@@ -23,6 +23,11 @@ interface TranscriptLine {
   permissionMode?: string;
   subtype?: string;
   cwd?: string;
+  /** SDK-provided structured answers for AskUserQuestion tool results */
+  toolUseResult?: {
+    questions?: QuestionItem[];
+    answers?: Record<string, string>;
+  };
 }
 
 interface ContentBlock {
@@ -322,6 +327,9 @@ export class TranscriptReader {
           let hasToolResult = false;
           const textParts: string[] = [];
 
+          // Extract structured answers from SDK's toolUseResult field (if present)
+          const sdkAnswers = parsed.toolUseResult?.answers;
+
           for (const block of msgContent) {
             if (block.type === 'tool_result' && block.tool_use_id) {
               hasToolResult = true;
@@ -329,10 +337,21 @@ export class TranscriptReader {
               const tc = toolCallMap.get(block.tool_use_id);
               if (tc) {
                 tc.result = resultText;
+                // AskUserQuestion: extract answers from SDK metadata or parse from result text
+                if (tc.toolName === 'AskUserQuestion' && tc.questions && !tc.answers) {
+                  tc.answers = sdkAnswers
+                    ? this.mapSdkAnswersToIndices(sdkAnswers, tc.questions)
+                    : this.parseQuestionAnswers(resultText, tc.questions);
+                }
               }
               const tcPart = toolCallPartMap.get(block.tool_use_id);
               if (tcPart) {
                 tcPart.result = resultText;
+                if (tcPart.toolName === 'AskUserQuestion' && tcPart.questions && !tcPart.answers) {
+                  tcPart.answers = sdkAnswers
+                    ? this.mapSdkAnswersToIndices(sdkAnswers, tcPart.questions as QuestionItem[])
+                    : this.parseQuestionAnswers(resultText, tcPart.questions as QuestionItem[]);
+                }
               }
             } else if (block.type === 'text' && block.text) {
               textParts.push(block.text);
@@ -545,6 +564,50 @@ export class TranscriptReader {
 
   private stripSystemTags(text: string): string {
     return text.replace(/<system-reminder>[\s\S]*?<\/system-reminder>/g, '').trim();
+  }
+
+  /**
+   * Map SDK's toolUseResult.answers (keyed by question text) to index-keyed record.
+   * SDK stores answers as { "Question text": "Answer value" }.
+   * Client expects { "0": "Answer value", "1": "..." }.
+   */
+  private mapSdkAnswersToIndices(sdkAnswers: Record<string, string>, questions: QuestionItem[]): Record<string, string> {
+    const answers: Record<string, string> = {};
+    for (const [questionText, answerText] of Object.entries(sdkAnswers)) {
+      const qIdx = questions.findIndex(q => q.question === questionText);
+      if (qIdx !== -1) {
+        answers[String(qIdx)] = answerText;
+      }
+    }
+    // If SDK answer keys are already indices (our gateway format), use directly
+    if (Object.keys(answers).length === 0) {
+      for (const [key, value] of Object.entries(sdkAnswers)) {
+        if (/^\d+$/.test(key)) {
+          answers[key] = value;
+        }
+      }
+    }
+    return answers;
+  }
+
+  /**
+   * Parse answers from AskUserQuestion tool_result text (fallback).
+   * Format: `..."Question text"="Answer text", "Q2"="A2". You can now...`
+   * Falls back to empty record (truthy signal) if parsing fails.
+   */
+  private parseQuestionAnswers(resultText: string, questions: QuestionItem[]): Record<string, string> {
+    const answers: Record<string, string> = {};
+    // Match "question"="answer" pairs in the result text
+    const pairRegex = /"([^"]+?)"\s*=\s*"([^"]+?)"/g;
+    let match;
+    while ((match = pairRegex.exec(resultText)) !== null) {
+      const [, questionText, answerText] = match;
+      const qIdx = questions.findIndex(q => q.question === questionText);
+      if (qIdx !== -1) {
+        answers[String(qIdx)] = answerText;
+      }
+    }
+    return answers;
   }
 }
 

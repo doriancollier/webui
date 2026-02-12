@@ -80,6 +80,10 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const abortRef = useRef<AbortController | null>(null);
   const currentPartsRef = useRef<MessagePart[]>([]);
   const historySeededRef = useRef(false);
+  const streamStartTimeRef = useRef<number | null>(null);
+  const estimatedTokensRef = useRef<number>(0);
+  const [streamStartTime, setStreamStartTime] = useState<number | null>(null);
+  const [estimatedTokens, setEstimatedTokens] = useState<number>(0);
 
   // Load message history from SDK transcript via TanStack Query
   const historyQuery = useQuery({
@@ -153,6 +157,12 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     setStatus('streaming');
     setError(null);
     currentPartsRef.current = [];
+    // Start inference timer immediately so it counts during tool calls too
+    const streamStart = Date.now();
+    streamStartTimeRef.current = streamStart;
+    estimatedTokensRef.current = 0;
+    setStreamStartTime(streamStart);
+    setEstimatedTokens(0);
 
     const assistantId = crypto.randomUUID();
     setMessages(prev => [...prev, {
@@ -200,6 +210,9 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         } else {
           parts.push({ type: 'text', text });
         }
+        // Inference indicator: accumulate token estimate from text deltas
+        estimatedTokensRef.current += text.length / 4;
+        setEstimatedTokens(estimatedTokensRef.current);
         updateAssistantMessage(assistantId);
         break;
       }
@@ -239,34 +252,54 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         if (existing) {
           existing.result = tc.result;
           existing.status = 'complete';
+          // Mark AskUserQuestion as answered so QuestionPrompt shows collapsed on remount
+          if (existing.interactiveType === 'question' && !existing.answers) {
+            existing.answers = {};
+          }
         }
         updateAssistantMessage(assistantId);
         break;
       }
       case 'approval_required': {
         const approval = data as ApprovalEvent;
-        currentPartsRef.current.push({
-          type: 'tool_call',
-          toolCallId: approval.toolCallId,
-          toolName: approval.toolName,
-          input: approval.input,
-          status: 'pending',
-          interactiveType: 'approval',
-        });
+        // Update existing part (created by tool_call_start) instead of duplicating
+        const existingA = findToolCallPart(approval.toolCallId);
+        if (existingA) {
+          existingA.interactiveType = 'approval';
+          existingA.input = approval.input;
+          existingA.status = 'pending';
+        } else {
+          currentPartsRef.current.push({
+            type: 'tool_call',
+            toolCallId: approval.toolCallId,
+            toolName: approval.toolName,
+            input: approval.input,
+            status: 'pending',
+            interactiveType: 'approval',
+          });
+        }
         updateAssistantMessage(assistantId);
         break;
       }
       case 'question_prompt': {
         const question = data as QuestionPromptEvent;
-        currentPartsRef.current.push({
-          type: 'tool_call',
-          toolCallId: question.toolCallId,
-          toolName: 'AskUserQuestion',
-          input: '',
-          status: 'pending',
-          interactiveType: 'question',
-          questions: question.questions,
-        });
+        // Update existing part (created by tool_call_start) instead of duplicating
+        const existingQ = findToolCallPart(question.toolCallId);
+        if (existingQ) {
+          existingQ.interactiveType = 'question';
+          existingQ.questions = question.questions;
+          existingQ.status = 'pending';
+        } else {
+          currentPartsRef.current.push({
+            type: 'tool_call',
+            toolCallId: question.toolCallId,
+            toolName: 'AskUserQuestion',
+            input: '',
+            status: 'pending',
+            interactiveType: 'question',
+            questions: question.questions,
+          });
+        }
         updateAssistantMessage(assistantId);
         break;
       }
@@ -302,6 +335,11 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         if (doneData.sessionId && doneData.sessionId !== sessionId) {
           options.onSessionIdChange?.(doneData.sessionId);
         }
+        // Reset inference indicator state
+        streamStartTimeRef.current = null;
+        estimatedTokensRef.current = 0;
+        setStreamStartTime(null);
+        setEstimatedTokens(0);
         setStatus('idle');
         break;
       }
@@ -342,5 +380,5 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   const isLoadingHistory = historyQuery.isLoading;
 
-  return { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus };
+  return { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens };
 }

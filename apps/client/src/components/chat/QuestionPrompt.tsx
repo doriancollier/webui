@@ -83,47 +83,58 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
 
   // Collapsed submitted state
   if (submitted) {
+    // Check if we have specific answer values (from live interaction or history with parsed answers)
+    const hasSpecificAnswers = preAnswers
+      ? Object.values(preAnswers).some(v => v !== '')
+      : Object.keys(selections).length > 0;
+
     return (
       <div className="my-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm transition-colors duration-200">
         <div className="flex items-center gap-2">
           <Check className="size-(--size-icon-md) text-emerald-500" />
-          <div className="flex flex-wrap gap-2">
-            {questions.map((q, idx) => {
-              let displayValue: string;
-              // Use preAnswers (from history) if available, otherwise use selections (from live interaction)
-              if (preAnswers) {
-                const raw = preAnswers[String(idx)] || '';
-                // Multi-select answers are JSON-stringified arrays
-                if (q.multiSelect) {
-                  try {
-                    displayValue = (JSON.parse(raw) as string[]).join(', ');
-                  } catch {
+          {hasSpecificAnswers ? (
+            <div className="flex flex-wrap gap-2">
+              {questions.map((q, idx) => {
+                let displayValue: string;
+                // Use preAnswers (from history) if available, otherwise use selections (from live interaction)
+                if (preAnswers && preAnswers[String(idx)]) {
+                  const raw = preAnswers[String(idx)];
+                  // Multi-select answers are JSON-stringified arrays
+                  if (q.multiSelect) {
+                    try {
+                      displayValue = (JSON.parse(raw) as string[]).join(', ');
+                    } catch {
+                      displayValue = raw;
+                    }
+                  } else {
                     displayValue = raw;
                   }
+                } else if (!preAnswers) {
+                  const sel = selections[idx];
+                  if (q.multiSelect) {
+                    const arr = (sel as string[]).map(v =>
+                      v === '__other__' ? otherText[idx] : v
+                    );
+                    displayValue = arr.join(', ');
+                  } else {
+                    displayValue = sel === '__other__' ? otherText[idx] : (sel as string);
+                  }
                 } else {
-                  displayValue = raw;
+                  return null; // Skip questions without specific answers
                 }
-              } else {
-                const sel = selections[idx];
-                if (q.multiSelect) {
-                  const arr = (sel as string[]).map(v =>
-                    v === '__other__' ? otherText[idx] : v
-                  );
-                  displayValue = arr.join(', ');
-                } else {
-                  displayValue = sel === '__other__' ? otherText[idx] : (sel as string);
-                }
-              }
-              return (
-                <span key={idx} className="inline-flex items-center gap-1">
-                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                    {q.header}:
+                return (
+                  <span key={idx} className="inline-flex items-center gap-1">
+                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                      {q.header}:
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400">{displayValue}</span>
                   </span>
-                  <span className="text-emerald-600 dark:text-emerald-400">{displayValue}</span>
-                </span>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
+          ) : (
+            <span className="text-emerald-600 dark:text-emerald-400">Questions answered</span>
+          )}
         </div>
       </div>
     );
