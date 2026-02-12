@@ -47,6 +47,14 @@ export function groupSessionsByTime(sessions: Session[]): GroupedSessions[] {
 }
 
 /**
+ * Shorten an absolute path by replacing the home directory prefix with ~.
+ * Handles macOS (/Users/) and Linux (/home/).
+ */
+export function shortenHomePath(absolutePath: string): string {
+  return absolutePath.replace(/^\/(?:Users|home)\/[^/]+/, '~');
+}
+
+/**
  * Format ISO timestamp as concise relative time.
  * Today: "Just now", "5m ago", "3h ago"
  * Yesterday: "Yesterday"

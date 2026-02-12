@@ -1,12 +1,12 @@
 import { Bot } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from '../ui/dropdown-menu';
+  ResponsiveDropdownMenu,
+  ResponsiveDropdownMenuTrigger,
+  ResponsiveDropdownMenuContent,
+  ResponsiveDropdownMenuLabel,
+  ResponsiveDropdownMenuRadioGroup,
+  ResponsiveDropdownMenuRadioItem,
+} from '../ui/responsive-dropdown-menu';
 
 const MODEL_OPTIONS = [
   { value: 'claude-sonnet-4-5-20250929', label: 'Sonnet 4.5' },
@@ -28,23 +28,23 @@ interface ModelItemProps {
 
 export function ModelItem({ model, onChangeModel }: ModelItemProps) {
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <ResponsiveDropdownMenu>
+      <ResponsiveDropdownMenuTrigger asChild>
         <button className="inline-flex items-center gap-1 hover:text-foreground transition-colors duration-150">
           <Bot className="size-(--size-icon-xs)" />
           <span>{getModelLabel(model)}</span>
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-44">
-        <DropdownMenuLabel>Model</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={model} onValueChange={onChangeModel}>
+      </ResponsiveDropdownMenuTrigger>
+      <ResponsiveDropdownMenuContent side="top" align="start" className="w-44">
+        <ResponsiveDropdownMenuLabel>Model</ResponsiveDropdownMenuLabel>
+        <ResponsiveDropdownMenuRadioGroup value={model} onValueChange={onChangeModel}>
           {MODEL_OPTIONS.map((m) => (
-            <DropdownMenuRadioItem key={m.value} value={m.value}>
+            <ResponsiveDropdownMenuRadioItem key={m.value} value={m.value}>
               {m.label}
-            </DropdownMenuRadioItem>
+            </ResponsiveDropdownMenuRadioItem>
           ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </ResponsiveDropdownMenuRadioGroup>
+      </ResponsiveDropdownMenuContent>
+    </ResponsiveDropdownMenu>
   );
 }

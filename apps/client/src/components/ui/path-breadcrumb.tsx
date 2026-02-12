@@ -47,7 +47,7 @@ export function PathBreadcrumb({
         }`;
 
         return (
-          <span key={segPath} className="flex items-center flex-shrink-0">
+          <span key={segPath} className={`flex items-center ${isLast ? 'flex-shrink-0' : 'min-w-0'}`}>
             {i > 0 && (
               <ChevronRight className={`${chevronClass} text-muted-foreground/40 flex-shrink-0`} />
             )}

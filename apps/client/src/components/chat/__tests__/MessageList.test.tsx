@@ -192,4 +192,38 @@ describe('MessageList', () => {
     const scrollContainer = container.querySelector('.overflow-y-auto');
     expect(scrollContainer).not.toBeNull();
   });
+
+  it('scroll container does not have relative or flex-1 classes', () => {
+    const messages: ChatMessage[] = [
+      { id: '1', role: 'user', content: 'Test', timestamp: new Date().toISOString() },
+    ];
+    const { container } = render(<MessageList sessionId="test-session" messages={messages} />);
+    const scrollContainer = container.querySelector('.overflow-y-auto');
+    expect(scrollContainer?.classList.contains('relative')).toBe(false);
+    expect(scrollContainer?.classList.contains('flex-1')).toBe(false);
+  });
+
+  it('does not render scroll-to-bottom button', () => {
+    const messages: ChatMessage[] = [
+      { id: '1', role: 'user', content: 'Test', timestamp: new Date().toISOString() },
+    ];
+    const { container } = render(<MessageList sessionId="test-session" messages={messages} />);
+    const button = container.querySelector('button[aria-label="Scroll to bottom"]');
+    expect(button).toBeNull();
+  });
+
+  it('accepts onScrollStateChange callback prop', () => {
+    const handleScrollState = vi.fn();
+    const messages: ChatMessage[] = [
+      { id: '1', role: 'user', content: 'Test', timestamp: new Date().toISOString() },
+    ];
+    const { container } = render(
+      <MessageList
+        sessionId="test-session"
+        messages={messages}
+        onScrollStateChange={handleScrollState}
+      />
+    );
+    expect(container).toBeDefined();
+  });
 });

@@ -1,7 +1,8 @@
 import { useRef, useCallback, useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
-import { CornerDownLeft, Square } from 'lucide-react';
+import { motion } from 'motion/react';
+import { ArrowUp, CornerDownLeft, Square } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 
 interface ChatInputProps {
   value: string;
@@ -32,6 +33,7 @@ export function ChatInput({
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -66,14 +68,16 @@ export function ChatInput({
       }
 
       // --- Default behavior (palette closed) ---
-      if (e.key === 'Enter' && !e.shiftKey) {
+      // Desktop: Enter submits, Shift+Enter for newline
+      // Mobile: Enter inserts newline, submit via button only
+      if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
         e.preventDefault();
         if (!isLoading && value.trim()) {
           onSubmit();
         }
       }
     },
-    [isLoading, value, onSubmit, onEscape, isPaletteOpen, onArrowUp, onArrowDown, onCommandSelect]
+    [isLoading, isMobile, value, onSubmit, onEscape, isPaletteOpen, onArrowUp, onArrowDown, onCommandSelect]
   );
 
   const handleFocus = useCallback(() => setIsFocused(true), []);
@@ -99,11 +103,14 @@ export function ChatInput({
   );
 
   const hasText = value.trim().length > 0;
+  const showButton = isLoading || hasText;
+  const SendIcon = isMobile ? ArrowUp : CornerDownLeft;
+  const Icon = isLoading ? Square : SendIcon;
 
   return (
     <div
       className={cn(
-        'relative rounded-lg border transition-colors duration-150',
+        'flex items-end gap-1.5 rounded-xl border p-1.5 pl-3 transition-colors duration-150',
         isFocused ? 'border-ring' : 'border-border'
       )}
     >
@@ -120,45 +127,28 @@ export function ChatInput({
         aria-expanded={isPaletteOpen ?? false}
         aria-activedescendant={isPaletteOpen ? activeDescendantId : undefined}
         placeholder="Message Claude..."
-        className="w-full resize-none bg-transparent px-3 py-2 pr-10 text-sm focus:outline-none min-h-[40px] max-h-[200px]"
+        className="flex-1 resize-none bg-transparent py-0.5 text-sm focus:outline-none min-h-[24px] max-h-[200px]"
         rows={1}
         disabled={isLoading}
       />
-      <div className="absolute right-2 bottom-1.5">
-        <AnimatePresence mode="wait">
-          {isLoading ? (
-            <motion.button
-              key="stop"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onStop}
-              className="rounded-md bg-destructive p-1.5 max-md:p-2.5 text-destructive-foreground hover:bg-destructive/90"
-              aria-label="Stop generating"
-            >
-              <Square className="size-(--size-icon-sm)" />
-            </motion.button>
-          ) : hasText ? (
-            <motion.button
-              key="send"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.15 }}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={onSubmit}
-              className="rounded-md bg-primary p-1.5 max-md:p-2.5 text-primary-foreground hover:bg-primary/90"
-              aria-label="Send message"
-            >
-              <CornerDownLeft className="size-(--size-icon-sm)" />
-            </motion.button>
-          ) : null}
-        </AnimatePresence>
-      </div>
+      <motion.button
+        animate={{ opacity: showButton ? 1 : 0, scale: showButton ? 1 : 0.8 }}
+        transition={{ duration: 0.15 }}
+        whileHover={showButton ? { scale: 1.1 } : undefined}
+        whileTap={showButton ? { scale: 0.9 } : undefined}
+        onClick={isLoading ? onStop : onSubmit}
+        disabled={!showButton}
+        className={cn(
+          'shrink-0 rounded-lg p-1.5 max-md:p-2 transition-colors',
+          isLoading
+            ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+            : 'bg-primary text-primary-foreground hover:bg-primary/90',
+          !showButton && 'pointer-events-none'
+        )}
+        aria-label={isLoading ? 'Stop generating' : 'Send message'}
+      >
+        <Icon className="size-(--size-icon-sm)" />
+      </motion.button>
     </div>
   );
 }

@@ -2,13 +2,13 @@ import { Shield, ShieldCheck, ShieldOff, ClipboardList } from 'lucide-react';
 import type { PermissionMode } from '@lifeos/shared/types';
 import type { LucideIcon } from 'lucide-react';
 import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-} from '../ui/dropdown-menu';
+  ResponsiveDropdownMenu,
+  ResponsiveDropdownMenuTrigger,
+  ResponsiveDropdownMenuContent,
+  ResponsiveDropdownMenuLabel,
+  ResponsiveDropdownMenuRadioGroup,
+  ResponsiveDropdownMenuRadioItem,
+} from '../ui/responsive-dropdown-menu';
 
 const PERMISSION_MODES: {
   value: PermissionMode;
@@ -48,39 +48,34 @@ export function PermissionModeItem({ mode, onChangeMode }: PermissionModeItemPro
   const isDangerous = mode === 'bypassPermissions';
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <ResponsiveDropdownMenu>
+      <ResponsiveDropdownMenuTrigger asChild>
         <button
           className={`inline-flex items-center gap-1 hover:text-foreground transition-colors duration-150 ${isDangerous ? 'text-red-500' : ''}`}
         >
           <Icon className="size-(--size-icon-xs)" />
           <span>{current.label}</span>
         </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="top" align="start" className="w-56">
-        <DropdownMenuLabel>Permission Mode</DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={mode} onValueChange={(v) => onChangeMode(v as PermissionMode)}>
+      </ResponsiveDropdownMenuTrigger>
+      <ResponsiveDropdownMenuContent side="top" align="start" className="w-56">
+        <ResponsiveDropdownMenuLabel>Permission Mode</ResponsiveDropdownMenuLabel>
+        <ResponsiveDropdownMenuRadioGroup value={mode} onValueChange={(v) => onChangeMode(v as PermissionMode)}>
           {PERMISSION_MODES.map((m) => {
-            const MIcon = m.icon;
             const isWarn = m.value === 'bypassPermissions';
             return (
-              <DropdownMenuRadioItem
+              <ResponsiveDropdownMenuRadioItem
                 key={m.value}
                 value={m.value}
+                icon={m.icon}
+                description={m.description}
                 className={isWarn ? 'text-red-500' : ''}
               >
-                <div className="flex items-center gap-2">
-                  <MIcon className="size-(--size-icon-xs) shrink-0" />
-                  <div className="text-left">
-                    <div>{m.label}</div>
-                    <div className="text-[10px] text-muted-foreground">{m.description}</div>
-                  </div>
-                </div>
-              </DropdownMenuRadioItem>
+                {m.label}
+              </ResponsiveDropdownMenuRadioItem>
             );
           })}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </ResponsiveDropdownMenuRadioGroup>
+      </ResponsiveDropdownMenuContent>
+    </ResponsiveDropdownMenu>
   );
 }

@@ -171,6 +171,10 @@ Animation should feel like physics, not decoration. Things should move because t
 
 **Streaming cursor:** Blinking pipe character, 1s infinite.
 
+**Scroll-to-bottom button:** Fade in + slide up 10px, 150ms ease-out. Fade out + slide down on exit. Right-aligned in message area overlay wrapper.
+
+**New messages pill:** Fade in + slide up 8px, 200ms ease-out. Fade out on exit (150ms). Centered horizontally in message area overlay wrapper. Appears when new messages arrive while user is scrolled up; dismissed on click or reaching bottom.
+
 ### What NOT to Animate
 
 - Message content (text should just appear)
@@ -205,6 +209,14 @@ Animation should feel like physics, not decoration. Things should move because t
 - Tool name in `font-mono`
 - Expandable with smooth height animation
 - Hover: border darkens slightly, subtle shadow appears
+
+### Scroll Overlays
+
+Both overlays live in a `relative flex-1 min-h-0` wrapper in ChatPanel, positioned `absolute` **outside** the scroll container. This ensures they stay fixed relative to the message viewport, not the scrollable content.
+
+- **Scroll-to-bottom button:** `absolute bottom-4 right-4`. Rounded circle, `bg-background`, 1px border, `shadow-sm` → `shadow-md` on hover. `ArrowDown` icon from lucide-react. `aria-label="Scroll to bottom"`. Visible when user is 200px+ from bottom.
+- **"New messages" pill:** `absolute bottom-16 left-1/2 -translate-x-1/2`. Rounded pill, `bg-foreground text-background` (inverted for high contrast in both themes), `text-xs font-medium`, `px-3 py-1.5`. `role="status" aria-live="polite"`. Visible when new messages arrive while scrolled up.
+- **Layout when both visible:** Pill centered at `bottom-16` (64px), button right-aligned at `bottom-4` (16px). Non-overlapping. Both clickable, both scroll to bottom, both dismiss when bottom is reached.
 
 ### Input Area
 
@@ -363,6 +375,76 @@ Usage:
   --mobile-scale-interactive: 1.30;
 }
 ```
+
+---
+
+## Responsive Components
+
+Interactive overlays that need different UX on desktop vs mobile use responsive wrappers. These keep the Radix primitive on desktop (keyboard nav, precise positioning) and swap to a Vaul Drawer on mobile (large touch targets, bottom-sheet pattern).
+
+### `ResponsiveDropdownMenu`
+
+Use instead of plain `DropdownMenu` when the menu appears in a touch-accessible area (status bars, toolbars, settings). Plain `DropdownMenu` is fine for desktop-only contexts (right-click menus, dense data tables).
+
+| Sub-component | Desktop (≥768px) | Mobile (<768px) |
+|---|---|---|
+| `ResponsiveDropdownMenu` | `DropdownMenu` | `Drawer` |
+| `ResponsiveDropdownMenuTrigger` | `DropdownMenuTrigger` | `DrawerTrigger` |
+| `ResponsiveDropdownMenuContent` | `DropdownMenuContent` | `DrawerContent` (auto-height) |
+| `ResponsiveDropdownMenuLabel` | `DropdownMenuLabel` | `DrawerHeader` + `DrawerTitle` |
+| `ResponsiveDropdownMenuRadioGroup` | `DropdownMenuRadioGroup` | `<div role="radiogroup">` |
+| `ResponsiveDropdownMenuRadioItem` | `DropdownMenuRadioItem` | Custom button with iOS sizing |
+
+#### RadioItem Props
+
+| Prop | Type | Required | Description |
+|------|------|----------|-------------|
+| `value` | `string` | Yes | Radio value |
+| `children` | `ReactNode` | Yes | Label text |
+| `icon` | `LucideIcon` | No | Leading icon (renders in both modes) |
+| `description` | `string` | No | Secondary text below label |
+| `className` | `string` | No | Additional classes (e.g., danger styling) |
+
+#### Mobile Sizing (Apple HIG)
+
+- `min-h-[44px]` touch targets
+- `text-[17px]` labels (iOS body)
+- `text-[13px]` descriptions (iOS footnote)
+- Right-aligned `Check` icon for selected item
+- `border-b border-border` separators between items
+
+#### Simple Usage (ModelItem)
+
+```tsx
+<ResponsiveDropdownMenu>
+  <ResponsiveDropdownMenuTrigger asChild>
+    <button>Sonnet 4.5</button>
+  </ResponsiveDropdownMenuTrigger>
+  <ResponsiveDropdownMenuContent side="top" align="start">
+    <ResponsiveDropdownMenuLabel>Model</ResponsiveDropdownMenuLabel>
+    <ResponsiveDropdownMenuRadioGroup value={model} onValueChange={setModel}>
+      <ResponsiveDropdownMenuRadioItem value="sonnet">Sonnet 4.5</ResponsiveDropdownMenuRadioItem>
+      <ResponsiveDropdownMenuRadioItem value="opus">Opus 4.6</ResponsiveDropdownMenuRadioItem>
+    </ResponsiveDropdownMenuRadioGroup>
+  </ResponsiveDropdownMenuContent>
+</ResponsiveDropdownMenu>
+```
+
+#### Rich Usage (PermissionModeItem)
+
+```tsx
+<ResponsiveDropdownMenuRadioItem
+  value="default"
+  icon={Shield}
+  description="Prompt for each tool call"
+>
+  Default
+</ResponsiveDropdownMenuRadioItem>
+```
+
+### `ResponsiveDialog`
+
+Use instead of plain `Dialog` when the dialog content needs full-screen treatment on mobile. Shows as a centered `Dialog` on desktop and a `Drawer` on mobile. See `components/ui/responsive-dialog.tsx`.
 
 ---
 

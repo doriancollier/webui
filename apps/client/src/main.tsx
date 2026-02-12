@@ -1,12 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { NuqsAdapter } from 'nuqs/adapters/react';
 import { App } from './App';
 import { HttpTransport } from './lib/http-transport';
 import { TransportProvider } from './contexts/TransportContext';
+import { useAppStore } from './stores/app-store';
 import './index.css';
+
+function DevtoolsToggle() {
+  const open = useAppStore((s) => s.devtoolsOpen);
+  if (!open) return null;
+  // Lazy-load devtools only when toggled on
+  const ReactQueryDevtools = React.lazy(() =>
+    import('@tanstack/react-query-devtools').then((m) => ({ default: m.ReactQueryDevtools }))
+  );
+  return (
+    <React.Suspense fallback={null}>
+      <ReactQueryDevtools initialIsOpen />
+    </React.Suspense>
+  );
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -26,7 +40,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <TransportProvider transport={transport}>
           <App />
         </TransportProvider>
-        <ReactQueryDevtools initialIsOpen={false} />
+        {import.meta.env.DEV && <DevtoolsToggle />}
       </QueryClientProvider>
     </NuqsAdapter>
   </React.StrictMode>

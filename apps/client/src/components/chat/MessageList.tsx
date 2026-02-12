@@ -1,9 +1,9 @@
-import { useRef, useEffect, useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ArrowDown } from 'lucide-react';
+import { useRef, useEffect, useState, useCallback, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ChatMessage, MessageGrouping } from '../../hooks/use-chat-session';
+import type { PermissionMode } from '@lifeos/shared/types';
 import { MessageItem } from './MessageItem';
+import { InferenceIndicator } from './InferenceIndicator';
 
 export function computeGrouping(messages: ChatMessage[]): MessageGrouping[] {
   let groupIndex = 0;
@@ -25,147 +25,159 @@ export function computeGrouping(messages: ChatMessage[]): MessageGrouping[] {
   });
 }
 
+export interface ScrollState {
+  isAtBottom: boolean;
+  distanceFromBottom: number;
+}
+
+export interface MessageListHandle {
+  scrollToBottom: () => void;
+}
+
 interface MessageListProps {
   messages: ChatMessage[];
   sessionId: string;
   status?: 'idle' | 'streaming' | 'error';
+  onScrollStateChange?: (state: ScrollState) => void;
+  streamStartTime?: number | null;
+  estimatedTokens?: number;
+  permissionMode?: PermissionMode;
 }
 
-export function MessageList({ messages, sessionId, status }: MessageListProps) {
-  const parentRef = useRef<HTMLDivElement>(null);
-  const [historyCount, setHistoryCount] = useState<number | null>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
-  const groupings = useMemo(() => computeGrouping(messages), [messages]);
+export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
+  function MessageList({ messages, sessionId, status, onScrollStateChange, streamStartTime, estimatedTokens, permissionMode }, ref) {
+    const parentRef = useRef<HTMLDivElement>(null);
+    const [historyCount, setHistoryCount] = useState<number | null>(null);
+    const isAtBottomRef = useRef(true);
+    const groupings = useMemo(() => computeGrouping(messages), [messages]);
 
-  useEffect(() => {
-    if (historyCount === null && messages.length > 0) {
-      setHistoryCount(messages.length);
-    }
-  }, [messages.length, historyCount]);
+    useEffect(() => {
+      if (historyCount === null && messages.length > 0) {
+        setHistoryCount(messages.length);
+      }
+    }, [messages.length, historyCount]);
 
-  const virtualizer = useVirtualizer({
-    count: messages.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => 80,
-    overscan: 5,
-    measureElement: (el) => el?.getBoundingClientRect().height ?? 80,
-  });
+    const virtualizer = useVirtualizer({
+      count: messages.length,
+      getScrollElement: () => parentRef.current,
+      estimateSize: () => 80,
+      overscan: 5,
+      measureElement: (el) => el?.getBoundingClientRect().height ?? 80,
+    });
 
-  // Track scroll position for scroll-to-bottom button
-  const handleScroll = useCallback(() => {
-    const container = parentRef.current;
-    if (!container) return;
-    const threshold = 100;
-    const isNearBottom =
-      container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
-    setShowScrollButton(!isNearBottom);
-  }, []);
+    // Track scroll position and report to parent
+    const handleScroll = useCallback(() => {
+      const container = parentRef.current;
+      if (!container) return;
+      const distanceFromBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      const isAtBottom = distanceFromBottom < 200;
+      isAtBottomRef.current = isAtBottom;
+      onScrollStateChange?.({ isAtBottom, distanceFromBottom });
+    }, [onScrollStateChange]);
 
-  useEffect(() => {
-    const container = parentRef.current;
-    if (!container) return;
-    container.addEventListener('scroll', handleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', handleScroll);
-  }, [handleScroll]);
+    useEffect(() => {
+      const container = parentRef.current;
+      if (!container) return;
+      container.addEventListener('scroll', handleScroll, { passive: true });
+      return () => container.removeEventListener('scroll', handleScroll);
+    }, [handleScroll]);
 
-  // When the scroll container becomes visible again (e.g. switching Obsidian
-  // sidebar tabs), the virtualizer loses its scroll position. Detect
-  // visibility changes and scroll to bottom when re-shown.
-  useEffect(() => {
-    const container = parentRef.current;
-    if (!container || messages.length === 0) return;
-    let wasHidden = false;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (!entry.isIntersecting) {
-          wasHidden = true;
-        } else if (wasHidden) {
-          wasHidden = false;
-          // Small delay so the virtualizer can re-measure after layout
-          requestAnimationFrame(() => {
-            virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
-          });
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(container);
-    return () => observer.disconnect();
-  }, [virtualizer, messages.length]);
+    // When the scroll container becomes visible again (e.g. switching Obsidian
+    // sidebar tabs), the virtualizer loses its scroll position. Detect
+    // visibility changes and scroll to bottom when re-shown.
+    useEffect(() => {
+      const container = parentRef.current;
+      if (!container || messages.length === 0) return;
+      let wasHidden = false;
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (!entry.isIntersecting) {
+            wasHidden = true;
+          } else if (wasHidden) {
+            wasHidden = false;
+            // Small delay so the virtualizer can re-measure after layout
+            requestAnimationFrame(() => {
+              virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+            });
+          }
+        },
+        { threshold: 0.1 }
+      );
+      observer.observe(container);
+      return () => observer.disconnect();
+    }, [virtualizer, messages.length]);
 
-  // Compute a scroll trigger that changes when messages are added or
-  // when the last message's tool calls change (e.g. interactive prompts).
-  const lastMsg = messages[messages.length - 1];
-  const scrollTrigger = `${messages.length}:${lastMsg?.toolCalls?.length ?? 0}`;
+    // Compute a scroll trigger that changes when messages are added or
+    // when the last message's tool calls change (e.g. interactive prompts).
+    const lastMsg = messages[messages.length - 1];
+    const scrollTrigger = `${messages.length}:${lastMsg?.toolCalls?.length ?? 0}`;
 
-  // Auto-scroll to bottom on new messages or tool call additions
-  useEffect(() => {
-    if (messages.length > 0 && !showScrollButton) {
+    // Auto-scroll to bottom on new messages or tool call additions
+    useEffect(() => {
+      if (messages.length > 0 && isAtBottomRef.current) {
+        virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+      }
+    }, [scrollTrigger, virtualizer]);
+
+    const scrollToBottom = useCallback(() => {
       virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
-    }
-  }, [scrollTrigger, virtualizer, showScrollButton]);
+    }, [virtualizer, messages.length]);
 
-  const scrollToBottom = useCallback(() => {
-    virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
-    setShowScrollButton(false);
-  }, [virtualizer, messages.length]);
+    useImperativeHandle(ref, () => ({
+      scrollToBottom,
+    }), [scrollToBottom]);
 
-  return (
-    <div ref={parentRef} className="chat-scroll-area flex-1 overflow-y-auto relative">
-      <div
-        style={{
-          height: virtualizer.getTotalSize(),
-          position: 'relative',
-          width: '100%',
-        }}
-      >
-        {virtualizer.getVirtualItems().map((virtualRow) => {
-          const msg = messages[virtualRow.index];
-          const isNew = historyCount !== null && virtualRow.index >= historyCount;
-          const isLastAssistant =
-            virtualRow.index === messages.length - 1 && msg.role === 'assistant';
-          const isStreaming = isLastAssistant && status === 'streaming';
+    return (
+      <div ref={parentRef} className="chat-scroll-area h-full overflow-y-auto">
+        <div
+          style={{
+            height: virtualizer.getTotalSize(),
+            position: 'relative',
+            width: '100%',
+          }}
+        >
+          {virtualizer.getVirtualItems().map((virtualRow) => {
+            const msg = messages[virtualRow.index];
+            const isNew = historyCount !== null && virtualRow.index >= historyCount;
+            const isLastAssistant =
+              virtualRow.index === messages.length - 1 && msg.role === 'assistant';
+            const isStreaming = isLastAssistant && status === 'streaming';
 
-          return (
-            <div
-              key={virtualRow.key}
-              data-index={virtualRow.index}
-              ref={virtualizer.measureElement}
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                transform: `translateY(${virtualRow.start}px)`,
-              }}
-            >
-              <MessageItem
-                message={msg}
-                grouping={groupings[virtualRow.index]}
-                sessionId={sessionId}
-                isNew={isNew}
-                isStreaming={isStreaming}
-              />
-            </div>
-          );
-        })}
+            return (
+              <div
+                key={virtualRow.key}
+                data-index={virtualRow.index}
+                ref={virtualizer.measureElement}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <MessageItem
+                  message={msg}
+                  grouping={groupings[virtualRow.index]}
+                  sessionId={sessionId}
+                  isNew={isNew}
+                  isStreaming={isStreaming}
+                />
+              </div>
+            );
+          })}
+          {/* Inference status indicator */}
+          <div style={{ position: 'absolute', top: virtualizer.getTotalSize(), left: 0, width: '100%' }}>
+            <InferenceIndicator
+              status={status ?? 'idle'}
+              streamStartTime={streamStartTime ?? null}
+              estimatedTokens={estimatedTokens ?? 0}
+              permissionMode={permissionMode}
+            />
+          </div>
+        </div>
       </div>
-
-      <AnimatePresence>
-        {showScrollButton && (
-          <motion.button
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.15 }}
-            onClick={scrollToBottom}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-background border shadow-sm p-2 hover:shadow-md transition-shadow"
-            aria-label="Scroll to bottom"
-          >
-            <ArrowDown className="size-(--size-icon-md)" />
-          </motion.button>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+    );
+  }
+);

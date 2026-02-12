@@ -25,6 +25,9 @@ interface AppState {
 
   recentCwds: RecentCwd[];
 
+  devtoolsOpen: boolean;
+  toggleDevtools: () => void;
+
   contextFiles: ContextFile[];
   addContextFile: (file: Omit<ContextFile, 'id'>) => void;
   removeContextFile: (id: string) => void;
@@ -58,6 +61,9 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       );
     } catch { return []; }
   })(),
+
+  devtoolsOpen: false,
+  toggleDevtools: () => set((s) => ({ devtoolsOpen: !s.devtoolsOpen })),
 
   contextFiles: [],
   addContextFile: (file) =>

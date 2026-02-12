@@ -1,7 +1,23 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { ChatInput } from '../ChatInput';
+
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
 
 afterEach(() => {
   cleanup();
@@ -72,7 +88,9 @@ describe('ChatInput', () => {
 
   it('hides send button when value is empty', () => {
     render(<ChatInput {...defaultProps} value="" />);
-    expect(screen.queryByLabelText('Send message')).toBeNull();
+    const btn = screen.getByLabelText('Send message');
+    expect(btn.getAttribute('disabled')).toBeDefined();
+    expect(btn.className).toContain('pointer-events-none');
   });
 
   it('shows send button when value is non-empty', () => {

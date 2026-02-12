@@ -109,7 +109,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div ref={containerRef} className="flex flex-col h-screen bg-background text-foreground">
+      <div ref={containerRef} className="flex flex-col h-dvh bg-background text-foreground">
         <PermissionBanner sessionId={activeSessionId} />
         <div className="relative flex flex-1 overflow-hidden">
           {/* Floating toggle — visible when sidebar is closed */}

@@ -4,7 +4,7 @@ import { useTransport } from '../../contexts/TransportContext';
 import { useAppStore, type RecentCwd } from '../../stores/app-store';
 import { useDirectoryState } from '../../hooks/use-directory-state';
 import { PathBreadcrumb } from '../ui/path-breadcrumb';
-import { formatRelativeTime } from '../../lib/session-utils';
+import { formatRelativeTime, shortenHomePath } from '../../lib/session-utils';
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -200,7 +200,7 @@ export function DirectoryPicker({ open, onOpenChange }: DirectoryPickerProps) {
                 >
                   <Folder className="size-(--size-icon-md) text-muted-foreground flex-shrink-0" />
                   <span className="text-sm text-muted-foreground truncate">
-                    {recent.path.replace(/^\/Users\/[^/]+/, '~')}
+                    {shortenHomePath(recent.path)}
                   </span>
                   <span className="ml-auto text-[11px] text-muted-foreground/50 flex-shrink-0">
                     {formatRelativeTime(recent.accessedAt)}

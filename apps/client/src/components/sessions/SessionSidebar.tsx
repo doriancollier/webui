@@ -9,7 +9,7 @@ import { SessionItem } from './SessionItem';
 import { DirectoryPicker } from './DirectoryPicker';
 import { groupSessionsByTime } from '@/lib/session-utils';
 import { PathBreadcrumb } from '../ui/path-breadcrumb';
-import { Plus, PanelLeftClose, FolderOpen, Sun, Moon, Monitor, Route, HeartPulse } from 'lucide-react';
+import { Plus, PanelLeftClose, FolderOpen, Sun, Moon, Monitor, Route, HeartPulse, Bug } from 'lucide-react';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../ui/hover-card';
 import { useTheme } from '../../hooks/use-theme';
 import type { Theme } from '../../hooks/use-theme';
@@ -19,7 +19,7 @@ export function SessionSidebar() {
   const transport = useTransport();
   const queryClient = useQueryClient();
   const [activeSessionId, setActiveSession] = useSessionId();
-  const { setSidebarOpen } = useAppStore();
+  const { setSidebarOpen, devtoolsOpen, toggleDevtools } = useAppStore();
   const isMobile = useIsMobile();
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -182,6 +182,20 @@ export function SessionSidebar() {
         >
           <ThemeIcon className="size-(--size-icon-sm)" />
         </button>
+          {import.meta.env.DEV && (
+            <button
+              onClick={toggleDevtools}
+              className={`p-1 max-md:p-2 rounded-md transition-colors duration-150 ${
+                devtoolsOpen
+                  ? 'text-amber-500'
+                  : 'text-amber-500/60 hover:text-amber-500'
+              }`}
+              title={devtoolsOpen ? 'Hide React Query devtools' : 'Show React Query devtools'}
+              aria-label="Toggle React Query devtools"
+            >
+              <Bug className="size-(--size-icon-sm)" />
+            </button>
+          )}
         </div>
       </div>
       <DirectoryPicker open={pickerOpen} onOpenChange={setPickerOpen} />
