@@ -75,7 +75,6 @@ const session = await transcriptReader.getSession(id)
 ## Security Checklist
 
 - [ ] Validate all input with Zod
-- [ ] Use DAL functions (auth checks built-in)
+- [ ] Use service layer functions (not direct file/data access)
 - [ ] Return appropriate status codes
 - [ ] Don't expose internal error details to clients
-- [ ] Rate limit sensitive endpoints (auth, payments)

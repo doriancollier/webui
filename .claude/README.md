@@ -8,7 +8,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 - **System Context** — Project instructions (CLAUDE.md) that teach Claude about this codebase
 - **Commands** — Slash commands for common workflows (`/git:commit`, `/spec:create`, etc.)
-- **Agents** — Specialized experts for complex tasks (`prisma-expert`, `typescript-expert`)
+- **Agents** — Specialized experts for complex tasks (`typescript-expert`, `react-tanstack-expert`)
 - **Skills** — Reusable expertise applied automatically (`debugging-systematically`, `designing-frontend`)
 - **Rules** — Path-specific guidance triggered when editing certain files
 - **Hooks** — Automated validation at lifecycle events (typecheck, lint, test)
@@ -19,13 +19,13 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 | Component | Count | Location |
 |-----------|-------|----------|
-| Commands | 49 | `.claude/commands/` |
-| Agents | 7 | `.claude/agents/` |
-| Skills | 13 | `.claude/skills/` |
-| Rules | 5 | `.claude/rules/` |
+| Commands | 45 | `.claude/commands/` |
+| Agents | 5 | `.claude/agents/` |
+| Skills | 8 | `.claude/skills/` |
+| Rules | 3 | `.claude/rules/` |
 | Hooks | 8 | `.claude/settings.json` |
-| MCP Servers | 5 | `.mcp.json` |
-| Developer Guides | 14 + INDEX | `developer-guides/` |
+| MCP Servers | 2 | `.mcp.json` |
+| Developer Guides | 6 | `developer-guides/` |
 
 ## Component Types
 
@@ -40,10 +40,8 @@ Slash commands are triggered explicitly by typing `/command`. They're expanded p
 | `debug/` | browser, types, test, api, data, logs, rubber-duck, performance | Systematic debugging |
 | `docs/` | reconcile | Documentation drift detection |
 | `roadmap/` | show, add, open, validate, analyze, prioritize, enrich, clear | Product roadmap management |
-| `system/` | ask, update, review, learn | Harness maintenance |
+| `system/` | ask, update, review, learn, release | Harness maintenance |
 | `app/` | upgrade, cleanup | Application dependency and code management |
-| `db/` | migrate, studio | Database operations |
-| `dev/` | scaffold | Feature scaffolding |
 | `cc/notify/` | on, off, status | Notification sounds |
 | `cc/ide/` | set, reset | VS Code color schemes |
 | `template/` | check, update | Upstream template updates |
@@ -64,17 +62,15 @@ Agents run in isolated context windows via the Task tool. Use for complex, multi
 
 | Agent | Specialty | When to Use |
 |-------|-----------|-------------|
-| `prisma-expert` | Database design, migrations, queries, Neon PostgreSQL | Schema changes, DAL patterns, query optimization |
 | `react-tanstack-expert` | React, TanStack Query, server/client components | Data fetching, state management, component architecture |
 | `typescript-expert` | Type system, generics, build errors | Complex types, build failures, type patterns |
-| `zod-forms-expert` | Zod schemas, React Hook Form, Shadcn Form | Form validation, schema design, form components |
 | `product-manager` | Roadmap, prioritization, scope management | Strategic decisions, feature prioritization |
 | `research-expert` | Web research, information gathering | External research (non-Claude Code topics) |
 | `code-search` | Finding files, patterns, functions | Locating code by pattern or content |
 
 **Explore vs code-search:**
-- `Explore` — Returns comprehensive answers with explanations ("How does auth work?")
-- `code-search` — Returns focused file lists only ("Find files using Prisma")
+- `Explore` — Returns comprehensive answers with explanations ("How does the transport layer work?")
+- `code-search` — Returns focused file lists only ("Find files using useSessionId")
 
 **Agent vs Skill**: Agents EXECUTE tasks in isolated context. Skills TEACH expertise in main conversation.
 
@@ -88,15 +84,10 @@ Skills provide reusable expertise that Claude applies automatically when relevan
 | `debugging-systematically` | Debugging methodology, troubleshooting patterns | Investigating bugs, tracing issues |
 | `designing-frontend` | Calm Tech design language, UI decisions | Planning UI, reviewing designs, hierarchy decisions |
 | `styling-with-tailwind-shadcn` | Tailwind CSS v4, Shadcn UI implementation | Writing styles, building components, theming |
-| `organizing-fsd-architecture` | Feature-Sliced Design, layer organization | Structuring features, file placement, imports |
-| `working-with-prisma` | Prisma 7 patterns, DAL conventions | Schema design, database queries, migrations |
-| `generating-images-replicate` | Replicate MCP for image generation, processing | Image generation, background removal, upscaling |
-| `vectorizing-images` | Raster-to-vector conversion with @neplex/vectorizer | Converting PNG/JPG to SVG, logo production |
 | `managing-roadmap-moscow` | MoSCoW prioritization, roadmap utilities | Product planning, prioritization decisions |
 | `writing-developer-guides` | Developer guide structure for AI agents | Creating/updating files in developer-guides/ |
 | `orchestrating-parallel-work` | Parallel agent execution, batch scheduling | Coordinating multiple concurrent tasks, optimizing task ordering |
 | `changelog-writing` | Human-friendly changelog entries, release notes | Populating changelog, preparing releases |
-| `posthog-nextjs-app-router` | PostHog analytics integration | Adding analytics to Next.js App Router |
 
 ### Rules (Path-Triggered)
 
@@ -104,9 +95,7 @@ Rules inject context-specific guidance when Claude works with matching files. Ea
 
 | Rule | Applies To | Key Guidance |
 |------|------------|--------------|
-| `api.md` | `apps/server/src/routes/**/*.ts` | Zod validation, DAL usage, error handling |
-| `dal.md` | `apps/server/src/services/**/*.ts`, `packages/shared/src/**/*.ts` | Auth checks, query/mutation patterns |
-| `security.md` | `**/auth/**`, `**/password/**`, `**/token/**` | No sensitive logging, hashing, session validation |
+| `api.md` | `apps/server/src/routes/**/*.ts` | Zod validation, service layer usage, error handling |
 | `testing.md` | `**/__tests__/**/*.ts`, `**/*.test.ts` | Vitest patterns, mocking, component testing |
 | `components.md` | `apps/client/src/components/**/*.tsx`, `apps/client/src/**/*.tsx` | Shadcn patterns, accessibility, styling |
 
@@ -129,9 +118,6 @@ External tools available via Model Context Protocol.
 |--------|---------|
 | `playwright` | Browser automation and visual debugging |
 | `context7` | Library documentation lookup |
-| `shadcn` | Component registry and examples |
-| `mcp-dev-db` | Direct database inspection (dev only) |
-| `replicate` | AI image generation, background removal, upscaling |
 
 ### Developer Guides
 
@@ -139,21 +125,12 @@ Detailed implementation patterns in `developer-guides/`:
 
 | Guide | Content |
 |-------|---------|
-| `INDEX.md` | **Coverage map** — maps code areas to guides, maintenance tracking |
-| `01-project-structure.md` | FSD architecture, file naming, directory layout |
-| `02-environment-variables.md` | T3 Env configuration, adding new variables |
-| `03-database-prisma.md` | Prisma 7, DAL patterns, naming conventions |
-| `04-forms-validation.md` | React Hook Form + Zod + Shadcn Form |
 | `05-data-fetching.md` | TanStack Query patterns, mutations |
 | `06-state-management.md` | Zustand vs TanStack Query decision guide |
 | `07-animations.md` | Motion library patterns |
 | `08-styling-theming.md` | Tailwind v4, dark mode, Shadcn |
-| `09-authentication.md` | BetterAuth, sessions, OTP patterns |
-| `10-metadata-seo.md` | Metadata API, favicons, Open Graph, SEO, AEO |
 | `11-parallel-execution.md` | Parallel agent execution patterns, batching, context savings |
-| `12-site-configuration.md` | Site configuration, feature toggles, env overrides |
-| `13-autonomous-roadmap-execution.md` | **⭐ Novel Feature** — Autonomous workflow, `/roadmap:work` |
-| `14-template-updates.md` | Template update system, `/template:check`, `/template:update` |
+| `13-autonomous-roadmap-execution.md` | Autonomous workflow, `/roadmap:work` |
 
 Skills often reference these guides for detailed patterns while keeping SKILL.md files concise.
 
@@ -173,7 +150,7 @@ Skills often reference these guides for detailed patterns while keeping SKILL.md
 │  USER-INVOKED     │  TOOL-INVOKED    │  AUTO-INVOKED           │
 │  (Commands)       │  (Agents)        │  (Skills, Rules, Hooks) │
 │                   │                  │                         │
-│  /spec:create     │  Task(prisma-    │  Skills: when relevant  │
+│  /spec:create     │  Task(typescript- │  Skills: when relevant  │
 │  /git:commit      │    expert)       │  Rules: when editing    │
 │  /ideate          │  Task(research-  │    matching files       │
 │                   │    expert)       │  Hooks: at lifecycle    │
@@ -206,10 +183,10 @@ Project-wide documentation? ─────────────► CLAUDE.md
 
 | Component | Pattern | Examples |
 |-----------|---------|----------|
-| Commands | `verb` or `noun` | create, commit, scaffold |
-| Agents | `domain-expert` | prisma-expert, typescript-expert |
+| Commands | `verb` or `noun` | create, commit, execute |
+| Agents | `domain-expert` | typescript-expert, react-tanstack-expert |
 | Skills | `verb-ing-noun` | debugging-systematically, designing-frontend |
-| Rules | `topic` (kebab-case) | api, dal, security |
+| Rules | `topic` (kebab-case) | api, testing, components |
 | Hooks | `action-target` | file-guard, lint-changed |
 
 ## Directory Structure
@@ -220,55 +197,42 @@ Project-wide documentation? ─────────────► CLAUDE.md
 ├── settings.json          # Hooks, permissions, environment
 ├── settings.local.json    # Local overrides, MCP servers
 │
-├── commands/              # Slash commands (49 total)
+├── commands/              # Slash commands (45 total)
 │   ├── app/               # Application maintenance
 │   ├── spec/              # Specification workflow
 │   ├── git/               # Version control
 │   ├── debug/             # Debugging commands
 │   ├── roadmap/           # Product roadmap
 │   ├── system/            # Harness maintenance
-│   ├── db/                # Database operations
-│   ├── dev/               # Development scaffolding
 │   ├── cc/                # Claude Code configuration
 │   │   ├── notify/        # Notification sounds
 │   │   └── ide/           # IDE color schemes
 │   ├── template/          # Upstream template management
-│   │   ├── check.md       # Check for updates
-│   │   └── update.md      # Apply updates
 │   ├── ideate.md          # Feature ideation
 │   ├── ideate-to-spec.md  # Ideation → specification
 │   └── review-recent-work.md
 │
-├── agents/                # Specialized agents (7 total)
-│   ├── database/
-│   │   └── prisma-expert.md
+├── agents/                # Specialized agents (5 total)
 │   ├── react/
 │   │   └── react-tanstack-expert.md
 │   ├── typescript/
 │   │   └── typescript-expert.md
-│   ├── forms/
-│   │   └── zod-forms-expert.md
 │   ├── code-search.md
 │   ├── product-manager.md
 │   └── research-expert.md
 │
-├── skills/                # Reusable expertise (13 total)
+├── skills/                # Reusable expertise (8 total)
 │   ├── proactive-clarification/
 │   ├── debugging-systematically/
 │   ├── designing-frontend/
 │   ├── styling-with-tailwind-shadcn/
-│   ├── organizing-fsd-architecture/
-│   ├── working-with-prisma/
-│   ├── generating-images-replicate/
-│   ├── vectorizing-images/
 │   ├── managing-roadmap-moscow/
 │   ├── writing-developer-guides/
-│   └── orchestrating-parallel-work/
+│   ├── orchestrating-parallel-work/
+│   └── changelog-writing/
 │
-└── rules/                 # Path-specific guidance (5 total)
+└── rules/                 # Path-specific guidance (3 total)
     ├── api.md             # API route handlers
-    ├── dal.md             # Data Access Layer
-    ├── security.md        # Security-critical code
     ├── testing.md         # Test patterns
     └── components.md      # UI components
 ```
@@ -428,37 +392,14 @@ Run `/system:review` periodically to:
 
 CLAUDE.md is the **primary source of truth** for project context. This README documents the harness structure; CLAUDE.md documents:
 - Technology stack and versions
-- Architecture patterns (FSD layers, DAL rules)
+- Architecture patterns (hexagonal, Transport interface)
 - Code conventions
-- Command and agent reference tables
-- Calculation rules
+- Monorepo structure and commands
 
 **Update CLAUDE.md when**:
 - Adding significant new commands or agents
 - Changing core workflows
 - Modifying architectural patterns
-
-### With UI Documentation Pages
-
-The template includes interactive documentation at `/system/` that displays harness information to users. These pages must stay synchronized with the actual harness.
-
-| Page | Path | Content |
-|------|------|---------|
-| System Overview | `/system` | Links to design system and Claude Code docs |
-| Claude Code Harness | `/system/claude-code` | Stats, commands, agents, skills, workflows |
-
-**Synchronization**: `/system:update` automatically updates these pages when harness components change. `/system:review` validates that UI pages match the actual harness state.
-
-**Arrays to update in the Claude Code harness UI page**:
-- `harnessStats` — Component counts
-- `commandNamespaces` — Command namespace listings
-- `agents` — Agent definitions
-- `skills` — Skill definitions
-
-**Update UI pages when**:
-- Adding/removing commands, agents, skills, or rules
-- Changing hook or MCP server counts
-- Modifying core workflows displayed in the UI
 
 ### With Developer Guides
 
