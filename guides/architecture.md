@@ -17,7 +17,7 @@ Transport
   listSessions()             -> Session[]
   getSession(id)             -> Session
   getMessages(sessionId)     -> { messages: HistoryMessage[] }
-  sendMessage(id, content, onEvent, signal) -> void
+  sendMessage(id, content, onEvent, signal, cwd?) -> void
   approveTool(sessionId, toolCallId)        -> { ok: boolean }
   denyTool(sessionId, toolCallId)           -> { ok: boolean }
   getCommands(refresh?)      -> CommandRegistry
@@ -26,7 +26,7 @@ Transport
 
 ### Key Design Decision: Callback-Based Streaming
 
-`sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. This normalizes both transports:
+`sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. An optional `cwd` parameter is passed through so the SDK uses the correct project directory when resuming sessions. This normalizes both transports:
 
 - **HttpTransport** parses SSE events from a `ReadableStream` and calls `onEvent`
 - **DirectTransport** iterates the `AsyncGenerator` from AgentManager and calls `onEvent`
@@ -93,7 +93,7 @@ Calls service instances directly in the same process:
 
 ```
 User input -> ChatPanel -> useChatSession.handleSubmit()
-  -> transport.sendMessage(sessionId, content, onEvent, signal)
+  -> transport.sendMessage(sessionId, content, onEvent, signal, cwd)
     -> fetch(POST /api/sessions/:id/messages) + ReadableStream SSE parsing
       -> onEvent(event) -> React state updates -> UI re-render
 ```
@@ -102,7 +102,7 @@ User input -> ChatPanel -> useChatSession.handleSubmit()
 
 ```
 User input -> ChatPanel -> useChatSession.handleSubmit()
-  -> transport.sendMessage(sessionId, content, onEvent, signal)
+  -> transport.sendMessage(sessionId, content, onEvent, signal, cwd)
     -> agentManager.sendMessage() -> SDK query()
       -> AsyncGenerator<StreamEvent>
         -> onEvent(event) -> React state updates -> UI re-render

@@ -3,6 +3,7 @@ import { AnimatePresence } from 'motion/react';
 import { useChatSession } from '../../hooks/use-chat-session';
 import { useCommands } from '../../hooks/use-commands';
 import { useTaskState } from '../../hooks/use-task-state';
+import { useSessionId } from '../../hooks/use-session-id';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { TaskListPanel } from './TaskListPanel';
@@ -17,9 +18,14 @@ interface ChatPanelProps {
 }
 
 export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
+  const [, setSessionId] = useSessionId();
   const taskState = useTaskState(sessionId);
   const { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus } =
-    useChatSession(sessionId, { transformContent, onTaskEvent: taskState.handleTaskEvent });
+    useChatSession(sessionId, {
+      transformContent,
+      onTaskEvent: taskState.handleTaskEvent,
+      onSessionIdChange: setSessionId,
+    });
   const [showCommands, setShowCommands] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);

@@ -107,14 +107,14 @@ router.post('/:id/messages', async (req, res) => {
   if (!parsed.success) {
     return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
   }
-  const { content } = parsed.data;
+  const { content, cwd } = parsed.data;
 
   const sessionId = req.params.id;
 
   initSSEStream(res);
 
   try {
-    for await (const event of agentManager.sendMessage(sessionId, content)) {
+    for await (const event of agentManager.sendMessage(sessionId, content, { cwd })) {
       sendSSEEvent(res, event);
 
       // If SDK assigned a different session ID, track it

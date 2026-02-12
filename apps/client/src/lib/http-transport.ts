@@ -65,11 +65,12 @@ export class HttpTransport implements Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
+    cwd?: string,
   ): Promise<void> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content, ...(cwd && { cwd }) }),
       signal,
     });
 

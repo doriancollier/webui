@@ -20,7 +20,7 @@ export interface DirectTransportServices {
     sendMessage(
       id: string,
       content: string,
-      opts?: { permissionMode?: PermissionMode },
+      opts?: { permissionMode?: PermissionMode; cwd?: string },
     ): AsyncGenerator<StreamEvent>;
     approveTool(
       sessionId: string,
@@ -106,10 +106,12 @@ export class DirectTransport implements Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
+    cwd?: string,
   ): Promise<void> {
     const generator = this.services.agentManager.sendMessage(
       sessionId,
       content,
+      ...(cwd ? [{ cwd }] : []),
     );
     for await (const event of generator) {
       if (signal?.aborted) break;

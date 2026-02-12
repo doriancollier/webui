@@ -20,6 +20,7 @@ export interface Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
+    cwd?: string,
   ): Promise<void>;
   approveTool(
     sessionId: string,

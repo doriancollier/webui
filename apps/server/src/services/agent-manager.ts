@@ -187,6 +187,7 @@ export class AgentManager {
   ensureSession(sessionId: string, opts: {
     permissionMode: PermissionMode;
     cwd?: string;
+    hasStarted?: boolean;
   }): void {
     if (!this.sessions.has(sessionId)) {
       this.sessions.set(sessionId, {
@@ -194,7 +195,7 @@ export class AgentManager {
         lastActivity: Date.now(),
         permissionMode: opts.permissionMode,
         cwd: opts.cwd,
-        hasStarted: false,
+        hasStarted: opts.hasStarted ?? false,
         pendingInteractions: new Map(),
         eventQueue: [],
       });
@@ -204,12 +205,16 @@ export class AgentManager {
   async *sendMessage(
     sessionId: string,
     content: string,
-    opts?: { permissionMode?: PermissionMode }
+    opts?: { permissionMode?: PermissionMode; cwd?: string }
   ): AsyncGenerator<StreamEvent> {
-    // Auto-create session if it doesn't exist (for resuming SDK sessions)
+    // Auto-create session if it doesn't exist (for resuming SDK sessions).
+    // Sessions hitting this path already exist on disk (created by CLI or a
+    // previous server run), so hasStarted must be true to trigger resume.
     if (!this.sessions.has(sessionId)) {
       this.ensureSession(sessionId, {
         permissionMode: opts?.permissionMode ?? 'default',
+        cwd: opts?.cwd,
+        hasStarted: true,
       });
     }
 

@@ -41,6 +41,8 @@ interface ChatSessionOptions {
   transformContent?: (content: string) => string | Promise<string>;
   /** Called when a task_update event is received during streaming */
   onTaskEvent?: (event: TaskUpdateEvent) => void;
+  /** Called when the SDK assigns a different session ID (e.g., first message in a new session) */
+  onSessionIdChange?: (newSessionId: string) => void;
 }
 
 /** Derive flat content and toolCalls from parts for backward compat */
@@ -175,6 +177,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         finalContent,
         (event) => handleStreamEvent(event.type, event.data, assistantId),
         abortController.signal,
+        selectedCwd ?? undefined,
       );
 
       setStatus('idle');
@@ -295,6 +298,10 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         break;
       }
       case 'done': {
+        const doneData = data as { sessionId?: string };
+        if (doneData.sessionId && doneData.sessionId !== sessionId) {
+          options.onSessionIdChange?.(doneData.sessionId);
+        }
         setStatus('idle');
         break;
       }

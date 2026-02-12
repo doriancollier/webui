@@ -64,6 +64,7 @@ function createSendMessageMock(events: StreamEvent[]) {
     _content: string,
     onEvent: (event: StreamEvent) => void,
     _signal?: AbortSignal,
+    _cwd?: string,
   ) => {
     for (const event of events) {
       onEvent(event);
@@ -276,6 +277,7 @@ describe('useChatSession', () => {
       _content: string,
       _onEvent: (event: StreamEvent) => void,
       signal?: AbortSignal,
+      _cwd?: string,
     ) => {
       return new Promise<void>((resolve, reject) => {
         signal?.addEventListener('abort', () => {
@@ -347,6 +349,7 @@ describe('useChatSession', () => {
       'Hello',
       expect.any(Function),
       expect.any(AbortSignal),
+      '/test/cwd',
     );
   });
 

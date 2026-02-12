@@ -96,6 +96,7 @@ export type UpdateSessionRequest = z.infer<typeof UpdateSessionRequestSchema>;
 export const SendMessageRequestSchema = z
   .object({
     content: z.string().min(1, 'content is required'),
+    cwd: z.string().optional(),
   })
   .openapi('SendMessageRequest');
 
