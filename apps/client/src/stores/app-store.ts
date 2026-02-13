@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { type FontFamilyKey, DEFAULT_FONT, getFontConfig, isValidFontKey } from '@/lib/font-config';
+import { loadGoogleFont, removeGoogleFont, applyFontCSS, removeFontCSS } from '@/lib/font-loader';
 
 export interface ContextFile {
   id: string;
@@ -52,6 +54,8 @@ interface AppState {
   setVerboseLogging: (v: boolean) => void;
   fontSize: 'small' | 'medium' | 'large';
   setFontSize: (v: 'small' | 'medium' | 'large') => void;
+  fontFamily: FontFamilyKey;
+  setFontFamily: (key: FontFamilyKey) => void;
   resetPreferences: () => void;
 
   contextFiles: ContextFile[];
@@ -214,6 +218,38 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
     set({ fontSize: v });
   },
 
+  fontFamily: (() => {
+    try {
+      const stored = localStorage.getItem('gateway-font-family');
+      const key = isValidFontKey(stored ?? '') ? stored! : DEFAULT_FONT;
+      const config = getFontConfig(key);
+      if (config.googleFontsUrl) {
+        loadGoogleFont(config.googleFontsUrl);
+      }
+      if (config.key !== 'system') {
+        applyFontCSS(config.sans, config.mono);
+      }
+      return key as FontFamilyKey;
+    } catch {
+      return DEFAULT_FONT;
+    }
+  })() as FontFamilyKey,
+  setFontFamily: (key) => {
+    try { localStorage.setItem('gateway-font-family', key); } catch {}
+    const config = getFontConfig(key);
+    if (config.googleFontsUrl) {
+      loadGoogleFont(config.googleFontsUrl);
+    } else {
+      removeGoogleFont();
+    }
+    if (config.key !== 'system') {
+      applyFontCSS(config.sans, config.mono);
+    } else {
+      removeFontCSS();
+    }
+    set({ fontFamily: key });
+  },
+
   resetPreferences: () => {
     try {
       localStorage.removeItem('gateway-show-timestamps');
@@ -228,8 +264,12 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       localStorage.removeItem('gateway-show-status-bar-cost');
       localStorage.removeItem('gateway-show-status-bar-context');
       localStorage.removeItem('gateway-show-status-bar-git');
+      localStorage.removeItem('gateway-font-family');
     } catch {}
     document.documentElement.style.setProperty('--user-font-scale', '1');
+    const defaultConfig = getFontConfig(DEFAULT_FONT);
+    if (defaultConfig.googleFontsUrl) loadGoogleFont(defaultConfig.googleFontsUrl);
+    applyFontCSS(defaultConfig.sans, defaultConfig.mono);
     set({
       showTimestamps: false,
       expandToolCalls: false,
@@ -238,6 +278,7 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       verboseLogging: false,
       devtoolsOpen: false,
       fontSize: 'medium',
+      fontFamily: DEFAULT_FONT,
       showStatusBarCwd: true,
       showStatusBarPermission: true,
       showStatusBarModel: true,

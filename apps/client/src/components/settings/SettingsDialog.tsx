@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { FONT_CONFIGS, type FontFamilyKey } from '@/lib/font-config';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -29,7 +30,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
-  const [activeTab, setActiveTab] = useState('preferences');
+  const [activeTab, setActiveTab] = useState('appearance');
   const {
     showTimestamps, setShowTimestamps,
     expandToolCalls, setExpandToolCalls,
@@ -37,6 +38,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     devtoolsOpen, toggleDevtools,
     verboseLogging, setVerboseLogging,
     fontSize, setFontSize,
+    fontFamily, setFontFamily,
     resetPreferences,
     showStatusBarCwd, setShowStatusBarCwd,
     showStatusBarPermission, setShowStatusBarPermission,
@@ -63,18 +65,18 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
         </ResponsiveDialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-3 mx-4 mt-3" style={{ width: 'calc(100% - 2rem)' }}>
+          <TabsList className="grid w-full grid-cols-4 mx-4 mt-3" style={{ width: 'calc(100% - 2rem)' }}>
+            <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
             <TabsTrigger value="statusBar">Status Bar</TabsTrigger>
             <TabsTrigger value="server">Server</TabsTrigger>
           </TabsList>
 
           <div className="overflow-y-auto flex-1 p-4 min-h-[280px]">
-            <TabsContent value="preferences" className="mt-0 space-y-6">
-              {/* Preferences Section */}
+            <TabsContent value="appearance" className="mt-0 space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+                  <h3 className="text-sm font-semibold text-foreground">Appearance</h3>
                   <button
                     onClick={() => { resetPreferences(); setTheme('system'); }}
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
@@ -96,6 +98,24 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   </Select>
                 </SettingRow>
 
+                <SettingRow label="Font family" description="Choose the typeface for the interface">
+                  <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as FontFamilyKey)}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FONT_CONFIGS.map((font) => (
+                        <SelectItem key={font.key} value={font.key}>
+                          <div className="flex flex-col">
+                            <span>{font.displayName}</span>
+                            <span className="text-xs text-muted-foreground">{font.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </SettingRow>
+
                 <SettingRow label="Font size" description="Adjust the text size across the interface">
                   <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
                     <SelectTrigger className="w-32">
@@ -108,6 +128,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     </SelectContent>
                   </Select>
                 </SettingRow>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="preferences" className="mt-0 space-y-6">
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
 
                 <SettingRow label="Show timestamps" description="Display message timestamps in chat">
                   <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />

@@ -184,14 +184,36 @@ describe('SettingsDialog', () => {
   });
 
   // Verifies tab navigation structure renders correctly
-  it('renders three tabs: Preferences, Status Bar, Server', () => {
+  it('renders four tabs: Appearance, Preferences, Status Bar, Server', () => {
     render(
       <SettingsDialog open={true} onOpenChange={vi.fn()} />,
       { wrapper: createWrapper() },
     );
+    expect(screen.getByRole('tab', { name: /appearance/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /preferences/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /status bar/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /server/i })).toBeDefined();
+  });
+
+  // Verifies font family selector appears in the Appearance tab
+  it('displays font family selector in Appearance tab', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    expect(screen.getByText('Font family')).toBeDefined();
+    expect(screen.getByText('Choose the typeface for the interface')).toBeDefined();
+  });
+
+  // Verifies Theme and Font size are in Appearance tab alongside Font family
+  it('displays Theme, Font family, and Font size in Appearance tab', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    expect(screen.getByText('Theme')).toBeDefined();
+    expect(screen.getByText('Font family')).toBeDefined();
+    expect(screen.getByText('Font size')).toBeDefined();
   });
 
   // Verifies Status Bar tab shows toggle switches
