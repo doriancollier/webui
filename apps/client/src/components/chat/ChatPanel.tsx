@@ -1,5 +1,6 @@
 import { useRef, useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import type { PanInfo } from 'motion/react';
 import { ArrowDown } from 'lucide-react';
 import { useChatSession } from '../../hooks/use-chat-session';
 import { useCommands } from '../../hooks/use-commands';
@@ -17,8 +18,10 @@ import { CommandPalette } from '../commands/CommandPalette';
 import { FilePalette } from '../files/FilePalette';
 import type { FileEntry } from '../files/FilePalette';
 import { ShortcutChips } from './ShortcutChips';
+import { DragHandle } from './DragHandle';
 import { StatusLine } from '../status/StatusLine';
 import { useFiles } from '../../hooks/use-files';
+import { useIsMobile } from '../../hooks/use-is-mobile';
 import { useAppStore } from '../../stores/app-store';
 import type { CommandEntry } from '@lifeos/shared/types';
 
@@ -82,6 +85,41 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       setHasNewMessages(false);
     }
   }, [isAtBottom]);
+
+  const isMobile = useIsMobile();
+  const [collapsed, setCollapsed] = useState(false);
+  const [showHint, setShowHint] = useState(() => {
+    if (!isMobile) return false;
+    const count = parseInt(localStorage.getItem('gateway-gesture-hint-count') || '0', 10);
+    return count < 3;
+  });
+
+  useEffect(() => {
+    if (!showHint) return;
+    const timer = setTimeout(() => {
+      setShowHint(false);
+      const count = parseInt(localStorage.getItem('gateway-gesture-hint-count') || '0', 10);
+      localStorage.setItem('gateway-gesture-hint-count', String(count + 1));
+    }, 4000);
+    return () => clearTimeout(timer);
+  }, [showHint]);
+
+  const dismissHint = useCallback(() => {
+    setShowHint(false);
+    const count = parseInt(localStorage.getItem('gateway-gesture-hint-count') || '0', 10);
+    localStorage.setItem('gateway-gesture-hint-count', String(count + 1));
+  }, []);
+
+  const SWIPE_THRESHOLD = 80;
+  const VELOCITY_THRESHOLD = 500;
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const { offset, velocity } = info;
+    if (offset.y > SWIPE_THRESHOLD || velocity.y > VELOCITY_THRESHOLD) {
+      setCollapsed(true);
+    } else if (offset.y < -SWIPE_THRESHOLD || velocity.y < -VELOCITY_THRESHOLD) {
+      setCollapsed(false);
+    }
+  };
 
   const showShortcutChips = useAppStore((s) => s.showShortcutChips);
   const [cwd] = useDirectoryState();
@@ -424,17 +462,57 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
           onCursorChange={handleCursorChange}
         />
 
-        <AnimatePresence>
-          {showShortcutChips && (
-            <ShortcutChips onChipClick={handleChipClick} />
-          )}
-        </AnimatePresence>
+        {isMobile && (
+          <>
+            <motion.div
+              animate={showHint ? { y: [0, 8, 0] } : undefined}
+              transition={showHint ? { duration: 1.2, repeat: 2 } : undefined}
+            >
+              <DragHandle collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+            </motion.div>
+            <AnimatePresence>
+              {showHint && (
+                <motion.p
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  onClick={dismissHint}
+                  className="text-center text-xs text-muted-foreground cursor-pointer"
+                >
+                  Swipe to collapse
+                </motion.p>
+              )}
+            </AnimatePresence>
+            <AnimatePresence initial={false}>
+              {!collapsed && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="overflow-hidden"
+                  drag="y"
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={0.2}
+                  onDragEnd={handleDragEnd}
+                  style={{ touchAction: 'pan-y' }}
+                >
+                  {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
+                  <StatusLine sessionId={sessionId} sessionStatus={sessionStatus} isStreaming={status === 'streaming'} />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </>
+        )}
 
-        <StatusLine
-          sessionId={sessionId}
-          sessionStatus={sessionStatus}
-          isStreaming={status === 'streaming'}
-        />
+        {!isMobile && (
+          <>
+            <AnimatePresence>
+              {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
+            </AnimatePresence>
+            <StatusLine sessionId={sessionId} sessionStatus={sessionStatus} isStreaming={status === 'streaming'} />
+          </>
+        )}
       </div>
     </div>
   );
