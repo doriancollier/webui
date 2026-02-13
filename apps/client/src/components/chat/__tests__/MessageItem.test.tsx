@@ -176,8 +176,8 @@ describe('MessageItem', () => {
   it('passes isStreaming to StreamingText for assistant messages', () => {
     const msg = { id: '1', role: 'assistant' as const, content: 'Streaming...', parts: [{ type: 'text' as const, text: 'Streaming...' }], timestamp: new Date().toISOString() };
     const { container } = render(<MessageItem message={msg} sessionId="test-session" grouping={onlyGrouping} isStreaming={true} />);
-    const cursor = container.querySelector('[aria-hidden="true"]');
-    expect(cursor).not.toBeNull();
+    const cursorWrapper = container.querySelector('.streaming-cursor');
+    expect(cursorWrapper).not.toBeNull();
   });
 
   it('renders divider on first-in-group when not the first group', () => {

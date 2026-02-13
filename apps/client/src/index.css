@@ -197,6 +197,37 @@ body {
   50% { opacity: 0; }
 }
 
+/* Inline streaming cursor — appended to the last text element inside Streamdown.
+   Uses a chain of :last-child selectors to drill into the Streamdown DOM and place
+   a ::after pseudo-element at the actual text insertion point. */
+.streaming-cursor > div > :last-child::after,
+.streaming-cursor > div > :last-child > :last-child::after,
+.streaming-cursor > div > :last-child > :last-child > :last-child::after {
+  content: '';
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  vertical-align: text-bottom;
+  margin-left: 1px;
+  background-color: var(--color-foreground);
+  opacity: 0.7;
+  border-radius: 1px;
+  animation: blink-cursor 1s step-end infinite, cursor-fade-in 0.15s ease-out;
+}
+
+/* Prevent duplicate cursors — only the deepest match should render */
+.streaming-cursor > div > :last-child:has(> :last-child)::after {
+  display: none;
+}
+.streaming-cursor > div > :last-child > :last-child:has(> :last-child)::after {
+  display: none;
+}
+
+@keyframes cursor-fade-in {
+  from { opacity: 0; }
+  to { opacity: 0.7; }
+}
+
 @keyframes shimmer-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); }
   50% { opacity: 1; transform: scale(1.15); }

@@ -38,6 +38,7 @@ interface MessageListProps {
   messages: ChatMessage[];
   sessionId: string;
   status?: 'idle' | 'streaming' | 'error';
+  isTextStreaming?: boolean;
   onScrollStateChange?: (state: ScrollState) => void;
   streamStartTime?: number | null;
   estimatedTokens?: number;
@@ -45,7 +46,7 @@ interface MessageListProps {
 }
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
-  function MessageList({ messages, sessionId, status, onScrollStateChange, streamStartTime, estimatedTokens, permissionMode }, ref) {
+  function MessageList({ messages, sessionId, status, isTextStreaming, onScrollStateChange, streamStartTime, estimatedTokens, permissionMode }, ref) {
     const parentRef = useRef<HTMLDivElement>(null);
     const [historyCount, setHistoryCount] = useState<number | null>(null);
     const isAtBottomRef = useRef(true);
@@ -158,7 +159,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
             const isNew = historyCount !== null && virtualRow.index >= historyCount;
             const isLastAssistant =
               virtualRow.index === messages.length - 1 && msg.role === 'assistant';
-            const isStreaming = isLastAssistant && status === 'streaming';
+            const isStreaming = isLastAssistant && !!isTextStreaming;
 
             return (
               <div

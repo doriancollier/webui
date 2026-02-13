@@ -30,22 +30,21 @@ describe('StreamingText', () => {
     expect(screen.getByText('**bold** and `code`')).toBeDefined();
   });
 
-  it('shows blinking cursor when isStreaming is true', () => {
+  it('adds streaming-cursor class when isStreaming is true', () => {
     const { container } = render(<StreamingText content="Hello" isStreaming={true} />);
-    const cursor = container.querySelector('[aria-hidden="true"]');
-    expect(cursor).not.toBeNull();
-    expect(cursor!.getAttribute('style')).toContain('blink-cursor');
+    const wrapper = container.firstElementChild;
+    expect(wrapper?.classList.contains('streaming-cursor')).toBe(true);
   });
 
-  it('does not show cursor when isStreaming is false', () => {
+  it('does not add streaming-cursor class when isStreaming is false', () => {
     const { container } = render(<StreamingText content="Hello" isStreaming={false} />);
-    const cursor = container.querySelector('[aria-hidden="true"]');
-    expect(cursor).toBeNull();
+    const wrapper = container.firstElementChild;
+    expect(wrapper?.classList.contains('streaming-cursor')).toBe(false);
   });
 
-  it('does not show cursor by default (isStreaming omitted)', () => {
+  it('does not add streaming-cursor class by default (isStreaming omitted)', () => {
     const { container } = render(<StreamingText content="Hello" />);
-    const cursor = container.querySelector('[aria-hidden="true"]');
-    expect(cursor).toBeNull();
+    const wrapper = container.firstElementChild;
+    expect(wrapper?.classList.contains('streaming-cursor')).toBe(false);
   });
 });

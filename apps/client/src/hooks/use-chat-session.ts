@@ -87,21 +87,25 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const estimatedTokensRef = useRef<number>(0);
   const [streamStartTime, setStreamStartTime] = useState<number | null>(null);
   const [estimatedTokens, setEstimatedTokens] = useState<number>(0);
+  // Track whether text deltas are actively flowing (for cursor visibility)
+  const textStreamingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isTextStreamingRef = useRef(false);
+  const [isTextStreaming, setIsTextStreaming] = useState(false);
 
   // Load message history from SDK transcript via TanStack Query
   const historyQuery = useQuery({
-    queryKey: ['messages', sessionId],
+    queryKey: ['messages', sessionId, selectedCwd],
     queryFn: () => transport.getMessages(sessionId, selectedCwd ?? undefined),
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
 
-  // Seed local messages state from history (once per mount)
+  // Seed local messages state from history (once per session+cwd combo)
   useEffect(() => {
     if (historyQuery.data && !historySeededRef.current) {
-      historySeededRef.current = true;
       const history = historyQuery.data.messages;
       if (history.length > 0) {
+        historySeededRef.current = true;
         setMessages(history.map(m => {
           // Build parts from history: use server-provided parts if available, else synthesize
           const parts: MessagePart[] = m.parts ? [...m.parts] : [];
@@ -202,6 +206,10 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         setError((err as Error).message);
         setStatus('error');
       }
+      // Clean up text streaming state on any exit
+      if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);
+      isTextStreamingRef.current = false;
+      setIsTextStreaming(false);
     }
   }, [input, status, sessionId]);
 
@@ -219,6 +227,16 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         // Inference indicator: accumulate token estimate from text deltas
         estimatedTokensRef.current += text.length / 4;
         setEstimatedTokens(estimatedTokensRef.current);
+        // Track active text generation for cursor visibility
+        if (!isTextStreamingRef.current) {
+          isTextStreamingRef.current = true;
+          setIsTextStreaming(true);
+        }
+        if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);
+        textStreamingTimerRef.current = setTimeout(() => {
+          isTextStreamingRef.current = false;
+          setIsTextStreaming(false);
+        }, 500);
         updateAssistantMessage(assistantId);
         break;
       }
@@ -346,6 +364,10 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         estimatedTokensRef.current = 0;
         setStreamStartTime(null);
         setEstimatedTokens(0);
+        // Reset text streaming cursor state
+        if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);
+        isTextStreamingRef.current = false;
+        setIsTextStreaming(false);
         setStatus('idle');
         break;
       }
@@ -381,10 +403,13 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   const stop = useCallback(() => {
     abortRef.current?.abort();
+    if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);
+    isTextStreamingRef.current = false;
+    setIsTextStreaming(false);
     setStatus('idle');
   }, []);
 
   const isLoadingHistory = historyQuery.isLoading;
 
-  return { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens };
+  return { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming };
 }

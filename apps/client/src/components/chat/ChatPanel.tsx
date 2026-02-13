@@ -6,12 +6,17 @@ import { useCommands } from '../../hooks/use-commands';
 import { useTaskState } from '../../hooks/use-task-state';
 import { useSessionId } from '../../hooks/use-session-id';
 import { useSessionStatus } from '../../hooks/use-session-status';
+import { useDirectoryState } from '../../hooks/use-directory-state';
+import { fuzzyMatch } from '../../lib/fuzzy-match';
 import { MessageList } from './MessageList';
 import type { MessageListHandle, ScrollState } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { TaskListPanel } from './TaskListPanel';
 import { CommandPalette } from '../commands/CommandPalette';
+import { FilePalette } from '../files/FilePalette';
+import type { FileEntry } from '../files/FilePalette';
 import { StatusLine } from '../status/StatusLine';
+import { useFiles } from '../../hooks/use-files';
 import type { CommandEntry } from '@lifeos/shared/types';
 
 interface ChatPanelProps {
@@ -24,7 +29,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const [, setSessionId] = useSessionId();
   const messageListRef = useRef<MessageListHandle>(null);
   const taskState = useTaskState(sessionId);
-  const { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens } =
+  const { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming } =
     useChatSession(sessionId, {
       transformContent,
       onTaskEvent: taskState.handleTaskEvent,
@@ -34,6 +39,14 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const [showCommands, setShowCommands] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [slashTriggerPos, setSlashTriggerPos] = useState(-1);
+
+  // File autocomplete state
+  const [showFiles, setShowFiles] = useState(false);
+  const [fileQuery, setFileQuery] = useState('');
+  const [fileSelectedIndex, setFileSelectedIndex] = useState(0);
+  const [fileTriggerPos, setFileTriggerPos] = useState(-1);
+  const [cursorPos, setCursorPos] = useState(0);
 
   // Scroll overlay state (Tasks #7, #8, #9)
   const [isAtBottom, setIsAtBottom] = useState(true);
@@ -66,22 +79,69 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     }
   }, [isAtBottom]);
 
-  const { data: registry } = useCommands();
+  const [cwd] = useDirectoryState();
+  const { data: registry } = useCommands(cwd);
   const allCommands = registry?.commands ?? [];
+  const { data: fileList } = useFiles(cwd);
 
   const filteredCommands = useMemo(() => {
     if (!commandQuery) return allCommands;
-    const q = commandQuery.toLowerCase();
-    return allCommands.filter((cmd) => {
-      const searchText = `${cmd.fullCommand} ${cmd.description}`.toLowerCase();
-      return searchText.includes(q);
-    });
+    return allCommands
+      .map((cmd) => {
+        const searchText = `${cmd.fullCommand} ${cmd.description}`;
+        const result = fuzzyMatch(commandQuery, searchText);
+        return { cmd, ...result };
+      })
+      .filter((r) => r.match)
+      .sort((a, b) => b.score - a.score)
+      .map((r) => r.cmd);
   }, [allCommands, commandQuery]);
+
+  // Build FileEntry list from raw file paths (extract directories as unique prefixes)
+  const allFileEntries = useMemo(() => {
+    if (!fileList?.files) return [];
+    const entries: FileEntry[] = [];
+    const seenDirs = new Set<string>();
+    for (const filePath of fileList.files) {
+      const lastSlash = filePath.lastIndexOf('/');
+      const directory = lastSlash >= 0 ? filePath.slice(0, lastSlash + 1) : '';
+      const filename = lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
+      entries.push({ path: filePath, filename, directory, isDirectory: false });
+      const parts = filePath.split('/');
+      for (let i = 1; i < parts.length; i++) {
+        const dir = parts.slice(0, i).join('/') + '/';
+        if (!seenDirs.has(dir)) {
+          seenDirs.add(dir);
+          entries.push({
+            path: dir,
+            filename: parts[i - 1] + '/',
+            directory: i > 1 ? parts.slice(0, i - 1).join('/') + '/' : '',
+            isDirectory: true,
+          });
+        }
+      }
+    }
+    return entries;
+  }, [fileList]);
+
+  const filteredFiles = useMemo(() => {
+    if (!showFiles) return [];
+    if (!fileQuery) return allFileEntries.slice(0, 50).map((e) => ({ ...e, indices: [] as number[] }));
+    return allFileEntries
+      .map((entry) => ({ ...entry, ...fuzzyMatch(fileQuery, entry.path) }))
+      .filter((r) => r.match)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 50);
+  }, [allFileEntries, fileQuery, showFiles]);
 
   // Reset selectedIndex when filter changes or palette opens/closes
   useEffect(() => {
     setSelectedIndex(0);
   }, [commandQuery, showCommands]);
+
+  useEffect(() => {
+    setFileSelectedIndex(0);
+  }, [fileQuery, showFiles]);
 
   // Clamp selectedIndex when filteredCommands shrinks
   useEffect(() => {
@@ -90,47 +150,119 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     }
   }, [filteredCommands.length, selectedIndex]);
 
-  function handleInputChange(value: string) {
-    setInput(value);
-    // Detect slash command trigger
-    const match = value.match(/(^|\s)\/(\w*)$/);
-    if (match) {
-      setShowCommands(true);
-      setCommandQuery(match[2]);
-    } else {
-      setShowCommands(false);
+  // Clamp fileSelectedIndex when filteredFiles shrinks
+  useEffect(() => {
+    if (filteredFiles.length > 0 && fileSelectedIndex >= filteredFiles.length) {
+      setFileSelectedIndex(filteredFiles.length - 1);
     }
-  }
+  }, [filteredFiles.length, fileSelectedIndex]);
 
-  function handleCommandSelect(cmd: CommandEntry) {
-    setInput(cmd.fullCommand + ' ');
+  function detectTrigger(value: string, cursor: number) {
+    const textToCursor = value.slice(0, cursor);
+
+    // Check for @ file trigger first
+    const fileMatch = textToCursor.match(/(^|\s)@([\w.\/:-]*)$/);
+    if (fileMatch) {
+      setShowFiles(true);
+      setFileQuery(fileMatch[2]);
+      setFileTriggerPos((fileMatch.index ?? 0) + fileMatch[1].length);
+      setShowCommands(false);
+      return;
+    }
+
+    // Check for / command trigger
+    const cmdMatch = textToCursor.match(/(^|\s)\/([\w:-]*)$/);
+    if (cmdMatch) {
+      setShowCommands(true);
+      setCommandQuery(cmdMatch[2]);
+      setSlashTriggerPos((cmdMatch.index ?? 0) + cmdMatch[1].length);
+      setShowFiles(false);
+      return;
+    }
+
+    setShowFiles(false);
     setShowCommands(false);
   }
 
+  function handleInputChange(value: string) {
+    setInput(value);
+    detectTrigger(value, cursorPos || value.length);
+  }
+
+  const handleCursorChange = useCallback((pos: number) => {
+    setCursorPos(pos);
+    detectTrigger(input, pos);
+  }, [input]);
+
+  function handleCommandSelect(cmd: CommandEntry) {
+    const before = input.slice(0, slashTriggerPos);
+    setInput(before + cmd.fullCommand + ' ');
+    setShowCommands(false);
+  }
+
+  function handleFileSelect(entry: FileEntry) {
+    const before = input.slice(0, fileTriggerPos);
+    const after = input.slice(fileTriggerPos + 1 + fileQuery.length); // +1 for @
+    if (entry.isDirectory) {
+      const newValue = before + '@' + entry.path + after;
+      setInput(newValue);
+      const newCursor = before.length + 1 + entry.path.length;
+      setCursorPos(newCursor);
+      setFileQuery(entry.path);
+      setFileSelectedIndex(0);
+    } else {
+      setInput(before + '@' + entry.path + ' ' + after);
+      setShowFiles(false);
+    }
+  }
+
   const handleArrowDown = useCallback(() => {
-    setSelectedIndex((prev) =>
-      filteredCommands.length === 0 ? 0 : (prev + 1) % filteredCommands.length
-    );
-  }, [filteredCommands.length]);
+    if (showFiles) {
+      setFileSelectedIndex((prev) =>
+        filteredFiles.length === 0 ? 0 : (prev + 1) % filteredFiles.length
+      );
+    } else {
+      setSelectedIndex((prev) =>
+        filteredCommands.length === 0 ? 0 : (prev + 1) % filteredCommands.length
+      );
+    }
+  }, [showFiles, filteredFiles.length, filteredCommands.length]);
 
   const handleArrowUp = useCallback(() => {
-    setSelectedIndex((prev) =>
-      filteredCommands.length === 0
-        ? 0
-        : (prev - 1 + filteredCommands.length) % filteredCommands.length
-    );
-  }, [filteredCommands.length]);
-
-  const handleKeyboardCommandSelect = useCallback(() => {
-    if (filteredCommands.length > 0 && selectedIndex < filteredCommands.length) {
-      handleCommandSelect(filteredCommands[selectedIndex]);
+    if (showFiles) {
+      setFileSelectedIndex((prev) =>
+        filteredFiles.length === 0 ? 0 : (prev - 1 + filteredFiles.length) % filteredFiles.length
+      );
     } else {
-      setShowCommands(false);
+      setSelectedIndex((prev) =>
+        filteredCommands.length === 0
+          ? 0
+          : (prev - 1 + filteredCommands.length) % filteredCommands.length
+      );
     }
-  }, [filteredCommands, selectedIndex]);
+  }, [showFiles, filteredFiles.length, filteredCommands.length]);
 
-  const activeDescendantId =
-    showCommands && filteredCommands.length > 0
+  const handleKeyboardSelect = useCallback(() => {
+    if (showFiles) {
+      if (filteredFiles.length > 0 && fileSelectedIndex < filteredFiles.length) {
+        handleFileSelect(filteredFiles[fileSelectedIndex]);
+      } else {
+        setShowFiles(false);
+      }
+    } else if (showCommands) {
+      if (filteredCommands.length > 0 && selectedIndex < filteredCommands.length) {
+        handleCommandSelect(filteredCommands[selectedIndex]);
+      } else {
+        setShowCommands(false);
+      }
+    }
+  }, [showFiles, showCommands, filteredFiles, fileSelectedIndex, filteredCommands, selectedIndex]);
+
+  const isPaletteOpen = showCommands || showFiles;
+
+  const activeDescendantId = showFiles && filteredFiles.length > 0
+    ? `file-item-${fileSelectedIndex}`
+    : showCommands && filteredCommands.length > 0
       ? `command-item-${selectedIndex}`
       : undefined;
 
@@ -161,6 +293,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             messages={messages}
             sessionId={sessionId}
             status={status}
+            isTextStreaming={isTextStreaming}
             onScrollStateChange={handleScrollStateChange}
             streamStartTime={streamStartTime}
             estimatedTokens={estimatedTokens}
@@ -224,7 +357,13 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
               filteredCommands={filteredCommands}
               selectedIndex={selectedIndex}
               onSelect={handleCommandSelect}
-              onClose={() => setShowCommands(false)}
+            />
+          )}
+          {showFiles && (
+            <FilePalette
+              filteredFiles={filteredFiles}
+              selectedIndex={fileSelectedIndex}
+              onSelect={handleFileSelect}
             />
           )}
         </AnimatePresence>
@@ -235,12 +374,13 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
           onSubmit={handleSubmit}
           isLoading={status === 'streaming'}
           onStop={stop}
-          onEscape={() => setShowCommands(false)}
-          isPaletteOpen={showCommands}
+          onEscape={() => { setShowCommands(false); setShowFiles(false); }}
+          isPaletteOpen={isPaletteOpen}
           onArrowUp={handleArrowUp}
           onArrowDown={handleArrowDown}
-          onCommandSelect={handleKeyboardCommandSelect}
+          onCommandSelect={handleKeyboardSelect}
           activeDescendantId={activeDescendantId}
+          onCursorChange={handleCursorChange}
         />
 
         <StatusLine
