@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
 import { useAppStore } from '../stores/app-store';
 import type { TaskItem, TaskUpdateEvent, TaskStatus } from '@lifeos/shared/types';
@@ -44,21 +45,28 @@ export function useTaskState(sessionId: string): TaskState {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const nextIdRef = useRef(1);
 
-  // Load historical tasks when sessionId changes
+  // Load historical tasks via TanStack Query (invalidated on sync_update)
+  const { data: initialTasks } = useQuery({
+    queryKey: ['tasks', sessionId, selectedCwd],
+    queryFn: () => transport.getTasks(sessionId, selectedCwd ?? undefined),
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Reset taskMap when query data changes (initial load or sync invalidation)
   useEffect(() => {
     setTaskMap(new Map());
     nextIdRef.current = 1;
-    transport.getTasks(sessionId, selectedCwd ?? undefined).then(({ tasks }) => {
-      if (tasks.length > 0) {
-        const map = new Map<string, TaskItem>();
-        for (const task of tasks) {
-          map.set(task.id, task);
-        }
-        setTaskMap(map);
-        nextIdRef.current = tasks.length + 1;
+
+    if (initialTasks && initialTasks.tasks.length > 0) {
+      const map = new Map<string, TaskItem>();
+      for (const task of initialTasks.tasks) {
+        map.set(task.id, task);
       }
-    }).catch(() => {});
-  }, [sessionId, transport, selectedCwd]);
+      setTaskMap(map);
+      nextIdRef.current = initialTasks.tasks.length + 1;
+    }
+  }, [initialTasks]);
 
   const handleTaskEvent = useCallback((event: TaskUpdateEvent) => {
     setTaskMap(prev => {

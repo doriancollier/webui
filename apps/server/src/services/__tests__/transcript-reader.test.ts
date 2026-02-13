@@ -781,4 +781,130 @@ describe('TranscriptReader', () => {
       expect(slug).toBe('-Users-foo-my-project--v2-');
     });
   });
+
+  describe('getTranscriptETag', () => {
+    it('returns ETag string based on mtime and size', async () => {
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({
+        mtimeMs: 1700000000000,
+        size: 4096,
+      });
+
+      const etag = await transcriptReader.getTranscriptETag('/vault', 'session-123');
+      expect(etag).toBe('"1700000000000-4096"');
+    });
+
+    it('returns null when file does not exist', async () => {
+      (fs.stat as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ENOENT'));
+
+      const etag = await transcriptReader.getTranscriptETag('/vault', 'nonexistent');
+      expect(etag).toBeNull();
+    });
+
+    it('returns different ETag after file is modified', async () => {
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({
+        mtimeMs: 1700000000000,
+        size: 4096,
+      });
+      const etag1 = await transcriptReader.getTranscriptETag('/vault', 'session-123');
+
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({
+        mtimeMs: 1700000001000,
+        size: 8192,
+      });
+      const etag2 = await transcriptReader.getTranscriptETag('/vault', 'session-123');
+
+      expect(etag1).not.toBe(etag2);
+    });
+  });
+
+  describe('readFromOffset', () => {
+    it('returns empty content when file has not grown', async () => {
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({ size: 100 });
+
+      const result = await transcriptReader.readFromOffset('/vault', 'session-123', 100);
+      expect(result).toEqual({ content: '', newOffset: 100 });
+    });
+
+    it('returns new content from offset to end of file', async () => {
+      const newContent = '{"type":"user","message":{"content":"hello"}}\n';
+      const buffer = Buffer.from(newContent);
+
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({ size: 200 + buffer.length });
+
+      const mockFileHandle = {
+        read: vi.fn().mockImplementation((buf: Buffer) => {
+          buffer.copy(buf);
+          return Promise.resolve({ bytesRead: buffer.length });
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      (fs.open as ReturnType<typeof vi.fn>).mockResolvedValue(mockFileHandle);
+
+      const result = await transcriptReader.readFromOffset('/vault', 'session-123', 200);
+      expect(result.newOffset).toBe(200 + buffer.length);
+      expect(result.content).toBe(newContent);
+    });
+
+    it('updates newOffset to current file size', async () => {
+      const newContent = 'new data';
+      const buffer = Buffer.from(newContent);
+
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({ size: 500 });
+
+      const mockFileHandle = {
+        read: vi.fn().mockImplementation((buf: Buffer) => {
+          Buffer.from(newContent).copy(buf);
+          return Promise.resolve({ bytesRead: buffer.length });
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      (fs.open as ReturnType<typeof vi.fn>).mockResolvedValue(mockFileHandle);
+
+      const result = await transcriptReader.readFromOffset('/vault', 'session-123', 492);
+      expect(result.newOffset).toBe(500);
+    });
+
+    it('reads only appended bytes, not full file', async () => {
+      const newContent = 'appended';
+      const fromOffset = 1000;
+      const fileSize = 1000 + newContent.length;
+
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({ size: fileSize });
+
+      const mockFileHandle = {
+        read: vi.fn().mockImplementation((buf: Buffer) => {
+          Buffer.from(newContent).copy(buf);
+          return Promise.resolve({ bytesRead: newContent.length });
+        }),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      (fs.open as ReturnType<typeof vi.fn>).mockResolvedValue(mockFileHandle);
+
+      await transcriptReader.readFromOffset('/vault', 'session-123', fromOffset);
+
+      // Verify read was called with correct offset parameter (position 1000)
+      expect(mockFileHandle.read).toHaveBeenCalledWith(
+        expect.any(Buffer),
+        0,
+        newContent.length,
+        fromOffset,
+      );
+    });
+
+    it('properly closes file handle in all cases', async () => {
+      (fs.stat as ReturnType<typeof vi.fn>).mockResolvedValue({ size: 200 });
+
+      const mockFileHandle = {
+        read: vi.fn().mockRejectedValue(new Error('read error')),
+        close: vi.fn().mockResolvedValue(undefined),
+      };
+      (fs.open as ReturnType<typeof vi.fn>).mockResolvedValue(mockFileHandle);
+
+      await expect(
+        transcriptReader.readFromOffset('/vault', 'session-123', 100)
+      ).rejects.toThrow('read error');
+
+      expect(mockFileHandle.close).toHaveBeenCalled();
+    });
+  });
 });

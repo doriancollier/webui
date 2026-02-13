@@ -1,13 +1,17 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import type { ChatMessage, MessageGrouping } from '../../hooks/use-chat-session';
 import { StreamingText } from './StreamingText';
 import { ToolCallCard } from './ToolCallCard';
 import { ToolApproval } from './ToolApproval';
+import type { ToolApprovalHandle } from './ToolApproval';
 import { QuestionPrompt } from './QuestionPrompt';
+import type { QuestionPromptHandle } from './QuestionPrompt';
 import { useAppStore } from '../../stores/app-store';
 import { cn } from '../../lib/utils';
+
+export type InteractiveToolHandle = ToolApprovalHandle | QuestionPromptHandle;
 
 function useToolCallVisibility(
   status: string,
@@ -76,6 +80,12 @@ interface MessageItemProps {
   sessionId: string;
   isNew?: boolean;
   isStreaming?: boolean;
+  /** The toolCallId of the currently active interactive tool (for keyboard shortcuts) */
+  activeToolCallId?: string | null;
+  /** Callback to register the active tool's imperative handle */
+  onToolRef?: (handle: InteractiveToolHandle | null) => void;
+  /** Index of keyboard-focused option in QuestionPrompt */
+  focusedOptionIndex?: number;
 }
 
 function formatTime(timestamp: string): string {
@@ -86,7 +96,7 @@ function formatTime(timestamp: string): string {
   }
 }
 
-export function MessageItem({ message, grouping, sessionId, isNew = false, isStreaming = false }: MessageItemProps) {
+export function MessageItem({ message, grouping, sessionId, isNew = false, isStreaming = false, activeToolCallId, onToolRef, focusedOptionIndex = -1 }: MessageItemProps) {
   const isUser = message.role === 'user';
   const { showTimestamps, expandToolCalls, autoHideToolCalls } = useAppStore();
   const [compactionExpanded, setCompactionExpanded] = useState(false);
@@ -94,6 +104,15 @@ export function MessageItem({ message, grouping, sessionId, isNew = false, isStr
   const showIndicator = position === 'only' || position === 'first';
   const isGroupStart = position === 'only' || position === 'first';
   const isGroupEnd = position === 'only' || position === 'last';
+
+  // Ref callbacks to report active interactive tool handle up to ChatPanel
+  const approvalRefCallback = useCallback((handle: ToolApprovalHandle | null) => {
+    onToolRef?.(handle);
+  }, [onToolRef]);
+
+  const questionRefCallback = useCallback((handle: QuestionPromptHandle | null) => {
+    onToolRef?.(handle);
+  }, [onToolRef]);
 
   const parts = message.parts ?? [];
 
@@ -185,24 +204,31 @@ export function MessageItem({ message, grouping, sessionId, isNew = false, isStr
             }
             // tool_call part
             if (part.interactiveType === 'approval') {
+              const isActive = part.toolCallId === activeToolCallId;
               return (
                 <ToolApproval
                   key={part.toolCallId}
+                  ref={isActive ? approvalRefCallback : undefined}
                   sessionId={sessionId}
                   toolCallId={part.toolCallId}
                   toolName={part.toolName}
                   input={part.input || ''}
+                  isActive={isActive}
                 />
               );
             }
             if (part.interactiveType === 'question' && part.questions) {
+              const isActive = part.toolCallId === activeToolCallId;
               return (
                 <QuestionPrompt
                   key={part.toolCallId}
+                  ref={isActive ? questionRefCallback : undefined}
                   sessionId={sessionId}
                   toolCallId={part.toolCallId}
                   questions={part.questions}
                   answers={part.answers}
+                  isActive={isActive}
+                  focusedOptionIndex={isActive ? focusedOptionIndex : -1}
                 />
               );
             }

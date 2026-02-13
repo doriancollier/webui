@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Check, X, ChevronDown } from 'lucide-react';
 import type { ToolCallState } from '../../hooks/use-chat-session';
 import { getToolLabel } from '../../lib/tool-labels';
+import { ToolArgumentsDisplay } from '../../lib/tool-arguments-formatter';
 
 interface ToolCallCardProps {
   toolCall: ToolCallState;
@@ -46,15 +47,7 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
           >
             <div className="border-t px-3 pb-3 pt-1">
               {toolCall.input && (
-                <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-                  {(() => {
-                    try {
-                      return JSON.stringify(JSON.parse(toolCall.input), null, 2);
-                    } catch {
-                      return toolCall.input;
-                    }
-                  })()}
-                </pre>
+                <ToolArgumentsDisplay toolName={toolCall.toolName} input={toolCall.input} />
               )}
               {toolCall.result && (
                 <pre className="mt-2 text-xs overflow-x-auto border-t pt-2 whitespace-pre-wrap">

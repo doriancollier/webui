@@ -68,6 +68,15 @@ router.get('/:id', async (req, res) => {
 // GET /api/sessions/:id/tasks - Get task state from SDK transcript
 router.get('/:id/tasks', async (req, res) => {
   const cwd = (req.query.cwd as string) || vaultRoot;
+
+  const etag = await transcriptReader.getTranscriptETag(cwd, req.params.id);
+  if (etag) {
+    res.setHeader('ETag', etag);
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
+    }
+  }
+
   try {
     const tasks = await transcriptReader.readTasks(cwd, req.params.id);
     res.json({ tasks });
@@ -79,6 +88,15 @@ router.get('/:id/tasks', async (req, res) => {
 // GET /api/sessions/:id/messages - Get message history from SDK transcript
 router.get('/:id/messages', async (req, res) => {
   const cwd = (req.query.cwd as string) || vaultRoot;
+
+  const etag = await transcriptReader.getTranscriptETag(cwd, req.params.id);
+  if (etag) {
+    res.setHeader('ETag', etag);
+    if (req.headers['if-none-match'] === etag) {
+      return res.status(304).end();
+    }
+  }
+
   const messages = await transcriptReader.readTranscript(cwd, req.params.id);
   res.json({ messages });
 });
@@ -112,6 +130,26 @@ router.post('/:id/messages', async (req, res) => {
 
   const sessionId = req.params.id;
 
+  // Read X-Client-Id header, or generate UUID if missing
+  const clientId = (req.headers['x-client-id'] as string) || crypto.randomUUID();
+
+  // Acquire lock before starting SSE stream
+  const lockAcquired = agentManager.acquireLock(sessionId, clientId, res);
+  if (!lockAcquired) {
+    const lockInfo = agentManager.getLockInfo(sessionId);
+    return res.status(409).json({
+      error: 'Session locked',
+      code: 'SESSION_LOCKED',
+      lockedBy: lockInfo?.clientId ?? 'unknown',
+      lockedAt: lockInfo ? new Date(lockInfo.acquiredAt).toISOString() : new Date().toISOString(),
+    });
+  }
+
+  // Guarantee lock release if client disconnects before try block
+  res.on('close', () => {
+    agentManager.releaseLock(sessionId, clientId);
+  });
+
   initSSEStream(res);
 
   try {
@@ -136,6 +174,7 @@ router.post('/:id/messages', async (req, res) => {
       data: { message: err instanceof Error ? err.message : 'Unknown error' },
     });
   } finally {
+    agentManager.releaseLock(sessionId, clientId);
     endSSEStream(res);
   }
 });
@@ -174,6 +213,28 @@ router.post('/:id/submit-answers', async (req, res) => {
   const ok = agentManager.submitAnswers(req.params.id, toolCallId, answers);
   if (!ok) return res.status(404).json({ error: 'No pending question' });
   res.json({ ok: true });
+});
+
+// GET /api/sessions/:id/stream - Persistent SSE connection for session sync
+router.get('/:id/stream', (req, res) => {
+  const sessionId = req.params.id;
+  const cwd = (req.query.cwd as string) || vaultRoot;
+  const sessionBroadcaster = req.app.locals.sessionBroadcaster;
+
+  // Set SSE headers
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
+  res.flushHeaders();
+
+  // Register with broadcaster
+  sessionBroadcaster.registerClient(sessionId, cwd, res);
+
+  // The broadcaster handles:
+  // - Sending sync_connected event
+  // - Auto-deregistering on disconnect (res.on('close'))
+  // - Broadcasting sync_update events when JSONL changes
 });
 
 export default router;

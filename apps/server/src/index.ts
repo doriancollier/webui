@@ -4,6 +4,8 @@ import { fileURLToPath } from 'url';
 import { createApp } from './app.js';
 import { agentManager } from './services/agent-manager.js';
 import { tunnelManager } from './services/tunnel-manager.js';
+import { SessionBroadcaster } from './services/session-broadcaster.js';
+import { transcriptReader } from './services/transcript-reader.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 if (!process.env.CLIENT_DIST_PATH) {
@@ -12,8 +14,16 @@ if (!process.env.CLIENT_DIST_PATH) {
 
 const PORT = parseInt(process.env.GATEWAY_PORT || '6942', 10);
 
+// Global reference for graceful shutdown
+let sessionBroadcaster: SessionBroadcaster | null = null;
+
 async function start() {
   const app = createApp();
+
+  // Initialize SessionBroadcaster and attach to app.locals
+  sessionBroadcaster = new SessionBroadcaster(transcriptReader);
+  app.locals.sessionBroadcaster = sessionBroadcaster;
+
   const host = process.env.TUNNEL_ENABLED === 'true' ? '0.0.0.0' : 'localhost';
   app.listen(PORT, host, () => {
     console.log(`Gateway server running on http://localhost:${PORT}`);
@@ -63,6 +73,9 @@ async function start() {
 // Graceful shutdown
 function shutdown() {
   console.log('\nShutting down...');
+  if (sessionBroadcaster) {
+    sessionBroadcaster.shutdown();
+  }
   tunnelManager.stop().finally(() => { process.exit(0); });
 }
 

@@ -1,5 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Shield, MessageSquare } from 'lucide-react';
 import { useElapsedTime } from '../../hooks/use-elapsed-time';
 import { useRotatingVerb } from '../../hooks/use-rotating-verb';
 import { DEFAULT_THEME, type IndicatorTheme } from './inference-themes';
@@ -12,6 +13,8 @@ interface InferenceIndicatorProps {
   estimatedTokens: number;
   theme?: IndicatorTheme;
   permissionMode?: PermissionMode;
+  isWaitingForUser?: boolean;
+  waitingType?: 'approval' | 'question';
 }
 
 function formatTokens(count: number): string {
@@ -27,6 +30,8 @@ export function InferenceIndicator({
   estimatedTokens,
   theme = DEFAULT_THEME,
   permissionMode = 'default',
+  isWaitingForUser,
+  waitingType,
 }: InferenceIndicatorProps) {
   const verbs = useMemo(() => {
     if (permissionMode === 'bypassPermissions') {
@@ -82,6 +87,28 @@ export function InferenceIndicator({
         <span>{lastElapsedRef.current}</span>
         <span aria-hidden="true">&middot;</span>
         <span>{formatTokens(lastTokensRef.current)}</span>
+      </motion.div>
+    );
+  }
+
+  // Waiting-for-user state: takes priority over normal streaming indicator
+  if (status === 'streaming' && isWaitingForUser) {
+    const WaitIcon = waitingType === 'approval' ? Shield : MessageSquare;
+    const waitMessage = waitingType === 'approval'
+      ? 'Waiting for your approval'
+      : 'Waiting for your answer';
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="flex items-baseline gap-1.5 px-4 py-2 text-2xs"
+        data-testid="inference-indicator-waiting"
+      >
+        <WaitIcon className="size-3 text-amber-500" />
+        <span className="text-amber-600 dark:text-amber-400">{waitMessage}</span>
+        <span className="text-muted-foreground/70 tabular-nums ml-1.5">{elapsed}</span>
       </motion.div>
     );
   }

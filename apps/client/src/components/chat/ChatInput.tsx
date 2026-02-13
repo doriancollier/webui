@@ -14,6 +14,7 @@ interface ChatInputProps {
   onChange: (value: string) => void;
   onSubmit: () => void;
   isLoading: boolean;
+  sessionBusy?: boolean;
   onStop?: () => void;
   onEscape?: () => void;
   onClear?: () => void;
@@ -30,6 +31,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   onChange,
   onSubmit,
   isLoading,
+  sessionBusy = false,
   onStop,
   onEscape,
   onClear,
@@ -161,35 +163,42 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
 
   const hasText = value.trim().length > 0;
   const showButton = isLoading || hasText;
-  const showClear = hasText && !isLoading;
+  const showClear = hasText && !isLoading && !sessionBusy;
   const SendIcon = isMobile ? ArrowUp : CornerDownLeft;
   const Icon = isLoading ? Square : SendIcon;
+  const isDisabled = isLoading || sessionBusy;
 
   return (
-    <div
-      className={cn(
-        'flex items-end gap-1.5 rounded-xl border p-1.5 pl-3 transition-colors duration-150',
-        isFocused ? 'border-ring' : 'border-border'
+    <div className="flex flex-col gap-1.5">
+      {sessionBusy && (
+        <div className="text-xs text-amber-600 dark:text-amber-500 px-1">
+          Session is busy. Please wait...
+        </div>
       )}
-    >
-      <textarea
-        ref={textareaRef}
-        value={value}
-        onChange={handleChange}
-        onKeyDown={handleKeyDown}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        onSelect={handleSelect}
-        role="combobox"
-        aria-autocomplete="list"
-        aria-controls={isPaletteOpen ? (activeDescendantId?.startsWith('file-') ? 'file-palette-listbox' : 'command-palette-listbox') : undefined}
-        aria-expanded={isPaletteOpen ?? false}
-        aria-activedescendant={isPaletteOpen ? activeDescendantId : undefined}
-        placeholder="Message Claude..."
-        className="flex-1 resize-none bg-transparent py-0.5 text-sm focus:outline-none min-h-[24px] max-h-[200px]"
-        rows={1}
-        disabled={isLoading}
-      />
+      <div
+        className={cn(
+          'flex items-end gap-1.5 rounded-xl border p-1.5 pl-3 transition-colors duration-150',
+          isFocused ? 'border-ring' : 'border-border'
+        )}
+      >
+        <textarea
+          ref={textareaRef}
+          value={value}
+          onChange={handleChange}
+          onKeyDown={handleKeyDown}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onSelect={handleSelect}
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls={isPaletteOpen ? (activeDescendantId?.startsWith('file-') ? 'file-palette-listbox' : 'command-palette-listbox') : undefined}
+          aria-expanded={isPaletteOpen ?? false}
+          aria-activedescendant={isPaletteOpen ? activeDescendantId : undefined}
+          placeholder="Message Claude..."
+          className="flex-1 resize-none bg-transparent py-0.5 text-sm focus:outline-none min-h-[24px] max-h-[200px]"
+          rows={1}
+          disabled={isDisabled}
+        />
       <motion.button
         animate={{ opacity: showClear ? 0.5 : 0, scale: showClear ? 1 : 0.8 }}
         transition={{ duration: 0.15 }}
@@ -205,24 +214,25 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
       >
         <X className="size-(--size-icon-sm)" />
       </motion.button>
-      <motion.button
-        animate={{ opacity: showButton ? 1 : 0, scale: showButton ? 1 : 0.8 }}
-        transition={{ duration: 0.15 }}
-        whileHover={showButton ? { scale: 1.1 } : undefined}
-        whileTap={showButton ? { scale: 0.9 } : undefined}
-        onClick={isLoading ? onStop : onSubmit}
-        disabled={!showButton}
-        className={cn(
-          'shrink-0 rounded-lg p-1.5 max-md:p-2 transition-colors',
-          isLoading
-            ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
-            : 'bg-primary text-primary-foreground hover:bg-primary/90',
-          !showButton && 'pointer-events-none'
-        )}
-        aria-label={isLoading ? 'Stop generating' : 'Send message'}
-      >
-        <Icon className="size-(--size-icon-sm)" />
-      </motion.button>
+        <motion.button
+          animate={{ opacity: showButton ? 1 : 0, scale: showButton ? 1 : 0.8 }}
+          transition={{ duration: 0.15 }}
+          whileHover={showButton && !sessionBusy ? { scale: 1.1 } : undefined}
+          whileTap={showButton && !sessionBusy ? { scale: 0.9 } : undefined}
+          onClick={isLoading ? onStop : onSubmit}
+          disabled={!showButton || sessionBusy}
+          className={cn(
+            'shrink-0 rounded-lg p-1.5 max-md:p-2 transition-colors',
+            isLoading
+              ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90',
+            (!showButton || sessionBusy) && 'pointer-events-none opacity-50'
+          )}
+          aria-label={isLoading ? 'Stop generating' : 'Send message'}
+        >
+          <Icon className="size-(--size-icon-sm)" />
+        </motion.button>
+      </div>
     </div>
   );
 });

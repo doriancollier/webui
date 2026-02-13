@@ -1,6 +1,6 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import type { TextDelta, ToolCallEvent, ApprovalEvent, QuestionPromptEvent, ErrorEvent, SessionStatusEvent, QuestionItem, TaskUpdateEvent, MessagePart } from '@lifeos/shared/types';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import type { TextDelta, ToolCallEvent, ApprovalEvent, QuestionPromptEvent, ErrorEvent, SessionStatusEvent, QuestionItem, TaskUpdateEvent, MessagePart, HistoryMessage } from '@lifeos/shared/types';
 import { useTransport } from '../contexts/TransportContext';
 import { useAppStore } from '../stores/app-store';
 
@@ -71,13 +71,57 @@ function deriveFromParts(parts: MessagePart[]): { content: string; toolCalls: To
   return { content: textSegments.join('\n'), toolCalls };
 }
 
+/** Map HistoryMessage from server to internal ChatMessage format */
+function mapHistoryMessage(m: HistoryMessage): ChatMessage {
+  // Build parts from history: use server-provided parts if available, else synthesize
+  const parts: MessagePart[] = m.parts ? [...m.parts] : [];
+  if (parts.length === 0) {
+    // Synthesize parts from flat content + toolCalls (backward compat)
+    if (m.content) {
+      parts.push({ type: 'text', text: m.content });
+    }
+    if (m.toolCalls) {
+      for (const tc of m.toolCalls) {
+        parts.push({
+          type: 'tool_call',
+          toolCallId: tc.toolCallId,
+          toolName: tc.toolName,
+          input: tc.input,
+          result: tc.result,
+          status: tc.status,
+          ...(tc.questions ? {
+            interactiveType: 'question' as const,
+            questions: tc.questions,
+            answers: tc.answers,
+          } : {}),
+        });
+      }
+    }
+  }
+
+  const derived = deriveFromParts(parts);
+  return {
+    id: m.id,
+    role: m.role,
+    content: derived.content,
+    toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : undefined,
+    parts,
+    timestamp: m.timestamp || '',
+    messageType: m.messageType,
+    commandName: m.commandName,
+    commandArgs: m.commandArgs,
+  };
+}
+
 export function useChatSession(sessionId: string, options: ChatSessionOptions = {}) {
   const transport = useTransport();
+  const queryClient = useQueryClient();
   const selectedCwd = useAppStore((s) => s.selectedCwd);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<ChatStatus>('idle');
   const [error, setError] = useState<string | null>(null);
+  const [sessionBusy, setSessionBusy] = useState(false);
   const sessionStatusRef = useRef<SessionStatusEvent | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatusEvent | null>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -93,64 +137,108 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const textStreamingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTextStreamingRef = useRef(false);
   const [isTextStreaming, setIsTextStreaming] = useState(false);
+  // Timer ref for sessionBusy auto-clear (cleanup on unmount)
+  const sessionBusyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Ref for selectedCwd to avoid stale closures in EventSource handler
+  const selectedCwdRef = useRef(selectedCwd);
+  // Track tab visibility for adaptive polling
+  const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
+  const messagesRef = useRef<ChatMessage[]>(messages);
 
-  // Load message history from SDK transcript via TanStack Query
+  // Keep refs in sync with state
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
+  useEffect(() => {
+    selectedCwdRef.current = selectedCwd;
+  }, [selectedCwd]);
+
+  // Track tab visibility for adaptive polling interval
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsTabVisible(!document.hidden);
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Determine if we're actively streaming
+  const isStreaming = status === 'streaming';
+
+  // Load message history from SDK transcript via TanStack Query with adaptive polling
   const historyQuery = useQuery({
     queryKey: ['messages', sessionId, selectedCwd],
     queryFn: () => transport.getMessages(sessionId, selectedCwd ?? undefined),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Always check for updates (ETag handles efficiency)
     refetchOnWindowFocus: false,
+    // Adaptive polling: 3s when visible, 10s when hidden, disabled while streaming
+    refetchInterval: () => {
+      if (isStreaming) return false; // No polling during active stream
+      return isTabVisible ? 3000 : 10000;
+    },
   });
 
-  // Seed local messages state from history (once per session+cwd combo)
+  // Reset history seed flag when session or cwd changes
   useEffect(() => {
-    if (historyQuery.data && !historySeededRef.current) {
-      const history = historyQuery.data.messages;
-      if (history.length > 0) {
-        historySeededRef.current = true;
-        setMessages(history.map(m => {
-          // Build parts from history: use server-provided parts if available, else synthesize
-          const parts: MessagePart[] = m.parts ? [...m.parts] : [];
-          if (parts.length === 0) {
-            // Synthesize parts from flat content + toolCalls (backward compat)
-            if (m.content) {
-              parts.push({ type: 'text', text: m.content });
-            }
-            if (m.toolCalls) {
-              for (const tc of m.toolCalls) {
-                parts.push({
-                  type: 'tool_call',
-                  toolCallId: tc.toolCallId,
-                  toolName: tc.toolName,
-                  input: tc.input,
-                  result: tc.result,
-                  status: tc.status,
-                  ...(tc.questions ? {
-                    interactiveType: 'question' as const,
-                    questions: tc.questions,
-                    answers: tc.answers,
-                  } : {}),
-                });
-              }
-            }
-          }
+    historySeededRef.current = false;
+    setMessages([]);
+  }, [sessionId, selectedCwd]);
 
-          const derived = deriveFromParts(parts);
-          return {
-            id: m.id,
-            role: m.role,
-            content: derived.content,
-            toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : undefined,
-            parts,
-            timestamp: m.timestamp || '',
-            messageType: m.messageType,
-            commandName: m.commandName,
-            commandArgs: m.commandArgs,
-          };
-        }));
+  // Seed local messages state from history (initial load + polling updates)
+  useEffect(() => {
+    if (!historyQuery.data) return;
+
+    const history = historyQuery.data.messages;
+
+    // Initial seed: replace messages state
+    if (!historySeededRef.current && history.length > 0) {
+      historySeededRef.current = true;
+      setMessages(history.map(mapHistoryMessage));
+      return;
+    }
+
+    // Subsequent polls: merge new messages (append-only)
+    if (historySeededRef.current && !isStreaming) {
+      const currentMessages = messagesRef.current;
+      const newMessages = history.slice(currentMessages.length);
+
+      if (newMessages.length > 0) {
+        setMessages(prev => [...prev, ...newMessages.map(mapHistoryMessage)]);
       }
     }
-  }, [historyQuery.data]);
+  }, [historyQuery.data, isStreaming]);
+
+  // EventSource subscription for real-time sync updates
+  useEffect(() => {
+    if (!sessionId || isStreaming) return;
+
+    // Construct EventSource URL for persistent SSE stream
+    const url = `/api/sessions/${sessionId}/stream`;
+    const eventSource = new EventSource(url);
+
+    eventSource.addEventListener('sync_update', () => {
+      // Use ref to avoid stale closure when selectedCwd changes
+      queryClient.invalidateQueries({ queryKey: ['messages', sessionId, selectedCwdRef.current] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', sessionId, selectedCwdRef.current] });
+    });
+
+    eventSource.addEventListener('sync_connected', () => {
+      // Optional: track connection status (currently no-op)
+    });
+
+    return () => {
+      eventSource.close();
+    };
+  }, [sessionId, isStreaming, queryClient]);
+
+  // Cleanup sessionBusy timer on unmount
+  useEffect(() => {
+    return () => {
+      if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
+    };
+  }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || status === 'streaming') return;
@@ -198,7 +286,19 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       setStatus('idle');
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
-        setError((err as Error).message);
+        // Check for SESSION_LOCKED error (409 conflict)
+        if ((err as { code?: string }).code === 'SESSION_LOCKED') {
+          setSessionBusy(true);
+          setInput(userMessage.content); // Restore user's input so they can retry
+          // Auto-clear busy state after 5 seconds (with cleanup)
+          if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
+          sessionBusyTimerRef.current = setTimeout(() => {
+            setSessionBusy(false);
+            sessionBusyTimerRef.current = null;
+          }, 5000);
+        } else {
+          setError((err as Error).message);
+        }
         setStatus('error');
       }
       // Clean up text streaming state on any exit
@@ -421,5 +521,15 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   const isLoadingHistory = historyQuery.isLoading;
 
-  return { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming };
+  const pendingInteractions = useMemo(() => {
+    return messages
+      .flatMap(m => m.toolCalls || [])
+      .filter(tc => tc.interactiveType && tc.status === 'pending');
+  }, [messages]);
+
+  const activeInteraction = pendingInteractions[0] || null;
+  const isWaitingForUser = activeInteraction !== null;
+  const waitingType = activeInteraction?.interactiveType || null;
+
+  return { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction };
 }

@@ -2,7 +2,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 import { existsSync } from 'fs';
-import { query, type Options, type SDKMessage, type PermissionResult } from '@anthropic-ai/claude-agent-sdk';
+import { query, type Options, type SDKMessage, type PermissionResult, type Query } from '@anthropic-ai/claude-agent-sdk';
+import type { Response } from 'express';
 import type { StreamEvent, PermissionMode, TaskUpdateEvent, TaskStatus } from '@lifeos/shared/types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -27,6 +28,13 @@ export function resolveClaudeCliPath(): string | undefined {
   return undefined;
 }
 
+interface SessionLock {
+  clientId: string;
+  acquiredAt: number;
+  ttl: number;
+  response: Response;
+}
+
 interface PendingInteraction {
   type: 'question' | 'approval';
   toolCallId: string;
@@ -43,6 +51,8 @@ interface AgentSession {
   cwd?: string;
   /** True once the first SDK query has been sent (JSONL file exists) */
   hasStarted: boolean;
+  /** Active SDK query object — used for mid-stream control (setPermissionMode, setModel) */
+  activeQuery?: Query;
   pendingInteractions: Map<string, PendingInteraction>;
   eventQueue: StreamEvent[];
   eventQueueNotify?: () => void;
@@ -119,7 +129,7 @@ function handleToolApproval(
         session.pendingInteractions.delete(toolUseId);
         resolve(
           approved
-            ? { behavior: 'allow' }
+            ? { behavior: 'allow', updatedInput: input }
             : { behavior: 'deny', message: 'User denied tool execution' },
         );
       },
@@ -170,7 +180,9 @@ export function buildTaskEvent(toolName: string, input: Record<string, unknown>)
 
 export class AgentManager {
   private sessions = new Map<string, AgentSession>();
+  private sessionLocks = new Map<string, SessionLock>();
   private readonly SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+  private readonly LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutes
   private readonly cwd: string;
   private readonly claudeCliPath: string | undefined;
 
@@ -234,6 +246,8 @@ export class AgentManager {
       sdkOptions.resume = session.sdkSessionId;
     }
 
+    console.log(`[sendMessage] session=${sessionId} permissionMode=${session.permissionMode} hasStarted=${session.hasStarted} resume=${session.hasStarted ? session.sdkSessionId : 'N/A'}`);
+
     switch (session.permissionMode) {
       case 'bypassPermissions':
         sdkOptions.permissionMode = 'bypassPermissions';
@@ -266,19 +280,23 @@ export class AgentManager {
     ): Promise<PermissionResult> => {
       // AskUserQuestion: pause, collect answers, inject into input
       if (toolName === 'AskUserQuestion') {
+        console.log(`[canUseTool] ${toolName} → routing to question handler (toolUseID=${context.toolUseID})`);
         return handleAskUserQuestion(session, context.toolUseID, input);
       }
 
       // Tool approval: pause when permissionMode is 'default'
       if (session.permissionMode === 'default') {
+        console.log(`[canUseTool] ${toolName} → requesting approval (permissionMode=default, toolUseID=${context.toolUseID})`);
         return handleToolApproval(session, context.toolUseID, toolName, input);
       }
 
       // All other cases: allow immediately
-      return { behavior: 'allow' };
+      console.log(`[canUseTool] ${toolName} → auto-allow (permissionMode=${session.permissionMode}, toolUseID=${context.toolUseID})`);
+      return { behavior: 'allow', updatedInput: input };
     };
 
     const agentQuery = query({ prompt: content, options: sdkOptions });
+    session.activeQuery = agentQuery;
 
     let inTool = false;
     let currentToolName = '';
@@ -348,6 +366,8 @@ export class AgentManager {
           message: err instanceof Error ? err.message : 'SDK error',
         },
       };
+    } finally {
+      session.activeQuery = undefined;
     }
 
     if (!emittedDone) {
@@ -506,7 +526,15 @@ export class AgentManager {
       session = this.sessions.get(sessionId)!;
     }
     if (opts.permissionMode) {
+      console.log(`[updateSession] ${sessionId} permissionMode: ${session.permissionMode} → ${opts.permissionMode}`);
       session.permissionMode = opts.permissionMode;
+      // Propagate to active SDK query for mid-stream changes
+      if (session.activeQuery) {
+        console.log(`[updateSession] ${sessionId} calling setPermissionMode(${opts.permissionMode}) on active query`);
+        session.activeQuery.setPermissionMode(opts.permissionMode).catch((err) => {
+          console.error(`[updateSession] setPermissionMode failed:`, err);
+        });
+      }
     }
     if (opts.model) {
       session.model = opts.model;
@@ -517,7 +545,11 @@ export class AgentManager {
   approveTool(sessionId: string, toolCallId: string, approved: boolean): boolean {
     const session = this.findSession(sessionId);
     const pending = session?.pendingInteractions.get(toolCallId);
-    if (!pending || pending.type !== 'approval') return false;
+    if (!pending || pending.type !== 'approval') {
+      console.log(`[approveTool] ${sessionId} toolCallId=${toolCallId} approved=${approved} → NOT FOUND (session=${!!session}, pending=${!!pending}, type=${pending?.type})`);
+      return false;
+    }
+    console.log(`[approveTool] ${sessionId} toolCallId=${toolCallId} approved=${approved} → resolving`);
     pending.resolve(approved);
     return true;
   }
@@ -539,6 +571,13 @@ export class AgentManager {
           clearTimeout(interaction.timeout);
         }
         this.sessions.delete(id);
+        this.sessionLocks.delete(id); // Clean up stale locks too
+      }
+    }
+    // Clean up expired locks
+    for (const [id, lock] of this.sessionLocks) {
+      if (now - lock.acquiredAt > lock.ttl) {
+        this.sessionLocks.delete(id);
       }
     }
   }
@@ -567,6 +606,76 @@ export class AgentManager {
    */
   getSdkSessionId(sessionId: string): string | undefined {
     return this.findSession(sessionId)?.sdkSessionId;
+  }
+
+  /**
+   * Attempt to acquire a lock on a session for a specific client.
+   * Returns true if the lock was acquired, false if the session is locked by another client.
+   */
+  acquireLock(sessionId: string, clientId: string, res: Response): boolean {
+    const existing = this.sessionLocks.get(sessionId);
+    if (existing) {
+      const expired = Date.now() - existing.acquiredAt > existing.ttl;
+      if (expired) {
+        this.sessionLocks.delete(sessionId);
+      } else if (existing.clientId !== clientId) {
+        return false;
+      }
+    }
+    const lock: SessionLock = {
+      clientId,
+      acquiredAt: Date.now(),
+      ttl: this.LOCK_TTL_MS,
+      response: res,
+    };
+    this.sessionLocks.set(sessionId, lock);
+    res.on('close', () => {
+      const current = this.sessionLocks.get(sessionId);
+      if (current === lock) {
+        this.sessionLocks.delete(sessionId);
+      }
+    });
+    return true;
+  }
+
+  /**
+   * Release a lock on a session if it's held by the specified client.
+   */
+  releaseLock(sessionId: string, clientId: string): void {
+    const lock = this.sessionLocks.get(sessionId);
+    if (lock && lock.clientId === clientId) {
+      this.sessionLocks.delete(sessionId);
+    }
+  }
+
+  /**
+   * Check if a session is locked.
+   * If clientId is provided, returns false if the lock is held by that client (owns the lock).
+   * Returns true if the session is locked by another client.
+   */
+  isLocked(sessionId: string, clientId?: string): boolean {
+    const lock = this.sessionLocks.get(sessionId);
+    if (!lock) return false;
+    if (Date.now() - lock.acquiredAt > lock.ttl) {
+      this.sessionLocks.delete(sessionId);
+      return false;
+    }
+    if (clientId && lock.clientId === clientId) return false;
+    return true;
+  }
+
+  /**
+   * Get information about the current lock on a session.
+   * Returns null if the session is not locked or the lock has expired.
+   */
+  getLockInfo(sessionId: string): { clientId: string; acquiredAt: number } | null {
+    const lock = this.sessionLocks.get(sessionId);
+    if (!lock) return null;
+    if (Date.now() - lock.acquiredAt > lock.ttl) {
+      this.sessionLocks.delete(sessionId);
+      return null;
+    }
+    return { clientId: lock.clientId, acquiredAt: lock.acquiredAt };
   }
 }
 

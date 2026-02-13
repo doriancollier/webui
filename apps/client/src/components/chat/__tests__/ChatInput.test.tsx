@@ -325,4 +325,34 @@ describe('ChatInput', () => {
       expect(onEscape).not.toHaveBeenCalled();
     });
   });
+
+  describe('sessionBusy state', () => {
+    it('disables textarea when sessionBusy is true', () => {
+      render(<ChatInput {...defaultProps} sessionBusy={true} />);
+      expect(screen.getByRole('combobox')).toHaveProperty('disabled', true);
+    });
+
+    it('disables send button when sessionBusy is true', () => {
+      render(<ChatInput {...defaultProps} value="hello" sessionBusy={true} />);
+      const btn = screen.getByLabelText('Send message');
+      expect(btn).toHaveProperty('disabled', true);
+      expect(btn.className).toContain('pointer-events-none');
+    });
+
+    it('shows busy message when sessionBusy is true', () => {
+      render(<ChatInput {...defaultProps} sessionBusy={true} />);
+      expect(screen.getByText(/Session is busy/)).toBeDefined();
+    });
+
+    it('hides busy message when sessionBusy is false', () => {
+      render(<ChatInput {...defaultProps} sessionBusy={false} />);
+      expect(screen.queryByText(/Session is busy/)).toBeNull();
+    });
+
+    it('hides clear button when sessionBusy is true', () => {
+      render(<ChatInput {...defaultProps} value="hello" sessionBusy={true} />);
+      const btn = screen.getByLabelText('Clear message');
+      expect(btn.className).toContain('pointer-events-none');
+    });
+  });
 });

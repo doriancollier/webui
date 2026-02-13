@@ -1,20 +1,34 @@
-import { useState } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import { Check, X, Shield } from 'lucide-react';
 import { useTransport } from '../../contexts/TransportContext';
+import { ToolArgumentsDisplay } from '../../lib/tool-arguments-formatter';
+import { Kbd } from '../ui/kbd';
+import { cn } from '@/lib/utils';
 
 interface ToolApprovalProps {
   sessionId: string;
   toolCallId: string;
   toolName: string;
   input: string;
+  /** Whether this is the active shortcut target */
+  isActive?: boolean;
 }
 
-export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApprovalProps) {
+export interface ToolApprovalHandle {
+  approve: () => void;
+  deny: () => void;
+}
+
+export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(function ToolApproval(
+  { sessionId, toolCallId, toolName, input, isActive = false },
+  ref,
+) {
   const transport = useTransport();
   const [responding, setResponding] = useState(false);
   const [decided, setDecided] = useState<'approved' | 'denied' | null>(null);
 
   async function handleApprove() {
+    if (responding || decided) return;
     setResponding(true);
     try {
       await transport.approveTool(sessionId, toolCallId);
@@ -27,6 +41,7 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
   }
 
   async function handleDeny() {
+    if (responding || decided) return;
     setResponding(true);
     try {
       await transport.denyTool(sessionId, toolCallId);
@@ -37,6 +52,11 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
       setResponding(false);
     }
   }
+
+  useImperativeHandle(ref, () => ({
+    approve() { handleApprove(); },
+    deny() { handleDeny(); },
+  }), [responding, decided]);
 
   if (decided) {
     return (
@@ -54,22 +74,19 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
   }
 
   return (
-    <div className="my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-colors duration-200">
+    <div className={cn(
+      "my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-all duration-200",
+      isActive && "ring-2 ring-amber-500/30",
+    )}>
       <div className="flex items-center gap-2 mb-2">
         <Shield className="size-(--size-icon-md) text-amber-500" />
         <span className="font-semibold">Tool approval required</span>
       </div>
       <div className="font-mono text-xs mb-2">{toolName}</div>
       {input && (
-        <pre className="text-xs overflow-x-auto mb-3 p-2 bg-muted rounded whitespace-pre-wrap">
-          {(() => {
-            try {
-              return JSON.stringify(JSON.parse(input), null, 2);
-            } catch {
-              return input;
-            }
-          })()}
-        </pre>
+        <div className="mb-3 p-2 bg-muted rounded">
+          <ToolArgumentsDisplay toolName={toolName} input={input} />
+        </div>
       )}
       <div className="flex gap-2">
         <button
@@ -78,6 +95,7 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
           className="flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 max-md:py-2 text-white text-xs hover:bg-emerald-700 disabled:opacity-50 transition-colors"
         >
           <Check className="size-(--size-icon-xs)" /> Approve
+          {isActive && <Kbd className="ml-1.5">Enter</Kbd>}
         </button>
         <button
           onClick={handleDeny}
@@ -85,8 +103,9 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
           className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 max-md:py-2 text-white text-xs hover:bg-red-700 disabled:opacity-50 transition-colors"
         >
           <X className="size-(--size-icon-xs)" /> Deny
+          {isActive && <Kbd className="ml-1.5">Esc</Kbd>}
         </button>
       </div>
     </div>
   );
-}
+});

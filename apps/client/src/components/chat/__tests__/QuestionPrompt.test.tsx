@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
-import { QuestionPrompt } from '../QuestionPrompt';
+import { createRef } from 'react';
+import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
+import { QuestionPrompt, type QuestionPromptHandle } from '../QuestionPrompt';
 import type { QuestionItem } from '@lifeos/shared/types';
 
 // Mock Radix Tabs with controlled state support for jsdom
@@ -388,5 +389,312 @@ describe('Answer summary layout', () => {
     expect(screen.getByText('Reschedule the internal meeting')).toBeDefined();
     expect(screen.getByText('Features')).toBeDefined();
     expect(screen.getByText('Dark mode, Search')).toBeDefined();
+  });
+});
+
+describe('QuestionPrompt interactive UX (Phase 2)', () => {
+  describe('isActive prop', () => {
+    it('adds ring-2 class when isActive is true', () => {
+      const { container } = render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} isActive={true} />,
+      );
+      const wrapper = container.firstElementChild as HTMLElement;
+      expect(wrapper.className).toContain('ring-2');
+      expect(wrapper.className).toContain('ring-amber-500/30');
+    });
+
+    it('does not have ring-2 class when isActive is false', () => {
+      const { container } = render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} isActive={false} />,
+      );
+      const wrapper = container.firstElementChild as HTMLElement;
+      expect(wrapper.className).not.toContain('ring-2');
+    });
+  });
+
+  describe('Kbd number hints', () => {
+    it('shows Kbd number hints on options when isActive is true', () => {
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} isActive={true} />,
+      );
+      const kbds = document.querySelectorAll('kbd');
+      // 2 regular options + 1 "Other" option + 1 submit button = 4 kbd elements
+      // Options get "1", "2", Other gets "3", submit gets "Enter"
+      expect(kbds.length).toBeGreaterThanOrEqual(3);
+      expect(kbds[0].textContent).toBe('1');
+      expect(kbds[1].textContent).toBe('2');
+      expect(kbds[2].textContent).toBe('3'); // Other option
+    });
+
+    it('hides Kbd hints when isActive is false', () => {
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} isActive={false} />,
+      );
+      const kbds = document.querySelectorAll('kbd');
+      expect(kbds.length).toBe(0);
+    });
+
+    it('shows Enter Kbd on submit button when isActive is true', () => {
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} isActive={true} />,
+      );
+      const submitButton = screen.getByRole('button', { name: /submit/i });
+      const kbd = submitButton.querySelector('kbd');
+      expect(kbd).not.toBeNull();
+      expect(kbd!.textContent).toBe('Enter');
+    });
+  });
+
+  describe('focusedOptionIndex prop', () => {
+    it('adds ring-1 to the focused option', () => {
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion]}
+          isActive={true}
+          focusedOptionIndex={1}
+        />,
+      );
+      // Get all option labels (including "Other")
+      const labels = document.querySelectorAll('label');
+      // Index 1 should have the ring-1 class
+      expect(labels[1].className).toContain('ring-1');
+      expect(labels[1].className).toContain('ring-amber-500/50');
+      // Index 0 should not
+      expect(labels[0].className).not.toContain('ring-1');
+    });
+
+    it('adds ring-1 to the "Other" option when focused', () => {
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion]}
+          isActive={true}
+          focusedOptionIndex={2}
+        />,
+      );
+      const labels = document.querySelectorAll('label');
+      // "Other" is at index 2 (after 2 regular options)
+      expect(labels[2].className).toContain('ring-1');
+    });
+
+    it('does not add ring-1 when isActive is false', () => {
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion]}
+          isActive={false}
+          focusedOptionIndex={0}
+        />,
+      );
+      const labels = document.querySelectorAll('label');
+      expect(labels[0].className).not.toContain('ring-1');
+    });
+  });
+
+  describe('navigation hints for multi-question tabs', () => {
+    it('shows arrow navigation hints when isActive and multiple questions', () => {
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion, multiSelectQuestion]}
+          isActive={true}
+        />,
+      );
+      expect(screen.getByText('navigate questions')).toBeDefined();
+    });
+
+    it('does not show arrow navigation hints when isActive is false', () => {
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion, multiSelectQuestion]}
+          isActive={false}
+        />,
+      );
+      expect(screen.queryByText('navigate questions')).toBeNull();
+    });
+
+    it('does not show arrow navigation hints for single question', () => {
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion]}
+          isActive={true}
+        />,
+      );
+      expect(screen.queryByText('navigate questions')).toBeNull();
+    });
+  });
+
+  describe('imperative handle', () => {
+    it('toggleOption selects a regular option (single-select)', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} ref={ref} />,
+      );
+
+      act(() => { ref.current!.toggleOption(0); });
+
+      // First radio should now be checked
+      const radios = screen.getAllByRole('radio') as HTMLInputElement[];
+      expect(radios[0].checked).toBe(true);
+    });
+
+    it('toggleOption toggles a checkbox (multi-select)', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[multiSelectQuestion]} ref={ref} />,
+      );
+
+      act(() => { ref.current!.toggleOption(0); }); // Select Dark mode
+      act(() => { ref.current!.toggleOption(2); }); // Select Search
+
+      const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+      expect(checkboxes[0].checked).toBe(true);
+      expect(checkboxes[1].checked).toBe(false); // Notifications
+      expect(checkboxes[2].checked).toBe(true);
+    });
+
+    it('toggleOption untoggle works for multi-select', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[multiSelectQuestion]} ref={ref} />,
+      );
+
+      act(() => { ref.current!.toggleOption(0); }); // Select Dark mode
+      act(() => { ref.current!.toggleOption(0); }); // Deselect Dark mode
+
+      const checkboxes = screen.getAllByRole('checkbox') as HTMLInputElement[];
+      expect(checkboxes[0].checked).toBe(false);
+    });
+
+    it('toggleOption selects "Other" when index equals options.length', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} ref={ref} />,
+      );
+
+      // singleSelectQuestion has 2 options, so index 2 = "Other"
+      act(() => { ref.current!.toggleOption(2); });
+
+      const radios = screen.getAllByRole('radio') as HTMLInputElement[];
+      // "Other" radio is the last one
+      expect(radios[2].checked).toBe(true);
+    });
+
+    it('navigateQuestion switches active tab', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion, multiSelectQuestion]}
+          ref={ref}
+        />,
+      );
+
+      expect(ref.current!.getActiveTab()).toBe('0');
+
+      act(() => { ref.current!.navigateQuestion('next'); });
+      expect(ref.current!.getActiveTab()).toBe('1');
+
+      // Should show second tab content now
+      expect(screen.getByText(multiSelectQuestion.question)).toBeDefined();
+    });
+
+    it('navigateQuestion does not go below 0', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion, multiSelectQuestion]}
+          ref={ref}
+        />,
+      );
+
+      act(() => { ref.current!.navigateQuestion('prev'); });
+      expect(ref.current!.getActiveTab()).toBe('0');
+    });
+
+    it('navigateQuestion does not go beyond last tab', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion, multiSelectQuestion]}
+          ref={ref}
+        />,
+      );
+
+      act(() => { ref.current!.navigateQuestion('next'); });
+      act(() => { ref.current!.navigateQuestion('next'); }); // Already at last, should stay
+      expect(ref.current!.getActiveTab()).toBe('1');
+    });
+
+    it('navigateQuestion is no-op for single question', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} ref={ref} />,
+      );
+
+      act(() => { ref.current!.navigateQuestion('next'); });
+      expect(ref.current!.getActiveTab()).toBe('0');
+    });
+
+    it('submit calls transport.submitAnswers when all answered', async () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} ref={ref} />,
+      );
+
+      act(() => { ref.current!.toggleOption(0); }); // Select first option
+      act(() => { ref.current!.submit(); });
+
+      await waitFor(() => {
+        expect(mockSubmitAnswers).toHaveBeenCalledWith(
+          'session-1',
+          'tc-1',
+          { '0': 'Reschedule the internal meeting' },
+        );
+      });
+    });
+
+    it('submit does not call transport when incomplete', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} ref={ref} />,
+      );
+
+      act(() => { ref.current!.submit(); }); // No selection made
+      expect(mockSubmitAnswers).not.toHaveBeenCalled();
+    });
+
+    it('getOptionCount includes the "Other" option', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt {...baseProps} questions={[singleSelectQuestion]} ref={ref} />,
+      );
+
+      // 2 regular options + 1 "Other" = 3
+      expect(ref.current!.getOptionCount()).toBe(3);
+    });
+
+    it('getOptionCount reflects active tab for multi-question', () => {
+      const ref = createRef<QuestionPromptHandle>();
+      render(
+        <QuestionPrompt
+          {...baseProps}
+          questions={[singleSelectQuestion, multiSelectQuestion]}
+          ref={ref}
+        />,
+      );
+
+      // First tab: 2 options + Other = 3
+      expect(ref.current!.getOptionCount()).toBe(3);
+
+      act(() => { ref.current!.navigateQuestion('next'); });
+      // Second tab: 3 options + Other = 4
+      expect(ref.current!.getOptionCount()).toBe(4);
+    });
   });
 });

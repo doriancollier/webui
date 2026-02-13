@@ -37,4 +37,5 @@ export type {
   ServerConfig,
   GitStatusResponse,
   GitStatusError,
+  SessionLockedError,
 } from './schemas.js';

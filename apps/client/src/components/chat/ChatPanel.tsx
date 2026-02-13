@@ -22,7 +22,9 @@ import { DragHandle } from './DragHandle';
 import { StatusLine } from '../status/StatusLine';
 import { useFiles } from '../../hooks/use-files';
 import { useIsMobile } from '../../hooks/use-is-mobile';
+import { useInteractiveShortcuts } from '../../hooks/use-interactive-shortcuts';
 import { useAppStore } from '../../stores/app-store';
+import type { InteractiveToolHandle } from './MessageItem';
 import type { CommandEntry } from '@lifeos/shared/types';
 
 interface ChatPanelProps {
@@ -36,13 +38,83 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const messageListRef = useRef<MessageListHandle>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const taskState = useTaskState(sessionId);
-  const { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming } =
+  const { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction } =
     useChatSession(sessionId, {
       transformContent,
       onTaskEvent: taskState.handleTaskEvent,
       onSessionIdChange: setSessionId,
     });
   const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
+
+  // Interactive tool shortcut wiring
+  const activeToolHandleRef = useRef<InteractiveToolHandle | null>(null);
+  const [focusedOptionIndex, setFocusedOptionIndex] = useState(0);
+  const [activeOptionCount, setActiveOptionCount] = useState(0);
+
+  const handleToolRef = useCallback((handle: InteractiveToolHandle | null) => {
+    activeToolHandleRef.current = handle;
+    setActiveOptionCount(
+      handle && 'getOptionCount' in handle ? handle.getOptionCount() : 0,
+    );
+  }, []);
+
+  // Reset focused index and option count when active interaction changes
+  useEffect(() => {
+    setFocusedOptionIndex(0);
+    setActiveOptionCount(0);
+  }, [activeInteraction?.toolCallId]);
+
+  const activeInteractionForShortcuts = useMemo(() => {
+    if (!activeInteraction) return null;
+    return {
+      type: activeInteraction.interactiveType as 'approval' | 'question',
+      toolCallId: activeInteraction.toolCallId,
+    };
+  }, [activeInteraction]);
+
+  useInteractiveShortcuts({
+    activeInteraction: activeInteractionForShortcuts,
+    onApprove: useCallback(() => {
+      const handle = activeToolHandleRef.current;
+      if (handle && 'approve' in handle) handle.approve();
+    }, []),
+    onDeny: useCallback(() => {
+      const handle = activeToolHandleRef.current;
+      if (handle && 'deny' in handle) handle.deny();
+    }, []),
+    onToggleOption: useCallback((index: number) => {
+      const handle = activeToolHandleRef.current;
+      if (handle && 'toggleOption' in handle) {
+        handle.toggleOption(index);
+        setFocusedOptionIndex(index);
+      }
+    }, []),
+    onNavigateOption: useCallback((direction: 'up' | 'down') => {
+      setFocusedOptionIndex(prev => {
+        const handle = activeToolHandleRef.current;
+        const count = handle && 'getOptionCount' in handle ? handle.getOptionCount() : 0;
+        if (count === 0) return prev;
+        if (direction === 'up') return prev <= 0 ? count - 1 : prev - 1;
+        return prev >= count - 1 ? 0 : prev + 1;
+      });
+    }, []),
+    onNavigateQuestion: useCallback((direction: 'prev' | 'next') => {
+      const handle = activeToolHandleRef.current;
+      if (handle && 'navigateQuestion' in handle) {
+        handle.navigateQuestion(direction);
+        setFocusedOptionIndex(0);
+        // Refresh option count since different questions may have different option counts
+        setActiveOptionCount(handle.getOptionCount());
+      }
+    }, []),
+    onSubmit: useCallback(() => {
+      const handle = activeToolHandleRef.current;
+      if (handle && 'submit' in handle) handle.submit();
+    }, []),
+    optionCount: activeOptionCount,
+    focusedIndex: focusedOptionIndex,
+  });
+
   const [showCommands, setShowCommands] = useState(false);
   const [commandQuery, setCommandQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -375,6 +447,11 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             streamStartTime={streamStartTime}
             estimatedTokens={estimatedTokens}
             permissionMode={permissionMode}
+            isWaitingForUser={isWaitingForUser}
+            waitingType={waitingType ?? undefined}
+            activeToolCallId={activeInteraction?.toolCallId ?? null}
+            onToolRef={handleToolRef}
+            focusedOptionIndex={focusedOptionIndex}
           />
         )}
 
@@ -451,6 +528,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
           onChange={handleInputChange}
           onSubmit={handleSubmit}
           isLoading={status === 'streaming'}
+          sessionBusy={sessionBusy}
           onStop={stop}
           onEscape={() => { setShowCommands(false); setShowFiles(false); }}
           onClear={() => { setInput(''); setShowCommands(false); setShowFiles(false); }}

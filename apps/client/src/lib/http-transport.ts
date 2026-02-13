@@ -12,6 +12,7 @@ import type {
   ServerConfig,
   GitStatusResponse,
   GitStatusError,
+  SessionLockedError,
 } from '@lifeos/shared/types';
 import type { Transport } from '@lifeos/shared/transport';
 
@@ -28,7 +29,13 @@ async function fetchJSON<T>(baseUrl: string, url: string, opts?: RequestInit): P
 }
 
 export class HttpTransport implements Transport {
-  constructor(private baseUrl: string) {}
+  private readonly clientId: string;
+  private readonly etagCache = new Map<string, string>();
+  private readonly messageCache = new Map<string, { messages: HistoryMessage[] }>();
+
+  constructor(private baseUrl: string) {
+    this.clientId = crypto.randomUUID();
+  }
 
   createSession(opts: CreateSessionRequest): Promise<Session> {
     return fetchJSON<Session>(this.baseUrl, '/sessions', {
@@ -61,11 +68,45 @@ export class HttpTransport implements Transport {
     });
   }
 
-  getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }> {
+  async getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }> {
     const params = new URLSearchParams();
     if (cwd) params.set('cwd', cwd);
     const qs = params.toString();
-    return fetchJSON<{ messages: HistoryMessage[] }>(this.baseUrl, `/sessions/${sessionId}/messages${qs ? `?${qs}` : ''}`);
+    const url = `/sessions/${sessionId}/messages${qs ? `?${qs}` : ''}`;
+
+    // Build headers with If-None-Match if we have a cached ETag
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    const cachedEtag = this.etagCache.get(sessionId);
+    if (cachedEtag) {
+      headers['If-None-Match'] = cachedEtag;
+    }
+
+    const res = await fetch(`${this.baseUrl}${url}`, { headers });
+
+    // 304 Not Modified: return cached response
+    if (res.status === 304) {
+      const cached = this.messageCache.get(sessionId);
+      if (cached) {
+        return cached;
+      }
+      // Fallback: if cache is missing, treat as error
+      throw new Error('304 received but no cached response available');
+    }
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(error.error || `HTTP ${res.status}`);
+    }
+
+    // 200 OK: parse response, cache ETag and response
+    const data = await res.json();
+    const etag = res.headers.get('ETag');
+    if (etag) {
+      this.etagCache.set(sessionId, etag);
+      this.messageCache.set(sessionId, data);
+    }
+
+    return data;
   }
 
   async sendMessage(
@@ -77,12 +118,26 @@ export class HttpTransport implements Transport {
   ): Promise<void> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Id': this.clientId,
+      },
       body: JSON.stringify({ content, ...(cwd && { cwd }) }),
       signal,
     });
 
     if (!response.ok) {
+      // Check for 409 SESSION_LOCKED error
+      if (response.status === 409) {
+        const errorData = await response.json().catch(() => null) as SessionLockedError | null;
+        if (errorData && errorData.code === 'SESSION_LOCKED') {
+          const error = new Error('Session locked') as Error & SessionLockedError;
+          error.code = 'SESSION_LOCKED';
+          error.lockedBy = errorData.lockedBy;
+          error.lockedAt = errorData.lockedAt;
+          throw error;
+        }
+      }
       throw new Error(`HTTP ${response.status}`);
     }
 

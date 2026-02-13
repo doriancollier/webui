@@ -30,6 +30,8 @@ export const StreamEventTypeSchema = z
     'done',
     'session_status',
     'task_update',
+    'sync_update',
+    'sync_connected',
   ])
   .openapi('StreamEventType');
 
@@ -233,6 +235,23 @@ export const TaskUpdateEventSchema = z
 
 export type TaskUpdateEvent = z.infer<typeof TaskUpdateEventSchema>;
 
+export const SyncUpdateEventSchema = z
+  .object({
+    sessionId: z.string(),
+    timestamp: z.string(),
+  })
+  .openapi('SyncUpdateEvent');
+
+export type SyncUpdateEvent = z.infer<typeof SyncUpdateEventSchema>;
+
+export const SyncConnectedEventSchema = z
+  .object({
+    sessionId: z.string(),
+  })
+  .openapi('SyncConnectedEvent');
+
+export type SyncConnectedEvent = z.infer<typeof SyncConnectedEventSchema>;
+
 export const StreamEventSchema = z
   .object({
     type: StreamEventTypeSchema,
@@ -245,6 +264,8 @@ export const StreamEventSchema = z
       DoneEventSchema,
       SessionStatusEventSchema,
       TaskUpdateEventSchema,
+      SyncUpdateEventSchema,
+      SyncConnectedEventSchema,
     ]),
   })
   .openapi('StreamEvent');
@@ -486,3 +507,14 @@ export const ErrorResponseSchema = z
   .openapi('ErrorResponse');
 
 export type ErrorResponse = z.infer<typeof ErrorResponseSchema>;
+
+export const SessionLockedErrorSchema = z
+  .object({
+    error: z.literal('Session locked'),
+    code: z.literal('SESSION_LOCKED'),
+    lockedBy: z.string(),
+    lockedAt: z.string(),
+  })
+  .openapi('SessionLockedError');
+
+export type SessionLockedError = z.infer<typeof SessionLockedErrorSchema>;

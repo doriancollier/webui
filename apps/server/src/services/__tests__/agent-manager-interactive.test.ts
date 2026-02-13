@@ -674,7 +674,7 @@ describe('AgentManager interactive tools', () => {
       expect(approved).toBe(true);
 
       const permissionResult = await permissionPromise;
-      expect(permissionResult).toEqual({ behavior: 'allow' });
+      expect(permissionResult).toEqual({ behavior: 'allow', updatedInput: { file_path: '/tmp/test.txt', content: 'hello' } });
     });
 
     it('denying a tool approval resolves with deny', async () => {
@@ -765,7 +765,7 @@ describe('AgentManager interactive tools', () => {
         { signal: new AbortController().signal, toolUseID: 'tool-w1' },
       );
 
-      expect(result).toEqual({ behavior: 'allow' });
+      expect(result).toEqual({ behavior: 'allow', updatedInput: { file_path: '/tmp/test.txt' } });
     });
   });
 

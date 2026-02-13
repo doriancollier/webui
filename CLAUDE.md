@@ -58,10 +58,11 @@ Express server on port `GATEWAY_PORT` (default 6942). Three route groups:
 - **`routes/commands.ts`** - Scans `../../.claude/commands/` for slash commands using gray-matter frontmatter parsing
 - **`routes/health.ts`** - Health check; includes optional `tunnel` status field when ngrok is enabled
 
-Four services:
+Five services:
 
 - **`services/agent-manager.ts`** - Manages Claude Agent SDK sessions. Calls `query()` with streaming, maps SDK events (`stream_event`, `tool_use_summary`, `result`) to gateway `StreamEvent` types. Tracks active sessions in-memory with 30-minute timeout. All sessions use `resume: sessionId` for SDK continuity. Accepts optional `cwd` constructor param (used by Obsidian plugin). Resolves the Claude Code CLI path dynamically via `resolveClaudeCliPath()` for Electron compatibility.
 - **`services/transcript-reader.ts`** - Single source of truth for session data. Reads SDK JSONL transcript files from `~/.claude/projects/{slug}/`. Provides `listSessions()` (scans directory, extracts metadata), `getSession()` (single session metadata), and `readTranscript()` (full message history). Extracts titles from first user message, permission mode from init message, timestamps from file stats.
+- **`services/session-broadcaster.ts`** - Manages cross-client session synchronization. Watches JSONL transcript files via chokidar for changes (including CLI writes). Maintains SSE connections with passive clients via `registerClient()`. Broadcasts `sync_update` events when files change. Debounces rapid writes (100ms). Uses incremental byte-offset reading via `transcriptReader.readFromOffset()`. Graceful shutdown closes all watchers and connections.
 - **`services/stream-adapter.ts`** - SSE helpers (`initSSEStream`, `sendSSEEvent`, `endSSEStream`) that format `StreamEvent` objects as SSE wire protocol.
 - **`services/tunnel-manager.ts`** - Opt-in ngrok tunnel lifecycle. Singleton that wraps `@ngrok/ngrok` SDK with dynamic import (zero cost when disabled). Configured via env vars: `TUNNEL_ENABLED`, `NGROK_AUTHTOKEN`, `TUNNEL_PORT`, `TUNNEL_AUTH`, `TUNNEL_DOMAIN`. Started after Express binds in `index.ts`; tunnel failure is non-blocking. Exposes `status` getter consumed by `health.ts`. Graceful shutdown via SIGINT/SIGTERM.
 
@@ -107,6 +108,20 @@ Configured in each app's `tsconfig.json` (for IDE/tsc) and `vite.config.ts` (for
 Messages flow: client POST to `/api/sessions/:id/messages` -> server yields `StreamEvent` objects as SSE -> client parses in `useChatSession`.
 
 Event types: `text_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`, `tool_result`, `approval_required`, `error`, `done`.
+
+### Session Sync Protocol
+
+Clients can subscribe to session changes via a persistent SSE connection: `GET /api/sessions/:id/stream`. This provides real-time sync across multiple clients (including CLI changes).
+
+Events:
+- `sync_connected` — Sent on initial connection. Data: `{ sessionId }`
+- `sync_update` — Sent when new content is written to the session's JSONL file. Data: `{ sessionId, timestamp }`
+
+Clients receiving `sync_update` should re-fetch message history. The GET /messages endpoint supports ETag caching (If-None-Match/304) for efficient polling.
+
+### Session Locking
+
+POST /messages uses session locking to prevent concurrent writes. Clients send an `X-Client-Id` header. If a session is already locked by another client, the server returns 409 with `{ error: 'Session locked', code: 'SESSION_LOCKED', lockedBy, lockedAt }`. Locks auto-expire after 5 minutes and are released when SSE connections close.
 
 ### Session History
 

@@ -4,12 +4,27 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./schemas": "./src/schemas.ts",
-    "./transport": "./src/transport.ts",
-    "./types": "./src/types.ts"
+    "./schemas": {
+      "types": "./src/schemas.ts",
+      "default": "./dist/schemas.js"
+    },
+    "./transport": {
+      "types": "./src/transport.ts",
+      "default": "./dist/transport.js"
+    },
+    "./types": {
+      "types": "./src/types.ts",
+      "default": "./dist/types.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc"
   },
   "dependencies": {
     "zod": "^4.3.6",
     "@asteasolutions/zod-to-openapi": "^8.4.0"
+  },
+  "devDependencies": {
+    "@lifeos/typescript-config": "*"
   }
 }

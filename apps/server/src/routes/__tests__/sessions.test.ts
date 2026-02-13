@@ -20,6 +20,10 @@ vi.mock('../../services/agent-manager.js', () => ({
     hasSession: vi.fn(),
     checkSessionHealth: vi.fn(),
     getSdkSessionId: vi.fn(),
+    acquireLock: vi.fn(),
+    releaseLock: vi.fn(),
+    getLockInfo: vi.fn(),
+    isLocked: vi.fn(),
   },
 }));
 
@@ -27,6 +31,14 @@ vi.mock('../../services/tunnel-manager.js', () => ({
   tunnelManager: {
     status: { enabled: false, connected: false, url: null, port: null, startedAt: null },
   },
+}));
+
+vi.mock('../../services/session-broadcaster.js', () => ({
+  SessionBroadcaster: vi.fn().mockImplementation(() => ({
+    registerClient: vi.fn(),
+    deregisterClient: vi.fn(),
+    shutdown: vi.fn(),
+  })),
 }));
 
 // Dynamically import after mocks are set up
@@ -38,12 +50,25 @@ import { parseSSEResponse } from '@lifeos/test-utils/sse-helpers';
 
 const app = createApp();
 
+// Mock sessionBroadcaster for tests that need it
+const mockSessionBroadcaster = {
+  registerClient: vi.fn(),
+  deregisterClient: vi.fn(),
+  shutdown: vi.fn(),
+};
+app.locals.sessionBroadcaster = mockSessionBroadcaster;
+
 describe('Sessions Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: return empty sessions list
     vi.mocked(transcriptReader.listSessions).mockResolvedValue([]);
     vi.mocked(transcriptReader.getSession).mockResolvedValue(null);
+    // Default: allow lock acquisition
+    vi.mocked(agentManager.acquireLock).mockReturnValue(true);
+    vi.mocked(agentManager.getLockInfo).mockReturnValue(null);
+    // Reset sessionBroadcaster mock
+    mockSessionBroadcaster.registerClient.mockClear();
   });
 
   // ---- POST /api/sessions ----
@@ -201,7 +226,73 @@ describe('Sessions Routes', () => {
       const parsed = parseSSEResponse(res.body);
       const errorEvent = parsed.find(e => e.type === 'error');
       expect(errorEvent).toBeDefined();
-      expect((errorEvent!.data as any).message).toBe('SDK failure');
+      expect((errorEvent!.data as { message: string }).message).toBe('SDK failure');
+    });
+
+    it('acquires and releases lock when streaming', async () => {
+      const events: StreamEvent[] = [
+        { type: 'text_delta', data: { text: 'Hello' } },
+        { type: 'done', data: { sessionId: 's1' } },
+      ];
+
+      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+        for (const event of events) {
+          yield event;
+        }
+      });
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('s1');
+
+      await request(app)
+        .post('/api/sessions/s1/messages')
+        .send({ content: 'hi' })
+        .buffer(true)
+        .parse((res, callback) => {
+          let data = '';
+          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+          res.on('end', () => { callback(null, data); });
+        });
+
+      expect(agentManager.acquireLock).toHaveBeenCalledWith('s1', expect.any(String), expect.anything());
+      expect(agentManager.releaseLock).toHaveBeenCalledWith('s1', expect.any(String));
+    });
+
+    it('returns 409 when session is locked by another client', async () => {
+      vi.mocked(agentManager.acquireLock).mockReturnValue(false);
+      vi.mocked(agentManager.getLockInfo).mockReturnValue({
+        clientId: 'other-client',
+        acquiredAt: Date.now() - 60000,
+      });
+
+      const res = await request(app)
+        .post('/api/sessions/s1/messages')
+        .send({ content: 'hi' });
+
+      expect(res.status).toBe(409);
+      expect(res.body).toMatchObject({
+        error: 'Session locked',
+        code: 'SESSION_LOCKED',
+        lockedBy: 'other-client',
+      });
+      expect(res.body.lockedAt).toBeDefined();
+    });
+
+    it('releases lock even when streaming errors', async () => {
+      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+        throw new Error('SDK failure');
+      });
+
+      await request(app)
+        .post('/api/sessions/s1/messages')
+        .send({ content: 'hi' })
+        .buffer(true)
+        .parse((res, callback) => {
+          let data = '';
+          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+          res.on('end', () => { callback(null, data); });
+        });
+
+      expect(agentManager.acquireLock).toHaveBeenCalled();
+      expect(agentManager.releaseLock).toHaveBeenCalled();
     });
   });
 
@@ -256,6 +347,43 @@ describe('Sessions Routes', () => {
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('No pending approval');
+    });
+  });
+
+  // ---- GET /api/sessions/:id/stream ----
+
+  describe('GET /api/sessions/:id/stream', () => {
+    it('sets SSE headers correctly', async () => {
+      // Mock registerClient to immediately close the response
+      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
+        res.end();
+      });
+
+      const res = await request(app)
+        .get('/api/sessions/s1/stream');
+
+      expect(res.status).toBe(200);
+      expect(res.headers['content-type']).toBe('text/event-stream');
+      expect(res.headers['cache-control']).toBe('no-cache');
+      expect(res.headers['connection']).toBe('keep-alive');
+      expect(res.headers['x-accel-buffering']).toBe('no');
+    });
+
+    it('registers client with sessionBroadcaster', async () => {
+      // Mock registerClient to immediately close the response
+      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
+        res.end();
+      });
+
+      await request(app)
+        .get('/api/sessions/s1/stream');
+
+      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalled();
+      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
+        's1',
+        expect.any(String),
+        expect.anything()
+      );
     });
   });
 });

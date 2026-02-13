@@ -35,14 +35,14 @@ describe('ToolCallCard', () => {
 
   it('does not show input details initially (collapsed)', () => {
     render(<ToolCallCard toolCall={baseToolCall} />);
-    expect(screen.queryByText(/file_path/)).toBeNull();
+    expect(screen.queryByText(/File path/)).toBeNull();
   });
 
   it('expands on click to show pretty-printed input', () => {
     render(<ToolCallCard toolCall={baseToolCall} />);
     fireEvent.click(screen.getByText('Read test.ts'));
     // After expanding, should show the pretty-printed JSON key
-    expect(screen.getByText(/file_path/)).toBeDefined();
+    expect(screen.getByText(/File path/)).toBeDefined();
   });
 
   it('shows result when available and expanded', () => {
@@ -55,9 +55,9 @@ describe('ToolCallCard', () => {
     render(<ToolCallCard toolCall={baseToolCall} />);
     const button = screen.getByText('Read test.ts');
     fireEvent.click(button);
-    expect(screen.getByText(/file_path/)).toBeDefined();
+    expect(screen.getByText(/File path/)).toBeDefined();
     fireEvent.click(button);
-    expect(screen.queryByText(/file_path/)).toBeNull();
+    expect(screen.queryByText(/File path/)).toBeNull();
   });
 
   it('renders pending status', () => {

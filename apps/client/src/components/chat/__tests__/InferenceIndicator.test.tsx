@@ -92,4 +92,73 @@ describe('InferenceIndicator', () => {
 
     expect(screen.getByText('~1.3k tokens')).toBeTruthy();
   });
+
+  it('renders waiting-for-approval state', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isWaitingForUser={true}
+        waitingType="approval"
+      />
+    );
+    expect(screen.getByTestId('inference-indicator-waiting')).toBeTruthy();
+    expect(screen.getByText('Waiting for your approval')).toBeTruthy();
+  });
+
+  it('renders waiting-for-answer state', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isWaitingForUser={true}
+        waitingType="question"
+      />
+    );
+    expect(screen.getByTestId('inference-indicator-waiting')).toBeTruthy();
+    expect(screen.getByText('Waiting for your answer')).toBeTruthy();
+  });
+
+  it('shows elapsed time in waiting state', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isWaitingForUser={true}
+        waitingType="approval"
+      />
+    );
+    expect(screen.getByText('2m 14s')).toBeTruthy();
+  });
+
+  it('does not show waiting when not streaming', () => {
+    const { container } = render(
+      <InferenceIndicator
+        status="idle"
+        streamStartTime={null}
+        estimatedTokens={0}
+        isWaitingForUser={true}
+        waitingType="approval"
+      />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('prefers waiting state over streaming state', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isWaitingForUser={true}
+        waitingType="approval"
+      />
+    );
+    // Should show waiting, not streaming
+    expect(screen.getByTestId('inference-indicator-waiting')).toBeTruthy();
+    expect(screen.queryByTestId('inference-indicator-streaming')).toBeNull();
+  });
 });

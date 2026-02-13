@@ -569,6 +569,16 @@ export class TranscriptReader {
    * Read task state from an SDK session transcript.
    * Parses TaskCreate/TaskUpdate tool_use blocks and reconstructs final state.
    */
+  async getTranscriptETag(vaultRoot: string, sessionId: string): Promise<string | null> {
+    const filePath = path.join(this.getTranscriptsDir(vaultRoot), `${sessionId}.jsonl`);
+    try {
+      const stat = await fs.stat(filePath);
+      return `"${stat.mtimeMs}-${stat.size}"`;
+    } catch {
+      return null;
+    }
+  }
+
   async readTasks(vaultRoot: string, sessionId: string): Promise<TaskItem[]> {
     const transcriptsDir = this.getTranscriptsDir(vaultRoot);
     const filePath = path.join(transcriptsDir, `${sessionId}.jsonl`);
@@ -627,6 +637,36 @@ export class TranscriptReader {
     }
 
     return Array.from(tasks.values());
+  }
+
+  /**
+   * Read new content from a transcript file starting from a byte offset.
+   * Returns the new content and the updated file size (new offset).
+   */
+  async readFromOffset(
+    vaultRoot: string,
+    sessionId: string,
+    fromOffset: number,
+  ): Promise<{ content: string; newOffset: number }> {
+    const filePath = path.join(this.getTranscriptsDir(vaultRoot), `${sessionId}.jsonl`);
+    const stat = await fs.stat(filePath);
+
+    if (stat.size <= fromOffset) {
+      return { content: '', newOffset: fromOffset };
+    }
+
+    const fileHandle = await fs.open(filePath, 'r');
+    try {
+      const newBytes = stat.size - fromOffset;
+      const buffer = Buffer.alloc(newBytes);
+      await fileHandle.read(buffer, 0, newBytes, fromOffset);
+      return {
+        content: buffer.toString('utf-8'),
+        newOffset: stat.size,
+      };
+    } finally {
+      await fileHandle.close();
+    }
   }
 
   private extractToolResultContent(content: string | ContentBlock[] | undefined): string {

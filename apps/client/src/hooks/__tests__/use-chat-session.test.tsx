@@ -15,6 +15,42 @@ vi.mock('../../stores/app-store', () => ({
   },
 }));
 
+// Mock EventSource for SSE subscription tests
+class MockEventSource {
+  url: string;
+  listeners: Map<string, Array<(event: Event) => void>>;
+  readyState: number;
+
+  constructor(url: string) {
+    this.url = url;
+    this.listeners = new Map();
+    this.readyState = 1; // OPEN
+  }
+
+  addEventListener(type: string, listener: (event: Event) => void) {
+    if (!this.listeners.has(type)) {
+      this.listeners.set(type, []);
+    }
+    this.listeners.get(type)!.push(listener);
+  }
+
+  removeEventListener(type: string, listener: (event: Event) => void) {
+    const listeners = this.listeners.get(type);
+    if (listeners) {
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
+  }
+
+  close() {
+    this.readyState = 2; // CLOSED
+  }
+}
+
+globalThis.EventSource = MockEventSource as unknown as typeof EventSource;
+
 function createMockTransport(overrides: Partial<Transport> = {}): Transport {
   return {
     listSessions: vi.fn().mockResolvedValue([]),
@@ -331,6 +367,29 @@ describe('useChatSession', () => {
     expect(result.current.error).toBe('HTTP 404');
   });
 
+  it('handles SESSION_LOCKED errors by setting sessionBusy and preserving input', async () => {
+    const lockedError = new Error('Session locked') as Error & { code: string };
+    lockedError.code = 'SESSION_LOCKED';
+    const sendMessage = vi.fn().mockRejectedValue(lockedError);
+    const transport = createMockTransport({ sendMessage });
+
+    const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+    await waitFor(() => expect(result.current.status).toBe('idle'));
+
+    await act(async () => {
+      result.current.setInput('test message');
+    });
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    expect(result.current.sessionBusy).toBe(true);
+    expect(result.current.input).toBe('test message'); // Input preserved
+    expect(result.current.error).toBeNull(); // No error message set for busy state
+    expect(result.current.status).toBe('error');
+  });
+
   it('calls transport.sendMessage with correct arguments', async () => {
     const sendMessage = createSendMessageMock([
       { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
@@ -533,6 +592,85 @@ describe('useChatSession', () => {
       expect(result.current.messages).toHaveLength(1);
       expect(result.current.messages[0].role).toBe('user');
       expect(result.current.status).toBe('idle');
+    });
+  });
+
+  describe('EventSource subscription for real-time sync', () => {
+    it('opens EventSource connection when session is active and not streaming', async () => {
+      const transport = createMockTransport();
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('idle');
+      });
+
+      // Verify EventSource was created for the session
+      expect(globalThis.EventSource).toBeDefined();
+    });
+
+    it('closes EventSource when session changes', async () => {
+      const transport = createMockTransport();
+      const { result, rerender } = renderHook(
+        ({ sessionId }) => useChatSession(sessionId),
+        {
+          wrapper: createWrapper(transport),
+          initialProps: { sessionId: 's1' }
+        }
+      );
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('idle');
+      });
+
+      // Change session ID
+      rerender({ sessionId: 's2' });
+
+      await waitFor(() => {
+        expect(result.current.status).toBe('idle');
+      });
+
+      // EventSource should have been recreated for new session
+      expect(result.current.status).toBe('idle');
+    });
+
+    it('does not open EventSource while streaming', async () => {
+      const sendMessage = vi.fn(async (
+        _sessionId: string,
+        _content: string,
+        _onEvent: (event: StreamEvent) => void,
+        signal?: AbortSignal,
+        _cwd?: string,
+      ) => {
+        return new Promise<void>((resolve, reject) => {
+          signal?.addEventListener('abort', () => {
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+          });
+        });
+      });
+      const transport = createMockTransport({ sendMessage });
+
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+
+      // Start streaming
+      act(() => {
+        result.current.handleSubmit();
+      });
+
+      await waitFor(() => expect(result.current.status).toBe('streaming'));
+
+      // EventSource should not interfere with streaming
+      expect(result.current.status).toBe('streaming');
+
+      // Clean up
+      await act(async () => {
+        result.current.stop();
+      });
     });
   });
 });

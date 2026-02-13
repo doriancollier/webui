@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ChatMessage, MessageGrouping } from '../../hooks/use-chat-session';
 import type { PermissionMode } from '@lifeos/shared/types';
 import { MessageItem } from './MessageItem';
+import type { InteractiveToolHandle } from './MessageItem';
 import { InferenceIndicator } from './InferenceIndicator';
 
 export function computeGrouping(messages: ChatMessage[]): MessageGrouping[] {
@@ -43,10 +44,15 @@ interface MessageListProps {
   streamStartTime?: number | null;
   estimatedTokens?: number;
   permissionMode?: PermissionMode;
+  isWaitingForUser?: boolean;
+  waitingType?: 'approval' | 'question';
+  activeToolCallId?: string | null;
+  onToolRef?: (handle: InteractiveToolHandle | null) => void;
+  focusedOptionIndex?: number;
 }
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
-  function MessageList({ messages, sessionId, status, isTextStreaming, onScrollStateChange, streamStartTime, estimatedTokens, permissionMode }, ref) {
+  function MessageList({ messages, sessionId, status, isTextStreaming, onScrollStateChange, streamStartTime, estimatedTokens, permissionMode, isWaitingForUser, waitingType, activeToolCallId, onToolRef, focusedOptionIndex }, ref) {
     const parentRef = useRef<HTMLDivElement>(null);
     const [historyCount, setHistoryCount] = useState<number | null>(null);
     const isAtBottomRef = useRef(true);
@@ -212,6 +218,9 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
                   sessionId={sessionId}
                   isNew={isNew}
                   isStreaming={isStreaming}
+                  activeToolCallId={activeToolCallId}
+                  onToolRef={onToolRef}
+                  focusedOptionIndex={focusedOptionIndex}
                 />
               </div>
             );
@@ -223,6 +232,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
               streamStartTime={streamStartTime ?? null}
               estimatedTokens={estimatedTokens ?? 0}
               permissionMode={permissionMode}
+              isWaitingForUser={isWaitingForUser}
+              waitingType={waitingType}
             />
           </div>
         </div>

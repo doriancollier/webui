@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useState, useImperativeHandle, forwardRef } from 'react';
 import { Check, MessageSquare } from 'lucide-react';
 import { useTransport } from '../../contexts/TransportContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
+import { Kbd } from '../ui/kbd';
+import { cn } from '@/lib/utils';
 import type { QuestionItem } from '@lifeos/shared/types';
 
 interface QuestionPromptProps {
@@ -10,9 +12,25 @@ interface QuestionPromptProps {
   questions: QuestionItem[];
   /** Pre-submitted answers from history — renders collapsed immediately */
   answers?: Record<string, string>;
+  /** Whether this is the active shortcut target */
+  isActive?: boolean;
+  /** Which option is focused via keyboard */
+  focusedOptionIndex?: number;
 }
 
-export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preAnswers }: QuestionPromptProps) {
+export interface QuestionPromptHandle {
+  toggleOption: (index: number) => void;
+  navigateOption: (direction: 'up' | 'down') => void;
+  navigateQuestion: (direction: 'prev' | 'next') => void;
+  submit: () => void;
+  getOptionCount: () => number;
+  getActiveTab: () => string;
+}
+
+export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptProps>(function QuestionPrompt(
+  { sessionId, toolCallId, questions, answers: preAnswers, isActive = false, focusedOptionIndex = -1 },
+  ref,
+) {
   const transport = useTransport();
   const [selections, setSelections] = useState<Record<string, string | string[]>>({});
   const [otherText, setOtherText] = useState<Record<string, string>>({});
@@ -20,6 +38,11 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('0');
+
+  const activeQuestion = questions[Number(activeTab)] || questions[0];
+  const activeQIdx = Number(activeTab);
+  // Include the "Other" option in the count
+  const currentOptionCount = activeQuestion ? activeQuestion.options.length + 1 : 0;
 
   function handleSingleSelect(questionIdx: number, value: string) {
     setSelections(prev => ({ ...prev, [questionIdx]: value }));
@@ -102,6 +125,59 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
     }
   }
 
+  useImperativeHandle(ref, () => ({
+    toggleOption(index: number) {
+      if (!activeQuestion || submitted || submitting) return;
+      // If index is the last (Other option), toggle __other__
+      if (index === activeQuestion.options.length) {
+        if (activeQuestion.multiSelect) {
+          const current = (selections[activeQIdx] as string[]) || [];
+          if (current.includes('__other__')) {
+            handleMultiSelect(activeQIdx, '__other__', false);
+          } else {
+            handleMultiSelect(activeQIdx, '__other__', true);
+          }
+        } else {
+          handleSingleSelect(activeQIdx, '__other__');
+        }
+        return;
+      }
+      const opt = activeQuestion.options[index];
+      if (!opt) return;
+      if (activeQuestion.multiSelect) {
+        const current = (selections[activeQIdx] as string[]) || [];
+        if (current.includes(opt.label)) {
+          handleMultiSelect(activeQIdx, opt.label, false);
+        } else {
+          handleMultiSelect(activeQIdx, opt.label, true);
+        }
+      } else {
+        handleSingleSelect(activeQIdx, opt.label);
+      }
+    },
+    navigateOption(_direction: 'up' | 'down') {
+      // Handled externally via focusedOptionIndex prop
+    },
+    navigateQuestion(direction: 'prev' | 'next') {
+      if (questions.length <= 1) return;
+      const current = Number(activeTab);
+      if (direction === 'next' && current < questions.length - 1) {
+        setActiveTab(String(current + 1));
+      } else if (direction === 'prev' && current > 0) {
+        setActiveTab(String(current - 1));
+      }
+    },
+    submit() {
+      handleSubmit();
+    },
+    getOptionCount() {
+      return currentOptionCount;
+    },
+    getActiveTab() {
+      return activeTab;
+    },
+  }), [activeQuestion, activeQIdx, activeTab, selections, submitted, submitting, currentOptionCount]);
+
   // Collapsed submitted state
   if (submitted) {
     const hasSpecificAnswers = preAnswers
@@ -159,9 +235,11 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
             return (
               <label
                 key={oIdx}
-                className={`flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors ${
-                  isSelected ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
-                }`}
+                className={cn(
+                  'flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-all duration-150',
+                  isSelected ? 'bg-amber-500/15' : 'hover:bg-amber-500/5',
+                  isActive && focusedOptionIndex === oIdx && 'ring-1 ring-amber-500/50',
+                )}
               >
                 <input
                   type={q.multiSelect ? 'checkbox' : 'radio'}
@@ -178,7 +256,10 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
                   className="mt-0.5 accent-amber-500"
                 />
                 <div>
-                  <span className="font-medium">{opt.label}</span>
+                  <span className="font-medium">
+                    {opt.label}
+                    {isActive && oIdx < 9 && <Kbd className="ml-1.5">{oIdx + 1}</Kbd>}
+                  </span>
                   {opt.description && (
                     <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
                   )}
@@ -189,11 +270,13 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
 
           {/* "Other" free-text option */}
           <label
-            className={`flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors ${
+            className={cn(
+              'flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-all duration-150',
               q.multiSelect
                 ? ((selections[qIdx] as string[]) || []).includes('__other__') ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
-                : selections[qIdx] === '__other__' ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
-            }`}
+                : selections[qIdx] === '__other__' ? 'bg-amber-500/15' : 'hover:bg-amber-500/5',
+              isActive && focusedOptionIndex === q.options.length && 'ring-1 ring-amber-500/50',
+            )}
           >
             <input
               type={q.multiSelect ? 'checkbox' : 'radio'}
@@ -214,7 +297,10 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
               className="mt-0.5 accent-amber-500"
             />
             <div className="flex-1">
-              <span className="font-medium">Other</span>
+              <span className="font-medium">
+                Other
+                {isActive && q.options.length < 9 && <Kbd className="ml-1.5">{q.options.length + 1}</Kbd>}
+              </span>
               {(q.multiSelect
                 ? ((selections[qIdx] as string[]) || []).includes('__other__')
                 : selections[qIdx] === '__other__') && (
@@ -237,7 +323,10 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
 
   // Pending state: render full question form
   return (
-    <div className="my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-colors duration-200">
+    <div className={cn(
+      "my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-all duration-200",
+      isActive && "ring-2 ring-amber-500/30",
+    )}>
       {questions.length === 1 ? (
         // Single question — render directly without tabs
         renderQuestionContent(questions[0], 0)
@@ -256,6 +345,12 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
               </TabsTrigger>
             ))}
           </TabsList>
+          {isActive && questions.length > 1 && (
+            <div className="flex items-center gap-1 text-2xs text-muted-foreground mb-2">
+              <Kbd>&larr;</Kbd><Kbd>&rarr;</Kbd>
+              <span>navigate questions</span>
+            </div>
+          )}
           {questions.map((q, idx) => (
             <TabsContent key={idx} value={String(idx)} className="mt-0">
               {renderQuestionContent(q, idx)}
@@ -276,9 +371,12 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
         {submitting ? (
           <>Submitting...</>
         ) : (
-          <><Check className="size-(--size-icon-xs)" /> Submit</>
+          <>
+            <Check className="size-(--size-icon-xs)" /> Submit
+            {isActive && <Kbd className="ml-1.5">Enter</Kbd>}
+          </>
         )}
       </button>
     </div>
   );
-}
+});

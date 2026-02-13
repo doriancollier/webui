@@ -35,6 +35,8 @@ const { field } = parsed.data;
 
 ## SSE Streaming
 
+### POST /api/sessions/:id/messages
+
 The `POST /api/sessions/:id/messages` endpoint returns a `text/event-stream` response. Each SSE message follows the format:
 
 ```
@@ -44,6 +46,46 @@ data: {"type":"text_delta","data":{"text":"Hello"}}
 ```
 
 Event types are documented in the `StreamEventType` enum in the OpenAPI spec. The Scalar UI describes the event format but cannot render live SSE streams.
+
+**Headers:**
+- `X-Client-Id` (optional) - Client identifier for session locking. If another client holds the lock, returns 409 `SESSION_LOCKED`.
+
+**Responses:**
+- `200` - SSE stream with `text_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`, `tool_result`, `approval_required`, `error`, `done` events
+- `409` - Session locked by another client. Response body: `{ error: 'Session locked', code: 'SESSION_LOCKED', lockedBy: string, lockedAt: string }`
+
+### GET /api/sessions/:id/stream
+
+Persistent SSE connection for session sync. Broadcasts updates when the session's JSONL file changes (including CLI writes).
+
+**Query params:**
+- `cwd` (optional) - Working directory path
+
+**Headers:**
+- `Content-Type: text/event-stream`
+- `Cache-Control: no-cache`
+- `ETag` - File-based cache tag (mtime + size)
+
+**Events:**
+- `sync_connected` - Sent on initial connection. Data: `{ sessionId: string }`
+- `sync_update` - Sent when JSONL file changes. Data: `{ sessionId: string, timestamp: string }`
+
+**Usage:** Clients should close the connection when no longer viewing the session.
+
+### GET /api/sessions/:id/messages
+
+Fetch message history for a session.
+
+**Query params:**
+- `cwd` (optional) - Working directory path
+
+**Headers:**
+- `If-None-Match` (optional) - ETag from previous response. Returns 304 if content unchanged.
+
+**Responses:**
+- `200` - Message array with `ETag` header (based on file mtime + size)
+- `304` - Not Modified (when `If-None-Match` matches current `ETag`)
+- `404` - Session not found
 
 ## Validation Errors
 

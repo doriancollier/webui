@@ -23,6 +23,7 @@
     "@lifeos/shared": "*",
     "@ngrok/ngrok": "^1.7.0",
     "@scalar/express-api-reference": "^0.8.40",
+    "chokidar": "^4.0.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
     "express": "^4.21.0",
