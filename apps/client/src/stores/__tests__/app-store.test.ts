@@ -8,13 +8,13 @@ describe('AppStore', () => {
 
   it('toggleSidebar flips state', async () => {
     const { useAppStore } = await import('../../stores/app-store');
-    expect(useAppStore.getState().sidebarOpen).toBe(true);
-
-    useAppStore.getState().toggleSidebar();
     expect(useAppStore.getState().sidebarOpen).toBe(false);
 
     useAppStore.getState().toggleSidebar();
     expect(useAppStore.getState().sidebarOpen).toBe(true);
+
+    useAppStore.getState().toggleSidebar();
+    expect(useAppStore.getState().sidebarOpen).toBe(false);
   });
 
   it('setSidebarOpen sets explicit value', async () => {
@@ -84,5 +84,23 @@ describe('AppStore', () => {
 
     useAppStore.getState().clearContextFiles();
     expect(useAppStore.getState().contextFiles).toEqual([]);
+  });
+
+  it('defaults autoHideToolCalls to true', async () => {
+    const { useAppStore } = await import('../../stores/app-store');
+    expect(useAppStore.getState().autoHideToolCalls).toBe(true);
+  });
+
+  it('persists autoHideToolCalls to localStorage', async () => {
+    const { useAppStore } = await import('../../stores/app-store');
+    useAppStore.getState().setAutoHideToolCalls(false);
+    expect(localStorage.getItem('gateway-auto-hide-tool-calls')).toBe('false');
+  });
+
+  it('resets autoHideToolCalls to true on resetPreferences', async () => {
+    const { useAppStore } = await import('../../stores/app-store');
+    useAppStore.getState().setAutoHideToolCalls(false);
+    useAppStore.getState().resetPreferences();
+    expect(useAppStore.getState().autoHideToolCalls).toBe(true);
   });
 });

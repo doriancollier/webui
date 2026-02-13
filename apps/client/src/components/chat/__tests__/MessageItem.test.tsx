@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { render, screen, cleanup, act } from '@testing-library/react';
 import { MessageItem } from '../MessageItem';
+import { useAppStore } from '../../../stores/app-store';
 import type { MessageGrouping } from '../../../hooks/use-chat-session';
 
 afterEach(() => {
   cleanup();
+});
+
+beforeEach(() => {
+  // Disable auto-hide so existing tests see all tool calls
+  useAppStore.getState().setAutoHideToolCalls(false);
 });
 
 // Mock motion/react to render plain elements (no animation delays)
@@ -214,5 +220,71 @@ describe('MessageItem', () => {
     const { container } = render(<MessageItem message={msg} sessionId="test-session" grouping={firstGrouping} />);
     const el = container.firstElementChild;
     expect(el?.className).toContain('pt-4');
+  });
+});
+
+describe('Auto-hide tool calls', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    cleanup();
+  });
+
+  const toolCallPart = (status: string) => ({
+    type: 'tool_call' as const,
+    toolCallId: 'tc-1',
+    toolName: 'Read',
+    input: '{}',
+    status: status as 'pending' | 'running' | 'complete' | 'error',
+  });
+
+  const makeMsg = (status: string) => ({
+    id: '1',
+    role: 'assistant' as const,
+    content: 'text',
+    parts: [
+      { type: 'text' as const, text: 'text' },
+      toolCallPart(status),
+    ],
+    timestamp: new Date().toISOString(),
+  });
+
+  it('hides tool calls that are already complete on mount when autoHide is ON', () => {
+    useAppStore.getState().setAutoHideToolCalls(true);
+    render(<MessageItem message={makeMsg('complete')} sessionId="s" grouping={onlyGrouping} />);
+    expect(screen.queryByText('Read ...')).toBeNull();
+  });
+
+  it('shows tool calls during streaming, hides 5s after completion', () => {
+    useAppStore.getState().setAutoHideToolCalls(true);
+    const msg = makeMsg('running');
+    const { rerender } = render(<MessageItem message={msg} sessionId="s" grouping={onlyGrouping} />);
+    expect(screen.getByText('Read ...')).toBeDefined();
+
+    // Transition to complete
+    const completedMsg = makeMsg('complete');
+    rerender(<MessageItem message={completedMsg} sessionId="s" grouping={onlyGrouping} />);
+    // Still visible immediately after completion
+    expect(screen.getByText('Read ...')).toBeDefined();
+
+    // Advance past 5s timer
+    act(() => { vi.advanceTimersByTime(5_000); });
+    expect(screen.queryByText('Read ...')).toBeNull();
+  });
+
+  it('never hides tool calls with error status', () => {
+    useAppStore.getState().setAutoHideToolCalls(true);
+    render(<MessageItem message={makeMsg('error')} sessionId="s" grouping={onlyGrouping} />);
+    act(() => { vi.advanceTimersByTime(10_000); });
+    expect(screen.getByText('Read ...')).toBeDefined();
+  });
+
+  it('shows all tool calls when autoHide is OFF', () => {
+    useAppStore.getState().setAutoHideToolCalls(false);
+    render(<MessageItem message={makeMsg('complete')} sessionId="s" grouping={onlyGrouping} />);
+    expect(screen.getByText('Read ...')).toBeDefined();
   });
 });

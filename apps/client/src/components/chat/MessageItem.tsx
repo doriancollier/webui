@@ -1,11 +1,74 @@
-import { motion } from 'motion/react';
+import { useRef, useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { ChevronRight } from 'lucide-react';
 import type { ChatMessage, MessageGrouping } from '../../hooks/use-chat-session';
 import { StreamingText } from './StreamingText';
 import { ToolCallCard } from './ToolCallCard';
 import { ToolApproval } from './ToolApproval';
 import { QuestionPrompt } from './QuestionPrompt';
+import { useAppStore } from '../../stores/app-store';
 import { cn } from '../../lib/utils';
+
+function useToolCallVisibility(
+  status: string,
+  autoHide: boolean,
+): boolean {
+  const initialStatusRef = useRef(status);
+  const [visible, setVisible] = useState(
+    !(autoHide && initialStatusRef.current === 'complete')
+  );
+
+  useEffect(() => {
+    if (
+      autoHide &&
+      status === 'complete' &&
+      initialStatusRef.current !== 'complete'
+    ) {
+      const timer = setTimeout(() => setVisible(false), 5_000);
+      return () => clearTimeout(timer);
+    }
+  }, [status, autoHide]);
+
+  if (!autoHide) return true;
+
+  return visible;
+}
+
+function AutoHideToolCall({
+  part,
+  autoHide,
+  expandToolCalls,
+}: {
+  part: { toolCallId: string; toolName: string; input?: string; result?: string; status: 'pending' | 'running' | 'complete' | 'error' };
+  autoHide: boolean;
+  expandToolCalls: boolean;
+}) {
+  const visible = useToolCallVisibility(part.status, autoHide);
+
+  return (
+    <AnimatePresence>
+      {visible && (
+        <motion.div
+          key={part.toolCallId}
+          exit={{ height: 0, opacity: 0 }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+          className="overflow-hidden"
+        >
+          <ToolCallCard
+            toolCall={{
+              toolCallId: part.toolCallId,
+              toolName: part.toolName,
+              input: part.input || '',
+              result: part.result,
+              status: part.status,
+            }}
+            defaultExpanded={expandToolCalls}
+          />
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
 
 interface MessageItemProps {
   message: ChatMessage;
@@ -25,6 +88,7 @@ function formatTime(timestamp: string): string {
 
 export function MessageItem({ message, grouping, sessionId, isNew = false, isStreaming = false }: MessageItemProps) {
   const isUser = message.role === 'user';
+  const { showTimestamps, expandToolCalls, autoHideToolCalls } = useAppStore();
   const { position, groupIndex } = grouping;
   const showIndicator = position === 'only' || position === 'first';
   const isGroupStart = position === 'only' || position === 'first';
@@ -59,7 +123,12 @@ export function MessageItem({ message, grouping, sessionId, isNew = false, isStr
         <div className="absolute inset-x-0 top-0 h-px bg-border/20" />
       )}
       {message.timestamp && (
-        <span className="absolute right-4 top-1 text-xs text-muted-foreground/0 group-hover:text-muted-foreground/60 max-md:text-muted-foreground/40 transition-colors duration-150">
+        <span className={cn(
+          'hidden sm:inline absolute right-4 top-1 text-xs transition-colors duration-150',
+          showTimestamps
+            ? 'text-muted-foreground/60'
+            : 'text-muted-foreground/0 group-hover:text-muted-foreground/60'
+        )}>
           {formatTime(message.timestamp)}
         </span>
       )}
@@ -111,15 +180,11 @@ export function MessageItem({ message, grouping, sessionId, isNew = false, isStr
               );
             }
             return (
-              <ToolCallCard
+              <AutoHideToolCall
                 key={part.toolCallId}
-                toolCall={{
-                  toolCallId: part.toolCallId,
-                  toolName: part.toolName,
-                  input: part.input || '',
-                  result: part.result,
-                  status: part.status,
-                }}
+                part={part}
+                autoHide={autoHideToolCalls}
+                expandToolCalls={expandToolCalls}
               />
             );
           })
