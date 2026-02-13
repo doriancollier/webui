@@ -34,6 +34,16 @@ interface AppState {
   setExpandToolCalls: (v: boolean) => void;
   autoHideToolCalls: boolean;
   setAutoHideToolCalls: (v: boolean) => void;
+  showStatusBarCwd: boolean;
+  setShowStatusBarCwd: (v: boolean) => void;
+  showStatusBarPermission: boolean;
+  setShowStatusBarPermission: (v: boolean) => void;
+  showStatusBarModel: boolean;
+  setShowStatusBarModel: (v: boolean) => void;
+  showStatusBarCost: boolean;
+  setShowStatusBarCost: (v: boolean) => void;
+  showStatusBarContext: boolean;
+  setShowStatusBarContext: (v: boolean) => void;
   verboseLogging: boolean;
   setVerboseLogging: (v: boolean) => void;
   fontSize: 'small' | 'medium' | 'large';
@@ -107,6 +117,51 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
     set({ autoHideToolCalls: v });
   },
 
+  showStatusBarCwd: (() => {
+    try { return localStorage.getItem('gateway-show-status-bar-cwd') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowStatusBarCwd: (v) => {
+    try { localStorage.setItem('gateway-show-status-bar-cwd', String(v)); } catch {}
+    set({ showStatusBarCwd: v });
+  },
+
+  showStatusBarPermission: (() => {
+    try { return localStorage.getItem('gateway-show-status-bar-permission') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowStatusBarPermission: (v) => {
+    try { localStorage.setItem('gateway-show-status-bar-permission', String(v)); } catch {}
+    set({ showStatusBarPermission: v });
+  },
+
+  showStatusBarModel: (() => {
+    try { return localStorage.getItem('gateway-show-status-bar-model') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowStatusBarModel: (v) => {
+    try { localStorage.setItem('gateway-show-status-bar-model', String(v)); } catch {}
+    set({ showStatusBarModel: v });
+  },
+
+  showStatusBarCost: (() => {
+    try { return localStorage.getItem('gateway-show-status-bar-cost') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowStatusBarCost: (v) => {
+    try { localStorage.setItem('gateway-show-status-bar-cost', String(v)); } catch {}
+    set({ showStatusBarCost: v });
+  },
+
+  showStatusBarContext: (() => {
+    try { return localStorage.getItem('gateway-show-status-bar-context') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowStatusBarContext: (v) => {
+    try { localStorage.setItem('gateway-show-status-bar-context', String(v)); } catch {}
+    set({ showStatusBarContext: v });
+  },
+
   verboseLogging: (() => {
     try { return localStorage.getItem('gateway-verbose-logging') === 'true'; }
     catch { return false; }
@@ -141,6 +196,11 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       localStorage.removeItem('gateway-auto-hide-tool-calls');
       localStorage.removeItem('gateway-verbose-logging');
       localStorage.removeItem('gateway-font-size');
+      localStorage.removeItem('gateway-show-status-bar-cwd');
+      localStorage.removeItem('gateway-show-status-bar-permission');
+      localStorage.removeItem('gateway-show-status-bar-model');
+      localStorage.removeItem('gateway-show-status-bar-cost');
+      localStorage.removeItem('gateway-show-status-bar-context');
     } catch {}
     document.documentElement.style.setProperty('--user-font-scale', '1');
     set({
@@ -150,6 +210,11 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       verboseLogging: false,
       devtoolsOpen: false,
       fontSize: 'medium',
+      showStatusBarCwd: true,
+      showStatusBarPermission: true,
+      showStatusBarModel: true,
+      showStatusBarCost: true,
+      showStatusBarContext: true,
     });
   },
 

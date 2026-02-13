@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Transport } from '@lifeos/shared/transport';
 import { TransportProvider } from '../../../contexts/TransportContext';
@@ -33,6 +33,14 @@ vi.mock('@radix-ui/react-dialog', async () => {
     Portal: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   };
 });
+
+// Mock Radix Tabs to render all tab content (no hide/show behavior)
+vi.mock('@radix-ui/react-tabs', () => ({
+  Root: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => <div {...props}>{children}</div>,
+  List: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => <div role="tablist" {...props}>{children}</div>,
+  Trigger: ({ children, value, ...props }: Record<string, unknown> & { children?: React.ReactNode; value?: string }) => <button role="tab" data-value={value} {...props}>{children}</button>,
+  Content: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => <div role="tabpanel" {...props}>{children}</div>,
+}));
 
 beforeAll(() => {
   // matchMedia mock for useTheme
@@ -134,7 +142,7 @@ describe('SettingsDialog', () => {
       <SettingsDialog open={true} onOpenChange={vi.fn()} />,
       { wrapper: createWrapper(transport) },
     );
-    // Wait for config to load
+    // All tab content is rendered (tabs are mocked to show all content)
     const version = await screen.findByText('1.0.0');
     expect(version).toBeDefined();
     expect(screen.getByText('6942')).toBeDefined();
@@ -171,5 +179,60 @@ describe('SettingsDialog', () => {
     // 8130s = 2h 15m 30s
     const uptime = await screen.findByText('2h 15m 30s');
     expect(uptime).toBeDefined();
+  });
+
+  // Verifies tab navigation structure renders correctly
+  it('renders three tabs: Preferences, Status Bar, Server', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    expect(screen.getByRole('tab', { name: /preferences/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /status bar/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /server/i })).toBeDefined();
+  });
+
+  // Verifies Status Bar tab shows toggle switches
+  it('switches to Status Bar tab and shows toggle switches', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /status bar/i }));
+    // All tab content is rendered (tabs are mocked to show all content)
+    expect(screen.getByText(/show directory/i)).toBeDefined();
+    expect(screen.getByText(/show permission mode/i)).toBeDefined();
+    expect(screen.getByText(/show model/i)).toBeDefined();
+    expect(screen.getByText(/show cost/i)).toBeDefined();
+    expect(screen.getByText(/show context usage/i)).toBeDefined();
+  });
+
+  // Verifies status bar toggles default to ON
+  it('has all status bar toggles enabled by default', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /status bar/i }));
+    // All tab panels are rendered (tabs are mocked). Find the Status Bar panel
+    // by locating the "Show directory" label and walking up to its tabpanel.
+    const statusBarLabel = screen.getByText(/show directory/i);
+    const statusBarPanel = statusBarLabel.closest('[role="tabpanel"]')!;
+    const switches = statusBarPanel.querySelectorAll('[role="switch"]');
+    expect(switches.length).toBe(5);
+    switches.forEach((sw) => {
+      expect(sw.getAttribute('data-state')).toBe('checked');
+    });
+  });
+
+  // Verifies server tab content is accessible
+  it('switches to Server tab and shows config', async () => {
+    const transport = createMockTransport();
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper(transport) },
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /server/i }));
+    await screen.findByText(/version/i);
   });
 });

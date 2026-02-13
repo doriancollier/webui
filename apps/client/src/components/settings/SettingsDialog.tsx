@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/responsive-dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -29,6 +29,7 @@ interface SettingsDialogProps {
 
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
+  const [activeTab, setActiveTab] = useState('preferences');
   const {
     showTimestamps, setShowTimestamps,
     expandToolCalls, setExpandToolCalls,
@@ -37,6 +38,11 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     verboseLogging, setVerboseLogging,
     fontSize, setFontSize,
     resetPreferences,
+    showStatusBarCwd, setShowStatusBarCwd,
+    showStatusBarPermission, setShowStatusBarPermission,
+    showStatusBarModel, setShowStatusBarModel,
+    showStatusBarCost, setShowStatusBarCost,
+    showStatusBarContext, setShowStatusBarContext,
   } = useAppStore();
 
   const transport = useTransport();
@@ -54,130 +60,156 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           <ResponsiveDialogTitle className="text-sm font-medium">Settings</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 
-        <div className="overflow-y-auto flex-1 p-4 space-y-6">
-          {/* Preferences Section */}
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
-              <button
-                onClick={() => { resetPreferences(); setTheme('system'); }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
-              >
-                Reset to defaults
-              </button>
-            </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
+          <TabsList className="grid w-full grid-cols-3 mx-4 mt-3" style={{ width: 'calc(100% - 2rem)' }}>
+            <TabsTrigger value="preferences">Preferences</TabsTrigger>
+            <TabsTrigger value="statusBar">Status Bar</TabsTrigger>
+            <TabsTrigger value="server">Server</TabsTrigger>
+          </TabsList>
 
-            <SettingRow label="Theme" description="Choose your preferred color scheme">
-              <Select value={theme} onValueChange={setTheme}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="light">Light</SelectItem>
-                  <SelectItem value="dark">Dark</SelectItem>
-                  <SelectItem value="system">System</SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingRow>
+          <div className="overflow-y-auto flex-1 p-4 min-h-[280px]">
+            <TabsContent value="preferences" className="mt-0 space-y-6">
+              {/* Preferences Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+                  <button
+                    onClick={() => { resetPreferences(); setTheme('system'); }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+                  >
+                    Reset to defaults
+                  </button>
+                </div>
 
-            <SettingRow label="Font size" description="Adjust the text size across the interface">
-              <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="small">Small</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="large">Large</SelectItem>
-                </SelectContent>
-              </Select>
-            </SettingRow>
+                <SettingRow label="Theme" description="Choose your preferred color scheme">
+                  <Select value={theme} onValueChange={setTheme}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="light">Light</SelectItem>
+                      <SelectItem value="dark">Dark</SelectItem>
+                      <SelectItem value="system">System</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </SettingRow>
 
-            <SettingRow label="Show timestamps" description="Display message timestamps in chat">
-              <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
-            </SettingRow>
+                <SettingRow label="Font size" description="Adjust the text size across the interface">
+                  <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
+                    <SelectTrigger className="w-32">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="small">Small</SelectItem>
+                      <SelectItem value="medium">Medium</SelectItem>
+                      <SelectItem value="large">Large</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </SettingRow>
 
-            <SettingRow label="Expand tool calls" description="Auto-expand tool call details in messages">
-              <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
-            </SettingRow>
+                <SettingRow label="Show timestamps" description="Display message timestamps in chat">
+                  <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
+                </SettingRow>
 
-            <SettingRow label="Auto-hide tool calls" description="Fade out completed tool calls after a few seconds">
-              <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
-            </SettingRow>
+                <SettingRow label="Expand tool calls" description="Auto-expand tool call details in messages">
+                  <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
+                </SettingRow>
 
-            <SettingRow label="Show dev tools" description="Enable developer tools panel">
-              <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
-            </SettingRow>
+                <SettingRow label="Auto-hide tool calls" description="Fade out completed tool calls after a few seconds">
+                  <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
+                </SettingRow>
 
-            <SettingRow label="Verbose logging" description="Show detailed logs in the console">
-              <Switch checked={verboseLogging} onCheckedChange={setVerboseLogging} />
-            </SettingRow>
-          </div>
+                <SettingRow label="Show dev tools" description="Enable developer tools panel">
+                  <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
+                </SettingRow>
 
-          <Separator />
-
-          {/* Server Section */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Server</h3>
-
-            {isLoading ? (
-              <div className="space-y-2">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center justify-between py-1">
-                    <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-                    <div className="h-4 w-16 rounded bg-muted animate-pulse" />
-                  </div>
-                ))}
+                <SettingRow label="Verbose logging" description="Show detailed logs in the console">
+                  <Switch checked={verboseLogging} onCheckedChange={setVerboseLogging} />
+                </SettingRow>
               </div>
-            ) : config ? (
-              <div className="space-y-1">
-                <ConfigRow label="Version" value={config.version} />
-                <ConfigRow label="Port" value={String(config.port)} />
-                <ConfigRow label="Uptime" value={formatUptime(config.uptime)} />
-                <ConfigRow label="Working Directory" value={config.workingDirectory} mono truncate />
-                <ConfigRow label="Node.js" value={config.nodeVersion} />
-                <ConfigRow
-                  label="Claude CLI"
-                  value={config.claudeCliPath || 'Not found'}
-                  mono
-                  truncate
-                  muted={!config.claudeCliPath}
-                />
+            </TabsContent>
 
-                <ConfigBadgeRow
-                  label="Tunnel"
-                  value={config.tunnel.enabled ? 'Enabled' : 'Disabled'}
-                  variant={config.tunnel.enabled ? 'default' : 'secondary'}
-                />
+            <TabsContent value="statusBar" className="mt-0 space-y-4">
+              <SettingRow label="Show directory" description="Display current working directory">
+                <Switch checked={showStatusBarCwd} onCheckedChange={setShowStatusBarCwd} />
+              </SettingRow>
+              <SettingRow label="Show permission mode" description="Display current permission setting">
+                <Switch checked={showStatusBarPermission} onCheckedChange={setShowStatusBarPermission} />
+              </SettingRow>
+              <SettingRow label="Show model" description="Display selected AI model">
+                <Switch checked={showStatusBarModel} onCheckedChange={setShowStatusBarModel} />
+              </SettingRow>
+              <SettingRow label="Show cost" description="Display session cost in USD">
+                <Switch checked={showStatusBarCost} onCheckedChange={setShowStatusBarCost} />
+              </SettingRow>
+              <SettingRow label="Show context usage" description="Display context window utilization">
+                <Switch checked={showStatusBarContext} onCheckedChange={setShowStatusBarContext} />
+              </SettingRow>
+            </TabsContent>
 
-                {config.tunnel.enabled && (
-                  <>
-                    <ConfigBadgeRow
-                      label="Tunnel Status"
-                      value={config.tunnel.connected ? 'Connected' : 'Disconnected'}
-                      variant={config.tunnel.connected ? 'default' : 'secondary'}
-                    />
+            <TabsContent value="server" className="mt-0 space-y-3">
+              {/* Server Section */}
+              <h3 className="text-sm font-semibold text-foreground">Server</h3>
 
-                    {config.tunnel.url && (
-                      <ConfigRow label="Tunnel URL" value={config.tunnel.url} mono />
-                    )}
+              {isLoading ? (
+                <div className="space-y-2">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center justify-between py-1">
+                      <div className="h-4 w-24 rounded bg-muted animate-pulse" />
+                      <div className="h-4 w-16 rounded bg-muted animate-pulse" />
+                    </div>
+                  ))}
+                </div>
+              ) : config ? (
+                <div className="space-y-1">
+                  <ConfigRow label="Version" value={config.version} />
+                  <ConfigRow label="Port" value={String(config.port)} />
+                  <ConfigRow label="Uptime" value={formatUptime(config.uptime)} />
+                  <ConfigRow label="Working Directory" value={config.workingDirectory} mono truncate />
+                  <ConfigRow label="Node.js" value={config.nodeVersion} />
+                  <ConfigRow
+                    label="Claude CLI"
+                    value={config.claudeCliPath || 'Not found'}
+                    mono
+                    truncate
+                    muted={!config.claudeCliPath}
+                  />
 
-                    <ConfigRow
-                      label="Tunnel Auth"
-                      value={config.tunnel.authEnabled ? 'Enabled' : 'Disabled'}
-                    />
+                  <ConfigBadgeRow
+                    label="Tunnel"
+                    value={config.tunnel.enabled ? 'Enabled' : 'Disabled'}
+                    variant={config.tunnel.enabled ? 'default' : 'secondary'}
+                  />
 
-                    <ConfigBadgeRow
-                      label="ngrok Token"
-                      value={config.tunnel.tokenConfigured ? 'Configured' : 'Not configured'}
-                      variant={config.tunnel.tokenConfigured ? 'default' : 'secondary'}
-                    />
-                  </>
-                )}
-              </div>
-            ) : null}
+                  {config.tunnel.enabled && (
+                    <>
+                      <ConfigBadgeRow
+                        label="Tunnel Status"
+                        value={config.tunnel.connected ? 'Connected' : 'Disconnected'}
+                        variant={config.tunnel.connected ? 'default' : 'secondary'}
+                      />
+
+                      {config.tunnel.url && (
+                        <ConfigRow label="Tunnel URL" value={config.tunnel.url} mono />
+                      )}
+
+                      <ConfigRow
+                        label="Tunnel Auth"
+                        value={config.tunnel.authEnabled ? 'Enabled' : 'Disabled'}
+                      />
+
+                      <ConfigBadgeRow
+                        label="ngrok Token"
+                        value={config.tunnel.tokenConfigured ? 'Configured' : 'Not configured'}
+                        variant={config.tunnel.tokenConfigured ? 'default' : 'secondary'}
+                      />
+                    </>
+                  )}
+                </div>
+              ) : null}
+            </TabsContent>
           </div>
-        </div>
+        </Tabs>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );

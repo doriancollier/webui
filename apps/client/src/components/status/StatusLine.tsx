@@ -1,4 +1,6 @@
+import React from 'react';
 import { useSessionStatus } from '../../hooks/use-session-status';
+import { useAppStore } from '../../stores/app-store';
 import { CwdItem } from './CwdItem';
 import { PermissionModeItem } from './PermissionModeItem';
 import { ModelItem } from './ModelItem';
@@ -14,6 +16,45 @@ interface StatusLineProps {
 
 export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLineProps) {
   const status = useSessionStatus(sessionId, sessionStatus, isStreaming);
+  const {
+    showStatusBarCwd,
+    showStatusBarPermission,
+    showStatusBarModel,
+    showStatusBarCost,
+    showStatusBarContext,
+  } = useAppStore();
+
+  const items: React.ReactNode[] = [];
+
+  if (showStatusBarCwd && status.cwd) {
+    items.push(<CwdItem key="cwd" cwd={status.cwd} />);
+  }
+  if (showStatusBarPermission) {
+    items.push(
+      <PermissionModeItem
+        key="permission"
+        mode={status.permissionMode}
+        onChangeMode={(mode) => status.updateSession({ permissionMode: mode })}
+      />
+    );
+  }
+  if (showStatusBarModel) {
+    items.push(
+      <ModelItem
+        key="model"
+        model={status.model}
+        onChangeModel={(model) => status.updateSession({ model })}
+      />
+    );
+  }
+  if (showStatusBarCost && status.costUsd !== null) {
+    items.push(<CostItem key="cost" costUsd={status.costUsd} />);
+  }
+  if (showStatusBarContext && status.contextPercent !== null) {
+    items.push(<ContextItem key="context" percent={status.contextPercent} />);
+  }
+
+  if (items.length === 0) return null;
 
   return (
     <div
@@ -22,31 +63,12 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
       aria-live="polite"
       className="flex flex-wrap items-center justify-center sm:justify-start gap-2 px-1 pt-2 text-xs text-muted-foreground whitespace-nowrap"
     >
-      {status.cwd && (
-        <>
-          <CwdItem cwd={status.cwd} />
-          <Separator />
-        </>
-      )}
-      <PermissionModeItem
-        mode={status.permissionMode}
-        onChangeMode={(mode) => status.updateSession({ permissionMode: mode })}
-      />
-      <Separator />
-      <ModelItem
-        model={status.model}
-        onChangeModel={(model) => status.updateSession({ model })}
-      />
-      <Separator />
-      {status.costUsd !== null && (
-        <>
-          <CostItem costUsd={status.costUsd} />
-          <Separator />
-        </>
-      )}
-      {status.contextPercent !== null && (
-        <ContextItem percent={status.contextPercent} />
-      )}
+      {items.map((item, i) => (
+        <React.Fragment key={i}>
+          {i > 0 && <Separator />}
+          {item}
+        </React.Fragment>
+      ))}
     </div>
   );
 }
