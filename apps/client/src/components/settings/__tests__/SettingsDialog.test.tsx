@@ -95,6 +95,8 @@ function createMockTransport(configOverrides?: Partial<typeof mockConfig>): Tran
     updateSession: vi.fn(),
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
+    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
+    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
     getConfig: vi.fn().mockResolvedValue({ ...mockConfig, ...configOverrides }),
   };
 }
@@ -219,7 +221,7 @@ describe('SettingsDialog', () => {
     const statusBarLabel = screen.getByText(/show directory/i);
     const statusBarPanel = statusBarLabel.closest('[role="tabpanel"]')!;
     const switches = statusBarPanel.querySelectorAll('[role="switch"]');
-    expect(switches.length).toBe(5);
+    expect(switches.length).toBe(6);
     switches.forEach((sw) => {
       expect(sw.getAttribute('data-state')).toBe('checked');
     });
@@ -234,5 +236,49 @@ describe('SettingsDialog', () => {
     );
     fireEvent.click(screen.getByRole('tab', { name: /server/i }));
     await screen.findByText(/version/i);
+  });
+
+  it('displays "Show shortcut chips" toggle in Preferences tab', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    expect(screen.getByText('Show shortcut chips')).toBeDefined();
+    expect(screen.getByText('Display shortcut hints below the message input')).toBeDefined();
+  });
+
+  it('shows "Show git status" toggle in Status Bar tab', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /status bar/i }));
+    expect(screen.getByText('Show git status')).toBeDefined();
+    expect(screen.getByText('Display branch name and change count')).toBeDefined();
+  });
+
+  it('has git status toggle enabled by default', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    fireEvent.click(screen.getByRole('tab', { name: /status bar/i }));
+    const label = screen.getByText('Show git status');
+    const row = label.closest('.flex')!;
+    const toggle = row.querySelector('[role="switch"]');
+    expect(toggle).toBeDefined();
+    expect(toggle?.getAttribute('data-state')).toBe('checked');
+  });
+
+  it('has shortcut chips toggle enabled by default', () => {
+    render(
+      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
+      { wrapper: createWrapper() },
+    );
+    const label = screen.getByText('Show shortcut chips');
+    const row = label.closest('.flex')!;
+    const toggle = row.querySelector('[role="switch"]');
+    expect(toggle).toBeDefined();
+    expect(toggle?.getAttribute('data-state')).toBe('checked');
   });
 });

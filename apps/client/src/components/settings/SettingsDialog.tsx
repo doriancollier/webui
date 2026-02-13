@@ -43,6 +43,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     showStatusBarModel, setShowStatusBarModel,
     showStatusBarCost, setShowStatusBarCost,
     showStatusBarContext, setShowStatusBarContext,
+    showStatusBarGit, setShowStatusBarGit,
+    showShortcutChips, setShowShortcutChips,
   } = useAppStore();
 
   const transport = useTransport();
@@ -119,6 +121,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
                 </SettingRow>
 
+                <SettingRow label="Show shortcut chips" description="Display shortcut hints below the message input">
+                  <Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />
+                </SettingRow>
+
                 <SettingRow label="Show dev tools" description="Enable developer tools panel">
                   <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
                 </SettingRow>
@@ -132,6 +138,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <TabsContent value="statusBar" className="mt-0 space-y-4">
               <SettingRow label="Show directory" description="Display current working directory">
                 <Switch checked={showStatusBarCwd} onCheckedChange={setShowStatusBarCwd} />
+              </SettingRow>
+              <SettingRow label="Show git status" description="Display branch name and change count">
+                <Switch checked={showStatusBarGit} onCheckedChange={setShowStatusBarGit} />
               </SettingRow>
               <SettingRow label="Show permission mode" description="Display current permission setting">
                 <Switch checked={showStatusBarPermission} onCheckedChange={setShowStatusBarPermission} />

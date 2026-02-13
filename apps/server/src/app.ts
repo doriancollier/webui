@@ -8,6 +8,8 @@ import commandRoutes from './routes/commands.js';
 import healthRoutes from './routes/health.js';
 import directoryRoutes from './routes/directory.js';
 import configRoutes from './routes/config.js';
+import fileRoutes from './routes/files.js';
+import gitRoutes from './routes/git.js';
 import { generateOpenAPISpec } from './services/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
 
@@ -25,6 +27,8 @@ export function createApp() {
   app.use('/api/health', healthRoutes);
   app.use('/api/directory', directoryRoutes);
   app.use('/api/config', configRoutes);
+  app.use('/api/files', fileRoutes);
+  app.use('/api/git', gitRoutes);
 
   // OpenAPI spec + interactive docs
   const spec = generateOpenAPISpec();

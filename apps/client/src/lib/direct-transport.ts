@@ -9,8 +9,11 @@ import type {
   PermissionMode,
   HistoryMessage,
   CommandRegistry,
+  FileListResponse,
   TaskItem,
   ServerConfig,
+  GitStatusResponse,
+  GitStatusError,
 } from '@lifeos/shared/types';
 
 export interface DirectTransportServices {
@@ -47,6 +50,12 @@ export interface DirectTransportServices {
   };
   commandRegistry: {
     getCommands(forceRefresh?: boolean): Promise<CommandRegistry>;
+  };
+  fileLister?: {
+    listFiles(cwd: string): Promise<{ files: string[]; truncated: boolean; total: number }>;
+  };
+  gitStatus?: {
+    getGitStatus(cwd: string): Promise<GitStatusResponse | GitStatusError>;
   };
   vaultRoot: string;
 }
@@ -207,12 +216,26 @@ export class DirectTransport implements Transport {
     return { path: this.services.vaultRoot };
   }
 
-  async getCommands(refresh?: boolean): Promise<CommandRegistry> {
+  async getCommands(refresh?: boolean, _cwd?: string): Promise<CommandRegistry> {
     return this.services.commandRegistry.getCommands(refresh);
   }
 
   async health(): Promise<HealthResponse> {
     return { status: 'ok', version: '0.1.0', uptime: 0 };
+  }
+
+  async listFiles(cwd: string): Promise<FileListResponse> {
+    if (this.services.fileLister) {
+      return this.services.fileLister.listFiles(cwd);
+    }
+    return { files: [], truncated: false, total: 0 };
+  }
+
+  async getGitStatus(cwd?: string): Promise<GitStatusResponse | GitStatusError> {
+    if (this.services.gitStatus) {
+      return this.services.gitStatus.getGitStatus(cwd || this.services.vaultRoot);
+    }
+    return { error: 'not_git_repo' as const };
   }
 
   async getConfig(): Promise<ServerConfig> {

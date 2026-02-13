@@ -30,7 +30,11 @@ export type {
   DirectoryEntry,
   CommandEntry,
   CommandRegistry,
+  FileListQuery,
+  FileListResponse,
   HealthResponse,
   TunnelStatus,
   ServerConfig,
+  GitStatusResponse,
+  GitStatusError,
 } from './schemas.js';

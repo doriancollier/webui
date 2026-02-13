@@ -7,6 +7,8 @@ import { PermissionModeItem } from './PermissionModeItem';
 import { ModelItem } from './ModelItem';
 import { CostItem } from './CostItem';
 import { ContextItem } from './ContextItem';
+import { GitStatusItem } from './GitStatusItem';
+import { useGitStatus } from '../../hooks/use-git-status';
 import type { SessionStatusEvent } from '@lifeos/shared/types';
 
 interface StatusLineProps {
@@ -25,13 +27,18 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
     showStatusBarModel,
     showStatusBarCost,
     showStatusBarContext,
+    showStatusBarGit,
   } = useAppStore();
+  const { data: gitStatus } = useGitStatus(status.cwd);
 
   // Build ordered list of visible item entries with stable keys
   const entries: { key: string; node: React.ReactNode }[] = [];
 
   if (showStatusBarCwd && status.cwd) {
     entries.push({ key: 'cwd', node: <CwdItem cwd={status.cwd} /> });
+  }
+  if (showStatusBarGit) {
+    entries.push({ key: 'git', node: <GitStatusItem data={gitStatus} /> });
   }
   if (showStatusBarPermission) {
     entries.push({

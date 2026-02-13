@@ -131,6 +131,7 @@ export type ListSessionsQuery = z.infer<typeof ListSessionsQuerySchema>;
 export const CommandsQuerySchema = z
   .object({
     refresh: z.enum(['true', 'false']).optional(),
+    cwd: z.string().optional(),
   })
   .openapi('CommandsQuery');
 
@@ -349,6 +350,26 @@ export const CommandRegistrySchema = z
 
 export type CommandRegistry = z.infer<typeof CommandRegistrySchema>;
 
+// === File Listing Types ===
+
+export const FileListQuerySchema = z
+  .object({
+    cwd: z.string().min(1),
+  })
+  .openapi('FileListQuery');
+
+export type FileListQuery = z.infer<typeof FileListQuerySchema>;
+
+export const FileListResponseSchema = z
+  .object({
+    files: z.array(z.string()),
+    truncated: z.boolean(),
+    total: z.number().int(),
+  })
+  .openapi('FileListResponse');
+
+export type FileListResponse = z.infer<typeof FileListResponseSchema>;
+
 // === Directory Browsing Types ===
 
 export const BrowseDirectoryQuerySchema = z
@@ -427,6 +448,33 @@ export const ServerConfigSchema = z
   .openapi('ServerConfig');
 
 export type ServerConfig = z.infer<typeof ServerConfigSchema>;
+
+// === Git Status ===
+
+export const GitStatusResponseSchema = z
+  .object({
+    branch: z.string().describe('Current branch name or HEAD SHA if detached'),
+    ahead: z.number().int().describe('Commits ahead of remote tracking branch'),
+    behind: z.number().int().describe('Commits behind remote tracking branch'),
+    modified: z.number().int().describe('Count of modified files (staged + unstaged)'),
+    staged: z.number().int().describe('Count of staged files'),
+    untracked: z.number().int().describe('Count of untracked files'),
+    conflicted: z.number().int().describe('Count of files with merge conflicts'),
+    clean: z.boolean().describe('True if working directory is clean'),
+    detached: z.boolean().describe('True if HEAD is detached'),
+    tracking: z.string().nullable().describe('Remote tracking branch name'),
+  })
+  .openapi('GitStatusResponse');
+
+export type GitStatusResponse = z.infer<typeof GitStatusResponseSchema>;
+
+export const GitStatusErrorSchema = z
+  .object({
+    error: z.literal('not_git_repo'),
+  })
+  .openapi('GitStatusError');
+
+export type GitStatusError = z.infer<typeof GitStatusErrorSchema>;
 
 // === Error Response ===
 

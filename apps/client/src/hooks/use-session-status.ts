@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
+import { useAppStore } from '../stores/app-store';
 import type { SessionStatusEvent, PermissionMode, UpdateSessionRequest } from '@lifeos/shared/types';
 
 /** Default model for new sessions before any SDK interaction. */
@@ -38,14 +39,15 @@ export function useSessionStatus(
 ) {
   const transport = useTransport();
   const queryClient = useQueryClient();
+  const selectedCwd = useAppStore((s) => s.selectedCwd);
 
   // Optimistic local overrides (applied immediately on user action)
   const [localModel, setLocalModel] = useState<string | null>(null);
   const [localPermissionMode, setLocalPermissionMode] = useState<PermissionMode | null>(null);
 
   const { data: session } = useQuery({
-    queryKey: ['session', sessionId],
-    queryFn: () => transport.getSession(sessionId),
+    queryKey: ['session', sessionId, selectedCwd],
+    queryFn: () => transport.getSession(sessionId, selectedCwd ?? undefined),
     staleTime: 30_000,
   });
 

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
 import type { CommandEntry } from '@lifeos/shared/types';
 
@@ -6,20 +6,28 @@ interface CommandPaletteProps {
   filteredCommands: CommandEntry[];
   selectedIndex: number;
   onSelect: (cmd: CommandEntry) => void;
-  onClose: () => void;
 }
 
-export function CommandPalette({ filteredCommands, selectedIndex, onSelect, onClose }: CommandPaletteProps) {
-  void onClose;
+export function CommandPalette({ filteredCommands, selectedIndex, onSelect }: CommandPaletteProps) {
+  // Pre-compute grouped structure with stable flat indices
+  const groups = useMemo(() => {
+    const result: { namespace: string; items: { cmd: CommandEntry; index: number }[] }[] = [];
+    const grouped = new Map<string, { cmd: CommandEntry; index: number }[]>();
+    let idx = 0;
 
-  // Group by namespace
-  const grouped = filteredCommands.reduce<Record<string, CommandEntry[]>>(
-    (acc, cmd) => {
-      (acc[cmd.namespace] ??= []).push(cmd);
-      return acc;
-    },
-    {}
-  );
+    for (const cmd of filteredCommands) {
+      if (!grouped.has(cmd.namespace)) {
+        grouped.set(cmd.namespace, []);
+      }
+      grouped.get(cmd.namespace)!.push({ cmd, index: idx++ });
+    }
+
+    for (const [namespace, items] of grouped) {
+      result.push({ namespace, items });
+    }
+
+    return result;
+  }, [filteredCommands]);
 
   // Scroll active item into view when selection changes
   useEffect(() => {
@@ -28,9 +36,6 @@ export function CommandPalette({ filteredCommands, selectedIndex, onSelect, onCl
       activeEl.scrollIntoView({ block: 'nearest' });
     }
   }, [selectedIndex]);
-
-  // Track flat index across groups for selectedIndex mapping
-  let flatIndex = 0;
 
   return (
     <motion.div
@@ -51,18 +56,17 @@ export function CommandPalette({ filteredCommands, selectedIndex, onSelect, onCl
             No commands found.
           </div>
         ) : (
-          Object.entries(grouped).map(([namespace, cmds]) => (
+          groups.map(({ namespace, items }) => (
             <div key={namespace}>
               <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                 {namespace}
               </div>
-              {cmds.map((cmd) => {
-                const currentIndex = flatIndex++;
-                const isSelected = currentIndex === selectedIndex;
+              {items.map(({ cmd, index }) => {
+                const isSelected = index === selectedIndex;
                 return (
                   <div
                     key={cmd.fullCommand}
-                    id={`command-item-${currentIndex}`}
+                    id={`command-item-${index}`}
                     role="option"
                     aria-selected={isSelected}
                     data-selected={isSelected}

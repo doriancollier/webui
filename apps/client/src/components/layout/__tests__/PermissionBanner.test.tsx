@@ -26,7 +26,9 @@ function createMockTransport(): Transport {
     updateSession: vi.fn(),
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
+    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
     getConfig: vi.fn().mockResolvedValue({ version: '1.0.0', port: 6942, uptime: 0, workingDirectory: '/test', nodeVersion: 'v20.0.0', claudeCliPath: null, tunnel: { enabled: false, connected: false, url: null, authEnabled: false, tokenConfigured: false } }),
+    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
   };
 }
 

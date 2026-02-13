@@ -251,6 +251,11 @@ export class TranscriptReader {
         firstTimestamp = parsed.timestamp;
       }
 
+      // Extract cwd (before title extraction — the continue statements below skip the rest of the loop)
+      if (!cwd && parsed.cwd) {
+        cwd = parsed.cwd;
+      }
+
       // Extract first user message for title
       if (!firstUserMessage && parsed.type === 'user' && parsed.message) {
         const text = this.extractTextContent(parsed.message.content);
@@ -264,11 +269,6 @@ export class TranscriptReader {
         if (!cleanText.trim()) continue;
 
         firstUserMessage = cleanText.trim();
-      }
-
-      // Extract cwd (usually on the first line)
-      if (!cwd && parsed.cwd) {
-        cwd = parsed.cwd;
       }
 
       // Once we have all head metadata, stop early

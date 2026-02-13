@@ -4,11 +4,14 @@ import type {
   UpdateSessionRequest,
   BrowseDirectoryResponse,
   CommandRegistry,
+  FileListResponse,
   HealthResponse,
   HistoryMessage,
   StreamEvent,
   TaskItem,
   ServerConfig,
+  GitStatusResponse,
+  GitStatusError,
 } from '@lifeos/shared/types';
 import type { Transport } from '@lifeos/shared/transport';
 
@@ -149,12 +152,31 @@ export class HttpTransport implements Transport {
     return fetchJSON<{ path: string }>(this.baseUrl, '/directory/default');
   }
 
-  getCommands(refresh = false): Promise<CommandRegistry> {
-    return fetchJSON<CommandRegistry>(this.baseUrl, `/commands${refresh ? '?refresh=true' : ''}`);
+  getCommands(refresh = false, cwd?: string): Promise<CommandRegistry> {
+    const params = new URLSearchParams();
+    if (refresh) params.set('refresh', 'true');
+    if (cwd) params.set('cwd', cwd);
+    const qs = params.toString();
+    return fetchJSON<CommandRegistry>(this.baseUrl, `/commands${qs ? `?${qs}` : ''}`);
+  }
+
+  getGitStatus(cwd?: string): Promise<GitStatusResponse | GitStatusError> {
+    const params = new URLSearchParams();
+    if (cwd) params.set('dir', cwd);
+    const qs = params.toString();
+    return fetchJSON<GitStatusResponse | GitStatusError>(
+      this.baseUrl,
+      `/git/status${qs ? `?${qs}` : ''}`,
+    );
   }
 
   health(): Promise<HealthResponse> {
     return fetchJSON<HealthResponse>(this.baseUrl, '/health');
+  }
+
+  listFiles(cwd: string): Promise<FileListResponse> {
+    const params = new URLSearchParams({ cwd });
+    return fetchJSON<FileListResponse>(this.baseUrl, `/files?${params}`);
   }
 
   getConfig(): Promise<ServerConfig> {

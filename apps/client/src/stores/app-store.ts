@@ -34,6 +34,8 @@ interface AppState {
   setExpandToolCalls: (v: boolean) => void;
   autoHideToolCalls: boolean;
   setAutoHideToolCalls: (v: boolean) => void;
+  showShortcutChips: boolean;
+  setShowShortcutChips: (v: boolean) => void;
   showStatusBarCwd: boolean;
   setShowStatusBarCwd: (v: boolean) => void;
   showStatusBarPermission: boolean;
@@ -44,6 +46,8 @@ interface AppState {
   setShowStatusBarCost: (v: boolean) => void;
   showStatusBarContext: boolean;
   setShowStatusBarContext: (v: boolean) => void;
+  showStatusBarGit: boolean;
+  setShowStatusBarGit: (v: boolean) => void;
   verboseLogging: boolean;
   setVerboseLogging: (v: boolean) => void;
   fontSize: 'small' | 'medium' | 'large';
@@ -117,6 +121,18 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
     set({ autoHideToolCalls: v });
   },
 
+  showShortcutChips: (() => {
+    try {
+      const stored = localStorage.getItem('gateway-show-shortcut-chips');
+      return stored === null ? true : stored === 'true';
+    }
+    catch { return true; }
+  })(),
+  setShowShortcutChips: (v) => {
+    try { localStorage.setItem('gateway-show-shortcut-chips', String(v)); } catch {}
+    set({ showShortcutChips: v });
+  },
+
   showStatusBarCwd: (() => {
     try { return localStorage.getItem('gateway-show-status-bar-cwd') !== 'false'; }
     catch { return true; }
@@ -162,6 +178,15 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
     set({ showStatusBarContext: v });
   },
 
+  showStatusBarGit: (() => {
+    try { return localStorage.getItem('gateway-show-status-bar-git') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowStatusBarGit: (v) => {
+    try { localStorage.setItem('gateway-show-status-bar-git', String(v)); } catch {}
+    set({ showStatusBarGit: v });
+  },
+
   verboseLogging: (() => {
     try { return localStorage.getItem('gateway-verbose-logging') === 'true'; }
     catch { return false; }
@@ -194,6 +219,7 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       localStorage.removeItem('gateway-show-timestamps');
       localStorage.removeItem('gateway-expand-tool-calls');
       localStorage.removeItem('gateway-auto-hide-tool-calls');
+      localStorage.removeItem('gateway-show-shortcut-chips');
       localStorage.removeItem('gateway-verbose-logging');
       localStorage.removeItem('gateway-font-size');
       localStorage.removeItem('gateway-show-status-bar-cwd');
@@ -201,12 +227,14 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       localStorage.removeItem('gateway-show-status-bar-model');
       localStorage.removeItem('gateway-show-status-bar-cost');
       localStorage.removeItem('gateway-show-status-bar-context');
+      localStorage.removeItem('gateway-show-status-bar-git');
     } catch {}
     document.documentElement.style.setProperty('--user-font-scale', '1');
     set({
       showTimestamps: false,
       expandToolCalls: false,
       autoHideToolCalls: true,
+      showShortcutChips: true,
       verboseLogging: false,
       devtoolsOpen: false,
       fontSize: 'medium',
@@ -215,6 +243,7 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       showStatusBarModel: true,
       showStatusBarCost: true,
       showStatusBarContext: true,
+      showStatusBarGit: true,
     });
   },
 

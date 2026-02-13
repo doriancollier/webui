@@ -9,6 +9,9 @@ import type {
   StreamEvent,
   TaskItem,
   ServerConfig,
+  FileListResponse,
+  GitStatusResponse,
+  GitStatusError,
 } from './types.js';
 
 export interface Transport {
@@ -40,7 +43,9 @@ export interface Transport {
   getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }>;
   browseDirectory(dirPath?: string, showHidden?: boolean): Promise<BrowseDirectoryResponse>;
   getDefaultCwd(): Promise<{ path: string }>;
-  getCommands(refresh?: boolean): Promise<CommandRegistry>;
+  getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
+  listFiles(cwd: string): Promise<FileListResponse>;
+  getGitStatus(cwd?: string): Promise<GitStatusResponse | GitStatusError>;
   health(): Promise<HealthResponse>;
   getConfig(): Promise<ServerConfig>;
 }
