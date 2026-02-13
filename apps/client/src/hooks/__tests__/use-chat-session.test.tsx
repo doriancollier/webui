@@ -31,6 +31,7 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
     updateSession: vi.fn(),
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
+    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
     getConfig: vi.fn().mockResolvedValue({ version: '1.0.0', port: 6942, uptime: 0, workingDirectory: '/test', nodeVersion: 'v20.0.0', claudeCliPath: null, tunnel: { enabled: false, connected: false, url: null, authEnabled: false, tokenConfigured: false } }),
     ...overrides,
   };
@@ -151,7 +152,8 @@ describe('useChatSession', () => {
     });
 
     expect(result.current.input).toBe('');
-    expect(result.current.messages).toHaveLength(2);
+    // With deferred assistant message creation, done without content creates no assistant message
+    expect(result.current.messages).toHaveLength(1);
     expect(result.current.messages[0].role).toBe('user');
     expect(result.current.messages[0].content).toBe('Hello');
   });
@@ -388,5 +390,148 @@ describe('useChatSession', () => {
     expect(result.current.messages[2].content).toBe('New question');
     expect(result.current.messages[3].role).toBe('assistant');
     expect(result.current.messages[3].content).toBe('New reply');
+  });
+
+  describe('deferred assistant message creation', () => {
+    it('does not create assistant message immediately on submit', async () => {
+      // Create a sendMessage mock that never resolves (hangs)
+      const sendMessage = vi.fn(async (
+        _sessionId: string,
+        _content: string,
+        _onEvent: (event: StreamEvent) => void,
+        signal?: AbortSignal,
+        _cwd?: string,
+      ) => {
+        return new Promise<void>((resolve, reject) => {
+          signal?.addEventListener('abort', () => {
+            reject(new DOMException('The operation was aborted.', 'AbortError'));
+          });
+        });
+      });
+      const transport = createMockTransport({ sendMessage });
+
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+
+      // Start streaming (don't await - it will hang)
+      act(() => {
+        result.current.handleSubmit();
+      });
+
+      // Wait for streaming status
+      await waitFor(() => expect(result.current.status).toBe('streaming'));
+
+      // Assert only user message exists, no assistant message yet
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0].role).toBe('user');
+      expect(result.current.status).toBe('streaming');
+
+      // Clean up by stopping
+      await act(async () => {
+        result.current.stop();
+      });
+    });
+
+    it('creates assistant message on first text_delta', async () => {
+      const sendMessage = createSendMessageMock([
+        { type: 'text_delta', data: { text: 'Hello from Claude' } } as StreamEvent,
+        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
+      ]);
+      const transport = createMockTransport({ sendMessage });
+
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('Hi');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // Assert assistant message was created with content from delta
+      expect(result.current.messages).toHaveLength(2);
+      expect(result.current.messages[1].role).toBe('assistant');
+      expect(result.current.messages[1].content).toBe('Hello from Claude');
+    });
+
+    it('creates assistant message on first tool_call_start', async () => {
+      const sendMessage = createSendMessageMock([
+        { type: 'tool_call_start', data: { toolCallId: 'tc1', toolName: 'Read', status: 'running' } } as StreamEvent,
+        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
+      ]);
+      const transport = createMockTransport({ sendMessage });
+
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('Read file');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // Assert assistant message was created with toolCalls array
+      expect(result.current.messages).toHaveLength(2);
+      expect(result.current.messages[1].role).toBe('assistant');
+      expect(result.current.messages[1].toolCalls).toHaveLength(1);
+      expect(result.current.messages[1].toolCalls![0].toolName).toBe('Read');
+    });
+
+    it('does not create duplicate assistant messages on subsequent events', async () => {
+      const sendMessage = createSendMessageMock([
+        { type: 'text_delta', data: { text: 'First ' } } as StreamEvent,
+        { type: 'text_delta', data: { text: 'Second' } } as StreamEvent,
+        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
+      ]);
+      const transport = createMockTransport({ sendMessage });
+
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // Assert only 1 assistant message exists with combined content
+      const assistantMessages = result.current.messages.filter(m => m.role === 'assistant');
+      expect(assistantMessages).toHaveLength(1);
+      expect(assistantMessages[0].content).toBe('First Second');
+    });
+
+    it('handles done without content gracefully', async () => {
+      const sendMessage = createSendMessageMock([
+        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
+      ]);
+      const transport = createMockTransport({ sendMessage });
+
+      const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // Assert only user message exists, no assistant message
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0].role).toBe('user');
+      expect(result.current.status).toBe('idle');
+    });
   });
 });

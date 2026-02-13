@@ -1,12 +1,20 @@
 // @vitest-environment jsdom
+import React from 'react';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
-import { MessageList, computeGrouping } from '../MessageList';
+import { MessageList, computeGrouping, type MessageListHandle } from '../MessageList';
 import type { ChatMessage } from '../../../hooks/use-chat-session';
 import { useAppStore } from '../../../stores/app-store';
 
 // jsdom does not implement IntersectionObserver
 globalThis.IntersectionObserver = vi.fn().mockImplementation(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
+// jsdom does not implement ResizeObserver
+globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   observe: vi.fn(),
   unobserve: vi.fn(),
   disconnect: vi.fn(),
@@ -62,6 +70,7 @@ vi.mock('@tanstack/react-virtual', () => ({
     getTotalSize: () => count * 80,
     measureElement: () => {},
     scrollToIndex: () => {},
+    scrollToOffset: () => {},
   }),
 }));
 
@@ -230,5 +239,22 @@ describe('MessageList', () => {
       />
     );
     expect(container).toBeDefined();
+  });
+
+  it('attaches ResizeObserver to content container', () => {
+    const messages: ChatMessage[] = [
+      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+    ];
+    render(<MessageList sessionId="test-session" messages={messages} />);
+    expect(globalThis.ResizeObserver).toHaveBeenCalled();
+  });
+
+  it('scroll container uses native scrollTop for scrollToBottom', () => {
+    const ref = React.createRef<MessageListHandle>();
+    const messages: ChatMessage[] = [
+      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+    ];
+    render(<MessageList ref={ref} sessionId="test-session" messages={messages} />);
+    expect(() => ref.current?.scrollToBottom()).not.toThrow();
   });
 });

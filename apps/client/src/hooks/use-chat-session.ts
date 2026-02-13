@@ -82,6 +82,8 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const [sessionStatus, setSessionStatus] = useState<SessionStatusEvent | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const currentPartsRef = useRef<MessagePart[]>([]);
+  const assistantIdRef = useRef<string>('');
+  const assistantCreatedRef = useRef(false);
   const historySeededRef = useRef(false);
   const streamStartTimeRef = useRef<number | null>(null);
   const estimatedTokensRef = useRef<number>(0);
@@ -174,15 +176,8 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     setStreamStartTime(streamStart);
     setEstimatedTokens(0);
 
-    const assistantId = crypto.randomUUID();
-    setMessages(prev => [...prev, {
-      id: assistantId,
-      role: 'assistant',
-      content: '',
-      toolCalls: [],
-      parts: [],
-      timestamp: new Date().toISOString(),
-    }]);
+    assistantIdRef.current = crypto.randomUUID();
+    assistantCreatedRef.current = false;
 
     const abortController = new AbortController();
     abortRef.current = abortController;
@@ -195,7 +190,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       await transport.sendMessage(
         sessionId,
         finalContent,
-        (event) => handleStreamEvent(event.type, event.data, assistantId),
+        (event) => handleStreamEvent(event.type, event.data, assistantIdRef.current),
         abortController.signal,
         selectedCwd ?? undefined,
       );
@@ -384,7 +379,22 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     return undefined;
   }
 
+  function ensureAssistantMessage(assistantId: string) {
+    if (!assistantCreatedRef.current) {
+      assistantCreatedRef.current = true;
+      setMessages(prev => [...prev, {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        toolCalls: [],
+        parts: [],
+        timestamp: new Date().toISOString(),
+      }]);
+    }
+  }
+
   function updateAssistantMessage(assistantId: string) {
+    ensureAssistantMessage(assistantId);
     const parts = currentPartsRef.current.map(p => ({ ...p }));
     const derived = deriveFromParts(parts);
     setMessages(prev =>

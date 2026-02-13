@@ -50,6 +50,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     const parentRef = useRef<HTMLDivElement>(null);
     const [historyCount, setHistoryCount] = useState<number | null>(null);
     const isAtBottomRef = useRef(true);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const rafIdRef = useRef<number>(0);
     const groupings = useMemo(() => computeGrouping(messages), [messages]);
 
     useEffect(() => {
@@ -114,7 +116,10 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
             wasHidden = false;
             // Small delay so the virtualizer can re-measure after layout
             requestAnimationFrame(() => {
-              virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+              const scrollEl = parentRef.current;
+              if (scrollEl) {
+                scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
+              }
             });
           }
         },
@@ -122,24 +127,50 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
       );
       observer.observe(container);
       return () => observer.disconnect();
-    }, [virtualizer, messages.length]);
+    }, [messages.length]);
 
-    // Compute a scroll trigger that changes when messages are added or
-    // when the last message's tool calls change (e.g. interactive prompts).
-    const lastMsg = messages[messages.length - 1];
-    const scrollTrigger = `${messages.length}:${lastMsg?.toolCalls?.length ?? 0}`;
+    // Auto-scroll via ResizeObserver: fires on any content height change
+    useEffect(() => {
+      const contentEl = contentRef.current;
+      if (!contentEl) return;
 
-    // Auto-scroll to bottom on new messages or tool call additions.
-    // Skip during active touch to avoid cancelling native momentum scroll.
+      const observer = new ResizeObserver(() => {
+        if (isAtBottomRef.current && !isTouchActiveRef.current) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = requestAnimationFrame(() => {
+            const scrollEl = parentRef.current;
+            if (scrollEl) {
+              scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
+            }
+          });
+        }
+      });
+
+      observer.observe(contentEl);
+      return () => {
+        observer.disconnect();
+        cancelAnimationFrame(rafIdRef.current);
+      };
+    }, []);
+
+    // Fallback: scroll on new message addition (ResizeObserver may not fire synchronously)
     useEffect(() => {
       if (messages.length > 0 && isAtBottomRef.current && !isTouchActiveRef.current) {
-        virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
+        requestAnimationFrame(() => {
+          const scrollEl = parentRef.current;
+          if (scrollEl) {
+            scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
+          }
+        });
       }
-    }, [scrollTrigger, virtualizer]);
+    }, [messages.length]);
 
     const scrollToBottom = useCallback(() => {
-      virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
-    }, [virtualizer, messages.length]);
+      const scrollEl = parentRef.current;
+      if (scrollEl) {
+        scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
+      }
+    }, []);
 
     useImperativeHandle(ref, () => ({
       scrollToBottom,
@@ -148,6 +179,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
     return (
       <div ref={parentRef} className="chat-scroll-area h-full overflow-y-auto">
         <div
+          ref={contentRef}
           style={{
             height: virtualizer.getTotalSize(),
             position: 'relative',
