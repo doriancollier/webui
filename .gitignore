@@ -6,3 +6,4 @@ dist-obsidian/
 coverage/
 *.tsbuildinfo
 .env
+.temp
