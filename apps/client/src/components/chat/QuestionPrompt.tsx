@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, MessageSquare } from 'lucide-react';
 import { useTransport } from '../../contexts/TransportContext';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import type { QuestionItem } from '@lifeos/shared/types';
 
 interface QuestionPromptProps {
@@ -18,6 +19,7 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
   const [submitted, setSubmitted] = useState(!!preAnswers);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('0');
 
   function handleSingleSelect(questionIdx: number, value: string) {
     setSelections(prev => ({ ...prev, [questionIdx]: value }));
@@ -37,19 +39,38 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
     setOtherText(prev => ({ ...prev, [questionIdx]: text }));
   }
 
+  function hasAnswer(idx: number): boolean {
+    const sel = selections[idx];
+    if (!sel) return false;
+    if (questions[idx].multiSelect) {
+      const arr = sel as string[];
+      return arr.length > 0 && (!arr.includes('__other__') || !!otherText[idx]?.trim());
+    }
+    return sel !== '__other__' || !!otherText[idx]?.trim();
+  }
+
   function isComplete(): boolean {
-    return questions.every((q, idx) => {
-      const sel = selections[idx];
-      if (!sel) return false;
+    return questions.every((_q, idx) => hasAnswer(idx));
+  }
+
+  function getDisplayValue(q: QuestionItem, idx: number): string | null {
+    if (preAnswers && preAnswers[String(idx)]) {
+      const raw = preAnswers[String(idx)];
       if (q.multiSelect) {
-        const arr = sel as string[];
-        if (arr.length === 0) return false;
-        if (arr.includes('__other__') && !otherText[idx]?.trim()) return false;
-      } else {
-        if (sel === '__other__' && !otherText[idx]?.trim()) return false;
+        try { return (JSON.parse(raw) as string[]).join(', '); }
+        catch { return raw; }
       }
-      return true;
-    });
+      return raw;
+    }
+    if (!preAnswers) {
+      const sel = selections[idx];
+      if (!sel) return null;
+      if (q.multiSelect) {
+        return (sel as string[]).map(v => v === '__other__' ? otherText[idx] : v).join(', ');
+      }
+      return sel === '__other__' ? otherText[idx] : (sel as string);
+    }
+    return null;
   }
 
   async function handleSubmit() {
@@ -83,58 +104,132 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
 
   // Collapsed submitted state
   if (submitted) {
-    // Check if we have specific answer values (from live interaction or history with parsed answers)
     const hasSpecificAnswers = preAnswers
       ? Object.values(preAnswers).some(v => v !== '')
       : Object.keys(selections).length > 0;
 
     return (
       <div className="my-1 rounded border border-emerald-500/20 bg-emerald-500/10 px-3 py-2 text-sm transition-colors duration-200">
-        <div className="flex items-center gap-2">
-          <Check className="size-(--size-icon-md) text-emerald-500" />
-          {hasSpecificAnswers ? (
-            <div className="flex flex-wrap gap-2">
+        {hasSpecificAnswers ? (
+          <div className="flex items-start gap-2">
+            <Check className="size-(--size-icon-md) text-emerald-500 mt-0.5 shrink-0" />
+            <div className="space-y-1.5 min-w-0">
               {questions.map((q, idx) => {
-                let displayValue: string;
-                // Use preAnswers (from history) if available, otherwise use selections (from live interaction)
-                if (preAnswers && preAnswers[String(idx)]) {
-                  const raw = preAnswers[String(idx)];
-                  // Multi-select answers are JSON-stringified arrays
-                  if (q.multiSelect) {
-                    try {
-                      displayValue = (JSON.parse(raw) as string[]).join(', ');
-                    } catch {
-                      displayValue = raw;
-                    }
-                  } else {
-                    displayValue = raw;
-                  }
-                } else if (!preAnswers) {
-                  const sel = selections[idx];
-                  if (q.multiSelect) {
-                    const arr = (sel as string[]).map(v =>
-                      v === '__other__' ? otherText[idx] : v
-                    );
-                    displayValue = arr.join(', ');
-                  } else {
-                    displayValue = sel === '__other__' ? otherText[idx] : (sel as string);
-                  }
-                } else {
-                  return null; // Skip questions without specific answers
-                }
+                const displayValue = getDisplayValue(q, idx);
+                if (!displayValue) return null;
                 return (
-                  <span key={idx} className="inline-flex items-center gap-1">
+                  <div key={idx}>
                     <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
-                      {q.header}:
+                      {q.header}
                     </span>
-                    <span className="text-emerald-600 dark:text-emerald-400">{displayValue}</span>
-                  </span>
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 break-words">
+                      {displayValue}
+                    </p>
+                  </div>
                 );
               })}
             </div>
-          ) : (
+          </div>
+        ) : (
+          <div className="flex items-center gap-2">
+            <Check className="size-(--size-icon-md) text-emerald-500" />
             <span className="text-emerald-600 dark:text-emerald-400">Questions answered</span>
-          )}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Render a single question's form content
+  function renderQuestionContent(q: QuestionItem, qIdx: number) {
+    return (
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <MessageSquare className="size-(--size-icon-sm) text-amber-500" />
+          <span className="font-semibold text-sm">{q.header}</span>
+        </div>
+        <p className="mb-2 text-foreground">{q.question}</p>
+
+        <div className="space-y-1.5 ml-1">
+          {q.options.map((opt, oIdx) => {
+            const isSelected = q.multiSelect
+              ? ((selections[qIdx] as string[]) || []).includes(opt.label)
+              : selections[qIdx] === opt.label;
+
+            return (
+              <label
+                key={oIdx}
+                className={`flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors ${
+                  isSelected ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
+                }`}
+              >
+                <input
+                  type={q.multiSelect ? 'checkbox' : 'radio'}
+                  name={`q-${qIdx}`}
+                  checked={isSelected}
+                  disabled={submitting}
+                  onChange={(e) => {
+                    if (q.multiSelect) {
+                      handleMultiSelect(qIdx, opt.label, e.target.checked);
+                    } else {
+                      handleSingleSelect(qIdx, opt.label);
+                    }
+                  }}
+                  className="mt-0.5 accent-amber-500"
+                />
+                <div>
+                  <span className="font-medium">{opt.label}</span>
+                  {opt.description && (
+                    <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
+                  )}
+                </div>
+              </label>
+            );
+          })}
+
+          {/* "Other" free-text option */}
+          <label
+            className={`flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors ${
+              q.multiSelect
+                ? ((selections[qIdx] as string[]) || []).includes('__other__') ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
+                : selections[qIdx] === '__other__' ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
+            }`}
+          >
+            <input
+              type={q.multiSelect ? 'checkbox' : 'radio'}
+              name={`q-${qIdx}`}
+              checked={
+                q.multiSelect
+                  ? ((selections[qIdx] as string[]) || []).includes('__other__')
+                  : selections[qIdx] === '__other__'
+              }
+              disabled={submitting}
+              onChange={(e) => {
+                if (q.multiSelect) {
+                  handleMultiSelect(qIdx, '__other__', e.target.checked);
+                } else {
+                  handleSingleSelect(qIdx, '__other__');
+                }
+              }}
+              className="mt-0.5 accent-amber-500"
+            />
+            <div className="flex-1">
+              <span className="font-medium">Other</span>
+              {(q.multiSelect
+                ? ((selections[qIdx] as string[]) || []).includes('__other__')
+                : selections[qIdx] === '__other__') && (
+                <textarea
+                  placeholder="Type your answer..."
+                  rows={2}
+                  value={otherText[qIdx] || ''}
+                  disabled={submitting}
+                  onChange={(e) => handleOtherText(qIdx, e.target.value)}
+                  className="mt-1 w-full rounded border border-amber-500/30 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-y"
+                  autoFocus
+                />
+              )}
+            </div>
+          </label>
         </div>
       </div>
     );
@@ -143,99 +238,31 @@ export function QuestionPrompt({ sessionId, toolCallId, questions, answers: preA
   // Pending state: render full question form
   return (
     <div className="my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-colors duration-200">
-      <div className="space-y-4">
-        {questions.map((q, qIdx) => (
-          <div key={qIdx}>
-            <div className="flex items-center gap-2 mb-1">
-              <MessageSquare className="size-(--size-icon-sm) text-amber-500" />
-              <span className="font-semibold text-sm">{q.header}</span>
-            </div>
-            <p className="mb-2 text-foreground">{q.question}</p>
-
-            <div className="space-y-1.5 ml-1">
-              {q.options.map((opt, oIdx) => {
-                const isSelected = q.multiSelect
-                  ? ((selections[qIdx] as string[]) || []).includes(opt.label)
-                  : selections[qIdx] === opt.label;
-
-                return (
-                  <label
-                    key={oIdx}
-                    className={`flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors ${
-                      isSelected ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
-                    }`}
-                  >
-                    <input
-                      type={q.multiSelect ? 'checkbox' : 'radio'}
-                      name={`q-${qIdx}`}
-                      checked={isSelected}
-                      disabled={submitting}
-                      onChange={(e) => {
-                        if (q.multiSelect) {
-                          handleMultiSelect(qIdx, opt.label, e.target.checked);
-                        } else {
-                          handleSingleSelect(qIdx, opt.label);
-                        }
-                      }}
-                      className="mt-0.5 accent-amber-500"
-                    />
-                    <div>
-                      <span className="font-medium">{opt.label}</span>
-                      {opt.description && (
-                        <p className="text-xs text-muted-foreground mt-0.5">{opt.description}</p>
-                      )}
-                    </div>
-                  </label>
-                );
-              })}
-
-              {/* "Other" free-text option */}
-              <label
-                className={`flex items-start gap-2 rounded px-2 py-1.5 cursor-pointer transition-colors ${
-                  q.multiSelect
-                    ? ((selections[qIdx] as string[]) || []).includes('__other__') ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
-                    : selections[qIdx] === '__other__' ? 'bg-amber-500/15' : 'hover:bg-amber-500/5'
-                }`}
+      {questions.length === 1 ? (
+        // Single question — render directly without tabs
+        renderQuestionContent(questions[0], 0)
+      ) : (
+        // Multiple questions — wrap in Tabs
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="h-auto bg-transparent p-0 gap-1.5 mb-3 flex-wrap">
+            {questions.map((q, idx) => (
+              <TabsTrigger
+                key={idx}
+                value={String(idx)}
+                className="h-auto rounded-full px-2.5 py-1 text-xs font-medium data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300 data-[state=active]:shadow-none data-[state=inactive]:bg-muted/50"
               >
-                <input
-                  type={q.multiSelect ? 'checkbox' : 'radio'}
-                  name={`q-${qIdx}`}
-                  checked={
-                    q.multiSelect
-                      ? ((selections[qIdx] as string[]) || []).includes('__other__')
-                      : selections[qIdx] === '__other__'
-                  }
-                  disabled={submitting}
-                  onChange={(e) => {
-                    if (q.multiSelect) {
-                      handleMultiSelect(qIdx, '__other__', e.target.checked);
-                    } else {
-                      handleSingleSelect(qIdx, '__other__');
-                    }
-                  }}
-                  className="mt-0.5 accent-amber-500"
-                />
-                <div className="flex-1">
-                  <span className="font-medium">Other</span>
-                  {(q.multiSelect
-                    ? ((selections[qIdx] as string[]) || []).includes('__other__')
-                    : selections[qIdx] === '__other__') && (
-                    <textarea
-                      placeholder="Type your answer..."
-                      rows={2}
-                      value={otherText[qIdx] || ''}
-                      disabled={submitting}
-                      onChange={(e) => handleOtherText(qIdx, e.target.value)}
-                      className="mt-1 w-full rounded border border-amber-500/30 bg-background px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-amber-500/50 resize-y"
-                      autoFocus
-                    />
-                  )}
-                </div>
-              </label>
-            </div>
-          </div>
-        ))}
-      </div>
+                {hasAnswer(idx) && <Check className="size-3 mr-1" />}
+                <span className="max-w-[120px] truncate">{q.header}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {questions.map((q, idx) => (
+            <TabsContent key={idx} value={String(idx)} className="mt-0">
+              {renderQuestionContent(q, idx)}
+            </TabsContent>
+          ))}
+        </Tabs>
+      )}
 
       {error && (
         <p className="mt-2 text-xs text-red-500">{error}</p>
