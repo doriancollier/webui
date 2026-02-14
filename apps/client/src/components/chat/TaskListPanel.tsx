@@ -1,12 +1,14 @@
 import { Loader2, Circle, CheckCircle2, ChevronDown, ChevronRight, ListTodo } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import type { TaskItem, TaskStatus } from '@lifeos/shared/types';
+import type { TaskItem, TaskStatus } from '@dorkos/shared/types';
 
 interface TaskListPanelProps {
   tasks: TaskItem[];
   activeForm: string | null;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  celebratingTaskId?: string | null;
+  onCelebrationComplete?: () => void;
 }
 
 const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
@@ -17,7 +19,7 @@ const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
 
 const MAX_VISIBLE = 10;
 
-export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse }: TaskListPanelProps) {
+export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse, celebratingTaskId, onCelebrationComplete }: TaskListPanelProps) {
   if (tasks.length === 0) return null;
 
   const done = tasks.filter(t => t.status === 'completed').length;
@@ -63,21 +65,59 @@ export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse
             exit={{ opacity: 0, height: 0 }}
             className="mt-1 space-y-0.5"
           >
-            {visibleTasks.map(task => (
-              <li
-                key={task.id}
-                className={`flex items-center gap-2 text-xs py-0.5 ${
-                  task.status === 'completed'
-                    ? 'text-muted-foreground/50 line-through'
-                    : task.status === 'in_progress'
-                    ? 'text-foreground font-medium'
-                    : 'text-muted-foreground'
-                }`}
-              >
-                {STATUS_ICON[task.status]}
-                <span className="truncate">{task.subject}</span>
-              </li>
-            ))}
+            {visibleTasks.map(task => {
+              const isCelebrating = task.id === celebratingTaskId && task.status === 'completed';
+
+              return (
+                <motion.li
+                  key={task.id}
+                  className={`relative flex items-center gap-2 text-xs py-0.5 ${
+                    task.status === 'completed'
+                      ? 'text-muted-foreground/50 line-through'
+                      : task.status === 'in_progress'
+                      ? 'text-foreground font-medium'
+                      : 'text-muted-foreground'
+                  }`}
+                  animate={isCelebrating ? {
+                    scale: [1, 1.05, 1],
+                  } : undefined}
+                  transition={isCelebrating ? { type: 'spring', stiffness: 400, damping: 10 } : undefined}
+                  onAnimationComplete={() => {
+                    if (isCelebrating) onCelebrationComplete?.();
+                  }}
+                >
+                  {/* Shimmer background for celebrating row */}
+                  {isCelebrating && (
+                    <motion.div
+                      aria-hidden="true"
+                      className="absolute inset-0 rounded"
+                      initial={{ backgroundPosition: '-200% 0' }}
+                      animate={{ backgroundPosition: '200% 0' }}
+                      transition={{ duration: 0.4, ease: 'easeOut' }}
+                      style={{
+                        backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+                        backgroundSize: '200% 100%',
+                      }}
+                    />
+                  )}
+
+                  {/* Checkmark spring-pop */}
+                  {isCelebrating ? (
+                    <motion.span
+                      initial={{ scale: 1 }}
+                      animate={{ scale: [1, 1.4, 1] }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+                    >
+                      {STATUS_ICON[task.status]}
+                    </motion.span>
+                  ) : (
+                    STATUS_ICON[task.status]
+                  )}
+
+                  <span className="truncate">{task.subject}</span>
+                </motion.li>
+              );
+            })}
           </motion.ul>
         )}
       </AnimatePresence>

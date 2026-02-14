@@ -14,6 +14,7 @@ import type { MessageListHandle, ScrollState } from './MessageList';
 import { ChatInput } from './ChatInput';
 import type { ChatInputHandle } from './ChatInput';
 import { TaskListPanel } from './TaskListPanel';
+import { CelebrationOverlay } from './CelebrationOverlay';
 import { CommandPalette } from '../commands/CommandPalette';
 import { FilePalette } from '../files/FilePalette';
 import type { FileEntry } from '../files/FilePalette';
@@ -24,8 +25,9 @@ import { useFiles } from '../../hooks/use-files';
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { useInteractiveShortcuts } from '../../hooks/use-interactive-shortcuts';
 import { useAppStore } from '../../stores/app-store';
+import { useCelebrations } from '../../hooks/use-celebrations';
 import type { InteractiveToolHandle } from './MessageItem';
-import type { CommandEntry } from '@lifeos/shared/types';
+import type { CommandEntry, TaskUpdateEvent } from '@dorkos/shared/types';
 
 interface ChatPanelProps {
   sessionId: string;
@@ -38,10 +40,26 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const messageListRef = useRef<MessageListHandle>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const taskState = useTaskState(sessionId);
+  const celebrations = useCelebrations();
+
+  const handleTaskEventWithCelebrations = useCallback(
+    (event: TaskUpdateEvent) => {
+      taskState.handleTaskEvent(event);
+      // Project task list forward: if this event updates a task's status,
+      // apply it to the current list so the engine sees the correct state
+      // (React state updates are batched, so taskState.tasks is still stale here)
+      const projectedTasks = taskState.tasks.map((t) =>
+        t.id === event.task.id ? { ...t, ...event.task } : t,
+      );
+      celebrations.handleTaskEvent(event, projectedTasks);
+    },
+    [taskState, celebrations],
+  );
+
   const { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction } =
     useChatSession(sessionId, {
       transformContent,
-      onTaskEvent: taskState.handleTaskEvent,
+      onTaskEvent: handleTaskEventWithCelebrations,
       onSessionIdChange: setSessionId,
     });
   const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
@@ -192,6 +210,19 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       setCollapsed(false);
     }
   };
+
+  const setIsStreaming = useAppStore((s) => s.setIsStreaming);
+  const setActiveForm = useAppStore((s) => s.setActiveForm);
+
+  useEffect(() => {
+    setIsStreaming(status === 'streaming');
+    return () => setIsStreaming(false);
+  }, [status, setIsStreaming]);
+
+  useEffect(() => {
+    setActiveForm(taskState.activeForm);
+    return () => setActiveForm(null);
+  }, [taskState.activeForm, setActiveForm]);
 
   const showShortcutChips = useAppStore((s) => s.showShortcutChips);
   const [cwd] = useDirectoryState();
@@ -491,11 +522,18 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         </AnimatePresence>
       </div>
 
+      <CelebrationOverlay
+        celebration={celebrations.activeCelebration}
+        onComplete={celebrations.clearCelebration}
+      />
+
       <TaskListPanel
         tasks={taskState.tasks}
         activeForm={taskState.activeForm}
         isCollapsed={taskState.isCollapsed}
         onToggleCollapse={taskState.toggleCollapse}
+        celebratingTaskId={celebrations.celebratingTaskId}
+        onCelebrationComplete={celebrations.clearCelebration}
       />
 
       {error && (

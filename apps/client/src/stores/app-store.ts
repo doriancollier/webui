@@ -50,6 +50,8 @@ interface AppState {
   setShowStatusBarContext: (v: boolean) => void;
   showStatusBarGit: boolean;
   setShowStatusBarGit: (v: boolean) => void;
+  showTaskCelebrations: boolean;
+  setShowTaskCelebrations: (v: boolean) => void;
   verboseLogging: boolean;
   setVerboseLogging: (v: boolean) => void;
   fontSize: 'small' | 'medium' | 'large';
@@ -57,6 +59,11 @@ interface AppState {
   fontFamily: FontFamilyKey;
   setFontFamily: (key: FontFamilyKey) => void;
   resetPreferences: () => void;
+
+  isStreaming: boolean;
+  setIsStreaming: (v: boolean) => void;
+  activeForm: string | null;
+  setActiveForm: (v: string | null) => void;
 
   contextFiles: ContextFile[];
   addContextFile: (file: Omit<ContextFile, 'id'>) => void;
@@ -191,6 +198,15 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
     set({ showStatusBarGit: v });
   },
 
+  showTaskCelebrations: (() => {
+    try { return localStorage.getItem('gateway-show-task-celebrations') !== 'false'; }
+    catch { return true; }
+  })(),
+  setShowTaskCelebrations: (v) => {
+    try { localStorage.setItem('gateway-show-task-celebrations', String(v)); } catch {}
+    set({ showTaskCelebrations: v });
+  },
+
   verboseLogging: (() => {
     try { return localStorage.getItem('gateway-verbose-logging') === 'true'; }
     catch { return false; }
@@ -264,6 +280,7 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       localStorage.removeItem('gateway-show-status-bar-cost');
       localStorage.removeItem('gateway-show-status-bar-context');
       localStorage.removeItem('gateway-show-status-bar-git');
+      localStorage.removeItem('gateway-show-task-celebrations');
       localStorage.removeItem('gateway-font-family');
     } catch {}
     document.documentElement.style.setProperty('--user-font-scale', '1');
@@ -285,8 +302,14 @@ export const useAppStore = create<AppState>()(devtools((set) => ({
       showStatusBarCost: true,
       showStatusBarContext: true,
       showStatusBarGit: true,
+      showTaskCelebrations: true,
     });
   },
+
+  isStreaming: false,
+  setIsStreaming: (v) => set({ isStreaming: v }),
+  activeForm: null,
+  setActiveForm: (v) => set({ activeForm: v }),
 
   contextFiles: [],
   addContextFile: (file) =>

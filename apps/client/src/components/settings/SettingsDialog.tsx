@@ -47,6 +47,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     showStatusBarContext, setShowStatusBarContext,
     showStatusBarGit, setShowStatusBarGit,
     showShortcutChips, setShowShortcutChips,
+    showTaskCelebrations, setShowTaskCelebrations,
   } = useAppStore();
 
   const transport = useTransport();
@@ -149,6 +150,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
                 <SettingRow label="Show shortcut chips" description="Display shortcut hints below the message input">
                   <Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />
+                </SettingRow>
+
+                <SettingRow label="Task celebrations" description="Show animations when tasks complete">
+                  <Switch checked={showTaskCelebrations} onCheckedChange={setShowTaskCelebrations} />
                 </SettingRow>
 
                 <SettingRow label="Show dev tools" description="Enable developer tools panel">
