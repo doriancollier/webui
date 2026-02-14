@@ -4,6 +4,9 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { checkClaude } from './check-claude.js';
 
+// Injected at build time by esbuild define
+declare const __CLI_VERSION__: string;
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
@@ -19,7 +22,7 @@ const { values } = parseArgs({
 
 if (values.help) {
   console.log(`
-Usage: lifeos-gateway [options]
+Usage: dorkos-gateway [options]
 
 Web-based interface and REST/SSE API for Claude Code
 
@@ -36,16 +39,15 @@ Environment:
   TUNNEL_DOMAIN      Custom ngrok domain
 
 Examples:
-  lifeos-gateway
-  lifeos-gateway --tunnel
-  lifeos-gateway --port 8080 --dir ~/projects/myapp
+  dorkos-gateway
+  dorkos-gateway --tunnel
+  dorkos-gateway --port 8080 --dir ~/projects/myapp
 `);
   process.exit(0);
 }
 
 if (values.version) {
-  const pkg = JSON.parse(fs.readFileSync(path.join(__dirname, '../../package.json'), 'utf-8'));
-  console.log(pkg.version);
+  console.log(__CLI_VERSION__);
   process.exit(0);
 }
 

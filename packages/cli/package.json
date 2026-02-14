@@ -1,14 +1,37 @@
 {
-  "name": "@lifeos/gateway",
+  "name": "@dorkos/gateway",
   "version": "0.1.0",
   "description": "Web-based interface and REST/SSE API for Claude Code",
+  "license": "MIT",
+  "author": "Dorian Collier",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/doriancollier/webui.git",
+    "directory": "packages/cli"
+  },
+  "homepage": "https://github.com/doriancollier/webui#readme",
+  "bugs": "https://github.com/doriancollier/webui/issues",
+  "keywords": [
+    "claude",
+    "claude-code",
+    "agent-sdk",
+    "gateway",
+    "webui",
+    "sse",
+    "rest-api"
+  ],
   "type": "module",
   "bin": {
-    "lifeos-gateway": "./dist/bin/cli.js"
+    "dorkos-gateway": "./dist/bin/cli.js"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "LICENSE",
+    "README.md"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "engines": {
     "node": ">=18.0.0"
   },
@@ -29,7 +52,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "*",
+    "@dorkos/typescript-config": "*",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"

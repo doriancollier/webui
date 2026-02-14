@@ -1,12 +1,17 @@
 import { build } from 'esbuild';
 import { execSync } from 'child_process';
 import fs from 'fs/promises';
+import { readFileSync } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(__dirname, '../../..');
-const OUT = path.resolve(__dirname, '../dist');
+const CLI_PKG = path.resolve(__dirname, '..');
+const OUT = path.resolve(CLI_PKG, 'dist');
+
+// Read CLI package version for injection into the binary
+const { version } = JSON.parse(readFileSync(path.join(CLI_PKG, 'package.json'), 'utf-8'));
 
 async function buildCLI() {
   // Clean
@@ -14,10 +19,10 @@ async function buildCLI() {
 
   // 1. Build client (Vite)
   console.log('[1/3] Building client...');
-  execSync('npx turbo build --filter=@lifeos/client', { cwd: ROOT, stdio: 'inherit' });
+  execSync('npx turbo build --filter=@dorkos/client', { cwd: ROOT, stdio: 'inherit' });
   await fs.cp(path.join(ROOT, 'apps/client/dist'), path.join(OUT, 'client'), { recursive: true });
 
-  // 2. Bundle server (esbuild) — inlines @lifeos/shared, externalizes node_modules
+  // 2. Bundle server (esbuild) — inlines @dorkos/shared, externalizes node_modules
   console.log('[2/3] Bundling server...');
   await build({
     entryPoints: [path.join(ROOT, 'apps/server/src/index.ts')],
@@ -52,6 +57,7 @@ async function buildCLI() {
     format: 'esm',
     outfile: path.join(OUT, 'bin/cli.js'),
     external: ['dotenv', '../server/index.js'],
+    define: { __CLI_VERSION__: JSON.stringify(version) },
     banner: { js: '#!/usr/bin/env node' },
   });
 
