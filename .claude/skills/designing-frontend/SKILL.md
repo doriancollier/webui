@@ -189,5 +189,5 @@ Before implementation, verify:
 
 - `docs/DESIGN_SYSTEM.md` — Full design specifications
 - `styling-with-tailwind-shadcn` skill — Implementation patterns
-- `developer-guides/08-styling-theming.md` — Styling patterns
-- `developer-guides/07-animations.md` — Animation patterns
+- `guides/08-styling-theming.md` — Styling patterns
+- `guides/07-animations.md` — Animation patterns

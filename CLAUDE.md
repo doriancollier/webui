@@ -40,6 +40,7 @@ turbo build            # Build all 3 apps (client Vite + server tsc + obsidian p
 turbo typecheck        # Type-check all packages
 turbo build --filter=@dorkos/obsidian-plugin  # Build Obsidian plugin only
 npm run build -w packages/cli  # Build CLI package (esbuild bundles server+client+CLI)
+npm publish -w packages/cli   # Publish dorkos to npm (prepublishOnly auto-builds)
 npm start              # Production server (serves built React app)
 npm run dev:tunnel -w apps/server   # Dev server + ngrok tunnel (tunnels Vite on :3000)
 ```
@@ -141,7 +142,7 @@ The plugin build (`apps/obsidian-plugin/vite.config.ts`) includes four Vite plug
 
 ### CLI Package (`packages/cli`)
 
-The `dorkos` npm package bundles the server + client into a standalone CLI tool. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@dorkos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The CLI uses `node:util` parseArgs and sets environment variables (`GATEWAY_PORT`, `CLIENT_DIST_PATH`, `GATEWAY_CWD`, `TUNNEL_ENABLED`, `NODE_ENV`) before dynamically importing the bundled server.
+The `dorkos` npm package bundles the server + client into a standalone CLI tool. Published to npm as `dorkos` (unscoped). Install via `npm install -g dorkos`, run via `dorkos`. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@dorkos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The version is injected at build time via esbuild's `define` config (reads from `packages/cli/package.json`). The CLI creates `~/.dork/` on startup for config storage and sets `DORK_HOME` env var. It also sets `GATEWAY_PORT`, `CLIENT_DIST_PATH`, `GATEWAY_CWD`, `TUNNEL_ENABLED`, and `NODE_ENV` before dynamically importing the bundled server.
 
 ## Guides
 
@@ -154,6 +155,13 @@ Detailed documentation lives in `guides/`:
 | [`guides/obsidian-plugin-development.md`](guides/obsidian-plugin-development.md) | Plugin lifecycle, ItemView pattern, React mounting, active file tracking, drag-and-drop, Vite build config, Electron quirks, debugging, common issues |
 | [`guides/api-reference.md`](guides/api-reference.md) | OpenAPI spec, Scalar docs UI, Zod schema patterns, adding endpoints, SSE streaming, validation errors |
 | [`guides/interactive-tools.md`](guides/interactive-tools.md) | Tool approval, AskUserQuestion, TaskList interactive flows |
+| [`guides/keyboard-shortcuts.md`](guides/keyboard-shortcuts.md) | Keyboard shortcuts and hotkeys |
+| [`guides/05-data-fetching.md`](guides/05-data-fetching.md) | TanStack Query patterns, mutations |
+| [`guides/06-state-management.md`](guides/06-state-management.md) | Zustand vs TanStack Query decision guide |
+| [`guides/07-animations.md`](guides/07-animations.md) | Motion library patterns |
+| [`guides/08-styling-theming.md`](guides/08-styling-theming.md) | Tailwind v4, dark mode, Shadcn |
+| [`guides/11-parallel-execution.md`](guides/11-parallel-execution.md) | Parallel agent execution patterns, batching, context savings |
+| [`guides/13-autonomous-roadmap-execution.md`](guides/13-autonomous-roadmap-execution.md) | Autonomous workflow, `/roadmap:work` |
 
 ## Testing
 

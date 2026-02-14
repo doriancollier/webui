@@ -70,7 +70,7 @@
           },
           {
             "type": "command",
-            "command": ".claude/scripts/check-docs-changed.sh"
+            "command": ".claude/scripts/hooks/check-docs-changed.sh"
           }
         ]
       }

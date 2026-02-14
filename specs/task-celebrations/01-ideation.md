@@ -40,7 +40,7 @@
 - `apps/client/src/components/settings/SettingsDialog.tsx`: 361 lines. Tabs: Appearance, Preferences, Status Bar, Server. Uses `<SettingRow>` + `<Switch>` pattern.
 - `packages/shared/src/schemas.ts`: `TaskStatusSchema` = `enum['pending', 'in_progress', 'completed']`. `TaskItemSchema` has `id, subject, status, blockedBy, blocks, owner`. `TaskUpdateEventSchema` has `action: 'create' | 'update' | 'snapshot'`.
 - `guides/design-system.md`: Timing: Instant 100ms, Fast 150ms, Normal 200ms, Slow 300ms. Easing: ease-out for entrances, spring for interactive. "Less, but better" philosophy.
-- `developer-guides/07-animations.md`: Motion.dev patterns, GPU-only properties, AnimatePresence for exits, spring physics for natural feel. Anti-patterns: animating width/height, over-animating, ignoring reduced-motion.
+- `guides/07-animations.md`: Motion.dev patterns, GPU-only properties, AnimatePresence for exits, spring physics for natural feel. Anti-patterns: animating width/height, over-animating, ignoring reduced-motion.
 - `apps/client/src/components/chat/MessageList.tsx`: Uses IntersectionObserver for visibility detection (hidden/visible tracking), touch tracking with refs. Document visibility pattern already exists.
 
 ---

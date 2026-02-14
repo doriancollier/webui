@@ -36,7 +36,7 @@ SYSTEM_PATHS = [
     ".claude/",
     "src/",
     "prisma/",
-    "developer-guides/",
+    "guides/",
     "next.config.ts",
     "package.json",
     "tsconfig.json",

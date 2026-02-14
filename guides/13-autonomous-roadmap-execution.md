@@ -477,5 +477,5 @@ The autonomous system uses the existing spec commands:
 
 - [CLAUDE.md - Autonomous Workflow Section](/CLAUDE.md)
 - [Roadmap Commands](/system/claude-code#roadmap)
-- [Spec Workflow](/developer-guides/INDEX.md)
-- [Parallel Execution](/developer-guides/11-parallel-execution.md)
+- [Spec Workflow](/guides/INDEX.md)
+- [Parallel Execution](/guides/11-parallel-execution.md)

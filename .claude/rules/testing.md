@@ -8,22 +8,23 @@ These rules apply to all test files in the `__tests__/` directory.
 
 ## Test File Structure
 
-Tests mirror the source structure under `__tests__/`:
+Tests live alongside source in `__tests__/` directories within each app:
 
 ```
-__tests__/
-├── layers/
-│   ├── widgets/
-│   │   └── [widget-name]/ui/*.test.tsx
-│   ├── features/
-│   │   └── [feature-name]/
-│   │       ├── ui/*.test.tsx
-│   │       └── model/*.test.ts
-│   └── entities/
-│       └── [entity-name]/
-│           ├── api/*.test.ts
-│           └── model/*.test.ts
-└── lib/*.test.ts
+apps/server/src/
+├── services/
+│   └── __tests__/
+│       ├── transcript-reader.test.ts
+│       ├── agent-manager.test.ts
+│       └── session-broadcaster.test.ts
+apps/client/src/
+├── components/
+│   └── __tests__/
+│       ├── MessageList.test.tsx
+│       └── SessionSidebar.test.tsx
+├── hooks/
+│   └── __tests__/
+│       └── use-chat-session.test.ts
 ```
 
 ## Required Patterns
@@ -41,21 +42,23 @@ import { render, screen } from '@testing-library/react'
 import '@testing-library/jest-dom'
 ```
 
-### Mock Next.js APIs
+### Mock Transport (Required for Client Components)
 
-Always mock Next.js navigation and request APIs:
+Components use the Transport interface via React Context. Always provide a mock Transport in tests:
 
 ```typescript
-// Mock next/navigation
-vi.mock('next/navigation', () => ({
-  usePathname: vi.fn(() => '/'),
-  useRouter: vi.fn(() => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    back: vi.fn(),
-  })),
-  useSearchParams: vi.fn(() => new URLSearchParams()),
-}))
+import { TransportProvider } from '@/contexts/TransportContext'
+import { createMockTransport } from '@dorkos/test-utils'
+
+const mockTransport = createMockTransport()
+
+function Wrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <TransportProvider transport={mockTransport}>
+      {children}
+    </TransportProvider>
+  )
+}
 ```
 
 ### Mock Browser APIs
@@ -124,22 +127,22 @@ describe('ComponentName', () => {
 })
 ```
 
-### DAL Function Tests
+### Service Tests
 
 ```typescript
-describe('getUserById', () => {
-  it('returns user when found', async () => {
-    // Mock Prisma
-    vi.mocked(prisma.user.findUnique).mockResolvedValue(mockUser)
+describe('TranscriptReader', () => {
+  it('returns session when found', async () => {
+    // Mock fs/promises for transcript reading
+    vi.mocked(readFile).mockResolvedValue(Buffer.from(mockJsonl))
 
-    const result = await getUserById('123')
-    expect(result).toEqual(mockUser)
+    const result = await transcriptReader.getSession('test-id')
+    expect(result).toEqual(expect.objectContaining({ id: 'test-id' }))
   })
 
-  it('throws UnauthorizedError when access denied', async () => {
-    vi.mocked(getCurrentUser).mockResolvedValue(null)
+  it('throws when session not found', async () => {
+    vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))
 
-    await expect(getUserById('123')).rejects.toThrow(UnauthorizedError)
+    await expect(transcriptReader.getSession('missing')).rejects.toThrow()
   })
 })
 ```
@@ -189,7 +192,8 @@ await new Promise(r => setTimeout(r, 1000))  // Wrong - use waitFor
 ## Running Tests
 
 ```bash
-pnpm test              # Run all tests
-pnpm test:watch        # Watch mode
-pnpm test:coverage     # With coverage report
+npx turbo test                    # Run all tests via Turborepo
+npx turbo test -- --run           # Single run (no watch)
+npx vitest run path/to/test.ts    # Run a specific test file
+npx vitest --watch                # Watch mode
 ```

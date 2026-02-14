@@ -19,7 +19,7 @@ Parse `$ARGUMENTS` for these options:
 | *(none)* | Interactive scope selection |
 | `all` | Update everything (harness + guides + roadmap) |
 | `harness` | Update `.claude/` directory only |
-| `guides` | Update `developer-guides/` only |
+| `guides` | Update `guides/` only |
 | `selective` | Choose individual files to update |
 
 ### Flags
@@ -42,7 +42,7 @@ Parse `$ARGUMENTS` for these options:
 /template:update                              # Interactive scope selection
 /template:update all                          # Update everything
 /template:update harness                      # Update .claude/ only
-/template:update guides                       # Update developer-guides/ only
+/template:update guides                       # Update guides/ only
 /template:update selective                    # Choose individual files
 /template:update --dry-run                    # Preview changes (no modifications)
 /template:update --verbose                    # Show detailed diffs during update
@@ -209,7 +209,7 @@ Analyzing update from v0.2.0-alpha.5 → v0.2.0-alpha.9...
 
 - .claude/skills/my-custom-skill/SKILL.md
 - .claude/agents/my-agent.md
-- developer-guides/99-my-notes.md
+- guides/99-my-notes.md
 
 ───────────────────────────────────────────────────────────────────
   WOULD FLAG: 1 conflict for review
@@ -416,7 +416,7 @@ options:
   - label: "Harness only"
     description: "Update .claude/ directory (commands, skills, agents, hooks)"
   - label: "Guides only"
-    description: "Update developer-guides/ documentation"
+    description: "Update guides/ documentation"
   - label: "Selective"
     description: "Choose individual files or directories"
   - label: "Cancel"
@@ -443,10 +443,10 @@ Filter to updateable files and present grouped by component:
 - [x] .claude/hooks/pre-tool-use/...
 ...
 
-### Guides (developer-guides/)
+### Guides (guides/)
 
-- [ ] developer-guides/01-project-structure.md
-- [ ] developer-guides/02-environment-variables.md
+- [ ] guides/01-project-structure.md
+- [ ] guides/02-environment-variables.md
 ...
 
 ### Roadmap (roadmap/)
@@ -534,7 +534,7 @@ Algorithm:
 |----------|-------|----------|
 | **Harness Core** | `.claude/hooks/`, `.claude/scripts/` | Replace |
 | **Harness Extensible** | `.claude/commands/`, `.claude/skills/`, `.claude/agents/` | Replace (preserve user additions) |
-| **Guides** | `developer-guides/*.md` | Replace |
+| **Guides** | `guides/*.md` | Replace |
 | **Roadmap System** | `roadmap/*.ts`, `roadmap/scripts/` | Replace |
 | **Roadmap Data** | `roadmap/roadmap.json` | Skip (user data) |
 | **Gray Zone** | `CLAUDE.md`, `package.json` | Merge (Phase 8) |
@@ -551,7 +551,7 @@ Algorithm:
 ### Will Replace (12 files)
 - .claude/commands/template/check.md
 - .claude/scripts/template-fetch.ts
-- developer-guides/01-project-structure.md
+- guides/01-project-structure.md
 ...
 
 ### Will Merge (2 files)
@@ -561,7 +561,7 @@ Algorithm:
 ### Will Skip - User Additions (3 files)
 - .claude/skills/my-custom-skill/
 - .claude/commands/my-command.md
-- developer-guides/99-my-notes.md
+- guides/99-my-notes.md
 
 ### Will Skip - User Space
 - src/** (always excluded)
@@ -1234,7 +1234,7 @@ Track as skipped and continue with remaining files. Don't abort the entire updat
       "preserveUserAdditions": true
     },
     "guides": {
-      "path": "developer-guides/",
+      "path": "guides/",
       "strategy": "replace"
     },
     "roadmap": {
@@ -1325,7 +1325,7 @@ EOF
 - scripts/template-fetch.ts
 - hooks/pre-tool-use/...
 
-**Guides (developer-guides/)**
+**Guides (guides/)**
 - 01-project-structure.md
 - 02-environment-variables.md
 
@@ -1385,9 +1385,9 @@ When `--dry-run` is present, the command operates in **read-only simulation mode
 .claude/commands/template/update.md
 .claude/scripts/template-fetch.ts
 .claude/hooks/pre-tool-use/check-any.md
-developer-guides/01-project-structure.md
-developer-guides/02-environment-variables.md
-developer-guides/03-database-prisma.md
+guides/01-project-structure.md
+guides/02-environment-variables.md
+guides/03-database-prisma.md
 ... (5 more files)
 
 ───────────────────────────────────────────────────────────────────
@@ -1403,7 +1403,7 @@ package.json - Dependency merge (2 deps updated, 1 added)
 
 .claude/skills/my-custom-skill/SKILL.md
 .claude/agents/my-agent.md
-developer-guides/99-my-notes.md
+guides/99-my-notes.md
 
 ───────────────────────────────────────────────────────────────────
   SUMMARY

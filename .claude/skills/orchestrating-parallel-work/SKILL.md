@@ -221,6 +221,6 @@ print("📊 Synthesizing results...")
 ## References
 
 For detailed patterns and examples, see:
-- `developer-guides/11-parallel-execution.md` — Complete guide
+- `guides/11-parallel-execution.md` — Complete guide
 - `.claude/commands/spec/execute.md` — Batch execution example
 - `.claude/commands/ideate.md` — Parallel research example

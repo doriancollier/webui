@@ -212,7 +212,7 @@ For key packages, specifically look for:
 
 Check if upgrade will require changes to:
 - `CLAUDE.md` Technology Stack table
-- `developer-guides/` patterns
+- `guides/` patterns
 - Breaking Changes Notes section
 
 ---
@@ -444,7 +444,7 @@ Note which developer guides need updates based on API changes.
 ### Step 8.4: Commit Documentation
 
 ```bash
-git add CLAUDE.md developer-guides/
+git add CLAUDE.md guides/
 git commit -m "$(cat <<'EOF'
 docs: update for dependency upgrades
 

@@ -38,7 +38,7 @@ slug: auto-hide-tool-calls
 - `apps/client/src/components/settings/SettingsDialog.tsx`: Settings dialog with Preferences section. Each setting uses `SettingRow` component with `Switch` control.
 - `apps/client/src/components/chat/__tests__/ToolCallCard.test.tsx`: Tests mock `motion/react` (renders plain elements) and `AnimatePresence` (renders children directly).
 - `apps/client/src/components/chat/__tests__/MessageItem.test.tsx`: Tests mock motion, Streamdown, ToolApproval, QuestionPrompt. Tests tool call rendering.
-- `developer-guides/07-animations.md`: Documents motion library patterns including AnimatePresence exit animations and anti-patterns.
+- `guides/07-animations.md`: Documents motion library patterns including AnimatePresence exit animations and anti-patterns.
 
 ## 3) Codebase Map
 

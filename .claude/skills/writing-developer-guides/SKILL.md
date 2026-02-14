@@ -1,6 +1,6 @@
 ---
 name: writing-developer-guides
-description: Structures developer guides for optimal AI agent and human consumption. Use when creating or updating files in developer-guides/, or when documentation needs to support autonomous coding agents.
+description: Structures developer guides for optimal AI agent and human consumption. Use when creating or updating files in guides/, or when documentation needs to support autonomous coding agents.
 ---
 
 # Writing Developer Guides
@@ -11,7 +11,7 @@ This skill teaches how to write developer guides that work well for both AI codi
 
 ## When to Apply
 
-- Creating a new file in `developer-guides/`
+- Creating a new file in `guides/`
 - Updating or refactoring an existing guide
 - Reviewing guides for completeness
 - User asks about documentation structure
@@ -186,7 +186,7 @@ After creating or modifying a guide:
 2. Add pattern matching rules (file patterns + keywords)
 3. Update Maintenance Tracking with today's date
 
-See `developer-guides/INDEX.md` for the format.
+See `guides/INDEX.md` for the format.
 
 ## References
 

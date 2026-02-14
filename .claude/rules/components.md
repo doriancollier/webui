@@ -1,5 +1,5 @@
 ---
-paths: apps/client/src/components/**/*.tsx, apps/client/src/**/*.tsx
+paths: apps/client/src/**/*.tsx
 ---
 
 # UI Component Rules
@@ -56,25 +56,22 @@ function Component({
 export { Component, componentVariants }
 ```
 
-### Client Components (`apps/client/src/`)
+### Feature Components (`apps/client/src/`)
 
 Feature/widget components with business logic:
 
 ```typescript
-'use client'  // Only if using hooks/interactivity
-
-import { usePathname } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { someUtil } from '../lib/utils'
-import type { EntityType } from '../model/types'
+import { useQueryState } from 'nuqs'
+import type { Session } from '@dorkos/shared/types'
 
 interface Props {
-  data: EntityType
+  session: Session
   onAction?: () => void
 }
 
-export function FeatureComponent({ data, onAction }: Props) {
-  const pathname = usePathname()
+export function FeatureComponent({ session, onAction }: Props) {
+  const [sessionId] = useQueryState('session')
 
   return (
     <div className="space-y-4">
@@ -93,32 +90,20 @@ This project uses **Base UI** (via basecn) instead of Radix UI. Key differences:
 ```tsx
 // WRONG (Radix pattern - won't work)
 <Button asChild>
-  <Link href="/contact">Contact</Link>
+  <a href="/contact">Contact</a>
 </Button>
 
-// CLIENT COMPONENTS: render prop works
-'use client'
-<Button render={<Link href="/contact" />}>
+// CORRECT: render prop
+<Button render={<a href="/contact" />}>
   Contact
 </Button>
 
-// SERVER COMPONENTS: Use plain Link with button styles (avoid render prop)
-// The render prop can cause "Element type is invalid" errors in Server Components
-<Link
-  href="/contact"
-  className="inline-flex items-center justify-center gap-2 rounded-md text-sm font-medium h-9 px-4 py-2 bg-primary text-primary-foreground shadow-xs hover:bg-primary/90"
->
-  Contact
-</Link>
-
-// With SidebarMenuButton (Client Component - uses useRender)
-<SidebarMenuButton render={<Link href={item.href} />}>
+// With SidebarMenuButton
+<SidebarMenuButton render={<a href={item.href} />}>
   <Icon className="size-4" />
   <span>{item.label}</span>
 </SidebarMenuButton>
 ```
-
-**Server Component Limitation:** The `Button render={<Link .../>}` pattern can cause intermittent "Element type is invalid: expected a string...but got: undefined" errors in React Server Components. When building Server Components, use plain `<Link>` elements with Tailwind button classes instead.
 
 ### Type Workarounds
 
@@ -204,9 +189,9 @@ function DropdownMenuLabel({ className, inset, ...props }) {
 | `asChild` | `render` prop |
 | Multiple @radix-ui/* packages | Single @base-ui/react |
 
-### SSR Purity
+### Deterministic Values
 
-Never use `Math.random()` in components - causes lint errors and SSR mismatches:
+Never use `Math.random()` in components — use `useId` for deterministic values:
 
 ```tsx
 // WRONG
@@ -221,28 +206,6 @@ const width = React.useMemo(() => {
 ```
 
 ## Required Patterns
-
-### Use Client Directive
-
-Only add `'use client'` when the component uses:
-- React hooks (`useState`, `useEffect`, etc.)
-- Browser APIs (`window`, `document`)
-- Event handlers (`onClick`, `onChange`)
-- Third-party client libraries
-
-```typescript
-// Server Component (default) - no directive needed
-export function StaticCard({ title }: { title: string }) {
-  return <div>{title}</div>
-}
-
-// Client Component - needs directive
-'use client'
-export function InteractiveCard() {
-  const [open, setOpen] = useState(false)
-  return <button onClick={() => setOpen(!open)}>Toggle</button>
-}
-```
 
 ### Styling with cn()
 
@@ -317,7 +280,7 @@ Use focus-visible, not focus:
 
 ## Design System: Calm Tech
 
-Follow the Calm Tech design language (see `docs/DESIGN_SYSTEM.md`):
+Follow the Calm Tech design language (see `guides/design-system.md`):
 
 | Element | Specification |
 |---------|---------------|
@@ -361,13 +324,15 @@ Follow the Calm Tech design language (see `docs/DESIGN_SYSTEM.md`):
 <Button className={variant === 'large' ? 'text-lg' : ''} />  // Wrong
 <Button className={cn(variant === 'large' && 'text-lg')} />  // Correct
 
-// NEVER forget forwardRef for wrapped primitives
+// NEVER forget ref forwarding for wrapped primitives
 function Input(props) {  // Wrong - breaks refs
   return <input {...props} />
 }
-const Input = React.forwardRef<HTMLInputElement, Props>((props, ref) => {
+// React 19: ref is a regular prop, no forwardRef needed
+function Input({ ref, ...props }: Props & { ref?: React.Ref<HTMLInputElement> }) {
   return <input ref={ref} {...props} />
-})  // Correct
+}  // Correct
+// Note: existing forwardRef usage in ui/ components is fine, but new components should use ref-as-prop
 ```
 
 ## File Naming

@@ -25,7 +25,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Rules | 3 | `.claude/rules/` |
 | Hooks | 8 | `.claude/settings.json` |
 | MCP Servers | 2 | `.mcp.json` |
-| Developer Guides | 6 | `developer-guides/` |
+| Guides | 12 | `guides/` |
 
 ## Component Types
 
@@ -35,11 +35,11 @@ Slash commands are triggered explicitly by typing `/command`. They're expanded p
 
 | Namespace | Commands | Purpose |
 |-----------|----------|---------|
-| `spec/` | create, decompose, execute, feedback, doc-update, migrate | Specification workflow (uses built-in task tools with `[slug] [P#]` subject convention) |
+| `spec/` | create, decompose, execute, feedback, doc-update, migrate, tasks-sync | Specification workflow (uses built-in task tools with `[slug] [P#]` subject convention) |
 | `git/` | commit, push | Version control with validation |
 | `debug/` | browser, types, test, api, data, logs, rubber-duck, performance | Systematic debugging |
 | `docs/` | reconcile | Documentation drift detection |
-| `roadmap/` | show, add, open, validate, analyze, prioritize, enrich, clear | Product roadmap management |
+| `roadmap/` | show, add, open, validate, analyze, prioritize, enrich, next, work, clear | Product roadmap management |
 | `system/` | ask, update, review, learn, release | Harness maintenance |
 | `app/` | upgrade, cleanup | Application dependency and code management |
 | `cc/notify/` | on, off, status | Notification sounds |
@@ -85,7 +85,7 @@ Skills provide reusable expertise that Claude applies automatically when relevan
 | `designing-frontend` | Calm Tech design language, UI decisions | Planning UI, reviewing designs, hierarchy decisions |
 | `styling-with-tailwind-shadcn` | Tailwind CSS v4, Shadcn UI implementation | Writing styles, building components, theming |
 | `managing-roadmap-moscow` | MoSCoW prioritization, roadmap utilities | Product planning, prioritization decisions |
-| `writing-developer-guides` | Developer guide structure for AI agents | Creating/updating files in developer-guides/ |
+| `writing-developer-guides` | Developer guide structure for AI agents | Creating/updating files in guides/ |
 | `orchestrating-parallel-work` | Parallel agent execution, batch scheduling | Coordinating multiple concurrent tasks, optimizing task ordering |
 | `changelog-writing` | Human-friendly changelog entries, release notes | Populating changelog, preparing releases |
 
@@ -97,7 +97,7 @@ Rules inject context-specific guidance when Claude works with matching files. Ea
 |------|------------|--------------|
 | `api.md` | `apps/server/src/routes/**/*.ts` | Zod validation, service layer usage, error handling |
 | `testing.md` | `**/__tests__/**/*.ts`, `**/*.test.ts` | Vitest patterns, mocking, component testing |
-| `components.md` | `apps/client/src/components/**/*.tsx`, `apps/client/src/**/*.tsx` | Shadcn patterns, accessibility, styling |
+| `components.md` | `apps/client/src/**/*.tsx` | Shadcn patterns, accessibility, styling |
 
 ### Hooks (Event-Triggered)
 
@@ -119,17 +119,23 @@ External tools available via Model Context Protocol.
 | `playwright` | Browser automation and visual debugging |
 | `context7` | Library documentation lookup |
 
-### Developer Guides
+### Guides
 
-Detailed implementation patterns in `developer-guides/`:
+All documentation lives in `guides/`:
 
 | Guide | Content |
 |-------|---------|
+| `architecture.md` | Hexagonal architecture, Transport interface, Electron compatibility |
+| `design-system.md` | Color palette, typography, spacing, motion specs |
+| `api-reference.md` | OpenAPI spec, Scalar docs UI, Zod schema patterns |
+| `interactive-tools.md` | Tool approval, AskUserQuestion, TaskList flows |
+| `keyboard-shortcuts.md` | Keyboard shortcuts and hotkeys |
+| `obsidian-plugin-development.md` | Plugin lifecycle, Vite build, Electron quirks |
 | `05-data-fetching.md` | TanStack Query patterns, mutations |
 | `06-state-management.md` | Zustand vs TanStack Query decision guide |
 | `07-animations.md` | Motion library patterns |
 | `08-styling-theming.md` | Tailwind v4, dark mode, Shadcn |
-| `11-parallel-execution.md` | Parallel agent execution patterns, batching, context savings |
+| `11-parallel-execution.md` | Parallel agent execution patterns, batching |
 | `13-autonomous-roadmap-execution.md` | Autonomous workflow, `/roadmap:work` |
 
 Skills often reference these guides for detailed patterns while keeping SKILL.md files concise.
@@ -202,6 +208,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── spec/              # Specification workflow
 │   ├── git/               # Version control
 │   ├── debug/             # Debugging commands
+│   ├── docs/              # Documentation maintenance
 │   ├── roadmap/           # Product roadmap
 │   ├── system/            # Harness maintenance
 │   ├── cc/                # Claude Code configuration
@@ -317,7 +324,7 @@ Use `/tasks` to see running background agents and their status.
 
 ### Reference
 
-See `developer-guides/11-parallel-execution.md` for complete patterns and decision framework.
+See `guides/11-parallel-execution.md` for complete patterns and decision framework.
 
 ## Maintaining the Harness
 
@@ -403,7 +410,7 @@ CLAUDE.md is the **primary source of truth** for project context. This README do
 
 ### With Developer Guides
 
-Developer guides in `developer-guides/` provide detailed patterns. Skills often reference these guides for comprehensive documentation while keeping SKILL.md concise.
+Developer guides in `guides/` provide detailed patterns. Skills often reference these guides for comprehensive documentation while keeping SKILL.md concise.
 
 ### With Roadmap
 

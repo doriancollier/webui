@@ -28,7 +28,7 @@ Search these sources to find the relevant process:
 - Contains technology stack, architecture patterns, and code conventions
 
 **Developer guides**:
-- Check `developer-guides/` for detailed implementation patterns and best practices
+- Check `guides/` for detailed implementation patterns and best practices
 
 **Path-specific rules**:
 - Check `.claude/rules/` for contextual rules that apply to specific file patterns
@@ -269,7 +269,7 @@ When explaining processes, clarify the invocation model:
 ## Important Notes
 
 - Always check CLAUDE.md first - it's the authoritative source for project conventions
-- Developer guides in `developer-guides/` contain detailed patterns
+- Developer guides in `guides/` contain detailed patterns
 - If a slash command exists, prefer that over a raw prompt
 - For database schema changes, remind users about the migration-first workflow
 - For code changes, remind about the prohibition on `any` types

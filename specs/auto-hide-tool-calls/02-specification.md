@@ -424,7 +424,7 @@ None — all clarifications from ideation have been resolved:
 - [Motion AnimatePresence docs](https://motion.dev/docs/react-animate-presence) — Exit animation API
 - [TanStack Virtual + Motion guide](https://www.devas.life/how-to-animate-a-tanstack-virtual-list-with-motion-rev-2/) — Compatibility patterns
 - [List animation best practices](https://theodorusclarence.com/blog/list-animation) — Outer/inner div pattern
-- `developer-guides/07-animations.md` — Project animation conventions
+- `guides/07-animations.md` — Project animation conventions
 
 ## 15. Files Modified
 
