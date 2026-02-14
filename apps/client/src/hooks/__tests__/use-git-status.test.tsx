@@ -3,10 +3,10 @@ import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Transport } from '@lifeos/shared/transport';
+import type { Transport } from '@dorkos/shared/transport';
 import { TransportProvider } from '../../contexts/TransportContext';
 import { useGitStatus, isGitStatusOk } from '../use-git-status';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 function createMockTransport(overrides: Partial<Transport> = {}): Transport {
   return {

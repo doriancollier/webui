@@ -3,7 +3,7 @@ slug: cli-package
 generated: 2026-02-12
 ---
 
-# Task Breakdown: Publishable npm CLI Package (`@lifeos/gateway`)
+# Task Breakdown: Publishable npm CLI Package (`@dorkos/gateway`)
 
 ## Phase 1: Server Modifications
 
@@ -89,7 +89,7 @@ this.cwd = cwd ?? process.env.GATEWAY_CWD ?? path.resolve(__dirname, '../../../.
 
 **Description**:
 
-Create the `packages/cli/` directory with the package scaffold. This establishes the workspace package that will be published as `@lifeos/gateway`.
+Create the `packages/cli/` directory with the package scaffold. This establishes the workspace package that will be published as `@dorkos/gateway`.
 
 #### 1. Create directory structure
 
@@ -106,12 +106,12 @@ packages/cli/
 
 ```json
 {
-  "name": "@lifeos/gateway",
+  "name": "@dorkos/gateway",
   "version": "0.1.0",
   "description": "Web-based interface and REST/SSE API for Claude Code",
   "type": "module",
   "bin": {
-    "lifeos-gateway": "./dist/bin/cli.js"
+    "dorkos-gateway": "./dist/bin/cli.js"
   },
   "files": [
     "dist/"
@@ -136,7 +136,7 @@ packages/cli/
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "*",
+    "@dorkos/typescript-config": "*",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
@@ -161,7 +161,7 @@ Extends shared TypeScript config with appropriate settings for the CLI package.
 ```
 
 **Acceptance Criteria**:
-- `npm install` from root succeeds and resolves `@lifeos/gateway` workspace
+- `npm install` from root succeeds and resolves `@dorkos/gateway` workspace
 - `turbo` recognizes the new workspace in `npx turbo ls`
 - The `pack` task is listed in turbo tasks
 - Directory structure is in place for subsequent tasks
@@ -239,7 +239,7 @@ await import('../server/index.js');
 The `--help` handler should print usage text similar to:
 
 ```
-Usage: lifeos-gateway [options]
+Usage: dorkos-gateway [options]
 
 Web-based interface and REST/SSE API for Claude Code
 
@@ -284,7 +284,7 @@ export function checkClaude(): void {
   } catch {
     console.error('Error: Claude Code CLI not found in PATH.');
     console.error('');
-    console.error('LifeOS Gateway requires the Claude Code CLI to function.');
+    console.error('DorkOS Gateway requires the Claude Code CLI to function.');
     console.error('Install it with:  npm install -g @anthropic-ai/claude-code');
     console.error('');
     console.error('More info: https://docs.anthropic.com/en/docs/claude-code');
@@ -312,7 +312,7 @@ export function checkClaude(): void {
 
 **Description**:
 
-Implement the build script that produces the final distributable package. Three steps: Vite client build, esbuild server bundle (inlining @lifeos/shared), esbuild CLI entry compilation.
+Implement the build script that produces the final distributable package. Three steps: Vite client build, esbuild server bundle (inlining @dorkos/shared), esbuild CLI entry compilation.
 
 #### `packages/cli/scripts/build.ts` (section 7.8)
 
@@ -331,10 +331,10 @@ async function buildCLI() {
 
   // 1. Build client (Vite)
   console.log('[1/3] Building client...');
-  execSync('npx turbo build --filter=@lifeos/client', { cwd: ROOT, stdio: 'inherit' });
+  execSync('npx turbo build --filter=@dorkos/client', { cwd: ROOT, stdio: 'inherit' });
   await fs.cp(path.join(ROOT, 'apps/client/dist'), path.join(OUT, 'client'), { recursive: true });
 
-  // 2. Bundle server (esbuild) — inlines @lifeos/shared, externalizes node_modules
+  // 2. Bundle server (esbuild) — inlines @dorkos/shared, externalizes node_modules
   console.log('[2/3] Bundling server...');
   await build({
     entryPoints: [path.join(ROOT, 'apps/server/src/index.ts')],
@@ -384,7 +384,7 @@ buildCLI();
 **Acceptance Criteria**:
 - Running `npm run build` in `packages/cli/` produces:
   - `dist/bin/cli.js` — executable CLI entry with shebang
-  - `dist/server/index.js` — bundled server with `@lifeos/shared` inlined
+  - `dist/server/index.js` — bundled server with `@dorkos/shared` inlined
   - `dist/server/index.js.map` — source map
   - `dist/client/index.html` — built React SPA
   - `dist/client/assets/` — client static assets
@@ -517,7 +517,7 @@ Verify `npm pack --dry-run` shows expected files:
 
 Add `packages/cli` to the monorepo structure section and document the new commands:
 - `npm run build` in `packages/cli` — build the CLI package
-- `turbo run pack --filter=@lifeos/gateway` — build via turbo
+- `turbo run pack --filter=@dorkos/gateway` — build via turbo
 - `node packages/cli/dist/bin/cli.js` — run locally
 
 **Acceptance Criteria**:

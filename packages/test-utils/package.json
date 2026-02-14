@@ -1,5 +1,5 @@
 {
-  "name": "@lifeos/test-utils",
+  "name": "@dorkos/test-utils",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,10 +10,10 @@
     "./sse-helpers": "./src/sse-helpers.ts"
   },
   "dependencies": {
-    "@lifeos/shared": "*"
+    "@dorkos/shared": "*"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "*",
+    "@dorkos/typescript-config": "*",
     "@testing-library/react": "^16.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
 import { useAppStore } from '../stores/app-store';
-import type { TaskItem, TaskUpdateEvent, TaskStatus } from '@lifeos/shared/types';
+import type { TaskItem, TaskUpdateEvent, TaskStatus } from '@dorkos/shared/types';
 
 const STATUS_ORDER: Record<TaskStatus, number> = {
   in_progress: 0,

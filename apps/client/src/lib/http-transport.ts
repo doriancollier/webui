@@ -13,8 +13,8 @@ import type {
   GitStatusResponse,
   GitStatusError,
   SessionLockedError,
-} from '@lifeos/shared/types';
-import type { Transport } from '@lifeos/shared/transport';
+} from '@dorkos/shared/types';
+import type { Transport } from '@dorkos/shared/transport';
 
 async function fetchJSON<T>(baseUrl: string, url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${baseUrl}${url}`, {

@@ -660,7 +660,7 @@ Core service that manages chokidar file watchers and SSE broadcast connections.
 
 ```typescript
 import type { Response } from 'express';
-import type { HistoryMessage } from '@lifeos/shared/types';
+import type { HistoryMessage } from '@dorkos/shared/types';
 import chokidar from 'chokidar';
 import fs from 'fs/promises';
 import path from 'path';
@@ -861,7 +861,7 @@ export class SessionBroadcaster {
 
     for (const client of watch.clients) {
       try {
-        sendSSEEvent(client, event as import('@lifeos/shared/types').StreamEvent);
+        sendSSEEvent(client, event as import('@dorkos/shared/types').StreamEvent);
       } catch {
         // Client may have disconnected; will be cleaned up by 'close' handler
       }

@@ -12,7 +12,7 @@ slug: monorepo-turborepo-migration
 
 ## 1. Overview
 
-Migrate LifeOS Gateway from a monolithic single-package structure to a Turborepo monorepo with npm workspaces. The project currently ships three independent build targets (React SPA, Express API, Obsidian plugin) from one `package.json` with shared types inlined. This migration splits them into 6 workspace packages with proper dependency boundaries, build caching, and parallel task execution.
+Migrate DorkOS Gateway from a monolithic single-package structure to a Turborepo monorepo with npm workspaces. The project currently ships three independent build targets (React SPA, Express API, Obsidian plugin) from one `package.json` with shared types inlined. This migration splits them into 6 workspace packages with proper dependency boundaries, build caching, and parallel task execution.
 
 ## 2. Background / Problem Statement
 
@@ -41,7 +41,7 @@ The hexagonal architecture (Transport interface with HttpTransport/DirectTranspo
 - Adding new features during migration
 - CI/CD pipeline changes or remote caching setup
 - Switching package managers (staying on npm)
-- Extracting a `@lifeos/ui` component library
+- Extracting a `@dorkos/ui` component library
 - Adding TypeScript Project References (Turborepo advises against this)
 
 ## 5. Technical Dependencies
@@ -62,21 +62,21 @@ No new runtime dependencies. `turbo` is the only new devDependency at the root l
 ### 6.1 Package Structure
 
 ```
-lifeos-gateway/
+dorkos-gateway/
 ├── apps/
-│   ├── client/                     # @lifeos/client
+│   ├── client/                     # @dorkos/client
 │   │   ├── src/                    # 62 files: components, hooks, stores, lib
 │   │   ├── public/
 │   │   ├── index.html
 │   │   ├── components.json         # shadcn/ui config
 │   │   ├── package.json
-│   │   ├── tsconfig.json           # extends @lifeos/typescript-config/react
+│   │   ├── tsconfig.json           # extends @dorkos/typescript-config/react
 │   │   └── vite.config.ts
-│   ├── server/                     # @lifeos/server
+│   ├── server/                     # @dorkos/server
 │   │   ├── src/                    # 25 files: routes, services, middleware
 │   │   ├── package.json
-│   │   └── tsconfig.json           # extends @lifeos/typescript-config/node
-│   └── obsidian-plugin/            # @lifeos/obsidian-plugin
+│   │   └── tsconfig.json           # extends @dorkos/typescript-config/node
+│   └── obsidian-plugin/            # @dorkos/obsidian-plugin
 │       ├── src/                    # 10 files: plugin main, views, components
 │       ├── build-plugins/          # 4 custom Vite plugins
 │       │   ├── copy-manifest.ts
@@ -88,19 +88,19 @@ lifeos-gateway/
 │       ├── tsconfig.json
 │       └── vite.config.ts
 ├── packages/
-│   ├── shared/                     # @lifeos/shared
+│   ├── shared/                     # @dorkos/shared
 │   │   ├── src/
 │   │   │   ├── schemas.ts          # Zod schemas + OpenAPI metadata
 │   │   │   ├── transport.ts        # Transport interface
 │   │   │   └── types.ts            # Re-exports from schemas
 │   │   ├── package.json            # exports map → .ts source (JIT)
 │   │   └── tsconfig.json
-│   ├── typescript-config/          # @lifeos/typescript-config
+│   ├── typescript-config/          # @dorkos/typescript-config
 │   │   ├── base.json
 │   │   ├── react.json
 │   │   ├── node.json
 │   │   └── package.json
-│   └── test-utils/                 # @lifeos/test-utils
+│   └── test-utils/                 # @dorkos/test-utils
 │       ├── src/
 │       │   ├── mock-factories.ts
 │       │   ├── react-helpers.tsx
@@ -120,23 +120,23 @@ lifeos-gateway/
 ### 6.2 Dependency Graph
 
 ```
-@lifeos/typescript-config (no deps)
+@dorkos/typescript-config (no deps)
          │
-@lifeos/shared (zod, @asteasolutions/zod-to-openapi)
+@dorkos/shared (zod, @asteasolutions/zod-to-openapi)
     ┌────┼────────────┐
     ▼    ▼            ▼
-@lifeos/ @lifeos/   @lifeos/
+@dorkos/ @dorkos/   @dorkos/
 client   server     test-utils
     │    │
     ▼    ▼
-@lifeos/obsidian-plugin
+@dorkos/obsidian-plugin
 ```
 
 ### 6.3 Root package.json
 
 ```json
 {
-  "name": "lifeos-gateway",
+  "name": "dorkos-gateway",
   "private": true,
   "packageManager": "npm@10.x.x",
   "workspaces": ["apps/*", "packages/*"],
@@ -191,11 +191,11 @@ client   server     test-utils
 
 ### 6.5 Package Configurations
 
-#### @lifeos/shared (packages/shared/package.json)
+#### @dorkos/shared (packages/shared/package.json)
 
 ```json
 {
-  "name": "@lifeos/shared",
+  "name": "@dorkos/shared",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -209,7 +209,7 @@ client   server     test-utils
     "@asteasolutions/zod-to-openapi": "^8.4.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "typescript": "^5.7.0"
   }
 }
@@ -217,11 +217,11 @@ client   server     test-utils
 
 Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers (Vite, tsc) compile on the fly. No build step needed for this package.
 
-#### @lifeos/typescript-config (packages/typescript-config/package.json)
+#### @dorkos/typescript-config (packages/typescript-config/package.json)
 
 ```json
 {
-  "name": "@lifeos/typescript-config",
+  "name": "@dorkos/typescript-config",
   "version": "0.0.0",
   "private": true,
   "files": ["base.json", "react.json", "node.json"]
@@ -268,11 +268,11 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 }
 ```
 
-#### @lifeos/client (apps/client/package.json)
+#### @dorkos/client (apps/client/package.json)
 
 ```json
 {
-  "name": "@lifeos/client",
+  "name": "@dorkos/client",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -291,7 +291,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*",
+    "@dorkos/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@tanstack/react-query": "^5.62.0",
@@ -311,8 +311,8 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
-    "@lifeos/test-utils": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
+    "@dorkos/test-utils": "workspace:*",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
@@ -333,7 +333,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 **apps/client/tsconfig.json:**
 ```json
 {
-  "extends": "@lifeos/typescript-config/react",
+  "extends": "@dorkos/typescript-config/react",
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]
@@ -349,11 +349,11 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 - `build.outDir`: `dist` (relative to package)
 - `test` config: `environment: 'jsdom'`
 
-#### @lifeos/server (apps/server/package.json)
+#### @dorkos/server (apps/server/package.json)
 
 ```json
 {
-  "name": "@lifeos/server",
+  "name": "@dorkos/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -370,7 +370,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*",
+    "@dorkos/shared": "workspace:*",
     "@anthropic-ai/claude-agent-sdk": "latest",
     "@asteasolutions/zod-to-openapi": "^8.4.0",
     "@scalar/express-api-reference": "^0.8.40",
@@ -382,7 +382,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
     "@types/uuid": "^10.0.0",
@@ -395,12 +395,12 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 }
 ```
 
-**Note:** The `exports` field with `./services/*` allows the Obsidian plugin to import `@lifeos/server/services/agent-manager` etc. This maps to TypeScript source (JIT pattern).
+**Note:** The `exports` field with `./services/*` allows the Obsidian plugin to import `@dorkos/server/services/agent-manager` etc. This maps to TypeScript source (JIT pattern).
 
 **apps/server/tsconfig.json:**
 ```json
 {
-  "extends": "@lifeos/typescript-config/node",
+  "extends": "@dorkos/typescript-config/node",
   "compilerOptions": {
     "outDir": "./dist"
   },
@@ -408,11 +408,11 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 }
 ```
 
-#### @lifeos/obsidian-plugin (apps/obsidian-plugin/package.json)
+#### @dorkos/obsidian-plugin (apps/obsidian-plugin/package.json)
 
 ```json
 {
-  "name": "@lifeos/obsidian-plugin",
+  "name": "@dorkos/obsidian-plugin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -422,14 +422,14 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*",
-    "@lifeos/server": "workspace:*",
-    "@lifeos/client": "workspace:*",
+    "@dorkos/shared": "workspace:*",
+    "@dorkos/server": "workspace:*",
+    "@dorkos/client": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-react": "latest",
     "obsidian": "latest",
@@ -442,11 +442,11 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 
 The plugin's `vite.config.ts` moves the 4 custom build plugins from the root `vite.config.obsidian.ts` into `build-plugins/` as separate modules and imports them.
 
-#### @lifeos/test-utils (packages/test-utils/package.json)
+#### @dorkos/test-utils (packages/test-utils/package.json)
 
 ```json
 {
-  "name": "@lifeos/test-utils",
+  "name": "@dorkos/test-utils",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -457,10 +457,10 @@ The plugin's `vite.config.ts` moves the 4 custom build plugins from the root `vi
     "./sse-helpers": "./src/sse-helpers.ts"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*"
+    "@dorkos/shared": "workspace:*"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@testing-library/react": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -475,31 +475,31 @@ The plugin's `vite.config.ts` moves the 4 custom build plugins from the root `vi
 
 | Current Pattern | New Pattern |
 |----------------|-------------|
-| `import { X } from '@shared/types'` | `import { X } from '@lifeos/shared/types'` |
-| `import { X } from '@shared/transport'` | `import { X } from '@lifeos/shared/transport'` |
-| `import { X } from '@shared/schemas'` | `import { X } from '@lifeos/shared/schemas'` |
+| `import { X } from '@shared/types'` | `import { X } from '@dorkos/shared/types'` |
+| `import { X } from '@shared/transport'` | `import { X } from '@dorkos/shared/transport'` |
+| `import { X } from '@shared/schemas'` | `import { X } from '@dorkos/shared/schemas'` |
 | `import { X } from '@/components/...'` | `import { X } from '@/components/...'` (unchanged) |
 
 #### Server imports (25 files)
 
 | Current Pattern | New Pattern |
 |----------------|-------------|
-| `import { X } from '../../shared/schemas.js'` | `import { X } from '@lifeos/shared/schemas'` |
-| `import { X } from '../../shared/types.js'` | `import { X } from '@lifeos/shared/types'` |
+| `import { X } from '../../shared/schemas.js'` | `import { X } from '@dorkos/shared/schemas'` |
+| `import { X } from '../../shared/types.js'` | `import { X } from '@dorkos/shared/types'` |
 | Relative service imports | Unchanged (within same package) |
 
 #### Plugin imports (10 files)
 
 | Current Pattern | New Pattern |
 |----------------|-------------|
-| `import { AgentManager } from '../../server/services/agent-manager'` | `import { AgentManager } from '@lifeos/server/services/agent-manager'` |
-| `import { TranscriptReader } from '../../server/services/transcript-reader'` | `import { TranscriptReader } from '@lifeos/server/services/transcript-reader'` |
-| `import { CommandRegistryService } from '../../server/services/command-registry'` | `import { CommandRegistryService } from '@lifeos/server/services/command-registry'` |
-| `import { App } from '../../client/App'` | `import { App } from '@lifeos/client/App'` |
-| `import { useAppStore } from '../../client/stores/app-store'` | `import { useAppStore } from '@lifeos/client/stores/app-store'` |
-| `import { TransportProvider } from '../../client/contexts/TransportContext'` | `import { TransportProvider } from '@lifeos/client/contexts/TransportContext'` |
-| `import { DirectTransport } from '../../client/lib/direct-transport'` | `import { DirectTransport } from '@lifeos/client/lib/direct-transport'` |
-| `import { X } from '@shared/types'` | `import { X } from '@lifeos/shared/types'` |
+| `import { AgentManager } from '../../server/services/agent-manager'` | `import { AgentManager } from '@dorkos/server/services/agent-manager'` |
+| `import { TranscriptReader } from '../../server/services/transcript-reader'` | `import { TranscriptReader } from '@dorkos/server/services/transcript-reader'` |
+| `import { CommandRegistryService } from '../../server/services/command-registry'` | `import { CommandRegistryService } from '@dorkos/server/services/command-registry'` |
+| `import { App } from '../../client/App'` | `import { App } from '@dorkos/client/App'` |
+| `import { useAppStore } from '../../client/stores/app-store'` | `import { useAppStore } from '@dorkos/client/stores/app-store'` |
+| `import { TransportProvider } from '../../client/contexts/TransportContext'` | `import { TransportProvider } from '@dorkos/client/contexts/TransportContext'` |
+| `import { DirectTransport } from '../../client/lib/direct-transport'` | `import { DirectTransport } from '@dorkos/client/lib/direct-transport'` |
+| `import { X } from '@shared/types'` | `import { X } from '@dorkos/shared/types'` |
 
 ### 6.7 Vitest Workspace Configuration
 
@@ -627,7 +627,7 @@ No security implications. All packages are private (`"private": true`). No new n
 |---------|---------|
 | Commands | `npm run dev` → `turbo dev`, `npm run build` → `turbo build`, etc. |
 | Architecture | New directory structure, package descriptions |
-| Path Aliases | `@/*` scoped per-app, `@shared/*` → `@lifeos/shared/*` |
+| Path Aliases | `@/*` scoped per-app, `@shared/*` → `@dorkos/shared/*` |
 | Server section | `apps/server/src/` paths |
 | Client section | `apps/client/src/` paths |
 | Plugin section | `apps/obsidian-plugin/src/` paths, build-plugins/ |
@@ -690,8 +690,8 @@ No security implications. All packages are private (`"private": true`). No new n
 
 **Files modified:**
 - `package.json` — add `"workspaces": ["packages/*"]`
-- All client files importing `@shared/*` → `@lifeos/shared/*` (~25 files)
-- All server files importing `../../shared/*` → `@lifeos/shared/*` (~8 files)
+- All client files importing `@shared/*` → `@dorkos/shared/*` (~25 files)
+- All server files importing `../../shared/*` → `@dorkos/shared/*` (~8 files)
 
 **Verification:** `turbo test` passes, `turbo build` succeeds.
 
@@ -746,8 +746,8 @@ No security implications. All packages are private (`"private": true`). No new n
 - `manifest.json` → `apps/obsidian-plugin/manifest.json`
 
 **Files modified:**
-- All plugin files with `../../server/` imports → `@lifeos/server/...` (~3 files)
-- All plugin files with `../../client/` imports → `@lifeos/client/...` (~5 files)
+- All plugin files with `../../server/` imports → `@dorkos/server/...` (~3 files)
+- All plugin files with `../../client/` imports → `@dorkos/client/...` (~5 files)
 
 **Files deleted:**
 - `vite.config.obsidian.ts` (root) — logic moves to `apps/obsidian-plugin/vite.config.ts`
@@ -766,7 +766,7 @@ No security implications. All packages are private (`"private": true`). No new n
 - `src/test-utils/**/*` → `packages/test-utils/src/**/*` (3 files)
 
 **Files modified:**
-- Client test files importing from `../../test-utils/` → `@lifeos/test-utils/...`
+- Client test files importing from `../../test-utils/` → `@dorkos/test-utils/...`
 - `apps/client/vite.config.ts` — vitest config for jsdom
 - `apps/server/` — add vitest config for node environment
 
@@ -802,16 +802,16 @@ No security implications. All packages are private (`"private": true`). No new n
 
 ## 13. Open Questions (Resolved)
 
-1. **`@lifeos/client` and `@lifeos/server` exports for plugin** — **Resolved: Use explicit entries.**
+1. **`@dorkos/client` and `@dorkos/server` exports for plugin** — **Resolved: Use explicit entries.**
    The plugin imports 3 server modules (`agent-manager`, `transcript-reader`, `command-registry`) and 5 client modules (`App`, `app-store`, `TransportContext`, `direct-transport`, `platform`). Use explicit exports rather than wildcards for type safety and clarity:
    - Server: `"./services/agent-manager"`, `"./services/transcript-reader"`, `"./services/command-registry"`
    - Client: `"./App"`, `"./stores/app-store"`, `"./contexts/TransportContext"`, `"./lib/direct-transport"`, `"./lib/platform"`
 
 2. **Server production build path resolution** — **Resolved: Works via Node module resolution.**
-   The server currently uses relative imports with `.js` extensions (`../../shared/types.js`) and `tsconfig.server.json` includes `src/shared/**/*`. After migration, `@lifeos/shared` becomes a workspace dependency resolved via Node module resolution. Since the JIT pattern exports `.ts` source, `tsc` resolves it through `node_modules/@lifeos/shared` → workspace symlink → `packages/shared/src/*.ts`. No additional `paths` config needed.
+   The server currently uses relative imports with `.js` extensions (`../../shared/types.js`) and `tsconfig.server.json` includes `src/shared/**/*`. After migration, `@dorkos/shared` becomes a workspace dependency resolved via Node module resolution. Since the JIT pattern exports `.ts` source, `tsc` resolves it through `node_modules/@dorkos/shared` → workspace symlink → `packages/shared/src/*.ts`. No additional `paths` config needed.
 
 3. **Obsidian plugin dev workflow** — **Resolved: Keep separate from `turbo dev`.**
-   Currently `dev:obsidian` runs separately from `npm run dev`. Maintain this pattern: `turbo dev` runs client + server only (the common workflow). The plugin's `dev` script (`vite build --watch`) runs independently via `turbo dev --filter=@lifeos/obsidian-plugin` or directly in the plugin directory. This avoids starting the plugin watcher when doing web-only development.
+   Currently `dev:obsidian` runs separately from `npm run dev`. Maintain this pattern: `turbo dev` runs client + server only (the common workflow). The plugin's `dev` script (`vite build --watch`) runs independently via `turbo dev --filter=@dorkos/obsidian-plugin` or directly in the plugin directory. This avoids starting the plugin watcher when doing web-only development.
 
 ## 14. References
 

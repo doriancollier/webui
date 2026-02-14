@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { Transport } from '@lifeos/shared/transport';
+import type { Transport } from '@dorkos/shared/transport';
 
 const TransportContext = createContext<Transport | null>(null);
 

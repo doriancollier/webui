@@ -2,13 +2,13 @@
 
 ## 1. Intent & Assumptions
 
-**Intent**: Package LifeOS Gateway as a standalone npm CLI tool (`lifeos-gateway`) so anyone with Node.js can install and run it via `npx lifeos-gateway` or `npm install -g lifeos-gateway`, with optional `--tunnel` support for remote access.
+**Intent**: Package DorkOS Gateway as a standalone npm CLI tool (`dorkos-gateway`) so anyone with Node.js can install and run it via `npx dorkos-gateway` or `npm install -g dorkos-gateway`, with optional `--tunnel` support for remote access.
 
 **Assumptions**:
 - Target users already have Node.js 18+ (Claude Code CLI is npm-distributed)
 - Users have Claude Code CLI installed (`@anthropic-ai/claude-code` or native)
 - The published package must work independently of the monorepo structure
-- `@lifeos/shared` must be bundled into the server (not a separate npm package)
+- `@dorkos/shared` must be bundled into the server (not a separate npm package)
 - `@ngrok/ngrok` stays as a regular dependency (npm handles platform binaries)
 - The pre-built React client (Vite output) ships as static assets in the package
 
@@ -34,7 +34,7 @@
 ```
                                     esbuild (bundle)
 apps/server/src/**  ──────────────────────────────────→  packages/cli/dist/server/index.js
-                          ↑ inlines @lifeos/shared
+                          ↑ inlines @dorkos/shared
 packages/shared/src/**  ──┘
 
 apps/client/src/**  ──── vite build ──────────────────→  packages/cli/dist/client/
@@ -58,7 +58,7 @@ packages/cli/src/cli.ts ── esbuild ─────────────�
 
 | Package | Strategy | Reason |
 |---------|----------|--------|
-| `@lifeos/shared` | **Bundle** (inline) | Workspace package, not published to npm |
+| `@dorkos/shared` | **Bundle** (inline) | Workspace package, not published to npm |
 | `@anthropic-ai/claude-agent-sdk` | **Externalize** | Complex, spawns processes, should be installed normally |
 | `@ngrok/ngrok` | **Externalize** | Native bindings, platform-specific |
 | `express` | **Externalize** | Large, common, well-tested |
@@ -81,7 +81,7 @@ packages/cli/src/cli.ts ── esbuild ─────────────�
 - **Best fit**: Fast, handles TypeScript natively, tree-shakes, externalizes node_modules
 - `--bundle --platform=node --target=node18 --format=esm`
 - `--external:@ngrok/ngrok --external:express` etc. for native/large deps
-- `@lifeos/shared` is NOT externalized, so it gets inlined into the server bundle
+- `@dorkos/shared` is NOT externalized, so it gets inlined into the server bundle
 - **Alternative considered**: tsup (esbuild wrapper with DTS support) — unnecessary complexity for a CLI
 
 ### CLI Entry Point: `node:util` parseArgs
@@ -108,7 +108,7 @@ packages/cli/src/cli.ts ── esbuild ─────────────�
 - `prepublishOnly` script runs full build pipeline
 - `files` whitelist: `["dist/", "bin/"]`
 - `engines: { "node": ">=18.0.0" }`
-- `bin: { "lifeos-gateway": "./bin/cli.js" }`
+- `bin: { "dorkos-gateway": "./bin/cli.js" }`
 - Semantic versioning starting at `0.1.0` (pre-release while stabilizing)
 
 ### Reference Packages
@@ -119,7 +119,7 @@ packages/cli/src/cli.ts ── esbuild ─────────────�
 
 ## 5. Open Questions / Clarifications
 
-1. **Package name**: `lifeos-gateway` or scoped `@lifeos/gateway`? Scoped requires npm org. Unscoped is simpler for `npx`.
+1. **Package name**: `dorkos-gateway` or scoped `@dorkos/gateway`? Scoped requires npm org. Unscoped is simpler for `npx`.
 
 2. **Server code modifications**: Should we modify `apps/server` source to support both monorepo and CLI contexts (via env vars / flags), or should `packages/cli` have its own entry point that wraps the server with CLI-specific path resolution?
 
@@ -127,7 +127,7 @@ packages/cli/src/cli.ts ── esbuild ─────────────�
 
 4. **Scope of first release**: Just the server + client + tunnel? Or also include the Obsidian plugin build pipeline?
 
-5. **`.env` handling**: In CLI mode, should we look for `.env` in the user's cwd (project-local), `~/.lifeos-gateway/.env` (global config), or just rely on env vars / CLI flags?
+5. **`.env` handling**: In CLI mode, should we look for `.env` in the user's cwd (project-local), `~/.dorkos-gateway/.env` (global config), or just rely on env vars / CLI flags?
 
 ## 6. Proposed Architecture
 
@@ -153,7 +153,7 @@ packages/cli/
 ### CLI Interface
 
 ```
-lifeos-gateway [options]
+dorkos-gateway [options]
 
 Options:
   -p, --port <port>     Port to listen on (default: 6942)
@@ -168,9 +168,9 @@ Environment:
   TUNNEL_DOMAIN         Custom ngrok domain
 
 Examples:
-  npx lifeos-gateway
-  npx lifeos-gateway --tunnel
-  npx lifeos-gateway --port 8080 --dir ~/projects/myapp
+  npx dorkos-gateway
+  npx dorkos-gateway --tunnel
+  npx dorkos-gateway --port 8080 --dir ~/projects/myapp
 ```
 
 ### Build Pipeline

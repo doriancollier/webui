@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { getPlatform } from '@lifeos/client/lib/platform';
+import { getPlatform } from '@dorkos/client/lib/platform';
 
 export function useFileOpener() {
   const openFile = useCallback(async (path: string) => {

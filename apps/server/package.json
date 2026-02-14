@@ -1,5 +1,5 @@
 {
-  "name": "@lifeos/server",
+  "name": "@dorkos/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -20,7 +20,7 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
     "@asteasolutions/zod-to-openapi": "^8.4.0",
-    "@lifeos/shared": "*",
+    "@dorkos/shared": "*",
     "@ngrok/ngrok": "^1.7.0",
     "@scalar/express-api-reference": "^0.8.40",
     "chokidar": "^4.0.3",
@@ -32,8 +32,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@lifeos/test-utils": "*",
-    "@lifeos/typescript-config": "*",
+    "@dorkos/test-utils": "*",
+    "@dorkos/typescript-config": "*",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
     "@types/supertest": "^6.0.3",

@@ -142,7 +142,7 @@ Note: The `--text-2xs` and `--text-3xs` naming changes to `--font-size-2xs` and 
 ```
 
 **Acceptance criteria:**
-- `turbo build --filter=@lifeos/client` succeeds
+- `turbo build --filter=@dorkos/client` succeeds
 - Tailwind generates utility classes that include `calc()` expressions
 - Desktop appearance is unchanged (all multipliers resolve to 1)
 - On a simulated 375px viewport, `text-sm` computes to `calc(0.875rem * 1.25)` = 17.5px
@@ -178,7 +178,7 @@ To:
 
 **Acceptance criteria:**
 - The viewport meta tag contains `viewport-fit=cover`
-- App builds successfully with `turbo build --filter=@lifeos/client`
+- App builds successfully with `turbo build --filter=@dorkos/client`
 
 ---
 
@@ -394,7 +394,7 @@ Migrate all ~55 icon instances from ad-hoc Tailwind size classes (`h-N w-N`) to 
 **Acceptance criteria:**
 - All ~55 icon instances use one of the three token classes: `size-[--size-icon-xs]`, `size-[--size-icon-sm]`, `size-[--size-icon-md]`
 - No remaining `h-2.5 w-2.5`, `h-3 w-3`, `h-3.5 w-3.5`, or `h-4 w-4` on Lucide icon elements in the listed files
-- `turbo build --filter=@lifeos/client` succeeds
+- `turbo build --filter=@dorkos/client` succeeds
 - Visual inspection: all icons render at expected sizes on desktop
 - No broken layouts from size changes
 
@@ -471,7 +471,7 @@ Change to `px-3 py-1 max-md:py-2` on both buttons.
 **Acceptance criteria:**
 - On mobile viewport (< 768px), all modified buttons have >= 44px touch area
 - On desktop viewport (>= 768px), padding is unchanged from current values
-- `turbo build --filter=@lifeos/client` succeeds
+- `turbo build --filter=@dorkos/client` succeeds
 
 ---
 
@@ -682,7 +682,7 @@ This prevents accidental horizontal swipes in the chat scroll area.
 - On iPhone simulator with notch: content not obscured by notch or home indicator
 - Chat scroll does not trigger pull-to-refresh on mobile
 - Horizontal swipes in chat area are prevented on mobile
-- `turbo build --filter=@lifeos/client` succeeds
+- `turbo build --filter=@dorkos/client` succeeds
 
 ---
 

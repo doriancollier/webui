@@ -1,4 +1,4 @@
-# LifeOS Gateway Design System
+# DorkOS Gateway Design System
 
 **Version:** 1.0
 **Philosophy:** Less, but better.

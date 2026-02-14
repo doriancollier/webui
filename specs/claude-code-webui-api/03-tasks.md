@@ -988,7 +988,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>LifeOS Gateway</title>
+    <title>DorkOS Gateway</title>
   </head>
   <body>
     <div id="root"></div>
@@ -1211,7 +1211,7 @@ export function Header() {
       >
         <PanelLeft className="h-5 w-5" />
       </button>
-      <h1 className="text-sm font-semibold flex-1">LifeOS Gateway</h1>
+      <h1 className="text-sm font-semibold flex-1">DorkOS Gateway</h1>
     </header>
   );
 }

@@ -24,7 +24,7 @@ All code lives in `gateway/` as a single TypeScript package with `src/server/`, 
 
 The Claude Code CLI is powerful but terminal-bound. Users who prefer a graphical interface, want to share sessions visually, or need richer tool call visualization have no alternative. Additionally, there is no programmatic API to drive Claude Code from external services (Slack, mobile, CI/CD).
 
-The `gateway/` directory was reserved in the LifeOS architecture specifically for this purpose (documented as "Node.js API server (future)" in `workspace/0-System/README.md`).
+The `gateway/` directory was reserved in the DorkOS architecture specifically for this purpose (documented as "Node.js API server (future)" in `workspace/0-System/README.md`).
 
 ---
 

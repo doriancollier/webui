@@ -18,7 +18,7 @@ import {
   ErrorResponseSchema,
   HistoryMessageSchema,
   TaskItemSchema,
-} from '@lifeos/shared/schemas';
+} from '@dorkos/shared/schemas';
 import { z } from 'zod';
 
 const registry = new OpenAPIRegistry();
@@ -372,7 +372,7 @@ export function generateOpenAPISpec() {
   return generator.generateDocument({
     openapi: '3.1.0',
     info: {
-      title: 'LifeOS Gateway API',
+      title: 'DorkOS Gateway API',
       version: '0.1.0',
       description:
         'REST/SSE API for Claude Code sessions, built with the Claude Agent SDK.',

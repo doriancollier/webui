@@ -491,7 +491,7 @@ Route-level tests for interactive endpoints mock `agentManager` and verify HTTP 
 const mockSubmitAnswers = vi.fn();
 const mockApproveTool = vi.fn();
 
-vi.mock('@lifeos/server/services/agent-manager', () => ({
+vi.mock('@dorkos/server/services/agent-manager', () => ({
   agentManager: {
     approveTool: mockApproveTool,
     submitAnswers: mockSubmitAnswers,

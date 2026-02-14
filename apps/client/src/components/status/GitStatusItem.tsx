@@ -1,5 +1,5 @@
 import { GitBranch, ArrowUp, ArrowDown } from 'lucide-react';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 import { isGitStatusOk } from '../../hooks/use-git-status';
 
 interface GitStatusItemProps {

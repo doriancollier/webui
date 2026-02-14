@@ -93,7 +93,7 @@ export { Tabs, TabsList, TabsTrigger, TabsContent };
 - `@radix-ui/react-tabs` is listed in `apps/client/package.json` dependencies
 - `tabs.tsx` exports `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
 - Component follows the same `forwardRef` + `cn()` + `displayName` pattern as `switch.tsx`
-- `npx turbo build --filter=@lifeos/client` passes
+- `npx turbo build --filter=@dorkos/client` passes
 
 ---
 
@@ -369,7 +369,7 @@ const {
 - No `<Separator />` between sections
 - Tab selection persists across dialog open/close
 - Tabs are keyboard-navigable (arrow keys, Enter/Space)
-- `npx turbo build --filter=@lifeos/client` passes
+- `npx turbo build --filter=@dorkos/client` passes
 
 ---
 

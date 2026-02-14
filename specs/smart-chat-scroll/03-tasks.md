@@ -290,7 +290,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
 - The scroll container div no longer has `relative` or `flex-1` classes
 - `computeGrouping` function and all virtualizer logic unchanged
 - IntersectionObserver visibility restore logic unchanged
-- `turbo build --filter=@lifeos/client` succeeds
+- `turbo build --filter=@dorkos/client` succeeds
 
 ---
 
@@ -426,7 +426,7 @@ Key changes from current layout:
 - Button appears when user scrolls 200px+ from bottom, disappears when near bottom
 - Clicking button scrolls to bottom and hides the button
 - Loading and empty states render correctly within the wrapper
-- `turbo build --filter=@lifeos/client` succeeds
+- `turbo build --filter=@dorkos/client` succeeds
 
 ---
 

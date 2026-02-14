@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What This Is
 
-LifeOS Gateway is a web-based interface and REST/SSE API for Claude Code, built with the Claude Agent SDK. It provides a chat UI for interacting with Claude Code sessions, with tool approval flows and slash command discovery.
+DorkOS Gateway is a web-based interface and REST/SSE API for Claude Code, built with the Claude Agent SDK. It provides a chat UI for interacting with Claude Code sessions, with tool approval flows and slash command discovery.
 
 The Agent SDK is fully integrated via `agent-manager.ts`, which calls the SDK's `query()` function and maps streaming events to the gateway's `StreamEvent` types. SDK JSONL transcript files are the single source of truth for all session data.
 
@@ -13,16 +13,16 @@ The Agent SDK is fully integrated via `agent-manager.ts`, which calls the SDK's 
 This is a Turborepo monorepo with three apps and four shared packages:
 
 ```
-lifeos-gateway/
+dorkos-gateway/
 ├── apps/
-│   ├── client/           # @lifeos/client - React 19 SPA (Vite 6, Tailwind 4, shadcn/ui)
-│   ├── server/           # @lifeos/server - Express API (tsc, NodeNext)
-│   └── obsidian-plugin/  # @lifeos/obsidian-plugin - Obsidian plugin (Vite lib, CJS)
+│   ├── client/           # @dorkos/client - React 19 SPA (Vite 6, Tailwind 4, shadcn/ui)
+│   ├── server/           # @dorkos/server - Express API (tsc, NodeNext)
+│   └── obsidian-plugin/  # @dorkos/obsidian-plugin - Obsidian plugin (Vite lib, CJS)
 ├── packages/
-│   ├── cli/              # @lifeos/gateway - Publishable npm CLI (esbuild bundle)
-│   ├── shared/           # @lifeos/shared - Zod schemas, types (JIT .ts exports)
-│   ├── typescript-config/ # @lifeos/typescript-config - Shared tsconfig presets
-│   └── test-utils/       # @lifeos/test-utils - Mock factories, test helpers
+│   ├── cli/              # @dorkos/gateway - Publishable npm CLI (esbuild bundle)
+│   ├── shared/           # @dorkos/shared - Zod schemas, types (JIT .ts exports)
+│   ├── typescript-config/ # @dorkos/typescript-config - Shared tsconfig presets
+│   └── test-utils/       # @dorkos/test-utils - Mock factories, test helpers
 ├── turbo.json
 ├── vitest.workspace.ts
 └── package.json          # Root workspace config + turbo only
@@ -32,13 +32,13 @@ lifeos-gateway/
 
 ```bash
 turbo dev              # Start both Express server (port 6942) and Vite dev server (port 3000)
-turbo dev --filter=@lifeos/server   # Express server only
-turbo dev --filter=@lifeos/client   # Vite dev server only (React UI with HMR)
+turbo dev --filter=@dorkos/server   # Express server only
+turbo dev --filter=@dorkos/client   # Vite dev server only (React UI with HMR)
 turbo test             # Vitest across client + server
 turbo test -- --run    # Vitest single run
 turbo build            # Build all 3 apps (client Vite + server tsc + obsidian plugin)
 turbo typecheck        # Type-check all packages
-turbo build --filter=@lifeos/obsidian-plugin  # Build Obsidian plugin only
+turbo build --filter=@dorkos/obsidian-plugin  # Build Obsidian plugin only
 npm run build -w packages/cli  # Build CLI package (esbuild bundles server+client+CLI)
 npm start              # Production server (serves built React app)
 npm run dev:tunnel -w apps/server   # Dev server + ngrok tunnel (tunnels Vite on :3000)
@@ -89,7 +89,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 
 ### Shared (`packages/shared/src/`)
 
-`schemas.ts` defines Zod schemas for all types with OpenAPI metadata. Each schema exports an inferred TypeScript type (e.g., `export type Session = z.infer<typeof SessionSchema>`). `types.ts` re-exports all types from `schemas.ts`, so existing `import { Session } from '@lifeos/shared/types'` imports work unchanged.
+`schemas.ts` defines Zod schemas for all types with OpenAPI metadata. Each schema exports an inferred TypeScript type (e.g., `export type Session = z.infer<typeof SessionSchema>`). `types.ts` re-exports all types from `schemas.ts`, so existing `import { Session } from '@dorkos/shared/types'` imports work unchanged.
 
 **API docs** are available at `/api/docs` (Scalar UI) and `/api/openapi.json` (raw spec). The OpenAPI spec is auto-generated from the Zod schemas in `apps/server/src/services/openapi-registry.ts`.
 
@@ -99,7 +99,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 
 - `@/*` -> `./src/*` (within each app, scoped to that app's source)
 
-Cross-package imports use the `@lifeos/*` package names (e.g., `import { Session } from '@lifeos/shared/types'`). The old `@shared/*` alias has been removed.
+Cross-package imports use the `@dorkos/*` package names (e.g., `import { Session } from '@dorkos/shared/types'`). The old `@shared/*` alias has been removed.
 
 Configured in each app's `tsconfig.json` (for IDE/tsc) and `vite.config.ts` (for bundling).
 
@@ -141,7 +141,7 @@ The plugin build (`apps/obsidian-plugin/vite.config.ts`) includes four Vite plug
 
 ### CLI Package (`packages/cli`)
 
-The `@lifeos/gateway` npm package bundles the server + client into a standalone CLI tool. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@lifeos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The CLI uses `node:util` parseArgs and sets environment variables (`GATEWAY_PORT`, `CLIENT_DIST_PATH`, `GATEWAY_CWD`, `TUNNEL_ENABLED`, `NODE_ENV`) before dynamically importing the bundled server.
+The `@dorkos/gateway` npm package bundles the server + client into a standalone CLI tool. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@dorkos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The CLI uses `node:util` parseArgs and sets environment variables (`GATEWAY_PORT`, `CLIENT_DIST_PATH`, `GATEWAY_CWD`, `TUNNEL_ENABLED`, `NODE_ENV`) before dynamically importing the bundled server.
 
 ## Guides
 

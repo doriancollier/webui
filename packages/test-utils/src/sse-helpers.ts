@@ -1,4 +1,4 @@
-import type { StreamEvent } from '@lifeos/shared/types';
+import type { StreamEvent } from '@dorkos/shared/types';
 
 /**
  * Creates an AsyncGenerator that yields StreamEvent objects.

@@ -1,4 +1,4 @@
-# LifeOS Gateway
+# DorkOS Gateway
 
 Web-based interface and channel-agnostic REST/SSE API for Claude Code, powered by the Claude Agent SDK.
 

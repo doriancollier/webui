@@ -1,4 +1,4 @@
-import type { Session, StreamEvent, CommandEntry } from '@lifeos/shared/types';
+import type { Session, StreamEvent, CommandEntry } from '@dorkos/shared/types';
 
 export function createMockSession(overrides: Partial<Session> = {}): Session {
   return {

@@ -68,7 +68,7 @@ describe('useElapsedTime', () => {
     vi.setSystemTime(now);
     const { result, rerender } = renderHook(
       ({ startTime }: { startTime: number | null }) => useElapsedTime(startTime),
-      { initialProps: { startTime: now } }
+      { initialProps: { startTime: now as number | null } }
     );
 
     expect(result.current.ms).toBeGreaterThanOrEqual(0);

@@ -14,7 +14,7 @@ import { SettingsDialog } from '@/components/settings/SettingsDialog';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '../ui/hover-card';
 import { useTheme } from '../../hooks/use-theme';
 import type { Theme } from '../../hooks/use-theme';
-import type { Session } from '@lifeos/shared/types';
+import type { Session } from '@dorkos/shared/types';
 
 export function SessionSidebar() {
   const transport = useTransport();

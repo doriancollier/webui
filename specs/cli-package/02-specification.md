@@ -2,7 +2,7 @@
 slug: cli-package
 ---
 
-# Specification: Publishable npm CLI Package (`@lifeos/gateway`)
+# Specification: Publishable npm CLI Package (`@dorkos/gateway`)
 
 ## 1. Status
 
@@ -10,20 +10,20 @@ slug: cli-package
 
 ## 2. Overview
 
-Create a `packages/cli` workspace package that bundles LifeOS Gateway into a publishable npm CLI tool. Users install via `npm install -g @lifeos/gateway` or run with `npx @lifeos/gateway`, getting the full web UI + Express API server + optional ngrok tunnel — no git clone required.
+Create a `packages/cli` workspace package that bundles DorkOS Gateway into a publishable npm CLI tool. Users install via `npm install -g @dorkos/gateway` or run with `npx @dorkos/gateway`, getting the full web UI + Express API server + optional ngrok tunnel — no git clone required.
 
-The CLI entry point parses arguments, sets environment variables, and dynamically imports the bundled server. The build pipeline uses esbuild to bundle the server (inlining `@lifeos/shared`) and Vite to build the React client as static assets.
+The CLI entry point parses arguments, sets environment variables, and dynamically imports the bundled server. The build pipeline uses esbuild to bundle the server (inlining `@dorkos/shared`) and Vite to build the React client as static assets.
 
 ## 3. Background / Problem Statement
 
-Currently, running LifeOS Gateway requires cloning the monorepo, installing all workspace dependencies, and building from source. This is a barrier for non-developer users or quick setup on new machines. Packaging as an npm CLI enables one-command installation and aligns with how Claude Code itself is distributed.
+Currently, running DorkOS Gateway requires cloning the monorepo, installing all workspace dependencies, and building from source. This is a barrier for non-developer users or quick setup on new machines. Packaging as an npm CLI enables one-command installation and aligns with how Claude Code itself is distributed.
 
 ## 4. Goals
 
-- One-command install: `npm install -g @lifeos/gateway` or `npx @lifeos/gateway`
+- One-command install: `npm install -g @dorkos/gateway` or `npx @dorkos/gateway`
 - CLI flags for port, tunnel, working directory, help, version
 - Pre-built React client shipped as static assets inside the package
-- Server bundled with `@lifeos/shared` inlined (no workspace dependency)
+- Server bundled with `@dorkos/shared` inlined (no workspace dependency)
 - Startup check for Claude Code CLI with helpful error message
 - Existing monorepo dev workflow completely unaffected
 - Minimal changes to `apps/server` (one env var addition)
@@ -53,7 +53,7 @@ No new runtime dependencies are added. `esbuild` is a devDependency of `packages
 
 ```
 packages/cli/
-├── package.json              # Published package config (@lifeos/gateway)
+├── package.json              # Published package config (@dorkos/gateway)
 ├── tsconfig.json             # Extends shared config
 ├── src/
 │   ├── cli.ts                # CLI entry point (parseArgs → env vars → import server)
@@ -137,7 +137,7 @@ export function checkClaude(): void {
   } catch {
     console.error('Error: Claude Code CLI not found in PATH.');
     console.error('');
-    console.error('LifeOS Gateway requires the Claude Code CLI to function.');
+    console.error('DorkOS Gateway requires the Claude Code CLI to function.');
     console.error('Install it with:  npm install -g @anthropic-ai/claude-code');
     console.error('');
     console.error('More info: https://docs.anthropic.com/en/docs/claude-code');
@@ -229,10 +229,10 @@ async function buildCLI() {
 
   // 1. Build client (Vite)
   console.log('[1/3] Building client...');
-  execSync('npx turbo build --filter=@lifeos/client', { cwd: ROOT, stdio: 'inherit' });
+  execSync('npx turbo build --filter=@dorkos/client', { cwd: ROOT, stdio: 'inherit' });
   await fs.cp(path.join(ROOT, 'apps/client/dist'), path.join(OUT, 'client'), { recursive: true });
 
-  // 2. Bundle server (esbuild) — inlines @lifeos/shared, externalizes node_modules
+  // 2. Bundle server (esbuild) — inlines @dorkos/shared, externalizes node_modules
   console.log('[2/3] Bundling server...');
   await build({
     entryPoints: [path.join(ROOT, 'apps/server/src/index.ts')],
@@ -283,12 +283,12 @@ buildCLI();
 
 ```json
 {
-  "name": "@lifeos/gateway",
+  "name": "@dorkos/gateway",
   "version": "0.1.0",
   "description": "Web-based interface and REST/SSE API for Claude Code",
   "type": "module",
   "bin": {
-    "lifeos-gateway": "./dist/bin/cli.js"
+    "dorkos-gateway": "./dist/bin/cli.js"
   },
   "files": [
     "dist/"
@@ -313,7 +313,7 @@ buildCLI();
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "*",
+    "@dorkos/typescript-config": "*",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"
@@ -337,7 +337,7 @@ buildCLI();
 }
 ```
 
-The CLI's `build` script calls `turbo build --filter=@lifeos/client` internally, but having a turbo task allows `turbo run pack --filter=@lifeos/gateway` as a top-level command.
+The CLI's `build` script calls `turbo build --filter=@dorkos/client` internally, but having a turbo task allows `turbo run pack --filter=@dorkos/gateway` as a top-level command.
 
 ### 7.11 Environment Variable Flow
 
@@ -358,32 +358,32 @@ cwd/.env        →      (dotenv loads)        →     NGROK_AUTHTOKEN, TUNNEL_A
 
 ```bash
 # Global install
-npm install -g @lifeos/gateway
+npm install -g @dorkos/gateway
 
 # Or run directly
-npx @lifeos/gateway
+npx @dorkos/gateway
 ```
 
 ### Usage
 
 ```bash
 # Start with defaults (port 6942, no tunnel)
-lifeos-gateway
+dorkos-gateway
 
 # Start with tunnel
-lifeos-gateway --tunnel
+dorkos-gateway --tunnel
 
 # Custom port and working directory
-lifeos-gateway --port 8080 --dir ~/projects/myapp
+dorkos-gateway --port 8080 --dir ~/projects/myapp
 
 # Help
-lifeos-gateway --help
+dorkos-gateway --help
 ```
 
 ### Output
 
 ```
-LifeOS Gateway running on http://localhost:6942
+DorkOS Gateway running on http://localhost:6942
 
 ┌─────────────────────────────────────────────────┐
 │  ngrok tunnel active                            │
@@ -397,7 +397,7 @@ LifeOS Gateway running on http://localhost:6942
 ```
 Error: Claude Code CLI not found in PATH.
 
-LifeOS Gateway requires the Claude Code CLI to function.
+DorkOS Gateway requires the Claude Code CLI to function.
 Install it with:  npm install -g @anthropic-ai/claude-code
 
 More info: https://docs.anthropic.com/en/docs/claude-code
@@ -462,7 +462,7 @@ cd packages/cli && npm pack --dry-run
 
 ## 12. Documentation
 
-- `lifeos-gateway --help` provides inline usage documentation
+- `dorkos-gateway --help` provides inline usage documentation
 - CLAUDE.md should be updated with the new `packages/cli` workspace and its commands
 - No separate guide needed for the first release
 

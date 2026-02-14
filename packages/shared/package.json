@@ -1,5 +1,5 @@
 {
-  "name": "@lifeos/shared",
+  "name": "@dorkos/shared",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -25,6 +25,6 @@
     "@asteasolutions/zod-to-openapi": "^8.4.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "*"
+    "@dorkos/typescript-config": "*"
   }
 }

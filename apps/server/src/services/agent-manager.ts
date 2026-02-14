@@ -4,7 +4,7 @@ import { execFileSync } from 'child_process';
 import { existsSync } from 'fs';
 import { query, type Options, type SDKMessage, type PermissionResult, type Query } from '@anthropic-ai/claude-agent-sdk';
 import type { Response } from 'express';
-import type { StreamEvent, PermissionMode, TaskUpdateEvent, TaskStatus } from '@lifeos/shared/types';
+import type { StreamEvent, PermissionMode, TaskUpdateEvent, TaskStatus } from '@dorkos/shared/types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -67,7 +67,7 @@ function handleAskUserQuestion(
     type: 'question_prompt',
     data: {
       toolCallId: toolUseId,
-      questions: input.questions as import('@lifeos/shared/types').QuestionItem[],
+      questions: input.questions as import('@dorkos/shared/types').QuestionItem[],
     },
   });
   session.eventQueueNotify?.();

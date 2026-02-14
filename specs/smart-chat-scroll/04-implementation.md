@@ -30,4 +30,4 @@
 ## Verification
 - TypeScript: Zero errors in changed files
 - Tests: 216/216 passing (3 new)
-- Build: `turbo build --filter=@lifeos/client` succeeds
+- Build: `turbo build --filter=@dorkos/client` succeeds

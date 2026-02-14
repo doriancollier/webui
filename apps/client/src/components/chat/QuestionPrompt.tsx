@@ -4,7 +4,7 @@ import { useTransport } from '../../contexts/TransportContext';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { Kbd } from '../ui/kbd';
 import { cn } from '@/lib/utils';
-import type { QuestionItem } from '@lifeos/shared/types';
+import type { QuestionItem } from '@dorkos/shared/types';
 
 interface QuestionPromptProps {
   sessionId: string;

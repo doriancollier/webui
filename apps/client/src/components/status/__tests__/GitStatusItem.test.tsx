@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { GitStatusItem } from '../GitStatusItem';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 const cleanStatus: GitStatusResponse = {
   branch: 'main',

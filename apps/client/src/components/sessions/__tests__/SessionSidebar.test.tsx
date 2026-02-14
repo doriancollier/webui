@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionSidebar } from '../SessionSidebar';
-import type { Transport } from '@lifeos/shared/transport';
-import type { Session } from '@lifeos/shared/types';
+import type { Transport } from '@dorkos/shared/transport';
+import type { Session } from '@dorkos/shared/types';
 import { TransportProvider } from '../../../contexts/TransportContext';
 
 // Mock motion/react

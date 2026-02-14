@@ -92,7 +92,7 @@ npm install --save-dev turbo
 
 ## Phase 2: Extract Shared Package + TypeScript Config
 
-### Task 2.1: Create @lifeos/typescript-config package
+### Task 2.1: Create @dorkos/typescript-config package
 
 **Objective:** Create a shared TypeScript configuration package with base, react, and node presets.
 
@@ -103,7 +103,7 @@ npm install --save-dev turbo
 2. Create `packages/typescript-config/package.json`:
 ```json
 {
-  "name": "@lifeos/typescript-config",
+  "name": "@dorkos/typescript-config",
   "version": "0.0.0",
   "private": true,
   "files": ["base.json", "react.json", "node.json"]
@@ -156,7 +156,7 @@ npm install --save-dev turbo
 
 **Acceptance Criteria:**
 - `packages/typescript-config/` exists with `package.json`, `base.json`, `react.json`, `node.json`
-- `npm ls @lifeos/typescript-config` resolves the workspace package
+- `npm ls @dorkos/typescript-config` resolves the workspace package
 - Each config file contains the correct compiler options as specified
 - The base config has `target: ES2022`, `strict: true`, `declaration: true`, etc.
 - The react config extends base and adds `jsx: react-jsx`, `moduleResolution: bundler`
@@ -164,7 +164,7 @@ npm install --save-dev turbo
 
 ---
 
-### Task 2.2: Create @lifeos/shared package and migrate shared source files
+### Task 2.2: Create @dorkos/shared package and migrate shared source files
 
 **Objective:** Extract `src/shared/` into a standalone workspace package using the JIT (Just-in-Time) pattern where exports point to TypeScript source directly.
 
@@ -175,7 +175,7 @@ npm install --save-dev turbo
 2. Create `packages/shared/package.json`:
 ```json
 {
-  "name": "@lifeos/shared",
+  "name": "@dorkos/shared",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -189,7 +189,7 @@ npm install --save-dev turbo
     "@asteasolutions/zod-to-openapi": "^8.4.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "typescript": "^5.7.0"
   }
 }
@@ -198,7 +198,7 @@ npm install --save-dev turbo
 3. Create `packages/shared/tsconfig.json`:
 ```json
 {
-  "extends": "@lifeos/typescript-config/base",
+  "extends": "@dorkos/typescript-config/base",
   "compilerOptions": {
     "module": "ESNext",
     "moduleResolution": "bundler"
@@ -217,39 +217,39 @@ npm install --save-dev turbo
 **Acceptance Criteria:**
 - `packages/shared/src/` contains `schemas.ts`, `transport.ts`, `types.ts`
 - `package.json` exports map points to `.ts` source files (JIT pattern)
-- `npm ls @lifeos/shared` resolves the workspace package
-- `@lifeos/shared` depends on `zod` and `@asteasolutions/zod-to-openapi`
+- `npm ls @dorkos/shared` resolves the workspace package
+- `@dorkos/shared` depends on `zod` and `@asteasolutions/zod-to-openapi`
 - No build step is needed for this package (consumers compile on the fly)
 - TypeScript compiles without errors: `npx tsc --noEmit -p packages/shared/tsconfig.json`
 
 ---
 
-### Task 2.3: Update all imports from @shared/* and ../../shared/* to @lifeos/shared/*
+### Task 2.3: Update all imports from @shared/* and ../../shared/* to @dorkos/shared/*
 
-**Objective:** Replace all existing imports referencing the old shared location with the new `@lifeos/shared/*` package imports.
+**Objective:** Replace all existing imports referencing the old shared location with the new `@dorkos/shared/*` package imports.
 
 **Implementation:**
 
 1. Update all **client** files (~25 files) that use `@shared/*`:
-   - `import { X } from '@shared/types'` -> `import { X } from '@lifeos/shared/types'`
-   - `import { X } from '@shared/transport'` -> `import { X } from '@lifeos/shared/transport'`
-   - `import { X } from '@shared/schemas'` -> `import { X } from '@lifeos/shared/schemas'`
+   - `import { X } from '@shared/types'` -> `import { X } from '@dorkos/shared/types'`
+   - `import { X } from '@shared/transport'` -> `import { X } from '@dorkos/shared/transport'`
+   - `import { X } from '@shared/schemas'` -> `import { X } from '@dorkos/shared/schemas'`
 
 2. Update all **server** files (~8 files) that use relative `../../shared/*`:
-   - `import { X } from '../../shared/schemas.js'` -> `import { X } from '@lifeos/shared/schemas'`
-   - `import { X } from '../../shared/types.js'` -> `import { X } from '@lifeos/shared/types'`
+   - `import { X } from '../../shared/schemas.js'` -> `import { X } from '@dorkos/shared/schemas'`
+   - `import { X } from '../../shared/types.js'` -> `import { X } from '@dorkos/shared/types'`
 
 3. Update any **plugin** files that use `@shared/*`:
-   - `import { X } from '@shared/types'` -> `import { X } from '@lifeos/shared/types'`
+   - `import { X } from '@shared/types'` -> `import { X } from '@dorkos/shared/types'`
 
 4. Remove the `@shared` path alias from `vite.config.ts` and `tsconfig.json` if present (the `@` alias for client-internal imports stays).
 
-5. Add `@lifeos/shared` as a workspace dependency in the root `package.json` (temporary, until client/server are extracted).
+5. Add `@dorkos/shared` as a workspace dependency in the root `package.json` (temporary, until client/server are extracted).
 
 **Acceptance Criteria:**
 - Zero files import from `@shared/*` (verify with `grep -r "from '@shared/" src/`)
 - Zero files import from `../../shared/` (verify with `grep -r "from '../../shared/" src/`)
-- All imports use `@lifeos/shared/schemas`, `@lifeos/shared/transport`, or `@lifeos/shared/types`
+- All imports use `@dorkos/shared/schemas`, `@dorkos/shared/transport`, or `@dorkos/shared/types`
 - `turbo build` succeeds
 - `turbo test` passes all existing tests
 - TypeScript compiles without errors
@@ -258,7 +258,7 @@ npm install --save-dev turbo
 
 ## Phase 3: Extract Client App
 
-### Task 3.1: Create @lifeos/client package and move client source files
+### Task 3.1: Create @dorkos/client package and move client source files
 
 **Objective:** Move `src/client/` into `apps/client/` as a standalone workspace package with its own Vite and TypeScript configuration.
 
@@ -269,7 +269,7 @@ npm install --save-dev turbo
 2. Create `apps/client/package.json`:
 ```json
 {
-  "name": "@lifeos/client",
+  "name": "@dorkos/client",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -288,7 +288,7 @@ npm install --save-dev turbo
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*",
+    "@dorkos/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@tanstack/react-query": "^5.62.0",
@@ -308,8 +308,8 @@ npm install --save-dev turbo
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
-    "@lifeos/test-utils": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
+    "@dorkos/test-utils": "workspace:*",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",
@@ -330,7 +330,7 @@ npm install --save-dev turbo
 3. Create `apps/client/tsconfig.json`:
 ```json
 {
-  "extends": "@lifeos/typescript-config/react",
+  "extends": "@dorkos/typescript-config/react",
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"]
@@ -370,7 +370,7 @@ npm install --save-dev turbo
 - `vite` dev server starts from `apps/client/`: `cd apps/client && npx vite`
 - HMR works correctly
 - `@/` path alias resolves within client source
-- `@lifeos/shared/*` imports resolve
+- `@dorkos/shared/*` imports resolve
 - `turbo build` produces client dist in `apps/client/dist/`
 - The `@source` directive in `index.css` correctly includes streamdown classes
 - `src/client/` directory is empty/removed
@@ -379,7 +379,7 @@ npm install --save-dev turbo
 
 ## Phase 4: Extract Server App
 
-### Task 4.1: Create @lifeos/server package and move server source files
+### Task 4.1: Create @dorkos/server package and move server source files
 
 **Objective:** Move `src/server/` into `apps/server/` as a standalone workspace package with its own TypeScript configuration and exports for the Obsidian plugin.
 
@@ -390,7 +390,7 @@ npm install --save-dev turbo
 2. Create `apps/server/package.json`:
 ```json
 {
-  "name": "@lifeos/server",
+  "name": "@dorkos/server",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -407,7 +407,7 @@ npm install --save-dev turbo
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*",
+    "@dorkos/shared": "workspace:*",
     "@anthropic-ai/claude-agent-sdk": "latest",
     "@asteasolutions/zod-to-openapi": "^8.4.0",
     "@scalar/express-api-reference": "^0.8.40",
@@ -419,7 +419,7 @@ npm install --save-dev turbo
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
     "@types/uuid": "^10.0.0",
@@ -435,7 +435,7 @@ npm install --save-dev turbo
 3. Create `apps/server/tsconfig.json`:
 ```json
 {
-  "extends": "@lifeos/typescript-config/node",
+  "extends": "@dorkos/typescript-config/node",
   "compilerOptions": {
     "outDir": "./dist"
   },
@@ -473,7 +473,7 @@ npm install --save-dev turbo
 
 ## Phase 5: Extract Obsidian Plugin
 
-### Task 5.1: Create @lifeos/obsidian-plugin package structure
+### Task 5.1: Create @dorkos/obsidian-plugin package structure
 
 **Objective:** Create the Obsidian plugin workspace package with its own Vite config and modular build plugins.
 
@@ -484,7 +484,7 @@ npm install --save-dev turbo
 2. Create `apps/obsidian-plugin/package.json`:
 ```json
 {
-  "name": "@lifeos/obsidian-plugin",
+  "name": "@dorkos/obsidian-plugin",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -494,14 +494,14 @@ npm install --save-dev turbo
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*",
-    "@lifeos/server": "workspace:*",
-    "@lifeos/client": "workspace:*",
+    "@dorkos/shared": "workspace:*",
+    "@dorkos/server": "workspace:*",
+    "@dorkos/client": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-react": "latest",
     "obsidian": "latest",
@@ -515,7 +515,7 @@ npm install --save-dev turbo
 3. Create `apps/obsidian-plugin/tsconfig.json`:
 ```json
 {
-  "extends": "@lifeos/typescript-config/react",
+  "extends": "@dorkos/typescript-config/react",
   "compilerOptions": {
     "paths": {
       "@/*": ["../../apps/client/src/*"]
@@ -561,16 +561,16 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
    - `manifest.json` -> `apps/obsidian-plugin/manifest.json`
 
 2. Update server imports in plugin files (~3 files):
-   - `import { AgentManager } from '../../server/services/agent-manager'` -> `import { AgentManager } from '@lifeos/server/services/agent-manager'`
-   - `import { TranscriptReader } from '../../server/services/transcript-reader'` -> `import { TranscriptReader } from '@lifeos/server/services/transcript-reader'`
-   - `import { CommandRegistryService } from '../../server/services/command-registry'` -> `import { CommandRegistryService } from '@lifeos/server/services/command-registry'`
+   - `import { AgentManager } from '../../server/services/agent-manager'` -> `import { AgentManager } from '@dorkos/server/services/agent-manager'`
+   - `import { TranscriptReader } from '../../server/services/transcript-reader'` -> `import { TranscriptReader } from '@dorkos/server/services/transcript-reader'`
+   - `import { CommandRegistryService } from '../../server/services/command-registry'` -> `import { CommandRegistryService } from '@dorkos/server/services/command-registry'`
 
 3. Update client imports in plugin files (~5 files):
-   - `import { App } from '../../client/App'` -> `import { App } from '@lifeos/client/App'`
-   - `import { useAppStore } from '../../client/stores/app-store'` -> `import { useAppStore } from '@lifeos/client/stores/app-store'`
-   - `import { TransportProvider } from '../../client/contexts/TransportContext'` -> `import { TransportProvider } from '@lifeos/client/contexts/TransportContext'`
-   - `import { DirectTransport } from '../../client/lib/direct-transport'` -> `import { DirectTransport } from '@lifeos/client/lib/direct-transport'`
-   - `import { X } from '@shared/types'` -> `import { X } from '@lifeos/shared/types'`
+   - `import { App } from '../../client/App'` -> `import { App } from '@dorkos/client/App'`
+   - `import { useAppStore } from '../../client/stores/app-store'` -> `import { useAppStore } from '@dorkos/client/stores/app-store'`
+   - `import { TransportProvider } from '../../client/contexts/TransportContext'` -> `import { TransportProvider } from '@dorkos/client/contexts/TransportContext'`
+   - `import { DirectTransport } from '../../client/lib/direct-transport'` -> `import { DirectTransport } from '@dorkos/client/lib/direct-transport'`
+   - `import { X } from '@shared/types'` -> `import { X } from '@dorkos/shared/types'`
 
 4. Delete root `vite.config.obsidian.ts` (logic is now in `apps/obsidian-plugin/vite.config.ts` and `build-plugins/`).
 
@@ -591,7 +591,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 
 ## Phase 6: Extract Test Utils & Configure Vitest
 
-### Task 6.1: Create @lifeos/test-utils package
+### Task 6.1: Create @dorkos/test-utils package
 
 **Objective:** Extract shared test utilities into a dedicated workspace package.
 
@@ -602,7 +602,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 2. Create `packages/test-utils/package.json`:
 ```json
 {
-  "name": "@lifeos/test-utils",
+  "name": "@dorkos/test-utils",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -613,10 +613,10 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
     "./sse-helpers": "./src/sse-helpers.ts"
   },
   "dependencies": {
-    "@lifeos/shared": "workspace:*"
+    "@dorkos/shared": "workspace:*"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@testing-library/react": "^16.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -628,7 +628,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 3. Create `packages/test-utils/tsconfig.json`:
 ```json
 {
-  "extends": "@lifeos/typescript-config/react",
+  "extends": "@dorkos/typescript-config/react",
   "include": ["src/**/*"]
 }
 ```
@@ -646,15 +646,15 @@ export * from './sse-helpers';
    - `src/test-utils/sse-helpers.ts` -> `packages/test-utils/src/sse-helpers.ts`
 
 6. Update all client test files that import from test-utils:
-   - `import { X } from '../../test-utils/...'` -> `import { X } from '@lifeos/test-utils/...'`
+   - `import { X } from '../../test-utils/...'` -> `import { X } from '@dorkos/test-utils/...'`
 
 7. Run `npm install` to relink.
 
 **Acceptance Criteria:**
 - `packages/test-utils/src/` contains `index.ts`, `mock-factories.ts`, `react-helpers.tsx`, `sse-helpers.ts`
 - `package.json` exports map provides individual and barrel imports
-- All test files import from `@lifeos/test-utils/*` not relative paths
-- `npm ls @lifeos/test-utils` resolves correctly
+- All test files import from `@dorkos/test-utils/*` not relative paths
+- `npm ls @dorkos/test-utils` resolves correctly
 
 ---
 
@@ -729,13 +729,13 @@ Update the following sections:
 
 1. **Commands section** - Replace all commands:
    - `npm run dev` -> `turbo dev` (starts Express + Vite in parallel)
-   - `npm run dev:server` -> `turbo dev --filter=@lifeos/server`
-   - `npm run dev:client` -> `turbo dev --filter=@lifeos/client`
+   - `npm run dev:server` -> `turbo dev --filter=@dorkos/server`
+   - `npm run dev:client` -> `turbo dev --filter=@dorkos/client`
    - `npm run test` -> `turbo test`
    - `npm run test:run` -> `turbo test -- --run`
    - `npm run build` -> `turbo build`
    - `npm start` -> `cd apps/server && npm start`
-   - Obsidian build: `turbo build --filter=@lifeos/obsidian-plugin`
+   - Obsidian build: `turbo build --filter=@dorkos/obsidian-plugin`
    - Single test file: `npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts`
 
 2. **Architecture section** - Update directory structure to show:
@@ -753,7 +753,7 @@ Update the following sections:
 
 7. **Path Aliases section**:
    - `@/*` -> scoped per-app (client only)
-   - `@shared/*` -> replaced by `@lifeos/shared/*`
+   - `@shared/*` -> replaced by `@dorkos/shared/*`
 
 8. **Testing section** - Document vitest workspace, per-package configs
 
@@ -778,7 +778,7 @@ Update the following sections:
    - Update source paths throughout
    - Update build command references to turbo
    - Update data flow diagrams if they reference file paths
-   - Update import examples to use `@lifeos/shared/*`, `@lifeos/server/*`, `@lifeos/client/*`
+   - Update import examples to use `@dorkos/shared/*`, `@dorkos/server/*`, `@dorkos/client/*`
 
 2. **`guides/design-system.md`**:
    - Update component file path references from `src/client/components/` to `apps/client/src/components/`
@@ -793,7 +793,7 @@ Update the following sections:
 
 4. **`guides/api-reference.md`**:
    - Update server file paths from `src/server/` to `apps/server/src/`
-   - Update schema import patterns to use `@lifeos/shared/schemas`
+   - Update schema import patterns to use `@dorkos/shared/schemas`
 
 5. **`guides/interactive-tools.md`**:
    - Update component path references from `src/client/` to `apps/client/src/`
@@ -802,7 +802,7 @@ Update the following sections:
 - All 5 guide files reference correct monorepo paths
 - No remaining references to old paths (`src/client/`, `src/server/`, `src/shared/`)
 - Build command references use turbo
-- Import examples use `@lifeos/shared/*` package imports
+- Import examples use `@dorkos/shared/*` package imports
 
 ---
 

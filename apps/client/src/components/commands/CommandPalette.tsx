@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { motion } from 'motion/react';
-import type { CommandEntry } from '@lifeos/shared/types';
+import type { CommandEntry } from '@dorkos/shared/types';
 
 interface CommandPaletteProps {
   filteredCommands: CommandEntry[];

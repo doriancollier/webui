@@ -1,5 +1,5 @@
 import { Shield, ShieldCheck, ShieldOff, ClipboardList } from 'lucide-react';
-import type { PermissionMode } from '@lifeos/shared/types';
+import type { PermissionMode } from '@dorkos/shared/types';
 import type { LucideIcon } from 'lucide-react';
 import {
   ResponsiveDropdownMenu,

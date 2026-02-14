@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 export function useGitStatus(cwd: string | null) {
   const transport = useTransport();

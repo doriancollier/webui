@@ -354,7 +354,7 @@ it('has shortcut chips toggle enabled by default', () => {
 
 - Run `npx vitest run apps/client/src/components/chat/__tests__/ShortcutChips.test.tsx` — all 5 tests pass
 - Run `npx vitest run apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` — all existing + 2 new tests pass
-- Run `npx turbo test --filter=@lifeos/client` — no regressions
+- Run `npx turbo test --filter=@dorkos/client` — no regressions
 
 ---
 

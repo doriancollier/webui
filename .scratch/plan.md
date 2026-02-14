@@ -1,4 +1,4 @@
-# Plan: Integrate ngrok Tunnel as `@lifeos/tunnel`
+# Plan: Integrate ngrok Tunnel as `@dorkos/tunnel`
 
 ## Summary
 
@@ -12,7 +12,7 @@ Create a new `packages/tunnel/` package that wraps the `@ngrok/ngrok` SDK, and i
 
 ```json
 {
-  "name": "@lifeos/tunnel",
+  "name": "@dorkos/tunnel",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -80,7 +80,7 @@ Unit tests that mock `@ngrok/ngrok`:
 
 ```diff
   "dependencies": {
-+   "@lifeos/tunnel": "*",
++   "@dorkos/tunnel": "*",
     "@anthropic-ai/claude-agent-sdk": "latest",
 ```
 
@@ -89,7 +89,7 @@ Unit tests that mock `@ngrok/ngrok`:
 The key change. After `app.listen()` succeeds, conditionally start the tunnel:
 
 ```typescript
-import { TunnelManager } from '@lifeos/tunnel';
+import { TunnelManager } from '@dorkos/tunnel';
 
 const PORT = parseInt(process.env.GATEWAY_PORT || '6942', 10);
 const tunnelManager = new TunnelManager();
@@ -272,7 +272,7 @@ This is exactly what makes it easy for people to install — it's just an npm de
 
 1. Create `packages/tunnel/` with `package.json` and `src/index.ts`
 2. Write tests in `packages/tunnel/src/__tests__/tunnel-manager.test.ts`
-3. Add `@lifeos/tunnel` dependency to `apps/server/package.json`
+3. Add `@dorkos/tunnel` dependency to `apps/server/package.json`
 4. Modify `apps/server/src/index.ts` to conditionally start tunnel
 5. Modify `apps/server/src/routes/health.ts` to expose tunnel info
 6. Update `turbo.json` env vars

@@ -87,9 +87,9 @@ export interface Transport {
 
 ### Verification
 
-- The shared package should typecheck cleanly: `npx turbo typecheck --filter=@lifeos/shared`
+- The shared package should typecheck cleanly: `npx turbo typecheck --filter=@dorkos/shared`
 - Note: client and server will have compile errors until they implement the new `listFiles` method (Tasks 2, 3)
-- The new types should be importable: `import type { FileListResponse } from '@lifeos/shared/types'`
+- The new types should be importable: `import type { FileListResponse } from '@dorkos/shared/types'`
 
 ---
 
@@ -215,7 +215,7 @@ export const fileLister = new FileListService();
 
 ```typescript
 import { Router } from 'express';
-import { FileListQuerySchema } from '@lifeos/shared/schemas';
+import { FileListQuerySchema } from '@dorkos/shared/schemas';
 import { fileLister } from '../services/file-lister.js';
 
 const router = Router();
@@ -388,9 +388,9 @@ describe('FileListService', () => {
 
 ### Verification
 
-- `npx turbo typecheck --filter=@lifeos/server` should pass
+- `npx turbo typecheck --filter=@dorkos/server` should pass
 - `npx vitest run apps/server/src/services/__tests__/file-lister.test.ts` should pass
-- `npx turbo dev --filter=@lifeos/server` then `curl 'http://localhost:6942/api/files?cwd=/path/to/project'` should return JSON with `files`, `truncated`, `total`
+- `npx turbo dev --filter=@dorkos/server` then `curl 'http://localhost:6942/api/files?cwd=/path/to/project'` should return JSON with `files`, `truncated`, `total`
 
 ---
 
@@ -420,7 +420,7 @@ import type {
   TaskItem,
   ServerConfig,
   FileListResponse,  // NEW
-} from '@lifeos/shared/types';
+} from '@dorkos/shared/types';
 ```
 
 Add the new method to the `HttpTransport` class. Place it after `getCommands` and before `health`, matching the Transport interface order:
@@ -450,7 +450,7 @@ import type {
   TaskItem,
   ServerConfig,
   FileListResponse,  // NEW
-} from '@lifeos/shared/types';
+} from '@dorkos/shared/types';
 ```
 
 Add to the `DirectTransportServices` interface (after `commandRegistry`):
@@ -482,7 +482,7 @@ Add the method to the `DirectTransport` class (after `getCommands`, before `heal
 
 ### Verification
 
-- `npx turbo typecheck --filter=@lifeos/client` should pass (once all Transport methods are implemented)
+- `npx turbo typecheck --filter=@dorkos/client` should pass (once all Transport methods are implemented)
 - Both transport classes now satisfy the `Transport` interface with the new `listFiles` method
 
 ---
@@ -668,7 +668,7 @@ Follow the exact same pattern as `apps/client/src/hooks/use-commands.ts`:
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
-import type { FileListResponse } from '@lifeos/shared/types';
+import type { FileListResponse } from '@dorkos/shared/types';
 
 export function useFiles(cwd?: string | null) {
   const transport = useTransport();
@@ -691,7 +691,7 @@ export function useFiles(cwd?: string | null) {
 
 ### Verification
 
-- `npx turbo typecheck --filter=@lifeos/client` should pass
+- `npx turbo typecheck --filter=@dorkos/client` should pass
 - The hook should be importable: `import { useFiles } from '../hooks/use-files'`
 
 ---
@@ -839,7 +839,7 @@ export function FilePalette({
 ### Verification
 
 - Component should render without errors when given mock data
-- `npx turbo typecheck --filter=@lifeos/client` should pass
+- `npx turbo typecheck --filter=@dorkos/client` should pass
 
 ---
 
@@ -1174,7 +1174,7 @@ NOTE: `detectTrigger` references state setters and will need to either be inline
 
 ### Verification
 
-- `npx turbo typecheck --filter=@lifeos/client` should pass
+- `npx turbo typecheck --filter=@dorkos/client` should pass
 - `npx turbo dev` then open the UI, type `@` in the chat input -- the file palette should appear
 - Type `@src/comp` -- fuzzy matches should filter to files in `src/components/`
 - Select a file -- `@src/components/ChatPanel.tsx ` should be inserted

@@ -3,7 +3,7 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { createRef } from 'react';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
 import { QuestionPrompt, type QuestionPromptHandle } from '../QuestionPrompt';
-import type { QuestionItem } from '@lifeos/shared/types';
+import type { QuestionItem } from '@dorkos/shared/types';
 
 // Mock Radix Tabs with controlled state support for jsdom
 vi.mock('@radix-ui/react-tabs', () => {

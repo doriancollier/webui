@@ -3,8 +3,8 @@ import { renderHook, act, waitFor } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useChatSession } from '../use-chat-session';
-import type { Transport } from '@lifeos/shared/transport';
-import type { StreamEvent } from '@lifeos/shared/types';
+import type { Transport } from '@dorkos/shared/transport';
+import type { StreamEvent } from '@dorkos/shared/types';
 import { TransportProvider } from '../../contexts/TransportContext';
 
 // Mock app store (selectedCwd)

@@ -33,7 +33,7 @@ slug: settings-screen
 **Acceptance criteria:**
 - All four component files exist in `apps/client/src/components/ui/`
 - Each component is importable: `import { Switch } from '@/components/ui/switch'` etc.
-- `npx turbo build --filter=@lifeos/client` passes
+- `npx turbo build --filter=@dorkos/client` passes
 
 ---
 
@@ -220,7 +220,7 @@ app.use('/api/config', configRoutes);
 
 **Acceptance criteria:**
 - `GET /api/config` is accessible when the server runs
-- `npx turbo build --filter=@lifeos/server` passes
+- `npx turbo build --filter=@dorkos/server` passes
 
 ---
 
@@ -245,7 +245,7 @@ import type {
   StreamEvent,
   TaskItem,
   ServerConfig,  // <-- add this
-} from '@lifeos/shared/types';
+} from '@dorkos/shared/types';
 ```
 
 2. Add the method to the `HttpTransport` class, after the `health()` method:
@@ -258,7 +258,7 @@ getConfig(): Promise<ServerConfig> {
 
 **Acceptance criteria:**
 - `HttpTransport` implements `getConfig()` that calls `GET /api/config`
-- `npx turbo typecheck` passes for `@lifeos/client`
+- `npx turbo typecheck` passes for `@dorkos/client`
 
 ---
 
@@ -284,7 +284,7 @@ import type {
   CommandRegistry,
   TaskItem,
   ServerConfig,  // <-- add this
-} from '@lifeos/shared/types';
+} from '@dorkos/shared/types';
 ```
 
 2. Add the method to the `DirectTransport` class, after the `health()` method:
@@ -756,7 +756,7 @@ const [settingsOpen, setSettingsOpen] = useState(false);
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Transport } from '@lifeos/shared/transport';
+import type { Transport } from '@dorkos/shared/transport';
 import { TransportProvider } from '../../../contexts/TransportContext';
 import { SettingsDialog } from '../SettingsDialog';
 

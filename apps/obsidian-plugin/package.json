@@ -1,5 +1,5 @@
 {
-  "name": "@lifeos/obsidian-plugin",
+  "name": "@dorkos/obsidian-plugin",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -9,14 +9,14 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@lifeos/shared": "*",
-    "@lifeos/server": "*",
-    "@lifeos/client": "*",
+    "@dorkos/shared": "*",
+    "@dorkos/server": "*",
+    "@dorkos/client": "*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@lifeos/typescript-config": "*",
+    "@dorkos/typescript-config": "*",
     "@tailwindcss/vite": "^4.0.0",
     "@vitejs/plugin-react": "latest",
     "obsidian": "latest",

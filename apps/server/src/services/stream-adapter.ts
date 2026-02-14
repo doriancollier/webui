@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import type { StreamEvent } from '@lifeos/shared/types';
+import type { StreamEvent } from '@dorkos/shared/types';
 
 export function initSSEStream(res: Response): void {
   res.writeHead(200, {

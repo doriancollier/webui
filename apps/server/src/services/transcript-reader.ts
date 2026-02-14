@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import type { Session, PermissionMode, HistoryMessage, HistoryToolCall, QuestionItem, TaskItem, TaskStatus, MessagePart, ToolCallPart } from '@lifeos/shared/types';
+import type { Session, PermissionMode, HistoryMessage, HistoryToolCall, QuestionItem, TaskItem, TaskStatus, MessagePart, ToolCallPart } from '@dorkos/shared/types';
 
 export type { HistoryMessage, HistoryToolCall };
 

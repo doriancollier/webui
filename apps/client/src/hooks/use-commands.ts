@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
-import type { CommandRegistry } from '@lifeos/shared/types';
+import type { CommandRegistry } from '@dorkos/shared/types';
 
 export function useCommands(cwd?: string | null) {
   const transport = useTransport();

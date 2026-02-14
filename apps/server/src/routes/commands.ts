@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { CommandRegistryService } from '../services/command-registry.js';
-import { CommandsQuerySchema } from '@lifeos/shared/schemas';
+import { CommandsQuerySchema } from '@dorkos/shared/schemas';
 import path from 'path';
 import { fileURLToPath } from 'url';
 

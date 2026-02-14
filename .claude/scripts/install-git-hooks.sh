@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# install-git-hooks.sh - Install LifeOS Gateway git hooks
+# install-git-hooks.sh - Install DorkOS Gateway git hooks
 #
 # This script installs git hooks that enhance the development workflow:
 #   - post-commit: Auto-populates changelog from conventional commits
@@ -33,7 +33,7 @@ HOOK_DEFS=(
 )
 
 install_hooks() {
-    echo "Installing LifeOS Gateway git hooks..."
+    echo "Installing DorkOS Gateway git hooks..."
     echo ""
 
     # Check if .git directory exists
@@ -103,7 +103,7 @@ install_hooks() {
 }
 
 uninstall_hooks() {
-    echo "Uninstalling LifeOS Gateway git hooks..."
+    echo "Uninstalling DorkOS Gateway git hooks..."
     echo ""
 
     local removed=0
@@ -144,7 +144,7 @@ uninstall_hooks() {
 }
 
 show_status() {
-    echo "LifeOS Gateway Git Hooks Status"
+    echo "DorkOS Gateway Git Hooks Status"
     echo "======================"
     echo ""
 
@@ -186,7 +186,7 @@ case "${1:-}" in
     --help|-h)
         echo "Usage: $0 [OPTIONS]"
         echo ""
-        echo "Install or manage LifeOS Gateway git hooks."
+        echo "Install or manage DorkOS Gateway git hooks."
         echo ""
         echo "Options:"
         echo "  (none)        Install hooks (default)"

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
 import { useAppStore } from '../stores/app-store';
-import type { SessionStatusEvent, PermissionMode, UpdateSessionRequest } from '@lifeos/shared/types';
+import type { SessionStatusEvent, PermissionMode, UpdateSessionRequest } from '@dorkos/shared/types';
 
 /** Default model for new sessions before any SDK interaction. */
 const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';

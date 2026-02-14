@@ -1,4 +1,6 @@
 import { motion } from 'motion/react';
+import { Terminal, FileText } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
 interface ShortcutChipsProps {
   onChipClick: (trigger: string) => void;
@@ -7,12 +9,13 @@ interface ShortcutChipsProps {
 interface ChipDef {
   trigger: string;
   label: string;
+  icon: LucideIcon;
   ariaLabel: string;
 }
 
 const chips: ChipDef[] = [
-  { trigger: '/', label: 'Commands', ariaLabel: 'Insert slash command trigger' },
-  { trigger: '@', label: 'Files', ariaLabel: 'Insert file mention trigger' },
+  { trigger: '/', label: 'Commands', icon: Terminal, ariaLabel: 'Insert slash command trigger' },
+  { trigger: '@', label: 'Files', icon: FileText, ariaLabel: 'Insert file mention trigger' },
 ];
 
 export function ShortcutChips({ onChipClick }: ShortcutChipsProps) {
@@ -32,6 +35,7 @@ export function ShortcutChips({ onChipClick }: ShortcutChipsProps) {
           onClick={() => onChipClick(chip.trigger)}
           className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
         >
+          <chip.icon className="size-3" />
           <kbd className="font-mono text-[10px] opacity-60">{chip.trigger}</kbd>
           {chip.label}
         </button>

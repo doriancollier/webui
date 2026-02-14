@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
-import type { FileListResponse } from '@lifeos/shared/types';
+import type { FileListResponse } from '@dorkos/shared/types';
 
 export function useFiles(cwd?: string | null) {
   const transport = useTransport();

@@ -79,7 +79,7 @@ vi.mock('../../../hooks/use-files', () => ({
 const mockShowShortcutChips = vi.fn(() => true);
 vi.mock('../../../stores/app-store', () => ({
   useAppStore: (selector: (s: Record<string, unknown>) => unknown) => {
-    const state = { showShortcutChips: mockShowShortcutChips() };
+    const state = { showShortcutChips: mockShowShortcutChips(), setIsStreaming: vi.fn(), setIsWaitingForUser: vi.fn(), setActiveForm: vi.fn() };
     return selector(state);
   },
 }));

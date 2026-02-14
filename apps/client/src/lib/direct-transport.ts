@@ -1,4 +1,4 @@
-import type { Transport } from '@lifeos/shared/transport';
+import type { Transport } from '@dorkos/shared/transport';
 import type {
   StreamEvent,
   Session,
@@ -14,7 +14,7 @@ import type {
   ServerConfig,
   GitStatusResponse,
   GitStatusError,
-} from '@lifeos/shared/types';
+} from '@dorkos/shared/types';
 
 export interface DirectTransportServices {
   agentManager: {

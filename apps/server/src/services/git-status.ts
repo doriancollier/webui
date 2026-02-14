@@ -1,6 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 const execFileAsync = promisify(execFile);
 

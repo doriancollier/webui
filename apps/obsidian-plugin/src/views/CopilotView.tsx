@@ -3,20 +3,20 @@ import { createRoot, Root } from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/react';
 import path from 'path';
-import { setPlatformAdapter } from '@lifeos/client/lib/platform';
-import { TransportProvider } from '@lifeos/client/contexts/TransportContext';
-import { DirectTransport } from '@lifeos/client/lib/direct-transport';
+import { setPlatformAdapter } from '@dorkos/client/lib/platform';
+import { TransportProvider } from '@dorkos/client/contexts/TransportContext';
+import { DirectTransport } from '@dorkos/client/lib/direct-transport';
 import { createObsidianAdapter } from '../lib/obsidian-adapter';
 import { ObsidianProvider } from '../contexts/ObsidianContext';
 import { ObsidianApp } from '../components/ObsidianApp';
-import { AgentManager } from '@lifeos/server/services/agent-manager';
-import { TranscriptReader } from '@lifeos/server/services/transcript-reader';
-import { CommandRegistryService } from '@lifeos/server/services/command-registry';
+import { AgentManager } from '@dorkos/server/services/agent-manager';
+import { TranscriptReader } from '@dorkos/server/services/transcript-reader';
+import { CommandRegistryService } from '@dorkos/server/services/command-registry';
 import type CopilotPlugin from '../main';
 // Vite extracts this to styles.css which Obsidian auto-loads
 import '../styles/plugin.css';
 
-export const VIEW_TYPE_COPILOT = 'lifeos-copilot-view';
+export const VIEW_TYPE_COPILOT = 'dorkos-copilot-view';
 
 export class CopilotView extends ItemView {
   root: Root | null = null;

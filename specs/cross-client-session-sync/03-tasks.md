@@ -680,7 +680,7 @@ Create the core session broadcaster service that manages chokidar file watchers 
 
 ```typescript
 import type { Response } from 'express';
-import type { HistoryMessage } from '@lifeos/shared/types';
+import type { HistoryMessage } from '@dorkos/shared/types';
 import chokidar from 'chokidar';
 import fs from 'fs/promises';
 import path from 'path';
@@ -822,7 +822,7 @@ export class SessionBroadcaster {
     if (!watch) return;
     for (const client of watch.clients) {
       try {
-        sendSSEEvent(client, event as import('@lifeos/shared/types').StreamEvent);
+        sendSSEEvent(client, event as import('@dorkos/shared/types').StreamEvent);
       } catch { /* Client may have disconnected */ }
     }
   }

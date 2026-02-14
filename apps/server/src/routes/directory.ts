@@ -2,7 +2,7 @@ import { Router } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import { BrowseDirectoryQuerySchema } from '@lifeos/shared/schemas';
+import { BrowseDirectoryQuerySchema } from '@dorkos/shared/schemas';
 
 const router = Router();
 const HOME = os.homedir();

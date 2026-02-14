@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { initSSEStream, sendSSEEvent, endSSEStream } from '../../services/stream-adapter.js';
-import type { StreamEvent } from '@lifeos/shared/types';
+import type { StreamEvent } from '@dorkos/shared/types';
 
 function createMockResponse() {
   return {

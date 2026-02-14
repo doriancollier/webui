@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { SessionItem } from '../SessionItem';
-import type { Session } from '@lifeos/shared/types';
+import type { Session } from '@dorkos/shared/types';
 
 // Mock window.matchMedia for useIsMobile hook
 beforeAll(() => {

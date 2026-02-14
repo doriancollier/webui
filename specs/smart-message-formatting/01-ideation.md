@@ -45,7 +45,7 @@
 - `packages/shared/src/types.ts` — Re-exports types from schemas
 
 **Shared dependencies:**
-- `@lifeos/shared` — Types flow from schemas → server (output) → client (consumption)
+- `@dorkos/shared` — Types flow from schemas → server (output) → client (consumption)
 - `StreamingText` / `Streamdown` — Only used for assistant messages, not user
 - `motion/react` — Entrance animations in MessageItem
 

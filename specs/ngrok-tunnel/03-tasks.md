@@ -110,7 +110,7 @@ health(): Promise<HealthResponse>;
 
 **In `apps/client/src/lib/http-transport.ts`:**
 
-1. Add `HealthResponse` to type imports from `@lifeos/shared/types`
+1. Add `HealthResponse` to type imports from `@dorkos/shared/types`
 2. Replace the inline return type at line 154:
 ```typescript
 // Before:
@@ -125,7 +125,7 @@ health(): Promise<HealthResponse> {
 
 **In `apps/client/src/lib/direct-transport.ts`:**
 
-1. Add `HealthResponse` to type imports from `@lifeos/shared/types`
+1. Add `HealthResponse` to type imports from `@dorkos/shared/types`
 2. Replace the inline return type at line 212:
 ```typescript
 // Before:
@@ -364,13 +364,13 @@ Replace the full content of `index.ts` with the code from spec section 3.7. Key 
 
 ### What to do
 
-Add `TunnelStatusSchema` to the import list from `@lifeos/shared/schemas`:
+Add `TunnelStatusSchema` to the import list from `@dorkos/shared/schemas`:
 
 ```typescript
 import {
   // ... existing imports ...
   TunnelStatusSchema,
-} from '@lifeos/shared/schemas';
+} from '@dorkos/shared/schemas';
 ```
 
 No other changes needed — the `HealthResponseSchema` already references `TunnelStatusSchema` via the optional `tunnel` field after Task 1. The import is needed so the registry can resolve the schema reference during OpenAPI generation.
@@ -452,7 +452,7 @@ These tests don't test tunnel behavior — the mock only prevents module resolut
 
 **In `apps/server/package.json`:**
 
-1. Add to `dependencies` (after `@lifeos/shared`):
+1. Add to `dependencies` (after `@dorkos/shared`):
 ```json
 "@ngrok/ngrok": "^1.4.1",
 ```

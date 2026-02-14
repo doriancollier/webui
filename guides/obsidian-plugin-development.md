@@ -1,6 +1,6 @@
 # Obsidian Plugin Development Guide
 
-> Developer reference for building the LifeOS Gateway Obsidian plugin — embedding our React chat client as an Obsidian copilot sidebar.
+> Developer reference for building the DorkOS Gateway Obsidian plugin — embedding our React chat client as an Obsidian copilot sidebar.
 
 ---
 
@@ -21,12 +21,12 @@ my-plugin/
 
 ```json
 {
-  "id": "lifeos-copilot",
-  "name": "LifeOS Copilot",
+  "id": "dorkos-copilot",
+  "name": "DorkOS Copilot",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "AI copilot sidebar powered by LifeOS Gateway",
-  "author": "LifeOS",
+  "description": "AI copilot sidebar powered by DorkOS Gateway",
+  "author": "DorkOS",
   "authorUrl": "https://github.com/your-repo",
   "isDesktopOnly": true
 }
@@ -67,7 +67,7 @@ The plugin renders our React client inside an `ItemView` in Obsidian's right sid
 import { ItemView, WorkspaceLeaf } from "obsidian";
 import { createRoot, Root } from "react-dom/client";
 
-export const VIEW_TYPE_COPILOT = "lifeos-copilot-view";
+export const VIEW_TYPE_COPILOT = "dorkos-copilot-view";
 
 export class CopilotView extends ItemView {
   root: Root | null = null;
@@ -81,7 +81,7 @@ export class CopilotView extends ItemView {
   }
 
   getDisplayText(): string {
-    return "LifeOS Copilot";
+    return "DorkOS Copilot";
   }
 
   getIcon(): string {
@@ -618,7 +618,7 @@ npm run build
 ### Development Workflow
 
 1. Run the build from the monorepo root or from `apps/obsidian-plugin/`
-2. The build outputs to `apps/obsidian-plugin/dist/` which is symlinked (or hardlinked) into the vault's `.obsidian/plugins/lifeos-copilot/`
+2. The build outputs to `apps/obsidian-plugin/dist/` which is symlinked (or hardlinked) into the vault's `.obsidian/plugins/dorkos-copilot/`
 3. Restart Obsidian (or use the Hot Reload plugin)
 4. Open dev console (`Cmd+Option+I`) to check for errors
 
@@ -785,9 +785,9 @@ gateway/                              # Turborepo monorepo root
 ├── packages/
 │   └── shared/src/
 │       ├── transport.ts              # Transport interface (the "port")
-│       └── types.ts                  # Shared type definitions (@lifeos/shared)
+│       └── types.ts                  # Shared type definitions (@dorkos/shared)
 ├── apps/
-│   ├── client/src/                   # Shared React components (@lifeos/client)
+│   ├── client/src/                   # Shared React components (@dorkos/client)
 │   │   ├── components/
 │   │   ├── hooks/
 │   │   │   ├── use-chat-session.ts   # Chat streaming (uses useTransport)
@@ -840,7 +840,7 @@ Our plugin is built to `apps/obsidian-plugin/dist/`. The Obsidian vault symlinks
 
 ```bash
 # Already done for this vault:
-ln -s /path/to/gateway/apps/obsidian-plugin/dist workspace/.obsidian/plugins/lifeos-copilot
+ln -s /path/to/gateway/apps/obsidian-plugin/dist workspace/.obsidian/plugins/dorkos-copilot
 ```
 
 The Vite build outputs all three required files:
@@ -859,32 +859,32 @@ The Vite build outputs all three required files:
 
 In the Console tab, look for:
 - Red error messages with stack traces
-- `[LifeOS Copilot]` prefixed log messages (our debug logging)
+- `[DorkOS Copilot]` prefixed log messages (our debug logging)
 - `Uncaught` or `TypeError` messages during plugin load
 
 ### Debugging "Failed to Load Plugin" Errors
 
 When Obsidian shows "Failed to load plugin", the error occurs in one of two phases:
 
-**Phase 1: Module Evaluation** — When Obsidian `require()`s the `main.js` file. All top-level code runs. If any top-level `require()`, variable initialization, or immediately-invoked code throws, the plugin fails here. You'll see the error in the console **before** any `[LifeOS Copilot]` log messages.
+**Phase 1: Module Evaluation** — When Obsidian `require()`s the `main.js` file. All top-level code runs. If any top-level `require()`, variable initialization, or immediately-invoked code throws, the plugin fails here. You'll see the error in the console **before** any `[DorkOS Copilot]` log messages.
 
-**Phase 2: Plugin Initialization** — When Obsidian calls `onload()` on the plugin instance. If `onload()` throws, you'll see `[LifeOS Copilot] onload() called` but then an error.
+**Phase 2: Plugin Initialization** — When Obsidian calls `onload()` on the plugin instance. If `onload()` throws, you'll see `[DorkOS Copilot] onload() called` but then an error.
 
 **Debugging checklist:**
 
 1. Open dev console (`Cmd+Option+I`)
 2. Disable and re-enable the plugin in Settings > Community Plugins
 3. Watch the console for the error
-4. Look for the `[LifeOS Copilot]` log messages to determine which phase failed
+4. Look for the `[DorkOS Copilot]` log messages to determine which phase failed
 
 ### Debug Logging
 
 The plugin includes debug logging at key points:
 
 ```
-[LifeOS Copilot] main.js module loaded    ← Phase 1 passed
-[LifeOS Copilot] onload() called          ← Phase 2 started
-[LifeOS Copilot] onload() complete        ← Phase 2 passed
+[DorkOS Copilot] main.js module loaded    ← Phase 1 passed
+[DorkOS Copilot] onload() called          ← Phase 2 started
+[DorkOS Copilot] onload() complete        ← Phase 2 passed
 ```
 
 If you don't see "main.js module loaded", the error is in module evaluation (top-level code or a dependency).

@@ -11,7 +11,7 @@ import {
   ApprovalRequestSchema,
   SubmitAnswersRequestSchema,
   ListSessionsQuerySchema,
-} from '@lifeos/shared/schemas';
+} from '@dorkos/shared/schemas';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const vaultRoot = path.resolve(__dirname, '../../../../');

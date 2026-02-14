@@ -36,7 +36,7 @@ slug: claude-code-webui-api
 ## 2) Pre-reading Log
 
 ### Codebase Files
-- `workspace/0-System/README.md`: LifeOS v0.11.0 architecture overview; confirms `gateway/` is designated as "Node.js API server (future)"
+- `workspace/0-System/README.md`: DorkOS v0.11.0 architecture overview; confirms `gateway/` is designated as "Node.js API server (future)"
 - `workspace/0-System/architecture.md`: References `gateway/` as "REST API + WebSocket" location
 - `.claude/commands/` (30+ namespaces): Command files are markdown with YAML frontmatter (`description`, `allowed-tools`, `argument-hint`, `category`)
 - `.claude/skills/` (54+ skills): Model-invoked knowledge modules with `SKILL.md` files
@@ -217,7 +217,7 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 - Pros: Production-ready AI-specific components, handles streaming/tool calls out of the box, shadcn-based styling
 - Cons: New library, may not cover all our custom needs (slash commands, permission modes)
 
-**Recommendation:** **Vercel AI SDK (`@ai-sdk/react`) + AI Elements + custom shadcn components** - Use `useChat` for state management, AI Elements for standard chat components (`<MessageThread>`, `<ToolDisplay>`, `<StreamingText>`), and custom shadcn components for LifeOS-specific features (slash command palette, permission toggle, session sidebar). This gives us production-tested streaming + AI-optimized components while retaining full control.
+**Recommendation:** **Vercel AI SDK (`@ai-sdk/react`) + AI Elements + custom shadcn components** - Use `useChat` for state management, AI Elements for standard chat components (`<MessageThread>`, `<ToolDisplay>`, `<StreamingText>`), and custom shadcn components for DorkOS-specific features (slash command palette, permission toggle, session sidebar). This gives us production-tested streaming + AI-optimized components while retaining full control.
 
 ### 5.5 Long Chat Performance
 

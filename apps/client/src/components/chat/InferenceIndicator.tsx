@@ -5,7 +5,7 @@ import { useElapsedTime } from '../../hooks/use-elapsed-time';
 import { useRotatingVerb } from '../../hooks/use-rotating-verb';
 import { DEFAULT_THEME, type IndicatorTheme } from './inference-themes';
 import { BYPASS_INFERENCE_VERBS } from './inference-verbs';
-import type { PermissionMode } from '@lifeos/shared/types';
+import type { PermissionMode } from '@dorkos/shared/types';
 
 interface InferenceIndicatorProps {
   status: 'idle' | 'streaming' | 'error';

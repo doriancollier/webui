@@ -1,9 +1,9 @@
 {
-  "id": "lifeos-copilot",
-  "name": "LifeOS Copilot",
+  "id": "dorkos-copilot",
+  "name": "DorkOS Copilot",
   "version": "0.1.0",
   "minAppVersion": "1.5.0",
-  "description": "AI copilot sidebar powered by LifeOS Gateway",
-  "author": "LifeOS",
+  "description": "AI copilot sidebar powered by DorkOS Gateway",
+  "author": "DorkOS",
   "isDesktopOnly": true
 }

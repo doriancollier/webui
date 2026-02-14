@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, waitFor, act } from '@testing-library/react';
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { Transport } from '@lifeos/shared/transport';
+import type { Transport } from '@dorkos/shared/transport';
 import { TransportProvider } from '../../contexts/TransportContext';
 import { useSessions } from '../use-sessions';
 

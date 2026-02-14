@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { TFile } from 'obsidian';
-import { App } from '@lifeos/client/App';
-import { useAppStore } from '@lifeos/client/stores/app-store';
-import { useTransport } from '@lifeos/client/contexts/TransportContext';
+import { App } from '@dorkos/client/App';
+import { useAppStore } from '@dorkos/client/stores/app-store';
+import { useTransport } from '@dorkos/client/contexts/TransportContext';
 import { useObsidian } from '../contexts/ObsidianContext';
 import { useActiveFile } from '../hooks/use-active-file';
 import { useFileOpener } from '../hooks/use-file-opener';

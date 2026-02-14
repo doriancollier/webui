@@ -3,7 +3,7 @@ import { X, FileText } from 'lucide-react';
 import { TFile } from 'obsidian';
 import { useObsidian } from '../contexts/ObsidianContext';
 import type { ActiveFileInfo } from '../hooks/use-active-file';
-import type { ContextFile } from '@lifeos/client/stores/app-store';
+import type { ContextFile } from '@dorkos/client/stores/app-store';
 
 interface ContextBarProps {
   activeFile: ActiveFileInfo | null;

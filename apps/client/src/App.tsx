@@ -8,6 +8,9 @@ import { PanelLeft } from 'lucide-react';
 import { PermissionBanner } from './components/layout/PermissionBanner';
 import { SessionSidebar } from './components/sessions/SessionSidebar';
 import { ChatPanel } from './components/chat/ChatPanel';
+import { useDirectoryState } from './hooks/use-directory-state';
+import { useFavicon } from './hooks/use-favicon';
+import { useDocumentTitle } from './hooks/use-document-title';
 
 interface AppProps {
   /** Optional transform applied to message content before sending to server */
@@ -22,6 +25,13 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   useDefaultCwd();
+
+  const [selectedCwd] = useDirectoryState();
+  const isStreaming = useAppStore((s) => s.isStreaming);
+  const activeForm = useAppStore((s) => s.activeForm);
+  const isWaitingForUser = useAppStore((s) => s.isWaitingForUser);
+  useFavicon({ cwd: embedded ? null : selectedCwd, isStreaming });
+  useDocumentTitle({ cwd: embedded ? null : selectedCwd, activeForm, isStreaming, isWaitingForUser });
 
   // Escape key closes overlay sidebar
   // Embedded: scoped to container element; Standalone: scoped to document

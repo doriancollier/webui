@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Copy, Check, ShieldOff } from 'lucide-react';
-import type { Session } from '@lifeos/shared/types';
+import type { Session } from '@dorkos/shared/types';
 import { cn } from '@/lib/utils';
 import { formatRelativeTime } from '@/lib/session-utils';
 import { useIsMobile } from '@/hooks/use-is-mobile';

@@ -1,4 +1,4 @@
-import type { Session } from '@lifeos/shared/types';
+import type { Session } from '@dorkos/shared/types';
 
 export type TimeGroup = 'Today' | 'Yesterday' | 'Previous 7 Days' | 'Previous 30 Days' | 'Older';
 

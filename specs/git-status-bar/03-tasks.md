@@ -119,7 +119,7 @@ Create a new service at `apps/server/src/services/git-status.ts` that shells out
 ```typescript
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 const execFileAsync = promisify(execFile);
 
@@ -293,7 +293,7 @@ Create a new hook at `apps/client/src/hooks/use-git-status.ts`:
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 export function useGitStatus(cwd: string | null) {
   const transport = useTransport();
@@ -385,7 +385,7 @@ Create a new component at `apps/client/src/components/status/GitStatusItem.tsx`:
 
 ```typescript
 import { GitBranch, ArrowUp, ArrowDown } from 'lucide-react';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 import { isGitStatusOk } from '../../hooks/use-git-status';
 
 interface GitStatusItemProps {
@@ -680,7 +680,7 @@ import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { GitStatusItem } from '../GitStatusItem';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 ```
 
 Test cases:
@@ -805,7 +805,7 @@ Create tests at `apps/client/src/hooks/__tests__/use-git-status.test.tsx`:
 import { describe, it, expect, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { isGitStatusOk } from '../use-git-status';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 ```
 
 Test cases:

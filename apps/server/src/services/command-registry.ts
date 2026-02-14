@@ -1,7 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
-import type { CommandEntry, CommandRegistry } from '@lifeos/shared/types';
+import type { CommandEntry, CommandRegistry } from '@dorkos/shared/types';
 
 /**
  * Fallback frontmatter parser for when gray-matter's YAML parser fails

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { fileLister } from '../services/file-lister.js';
-import { FileListQuerySchema } from '@lifeos/shared/schemas';
+import { FileListQuerySchema } from '@dorkos/shared/schemas';
 
 const router = Router();
 

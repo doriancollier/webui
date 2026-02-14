@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { StreamEvent } from '@lifeos/shared/types';
+import type { StreamEvent } from '@dorkos/shared/types';
 
 // Mock services before importing app
 vi.mock('../../services/transcript-reader.js', () => ({
@@ -46,7 +46,7 @@ import request from 'supertest';
 import { createApp } from '../../app.js';
 import { transcriptReader } from '../../services/transcript-reader.js';
 import { agentManager } from '../../services/agent-manager.js';
-import { parseSSEResponse } from '@lifeos/test-utils/sse-helpers';
+import { parseSSEResponse } from '@dorkos/test-utils/sse-helpers';
 
 const app = createApp();
 

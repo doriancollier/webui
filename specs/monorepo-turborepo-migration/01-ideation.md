@@ -10,11 +10,11 @@
 
 ## 1) Intent & Assumptions
 
-**Task brief:** Migrate the LifeOS Gateway project from a single-package structure to a Turborepo monorepo with proper package boundaries. The project currently has three distinct build targets (web client, Express server, Obsidian plugin) sharing a common types layer, all in one `package.json`. The migration should also update all developer guides in `guides/` and Claude Code commands/skills in `.claude/` to reflect the new structure.
+**Task brief:** Migrate the DorkOS Gateway project from a single-package structure to a Turborepo monorepo with proper package boundaries. The project currently has three distinct build targets (web client, Express server, Obsidian plugin) sharing a common types layer, all in one `package.json`. The migration should also update all developer guides in `guides/` and Claude Code commands/skills in `.claude/` to reflect the new structure.
 
 **Assumptions:**
 - npm workspaces will be the workspace protocol (project already uses npm)
-- Four natural packages: `@lifeos/shared`, `@lifeos/server`, `@lifeos/client`, `@lifeos/obsidian-plugin`
+- Four natural packages: `@dorkos/shared`, `@dorkos/server`, `@dorkos/client`, `@dorkos/obsidian-plugin`
 - The existing hexagonal architecture and Transport abstraction remain unchanged
 - All existing tests should continue to pass after migration
 - The Obsidian plugin's custom Vite build plugins (dirname polyfill, safe requires, electron compat) remain necessary
@@ -26,7 +26,7 @@
 - Adding new features during migration
 - CI/CD pipeline setup
 - Switching package managers (staying on npm)
-- Extracting a separate `@lifeos/ui` component library
+- Extracting a separate `@dorkos/ui` component library
 - Remote caching setup (can be added later)
 
 ---
@@ -40,7 +40,7 @@
 - `vite.config.ts`: React + Tailwind plugins, path aliases matching tsconfig, proxy `/api` to Express on port 6942, output to `dist/`.
 - `vite.config.obsidian.ts`: CJS library mode, 4 custom Vite plugins (copyManifest, fixDirnamePolyfill, safeRequires, patchElectronCompat), externals for Obsidian/Electron/Node builtins/CodeMirror, inline dynamic imports, output to `dist-obsidian/`, target node18.
 - `.env`: Contains `GATEWAY_PORT=6942`.
-- `manifest.json`: Obsidian plugin manifest (lifeos-copilot v0.1.0).
+- `manifest.json`: Obsidian plugin manifest (dorkos-copilot v0.1.0).
 - `components.json`: shadcn/ui configuration (new-york style, neutral palette).
 
 ### Source Code
@@ -102,12 +102,12 @@
 
 ### Dependency Graph
 ```
-@lifeos/shared (schemas, transport interface, types)
-  ├─→ @lifeos/server (Express app + services)
-  │     └─→ @lifeos/obsidian-plugin (DirectTransport uses services)
-  ├─→ @lifeos/client (React SPA + HttpTransport)
-  │     └─→ @lifeos/obsidian-plugin (embeds React components)
-  └─→ @lifeos/obsidian-plugin (uses shared types)
+@dorkos/shared (schemas, transport interface, types)
+  ├─→ @dorkos/server (Express app + services)
+  │     └─→ @dorkos/obsidian-plugin (DirectTransport uses services)
+  ├─→ @dorkos/client (React SPA + HttpTransport)
+  │     └─→ @dorkos/obsidian-plugin (embeds React components)
+  └─→ @dorkos/obsidian-plugin (uses shared types)
 ```
 
 ### Shared Dependencies (used by multiple modules)
@@ -181,9 +181,9 @@ N/A — this is a migration, not a bug fix.
 
 **TypeScript Configuration:**
 - Turborepo explicitly advises against TypeScript Project References — use their task graph instead
-- Use a `@lifeos/typescript-config` package with base/react/node configs
+- Use a `@dorkos/typescript-config` package with base/react/node configs
 - Internal packages should use "Just-in-Time" pattern: export `.ts` source directly via `package.json` exports, let Vite/tsc consumers compile it
-- Replace `@shared/*` path alias with `@lifeos/shared` package exports at package boundaries
+- Replace `@shared/*` path alias with `@dorkos/shared` package exports at package boundaries
 - Keep `@/*` as a local alias within each app
 
 **Vitest:**
@@ -199,7 +199,7 @@ N/A — this is a migration, not a bug fix.
 **Dependency Management:**
 - Install dependencies in the packages that use them, not the root
 - Root should only have monorepo tools: `turbo`, `concurrently` (if kept), `typescript`
-- Use `"@lifeos/shared": "workspace:*"` for internal dependencies
+- Use `"@dorkos/shared": "workspace:*"` for internal dependencies
 
 **Migration Strategy:**
 - Incremental, phased approach is strongly recommended
@@ -216,39 +216,39 @@ Rationale: The project already has clear package boundaries and a dependency gra
 
 ## 6) Clarification
 
-1. **Package naming convention**: Should packages use `@lifeos/` scope (e.g., `@lifeos/shared`, `@lifeos/client`) or a different scope? These are private packages so it doesn't matter for npm registry, but it affects all import statements.
+1. **Package naming convention**: Should packages use `@dorkos/` scope (e.g., `@dorkos/shared`, `@dorkos/client`) or a different scope? These are private packages so it doesn't matter for npm registry, but it affects all import statements.
 
 2. **Directory layout preference**: Standard Turborepo convention is `apps/` for deployable apps and `packages/` for shared libraries. Should the Obsidian plugin go in `apps/obsidian-plugin/` (it's a deployable artifact) or `packages/obsidian-plugin/` (it's a library/plugin)? Recommendation: `apps/` since it produces a deployable build.
 
-3. **Shared config packages**: Should we create `@lifeos/typescript-config` and `@lifeos/vitest-config` packages for shared configs, or keep configs local to each package? With only 4 packages, shared config packages add structure but may be premature. Recommendation: Create `@lifeos/typescript-config` (low effort, high value), skip vitest-config for now.
+3. **Shared config packages**: Should we create `@dorkos/typescript-config` and `@dorkos/vitest-config` packages for shared configs, or keep configs local to each package? With only 4 packages, shared config packages add structure but may be premature. Recommendation: Create `@dorkos/typescript-config` (low effort, high value), skip vitest-config for now.
 
-4. **Server service extraction**: The Obsidian plugin imports server services directly (AgentManager, TranscriptReader, CommandRegistryService). Should these services stay in `@lifeos/server` with the plugin depending on the full server package, or should we extract them to a separate `@lifeos/server-core` package? Recommendation: Keep in server for now, extract later if the dependency feels too heavy.
+4. **Server service extraction**: The Obsidian plugin imports server services directly (AgentManager, TranscriptReader, CommandRegistryService). Should these services stay in `@dorkos/server` with the plugin depending on the full server package, or should we extract them to a separate `@dorkos/server-core` package? Recommendation: Keep in server for now, extract later if the dependency feels too heavy.
 
 5. **Claude Code commands/skills scope**: Many commands in `.claude/` reference paths like `src/server/`, `src/client/`, etc. and build scripts. Should we update all commands to use new paths during migration, or handle as a follow-up? Recommendation: Update during migration since stale paths will break commands.
 
 6. **`guides/` location**: Should guide files remain at the monorepo root (`guides/`) or move into a specific package? Since they document the overall system (not one package), keeping them at root makes sense. Recommendation: Keep at root, update all path references inside them.
 
-7. **Test utilities**: `src/test-utils/` contains shared mock factories. Should this become its own package `@lifeos/test-utils` or stay co-located with client tests? Recommendation: Extract to `packages/test-utils/` since both client and plugin tests may need them.
+7. **Test utilities**: `src/test-utils/` contains shared mock factories. Should this become its own package `@dorkos/test-utils` or stay co-located with client tests? Recommendation: Extract to `packages/test-utils/` since both client and plugin tests may need them.
 
 ---
 
 ## 7) Proposed Package Structure
 
 ```
-lifeos-gateway/
+dorkos-gateway/
 ├── apps/
-│   ├── client/                     # @lifeos/client
+│   ├── client/                     # @dorkos/client
 │   │   ├── src/                    # React components, hooks, stores
 │   │   ├── public/
 │   │   ├── index.html
 │   │   ├── package.json
-│   │   ├── tsconfig.json           # extends @lifeos/typescript-config/react
+│   │   ├── tsconfig.json           # extends @dorkos/typescript-config/react
 │   │   └── vite.config.ts
-│   ├── server/                     # @lifeos/server
+│   ├── server/                     # @dorkos/server
 │   │   ├── src/                    # Express routes, services, middleware
 │   │   ├── package.json
-│   │   └── tsconfig.json           # extends @lifeos/typescript-config/node
-│   └── obsidian-plugin/            # @lifeos/obsidian-plugin
+│   │   └── tsconfig.json           # extends @dorkos/typescript-config/node
+│   └── obsidian-plugin/            # @dorkos/obsidian-plugin
 │       ├── src/                    # Plugin main, views, DirectTransport
 │       ├── build-plugins/          # Custom Vite plugins (dirname, safeRequires, etc.)
 │       ├── manifest.json
@@ -256,19 +256,19 @@ lifeos-gateway/
 │       ├── tsconfig.json
 │       └── vite.config.ts
 ├── packages/
-│   ├── shared/                     # @lifeos/shared
+│   ├── shared/                     # @dorkos/shared
 │   │   ├── src/
 │   │   │   ├── schemas.ts
 │   │   │   ├── transport.ts
 │   │   │   └── types.ts
 │   │   ├── package.json
 │   │   └── tsconfig.json
-│   ├── typescript-config/          # @lifeos/typescript-config
+│   ├── typescript-config/          # @dorkos/typescript-config
 │   │   ├── base.json
 │   │   ├── react.json
 │   │   ├── node.json
 │   │   └── package.json
-│   └── test-utils/                 # @lifeos/test-utils
+│   └── test-utils/                 # @dorkos/test-utils
 │       ├── src/
 │       ├── package.json
 │       └── tsconfig.json
@@ -299,8 +299,8 @@ lifeos-gateway/
 - Move `src/shared/` → `packages/shared/src/`
 - Create `packages/typescript-config/` with base/react/node configs
 - Add workspace config: `"workspaces": ["packages/*"]`
-- Update client imports: `@shared/*` → `@lifeos/shared/*`
-- Update server imports: relative paths → `@lifeos/shared/*`
+- Update client imports: `@shared/*` → `@dorkos/shared/*`
+- Update server imports: relative paths → `@dorkos/shared/*`
 - Run tests, verify TypeScript compiles
 - **Commit: "refactor: extract shared and typescript-config packages"**
 
@@ -327,7 +327,7 @@ lifeos-gateway/
 - Move `src/plugin/` → `apps/obsidian-plugin/src/`
 - Move custom Vite plugins to `apps/obsidian-plugin/build-plugins/`
 - Move `manifest.json` → `apps/obsidian-plugin/`
-- Update deep relative imports to package imports (`@lifeos/server`, `@lifeos/client`)
+- Update deep relative imports to package imports (`@dorkos/server`, `@dorkos/client`)
 - Test build and load in Obsidian
 - **Commit: "refactor: extract Obsidian plugin app"**
 

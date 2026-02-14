@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState, useCallback, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import type { ChatMessage, MessageGrouping } from '../../hooks/use-chat-session';
-import type { PermissionMode } from '@lifeos/shared/types';
+import type { PermissionMode } from '@dorkos/shared/types';
 import { MessageItem } from './MessageItem';
 import type { InteractiveToolHandle } from './MessageItem';
 import { InferenceIndicator } from './InferenceIndicator';

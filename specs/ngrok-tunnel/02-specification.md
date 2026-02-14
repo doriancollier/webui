@@ -324,7 +324,7 @@ start();
 
 ### 3.8 MODIFY: `apps/server/src/services/openapi-registry.ts`
 
-Add `TunnelStatusSchema` to the import list from `@lifeos/shared/schemas`. No other changes needed — the `HealthResponseSchema` already contains the optional tunnel field after the schema change.
+Add `TunnelStatusSchema` to the import list from `@dorkos/shared/schemas`. No other changes needed — the `HealthResponseSchema` already contains the optional tunnel field after the schema change.
 
 ---
 
@@ -342,7 +342,7 @@ Add `HealthResponse` to the type imports. Replace inline `health()` return type 
 
 ### 3.11 MODIFY: `apps/server/package.json`
 
-**Change 1:** Add `"@ngrok/ngrok": "^1.4.1"` to `dependencies` (after `@lifeos/shared`).
+**Change 1:** Add `"@ngrok/ngrok": "^1.4.1"` to `dependencies` (after `@dorkos/shared`).
 
 **Change 2:** Add script `"dev:tunnel": "TUNNEL_ENABLED=true TUNNEL_PORT=3000 tsx watch src/index.ts"` (after `dev`).
 

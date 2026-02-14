@@ -12,7 +12,7 @@
     "build": "turbo build",
     "test": "turbo test",
     "typecheck": "turbo typecheck",
-    "start": "npm run start --workspace=@lifeos/server"
+    "start": "npm run start --workspace=@dorkos/server"
   },
   "devDependencies": {
     "turbo": "^2.8.7"

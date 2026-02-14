@@ -39,7 +39,7 @@
 - `apps/client/src/components/chat/MessageItem.tsx` — Parent that renders QuestionPrompt
 
 **Shared dependencies:**
-- `@lifeos/shared/types` — `QuestionItem`, `QuestionOption` types
+- `@dorkos/shared/types` — `QuestionItem`, `QuestionOption` types
 - `../../contexts/TransportContext` — `useTransport()` for `submitAnswers()`
 - `lucide-react` — `Check`, `MessageSquare` icons
 

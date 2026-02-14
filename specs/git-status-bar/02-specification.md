@@ -110,7 +110,7 @@ Create a new service that shells out to git:
 ```typescript
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 const execFileAsync = promisify(execFile);
 
@@ -225,7 +225,7 @@ Or if the service is already imported at the top, call it directly. Follow whate
 ```typescript
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 export function useGitStatus(cwd: string | null) {
   const transport = useTransport();
@@ -276,7 +276,7 @@ showStatusBarGit: true,
 
 ```typescript
 import { GitBranch, ArrowUp, ArrowDown } from 'lucide-react';
-import type { GitStatusResponse, GitStatusError } from '@lifeos/shared/types';
+import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 import { isGitStatusOk } from '../../hooks/use-git-status';
 
 interface GitStatusItemProps {

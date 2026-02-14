@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTransport } from '../contexts/TransportContext';
 import { useSessionId } from './use-session-id';
 import { useAppStore } from '../stores/app-store';
-import type { CreateSessionRequest } from '@lifeos/shared/types';
+import type { CreateSessionRequest } from '@dorkos/shared/types';
 
 export function useSessions() {
   const queryClient = useQueryClient();

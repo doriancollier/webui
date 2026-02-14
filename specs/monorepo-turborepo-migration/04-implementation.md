@@ -5,20 +5,20 @@
 
 ## Overview
 
-Successfully migrated LifeOS Gateway from a single-package structure to a Turborepo monorepo with 6 npm workspace packages.
+Successfully migrated DorkOS Gateway from a single-package structure to a Turborepo monorepo with 6 npm workspace packages.
 
 ## Final Structure
 
 ```
-lifeos-gateway/
+dorkos-gateway/
 ├── apps/
-│   ├── client/            # @lifeos/client — React 19 SPA (Vite 6)
-│   ├── server/            # @lifeos/server — Express API (tsc)
-│   └── obsidian-plugin/   # @lifeos/obsidian-plugin — Vite lib mode CJS
+│   ├── client/            # @dorkos/client — React 19 SPA (Vite 6)
+│   ├── server/            # @dorkos/server — Express API (tsc)
+│   └── obsidian-plugin/   # @dorkos/obsidian-plugin — Vite lib mode CJS
 ├── packages/
-│   ├── shared/            # @lifeos/shared — Zod schemas, types (JIT .ts exports)
-│   ├── typescript-config/  # @lifeos/typescript-config — base/react/node configs
-│   └── test-utils/        # @lifeos/test-utils — Mock factories, test helpers
+│   ├── shared/            # @dorkos/shared — Zod schemas, types (JIT .ts exports)
+│   ├── typescript-config/  # @dorkos/typescript-config — base/react/node configs
+│   └── test-utils/        # @dorkos/test-utils — Mock factories, test helpers
 ├── turbo.json
 ├── vitest.workspace.ts
 ├── package.json           # Root workspace config + turbo only
@@ -38,7 +38,7 @@ lifeos-gateway/
 
 ## Key Decisions Made During Implementation
 
-1. **JIT exports for @lifeos/shared**: Package.json exports map points directly to `.ts` source files — no build step needed. Consuming packages (client via Vite, server via tsx) handle transpilation.
+1. **JIT exports for @dorkos/shared**: Package.json exports map points directly to `.ts` source files — no build step needed. Consuming packages (client via Vite, server via tsx) handle transpilation.
 
 2. **Obsidian plugin build plugins extracted**: 4 inline Vite plugins from root `vite.config.obsidian.ts` extracted to `apps/obsidian-plugin/build-plugins/` as separate modules.
 
@@ -51,12 +51,12 @@ lifeos-gateway/
 ## Implementation Phases Completed
 
 1. **Phase 1**: Installed Turborepo, created turbo.json, updated root scripts
-2. **Phase 2**: Created @lifeos/typescript-config and @lifeos/shared packages
+2. **Phase 2**: Created @dorkos/typescript-config and @dorkos/shared packages
 3. **Phase 3**: Updated all imports across client and server
-4. **Phase 4**: Extracted @lifeos/client with Vite config and all React deps
-5. **Phase 5**: Extracted @lifeos/server with Express deps and adjusted paths
+4. **Phase 4**: Extracted @dorkos/client with Vite config and all React deps
+5. **Phase 5**: Extracted @dorkos/server with Express deps and adjusted paths
 6. **Phase 6**: Created obsidian-plugin structure, extracted build plugins, moved source
-7. **Phase 7**: Created @lifeos/test-utils, configured vitest.workspace.ts, cleaned root
+7. **Phase 7**: Created @dorkos/test-utils, configured vitest.workspace.ts, cleaned root
 8. **Phase 8**: Updated CLAUDE.md, 5 guides, .claude/ rules/hooks/commands
 
 ## Known Issues
