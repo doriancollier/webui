@@ -18,7 +18,7 @@ import { FilePalette } from '@/layers/features/files';
 import type { FileEntry } from '@/layers/features/files';
 import { ShortcutChips } from './ShortcutChips';
 import { DragHandle } from './DragHandle';
-import { StatusLine } from '@/layers/features/status/ui/StatusLine';
+import { StatusLine } from '@/layers/features/status';
 import { useFiles } from '@/layers/features/files';
 import { useCelebrations } from '../model/use-celebrations';
 import type { InteractiveToolHandle } from './MessageItem';

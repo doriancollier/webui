@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { getPlatform, useAppStore } from '@/layers/shared/lib';
 import { useQueryState } from 'nuqs';
-import { useSessionId } from '@/layers/entities/session/model/use-session-id';
+import { useSessionId } from './use-session-id';
 
 export function useDirectoryState(): [string | null, (dir: string | null) => void] {
   const platform = getPlatform();

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore } from '@/layers/shared/lib';
-import { useSessionId } from '@/layers/entities/session/model/use-session-id';
+import { useSessionId } from './use-session-id';
 import type { CreateSessionRequest } from '@dorkos/shared/types';
 
 export function useSessions() {
