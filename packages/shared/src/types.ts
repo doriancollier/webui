@@ -1,5 +1,11 @@
-// All types are now derived from Zod schemas (single source of truth).
-// See schemas.ts for schema definitions with OpenAPI metadata.
+/**
+ * Type re-exports — all types derived from Zod schemas in `schemas.ts`.
+ *
+ * Import types from this module (`@dorkos/shared/types`) for consuming code.
+ * Import schemas from `@dorkos/shared/schemas` when you need runtime validation.
+ *
+ * @module shared/types
+ */
 export type {
   PermissionMode,
   Session,

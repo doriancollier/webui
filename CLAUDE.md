@@ -210,5 +210,6 @@ Tests live alongside source in `__tests__/` directories within each app and pack
 - **No type-checked lint rules**: The typecheck hook already runs `tsc --noEmit` — ESLint uses syntax-only TypeScript rules (`tseslint.configs.recommended`).
 - **FSD layer enforcement**: `no-restricted-imports` rules enforce the unidirectional layer dependency hierarchy as hard errors. Cross-feature model imports are enforced by the Claude Code rule in `.claude/rules/fsd-layers.md`.
 - **React Compiler rules**: Bundled with `eslint-plugin-react-hooks` v7, downgraded to warnings.
+- **TSDoc**: `eslint-plugin-jsdoc` enforces TSDoc on exported functions/classes (warn-first). See `.claude/rules/documentation.md` for conventions.
 - **Prettier + Tailwind**: `prettier-plugin-tailwindcss` sorts Tailwind classes automatically.
 - **Claude Code rules**: `.claude/rules/file-size.md`, `.claude/rules/documentation.md`, `.claude/rules/code-quality.md` provide additional guidelines for file size limits, documentation standards, and code quality practices.

@@ -23,6 +23,12 @@ function parseFrontmatterFallback(content: string): Record<string, string> {
   return result;
 }
 
+/**
+ * Scans `.claude/commands/` for slash command definitions.
+ *
+ * Parses YAML frontmatter (description, allowed-tools, argument-hint) via gray-matter
+ * with a fallback parser for malformed YAML. Results are cached until `invalidateCache()`.
+ */
 class CommandRegistryService {
   private cache: CommandRegistry | null = null;
   private readonly commandsDir: string;

@@ -1,3 +1,8 @@
+/**
+ * Shared model — global hooks, Zustand stores, and Transport context.
+ *
+ * @module shared/model
+ */
 export { TransportProvider, useTransport } from './TransportContext';
 export { useAppStore, type ContextFile, type RecentCwd } from './app-store';
 export { useTheme, type Theme } from './use-theme';

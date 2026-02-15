@@ -1,3 +1,12 @@
+/**
+ * Zod schemas — single source of truth for all shared types and OpenAPI metadata.
+ *
+ * Each schema exports an inferred TypeScript type. Types are re-exported from `types.ts`
+ * for backward-compatible imports. Schemas are consumed by the OpenAPI registry for
+ * auto-generated API documentation and by route handlers for request validation.
+ *
+ * @module shared/schemas
+ */
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
 

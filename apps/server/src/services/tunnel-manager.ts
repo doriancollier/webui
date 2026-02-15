@@ -1,3 +1,14 @@
+/**
+ * Opt-in ngrok tunnel lifecycle manager (singleton).
+ *
+ * Wraps `@ngrok/ngrok` SDK with dynamic import for zero cost when disabled.
+ * Configured via env vars: `TUNNEL_ENABLED`, `NGROK_AUTHTOKEN`, `TUNNEL_PORT`,
+ * `TUNNEL_AUTH`, `TUNNEL_DOMAIN`. Tunnel failure is non-blocking.
+ *
+ * @module services/tunnel-manager
+ */
+
+/** Configuration for starting an ngrok tunnel. */
 export interface TunnelConfig {
   port: number;
   authtoken?: string;
@@ -13,6 +24,7 @@ export interface TunnelStatus {
   startedAt: string | null;
 }
 
+/** Singleton manager for ngrok tunnel lifecycle (start, stop, status). */
 export class TunnelManager {
   private listener: { close(): Promise<void>; url(): string | null } | null = null;
   private _status: TunnelStatus = {

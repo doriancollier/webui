@@ -2,8 +2,21 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
+/**
+ * Git repository status via `git status --porcelain=v1`.
+ *
+ * Parses branch, tracking, ahead/behind counts, and file change counts.
+ * Returns `GitStatusError` for non-git directories.
+ *
+ * @module services/git-status
+ */
 const execFileAsync = promisify(execFile);
 
+/**
+ * Get git status for a working directory.
+ *
+ * @param cwd - Directory to check (must be inside a git repo)
+ */
 export async function getGitStatus(cwd: string): Promise<GitStatusResponse | GitStatusError> {
   try {
     const { stdout } = await execFileAsync('git', ['status', '--porcelain=v1', '--branch'], {
@@ -19,6 +32,7 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResponse | Git
 const CONFLICT_CODES = new Set(['UU', 'AA', 'DD', 'AU', 'UA', 'DU', 'UD']);
 const STAGED_CODES = new Set(['M', 'A', 'D', 'R', 'C']);
 
+/** @internal Parse `git status --porcelain=v1 --branch` output into structured data. */
 export function parsePorcelainOutput(stdout: string): GitStatusResponse {
   const lines = stdout.split('\n').filter(Boolean);
 

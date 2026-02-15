@@ -3,6 +3,14 @@ import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
 
+/**
+ * File listing service for the client file browser.
+ *
+ * Tries `git ls-files` first for accuracy, falls back to recursive readdir.
+ * Results are cached with a 5-minute TTL. Enforces a 10,000 file limit.
+ *
+ * @module services/file-lister
+ */
 const execFileAsync = promisify(execFile);
 
 const EXCLUDED_DIRS = new Set([

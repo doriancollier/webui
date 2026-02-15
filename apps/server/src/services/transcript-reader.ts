@@ -53,13 +53,23 @@ interface ContentBlock {
   content?: string | ContentBlock[];
 }
 
+/**
+ * Single source of truth for session data — reads SDK JSONL transcript files
+ * from `~/.claude/projects/{slug}/`.
+ *
+ * Provides session listing, metadata extraction, full message history parsing,
+ * task state reconstruction, and incremental byte-offset reading for sync.
+ * Uses a metadata cache keyed by file mtime to avoid re-parsing unchanged files.
+ */
 export class TranscriptReader {
   private metaCache = new Map<string, { session: Session; mtimeMs: number }>();
 
+  /** Convert a working directory path to an SDK project slug (filesystem-safe). */
   getProjectSlug(cwd: string): string {
     return cwd.replace(/[^a-zA-Z0-9-]/g, '-');
   }
 
+  /** Resolve the SDK transcripts directory for a given vault root. */
   getTranscriptsDir(vaultRoot: string): string {
     const slug = this.getProjectSlug(vaultRoot);
     return path.join(os.homedir(), '.claude', 'projects', slug);
@@ -577,6 +587,7 @@ export class TranscriptReader {
    * Read task state from an SDK session transcript.
    * Parses TaskCreate/TaskUpdate tool_use blocks and reconstructs final state.
    */
+  /** Get an ETag for a session transcript (mtime + size) for HTTP caching. */
   async getTranscriptETag(vaultRoot: string, sessionId: string): Promise<string | null> {
     const filePath = path.join(this.getTranscriptsDir(vaultRoot), `${sessionId}.jsonl`);
     try {
@@ -587,6 +598,10 @@ export class TranscriptReader {
     }
   }
 
+  /**
+   * Read task state from an SDK session transcript.
+   * Parses TaskCreate/TaskUpdate tool_use blocks and reconstructs final state.
+   */
   async readTasks(vaultRoot: string, sessionId: string): Promise<TaskItem[]> {
     const transcriptsDir = this.getTranscriptsDir(vaultRoot);
     const filePath = path.join(transcriptsDir, `${sessionId}.jsonl`);

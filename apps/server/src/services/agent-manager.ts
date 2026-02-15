@@ -21,7 +21,12 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const INTERACTION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 
-/** Resolve the Claude Code CLI path for the SDK to spawn. */
+/**
+ * Resolve the Claude Code CLI path for the SDK to spawn.
+ *
+ * Tries SDK bundled path first, then PATH lookup, then falls back to
+ * undefined for SDK default resolution (may fail in Electron).
+ */
 export function resolveClaudeCliPath(): string | undefined {
   // 1. Try the SDK's bundled cli.js (works when running from source / node_modules)
   try {
@@ -160,6 +165,12 @@ function handleToolApproval(
 
 const TASK_TOOL_NAMES = new Set(['TaskCreate', 'TaskUpdate', 'TaskList', 'TaskGet']);
 
+/**
+ * Build a TaskUpdateEvent from a TaskCreate/TaskUpdate tool call input.
+ *
+ * @param toolName - SDK tool name (TaskCreate or TaskUpdate)
+ * @param input - Raw tool input from the SDK stream
+ */
 export function buildTaskEvent(
   toolName: string,
   input: Record<string, unknown>
@@ -196,6 +207,11 @@ export function buildTaskEvent(
   }
 }
 
+/**
+ * Manages Claude Agent SDK sessions — creation, resumption, streaming, tool approval,
+ * and session locking. Calls the SDK's `query()` function and maps streaming events
+ * to gateway `StreamEvent` types. Tracks active sessions in-memory with 30-minute timeout.
+ */
 export class AgentManager {
   private sessions = new Map<string, AgentSession>();
   private sessionLocks = new Map<string, SessionLock>();

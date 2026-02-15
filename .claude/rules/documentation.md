@@ -2,22 +2,65 @@
 paths: '**/*.ts, **/*.tsx'
 ---
 
-# Documentation Standards
+# TSDoc Documentation Standards
 
-## JSDoc: When Required
+Enforced by `eslint-plugin-jsdoc` (warn-first). Use TSDoc syntax — no `{type}` annotations (TypeScript provides types).
 
+## TSDoc: When Required
+
+- Exported functions and classes (enforced by linter)
 - Public APIs exported from barrel `index.ts` files
+- FSD module `index.ts` files: module-level TSDoc describing purpose and FSD layer role
 - Complex algorithms where the approach is non-obvious
-- FSD module `index.ts` files (brief module description)
 - Non-obvious type constraints or generic parameters
 - Functions with surprising behavior or side effects
 
-## JSDoc: When to Skip
+## TSDoc: When to Skip
 
 - Self-explanatory functions with clear names (e.g., `getUserById`)
 - Standard CRUD operations and simple data transformations
 - Private/internal utilities only used in one place
 - React components where props interface is self-documenting
+- Test files (linter rule disabled for `__tests__/`)
+
+## TSDoc Format
+
+Use `@param name - Description` (no `{type}` — let TypeScript handle types):
+
+```typescript
+/**
+ * Resolve the Claude Code CLI path for the SDK to spawn.
+ *
+ * Tries SDK bundled path first, then PATH lookup, then falls back to undefined
+ * for SDK default resolution.
+ *
+ * @param preferLocal - Prefer locally installed CLI over global
+ */
+export function resolveClaudeCliPath(preferLocal?: boolean): string | undefined {
+```
+
+## Barrel `index.ts` Module Docs
+
+Every FSD barrel file should have a module-level TSDoc comment:
+
+```typescript
+/**
+ * Session entity — domain hooks for session lifecycle and state.
+ *
+ * @module entities/session
+ */
+export { useSessions } from './model/use-sessions';
+export { useSessionId } from './model/use-session-id';
+```
+
+## `@internal` Tag
+
+Mark exports that are public for testing but not intended for external use:
+
+```typescript
+/** @internal Exported for testing only. */
+export function parsePorcelainOutput(stdout: string): GitStatusResponse {
+```
 
 ## Inline Comments
 

@@ -1,3 +1,8 @@
+/**
+ * Shared UI primitives — shadcn/ui components (new-york style, neutral gray palette).
+ *
+ * @module shared/ui
+ */
 export { Badge, badgeVariants } from './badge';
 export {
   Dialog,

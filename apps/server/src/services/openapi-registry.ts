@@ -1,3 +1,11 @@
+/**
+ * OpenAPI 3.1.0 spec auto-generated from Zod schemas.
+ *
+ * Registers all API endpoints with descriptions, request/response schemas.
+ * Powers `/api/docs` (Scalar UI) and `/api/openapi.json`.
+ *
+ * @module services/openapi-registry
+ */
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
 import {
   SessionSchema,
@@ -365,6 +373,7 @@ registry.registerPath({
 
 // --- Generator ---
 
+/** Generate the full OpenAPI 3.1.0 document from registered paths and schemas. */
 export function generateOpenAPISpec() {
   const generator = new OpenApiGeneratorV31(registry.definitions);
   return generator.generateDocument({

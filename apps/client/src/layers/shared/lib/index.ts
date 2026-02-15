@@ -1,3 +1,8 @@
+/**
+ * Shared lib — domain-agnostic utilities, Transport implementations, and helpers.
+ *
+ * @module shared/lib
+ */
 export { cn } from './utils';
 export { getPlatform, setPlatformAdapter, type PlatformAdapter } from './platform';
 export { fuzzyMatch } from './fuzzy-match';
