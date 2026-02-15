@@ -5,15 +5,15 @@
   "tsx": true,
   "tailwind": {
     "config": "",
-    "css": "src/client/index.css",
+    "css": "src/index.css",
     "baseColor": "zinc",
     "cssVariables": true
   },
   "aliases": {
-    "components": "@/components",
-    "utils": "@/lib/utils",
-    "ui": "@/components/ui",
-    "lib": "@/lib",
-    "hooks": "@/hooks"
+    "components": "@/layers/shared/ui",
+    "utils": "@/layers/shared/lib/utils",
+    "ui": "@/layers/shared/ui",
+    "lib": "@/layers/shared/lib",
+    "hooks": "@/layers/shared/lib"
   }
 }

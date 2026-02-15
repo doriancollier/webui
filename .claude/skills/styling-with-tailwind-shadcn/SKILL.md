@@ -308,7 +308,7 @@ import { AnimatePresence } from 'motion/react'
 Always use `cn()` for conditional classes:
 
 ```typescript
-import { cn } from '@/lib/utils'
+import { cn } from '@/layers/shared/lib/utils'
 
 <button
   className={cn(
