@@ -81,9 +81,11 @@ export function FeatureComponent({ session, onAction }: Props) {
 }
 ```
 
-## Base UI Composition (Not Radix)
+## Base UI Composition (Planned Migration)
 
-This project uses **Base UI** (via basecn) instead of Radix UI. Key differences:
+> **NOTE**: The project currently uses **Radix UI** with `asChild` composition. The patterns below document Base UI (via basecn) for a planned future migration. Until migration happens, use Radix/`asChild` patterns in new code.
+
+Key differences from Radix:
 
 ### Composition Pattern: `render` prop (not `asChild`)
 

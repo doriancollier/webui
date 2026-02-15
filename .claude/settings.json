@@ -71,6 +71,10 @@
           {
             "type": "command",
             "command": ".claude/scripts/hooks/check-docs-changed.sh"
+          },
+          {
+            "type": "command",
+            "command": "node .claude/scripts/hooks/autonomous-check.mjs"
           }
         ]
       }
