@@ -25,7 +25,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Rules | 5 | `.claude/rules/` |
 | Claude Hooks | 9 | `.claude/hooks/`, configured in `.claude/settings.json` |
 | Git Hooks | 1 | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
-| MCP Servers | 2 | `.mcp.json` |
+| MCP Servers | 3 | `.mcp.json` |
 | Guides | 13 | `guides/` |
 
 ## Component Types
@@ -126,6 +126,7 @@ External tools available via Model Context Protocol.
 |--------|---------|
 | `playwright` | Browser automation and visual debugging |
 | `context7` | Library documentation lookup |
+| `shadcn` | Shadcn UI component registry, examples, and installation commands |
 
 ### Guides
 

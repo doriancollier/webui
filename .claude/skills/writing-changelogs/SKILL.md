@@ -1,6 +1,6 @@
 ---
 name: writing-changelogs
-description: Write human-friendly changelog entries and release notes. Use when populating changelog, preparing releases, or reviewing release notes quality.
+description: Writes human-friendly changelog entries and release notes. Use when populating changelog, preparing releases, or reviewing release notes quality.
 ---
 
 # Writing Changelogs
