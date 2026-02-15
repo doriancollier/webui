@@ -33,7 +33,7 @@ When the user is at the bottom and tool calls arrive or expand, the chat doesn't
 
 The InferenceIndicator (rotating verbs + timer + tokens) gets pushed below the viewport during streaming.
 
-**Root cause:** The indicator is positioned at `top: virtualizer.getTotalSize()` but `scrollToIndex(messages.length - 1, { align: 'end' })` scrolls to the bottom of the last *message*, not to the indicator below it.
+**Root cause:** The indicator is positioned at `top: virtualizer.getTotalSize()` but `scrollToIndex(messages.length - 1, { align: 'end' })` scrolls to the bottom of the last _message_, not to the indicator below it.
 
 ## 3. Goals
 
@@ -52,11 +52,11 @@ The InferenceIndicator (rotating verbs + timer + tokens) gets pushed below the v
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| `@tanstack/react-virtual` | ^3.11.0 | Virtual scrolling — `useVirtualizer`, `scrollToOffset` |
-| `motion` | ^12.33.0 | Animations — message entrance, tool card transitions |
-| `ResizeObserver` (browser API) | Native | Detect content height changes for auto-scroll |
+| Dependency                     | Version  | Purpose                                                |
+| ------------------------------ | -------- | ------------------------------------------------------ |
+| `@tanstack/react-virtual`      | ^3.11.0  | Virtual scrolling — `useVirtualizer`, `scrollToOffset` |
+| `motion`                       | ^12.33.0 | Animations — message entrance, tool card transitions   |
+| `ResizeObserver` (browser API) | Native   | Detect content height changes for auto-scroll          |
 
 No new dependencies required. `scrollToOffset` is already available on the `@tanstack/react-virtual` virtualizer instance but not currently used.
 
@@ -65,11 +65,13 @@ No new dependencies required. `scrollToOffset` is already available on the `@tan
 ### 6.1 Fix 1: Defer Assistant Message Creation
 
 **Current flow:**
+
 ```
 handleSubmit() → creates empty assistant message → SSE starts → handleStreamEvent() updates it
 ```
 
 **New flow:**
+
 ```
 handleSubmit() → stores assistantId in ref → SSE starts → handleStreamEvent() creates + updates message on first content event
 ```
@@ -77,11 +79,13 @@ handleSubmit() → stores assistantId in ref → SSE starts → handleStreamEven
 **Changes to `use-chat-session.ts`:**
 
 1. Add a ref to track whether the assistant message has been created:
+
    ```typescript
    const assistantCreatedRef = useRef(false);
    ```
 
 2. In `handleSubmit`, remove the eager `setMessages` call (lines 177-185). Keep the `assistantId` generation but store it in a ref:
+
    ```typescript
    const assistantIdRef = useRef<string>('');
    // In handleSubmit:
@@ -90,18 +94,22 @@ handleSubmit() → stores assistantId in ref → SSE starts → handleStreamEven
    ```
 
 3. In `handleStreamEvent`, before the first call to `updateAssistantMessage`, check if the message exists. If not, create it:
+
    ```typescript
    function ensureAssistantMessage(assistantId: string) {
      if (!assistantCreatedRef.current) {
        assistantCreatedRef.current = true;
-       setMessages(prev => [...prev, {
-         id: assistantId,
-         role: 'assistant',
-         content: '',
-         toolCalls: [],
-         parts: [],
-         timestamp: new Date().toISOString(),
-       }]);
+       setMessages((prev) => [
+         ...prev,
+         {
+           id: assistantId,
+           role: 'assistant',
+           content: '',
+           toolCalls: [],
+           parts: [],
+           timestamp: new Date().toISOString(),
+         },
+       ]);
      }
    }
    ```
@@ -115,6 +123,7 @@ handleSubmit() → stores assistantId in ref → SSE starts → handleStreamEven
 ### 6.2 Fix 2: Auto-scroll via ResizeObserver
 
 **Current implementation (to be replaced):**
+
 ```typescript
 // MessageList.tsx lines 129-138
 const lastMsg = messages[messages.length - 1];
@@ -134,6 +143,7 @@ useEffect(() => {
 2. When the observer fires and `isAtBottomRef.current === true` and `!isTouchActiveRef.current`, scroll to bottom using `scrollToOffset`.
 
 3. Debounce with `requestAnimationFrame` to avoid layout thrashing:
+
    ```typescript
    const contentRef = useRef<HTMLDivElement>(null);
    const rafIdRef = useRef<number>(0);
@@ -180,9 +190,10 @@ useEffect(() => {
 
 ### 6.3 Fix 3: InferenceIndicator Visibility
 
-This fix is largely addressed by Fix 2. Since the ResizeObserver triggers on *any* height change within the content div, and the scroll target is the container's full `scrollHeight`, the InferenceIndicator (positioned at `top: virtualizer.getTotalSize()`) is automatically included.
+This fix is largely addressed by Fix 2. Since the ResizeObserver triggers on _any_ height change within the content div, and the scroll target is the container's full `scrollHeight`, the InferenceIndicator (positioned at `top: virtualizer.getTotalSize()`) is automatically included.
 
 **Additional change:** Update the `scrollToBottom` imperative method (exposed via `MessageListHandle`) to also use the native scroll approach:
+
 ```typescript
 const scrollToBottom = useCallback(() => {
   const scrollEl = parentRef.current;
@@ -197,6 +208,7 @@ const scrollToBottom = useCallback(() => {
 ## 7. User Experience
 
 ### Before (Current)
+
 1. User submits message
 2. Empty assistant bubble with `●` dot appears immediately
 3. Seconds pass with blank area (looks broken)
@@ -205,6 +217,7 @@ const scrollToBottom = useCallback(() => {
 6. InferenceIndicator not visible during streaming
 
 ### After (Fixed)
+
 1. User submits message
 2. InferenceIndicator shows "Thinking..." at bottom of message list (already works — tied to `status === 'streaming'`)
 3. First content arrives → assistant message appears with content
@@ -277,11 +290,13 @@ No documentation updates required. The changes are internal implementation fixes
 ## 12. Implementation Phases
 
 ### Phase 1: Defer Assistant Message Creation
+
 - Modify `use-chat-session.ts` — move assistant message creation into `ensureAssistantMessage` called from `updateAssistantMessage`
 - Update `use-chat-session.test.tsx` — add tests for deferred creation
 - Verify: no empty bubble, history still works, InferenceIndicator shows during wait
 
 ### Phase 2: ResizeObserver Auto-scroll
+
 - Modify `MessageList.tsx` — add ResizeObserver on content div, replace `scrollTrigger` useEffect
 - Add `contentRef` to the inner div
 - Update `scrollToBottom` and IntersectionObserver re-show to use native scroll
@@ -289,20 +304,22 @@ No documentation updates required. The changes are internal implementation fixes
 - Verify: tool calls don't break scroll, InferenceIndicator stays visible
 
 ### Phase 3: Validation
+
 - Run `npx turbo test` — all tests pass
 - Run `npx turbo build` — build passes
 - Manual QA: test all scenarios from testing strategy
 
 ## 13. Files Modified
 
-| File | Action | Phase |
-|------|--------|-------|
-| `apps/client/src/hooks/use-chat-session.ts` | **Modify** — Defer assistant message creation | 1 |
-| `apps/client/src/hooks/__tests__/use-chat-session.test.tsx` | **Modify** — Add deferred creation tests | 1 |
-| `apps/client/src/components/chat/MessageList.tsx` | **Modify** — ResizeObserver scroll, native scrollTop, contentRef | 2 |
-| `apps/client/src/components/chat/__tests__/MessageList.test.tsx` | **Modify** — ResizeObserver mock and tests | 2 |
+| File                                                             | Action                                                           | Phase |
+| ---------------------------------------------------------------- | ---------------------------------------------------------------- | ----- |
+| `apps/client/src/hooks/use-chat-session.ts`                      | **Modify** — Defer assistant message creation                    | 1     |
+| `apps/client/src/hooks/__tests__/use-chat-session.test.tsx`      | **Modify** — Add deferred creation tests                         | 1     |
+| `apps/client/src/components/chat/MessageList.tsx`                | **Modify** — ResizeObserver scroll, native scrollTop, contentRef | 2     |
+| `apps/client/src/components/chat/__tests__/MessageList.test.tsx` | **Modify** — ResizeObserver mock and tests                       | 2     |
 
 Files NOT modified:
+
 - `ChatPanel.tsx` — No changes needed; it already passes `status` and streaming props correctly
 - `MessageItem.tsx` — No changes needed; it will simply never receive an empty-parts assistant message
 - `InferenceIndicator.tsx` — No changes needed; its positioning is fixed by the scroll improvements

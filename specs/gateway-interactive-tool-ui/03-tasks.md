@@ -26,7 +26,7 @@ export type StreamEventType =
   | 'tool_call_end'
   | 'tool_result'
   | 'approval_required'
-  | 'question_prompt'     // NEW
+  | 'question_prompt' // NEW
   | 'error'
   | 'done'
   | 'session_status';
@@ -41,9 +41,9 @@ export interface QuestionOption {
 }
 
 export interface QuestionItem {
-  header: string;       // Max 12 chars, displayed as chip/tag
-  question: string;     // Full question text
-  options: QuestionOption[];  // 2-4 predefined options
+  header: string; // Max 12 chars, displayed as chip/tag
+  question: string; // Full question text
+  options: QuestionOption[]; // 2-4 predefined options
   multiSelect: boolean;
 }
 
@@ -58,11 +58,19 @@ export interface QuestionPromptEvent {
 ```typescript
 export interface StreamEvent {
   type: StreamEventType;
-  data: TextDelta | ToolCallEvent | ApprovalEvent | QuestionPromptEvent | ErrorEvent | DoneEvent | SessionStatusEvent;
+  data:
+    | TextDelta
+    | ToolCallEvent
+    | ApprovalEvent
+    | QuestionPromptEvent
+    | ErrorEvent
+    | DoneEvent
+    | SessionStatusEvent;
 }
 ```
 
 **Acceptance criteria**:
+
 - `question_prompt` is in the StreamEventType union
 - `QuestionOption`, `QuestionItem`, `QuestionPromptEvent` interfaces are exported
 - `StreamEvent.data` union includes `QuestionPromptEvent`
@@ -102,7 +110,7 @@ interface AgentSession {
   pendingInteractions: Map<string, PendingInteraction>;
   // Event queue for canUseTool-emitted events:
   eventQueue: StreamEvent[];
-  eventQueueNotify?: () => void;  // resolve fn to wake generator
+  eventQueueNotify?: () => void; // resolve fn to wake generator
 }
 ```
 
@@ -128,10 +136,13 @@ async function handleAskUserQuestion(
 
   // Create deferred promise
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      session.pendingInteractions.delete(toolUseId);
-      resolve({ behavior: 'deny', message: 'User did not respond within 10 minutes' });
-    }, 10 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        session.pendingInteractions.delete(toolUseId);
+        resolve({ behavior: 'deny', message: 'User did not respond within 10 minutes' });
+      },
+      10 * 60 * 1000
+    );
 
     session.pendingInteractions.set(toolUseId, {
       type: 'question',
@@ -177,10 +188,13 @@ async function handleToolApproval(
   session.eventQueueNotify?.();
 
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      session.pendingInteractions.delete(toolUseId);
-      resolve({ behavior: 'deny', message: 'Tool approval timed out after 10 minutes' });
-    }, 10 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        session.pendingInteractions.delete(toolUseId);
+        resolve({ behavior: 'deny', message: 'Tool approval timed out after 10 minutes' });
+      },
+      10 * 60 * 1000
+    );
 
     session.pendingInteractions.set(toolUseId, {
       type: 'approval',
@@ -188,9 +202,10 @@ async function handleToolApproval(
       resolve: (approved) => {
         clearTimeout(timeout);
         session.pendingInteractions.delete(toolUseId);
-        resolve(approved
-          ? { behavior: 'allow' }
-          : { behavior: 'deny', message: 'User denied tool execution' }
+        resolve(
+          approved
+            ? { behavior: 'allow' }
+            : { behavior: 'deny', message: 'User denied tool execution' }
         );
       },
       reject: (reason) => {
@@ -316,6 +331,7 @@ approveTool(sessionId: string, toolCallId: string, approved: boolean): boolean {
 Remove the old `_toolCallId` parameter naming and `pendingApproval` field.
 
 **Acceptance criteria**:
+
 - `pendingApproval` field removed from AgentSession, replaced with `pendingInteractions` Map
 - `eventQueue` and `eventQueueNotify` fields added to AgentSession
 - `canUseTool` callback registered in `sendMessage()`
@@ -348,7 +364,7 @@ export interface Transport {
   submitAnswers(
     sessionId: string,
     toolCallId: string,
-    answers: Record<string, string>,
+    answers: Record<string, string>
   ): Promise<{ ok: boolean }>;
 }
 ```
@@ -406,6 +422,7 @@ async submitAnswers(sessionId: string, toolCallId: string, answers: Record<strin
 ```
 
 **Acceptance criteria**:
+
 - `submitAnswers` exists on Transport interface
 - Express route validates `toolCallId` and `answers`, returns 400/404/200 correctly
 - HttpTransport makes POST to `/api/sessions/:id/submit-answers`
@@ -484,37 +501,39 @@ interface MessageItemProps {
   grouping: MessageGrouping;
   isNew?: boolean;
   isStreaming?: boolean;
-  sessionId: string;  // NEW
+  sessionId: string; // NEW
 }
 ```
 
 Update the tool calls rendering block:
 
 ```tsx
-{message.toolCalls?.map((tc) => {
-  if (tc.interactiveType === 'question' && tc.questions) {
-    return (
-      <QuestionPrompt
-        key={tc.toolCallId}
-        sessionId={sessionId}
-        toolCallId={tc.toolCallId}
-        questions={tc.questions}
-      />
-    );
-  }
-  if (tc.interactiveType === 'approval') {
-    return (
-      <ToolApproval
-        key={tc.toolCallId}
-        sessionId={sessionId}
-        toolCallId={tc.toolCallId}
-        toolName={tc.toolName}
-        input={tc.input}
-      />
-    );
-  }
-  return <ToolCallCard key={tc.toolCallId} toolCall={tc} />;
-})}
+{
+  message.toolCalls?.map((tc) => {
+    if (tc.interactiveType === 'question' && tc.questions) {
+      return (
+        <QuestionPrompt
+          key={tc.toolCallId}
+          sessionId={sessionId}
+          toolCallId={tc.toolCallId}
+          questions={tc.questions}
+        />
+      );
+    }
+    if (tc.interactiveType === 'approval') {
+      return (
+        <ToolApproval
+          key={tc.toolCallId}
+          sessionId={sessionId}
+          toolCallId={tc.toolCallId}
+          toolName={tc.toolName}
+          input={tc.input}
+        />
+      );
+    }
+    return <ToolCallCard key={tc.toolCallId} toolCall={tc} />;
+  });
+}
 ```
 
 Import `QuestionPrompt` and `ToolApproval` components.
@@ -522,6 +541,7 @@ Import `QuestionPrompt` and `ToolApproval` components.
 Also update the parent component that renders `MessageItem` to pass `sessionId` as a prop. Check `MessageList.tsx` or `ChatPanel.tsx` for where `MessageItem` is used and thread `sessionId` through.
 
 **Acceptance criteria**:
+
 - `ToolCallState` has optional `interactiveType` and `questions` fields
 - `question_prompt` event creates a tool call entry with `interactiveType: 'question'` and `questions` populated
 - `approval_required` event creates a tool call entry with `interactiveType: 'approval'`
@@ -543,6 +563,7 @@ Also update the parent component that renders `MessageItem` to pass `sessionId` 
 Create `src/client/components/chat/QuestionPrompt.tsx` with the following implementation:
 
 **Props:**
+
 ```typescript
 interface QuestionPromptProps {
   sessionId: string;
@@ -552,11 +573,13 @@ interface QuestionPromptProps {
 ```
 
 **Component states:**
+
 - `pending` (default): Renders questions with options, "Other" input, submit button
 - `submitting`: Disabled inputs, loading indicator on submit button
 - `submitted`: Collapsed compact summary showing selected answers
 
 **Rendering logic per question:**
+
 - Display `header` as a colored chip/tag (similar to ToolApproval's shield icon area)
 - Display `question` as the main text
 - If `multiSelect === false`: render radio buttons for each option
@@ -565,6 +588,7 @@ interface QuestionPromptProps {
 - Each option shows `label` prominently and `description` as muted subtext
 
 **Post-submission collapsed state:**
+
 ```
 +-------------------------------------------------+
 | checkmark  [header chip] Selected: "Option Label"    |
@@ -573,12 +597,14 @@ interface QuestionPromptProps {
 ```
 
 **Styling:**
+
 - Pending: amber border/bg (`border-amber-500/20 bg-amber-500/10`) matching ToolApproval pending state
 - Submitted: emerald border/bg (`border-emerald-500/20 bg-emerald-500/10`) matching ToolApproval approved state
 - Uses `useTransport()` hook for `submitAnswers` call
 - `motion` animations for enter/collapse transitions (following established pattern in ToolApproval)
 
 **Submit behavior:**
+
 - Collect answers as `Record<string, string>` mapping question indices (as string keys "0", "1", etc.) to selected option labels
 - For multi-select questions, the value is a JSON-serialized array of selected labels
 - For "Other" selections, the value is the user's free text
@@ -589,6 +615,7 @@ interface QuestionPromptProps {
 **Icons from lucide-react:** `Check`, `CircleDot` (or similar for radio state), `MessageSquare` (for the question header)
 
 **Acceptance criteria**:
+
 - Component renders questions with headers as chips
 - Radio buttons for single-select, checkboxes for multi-select
 - "Other" free-text option always present for each question
@@ -622,6 +649,7 @@ Create comprehensive unit tests covering:
 9. **canUseTool skips approval when permissionMode is not 'default'** - e.g., `bypassPermissions`
 
 **Mocking strategy:**
+
 - Mock `@anthropic-ai/claude-agent-sdk` `query()` function to yield controlled messages
 - Test handler functions directly by accessing them on the class or extracting them
 - Use `vi.useFakeTimers()` for timeout tests
@@ -646,6 +674,7 @@ Create component tests covering:
 8. **Handles submission error gracefully** - Error state shows error message, form re-enabled
 
 **Testing patterns (follow established conventions):**
+
 - Mock `motion/react` to render plain elements (established pattern)
 - Inject mock `Transport` via `TransportProvider` wrapper (established pattern)
 - Use React Testing Library with jsdom
@@ -660,11 +689,13 @@ Create component tests covering:
 **Active form**: Writing route integration tests and hook event handling tests
 
 **Route tests** (`sessions-interactive.test.ts`):
+
 1. **POST `/submit-answers` returns 200** with valid pending question
 2. **POST `/submit-answers` returns 404** when no pending question exists
 3. **POST `/submit-answers` returns 400** when missing `toolCallId` or `answers` in body
 
 **Hook tests** (`use-chat-session-interactive.test.ts`, optional - can combine with route tests):
+
 1. **`question_prompt` event** adds tool call with `interactiveType: 'question'` and populated `questions`
 2. **`approval_required` event** adds tool call with `interactiveType: 'approval'`
 
@@ -687,11 +718,13 @@ Create `guides/interactive-tools.md` covering:
 7. **Testing interactive tools** - Mocking strategies, fake timers, transport injection
 
 Update `CLAUDE.md` guides table to include the new guide:
+
 ```
 | [`guides/interactive-tools.md`](guides/interactive-tools.md) | canUseTool pattern, event queue, AskUserQuestion/tool approval flows, adding new interactive tools |
 ```
 
 **Acceptance criteria**:
+
 - Guide is comprehensive and follows existing guide style
 - Includes code examples for adding a hypothetical new interactive tool
 - CLAUDE.md updated with new guide entry

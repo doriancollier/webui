@@ -84,6 +84,7 @@ N/A - This is a new feature, not a bug fix.
 ### Potential Solutions
 
 **1. Streamdown (Vercel)**
+
 - Description: Drop-in streaming markdown renderer built for AI chat, with Shiki code highlighting, GFM support, and unterminated syntax handling
 - Pros:
   - Purpose-built for streaming AI chat (handles incomplete markdown gracefully)
@@ -100,6 +101,7 @@ N/A - This is a new feature, not a bug fix.
 - Maintenance: Low
 
 **2. react-markdown + remark-gfm + react-syntax-highlighter**
+
 - Description: Most popular React markdown renderer with plugin ecosystem
 - Pros:
   - Most widely used (116K+ developers), very mature
@@ -116,6 +118,7 @@ N/A - This is a new feature, not a bug fix.
 - Maintenance: Medium
 
 **3. markdown-to-jsx**
+
 - Description: Lightweight, fast markdown-to-React renderer
 - Pros:
   - Smaller bundle than react-markdown
@@ -131,6 +134,7 @@ N/A - This is a new feature, not a bug fix.
 ### Recommendation
 
 **Streamdown** is the clear choice:
+
 1. It's already a dependency in `package.json`
 2. Purpose-built for exactly this use case (streaming AI chat)
 3. Handles the hardest problem (incomplete markdown during streaming) automatically

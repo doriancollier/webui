@@ -46,24 +46,40 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       // apply it to the current list so the engine sees the correct state
       // (React state updates are batched, so taskState.tasks is still stale here)
       const projectedTasks = taskState.tasks.map((t) =>
-        t.id === event.task.id ? { ...t, ...event.task } : t,
+        t.id === event.task.id ? { ...t, ...event.task } : t
       );
       celebrations.handleTaskEvent(event, projectedTasks);
     },
-    [taskState, celebrations],
+    [taskState, celebrations]
   );
 
-  const { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction } =
-    useChatSession(sessionId, {
-      transformContent,
-      onTaskEvent: handleTaskEventWithCelebrations,
-      onSessionIdChange: setSessionId,
-      onStreamingDone: useCallback(() => {
-        if (enableNotificationSound) {
-          playNotificationSound();
-        }
-      }, [enableNotificationSound]),
-    });
+  const {
+    messages,
+    input,
+    setInput,
+    handleSubmit,
+    status,
+    error,
+    sessionBusy,
+    stop,
+    isLoadingHistory,
+    sessionStatus,
+    streamStartTime,
+    estimatedTokens,
+    isTextStreaming,
+    isWaitingForUser,
+    waitingType,
+    activeInteraction,
+  } = useChatSession(sessionId, {
+    transformContent,
+    onTaskEvent: handleTaskEventWithCelebrations,
+    onSessionIdChange: setSessionId,
+    onStreamingDone: useCallback(() => {
+      if (enableNotificationSound) {
+        playNotificationSound();
+      }
+    }, [enableNotificationSound]),
+  });
   const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
 
   // Interactive tool shortcut wiring
@@ -73,9 +89,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
 
   const handleToolRef = useCallback((handle: InteractiveToolHandle | null) => {
     activeToolHandleRef.current = handle;
-    setActiveOptionCount(
-      handle && 'getOptionCount' in handle ? handle.getOptionCount() : 0,
-    );
+    setActiveOptionCount(handle && 'getOptionCount' in handle ? handle.getOptionCount() : 0);
   }, []);
 
   // Reset focused index and option count when active interaction changes
@@ -110,7 +124,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       }
     }, []),
     onNavigateOption: useCallback((direction: 'up' | 'down') => {
-      setFocusedOptionIndex(prev => {
+      setFocusedOptionIndex((prev) => {
         const handle = activeToolHandleRef.current;
         const count = handle && 'getOptionCount' in handle ? handle.getOptionCount() : 0;
         if (count === 0) return prev;
@@ -280,7 +294,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
 
   const filteredFiles = useMemo(() => {
     if (!showFiles) return [];
-    if (!fileQuery) return allFileEntries.slice(0, 50).map((e) => ({ ...e, indices: [] as number[] }));
+    if (!fileQuery)
+      return allFileEntries.slice(0, 50).map((e) => ({ ...e, indices: [] as number[] }));
     return allFileEntries
       .map((entry) => ({ ...entry, ...fuzzyMatch(fileQuery, entry.path) }))
       .filter((r) => r.match)
@@ -315,7 +330,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     const textToCursor = value.slice(0, cursor);
 
     // Check for @ file trigger first
-    const fileMatch = textToCursor.match(/(^|\s)@([\w.\/:-]*)$/);
+    const fileMatch = textToCursor.match(/(^|\s)@([\w./:-]*)$/);
     if (fileMatch) {
       setShowFiles(true);
       setFileQuery(fileMatch[2]);
@@ -343,10 +358,13 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     detectTrigger(value, cursorPos || value.length);
   }
 
-  const handleCursorChange = useCallback((pos: number) => {
-    setCursorPos(pos);
-    detectTrigger(input, pos);
-  }, [input]);
+  const handleCursorChange = useCallback(
+    (pos: number) => {
+      setCursorPos(pos);
+      detectTrigger(input, pos);
+    },
+    [input]
+  );
 
   function handleCommandSelect(cmd: CommandEntry) {
     const before = input.slice(0, slashTriggerPos);
@@ -412,67 +430,89 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     }
   }, [showFiles, showCommands, filteredFiles, fileSelectedIndex, filteredCommands, selectedIndex]);
 
-  const handleChipClick = useCallback((trigger: string) => {
-    const existingTrigger = input.match(/(^|\s)([/@])([\w.\/:-]*)$/);
-    let newValue: string;
+  const handleChipClick = useCallback(
+    (trigger: string) => {
+      const existingTrigger = input.match(/(^|\s)([/@])([\w./:-]*)$/);
+      let newValue: string;
 
-    if (existingTrigger) {
-      const triggerChar = existingTrigger[2];
-      const queryText = existingTrigger[3];
-      const triggerStart = (existingTrigger.index ?? 0) + existingTrigger[1].length;
+      if (existingTrigger) {
+        const triggerChar = existingTrigger[2];
+        const queryText = existingTrigger[3];
+        const triggerStart = (existingTrigger.index ?? 0) + existingTrigger[1].length;
 
-      if (triggerChar === trigger && !queryText) {
-        // Toggle: same chip clicked again with no query — remove trigger and close palette
-        const prefix = input.slice(0, triggerStart);
-        // Also remove trailing space we may have added before the trigger
-        newValue = prefix.endsWith(' ') && triggerStart > 0 ? prefix.slice(0, -1) : prefix;
-        setInput(newValue);
-        setShowFiles(false);
-        setShowCommands(false);
-        requestAnimationFrame(() => chatInputRef.current?.focusAt(newValue.length));
-        return;
+        if (triggerChar === trigger && !queryText) {
+          // Toggle: same chip clicked again with no query — remove trigger and close palette
+          const prefix = input.slice(0, triggerStart);
+          // Also remove trailing space we may have added before the trigger
+          newValue = prefix.endsWith(' ') && triggerStart > 0 ? prefix.slice(0, -1) : prefix;
+          setInput(newValue);
+          setShowFiles(false);
+          setShowCommands(false);
+          requestAnimationFrame(() => chatInputRef.current?.focusAt(newValue.length));
+          return;
+        }
+        // Different trigger or has query text — replace with new trigger
+        newValue = input.slice(0, triggerStart) + trigger;
+      } else if (input.length > 0 && !input.endsWith(' ')) {
+        newValue = input + ' ' + trigger;
+      } else {
+        newValue = input + trigger;
       }
-      // Different trigger or has query text — replace with new trigger
-      newValue = input.slice(0, triggerStart) + trigger;
-    } else if (input.length > 0 && !input.endsWith(' ')) {
-      newValue = input + ' ' + trigger;
-    } else {
-      newValue = input + trigger;
-    }
 
-    setInput(newValue);
-    detectTrigger(newValue, newValue.length);
-    // Focus textarea with cursor after the trigger so typing filters immediately
-    requestAnimationFrame(() => chatInputRef.current?.focusAt(newValue.length));
-  }, [input, setInput]);
+      setInput(newValue);
+      detectTrigger(newValue, newValue.length);
+      // Focus textarea with cursor after the trigger so typing filters immediately
+      requestAnimationFrame(() => chatInputRef.current?.focusAt(newValue.length));
+    },
+    [input, setInput]
+  );
 
   const isPaletteOpen = showCommands || showFiles;
 
-  const activeDescendantId = showFiles && filteredFiles.length > 0
-    ? `file-item-${fileSelectedIndex}`
-    : showCommands && filteredCommands.length > 0
-      ? `command-item-${selectedIndex}`
-      : undefined;
+  const activeDescendantId =
+    showFiles && filteredFiles.length > 0
+      ? `file-item-${fileSelectedIndex}`
+      : showCommands && filteredCommands.length > 0
+        ? `command-item-${selectedIndex}`
+        : undefined;
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="relative flex-1 min-h-0">
+    <div className="flex h-full flex-col">
+      <div className="relative min-h-0 flex-1">
         {isLoadingHistory ? (
-          <div className="h-full flex items-center justify-center">
-            <div className="flex items-center gap-2 text-muted-foreground text-sm">
+          <div className="flex h-full items-center justify-center">
+            <div className="text-muted-foreground flex items-center gap-2 text-sm">
               <div className="flex gap-1">
-                <span className="h-2 w-2 rounded-full bg-muted-foreground" style={{ animation: 'typing-dot 1.4s ease-in-out infinite', animationDelay: '0s' }} />
-                <span className="h-2 w-2 rounded-full bg-muted-foreground" style={{ animation: 'typing-dot 1.4s ease-in-out infinite', animationDelay: '0.2s' }} />
-                <span className="h-2 w-2 rounded-full bg-muted-foreground" style={{ animation: 'typing-dot 1.4s ease-in-out infinite', animationDelay: '0.4s' }} />
+                <span
+                  className="bg-muted-foreground h-2 w-2 rounded-full"
+                  style={{
+                    animation: 'typing-dot 1.4s ease-in-out infinite',
+                    animationDelay: '0s',
+                  }}
+                />
+                <span
+                  className="bg-muted-foreground h-2 w-2 rounded-full"
+                  style={{
+                    animation: 'typing-dot 1.4s ease-in-out infinite',
+                    animationDelay: '0.2s',
+                  }}
+                />
+                <span
+                  className="bg-muted-foreground h-2 w-2 rounded-full"
+                  style={{
+                    animation: 'typing-dot 1.4s ease-in-out infinite',
+                    animationDelay: '0.4s',
+                  }}
+                />
               </div>
               Loading conversation...
             </div>
           </div>
         ) : messages.length === 0 ? (
-          <div className="h-full flex items-center justify-center">
+          <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <p className="text-muted-foreground text-base">Start a conversation</p>
-              <p className="text-muted-foreground/60 text-sm mt-2">Type a message below to begin</p>
+              <p className="text-muted-foreground/60 mt-2 text-sm">Type a message below to begin</p>
             </div>
           </div>
         ) : (
@@ -503,7 +543,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.2 }}
               onClick={scrollToBottom}
-              className="absolute bottom-16 left-1/2 -translate-x-1/2 z-10 rounded-full bg-foreground text-background text-xs font-medium px-3 py-1.5 shadow-sm cursor-pointer hover:bg-foreground/90 transition-colors"
+              className="bg-foreground text-background hover:bg-foreground/90 absolute bottom-16 left-1/2 z-10 -translate-x-1/2 cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-colors"
               role="status"
               aria-live="polite"
             >
@@ -521,7 +561,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.15 }}
               onClick={scrollToBottom}
-              className="absolute bottom-4 right-4 rounded-full bg-background border shadow-sm p-2 hover:shadow-md transition-shadow"
+              className="bg-background absolute right-4 bottom-4 rounded-full border p-2 shadow-sm transition-shadow hover:shadow-md"
               aria-label="Scroll to bottom"
             >
               <ArrowDown className="size-(--size-icon-md)" />
@@ -545,7 +585,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       />
 
       {error && (
-        <div className="mx-4 mb-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-3 py-2 text-sm">
+        <div className="mx-4 mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
           {error}
         </div>
       )}
@@ -576,8 +616,15 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
           isLoading={status === 'streaming'}
           sessionBusy={sessionBusy}
           onStop={stop}
-          onEscape={() => { setShowCommands(false); setShowFiles(false); }}
-          onClear={() => { setInput(''); setShowCommands(false); setShowFiles(false); }}
+          onEscape={() => {
+            setShowCommands(false);
+            setShowFiles(false);
+          }}
+          onClear={() => {
+            setInput('');
+            setShowCommands(false);
+            setShowFiles(false);
+          }}
           isPaletteOpen={isPaletteOpen}
           onArrowUp={handleArrowUp}
           onArrowDown={handleArrowDown}
@@ -601,7 +648,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   onClick={dismissHint}
-                  className="text-center text-xs text-muted-foreground cursor-pointer"
+                  className="text-muted-foreground cursor-pointer text-center text-xs"
                 >
                   Swipe to collapse
                 </motion.p>
@@ -622,7 +669,11 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
                   style={{ touchAction: 'pan-y' }}
                 >
                   {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
-                  <StatusLine sessionId={sessionId} sessionStatus={sessionStatus} isStreaming={status === 'streaming'} />
+                  <StatusLine
+                    sessionId={sessionId}
+                    sessionStatus={sessionStatus}
+                    isStreaming={status === 'streaming'}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -634,7 +685,11 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             <AnimatePresence>
               {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
             </AnimatePresence>
-            <StatusLine sessionId={sessionId} sessionStatus={sessionStatus} isStreaming={status === 'streaming'} />
+            <StatusLine
+              sessionId={sessionId}
+              sessionStatus={sessionStatus}
+              isStreaming={status === 'streaming'}
+            />
           </>
         )}
       </div>

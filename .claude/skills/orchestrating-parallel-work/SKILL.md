@@ -66,12 +66,12 @@ Ask these questions:
 
 ### Choosing the Pattern
 
-| Situation | Pattern |
-|-----------|---------|
-| 2-3 independent research/analysis tasks | **Parallel Background Agents** |
-| Many tasks with known dependencies | **Dependency-Aware Batching** |
-| Heavy analysis before implementation | **Analysis Then Implementation** |
-| 10+ similar independent tasks | **Self-Organizing Workers** |
+| Situation                               | Pattern                          |
+| --------------------------------------- | -------------------------------- |
+| 2-3 independent research/analysis tasks | **Parallel Background Agents**   |
+| Many tasks with known dependencies      | **Dependency-Aware Batching**    |
+| Heavy analysis before implementation    | **Analysis Then Implementation** |
+| 10+ similar independent tasks           | **Self-Organizing Workers**      |
 
 ## Core Patterns
 
@@ -162,15 +162,15 @@ for phase in plan.phases:
 
 ## Agent Selection Guide
 
-| Task Type | Recommended Agent |
-|-----------|-------------------|
-| Codebase exploration | `Explore` |
-| Web research | `research-expert` |
-| Database work | `prisma-expert` |
-| React/frontend | `react-tanstack-expert` |
-| TypeScript issues | `typescript-expert` |
-| General implementation | `general-purpose` |
-| File search | `code-search` |
+| Task Type              | Recommended Agent       |
+| ---------------------- | ----------------------- |
+| Codebase exploration   | `Explore`               |
+| Web research           | `research-expert`       |
+| Database work          | `prisma-expert`         |
+| React/frontend         | `react-tanstack-expert` |
+| TypeScript issues      | `typescript-expert`     |
+| General implementation | `general-purpose`       |
+| File search            | `code-search`           |
 
 ## Error Handling
 
@@ -221,6 +221,7 @@ print("📊 Synthesizing results...")
 ## References
 
 For detailed patterns and examples, see:
+
 - `guides/11-parallel-execution.md` — Complete guide
 - `.claude/commands/spec/execute.md` — Batch execution example
 - `.claude/commands/ideate.md` — Parallel research example

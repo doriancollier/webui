@@ -10,11 +10,7 @@ export function TransportProvider({
   transport: Transport;
   children: React.ReactNode;
 }) {
-  return (
-    <TransportContext.Provider value={transport}>
-      {children}
-    </TransportContext.Provider>
-  );
+  return <TransportContext.Provider value={transport}>{children}</TransportContext.Provider>;
 }
 
 export function useTransport(): Transport {

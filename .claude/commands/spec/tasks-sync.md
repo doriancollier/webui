@@ -2,7 +2,7 @@
 description: Sync tasks from 03-tasks.md to the built-in task system
 category: validation
 allowed-tools: Read, TaskCreate, TaskList, TaskGet, TaskUpdate, Grep
-argument-hint: "<path-to-tasks-file>"
+argument-hint: '<path-to-tasks-file>'
 ---
 
 # Sync Tasks to Task System
@@ -10,6 +10,7 @@ argument-hint: "<path-to-tasks-file>"
 Parse `specs/[slug]/03-tasks.md` and create any missing tasks in the built-in task system.
 
 **Use this command when:**
+
 - `/spec:decompose` completed but tasks weren't created
 - `03-tasks.md` exists but `TaskList()` shows no matching tasks
 - You need to manually sync tasks after editing `03-tasks.md`
@@ -28,6 +29,7 @@ SLUG=$(echo "$TASKS_FILE" | cut -d'/' -f2)
 ```
 
 Display:
+
 ```
 🔄 Syncing tasks for: [slug]
    Source: $ARGUMENTS
@@ -44,6 +46,7 @@ existing_subjects = existing_tasks.map(t => t.subject)
 ```
 
 Display:
+
 ```
 📋 Found [count] existing tasks for [slug]
 ```
@@ -55,6 +58,7 @@ Read the tasks file and extract task definitions.
 **Task Header Pattern**: `### Task X.Y: [Title]`
 
 For each task section, extract:
+
 - **Phase number**: From `X` in `Task X.Y`
 - **Task number**: From `Y` in `Task X.Y`
 - **Title**: Text after the colon
@@ -64,11 +68,13 @@ For each task section, extract:
 ### Step 4: Identify Missing Tasks
 
 For each parsed task:
+
 1. Build expected subject: `[<slug>] [P<phase>] <title>`
 2. Check if subject exists in `existing_subjects`
 3. If not found, add to `missing_tasks` list
 
 Display:
+
 ```
 📊 Task Analysis:
    Total in file: [count]
@@ -89,6 +95,7 @@ TaskCreate({
 ```
 
 Display progress:
+
 ```
 Creating tasks...
    ✅ [P1] Task title 1
@@ -111,6 +118,7 @@ TaskUpdate({
 ```
 
 **Dependency Resolution**:
+
 - Parse `**Dependencies**: Task 1.1, Task 1.2` format
 - Look up task IDs by matching subjects
 - Skip dependencies for tasks that don't exist
@@ -141,6 +149,7 @@ TaskUpdate({
 ```regex
 ^### Task (\d+)\.(\d+): (.+)$
 ```
+
 - Group 1: Phase number
 - Group 2: Task number within phase
 - Group 3: Task title
@@ -148,6 +157,7 @@ TaskUpdate({
 ### Description Extraction
 
 Content between task header and next section marker:
+
 - Next `### Task` header
 - Next `## Phase` header
 - Next `## ` header (any h2)
@@ -162,11 +172,13 @@ Content between task header and next section marker:
 Parse comma-separated list: `Task 1.1, Task 1.2, Task 2.1`
 
 Convert to subjects for lookup:
+
 - `Task 1.1` → find task with `[P1]` in subject and matching title context
 
 ### ActiveForm Derivation
 
 Convert imperative title to present continuous:
+
 - "Create user schema" → "Creating user schema"
 - "Implement login form" → "Implementing login form"
 - "Add authentication" → "Adding authentication"
@@ -217,8 +229,8 @@ Nothing to create.
 
 ## Integration
 
-| Related Command | Relationship |
-|-----------------|--------------|
+| Related Command   | Relationship                                                      |
+| ----------------- | ----------------------------------------------------------------- |
 | `/spec:decompose` | Creates tasks.md and should create tasks (this command is backup) |
-| `/spec:execute` | Executes tasks created by decompose or this sync command |
-| `TaskList()` | View all synced tasks |
+| `/spec:execute`   | Executes tasks created by decompose or this sync command          |
+| `TaskList()`      | View all synced tasks                                             |

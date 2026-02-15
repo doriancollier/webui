@@ -36,12 +36,12 @@ Tabs solve both problems: they organize growing settings into discoverable categ
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| `@radix-ui/react-tabs` | ^1.1.13 | Tab primitives (Root, List, Trigger, Content) |
-| `@radix-ui/react-switch` | ^1.2.6 | Toggle switches (already installed) |
-| `zustand` | existing | State management with localStorage persistence |
-| `@tanstack/react-query` | existing | Server config fetching (unchanged) |
+| Dependency               | Version  | Purpose                                        |
+| ------------------------ | -------- | ---------------------------------------------- |
+| `@radix-ui/react-tabs`   | ^1.1.13  | Tab primitives (Root, List, Trigger, Content)  |
+| `@radix-ui/react-switch` | ^1.2.6   | Toggle switches (already installed)            |
+| `zustand`                | existing | State management with localStorage persistence |
+| `@tanstack/react-query`  | existing | Server config fetching (unchanged)             |
 
 **Note:** The `radix-ui` umbrella package v1.4.3 is already installed and includes tabs in the lockfile. We just need to add the explicit `@radix-ui/react-tabs` dependency to `apps/client/package.json`.
 
@@ -120,15 +120,16 @@ Add 5 new boolean preferences following the existing `autoHideToolCalls` pattern
 
 **New State Fields:**
 
-| Field | Type | Storage Key | Default |
-|-------|------|------------|---------|
-| `showStatusBarCwd` | `boolean` | `gateway-show-status-bar-cwd` | `true` |
-| `showStatusBarPermission` | `boolean` | `gateway-show-status-bar-permission` | `true` |
-| `showStatusBarModel` | `boolean` | `gateway-show-status-bar-model` | `true` |
-| `showStatusBarCost` | `boolean` | `gateway-show-status-bar-cost` | `true` |
-| `showStatusBarContext` | `boolean` | `gateway-show-status-bar-context` | `true` |
+| Field                     | Type      | Storage Key                          | Default |
+| ------------------------- | --------- | ------------------------------------ | ------- |
+| `showStatusBarCwd`        | `boolean` | `gateway-show-status-bar-cwd`        | `true`  |
+| `showStatusBarPermission` | `boolean` | `gateway-show-status-bar-permission` | `true`  |
+| `showStatusBarModel`      | `boolean` | `gateway-show-status-bar-model`      | `true`  |
+| `showStatusBarCost`       | `boolean` | `gateway-show-status-bar-cost`       | `true`  |
+| `showStatusBarContext`    | `boolean` | `gateway-show-status-bar-context`    | `true`  |
 
 **Getter pattern** (same as `autoHideToolCalls`):
+
 ```typescript
 showStatusBarCwd: (() => {
   try { return localStorage.getItem('gateway-show-status-bar-cwd') !== 'false'; }
@@ -137,6 +138,7 @@ showStatusBarCwd: (() => {
 ```
 
 **Setter pattern:**
+
 ```typescript
 setShowStatusBarCwd: (v) => {
   try { localStorage.setItem('gateway-show-status-bar-cwd', String(v)); } catch {}
@@ -145,6 +147,7 @@ setShowStatusBarCwd: (v) => {
 ```
 
 **Update `resetPreferences()`** — add 5 new `localStorage.removeItem()` calls and reset all 5 fields to `true`:
+
 ```typescript
 resetPreferences: () => {
   try {
@@ -174,39 +177,52 @@ resetPreferences: () => {
 **Key changes:**
 
 1. **Import Tabs components:**
+
    ```typescript
    import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
    ```
 
 2. **Add tab state** — controlled `value`/`onValueChange` with `useState` inside SettingsDialog itself:
+
    ```typescript
    const [activeTab, setActiveTab] = useState('preferences');
    ```
+
    This persists across open/close (React state survives unmount if parent stays mounted, which it does since SessionSidebar stays mounted). Resets on page refresh.
 
 3. **Add status bar store access:**
+
    ```typescript
    const {
      // ... existing destructuring ...
-     showStatusBarCwd, setShowStatusBarCwd,
-     showStatusBarPermission, setShowStatusBarPermission,
-     showStatusBarModel, setShowStatusBarModel,
-     showStatusBarCost, setShowStatusBarCost,
-     showStatusBarContext, setShowStatusBarContext,
+     showStatusBarCwd,
+     setShowStatusBarCwd,
+     showStatusBarPermission,
+     setShowStatusBarPermission,
+     showStatusBarModel,
+     setShowStatusBarModel,
+     showStatusBarCost,
+     setShowStatusBarCost,
+     showStatusBarContext,
+     setShowStatusBarContext,
    } = useAppStore();
    ```
 
 4. **Replace content layout** — the current `<div className="overflow-y-auto flex-1 p-4 space-y-6">` wrapping both sections becomes a `<Tabs>` wrapper with three `<TabsContent>` panels:
 
    ```tsx
-   <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
-     <TabsList className="grid w-full grid-cols-3 mx-4 mt-3" style={{ width: 'calc(100% - 2rem)' }}>
+   <Tabs
+     value={activeTab}
+     onValueChange={setActiveTab}
+     className="flex flex-1 flex-col overflow-hidden"
+   >
+     <TabsList className="mx-4 mt-3 grid w-full grid-cols-3" style={{ width: 'calc(100% - 2rem)' }}>
        <TabsTrigger value="preferences">Preferences</TabsTrigger>
        <TabsTrigger value="statusBar">Status Bar</TabsTrigger>
        <TabsTrigger value="server">Server</TabsTrigger>
      </TabsList>
 
-     <div className="overflow-y-auto flex-1 p-4">
+     <div className="flex-1 overflow-y-auto p-4">
        <TabsContent value="preferences" className="mt-0 space-y-6">
          {/* Existing preferences content — all 7 SettingRow items + Reset link */}
        </TabsContent>
@@ -258,6 +274,7 @@ Five `SettingRow` entries using the existing component pattern:
 **File:** `apps/client/src/components/status/StatusLine.tsx` (MODIFY)
 
 **Import and read store:**
+
 ```typescript
 import { useAppStore } from '../../stores/app-store';
 
@@ -273,7 +290,7 @@ const {
 
 **Conditional rendering with smart separators:**
 
-The current approach uses inline `<Separator />` components after each item. With toggleable visibility, separators must only appear *between* visible items. The cleanest approach: collect visible items into an array and render separators between them.
+The current approach uses inline `<Separator />` components after each item. With toggleable visibility, separators must only appear _between_ visible items. The cleanest approach: collect visible items into an array and render separators between them.
 
 ```tsx
 // Build array of visible items
@@ -312,8 +329,11 @@ if (items.length === 0) return null;
 
 // Render with separators between items
 return (
-  <div role="toolbar" aria-label="Session status" aria-live="polite"
-    className="flex flex-wrap items-center justify-center sm:justify-start gap-2 px-1 pt-2 text-xs text-muted-foreground whitespace-nowrap"
+  <div
+    role="toolbar"
+    aria-label="Session status"
+    aria-live="polite"
+    className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 px-1 pt-2 text-xs whitespace-nowrap sm:justify-start"
   >
     {items.map((item, i) => (
       <React.Fragment key={i}>
@@ -346,7 +366,7 @@ This feature is entirely client-side. No server routes, transport methods, or sh
 ### Edge Cases
 
 - **All items off:** Status bar area collapses completely. User re-enables via Settings > Status Bar tab.
-- **Data-conditional items:** If `showStatusBarCost` is ON but `status.costUsd` is `null`, the cost item still doesn't render (data availability takes precedence). The toggle controls *user preference*, not data availability.
+- **Data-conditional items:** If `showStatusBarCost` is ON but `status.costUsd` is `null`, the cost item still doesn't render (data availability takes precedence). The toggle controls _user preference_, not data availability.
 - **Reset:** "Reset to defaults" on the Preferences tab resets all preferences including status bar toggles (all back to ON).
 - **Tab memory:** Reopening the dialog returns to the last-viewed tab within the same page session.
 
@@ -357,6 +377,7 @@ This feature is entirely client-side. No server routes, transport methods, or sh
 **File:** `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` (MODIFY)
 
 **Additional mocks needed:**
+
 ```typescript
 // Mock @radix-ui/react-tabs (or rely on jsdom rendering — Radix tabs work in jsdom)
 // No additional mock needed if Radix tabs render in jsdom (they should)
@@ -470,14 +491,14 @@ All changes are in `apps/client/` only — no server changes, no shared type cha
 
 ## 13. Files Modified/Created
 
-| File | Action | Description |
-|------|--------|-------------|
-| `apps/client/package.json` | **Modify** | Add `@radix-ui/react-tabs` dependency |
-| `apps/client/src/components/ui/tabs.tsx` | **Create** | Radix Tabs shadcn-style wrapper (4 exports) |
-| `apps/client/src/stores/app-store.ts` | **Modify** | Add 5 status bar visibility toggles + update resetPreferences |
-| `apps/client/src/components/settings/SettingsDialog.tsx` | **Modify** | Restructure with Tabs, add Status Bar tab content |
-| `apps/client/src/components/status/StatusLine.tsx` | **Modify** | Read visibility toggles, conditional item rendering, smart separators |
-| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | **Modify** | Add tab navigation + status bar toggle tests |
+| File                                                                    | Action     | Description                                                           |
+| ----------------------------------------------------------------------- | ---------- | --------------------------------------------------------------------- |
+| `apps/client/package.json`                                              | **Modify** | Add `@radix-ui/react-tabs` dependency                                 |
+| `apps/client/src/components/ui/tabs.tsx`                                | **Create** | Radix Tabs shadcn-style wrapper (4 exports)                           |
+| `apps/client/src/stores/app-store.ts`                                   | **Modify** | Add 5 status bar visibility toggles + update resetPreferences         |
+| `apps/client/src/components/settings/SettingsDialog.tsx`                | **Modify** | Restructure with Tabs, add Status Bar tab content                     |
+| `apps/client/src/components/status/StatusLine.tsx`                      | **Modify** | Read visibility toggles, conditional item rendering, smart separators |
+| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | **Modify** | Add tab navigation + status bar toggle tests                          |
 
 ## 14. Acceptance Criteria
 

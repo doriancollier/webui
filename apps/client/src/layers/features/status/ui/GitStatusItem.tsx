@@ -12,7 +12,10 @@ export function GitStatusItem({ data }: GitStatusItemProps) {
   // Not a git repo — show disabled state
   if (!isGitStatusOk(data)) {
     return (
-      <span className="inline-flex items-center gap-1 text-muted-foreground/50" title="Not a git repository">
+      <span
+        className="text-muted-foreground/50 inline-flex items-center gap-1"
+        title="Not a git repository"
+      >
         <GitBranch className="size-(--size-icon-xs)" />
         <span>No repo</span>
       </span>
@@ -28,9 +31,8 @@ export function GitStatusItem({ data }: GitStatusItemProps) {
   if (data.staged > 0) parts.push(`${data.staged} staged`);
   if (data.untracked > 0) parts.push(`${data.untracked} untracked`);
   if (data.conflicted > 0) parts.push(`${data.conflicted} conflicted`);
-  const tooltip = parts.length > 0
-    ? `${data.branch} · ${parts.join(', ')}`
-    : `${data.branch} · clean`;
+  const tooltip =
+    parts.length > 0 ? `${data.branch} · ${parts.join(', ')}` : `${data.branch} · clean`;
 
   return (
     <span className="inline-flex items-center gap-1" title={tooltip}>
@@ -38,21 +40,19 @@ export function GitStatusItem({ data }: GitStatusItemProps) {
       <span className="max-w-[25ch] truncate">{data.branch}</span>
 
       {data.ahead > 0 && (
-        <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+        <span className="text-muted-foreground inline-flex items-center gap-0.5">
           <ArrowUp className="size-(--size-icon-xs)" />
           {data.ahead}
         </span>
       )}
       {data.behind > 0 && (
-        <span className="inline-flex items-center gap-0.5 text-muted-foreground">
+        <span className="text-muted-foreground inline-flex items-center gap-0.5">
           <ArrowDown className="size-(--size-icon-xs)" />
           {data.behind}
         </span>
       )}
 
-      {totalChanges > 0 && (
-        <span className="text-muted-foreground">· {changeLabel}</span>
-      )}
+      {totalChanges > 0 && <span className="text-muted-foreground">· {changeLabel}</span>}
     </span>
   );
 }

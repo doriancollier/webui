@@ -85,12 +85,7 @@ describe('parsePorcelainOutput', () => {
   });
 
   it('handles deleted files', () => {
-    const output = [
-      '## main',
-      'D  deleted-staged.txt',
-      ' D deleted-unstaged.txt',
-      '',
-    ].join('\n');
+    const output = ['## main', 'D  deleted-staged.txt', ' D deleted-unstaged.txt', ''].join('\n');
     const result = parsePorcelainOutput(output);
     expect(result.staged).toBe(1);
     expect(result.modified).toBe(1);

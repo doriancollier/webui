@@ -17,6 +17,7 @@ slug: inference-status-indicator
 **Task brief:** Add a web-native inference status indicator inspired by Claude Code CLI's animated spinner. The indicator appears at the bottom of the message history, shows animated visual feedback + rotating witty messages + elapsed time + token count while Claude is processing, and displays a completion summary afterward. The system should be pluggable so themes/variants can be swapped in the future (holidays, user preferences).
 
 **Assumptions:**
+
 - Streaming state (`status: 'idle' | 'streaming' | 'error'`) is already tracked in `useChatSession`
 - `session_status` SSE events provide `contextTokens` and `costUsd` but NOT per-response token deltas — we'll estimate from text chunks
 - The server does not emit elapsed time; this must be computed client-side
@@ -24,6 +25,7 @@ slug: inference-status-indicator
 - The indicator renders in the chat scroll area, not in a fixed position
 
 **Out of scope:**
+
 - User-selectable themes UI (future — we just need the pluggable architecture)
 - Holiday auto-detection (future)
 - Server-side timing or token counting changes
@@ -52,6 +54,7 @@ slug: inference-status-indicator
 ## 3) Codebase Map
 
 **Primary components/modules:**
+
 - `apps/client/src/hooks/use-chat-session.ts` — Streaming state machine, SSE event handler
 - `apps/client/src/components/chat/ChatPanel.tsx` — Layout orchestrator
 - `apps/client/src/components/chat/MessageList.tsx` — Virtualized message display + auto-scroll
@@ -59,12 +62,14 @@ slug: inference-status-indicator
 - `apps/client/src/components/status/StatusLine.tsx` — Session metadata display
 
 **Shared dependencies:**
+
 - `motion/react` — Animation library (already integrated, `MotionConfig` at app level)
 - `@tanstack/react-virtual` — List virtualization in MessageList
 - Zustand `app-store.ts` — Cross-component UI state
 - CSS custom properties in `index.css` — Design tokens, mobile scale
 
 **Data flow:**
+
 ```
 User submits → useChatSession.handleSubmit() → transport.sendMessage()
   → SSE events arrive → handleStreamEvent() dispatches per type
@@ -73,6 +78,7 @@ User submits → useChatSession.handleSubmit() → transport.sendMessage()
 ```
 
 **Available streaming data:**
+
 - `status`: 'idle' | 'streaming' | 'error' (from hook)
 - `sessionStatus.contextTokens`: Current context window usage (from `session_status` events)
 - `sessionStatus.costUsd`: Cumulative cost
@@ -80,6 +86,7 @@ User submits → useChatSession.handleSubmit() → transport.sendMessage()
 - No built-in start/end timestamps or per-turn token counts
 
 **Potential blast radius:**
+
 - `useChatSession` — Add timing + token tracking refs
 - `ChatPanel` or `MessageList` — Render the indicator component
 - New component files — The indicator itself + hooks + verb data
@@ -104,11 +111,13 @@ The CLI uses an ASCII spinner character (rotating `⠋⠙⠹⠸⠼⠴⠦⠧⠇�
 ```
 
 On completion:
+
 ```
 ⠿ Churned for 6m 14s
 ```
 
 The 100 verbs fall into categories:
+
 - **Cerebral:** Cerebrating, Cogitating, Contemplating, Pondering, Ruminating, Musing...
 - **Creative:** Brewing, Concocting, Conjuring, Crafting, Hatching, Synthesizing...
 - **Active:** Churning, Computing, Crunching, Spinning, Whirring...
@@ -125,18 +134,21 @@ Users can customize verbs via `~/.claude/settings.json` with a `spinnerVerbs` co
 ### Potential Approaches
 
 **1. Ambient Shimmer (CSS-only)**
+
 - Subtle gradient sweep across the indicator area
 - Pros: Very calm, CSS-only, GPU-accelerated
 - Cons: May be too subtle, doesn't convey personality
 - Complexity: Low
 
 **2. Pulsing Dot/Icon**
+
 - Small icon that breathes with scale + opacity
 - Pros: Noticeable, familiar "live" indicator pattern
 - Cons: Can feel generic, limited entertainment value
 - Complexity: Low
 
 **3. Rotating Text + Subtle Icon (Hybrid) — RECOMMENDED**
+
 - Witty rotating messages paired with a gentle icon animation
 - Format: `[animated icon] Cerebrating... 2m 14s · 1.2k tokens`
 - Completion: `[static icon] Churned for 6m 14s`
@@ -145,6 +157,7 @@ Users can customize verbs via `~/.claude/settings.json` with a `spinnerVerbs` co
 - Complexity: Medium
 
 **4. Particle/Morphing SVG**
+
 - Abstract shapes that morph or orbit
 - Pros: Visually unique, premium feel
 - Cons: High complexity, may clash with Calm Tech, performance risk
@@ -168,10 +181,10 @@ Use a **theme object pattern** — each theme defines its icon component, animat
 interface IndicatorTheme {
   name: string;
   icon: React.ComponentType<{ className?: string }>;
-  iconAnimation: MotionProps;      // Motion animate/transition config
+  iconAnimation: MotionProps; // Motion animate/transition config
   verbs: string[];
-  verbInterval: number;            // ms between rotations
-  completionVerb?: string;         // e.g. "Churned" — defaults to random
+  verbInterval: number; // ms between rotations
+  completionVerb?: string; // e.g. "Churned" — defaults to random
 }
 ```
 

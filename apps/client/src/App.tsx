@@ -26,7 +26,12 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   const activeForm = useAppStore((s) => s.activeForm);
   const isWaitingForUser = useAppStore((s) => s.isWaitingForUser);
   useFavicon({ cwd: embedded ? null : selectedCwd, isStreaming });
-  useDocumentTitle({ cwd: embedded ? null : selectedCwd, activeForm, isStreaming, isWaitingForUser });
+  useDocumentTitle({
+    cwd: embedded ? null : selectedCwd,
+    activeForm,
+    isStreaming,
+    isWaitingForUser,
+  });
 
   // Escape key closes overlay sidebar
   // Embedded: scoped to container element; Standalone: scoped to document
@@ -46,7 +51,10 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   if (embedded) {
     return (
       <MotionConfig reducedMotion="user">
-        <div ref={containerRef} className="relative flex flex-col h-full bg-background text-foreground">
+        <div
+          ref={containerRef}
+          className="bg-background text-foreground relative flex h-full flex-col"
+        >
           <PermissionBanner sessionId={activeSessionId} />
           <div className="relative flex-1 overflow-hidden">
             {/* Overlay sidebar — always uses overlay pattern in embedded mode */}
@@ -67,7 +75,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                     animate={{ x: 0 }}
                     exit={{ x: -320 }}
                     transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                    className="absolute top-0 left-0 z-50 h-full w-80 border-r bg-background overflow-y-auto"
+                    className="bg-background absolute top-0 left-0 z-50 h-full w-80 overflow-y-auto border-r"
                   >
                     <SessionSidebar />
                   </motion.div>
@@ -84,7 +92,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                   exit={{ opacity: 0, scale: 0.9 }}
                   transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
                   onClick={toggleSidebar}
-                  className="absolute top-3 left-3 z-30 p-1.5 rounded-md bg-background/80 backdrop-blur border shadow-sm hover:bg-accent transition-colors duration-150"
+                  className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
                   aria-label="Open sidebar"
                 >
                   <PanelLeft className="size-(--size-icon-md)" />
@@ -92,14 +100,18 @@ export function App({ transformContent, embedded }: AppProps = {}) {
               )}
             </AnimatePresence>
 
-            <main className="flex-1 overflow-hidden h-full">
+            <main className="h-full flex-1 overflow-hidden">
               {activeSessionId ? (
-                <ChatPanel key={activeSessionId} sessionId={activeSessionId} transformContent={transformContent} />
+                <ChatPanel
+                  key={activeSessionId}
+                  sessionId={activeSessionId}
+                  transformContent={transformContent}
+                />
               ) : (
-                <div className="flex-1 flex items-center justify-center h-full">
+                <div className="flex h-full flex-1 items-center justify-center">
                   <div className="text-center">
                     <p className="text-muted-foreground text-base">New conversation</p>
-                    <p className="text-muted-foreground/60 text-sm mt-2">
+                    <p className="text-muted-foreground/60 mt-2 text-sm">
                       Select a session or start a new one
                     </p>
                   </div>
@@ -114,7 +126,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div ref={containerRef} className="flex flex-col h-dvh bg-background text-foreground">
+      <div ref={containerRef} className="bg-background text-foreground flex h-dvh flex-col">
         <PermissionBanner sessionId={activeSessionId} />
         <div className="relative flex flex-1 overflow-hidden">
           {/* Floating toggle — visible when sidebar is closed */}
@@ -126,7 +138,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                 exit={{ opacity: 0, scale: 0.9 }}
                 transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
                 onClick={toggleSidebar}
-                className="absolute top-3 left-3 z-30 p-1.5 rounded-md bg-background/80 backdrop-blur border shadow-sm hover:bg-accent transition-colors duration-150"
+                className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
                 aria-label="Open sidebar"
               >
                 <PanelLeft className="size-(--size-icon-md)" />
@@ -153,7 +165,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                     animate={{ x: 0 }}
                     exit={{ x: '-90vw' }}
                     transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                    className="fixed top-0 left-0 z-50 h-full w-[90vw] border-r bg-background overflow-y-auto"
+                    className="bg-background fixed top-0 left-0 z-50 h-full w-[90vw] overflow-y-auto border-r"
                   >
                     <SessionSidebar />
                   </motion.div>
@@ -165,9 +177,9 @@ export function App({ transformContent, embedded }: AppProps = {}) {
             <motion.div
               animate={{ width: sidebarOpen ? 320 : 0 }}
               transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-              className="overflow-hidden flex-shrink-0 border-r"
+              className="flex-shrink-0 overflow-hidden border-r"
             >
-              <div className="w-80 h-full overflow-y-auto">
+              <div className="h-full w-80 overflow-y-auto">
                 <SessionSidebar />
               </div>
             </motion.div>
@@ -175,12 +187,16 @@ export function App({ transformContent, embedded }: AppProps = {}) {
 
           <main className="flex-1 overflow-hidden">
             {activeSessionId ? (
-              <ChatPanel key={activeSessionId} sessionId={activeSessionId} transformContent={transformContent} />
+              <ChatPanel
+                key={activeSessionId}
+                sessionId={activeSessionId}
+                transformContent={transformContent}
+              />
             ) : (
-              <div className="flex-1 flex items-center justify-center h-full">
+              <div className="flex h-full flex-1 items-center justify-center">
                 <div className="text-center">
                   <p className="text-muted-foreground text-base">New conversation</p>
-                  <p className="text-muted-foreground/60 text-sm mt-2">
+                  <p className="text-muted-foreground/60 mt-2 text-sm">
                     Select a session or start a new one
                   </p>
                 </div>

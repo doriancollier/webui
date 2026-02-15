@@ -1,6 +1,6 @@
 ---
 description: Display the current roadmap summary in the terminal
-argument-hint: "(no arguments)"
+argument-hint: '(no arguments)'
 allowed-tools: Bash
 category: roadmap
 ---
@@ -35,6 +35,7 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/generate_summary.py
 ## Output
 
 The summary includes:
+
 - Items grouped by time horizon (Now, Next, Later)
 - Sub-grouped by MoSCoW priority (Must-Have, Should-Have, Could-Have, Won't-Have)
 - Status indicators (not-started, in-progress, completed, on-hold)
@@ -72,8 +73,8 @@ Last Updated: 2026-02-01T12:00:00.000000+00:00
 
 ## Related Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/roadmap:open` | Open visual roadmap in browser |
-| `/roadmap:analyze` | Detailed health analysis with recommendations |
-| `/roadmap:validate` | Validate roadmap.json structure |
+| Command             | Purpose                                       |
+| ------------------- | --------------------------------------------- |
+| `/roadmap:open`     | Open visual roadmap in browser                |
+| `/roadmap:analyze`  | Detailed health analysis with recommendations |
+| `/roadmap:validate` | Validate roadmap.json structure               |

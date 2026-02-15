@@ -4,7 +4,9 @@
    ========================================================================== */
 
 /* CSS Reset & Base */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
@@ -57,7 +59,7 @@
 
 /* Dark Mode - via media query (default) or data attribute (manual toggle) */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
+  :root:not([data-theme='light']) {
     --background: oklch(0.098 0.005 260);
     --foreground: oklch(0.98 0.002 250);
     --card: oklch(0.145 0.005 260);
@@ -81,7 +83,7 @@
 }
 
 /* Dark Mode - manual override */
-:root[data-theme="dark"] {
+:root[data-theme='dark'] {
   --background: oklch(0.098 0.005 260);
   --foreground: oklch(0.98 0.002 250);
   --card: oklch(0.145 0.005 260);
@@ -104,7 +106,9 @@
 }
 
 html {
-  font-feature-settings: "rlig" 1, "calt" 1;
+  font-feature-settings:
+    'rlig' 1,
+    'calt' 1;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -270,30 +274,30 @@ body {
   display: block;
 }
 
-:root[data-theme="dark"] .theme-toggle .icon-sun,
-:root:not([data-theme="light"]) .theme-toggle .icon-sun {
+:root[data-theme='dark'] .theme-toggle .icon-sun,
+:root:not([data-theme='light']) .theme-toggle .icon-sun {
   display: block;
 }
 
-:root[data-theme="dark"] .theme-toggle .icon-moon,
-:root:not([data-theme="light"]) .theme-toggle .icon-moon {
+:root[data-theme='dark'] .theme-toggle .icon-moon,
+:root:not([data-theme='light']) .theme-toggle .icon-moon {
   display: none;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .theme-toggle .icon-sun {
+  :root:not([data-theme='light']) .theme-toggle .icon-sun {
     display: block;
   }
-  :root:not([data-theme="light"]) .theme-toggle .icon-moon {
+  :root:not([data-theme='light']) .theme-toggle .icon-moon {
     display: none;
   }
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .theme-toggle .icon-sun {
+  :root:not([data-theme='dark']) .theme-toggle .icon-sun {
     display: none;
   }
-  :root:not([data-theme="dark"]) .theme-toggle .icon-moon {
+  :root:not([data-theme='dark']) .theme-toggle .icon-moon {
     display: block;
   }
 }
@@ -417,7 +421,9 @@ body {
 
 .filter-select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--info);
+  box-shadow:
+    0 0 0 2px var(--background),
+    0 0 0 4px var(--info);
 }
 
 /* Hide completed toggle */
@@ -448,7 +454,7 @@ body {
   color: var(--foreground);
 }
 
-.hide-completed-toggle input[type="checkbox"] {
+.hide-completed-toggle input[type='checkbox'] {
   width: 1rem;
   height: 1rem;
   margin: 0;
@@ -900,63 +906,63 @@ body {
 }
 
 /* Command button - light mode base (dark mode is default in the button styles above) */
-:root:not([data-theme="dark"]) .command-btn {
+:root:not([data-theme='dark']) .command-btn {
   background: oklch(0.96 0.005 260);
   color: oklch(0.35 0.12 145);
   border-color: oklch(0.88 0.005 260);
 }
 
-:root:not([data-theme="dark"]) .command-btn .icon {
+:root:not([data-theme='dark']) .command-btn .icon {
   color: oklch(0.55 0.01 260);
 }
 
-:root:not([data-theme="dark"]) .command-btn:hover {
+:root:not([data-theme='dark']) .command-btn:hover {
   background: oklch(0.94 0.005 260);
   border-color: oklch(0.35 0.12 145);
 }
 
-:root:not([data-theme="dark"]) .command-btn:hover .icon {
+:root:not([data-theme='dark']) .command-btn:hover .icon {
   color: oklch(0.35 0.12 145);
 }
 
 /* Override for explicit dark mode */
-:root[data-theme="dark"] .command-btn {
+:root[data-theme='dark'] .command-btn {
   background: oklch(0.12 0.005 260);
   color: oklch(0.75 0.15 145);
   border-color: var(--border);
 }
 
-:root[data-theme="dark"] .command-btn .icon {
+:root[data-theme='dark'] .command-btn .icon {
   color: oklch(0.6 0.01 260);
 }
 
-:root[data-theme="dark"] .command-btn:hover {
+:root[data-theme='dark'] .command-btn:hover {
   background: oklch(0.16 0.005 260);
   border-color: oklch(0.75 0.15 145);
 }
 
-:root[data-theme="dark"] .command-btn:hover .icon {
+:root[data-theme='dark'] .command-btn:hover .icon {
   color: oklch(0.75 0.15 145);
 }
 
 /* System dark mode preference (when no explicit theme set) */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .command-btn {
+  :root:not([data-theme='light']) .command-btn {
     background: oklch(0.12 0.005 260);
     color: oklch(0.75 0.15 145);
     border-color: var(--border);
   }
 
-  :root:not([data-theme="light"]) .command-btn .icon {
+  :root:not([data-theme='light']) .command-btn .icon {
     color: oklch(0.6 0.01 260);
   }
 
-  :root:not([data-theme="light"]) .command-btn:hover {
+  :root:not([data-theme='light']) .command-btn:hover {
     background: oklch(0.16 0.005 260);
     border-color: oklch(0.75 0.15 145);
   }
 
-  :root:not([data-theme="light"]) .command-btn:hover .icon {
+  :root:not([data-theme='light']) .command-btn:hover .icon {
     color: oklch(0.75 0.15 145);
   }
 }
@@ -1523,19 +1529,19 @@ body {
 }
 
 /* Light mode code blocks */
-:root:not([data-theme="dark"]) .markdown-content pre {
+:root:not([data-theme='dark']) .markdown-content pre {
   background: oklch(0.97 0.005 260);
 }
 
-:root:not([data-theme="dark"]) .markdown-content pre code {
+:root:not([data-theme='dark']) .markdown-content pre code {
   color: oklch(0.25 0.01 260);
 }
 
 @media (prefers-color-scheme: light) {
-  :root:not([data-theme="dark"]) .markdown-content pre {
+  :root:not([data-theme='dark']) .markdown-content pre {
     background: oklch(0.97 0.005 260);
   }
-  :root:not([data-theme="dark"]) .markdown-content pre code {
+  :root:not([data-theme='dark']) .markdown-content pre code {
     color: oklch(0.25 0.01 260);
   }
 }
@@ -1583,7 +1589,7 @@ body {
 }
 
 /* Task lists */
-.markdown-content input[type="checkbox"] {
+.markdown-content input[type='checkbox'] {
   margin-right: var(--space-2);
   accent-color: var(--info);
 }

@@ -17,12 +17,14 @@ slug: improve-slash-commands
 **Task brief:** Improve the slash command system across client and server. Fix the colon regex bug that prevents filtering by full command name, add fuzzy matching, preserve text before the slash on command selection, reload commands when directory changes, and clean up minor issues.
 
 **Assumptions:**
+
 - We're improving the existing system, not replacing it
 - The command palette UI structure (grouped by namespace) stays
 - Directory switching already exists via `useDirectoryState()` (`?dir=` URL param / Zustand store)
 - Command set of ~50-200 items (no need for virtualization or heavy indexing)
 
 **Out of scope:**
+
 - Adding new command `.md` files
 - Changing how the Agent SDK processes/executes commands server-side
 - Rich text / contenteditable for the input (stays as textarea)
@@ -50,27 +52,29 @@ slug: improve-slash-commands
 
 **Primary Components/Modules:**
 
-| Path | Role |
-|------|------|
-| `apps/client/src/components/chat/ChatPanel.tsx` | Slash detection, filtering, palette state, command selection |
-| `apps/client/src/components/commands/CommandPalette.tsx` | Palette UI rendering (grouped by namespace) |
-| `apps/client/src/components/chat/ChatInput.tsx` | Keyboard event handling when palette open |
-| `apps/client/src/hooks/use-commands.ts` | React Query hook for fetching commands |
-| `apps/client/src/hooks/use-directory-state.ts` | Cwd state (URL ↔ Zustand) |
-| `apps/server/src/routes/commands.ts` | GET /api/commands endpoint |
-| `apps/server/src/services/command-registry.ts` | Filesystem scanner + cache |
-| `packages/shared/src/transport.ts` | Transport interface |
-| `packages/shared/src/schemas.ts` | Zod schemas for commands |
-| `apps/client/src/lib/http-transport.ts` | HTTP transport adapter |
-| `apps/client/src/lib/direct-transport.ts` | Direct transport adapter |
+| Path                                                     | Role                                                         |
+| -------------------------------------------------------- | ------------------------------------------------------------ |
+| `apps/client/src/components/chat/ChatPanel.tsx`          | Slash detection, filtering, palette state, command selection |
+| `apps/client/src/components/commands/CommandPalette.tsx` | Palette UI rendering (grouped by namespace)                  |
+| `apps/client/src/components/chat/ChatInput.tsx`          | Keyboard event handling when palette open                    |
+| `apps/client/src/hooks/use-commands.ts`                  | React Query hook for fetching commands                       |
+| `apps/client/src/hooks/use-directory-state.ts`           | Cwd state (URL ↔ Zustand)                                    |
+| `apps/server/src/routes/commands.ts`                     | GET /api/commands endpoint                                   |
+| `apps/server/src/services/command-registry.ts`           | Filesystem scanner + cache                                   |
+| `packages/shared/src/transport.ts`                       | Transport interface                                          |
+| `packages/shared/src/schemas.ts`                         | Zod schemas for commands                                     |
+| `apps/client/src/lib/http-transport.ts`                  | HTTP transport adapter                                       |
+| `apps/client/src/lib/direct-transport.ts`                | Direct transport adapter                                     |
 
 **Shared Dependencies:**
+
 - `useDirectoryState()` — cwd management
 - `useTransport()` — transport injection via React Context
 - `useAppStore` (Zustand) — `selectedCwd`, `sessionId`
 - TanStack Query — caching layer
 
 **Data Flow:**
+
 ```
 Server startup → CommandRegistryService(vaultRoot) scans .claude/commands/
 Client mount → useCommands() → transport.getCommands() → GET /api/commands
@@ -80,6 +84,7 @@ User submits → transport.sendMessage(sessionId, "/ns:cmd args", onEvent)
 ```
 
 **Directory Switching (current):**
+
 ```
 User changes dir → useDirectoryState setter → setUrlDir + setStoreDir + setSessionId(null)
 Commands: NOT invalidated (static query key ['commands'], no cwd param)
@@ -109,12 +114,12 @@ Commands: NOT invalidated (static query key ['commands'], no cwd param)
 
 ### Fuzzy Matching
 
-| Approach | Bundle Size | Pros | Cons |
-|----------|-------------|------|------|
-| **fuzzysort** | ~6KB | Fast, great for file/command names, highlight support | Slightly larger than alternatives |
-| **command-score** | ~3KB | Superhuman-style scoring, tiny | Less highlighting support |
-| **Custom subsequence** | 0KB | Zero dependencies | No scoring/ranking, must maintain |
-| **Fuse.js** | ~19KB | Full-featured, well-documented | Overkill for 50-200 items |
+| Approach               | Bundle Size | Pros                                                  | Cons                              |
+| ---------------------- | ----------- | ----------------------------------------------------- | --------------------------------- |
+| **fuzzysort**          | ~6KB        | Fast, great for file/command names, highlight support | Slightly larger than alternatives |
+| **command-score**      | ~3KB        | Superhuman-style scoring, tiny                        | Less highlighting support         |
+| **Custom subsequence** | 0KB         | Zero dependencies                                     | No scoring/ranking, must maintain |
+| **Fuse.js**            | ~19KB       | Full-featured, well-documented                        | Overkill for 50-200 items         |
 
 **Recommendation:** Simple custom subsequence matching. For ~50-200 commands, the perf difference is negligible, and we avoid adding a dependency. If we later need ranked results or highlighting, upgrade to fuzzysort.
 

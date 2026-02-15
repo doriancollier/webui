@@ -51,6 +51,7 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
 ```
 
 Analyzes roadmap health:
+
 - Must-Have % (warns if >60%)
 - Items at risk or blocked
 - Items missing effort estimates
@@ -84,6 +85,7 @@ When making changes to `roadmap.json`:
 ## JSON Schema
 
 The schema is defined at `/roadmap/schema.json`. Key rules:
+
 - Item IDs must be valid UUID v4
 - `moscow` must be one of: must-have, should-have, could-have, wont-have
 - `status` must be one of: not-started, in-progress, completed, on-hold
@@ -95,6 +97,7 @@ The schema is defined at `/roadmap/schema.json`. Key rules:
 ### Automatic Activation Triggers
 
 The managing-roadmap-moscow skill is automatically applied when:
+
 - User mentions "roadmap" in prompts
 - Working on files in `roadmap/` directory
 - Running `/ideate` with `--roadmap-id` or `--roadmap-item` flag
@@ -105,12 +108,14 @@ The managing-roadmap-moscow skill is automatically applied when:
 ### Automatic Status Updates
 
 The roadmap skill can autonomously update item status when:
+
 - **Starting ideation**: Set status to `in-progress` when `/ideate --roadmap-id` is run
 - **Completing implementation**: Set status to `completed` when `/spec:execute` finishes all tasks
 
 ### Linking Specs to Roadmap Items
 
 When creating specs for roadmap items:
+
 1. Use the item's UUID with `--roadmap-id` flag
 2. The slug will be derived from the item title
 3. Links will be automatically added to the roadmap item

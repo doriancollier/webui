@@ -1,1 +1,1 @@
-export { PermissionBanner } from './ui/PermissionBanner'
+export { PermissionBanner } from './ui/PermissionBanner';

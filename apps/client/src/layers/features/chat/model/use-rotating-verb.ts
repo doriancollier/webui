@@ -5,10 +5,7 @@ interface RotatingVerbResult {
   key: string;
 }
 
-export function useRotatingVerb(
-  verbs: readonly string[],
-  intervalMs: number,
-): RotatingVerbResult {
+export function useRotatingVerb(verbs: readonly string[], intervalMs: number): RotatingVerbResult {
   const keyCounterRef = useRef(0);
   const lastVerbRef = useRef<string | null>(null);
 

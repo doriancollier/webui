@@ -13,17 +13,19 @@ function buildTitle(cwd: string, activeForm: string | null, prefix: string): str
   const dirName = cwd.split('/').filter(Boolean).pop() ?? cwd;
   let title = `${prefix}${emoji} ${dirName}`;
   if (activeForm) {
-    const truncated =
-      activeForm.length > 40
-        ? activeForm.slice(0, 40) + '\u2026'
-        : activeForm;
+    const truncated = activeForm.length > 40 ? activeForm.slice(0, 40) + '\u2026' : activeForm;
     title += ` \u2014 ${truncated}`;
   }
   title += ' \u2014 DorkOS';
   return title;
 }
 
-export function useDocumentTitle({ cwd, activeForm, isStreaming, isWaitingForUser }: UseDocumentTitleOptions) {
+export function useDocumentTitle({
+  cwd,
+  activeForm,
+  isStreaming,
+  isWaitingForUser,
+}: UseDocumentTitleOptions) {
   const isTabHiddenRef = useRef(document.hidden);
   const hasUnseenResponseRef = useRef(false);
   const wasStreamingRef = useRef(isStreaming);

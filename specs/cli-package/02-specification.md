@@ -39,11 +39,11 @@ Currently, running DorkOS requires cloning the monorepo, installing all workspac
 
 ## 6. Technical Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `esbuild` | `^0.24` | Bundle server + shared into single JS file |
-| `node:util` (parseArgs) | Node 18.3+ built-in | CLI argument parsing (zero deps) |
-| All `apps/server` deps | (inherited) | Runtime dependencies declared in CLI package.json |
+| Package                 | Version             | Purpose                                           |
+| ----------------------- | ------------------- | ------------------------------------------------- |
+| `esbuild`               | `^0.24`             | Bundle server + shared into single JS file        |
+| `node:util` (parseArgs) | Node 18.3+ built-in | CLI argument parsing (zero deps)                  |
+| All `apps/server` deps  | (inherited)         | Runtime dependencies declared in CLI package.json |
 
 No new runtime dependencies are added. `esbuild` is a devDependency of `packages/cli` only.
 
@@ -83,17 +83,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
   options: {
-    port:    { type: 'string',  short: 'p', default: '6942' },
-    tunnel:  { type: 'boolean', short: 't', default: false },
-    dir:     { type: 'string',  short: 'd', default: process.cwd() },
-    help:    { type: 'boolean', short: 'h' },
+    port: { type: 'string', short: 'p', default: '6942' },
+    tunnel: { type: 'boolean', short: 't', default: false },
+    dir: { type: 'string', short: 'd', default: process.cwd() },
+    help: { type: 'boolean', short: 'h' },
     version: { type: 'boolean', short: 'v' },
   },
   allowPositionals: false,
 });
 
 // --help
-if (values.help) { /* print usage, exit */ }
+if (values.help) {
+  /* print usage, exit */
+}
 
 // --version
 if (values.version) {
@@ -155,8 +157,7 @@ One change: read `CLIENT_DIST_PATH` env var with fallback to current relative pa
 const distPath = path.join(__dirname, '../../client/dist');
 
 // After:
-const distPath = process.env.CLIENT_DIST_PATH
-  ?? path.join(__dirname, '../../client/dist');
+const distPath = process.env.CLIENT_DIST_PATH ?? path.join(__dirname, '../../client/dist');
 ```
 
 This is the **only** change to `apps/server`. The fallback preserves monorepo behavior.
@@ -254,7 +255,9 @@ async function buildCLI() {
       'zod',
     ],
     sourcemap: true,
-    banner: { js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);" },
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
   });
 
   // 3. Compile CLI entry
@@ -290,9 +293,7 @@ buildCLI();
   "bin": {
     "dorkos": "./dist/bin/cli.js"
   },
-  "files": [
-    "dist/"
-  ],
+  "files": ["dist/"],
   "engines": {
     "node": ">=18.0.0"
   },
@@ -408,11 +409,13 @@ More info: https://docs.anthropic.com/en/docs/claude-code
 ### Unit Tests (`packages/cli/src/__tests__/`)
 
 **`check-claude.test.ts`** — Tests the Claude CLI availability check:
+
 - Exits with error when `claude` not found (mock `execSync` to throw)
 - Succeeds silently when `claude` is found (mock `execSync` to return)
 - Error message includes install instructions
 
 **`cli.test.ts`** — Tests CLI argument parsing:
+
 - `--help` prints usage and exits 0
 - `--version` reads package.json version and exits 0
 - `--port 8080` sets `GATEWAY_PORT` env var
@@ -423,6 +426,7 @@ More info: https://docs.anthropic.com/en/docs/claude-code
 ### Integration Tests
 
 **`build.test.ts`** — Tests the build pipeline (can be slow, tagged):
+
 - `dist/bin/cli.js` exists and has shebang
 - `dist/server/index.js` exists and is a valid ESM module
 - `dist/client/index.html` exists

@@ -61,6 +61,7 @@ When Claude's agent SDK pauses execution for user input (tool approval or AskUse
 - **No new dependencies required**
 
 Relevant documentation:
+
 - `guides/interactive-tools.md` — Architecture of deferred promise pattern and interactive tool data flow
 - `guides/architecture.md` — Transport interface, hexagonal architecture
 - `guides/design-system.md` — Color palette, typography, spacing
@@ -115,8 +116,8 @@ function Kbd({ className, children, ...props }: React.ComponentProps<'kbd'>) {
   return (
     <kbd
       className={cn(
-        'pointer-events-none hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground',
-        className,
+        'bg-muted text-muted-foreground pointer-events-none hidden h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium select-none md:inline-flex',
+        className
       )}
       {...props}
     >
@@ -158,6 +159,7 @@ interface UseInteractiveShortcutsOptions {
 ```
 
 The hook:
+
 1. Returns early (no listener) when `activeInteraction` is null
 2. Attaches a `document.addEventListener('keydown', handler)` in a `useEffect`
 3. Inside the handler, checks `event.target` — if it's an enabled `<textarea>` or `<input>`, only Enter and Esc are handled (all others pass through for typing)
@@ -173,11 +175,12 @@ A React component that renders tool arguments as formatted key-value pairs:
 ```tsx
 interface ToolArgumentsDisplayProps {
   toolName: string;
-  input: string;  // JSON string
+  input: string; // JSON string
 }
 ```
 
 Rendering logic:
+
 1. Parse JSON. If parse fails, fall back to plain `<pre>` (current behavior).
 2. For each top-level key:
    - Render key as a label (humanized: `file_path` → `File path`, `command` → `Command`)
@@ -193,34 +196,38 @@ Rendering logic:
 #### `apps/client/src/components/chat/ToolApproval.tsx`
 
 Changes:
+
 1. Replace `<pre>{JSON.stringify(...)}</pre>` with `<ToolArgumentsDisplay toolName={toolName} input={input} />`
 2. Add `isActive` prop (boolean) — when true, show amber ring/glow border; when false, show muted border and hide Kbd hints
 3. Add Kbd hints next to buttons: `Approve <Kbd>Enter</Kbd>` and `Deny <Kbd>Esc</Kbd>`
 4. Only show Kbd hints when `isActive` is true
 
 New props:
+
 ```tsx
 interface ToolApprovalProps {
   sessionId: string;
   toolCallId: string;
   toolName: string;
   input: string;
-  isActive?: boolean;  // NEW: whether this is the shortcut target
+  isActive?: boolean; // NEW: whether this is the shortcut target
 }
 ```
 
 Active state styling:
+
 ```tsx
 // Active: prominent amber border with ring
-'ring-2 ring-amber-500/30 border-amber-500/40'
+'ring-2 ring-amber-500/30 border-amber-500/40';
 
 // Inactive: muted border, same as current but dimmed
-'border-amber-500/10 bg-amber-500/5 opacity-75'
+'border-amber-500/10 bg-amber-500/5 opacity-75';
 ```
 
 #### `apps/client/src/components/chat/QuestionPrompt.tsx`
 
 Changes:
+
 1. Add `isActive` prop
 2. Add Kbd number hints next to each option: `<Kbd>1</Kbd>` next to first option, etc.
 3. Add Kbd hints for tab navigation: `<Kbd>←</Kbd>` / `<Kbd>→</Kbd>` next to tab triggers
@@ -229,25 +236,28 @@ Changes:
 6. Only show Kbd hints when `isActive` is true
 
 New props:
+
 ```tsx
 interface QuestionPromptProps {
   sessionId: string;
   toolCallId: string;
   questions: QuestionItem[];
   answers?: Record<string, string>;
-  isActive?: boolean;  // NEW
+  isActive?: boolean; // NEW
 }
 ```
 
 #### `apps/client/src/components/chat/ToolCallCard.tsx`
 
 Changes:
+
 1. Replace `<pre>{JSON.stringify(...)}</pre>` with `<ToolArgumentsDisplay toolName={toolCall.toolName} input={toolCall.input} />`
 2. No keyboard shortcuts needed — ToolCallCard is not interactive
 
 #### `apps/client/src/components/chat/InferenceIndicator.tsx`
 
 Changes:
+
 1. Add `isWaitingForUser` prop and `waitingType` prop:
    ```tsx
    interface InferenceIndicatorProps {
@@ -256,8 +266,8 @@ Changes:
      estimatedTokens: number;
      theme?: IndicatorTheme;
      permissionMode?: PermissionMode;
-     isWaitingForUser?: boolean;        // NEW
-     waitingType?: 'approval' | 'question';  // NEW
+     isWaitingForUser?: boolean; // NEW
+     waitingType?: 'approval' | 'question'; // NEW
    }
    ```
 2. When `isWaitingForUser` is true, render a static message instead of rotating verbs:
@@ -270,17 +280,20 @@ Changes:
 #### `apps/client/src/hooks/use-chat-session.ts`
 
 Changes:
+
 1. Derive and expose new computed state:
+
    ```tsx
    // Find the first pending interactive tool call across all messages
    const pendingInteractions = messages
-     .flatMap(m => m.toolCalls || [])
-     .filter(tc => tc.interactiveType && tc.status === 'pending' && !tc.decided);
+     .flatMap((m) => m.toolCalls || [])
+     .filter((tc) => tc.interactiveType && tc.status === 'pending' && !tc.decided);
 
    const activeInteraction = pendingInteractions[0] || null;
    const isWaitingForUser = activeInteraction !== null;
    const waitingType = activeInteraction?.interactiveType || null;
    ```
+
 2. Return `isWaitingForUser`, `waitingType`, and `activeInteraction` from the hook
 
 Note: `decided` is not currently on `ToolCallState`. The ToolApproval component tracks decided state internally. We need to consider whether the "decided" state should be lifted to `ToolCallState` or whether we filter by checking if the ToolApproval/QuestionPrompt has already submitted. The simpler approach: the component calls a callback to mark the tool as no longer pending, which removes it from `pendingInteractions`.
@@ -288,6 +301,7 @@ Note: `decided` is not currently on `ToolCallState`. The ToolApproval component 
 #### `apps/client/src/components/chat/MessageItem.tsx`
 
 Changes:
+
 1. Accept `activeToolCallId` prop (string | null) — the toolCallId of the currently active interactive tool
 2. Pass `isActive={tc.toolCallId === activeToolCallId}` to `ToolApproval` and `QuestionPrompt`
 3. Thread from `MessageList` → `MessageItem` via props
@@ -295,12 +309,14 @@ Changes:
 #### `apps/client/src/components/chat/MessageList.tsx`
 
 Changes:
+
 1. Accept `activeToolCallId` prop from parent (ChatPanel)
 2. Pass through to each `MessageItem`
 
 #### `apps/client/src/components/chat/ChatPanel.tsx`
 
 Changes:
+
 1. Extract `activeInteraction`, `isWaitingForUser`, `waitingType` from `useChatSession`
 2. Pass `activeToolCallId={activeInteraction?.toolCallId}` to `MessageList`
 3. Pass `isWaitingForUser` and `waitingType` to `InferenceIndicator` (via MessageList)
@@ -335,6 +351,7 @@ QuestionPrompt manages its own selections/submissions internally. For keyboard s
 **Solution: Imperative handle via `useImperativeHandle`**
 
 QuestionPrompt exposes a ref with methods:
+
 ```tsx
 export interface QuestionPromptHandle {
   toggleOption: (index: number) => void;
@@ -349,6 +366,7 @@ export interface QuestionPromptHandle {
 ChatPanel holds a `questionPromptRef` and passes it down through MessageList → MessageItem → QuestionPrompt. The hook calls methods on this ref.
 
 Similarly, ToolApproval exposes:
+
 ```tsx
 export interface ToolApprovalHandle {
   approve: () => void;
@@ -361,6 +379,7 @@ This avoids lifting all QuestionPrompt state to ChatPanel while still enabling k
 ### 9.5 Active Tool Identification and Scroll-to-Active
 
 When a new interactive tool becomes active (first pending), the UI should:
+
 1. Mark it with the active visual style (ring/glow)
 2. Auto-scroll to it if not in viewport (the auto-scroll mechanism already scrolls to bottom on new content, which covers most cases)
 
@@ -382,6 +401,7 @@ When the active tool is resolved (approved/denied/answered), the next pending to
 ### Mobile Flow
 
 Same as desktop but:
+
 - No Kbd hints shown (no physical keyboard)
 - All interaction is tap-based (buttons, radio buttons)
 - Touch-friendly button sizes maintained (existing `max-md:py-2` on buttons)
@@ -399,12 +419,14 @@ Same as desktop but:
 ### Unit Tests
 
 #### `apps/client/src/components/ui/__tests__/kbd.test.tsx`
+
 - Renders children text
 - Applies `hidden md:inline-flex` by default
 - Accepts custom className override
 - Renders as `<kbd>` element
 
 #### `apps/client/src/hooks/__tests__/use-interactive-shortcuts.test.ts`
+
 - **Approval shortcuts**: Enter fires onApprove, Escape fires onDeny
 - **Question shortcuts**: digit keys fire onToggleOption with correct index, arrows fire onNavigateOption, Space fires onToggleOption, Enter fires onSubmit
 - **Question tab navigation**: Left/Right arrows fire onNavigateQuestion, `[`/`]` fire onNavigateQuestion
@@ -415,6 +437,7 @@ Same as desktop but:
 - **Rapid-fire prevention**: callback not called if already responding
 
 #### `apps/client/src/lib/__tests__/tool-arguments-formatter.test.tsx`
+
 - Renders flat key-value pairs
 - Humanizes key names (`file_path` → `File path`)
 - Truncates long strings at 120 chars
@@ -425,6 +448,7 @@ Same as desktop but:
 - Handles empty input string
 
 #### Updated: `apps/client/src/components/chat/__tests__/ToolApproval.test.tsx` (new file)
+
 - Renders formatted arguments (not raw JSON)
 - Shows Kbd hints when isActive=true
 - Hides Kbd hints when isActive=false
@@ -433,12 +457,14 @@ Same as desktop but:
 - Approve/Deny buttons still work via click
 
 #### Updated: `apps/client/src/components/chat/__tests__/QuestionPrompt.test.tsx`
+
 - Existing tests continue to pass
 - New: Kbd number hints render next to options when isActive
 - New: Kbd hints hidden when isActive=false
 - New: Submit button disabled when no selection made
 
 #### Updated: `apps/client/src/components/chat/__tests__/InferenceIndicator.test.tsx`
+
 - Existing tests continue to pass
 - New: renders "Waiting for your approval" when isWaitingForUser=true, waitingType='approval'
 - New: renders "Waiting for your answer" when isWaitingForUser=true, waitingType='question'
@@ -446,6 +472,7 @@ Same as desktop but:
 - New: uses amber color during waiting state
 
 #### Updated: `apps/client/src/components/chat/__tests__/ToolCallCard.test.tsx`
+
 - Existing tests continue to pass
 - New: renders ToolArgumentsDisplay instead of raw JSON in expanded state
 
@@ -482,6 +509,7 @@ Same as desktop but:
 ### New: `guides/keyboard-shortcuts.md`
 
 Developer guide covering:
+
 - Focus state machine (4 states with transition diagram)
 - `useInteractiveShortcuts` hook API and usage
 - How to add shortcuts for new interactive tool types
@@ -492,6 +520,7 @@ Developer guide covering:
 ### Updated: `guides/interactive-tools.md`
 
 Add a section on keyboard shortcuts:
+
 - How keyboard shortcuts integrate with the interactive tool data flow
 - The `isActive` prop pattern for multi-tool scenarios
 - The imperative handle pattern for QuestionPrompt/ToolApproval

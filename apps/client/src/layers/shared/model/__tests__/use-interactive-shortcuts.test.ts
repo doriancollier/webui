@@ -41,7 +41,7 @@ describe('useInteractiveShortcuts', () => {
           onNavigateOption,
           onNavigateQuestion,
           onSubmit,
-        }),
+        })
       );
 
       fireKey('Enter');
@@ -67,7 +67,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: approvalInteraction,
           onApprove,
           onDeny,
-        }),
+        })
       );
 
       fireKey('Enter');
@@ -80,7 +80,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: approvalInteraction,
           onApprove,
           onDeny,
-        }),
+        })
       );
 
       fireKey('Escape');
@@ -96,7 +96,7 @@ describe('useInteractiveShortcuts', () => {
           onToggleOption,
           onNavigateOption,
           onSubmit,
-        }),
+        })
       );
 
       fireKey('1');
@@ -113,7 +113,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: approvalInteraction,
           onApprove,
           onDeny,
-        }),
+        })
       );
 
       fireKey('Enter');
@@ -131,7 +131,7 @@ describe('useInteractiveShortcuts', () => {
             onApprove,
             onDeny,
           }),
-        { initialProps: { interaction: approvalInteraction } },
+        { initialProps: { interaction: approvalInteraction } }
       );
 
       fireKey('Enter');
@@ -154,7 +154,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: questionInteraction,
           onToggleOption,
           optionCount: 5,
-        }),
+        })
       );
 
       fireKey('1');
@@ -173,7 +173,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: questionInteraction,
           onToggleOption,
           optionCount: 2,
-        }),
+        })
       );
 
       fireKey('3'); // Index 2, but optionCount is 2 so max index is 1
@@ -188,7 +188,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onNavigateOption,
-        }),
+        })
       );
 
       fireKey('ArrowUp');
@@ -200,7 +200,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onNavigateOption,
-        }),
+        })
       );
 
       fireKey('ArrowDown');
@@ -213,7 +213,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: questionInteraction,
           onToggleOption,
           focusedIndex: 2,
-        }),
+        })
       );
 
       fireKey(' ');
@@ -225,7 +225,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onNavigateQuestion,
-        }),
+        })
       );
 
       fireKey('ArrowLeft');
@@ -237,7 +237,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onNavigateQuestion,
-        }),
+        })
       );
 
       fireKey('ArrowRight');
@@ -249,7 +249,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onNavigateQuestion,
-        }),
+        })
       );
 
       fireKey('[');
@@ -261,7 +261,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onNavigateQuestion,
-        }),
+        })
       );
 
       fireKey(']');
@@ -273,7 +273,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onSubmit,
-        }),
+        })
       );
 
       fireKey('Enter');
@@ -294,7 +294,7 @@ describe('useInteractiveShortcuts', () => {
           onSubmit,
           optionCount: 5,
           focusedIndex: 0,
-        }),
+        })
       );
 
       const textarea = document.createElement('textarea');
@@ -315,7 +315,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onSubmit,
-        }),
+        })
       );
 
       const textarea = document.createElement('textarea');
@@ -330,7 +330,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: questionInteraction,
           onSubmit,
-        }),
+        })
       );
 
       const textarea = document.createElement('textarea');
@@ -346,7 +346,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: questionInteraction,
           onToggleOption,
           optionCount: 5,
-        }),
+        })
       );
 
       const input = document.createElement('input');
@@ -362,7 +362,7 @@ describe('useInteractiveShortcuts', () => {
           activeInteraction: questionInteraction,
           onToggleOption,
           optionCount: 5,
-        }),
+        })
       );
 
       const input = document.createElement('input');
@@ -382,7 +382,7 @@ describe('useInteractiveShortcuts', () => {
         useInteractiveShortcuts({
           activeInteraction: { type: 'approval', toolCallId: 'tc-1' },
           onApprove,
-        }),
+        })
       );
 
       unmount();

@@ -30,14 +30,39 @@ afterEach(() => {
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <div className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</div>;
+      return (
+        <div className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </div>
+      );
     },
-    button: ({ children, initial, animate, exit, transition, whileHover, whileTap, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition; void whileHover; void whileTap;
+    button: ({
+      children,
+      initial,
+      animate,
+      exit,
+      transition,
+      whileHover,
+      whileTap,
+      ...props
+    }: Record<string, unknown>) => {
+      void initial;
+      void animate;
+      void exit;
+      void transition;
+      void whileHover;
+      void whileTap;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <button className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</button>;
+      return (
+        <button className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </button>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -45,12 +70,16 @@ vi.mock('motion/react', () => ({
 
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 
 // Mock ToolApproval to avoid needing TransportProvider in unit tests
 vi.mock('../ToolApproval', () => ({
-  ToolApproval: ({ toolName }: { toolName: string }) => <div data-testid="tool-approval">{toolName}</div>,
+  ToolApproval: ({ toolName }: { toolName: string }) => (
+    <div data-testid="tool-approval">{toolName}</div>
+  ),
 }));
 
 // Mock QuestionPrompt to avoid needing TransportProvider in unit tests
@@ -152,7 +181,13 @@ describe('MessageList', () => {
 
   it('renders user message content', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Hello world', parts: [{ type: 'text', text: 'Hello world' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Hello world',
+        parts: [{ type: 'text', text: 'Hello world' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     render(<MessageList sessionId="test-session" messages={messages} />);
     expect(screen.getByText('Hello world')).toBeDefined();
@@ -160,7 +195,13 @@ describe('MessageList', () => {
 
   it('renders assistant message content', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'assistant', content: 'Hi there, how can I help?', parts: [{ type: 'text', text: 'Hi there, how can I help?' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'assistant',
+        content: 'Hi there, how can I help?',
+        parts: [{ type: 'text', text: 'Hi there, how can I help?' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     render(<MessageList sessionId="test-session" messages={messages} />);
     expect(screen.getByText('Hi there, how can I help?')).toBeDefined();
@@ -168,8 +209,20 @@ describe('MessageList', () => {
 
   it('renders multiple messages', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Hello', parts: [{ type: 'text', text: 'Hello' }], timestamp: new Date().toISOString() },
-      { id: '2', role: 'assistant', content: 'Hi there', parts: [{ type: 'text', text: 'Hi there' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Hello',
+        parts: [{ type: 'text', text: 'Hello' }],
+        timestamp: new Date().toISOString(),
+      },
+      {
+        id: '2',
+        role: 'assistant',
+        content: 'Hi there',
+        parts: [{ type: 'text', text: 'Hi there' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     render(<MessageList sessionId="test-session" messages={messages} />);
     expect(screen.getByText('Hello')).toBeDefined();
@@ -184,12 +237,16 @@ describe('MessageList', () => {
         id: '1',
         role: 'assistant',
         content: 'Let me read that file.',
-        toolCalls: [
-          { toolCallId: 'tc-1', toolName: 'Read', input: '{}', status: 'complete' },
-        ],
+        toolCalls: [{ toolCallId: 'tc-1', toolName: 'Read', input: '{}', status: 'complete' }],
         parts: [
           { type: 'text', text: 'Let me read that file.' },
-          { type: 'tool_call', toolCallId: 'tc-1', toolName: 'Read', input: '{}', status: 'complete' },
+          {
+            type: 'tool_call',
+            toolCallId: 'tc-1',
+            toolName: 'Read',
+            input: '{}',
+            status: 'complete',
+          },
         ],
         timestamp: new Date().toISOString(),
       },
@@ -200,7 +257,13 @@ describe('MessageList', () => {
 
   it('has scroll container with overflow', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Test',
+        parts: [{ type: 'text', text: 'Test' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     const { container } = render(<MessageList sessionId="test-session" messages={messages} />);
     const scrollContainer = container.querySelector('.overflow-y-auto');
@@ -209,7 +272,13 @@ describe('MessageList', () => {
 
   it('scroll container does not have relative or flex-1 classes', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Test',
+        parts: [{ type: 'text', text: 'Test' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     const { container } = render(<MessageList sessionId="test-session" messages={messages} />);
     const scrollContainer = container.querySelector('.overflow-y-auto');
@@ -219,7 +288,13 @@ describe('MessageList', () => {
 
   it('does not render scroll-to-bottom button', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Test',
+        parts: [{ type: 'text', text: 'Test' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     const { container } = render(<MessageList sessionId="test-session" messages={messages} />);
     const button = container.querySelector('button[aria-label="Scroll to bottom"]');
@@ -229,7 +304,13 @@ describe('MessageList', () => {
   it('accepts onScrollStateChange callback prop', () => {
     const handleScrollState = vi.fn();
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Test',
+        parts: [{ type: 'text', text: 'Test' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     const { container } = render(
       <MessageList
@@ -243,7 +324,13 @@ describe('MessageList', () => {
 
   it('attaches ResizeObserver to content container', () => {
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Test',
+        parts: [{ type: 'text', text: 'Test' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     render(<MessageList sessionId="test-session" messages={messages} />);
     expect(globalThis.ResizeObserver).toHaveBeenCalled();
@@ -252,7 +339,13 @@ describe('MessageList', () => {
   it('scroll container uses native scrollTop for scrollToBottom', () => {
     const ref = React.createRef<MessageListHandle>();
     const messages: ChatMessage[] = [
-      { id: '1', role: 'user', content: 'Test', parts: [{ type: 'text', text: 'Test' }], timestamp: new Date().toISOString() },
+      {
+        id: '1',
+        role: 'user',
+        content: 'Test',
+        parts: [{ type: 'text', text: 'Test' }],
+        timestamp: new Date().toISOString(),
+      },
     ];
     render(<MessageList ref={ref} sessionId="test-session" messages={messages} />);
     expect(() => ref.current?.scrollToBottom()).not.toThrow();

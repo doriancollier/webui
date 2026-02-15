@@ -1,6 +1,6 @@
 ---
 description: Debug API and data flow issues by tracing through Component → TanStack Query → Server Action → DAL → Prisma
-argument-hint: "[endpoint-or-feature] [--url <url>]"
+argument-hint: '[endpoint-or-feature] [--url <url>]'
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion, mcp__playwright__browser_snapshot, mcp__playwright__browser_navigate, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__context7__resolve-library-id, mcp__context7__query-docs, mcp__mcp-dev-db__health, mcp__mcp-dev-db__get_schema_overview, mcp__mcp-dev-db__get_table_details, mcp__mcp-dev-db__execute_sql_select, mcp__mcp-dev-db__explain_query, mcp__mcp-dev-db__validate_sql
 ---
 
@@ -30,6 +30,7 @@ Debug data-related issues by systematically tracing through the project's data f
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If `--url <url>` flag provided, navigate to that URL
 - Remaining text describes the endpoint or feature with issues
 - If empty, prompt for details
@@ -228,6 +229,7 @@ print("\n📊 Diagnostic Summary:")
 ```
 
 **Benefits**:
+
 - 3x faster than sequential investigation
 - Each agent uses specialized expertise
 - Parallel context usage instead of single overloaded context
@@ -246,6 +248,7 @@ Look for:
 ```
 
 Questions to ask:
+
 - Is the component receiving the data?
 - Is the data in the expected shape?
 - Are there rendering conditions blocking display?
@@ -266,12 +269,12 @@ Look for:
 
 Common TanStack Query issues:
 
-| Issue | Symptom | Fix |
-|-------|---------|-----|
-| Stale data | Old data after mutation | Invalidate queries after mutation |
-| Cache key collision | Wrong data displayed | Make queryKey more specific |
-| Query disabled | No fetch occurs | Check `enabled` condition |
-| Infinite loading | Never resolves | Check queryFn for errors |
+| Issue               | Symptom                 | Fix                               |
+| ------------------- | ----------------------- | --------------------------------- |
+| Stale data          | Old data after mutation | Invalidate queries after mutation |
+| Cache key collision | Wrong data displayed    | Make queryKey more specific       |
+| Query disabled      | No fetch occurs         | Check `enabled` condition         |
+| Infinite loading    | Never resolves          | Check queryFn for errors          |
 
 ### 3.3 API Route Layer (GET requests)
 
@@ -302,12 +305,12 @@ Look for:
 
 Common server action issues:
 
-| Issue | Symptom | Fix |
-|-------|---------|-----|
-| Missing revalidation | Data stale after mutation | Add `revalidatePath()` |
-| Validation failure | Action returns error | Check Zod schema matches input |
-| Auth failure | 401/403 errors | Check `requireAuth()` call |
-| Silent failure | No response | Check return statement |
+| Issue                | Symptom                   | Fix                            |
+| -------------------- | ------------------------- | ------------------------------ |
+| Missing revalidation | Data stale after mutation | Add `revalidatePath()`         |
+| Validation failure   | Action returns error      | Check Zod schema matches input |
+| Auth failure         | 401/403 errors            | Check `requireAuth()` call     |
+| Silent failure       | No response               | Check return statement         |
 
 ### 3.5 DAL Layer
 
@@ -355,6 +358,7 @@ mcp__mcp-dev-db__execute_sql_select: {
 This is the **ground truth** - if data exists here but not in the UI, the issue is in the application layers above.
 
 Key checks:
+
 - Does the record exist in the database?
 - Are foreign key relationships intact?
 - Are timestamps correct (created_at, updated_at)?
@@ -367,6 +371,7 @@ Key checks:
 ### 4.1 Data Not Loading
 
 Debugging checklist:
+
 1. [ ] Check network tab for request
 2. [ ] Check server logs for errors
 3. [ ] Verify API route exists and handles GET
@@ -377,6 +382,7 @@ Debugging checklist:
 ### 4.2 Stale Data After Mutation
 
 Debugging checklist:
+
 1. [ ] Check server action calls `revalidatePath()` or `revalidateTag()`
 2. [ ] Verify TanStack Query invalidation: `queryClient.invalidateQueries()`
 3. [ ] Check queryKey matches between query and invalidation
@@ -402,19 +408,20 @@ AskUserQuestion:
 ### 4.4 API Errors
 
 Check error details:
+
 ```
 mcp__playwright__browser_network_requests: { includeStatic: false }
 ```
 
 Common API errors:
 
-| Status | Meaning | Check |
-|--------|---------|-------|
-| 400 | Bad Request | Request body/params validation |
-| 401 | Unauthorized | Auth token/session |
-| 403 | Forbidden | User permissions |
-| 404 | Not Found | Route exists, resource ID |
-| 500 | Server Error | Server logs, Prisma errors |
+| Status | Meaning      | Check                          |
+| ------ | ------------ | ------------------------------ |
+| 400    | Bad Request  | Request body/params validation |
+| 401    | Unauthorized | Auth token/session             |
+| 403    | Forbidden    | User permissions               |
+| 404    | Not Found    | Route exists, resource ID      |
+| 500    | Server Error | Server logs, Prisma errors     |
 
 ## Phase 5: Fix Implementation
 
@@ -452,6 +459,7 @@ TodoWrite:
 ### 5.3 Make Changes
 
 For each change:
+
 1. **Read the file first**
 2. **Make targeted edits**
 3. **Follow project DAL patterns** - auth checks, error handling
@@ -460,6 +468,7 @@ For each change:
 ### 5.4 Verify the Fix
 
 If browser URL provided:
+
 ```
 mcp__playwright__browser_navigate: { url: "[url]" }
 mcp__playwright__browser_snapshot: {}
@@ -467,6 +476,7 @@ mcp__playwright__browser_network_requests: { includeStatic: false }
 ```
 
 Check:
+
 - Data loads correctly
 - No console errors
 - Network requests succeed
@@ -488,6 +498,7 @@ Check:
 ### 6.2 Cache Considerations
 
 If caching was involved, note:
+
 - What cache invalidation was added
 - What staleTime/cacheTime settings apply
 - When data will refresh
@@ -515,44 +526,44 @@ AskUserQuestion:
 
 ### Project File Locations
 
-| Layer | Location |
-|-------|----------|
-| Components | `src/layers/features/*/ui/` or `src/layers/widgets/*/` |
-| TanStack Query | `src/layers/features/*/model/` |
-| API Routes | `src/app/api/*/route.ts` |
-| Server Actions | `src/app/actions/` or `src/layers/features/*/api/` |
-| DAL Queries | `src/layers/entities/*/api/queries.ts` |
-| DAL Mutations | `src/layers/entities/*/api/mutations.ts` |
-| Prisma Schema | `prisma/schema.prisma` |
+| Layer          | Location                                               |
+| -------------- | ------------------------------------------------------ |
+| Components     | `src/layers/features/*/ui/` or `src/layers/widgets/*/` |
+| TanStack Query | `src/layers/features/*/model/`                         |
+| API Routes     | `src/app/api/*/route.ts`                               |
+| Server Actions | `src/app/actions/` or `src/layers/features/*/api/`     |
+| DAL Queries    | `src/layers/entities/*/api/queries.ts`                 |
+| DAL Mutations  | `src/layers/entities/*/api/mutations.ts`               |
+| Prisma Schema  | `prisma/schema.prisma`                                 |
 
 ### TanStack Query Patterns
 
 ```typescript
 // Invalidate after mutation
-queryClient.invalidateQueries({ queryKey: ['accounts'] })
+queryClient.invalidateQueries({ queryKey: ['accounts'] });
 
 // Optimistic update
 onMutate: async (newData) => {
-  await queryClient.cancelQueries({ queryKey })
-  const previous = queryClient.getQueryData(queryKey)
-  queryClient.setQueryData(queryKey, newData)
-  return { previous }
-}
+  await queryClient.cancelQueries({ queryKey });
+  const previous = queryClient.getQueryData(queryKey);
+  queryClient.setQueryData(queryKey, newData);
+  return { previous };
+};
 ```
 
 ### Server Action Patterns
 
 ```typescript
-'use server'
-import { revalidatePath } from 'next/cache'
+'use server';
+import { revalidatePath } from 'next/cache';
 
 export async function createItem(data: FormData) {
-  const validated = schema.safeParse(Object.fromEntries(data))
-  if (!validated.success) return { error: validated.error }
+  const validated = schema.safeParse(Object.fromEntries(data));
+  if (!validated.success) return { error: validated.error };
 
-  const result = await createItemDAL(validated.data)
-  revalidatePath('/items')  // Don't forget this!
-  return result
+  const result = await createItemDAL(validated.data);
+  revalidatePath('/items'); // Don't forget this!
+  return result;
 }
 ```
 

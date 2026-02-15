@@ -92,7 +92,7 @@ describe('AgentManager - Session Locking', () => {
         const locks = (agentManager as unknown as AgentManagerWithLocks).sessionLocks;
         const lock = locks.get('session1');
         if (lock) {
-          lock.acquiredAt = Date.now() - (6 * 60 * 1000); // 6 minutes ago
+          lock.acquiredAt = Date.now() - 6 * 60 * 1000; // 6 minutes ago
         }
       }
 
@@ -160,7 +160,7 @@ describe('AgentManager - Session Locking', () => {
       const locks = (agentManager as unknown as AgentManagerWithLocks).sessionLocks;
       const lock = locks.get('session1');
       if (lock) {
-        lock.acquiredAt = Date.now() - (6 * 60 * 1000); // 6 minutes ago
+        lock.acquiredAt = Date.now() - 6 * 60 * 1000; // 6 minutes ago
       }
 
       expect(agentManager.isLocked('session1')).toBe(false);
@@ -193,7 +193,7 @@ describe('AgentManager - Session Locking', () => {
       const locks = (agentManager as unknown as AgentManagerWithLocks).sessionLocks;
       const lock = locks.get('session1');
       if (lock) {
-        lock.acquiredAt = Date.now() - (6 * 60 * 1000); // 6 minutes ago
+        lock.acquiredAt = Date.now() - 6 * 60 * 1000; // 6 minutes ago
       }
 
       expect(agentManager.getLockInfo('session1')).toBeNull();
@@ -209,7 +209,7 @@ describe('AgentManager - Session Locking', () => {
       const locks = (agentManager as unknown as AgentManagerWithLocks).sessionLocks;
       const lock = locks.get('session1');
       if (lock) {
-        lock.acquiredAt = Date.now() - (6 * 60 * 1000); // 6 minutes ago
+        lock.acquiredAt = Date.now() - 6 * 60 * 1000; // 6 minutes ago
       }
 
       agentManager.checkSessionHealth();
@@ -226,7 +226,7 @@ describe('AgentManager - Session Locking', () => {
 
     it('cleans up locks when session is removed', () => {
       const res = createMockResponse();
-      
+
       // Create a session and acquire a lock
       agentManager.ensureSession('session1', { permissionMode: 'default' });
       agentManager.acquireLock('session1', 'client1', res);
@@ -236,7 +236,7 @@ describe('AgentManager - Session Locking', () => {
       vi.advanceTimersByTime(31 * 60 * 1000); // 31 minutes
 
       agentManager.checkSessionHealth();
-      
+
       expect(agentManager.hasSession('session1')).toBe(false);
       expect(agentManager.isLocked('session1')).toBe(false);
 

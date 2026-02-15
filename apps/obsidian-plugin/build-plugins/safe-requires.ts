@@ -18,7 +18,7 @@ export function safeRequires(): Plugin {
         const pattern = new RegExp(`require\\("${escaped}"\\)`, 'g');
         result = result.replace(
           pattern,
-          `(function(){try{return require("${pkg}")}catch(e){return{}}})()`,
+          `(function(){try{return require("${pkg}")}catch(e){return{}}})()`
         );
       }
       return { code: result, map: null };

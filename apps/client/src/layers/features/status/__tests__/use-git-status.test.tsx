@@ -26,7 +26,21 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
-    getConfig: vi.fn().mockResolvedValue({ version: '1.0.0', port: 6942, uptime: 0, workingDirectory: '/test', nodeVersion: 'v20.0.0', claudeCliPath: null, tunnel: { enabled: false, connected: false, url: null, authEnabled: false, tokenConfigured: false } }),
+    getConfig: vi.fn().mockResolvedValue({
+      version: '1.0.0',
+      port: 6942,
+      uptime: 0,
+      workingDirectory: '/test',
+      nodeVersion: 'v20.0.0',
+      claudeCliPath: null,
+      tunnel: {
+        enabled: false,
+        connected: false,
+        url: null,
+        authEnabled: false,
+        tokenConfigured: false,
+      },
+    }),
     ...overrides,
   };
 }
@@ -45,9 +59,16 @@ function createWrapper(transport: Transport) {
 describe('useGitStatus', () => {
   it('calls transport.getGitStatus with cwd', async () => {
     const mockStatus: GitStatusResponse = {
-      branch: 'main', ahead: 0, behind: 0,
-      modified: 1, staged: 0, untracked: 0, conflicted: 0,
-      clean: false, detached: false, tracking: 'origin/main',
+      branch: 'main',
+      ahead: 0,
+      behind: 0,
+      modified: 1,
+      staged: 0,
+      untracked: 0,
+      conflicted: 0,
+      clean: false,
+      detached: false,
+      tracking: 'origin/main',
     };
     const transport = createMockTransport({
       getGitStatus: vi.fn().mockResolvedValue(mockStatus),
@@ -72,9 +93,16 @@ describe('useGitStatus', () => {
 describe('isGitStatusOk', () => {
   it('returns true for valid status', () => {
     const status: GitStatusResponse = {
-      branch: 'main', ahead: 0, behind: 0,
-      modified: 0, staged: 0, untracked: 0, conflicted: 0,
-      clean: true, detached: false, tracking: null,
+      branch: 'main',
+      ahead: 0,
+      behind: 0,
+      modified: 0,
+      staged: 0,
+      untracked: 0,
+      conflicted: 0,
+      clean: true,
+      detached: false,
+      tracking: null,
     };
     expect(isGitStatusOk(status)).toBe(true);
   });

@@ -65,8 +65,11 @@ describe('GitStatusItem', () => {
 
   it('renders both ahead and behind', () => {
     const data: GitStatusResponse = {
-      ...cleanStatus, ahead: 4, behind: 7,
-      modified: 1, clean: false,
+      ...cleanStatus,
+      ahead: 4,
+      behind: 7,
+      modified: 1,
+      clean: false,
     };
     render(<GitStatusItem data={data} />);
     expect(screen.getByText('4')).toBeDefined();
@@ -84,7 +87,11 @@ describe('GitStatusItem', () => {
   });
 
   it('truncates long branch names via CSS class', () => {
-    render(<GitStatusItem data={{ ...cleanStatus, branch: 'feature/very-long-branch-name-that-should-be-truncated' }} />);
+    render(
+      <GitStatusItem
+        data={{ ...cleanStatus, branch: 'feature/very-long-branch-name-that-should-be-truncated' }}
+      />
+    );
     const branchEl = screen.getByText('feature/very-long-branch-name-that-should-be-truncated');
     expect(branchEl.className).toContain('truncate');
     expect(branchEl.className).toContain('max-w-[25ch]');

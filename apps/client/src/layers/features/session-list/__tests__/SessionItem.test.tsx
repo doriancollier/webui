@@ -24,9 +24,16 @@ beforeAll(() => {
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <div className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</div>;
+      return (
+        <div className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </div>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -56,16 +63,12 @@ describe('SessionItem', () => {
   });
 
   it('renders session title', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     expect(screen.getByText('Test conversation')).toBeDefined();
   });
 
   it('renders relative time from updatedAt', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     // updatedAt is 1 hour before NOW
     expect(screen.getByText('1h ago')).toBeDefined();
   });
@@ -80,9 +83,7 @@ describe('SessionItem', () => {
 
   it('calls onClick when clicked', () => {
     const onClick = vi.fn();
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={onClick} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={onClick} />);
     fireEvent.click(screen.getByText('Test conversation'));
     expect(onClick).toHaveBeenCalledOnce();
   });
@@ -136,16 +137,12 @@ describe('SessionItem', () => {
 
   // Details panel tests
   it('does not show details panel by default', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     expect(screen.queryByText('Session ID')).toBeNull();
   });
 
   it('shows details panel when ellipsis button is clicked', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     const detailsBtn = screen.getByLabelText('Session details');
     fireEvent.click(detailsBtn);
     expect(screen.getByText('Session ID')).toBeDefined();
@@ -153,9 +150,7 @@ describe('SessionItem', () => {
   });
 
   it('shows timestamps in details panel', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     fireEvent.click(screen.getByLabelText('Session details'));
     expect(screen.getByText('Created')).toBeDefined();
     expect(screen.getByText('Updated')).toBeDefined();
@@ -176,17 +171,13 @@ describe('SessionItem', () => {
 
   it('does not trigger onClick when details button is clicked', () => {
     const onClick = vi.fn();
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={onClick} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={onClick} />);
     fireEvent.click(screen.getByLabelText('Session details'));
     expect(onClick).not.toHaveBeenCalled();
   });
 
   it('hides details panel when ellipsis is clicked again', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     const detailsBtn = screen.getByLabelText('Session details');
     fireEvent.click(detailsBtn);
     expect(screen.getByText('Session ID')).toBeDefined();
@@ -195,9 +186,7 @@ describe('SessionItem', () => {
   });
 
   it('renders copy button for session ID', () => {
-    render(
-      <SessionItem session={makeSession()} isActive={false} onClick={() => {}} />
-    );
+    render(<SessionItem session={makeSession()} isActive={false} onClick={() => {}} />);
     fireEvent.click(screen.getByLabelText('Session details'));
     expect(screen.getByLabelText('Copy Session ID')).toBeDefined();
   });

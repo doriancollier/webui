@@ -15,6 +15,7 @@ slug: git-status-bar
 
 **Status:** Not Started
 **Files:**
+
 - `packages/shared/src/schemas.ts` (MODIFY)
 - `packages/shared/src/types.ts` (MODIFY)
 
@@ -60,6 +61,7 @@ export type { GitStatusResponse, GitStatusError } from './schemas';
 Add these to the existing export block alongside the other type re-exports.
 
 **Acceptance Criteria:**
+
 - `GitStatusResponseSchema` and `GitStatusErrorSchema` are exported from `schemas.ts`
 - `GitStatusResponse` and `GitStatusError` types are exported from `types.ts`
 - Schemas include `.openapi()` metadata
@@ -72,6 +74,7 @@ Add these to the existing export block alongside the other type re-exports.
 **Status:** Not Started
 **Blocked by:** Task 1.1
 **Files:**
+
 - `packages/shared/src/transport.ts` (MODIFY)
 
 **Description:**
@@ -96,6 +99,7 @@ import type {
 ```
 
 **Acceptance Criteria:**
+
 - `getGitStatus` method is declared on the `Transport` interface
 - Method signature accepts optional `cwd` string parameter
 - Return type is `Promise<GitStatusResponse | GitStatusError>`
@@ -110,6 +114,7 @@ import type {
 **Status:** Not Started
 **Blocked by:** Task 1.1
 **Files:**
+
 - `apps/server/src/services/git-status.ts` (NEW)
 
 **Description:**
@@ -139,11 +144,13 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResponse | Git
 **Parsing logic for `--porcelain=v1 --branch` output:**
 
 The first line is the branch header:
+
 ```
 ## main...origin/main [ahead 2, behind 1]
 ```
 
 Remaining lines are file status entries with 2-char codes:
+
 ```
  M file1.txt       (modified, unstaged)
 M  file2.txt       (modified, staged)
@@ -153,6 +160,7 @@ UU file5.txt       (conflicted)
 ```
 
 The `parsePorcelainOutput` function must:
+
 1. Extract branch name from `## <branch>` (before `...` if tracking remote)
 2. Extract `tracking` branch (after `...`, before `[`)
 3. Extract `ahead`/`behind` from `[ahead N, behind M]` bracket notation
@@ -167,6 +175,7 @@ The `parsePorcelainOutput` function must:
 Export `parsePorcelainOutput` so it can be tested directly.
 
 **Acceptance Criteria:**
+
 - `getGitStatus(cwd)` calls `git status --porcelain=v1 --branch` with 5-second timeout
 - Returns `{ error: 'not_git_repo' }` when git command fails
 - `parsePorcelainOutput` correctly extracts branch, tracking, ahead, behind
@@ -182,6 +191,7 @@ Export `parsePorcelainOutput` so it can be tested directly.
 **Status:** Not Started
 **Blocked by:** Task 2.1
 **Files:**
+
 - `apps/server/src/routes/git.ts` (NEW)
 - `apps/server/src/app.ts` (MODIFY)
 
@@ -224,6 +234,7 @@ app.use('/api/git', gitRoutes);
 Add this alongside the existing route mounts (sessions, commands, health, files).
 
 **Acceptance Criteria:**
+
 - GET `/api/git/status` returns git status JSON
 - Accepts optional `?dir=` query parameter
 - Defaults to `process.cwd()` when no `dir` provided
@@ -239,6 +250,7 @@ Add this alongside the existing route mounts (sessions, commands, health, files)
 **Status:** Not Started
 **Blocked by:** Task 1.1
 **Files:**
+
 - `apps/client/src/stores/app-store.ts` (MODIFY)
 
 **Description:**
@@ -246,12 +258,14 @@ Add this alongside the existing route mounts (sessions, commands, health, files)
 Add the toggle to the Zustand store following the exact existing pattern used by other status bar toggles.
 
 In the state interface, add:
+
 ```typescript
 showStatusBarGit: boolean;
 setShowStatusBarGit: (v: boolean) => void;
 ```
 
 In the `create()` call, add:
+
 ```typescript
 showStatusBarGit: (() => {
   try { return localStorage.getItem('gateway-show-status-bar-git') !== 'false'; }
@@ -264,6 +278,7 @@ setShowStatusBarGit: (v) => {
 ```
 
 In the `resetPreferences()` function, add:
+
 ```typescript
 localStorage.removeItem('gateway-show-status-bar-git');
 // ... and in the state reset object:
@@ -271,6 +286,7 @@ showStatusBarGit: true,
 ```
 
 **Acceptance Criteria:**
+
 - `showStatusBarGit` defaults to `true`
 - Value is persisted to `localStorage` with key `gateway-show-status-bar-git`
 - `setShowStatusBarGit` updates both store and localStorage
@@ -284,6 +300,7 @@ showStatusBarGit: true,
 **Status:** Not Started
 **Blocked by:** Task 1.2
 **Files:**
+
 - `apps/client/src/hooks/use-git-status.ts` (NEW)
 
 **Description:**
@@ -316,6 +333,7 @@ export function isGitStatusOk(
 ```
 
 **Acceptance Criteria:**
+
 - `useGitStatus` polls every 10 seconds with `refetchInterval: 10_000`
 - Polling pauses when tab is hidden (`refetchIntervalInBackground: false`)
 - Data is stale after 5 seconds (`staleTime: 5_000`)
@@ -330,6 +348,7 @@ export function isGitStatusOk(
 **Status:** Not Started
 **Blocked by:** Task 1.2
 **Files:**
+
 - `apps/client/src/lib/http-transport.ts` (MODIFY)
 - `apps/client/src/lib/direct-transport.ts` (MODIFY)
 
@@ -363,6 +382,7 @@ Follow whatever pattern DirectTransport uses for its other methods (it may use d
 Import `GitStatusResponse` and `GitStatusError` types in both files.
 
 **Acceptance Criteria:**
+
 - `HttpTransport.getGitStatus()` calls `GET /api/git/status` with optional `?dir=` param
 - `DirectTransport.getGitStatus()` calls the service directly, falling back to `this.cwd`
 - Both return `Promise<GitStatusResponse | GitStatusError>`
@@ -377,6 +397,7 @@ Import `GitStatusResponse` and `GitStatusError` types in both files.
 **Status:** Not Started
 **Blocked by:** Task 3.2
 **Files:**
+
 - `apps/client/src/components/status/GitStatusItem.tsx` (NEW)
 
 **Description:**
@@ -446,19 +467,20 @@ export function GitStatusItem({ data }: GitStatusItemProps) {
 
 **Display States:**
 
-| State | Display |
-|-------|---------|
-| Clean, no remote | `[GitBranch] main` |
-| Clean, synced | `[GitBranch] main` |
-| Dirty | `[GitBranch] main · 3 changes` |
-| Dirty + ahead | `[GitBranch] main ↑2 · 3 changes` |
-| Dirty + behind | `[GitBranch] main ↓1 · 3 changes` |
+| State                  | Display                              |
+| ---------------------- | ------------------------------------ |
+| Clean, no remote       | `[GitBranch] main`                   |
+| Clean, synced          | `[GitBranch] main`                   |
+| Dirty                  | `[GitBranch] main · 3 changes`       |
+| Dirty + ahead          | `[GitBranch] main ↑2 · 3 changes`    |
+| Dirty + behind         | `[GitBranch] main ↓1 · 3 changes`    |
 | Dirty + ahead + behind | `[GitBranch] main ↑2 ↓1 · 3 changes` |
-| Detached HEAD | `[GitBranch] abc1234 · 3 changes` |
-| Not a git repo | `[GitBranch] No repo` (grayed out) |
-| Loading (first fetch) | Item not shown until data arrives |
+| Detached HEAD          | `[GitBranch] abc1234 · 3 changes`    |
+| Not a git repo         | `[GitBranch] No repo` (grayed out)   |
+| Loading (first fetch)  | Item not shown until data arrives    |
 
 **Acceptance Criteria:**
+
 - Shows branch name with GitBranch icon
 - Shows ahead/behind arrows when non-zero
 - Shows total change count when dirty
@@ -475,6 +497,7 @@ export function GitStatusItem({ data }: GitStatusItemProps) {
 **Status:** Not Started
 **Blocked by:** Task 4.1, Task 3.1
 **Files:**
+
 - `apps/client/src/components/status/StatusLine.tsx` (MODIFY)
 
 **Description:**
@@ -487,12 +510,14 @@ import { useGitStatus } from '../../hooks/use-git-status';
 ```
 
 Inside the StatusLine component, add:
+
 ```typescript
 const { showStatusBarGit } = useAppStore();
 const { data: gitStatus } = useGitStatus(status.cwd);
 ```
 
 In the entries array building section, add (after CwdItem since they are both about working directory context, before other items):
+
 ```typescript
 if (showStatusBarGit) {
   entries.push({ key: 'git', node: <GitStatusItem data={gitStatus} /> });
@@ -500,6 +525,7 @@ if (showStatusBarGit) {
 ```
 
 **Acceptance Criteria:**
+
 - Git status item appears in the status bar when `showStatusBarGit` is true
 - Item is positioned after CwdItem and before other items
 - Uses `useGitStatus(status.cwd)` to get data
@@ -513,6 +539,7 @@ if (showStatusBarGit) {
 **Status:** Not Started
 **Blocked by:** Task 3.1
 **Files:**
+
 - `apps/client/src/components/settings/SettingsDialog.tsx` (MODIFY)
 
 **Description:**
@@ -520,11 +547,13 @@ if (showStatusBarGit) {
 Add a new toggle in the Status Bar tab of the Settings dialog.
 
 Get the store values:
+
 ```typescript
 const { showStatusBarGit, setShowStatusBarGit } = useAppStore();
 ```
 
 Add a new toggle row in the Status Bar tab content, placed after the existing "Show working directory" toggle since they're related:
+
 ```typescript
 <SettingRow label="Show git status" description="Display branch name and change count">
   <Switch checked={showStatusBarGit} onCheckedChange={setShowStatusBarGit} />
@@ -532,6 +561,7 @@ Add a new toggle row in the Status Bar tab content, placed after the existing "S
 ```
 
 **Acceptance Criteria:**
+
 - "Show git status" toggle appears in the Status Bar tab
 - Toggle label is "Show git status"
 - Toggle description is "Display branch name and change count"
@@ -548,6 +578,7 @@ Add a new toggle row in the Status Bar tab content, placed after the existing "S
 **Status:** Not Started
 **Blocked by:** Task 2.1
 **Files:**
+
 - `apps/server/src/services/__tests__/git-status.test.ts` (NEW)
 
 **Description:**
@@ -630,7 +661,7 @@ describe('parsePorcelainOutput', () => {
     ].join('\n');
     const result = parsePorcelainOutput(output);
     expect(result.modified).toBe(1);
-    expect(result.staged).toBe(2);  // M + A
+    expect(result.staged).toBe(2); // M + A
     expect(result.untracked).toBe(1);
     expect(result.conflicted).toBe(1);
     expect(result.clean).toBe(false);
@@ -654,6 +685,7 @@ describe('getGitStatus', () => {
 ```
 
 **Acceptance Criteria:**
+
 - All 9 test cases pass
 - `parsePorcelainOutput` is tested independently from `getGitStatus`
 - `child_process.execFile` is mocked (not calling real git)
@@ -666,6 +698,7 @@ describe('getGitStatus', () => {
 **Status:** Not Started
 **Blocked by:** Task 4.1
 **Files:**
+
 - `apps/client/src/components/status/__tests__/GitStatusItem.test.tsx` (NEW)
 
 **Description:**
@@ -703,16 +736,28 @@ Example test data:
 ```typescript
 const cleanStatus: GitStatusResponse = {
   branch: 'main',
-  ahead: 0, behind: 0,
-  modified: 0, staged: 0, untracked: 0, conflicted: 0,
-  clean: true, detached: false, tracking: 'origin/main',
+  ahead: 0,
+  behind: 0,
+  modified: 0,
+  staged: 0,
+  untracked: 0,
+  conflicted: 0,
+  clean: true,
+  detached: false,
+  tracking: 'origin/main',
 };
 
 const dirtyStatus: GitStatusResponse = {
   branch: 'feature/my-branch',
-  ahead: 2, behind: 1,
-  modified: 3, staged: 1, untracked: 2, conflicted: 0,
-  clean: false, detached: false, tracking: 'origin/feature/my-branch',
+  ahead: 2,
+  behind: 1,
+  modified: 3,
+  staged: 1,
+  untracked: 2,
+  conflicted: 0,
+  clean: false,
+  detached: false,
+  tracking: 'origin/feature/my-branch',
 };
 
 const errorStatus: GitStatusError = { error: 'not_git_repo' };
@@ -756,6 +801,7 @@ it('sets title attribute with tooltip breakdown', () => {
 ```
 
 **Acceptance Criteria:**
+
 - All 10 test cases pass
 - Tests use `@testing-library/react` with jsdom environment
 - Tests cover all display states: clean, dirty, singular change, ahead, behind, both, error, undefined, truncation, tooltip
@@ -767,6 +813,7 @@ it('sets title attribute with tooltip breakdown', () => {
 **Status:** Not Started
 **Blocked by:** Task 4.3
 **Files:**
+
 - `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` (MODIFY)
 
 **Description:**
@@ -781,6 +828,7 @@ Add test cases to the existing `SettingsDialog.test.tsx`:
 Navigate to the Status Bar tab and verify the toggle is present and defaults to checked. Follow the existing test patterns in the file for navigating tabs and checking toggle state.
 
 **Acceptance Criteria:**
+
 - "Show git status" toggle is visible in Status Bar tab
 - Toggle defaults to checked state
 - Tests follow existing SettingsDialog test patterns
@@ -792,6 +840,7 @@ Navigate to the Status Bar tab and verify the toggle is present and defaults to 
 **Status:** Not Started
 **Blocked by:** Task 3.2
 **Files:**
+
 - `apps/client/src/hooks/__tests__/use-git-status.test.tsx` (NEW)
 
 **Description:**
@@ -823,9 +872,16 @@ For hook tests, use the same TransportProvider wrapper pattern used by other hoo
 describe('isGitStatusOk', () => {
   it('returns true for valid status', () => {
     const status: GitStatusResponse = {
-      branch: 'main', ahead: 0, behind: 0,
-      modified: 0, staged: 0, untracked: 0, conflicted: 0,
-      clean: true, detached: false, tracking: null,
+      branch: 'main',
+      ahead: 0,
+      behind: 0,
+      modified: 0,
+      staged: 0,
+      untracked: 0,
+      conflicted: 0,
+      clean: true,
+      detached: false,
+      tracking: null,
     };
     expect(isGitStatusOk(status)).toBe(true);
   });
@@ -842,6 +898,7 @@ describe('isGitStatusOk', () => {
 ```
 
 **Acceptance Criteria:**
+
 - All 4 test cases pass
 - Hook tests use TransportProvider wrapper with mock transport
 - `isGitStatusOk` type guard is tested for valid, error, and undefined inputs
@@ -863,17 +920,18 @@ Task 1.1 (schemas/types)
 
 ## Summary
 
-| Phase | Tasks | Description |
-|-------|-------|-------------|
-| P1: Shared Foundation | 1.1, 1.2 | Schemas, types, transport interface |
-| P2: Server | 2.1, 2.2 | Git status service, route, mount |
-| P3: Client Infrastructure | 3.1, 3.2, 3.3 | Store toggle, hook, transport adapters |
-| P4: Client UI | 4.1, 4.2, 4.3 | GitStatusItem component, StatusLine integration, Settings toggle |
-| P5: Tests | 5.1, 5.2, 5.3, 5.4 | Service tests, component tests, settings tests, hook tests |
+| Phase                     | Tasks              | Description                                                      |
+| ------------------------- | ------------------ | ---------------------------------------------------------------- |
+| P1: Shared Foundation     | 1.1, 1.2           | Schemas, types, transport interface                              |
+| P2: Server                | 2.1, 2.2           | Git status service, route, mount                                 |
+| P3: Client Infrastructure | 3.1, 3.2, 3.3      | Store toggle, hook, transport adapters                           |
+| P4: Client UI             | 4.1, 4.2, 4.3      | GitStatusItem component, StatusLine integration, Settings toggle |
+| P5: Tests                 | 5.1, 5.2, 5.3, 5.4 | Service tests, component tests, settings tests, hook tests       |
 
 **Total tasks:** 13
 
 **Parallel execution opportunities:**
+
 - After Task 1.1: Tasks 1.2, 2.1, and 3.1 can run in parallel
 - After Task 1.2: Tasks 3.2, 3.3, and 5.4 can run in parallel
 - After Task 2.1: Tasks 2.2 and 5.1 can run in parallel

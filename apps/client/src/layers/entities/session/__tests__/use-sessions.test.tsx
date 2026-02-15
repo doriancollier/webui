@@ -37,7 +37,21 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getConfig: vi.fn().mockResolvedValue({ version: '1.0.0', port: 6942, uptime: 0, workingDirectory: '/test', nodeVersion: 'v20.0.0', claudeCliPath: null, tunnel: { enabled: false, connected: false, url: null, authEnabled: false, tokenConfigured: false } }),
+    getConfig: vi.fn().mockResolvedValue({
+      version: '1.0.0',
+      port: 6942,
+      uptime: 0,
+      workingDirectory: '/test',
+      nodeVersion: 'v20.0.0',
+      claudeCliPath: null,
+      tunnel: {
+        enabled: false,
+        connected: false,
+        url: null,
+        authEnabled: false,
+        tokenConfigured: false,
+      },
+    }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
     ...overrides,
   };
@@ -65,7 +79,13 @@ describe('useSessions', () => {
 
   it('lists sessions via React Query', async () => {
     const sessions = [
-      { id: 's1', title: 'Session 1', createdAt: '2024-01-01', updatedAt: '2024-01-01', permissionMode: 'default' as const },
+      {
+        id: 's1',
+        title: 'Session 1',
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-01',
+        permissionMode: 'default' as const,
+      },
     ];
     const transport = createMockTransport({ listSessions: vi.fn().mockResolvedValue(sessions) });
 
@@ -88,7 +108,13 @@ describe('useSessions', () => {
   });
 
   it('createSession mutation sets active session on success', async () => {
-    const newSession = { id: 'new-1', title: 'New Session', createdAt: '2024-01-01', updatedAt: '2024-01-01', permissionMode: 'default' as const };
+    const newSession = {
+      id: 'new-1',
+      title: 'New Session',
+      createdAt: '2024-01-01',
+      updatedAt: '2024-01-01',
+      permissionMode: 'default' as const,
+    };
     const transport = createMockTransport({
       createSession: vi.fn().mockResolvedValue(newSession),
       listSessions: vi.fn().mockResolvedValue([newSession]),

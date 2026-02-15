@@ -74,6 +74,7 @@ interface DragHandleProps {
 ```
 
 **Visual spec:**
+
 - Container: `h-6` (24px) flex center, full width — provides 48px effective touch target with surrounding padding
 - Pill: `w-9 h-1 rounded-full bg-muted-foreground/30` (36×4px, subtle gray)
 - Hover/active: `bg-muted-foreground/50`
@@ -96,6 +97,7 @@ Use motion.dev's `drag="y"` on the collapsible wrapper:
 ```
 
 **`handleDragEnd` logic:**
+
 ```tsx
 const SWIPE_THRESHOLD = 80; // pixels
 const VELOCITY_THRESHOLD = 500; // px/s
@@ -145,7 +147,7 @@ Use `AnimatePresence` with spring transition for the chips + status bar:
 
 **First-use hint count:** `localStorage.getItem('gateway-gesture-hint-count')` — integer tracking how many times the hint has been shown. Incremented on each mobile visit. Hint displays when count < 3.
 
-**Interaction with existing settings:** The `showShortcutChips` app store preference is respected independently. If a user disables chips in settings, they remain hidden regardless of collapse state. The collapse gesture only affects *visibility when both are enabled*.
+**Interaction with existing settings:** The `showShortcutChips` app store preference is respected independently. If a user disables chips in settings, they remain hidden regardless of collapse state. The collapse gesture only affects _visibility when both are enabled_.
 
 ### First-Use Hint
 
@@ -154,6 +156,7 @@ Use `AnimatePresence` with spring transition for the chips + status bar:
 **Trigger:** On mobile, when `localStorage 'gateway-gesture-hint-count'` is < 3, show the hint on mount.
 
 **Visual:**
+
 - A small text label "Swipe to collapse" appears below the drag handle
 - The drag handle animates with a subtle downward bounce: `y: [0, 8, 0]` over 1.2s, repeating 2x
 - Auto-dismisses after 3-4 seconds with fade out
@@ -161,6 +164,7 @@ Use `AnimatePresence` with spring transition for the chips + status bar:
 - After dismissal, increment the count in localStorage
 
 **Implementation:**
+
 ```tsx
 const [showHint, setShowHint] = useState(() => {
   if (!isMobile) return false;
@@ -182,6 +186,7 @@ useEffect(() => {
 ### Desktop Behavior
 
 When `useIsMobile()` returns `false`:
+
 - No `DragHandle` rendered
 - No drag gesture wrapper
 - ShortcutChips and StatusLine render in their current positions exactly as today
@@ -190,22 +195,24 @@ When `useIsMobile()` returns `false`:
 ### CSS Considerations
 
 **Already handled by existing styles:**
+
 - `body { overscroll-behavior: contain; }` — prevents pull-to-refresh (index.css line 323)
 - `.chat-scroll-area { touch-action: pan-y; }` — prevents horizontal swipes (index.css line 334)
 - `.chat-input-container` safe area insets — preserved (index.css line 340)
 
 **New CSS needed:**
+
 - `touch-action: pan-y` on the drag wrapper element (via inline style, already shown in the motion.div)
 - The drag handle pill uses Tailwind utility classes only, no custom CSS needed
 
 ### File Changes Summary
 
-| File | Change |
-|------|--------|
-| `apps/client/src/components/chat/ChatPanel.tsx` | Add collapsed state, DragHandle, collapsible wrapper with drag gesture, first-use hint logic. Guard with `useIsMobile()`. |
-| `apps/client/src/components/chat/DragHandle.tsx` | **NEW** — Drag handle pill component with tap toggle and a11y. |
-| `apps/client/src/components/chat/__tests__/DragHandle.test.tsx` | **NEW** — Tests for handle rendering, tap toggle, a11y attributes. |
-| `apps/client/src/components/chat/__tests__/ChatPanel.test.tsx` | **NEW** — Tests for collapse gesture, hint display, desktop no-op. |
+| File                                                            | Change                                                                                                                    |
+| --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `apps/client/src/components/chat/ChatPanel.tsx`                 | Add collapsed state, DragHandle, collapsible wrapper with drag gesture, first-use hint logic. Guard with `useIsMobile()`. |
+| `apps/client/src/components/chat/DragHandle.tsx`                | **NEW** — Drag handle pill component with tap toggle and a11y.                                                            |
+| `apps/client/src/components/chat/__tests__/DragHandle.test.tsx` | **NEW** — Tests for handle rendering, tap toggle, a11y attributes.                                                        |
+| `apps/client/src/components/chat/__tests__/ChatPanel.test.tsx`  | **NEW** — Tests for collapse gesture, hint display, desktop no-op.                                                        |
 
 ## User Experience
 
@@ -237,14 +244,28 @@ All tests mock `motion/react` using the established Proxy pattern from `Shortcut
 
 ```tsx
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target: unknown, prop: string) => {
-      return ({ children, initial: _i, animate: _a, exit: _e, transition: _t, drag: _d, dragConstraints: _dc, dragElastic: _de, onDragEnd: _ode, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-        const Tag = prop as keyof React.JSX.IntrinsicElements;
-        return <Tag {...props}>{children}</Tag>;
-      };
-    },
-  }),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target: unknown, prop: string) => {
+        return ({
+          children,
+          initial: _i,
+          animate: _a,
+          exit: _e,
+          transition: _t,
+          drag: _d,
+          dragConstraints: _dc,
+          dragElastic: _de,
+          onDragEnd: _ode,
+          ...props
+        }: Record<string, unknown> & { children?: React.ReactNode }) => {
+          const Tag = prop as keyof React.JSX.IntrinsicElements;
+          return <Tag {...props}>{children}</Tag>;
+        };
+      },
+    }
+  ),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 ```

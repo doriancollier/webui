@@ -1,6 +1,6 @@
 ---
 description: Validate the roadmap JSON structure
-argument-hint: "(no arguments)"
+argument-hint: '(no arguments)'
 allowed-tools: Bash
 category: roadmap
 ---
@@ -41,11 +41,13 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/validate_roadmap.py
 ## Output
 
 On success:
+
 ```
 ✅ Roadmap validation passed
 ```
 
 On failure:
+
 ```
 ❌ Validation errors found:
 - Item "abc123": Invalid moscow value "critical"

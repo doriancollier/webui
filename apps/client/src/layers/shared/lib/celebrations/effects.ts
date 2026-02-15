@@ -54,6 +54,7 @@ export const MINI_SPRING_CONFIG = {
  * Applied as a CSS background-position animation via motion.div.
  */
 export const SHIMMER_STYLE: React.CSSProperties = {
-  backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+  backgroundImage:
+    'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
   backgroundSize: '200% 100%',
 };

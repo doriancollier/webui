@@ -8,9 +8,16 @@ import type { ToolCallState } from '../model/use-chat-session';
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <div className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</div>;
+      return (
+        <div className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </div>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,

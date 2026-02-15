@@ -43,7 +43,8 @@ import request from 'supertest';
 import { createApp } from '../../app.js';
 
 // Get a reference to the mock function
-const { __mockGetCommands: mockGetCommands } = await import('../../services/command-registry.js') as any;
+const { __mockGetCommands: mockGetCommands } =
+  (await import('../../services/command-registry.js')) as any;
 
 const app = createApp();
 
@@ -56,7 +57,13 @@ describe('Commands Routes', () => {
     it('returns cached commands', async () => {
       const registry = {
         commands: [
-          { namespace: 'daily', command: 'plan', fullCommand: '/daily:plan', description: 'Plan day', filePath: 'x.md' },
+          {
+            namespace: 'daily',
+            command: 'plan',
+            fullCommand: '/daily:plan',
+            description: 'Plan day',
+            filePath: 'x.md',
+          },
         ],
         lastScanned: '2024-01-01T00:00:00.000Z',
       };

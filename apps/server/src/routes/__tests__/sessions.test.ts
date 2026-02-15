@@ -75,18 +75,15 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions', () => {
     it('creates a session with default permissionMode', async () => {
-      const res = await request(app)
-        .post('/api/sessions')
-        .send({});
+      const res = await request(app).post('/api/sessions').send({});
 
       expect(res.status).toBe(200);
       expect(res.body.id).toBeDefined();
       expect(res.body.title).toBe('New Session');
       expect(res.body.permissionMode).toBe('default');
-      expect(agentManager.ensureSession).toHaveBeenCalledWith(
-        res.body.id,
-        { permissionMode: 'default' }
-      );
+      expect(agentManager.ensureSession).toHaveBeenCalledWith(res.body.id, {
+        permissionMode: 'default',
+      });
     });
 
     it('creates a session with bypassPermissions permissionMode', async () => {
@@ -96,16 +93,13 @@ describe('Sessions Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.permissionMode).toBe('bypassPermissions');
-      expect(agentManager.ensureSession).toHaveBeenCalledWith(
-        res.body.id,
-        { permissionMode: 'bypassPermissions' }
-      );
+      expect(agentManager.ensureSession).toHaveBeenCalledWith(res.body.id, {
+        permissionMode: 'bypassPermissions',
+      });
     });
 
     it('returns timestamps on created session', async () => {
-      const res = await request(app)
-        .post('/api/sessions')
-        .send({});
+      const res = await request(app).post('/api/sessions').send({});
 
       expect(res.body.createdAt).toBeDefined();
       expect(res.body.updatedAt).toBeDefined();
@@ -125,12 +119,18 @@ describe('Sessions Routes', () => {
     it('returns sessions from transcriptReader', async () => {
       const sessions = [
         {
-          id: 's1', title: 'First question', createdAt: '2024-01-02',
-          updatedAt: '2024-01-02', permissionMode: 'default' as const,
+          id: 's1',
+          title: 'First question',
+          createdAt: '2024-01-02',
+          updatedAt: '2024-01-02',
+          permissionMode: 'default' as const,
         },
         {
-          id: 's2', title: 'Second question', createdAt: '2024-01-01',
-          updatedAt: '2024-01-01', permissionMode: 'bypassPermissions' as const,
+          id: 's2',
+          title: 'Second question',
+          createdAt: '2024-01-01',
+          updatedAt: '2024-01-01',
+          permissionMode: 'bypassPermissions' as const,
         },
       ];
       vi.mocked(transcriptReader.listSessions).mockResolvedValue(sessions);
@@ -146,8 +146,11 @@ describe('Sessions Routes', () => {
   describe('GET /api/sessions/:id', () => {
     it('returns session when found', async () => {
       const session = {
-        id: 's1', title: 'My session', createdAt: '2024-01-01',
-        updatedAt: '2024-01-01', permissionMode: 'default' as const,
+        id: 's1',
+        title: 'My session',
+        createdAt: '2024-01-01',
+        updatedAt: '2024-01-01',
+        permissionMode: 'default' as const,
       };
       vi.mocked(transcriptReader.getSession).mockResolvedValue(session);
 
@@ -167,9 +170,7 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions/:id/messages', () => {
     it('returns 400 for missing content', async () => {
-      const res = await request(app)
-        .post('/api/sessions/s1/messages')
-        .send({});
+      const res = await request(app).post('/api/sessions/s1/messages').send({});
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Invalid request');
@@ -194,8 +195,12 @@ describe('Sessions Routes', () => {
         .buffer(true)
         .parse((res, callback) => {
           let data = '';
-          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
-          res.on('end', () => { callback(null, data); });
+          res.on('data', (chunk: Buffer) => {
+            data += chunk.toString();
+          });
+          res.on('end', () => {
+            callback(null, data);
+          });
         });
 
       expect(res.status).toBe(200);
@@ -219,12 +224,16 @@ describe('Sessions Routes', () => {
         .buffer(true)
         .parse((res, callback) => {
           let data = '';
-          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
-          res.on('end', () => { callback(null, data); });
+          res.on('data', (chunk: Buffer) => {
+            data += chunk.toString();
+          });
+          res.on('end', () => {
+            callback(null, data);
+          });
         });
 
       const parsed = parseSSEResponse(res.body);
-      const errorEvent = parsed.find(e => e.type === 'error');
+      const errorEvent = parsed.find((e) => e.type === 'error');
       expect(errorEvent).toBeDefined();
       expect((errorEvent!.data as { message: string }).message).toBe('SDK failure');
     });
@@ -248,11 +257,19 @@ describe('Sessions Routes', () => {
         .buffer(true)
         .parse((res, callback) => {
           let data = '';
-          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
-          res.on('end', () => { callback(null, data); });
+          res.on('data', (chunk: Buffer) => {
+            data += chunk.toString();
+          });
+          res.on('end', () => {
+            callback(null, data);
+          });
         });
 
-      expect(agentManager.acquireLock).toHaveBeenCalledWith('s1', expect.any(String), expect.anything());
+      expect(agentManager.acquireLock).toHaveBeenCalledWith(
+        's1',
+        expect.any(String),
+        expect.anything()
+      );
       expect(agentManager.releaseLock).toHaveBeenCalledWith('s1', expect.any(String));
     });
 
@@ -263,9 +280,7 @@ describe('Sessions Routes', () => {
         acquiredAt: Date.now() - 60000,
       });
 
-      const res = await request(app)
-        .post('/api/sessions/s1/messages')
-        .send({ content: 'hi' });
+      const res = await request(app).post('/api/sessions/s1/messages').send({ content: 'hi' });
 
       expect(res.status).toBe(409);
       expect(res.body).toMatchObject({
@@ -287,8 +302,12 @@ describe('Sessions Routes', () => {
         .buffer(true)
         .parse((res, callback) => {
           let data = '';
-          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
-          res.on('end', () => { callback(null, data); });
+          res.on('data', (chunk: Buffer) => {
+            data += chunk.toString();
+          });
+          res.on('end', () => {
+            callback(null, data);
+          });
         });
 
       expect(agentManager.acquireLock).toHaveBeenCalled();
@@ -302,9 +321,7 @@ describe('Sessions Routes', () => {
     it('approves pending tool call', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(true);
 
-      const res = await request(app)
-        .post('/api/sessions/s1/approve')
-        .send({ toolCallId: 'tc1' });
+      const res = await request(app).post('/api/sessions/s1/approve').send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
@@ -314,9 +331,7 @@ describe('Sessions Routes', () => {
     it('returns 404 when no pending approval', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(false);
 
-      const res = await request(app)
-        .post('/api/sessions/s1/approve')
-        .send({ toolCallId: 'tc1' });
+      const res = await request(app).post('/api/sessions/s1/approve').send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('No pending approval');
@@ -329,9 +344,7 @@ describe('Sessions Routes', () => {
     it('denies pending tool call', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(true);
 
-      const res = await request(app)
-        .post('/api/sessions/s1/deny')
-        .send({ toolCallId: 'tc1' });
+      const res = await request(app).post('/api/sessions/s1/deny').send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
@@ -341,9 +354,7 @@ describe('Sessions Routes', () => {
     it('returns 404 when no pending approval', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(false);
 
-      const res = await request(app)
-        .post('/api/sessions/s1/deny')
-        .send({ toolCallId: 'tc1' });
+      const res = await request(app).post('/api/sessions/s1/deny').send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('No pending approval');
@@ -359,8 +370,7 @@ describe('Sessions Routes', () => {
         res.end();
       });
 
-      const res = await request(app)
-        .get('/api/sessions/s1/stream');
+      const res = await request(app).get('/api/sessions/s1/stream');
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toBe('text/event-stream');
@@ -375,8 +385,7 @@ describe('Sessions Routes', () => {
         res.end();
       });
 
-      await request(app)
-        .get('/api/sessions/s1/stream');
+      await request(app).get('/api/sessions/s1/stream');
 
       expect(mockSessionBroadcaster.registerClient).toHaveBeenCalled();
       expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(

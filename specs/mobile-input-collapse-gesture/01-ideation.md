@@ -16,6 +16,7 @@ slug: mobile-input-collapse-gesture
 **Task brief:** The bottom input area (textarea + shortcut chips + status bar) takes too much vertical space on mobile. Add swipe-down-to-collapse and swipe-up-to-expand gestures that hide/show the chips and status bar. Only on mobile. Find a UX approach that makes the gesture discoverable without adding visual clutter.
 
 **Assumptions:**
+
 - The textarea itself always remains visible — only chips and status bar collapse
 - "Mobile" = screens below 768px (matches existing `useIsMobile` hook / `MOBILE_BREAKPOINT`)
 - On desktop, chips and status bar always show (no gesture, no change)
@@ -23,6 +24,7 @@ slug: mobile-input-collapse-gesture
 - The existing `showShortcutChips` setting in app-store remains independent — if a user disables chips in settings, they stay hidden regardless of gesture state
 
 **Out of scope:**
+
 - Collapsing the textarea itself
 - Desktop gesture support
 - Auto-collapse based on typing or streaming state (research shows Discord users dislike this)
@@ -45,10 +47,12 @@ slug: mobile-input-collapse-gesture
 ## 3) Codebase Map
 
 **Primary components that need changes:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx` — Wrap chips + status bar in a collapsible container with gesture handling
 - `apps/client/src/stores/app-store.ts` — Add `mobileInputCollapsed` state (optional, could be local state)
 
 **Shared dependencies:**
+
 - `motion/react` — Already in the dependency tree (motion.dev). Used extensively throughout the app for animations.
 - `useIsMobile()` hook — Already exists, returns boolean for `< 768px`
 - `useAppStore` — Zustand store, already has `showShortcutChips`
@@ -57,6 +61,7 @@ slug: mobile-input-collapse-gesture
 Swipe gesture on `chat-input-container` → update `collapsed` state → `AnimatePresence` hides/shows chips + status bar with spring animation
 
 **Potential blast radius:**
+
 - Direct: `ChatPanel.tsx` (gesture wrapper + conditional rendering)
 - Possibly: `app-store.ts` (if persisting collapsed state)
 - Tests: `ChatPanel.test.tsx`, `ShortcutChips.test.tsx` may need updates if DOM structure changes
@@ -77,6 +82,7 @@ N/A — This is a feature, not a bug fix.
 The app already depends on `motion/react`. Motion provides `drag="y"`, `dragConstraints`, `dragElastic`, and `onDragEnd` with velocity/offset data — everything needed for swipe detection. Zero additional bundle cost.
 
 Alternatives considered:
+
 - **@use-gesture/react** — More granular control but adds ~20-30KB bundle, requires integration work with motion.dev for animations. Overkill for this use case.
 - **Native touch events** — Zero bundle but requires manual velocity calculation, threshold logic, and animation coordination. More code to maintain.
 - **Hammer.js / TinyGesture** — Not React-native, less maintained, requires wrappers.

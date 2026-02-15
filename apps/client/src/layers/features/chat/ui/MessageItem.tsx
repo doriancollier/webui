@@ -13,21 +13,12 @@ import { cn } from '@/layers/shared/lib';
 
 export type InteractiveToolHandle = ToolApprovalHandle | QuestionPromptHandle;
 
-function useToolCallVisibility(
-  status: string,
-  autoHide: boolean,
-): boolean {
+function useToolCallVisibility(status: string, autoHide: boolean): boolean {
   const initialStatusRef = useRef(status);
-  const [visible, setVisible] = useState(
-    !(autoHide && initialStatusRef.current === 'complete')
-  );
+  const [visible, setVisible] = useState(!(autoHide && initialStatusRef.current === 'complete'));
 
   useEffect(() => {
-    if (
-      autoHide &&
-      status === 'complete' &&
-      initialStatusRef.current !== 'complete'
-    ) {
+    if (autoHide && status === 'complete' && initialStatusRef.current !== 'complete') {
       const timer = setTimeout(() => setVisible(false), 5_000);
       return () => clearTimeout(timer);
     }
@@ -43,7 +34,13 @@ function AutoHideToolCall({
   autoHide,
   expandToolCalls,
 }: {
-  part: { toolCallId: string; toolName: string; input?: string; result?: string; status: 'pending' | 'running' | 'complete' | 'error' };
+  part: {
+    toolCallId: string;
+    toolName: string;
+    input?: string;
+    result?: string;
+    status: 'pending' | 'running' | 'complete' | 'error';
+  };
   autoHide: boolean;
   expandToolCalls: boolean;
 }) {
@@ -96,7 +93,16 @@ function formatTime(timestamp: string): string {
   }
 }
 
-export function MessageItem({ message, grouping, sessionId, isNew = false, isStreaming = false, activeToolCallId, onToolRef, focusedOptionIndex = -1 }: MessageItemProps) {
+export function MessageItem({
+  message,
+  grouping,
+  sessionId,
+  isNew = false,
+  isStreaming = false,
+  activeToolCallId,
+  onToolRef,
+  focusedOptionIndex = -1,
+}: MessageItemProps) {
   const isUser = message.role === 'user';
   const { showTimestamps, expandToolCalls, autoHideToolCalls } = useAppStore();
   const [compactionExpanded, setCompactionExpanded] = useState(false);
@@ -106,13 +112,19 @@ export function MessageItem({ message, grouping, sessionId, isNew = false, isStr
   const isGroupEnd = position === 'only' || position === 'last';
 
   // Ref callbacks to report active interactive tool handle up to ChatPanel
-  const approvalRefCallback = useCallback((handle: ToolApprovalHandle | null) => {
-    onToolRef?.(handle);
-  }, [onToolRef]);
+  const approvalRefCallback = useCallback(
+    (handle: ToolApprovalHandle | null) => {
+      onToolRef?.(handle);
+    },
+    [onToolRef]
+  );
 
-  const questionRefCallback = useCallback((handle: QuestionPromptHandle | null) => {
-    onToolRef?.(handle);
-  }, [onToolRef]);
+  const questionRefCallback = useCallback(
+    (handle: QuestionPromptHandle | null) => {
+      onToolRef?.(handle);
+    },
+    [onToolRef]
+  );
 
   const parts = message.parts ?? [];
 
@@ -140,55 +152,60 @@ export function MessageItem({ message, grouping, sessionId, isNew = false, isStr
       )}
     >
       {isGroupStart && groupIndex > 0 && (
-        <div className="absolute inset-x-0 top-0 h-px bg-border/20" />
+        <div className="bg-border/20 absolute inset-x-0 top-0 h-px" />
       )}
       {message.timestamp && (
-        <span className={cn(
-          'hidden sm:inline absolute right-4 top-1 text-xs transition-colors duration-150',
-          showTimestamps
-            ? 'text-muted-foreground/60'
-            : 'text-muted-foreground/0 group-hover:text-muted-foreground/60'
-        )}>
+        <span
+          className={cn(
+            'absolute top-1 right-4 hidden text-xs transition-colors duration-150 sm:inline',
+            showTimestamps
+              ? 'text-muted-foreground/60'
+              : 'text-muted-foreground/0 group-hover:text-muted-foreground/60'
+          )}
+        >
           {formatTime(message.timestamp)}
         </span>
       )}
-      <div className="flex-shrink-0 w-4 mt-[3px]">
-        {showIndicator && (
-          isUser ? (
-            <ChevronRight className="size-(--size-icon-md) text-muted-foreground" />
+      <div className="mt-[3px] w-4 flex-shrink-0">
+        {showIndicator &&
+          (isUser ? (
+            <ChevronRight className="text-muted-foreground size-(--size-icon-md)" />
           ) : (
-            <span className="flex items-center justify-center size-(--size-icon-md) text-muted-foreground text-[10px]">●</span>
-          )
-        )}
+            <span className="text-muted-foreground flex size-(--size-icon-md) items-center justify-center text-[10px]">
+              ●
+            </span>
+          ))}
       </div>
-      <div className="flex-1 min-w-0 max-w-[80ch]">
+      <div className="max-w-[80ch] min-w-0 flex-1">
         {isUser ? (
           message.messageType === 'command' ? (
-            <div className="font-mono text-sm text-muted-foreground truncate">
+            <div className="text-muted-foreground truncate font-mono text-sm">
               {message.content}
             </div>
           ) : message.messageType === 'compaction' ? (
             <div className="w-full">
               <button
                 onClick={() => setCompactionExpanded(!compactionExpanded)}
-                className="flex items-center gap-2 text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors w-full"
+                className="text-muted-foreground/60 hover:text-muted-foreground flex w-full items-center gap-2 text-xs transition-colors"
               >
-                <div className="h-px flex-1 bg-border/40" />
-                <ChevronRight className={cn(
-                  'size-3 transition-transform duration-200',
-                  compactionExpanded && 'rotate-90'
-                )} />
+                <div className="bg-border/40 h-px flex-1" />
+                <ChevronRight
+                  className={cn(
+                    'size-3 transition-transform duration-200',
+                    compactionExpanded && 'rotate-90'
+                  )}
+                />
                 <span>Context compacted</span>
-                <div className="h-px flex-1 bg-border/40" />
+                <div className="bg-border/40 h-px flex-1" />
               </button>
               {compactionExpanded && (
-                <div className="mt-2 text-xs text-muted-foreground/60 whitespace-pre-wrap">
+                <div className="text-muted-foreground/60 mt-2 text-xs whitespace-pre-wrap">
                   {message.content}
                 </div>
               )}
             </div>
           ) : (
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            <div className="break-words whitespace-pre-wrap">{message.content}</div>
           )
         ) : (
           parts.map((part, i) => {

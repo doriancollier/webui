@@ -8,7 +8,9 @@ router.get('/', (_req, res) => {
   let claudeCliPath: string | null = null;
   try {
     claudeCliPath = resolveClaudeCliPath() ?? null;
-  } catch {}
+  } catch {
+    // CLI path resolution can fail — fallback to null
+  }
 
   const tunnel = tunnelManager.status;
 

@@ -68,7 +68,7 @@ export function useTaskState(sessionId: string): TaskState {
   }, [initialTasks]);
 
   const handleTaskEvent = useCallback((event: TaskUpdateEvent) => {
-    setTaskMap(prev => {
+    setTaskMap((prev) => {
       const next = new Map(prev);
       if (event.action === 'create') {
         const id = String(nextIdRef.current++);
@@ -76,7 +76,10 @@ export function useTaskState(sessionId: string): TaskState {
       } else if (event.action === 'update' && event.task.id) {
         const existing = next.get(event.task.id);
         if (existing) {
-          next.set(event.task.id, { ...existing, ...stripDefaults(event.task as unknown as Record<string, unknown>) });
+          next.set(event.task.id, {
+            ...existing,
+            ...stripDefaults(event.task as unknown as Record<string, unknown>),
+          });
         }
       }
       return next;
@@ -84,12 +87,12 @@ export function useTaskState(sessionId: string): TaskState {
   }, []);
 
   const toggleCollapse = useCallback(() => {
-    setIsCollapsed(prev => !prev);
+    setIsCollapsed((prev) => !prev);
   }, []);
 
   const allTasks = Array.from(taskMap.values());
   const sorted = sortTasks(allTasks);
-  const inProgressTask = allTasks.find(t => t.status === 'in_progress');
+  const inProgressTask = allTasks.find((t) => t.status === 'in_progress');
   const activeForm = inProgressTask?.activeForm ?? null;
 
   return {

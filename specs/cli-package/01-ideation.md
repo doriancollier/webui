@@ -5,6 +5,7 @@
 **Intent**: Package DorkOS as a standalone npm CLI tool (`dorkos`) so anyone with Node.js can install and run it via `npx dorkos` or `npm install -g dorkos`, with optional `--tunnel` support for remote access.
 
 **Assumptions**:
+
 - Target users already have Node.js 18+ (Claude Code CLI is npm-distributed)
 - Users have Claude Code CLI installed (`@anthropic-ai/claude-code` or native)
 - The published package must work independently of the monorepo structure
@@ -14,18 +15,18 @@
 
 ## 2. Pre-reading Log
 
-| File | Key Finding |
-|------|-------------|
-| `turbo.json` | Build outputs to `dist/**`, env vars tracked: `NODE_ENV`, `VITE_*`, `GATEWAY_PORT`, `NGROK_*`, `TUNNEL_*` |
-| `apps/server/src/index.ts` | Loads `.env` from `path.join(__dirname, '../../../.env')` — assumes monorepo structure |
-| `apps/server/src/app.ts` | Production mode serves client from `path.join(__dirname, '../../client/dist')` — relative to `dist/app.js` |
-| `apps/server/src/services/agent-manager.ts` | Default cwd: `path.resolve(__dirname, '../../../../')` (monorepo root). CLI resolution: SDK bundled `cli.js` → `which claude` → undefined |
-| `apps/server/src/services/command-registry.ts` | Scans `{vaultRoot}/.claude/commands/` for slash commands |
-| `apps/server/src/services/transcript-reader.ts` | Reads from `~/.claude/projects/{slug}/` — no monorepo dependency |
-| `apps/server/src/services/tunnel-manager.ts` | Dynamic `import('@ngrok/ngrok')` — zero cost when disabled |
-| `apps/client/vite.config.ts` | Outputs to `dist/`, proxy `/api` to `GATEWAY_PORT` in dev |
-| `packages/shared/package.json` | Exports raw `.ts` files via package.json `exports` — JIT, no build step |
-| `apps/server/package.json` | 11 dependencies including SDK, ngrok, express, zod, gray-matter |
+| File                                            | Key Finding                                                                                                                               |
+| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `turbo.json`                                    | Build outputs to `dist/**`, env vars tracked: `NODE_ENV`, `VITE_*`, `GATEWAY_PORT`, `NGROK_*`, `TUNNEL_*`                                 |
+| `apps/server/src/index.ts`                      | Loads `.env` from `path.join(__dirname, '../../../.env')` — assumes monorepo structure                                                    |
+| `apps/server/src/app.ts`                        | Production mode serves client from `path.join(__dirname, '../../client/dist')` — relative to `dist/app.js`                                |
+| `apps/server/src/services/agent-manager.ts`     | Default cwd: `path.resolve(__dirname, '../../../../')` (monorepo root). CLI resolution: SDK bundled `cli.js` → `which claude` → undefined |
+| `apps/server/src/services/command-registry.ts`  | Scans `{vaultRoot}/.claude/commands/` for slash commands                                                                                  |
+| `apps/server/src/services/transcript-reader.ts` | Reads from `~/.claude/projects/{slug}/` — no monorepo dependency                                                                          |
+| `apps/server/src/services/tunnel-manager.ts`    | Dynamic `import('@ngrok/ngrok')` — zero cost when disabled                                                                                |
+| `apps/client/vite.config.ts`                    | Outputs to `dist/`, proxy `/api` to `GATEWAY_PORT` in dev                                                                                 |
+| `packages/shared/package.json`                  | Exports raw `.ts` files via package.json `exports` — JIT, no build step                                                                   |
+| `apps/server/package.json`                      | 11 dependencies including SDK, ngrok, express, zod, gray-matter                                                                           |
 
 ## 3. Codebase Map
 
@@ -46,26 +47,26 @@ packages/cli/src/cli.ts ── esbuild ─────────────�
 
 ### Path Resolution (Current vs CLI Package)
 
-| Purpose | Current (monorepo) | CLI Package |
-|---------|--------------------|-------------|
-| `.env` | `__dirname + '../../../.env'` | User's `cwd/.env` → skip if missing |
-| Client assets | `__dirname + '../../client/dist'` | `__dirname + '../client'` (co-located in package) |
-| Default cwd | Monorepo root | `process.cwd()` (user's project dir) |
-| Commands dir | `{monorepoRoot}/.claude/commands/` | `{cwd}/.claude/commands/` (per-project) |
-| SDK transcripts | `~/.claude/projects/{slug}/` | Same (no change needed) |
+| Purpose         | Current (monorepo)                 | CLI Package                                       |
+| --------------- | ---------------------------------- | ------------------------------------------------- |
+| `.env`          | `__dirname + '../../../.env'`      | User's `cwd/.env` → skip if missing               |
+| Client assets   | `__dirname + '../../client/dist'`  | `__dirname + '../client'` (co-located in package) |
+| Default cwd     | Monorepo root                      | `process.cwd()` (user's project dir)              |
+| Commands dir    | `{monorepoRoot}/.claude/commands/` | `{cwd}/.claude/commands/` (per-project)           |
+| SDK transcripts | `~/.claude/projects/{slug}/`       | Same (no change needed)                           |
 
 ### Dependencies to Bundle vs Externalize
 
-| Package | Strategy | Reason |
-|---------|----------|--------|
-| `@dorkos/shared` | **Bundle** (inline) | Workspace package, not published to npm |
-| `@anthropic-ai/claude-agent-sdk` | **Externalize** | Complex, spawns processes, should be installed normally |
-| `@ngrok/ngrok` | **Externalize** | Native bindings, platform-specific |
-| `express` | **Externalize** | Large, common, well-tested |
-| `zod` | **Externalize** | Runtime schema validation |
-| `cors`, `dotenv`, `gray-matter`, `uuid` | **Externalize** | Pure JS, small, install normally |
-| `@scalar/express-api-reference` | **Externalize** | Large UI bundle |
-| `@asteasolutions/zod-to-openapi` | **Externalize** | OpenAPI generation |
+| Package                                 | Strategy            | Reason                                                  |
+| --------------------------------------- | ------------------- | ------------------------------------------------------- |
+| `@dorkos/shared`                        | **Bundle** (inline) | Workspace package, not published to npm                 |
+| `@anthropic-ai/claude-agent-sdk`        | **Externalize**     | Complex, spawns processes, should be installed normally |
+| `@ngrok/ngrok`                          | **Externalize**     | Native bindings, platform-specific                      |
+| `express`                               | **Externalize**     | Large, common, well-tested                              |
+| `zod`                                   | **Externalize**     | Runtime schema validation                               |
+| `cors`, `dotenv`, `gray-matter`, `uuid` | **Externalize**     | Pure JS, small, install normally                        |
+| `@scalar/express-api-reference`         | **Externalize**     | Large UI bundle                                         |
+| `@asteasolutions/zod-to-openapi`        | **Externalize**     | OpenAPI generation                                      |
 
 ### What Must Change in Server Code
 

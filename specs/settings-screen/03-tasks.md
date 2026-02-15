@@ -14,6 +14,7 @@ slug: settings-screen
 ### Task 1.1: Install shadcn/ui components (Switch, Label, Separator, Badge)
 
 **Files created:**
+
 - `apps/client/src/components/ui/switch.tsx`
 - `apps/client/src/components/ui/label.tsx`
 - `apps/client/src/components/ui/separator.tsx`
@@ -22,6 +23,7 @@ slug: settings-screen
 **Steps:**
 
 1. From the `apps/client` directory, run:
+
    ```bash
    npx shadcn@latest add switch label separator badge
    ```
@@ -31,6 +33,7 @@ slug: settings-screen
 3. Verify each component exports correctly and follows the existing `data-slot` pattern used in other UI components (e.g., `button.tsx`).
 
 **Acceptance criteria:**
+
 - All four component files exist in `apps/client/src/components/ui/`
 - Each component is importable: `import { Switch } from '@/components/ui/switch'` etc.
 - `npx turbo build --filter=@dorkos/client` passes
@@ -40,6 +43,7 @@ slug: settings-screen
 ### Task 1.2: Add ServerConfigSchema to shared schemas and types
 
 **Files modified:**
+
 - `packages/shared/src/schemas.ts`
 - `packages/shared/src/types.ts`
 
@@ -78,11 +82,12 @@ export type {
   // ... existing exports ...
   HealthResponse,
   TunnelStatus,
-  ServerConfig,  // <-- add this
+  ServerConfig, // <-- add this
 } from './schemas.js';
 ```
 
 **Acceptance criteria:**
+
 - `ServerConfigSchema` is exported from `packages/shared/src/schemas.ts`
 - `ServerConfig` type is exported from `packages/shared/src/types.ts`
 - `npx turbo typecheck` passes
@@ -92,6 +97,7 @@ export type {
 ### Task 1.3: Add getConfig() to Transport interface
 
 **Files modified:**
+
 - `packages/shared/src/transport.ts`
 
 **Steps:**
@@ -109,7 +115,7 @@ import type {
   HistoryMessage,
   StreamEvent,
   TaskItem,
-  ServerConfig,  // <-- add this
+  ServerConfig, // <-- add this
 } from './types.js';
 ```
 
@@ -120,6 +126,7 @@ getConfig(): Promise<ServerConfig>;
 ```
 
 **Acceptance criteria:**
+
 - `Transport` interface includes `getConfig(): Promise<ServerConfig>`
 - `npx turbo typecheck` will show errors in `HttpTransport` and `DirectTransport` (expected, fixed in Tasks 1.5 and 1.6)
 
@@ -128,6 +135,7 @@ getConfig(): Promise<ServerConfig>;
 ### Task 1.4: Create server config route
 
 **Files created:**
+
 - `apps/server/src/routes/config.ts`
 
 **Steps:**
@@ -182,6 +190,7 @@ export function resolveClaudeCliPath(): string | undefined {
 ```
 
 **Acceptance criteria:**
+
 - `apps/server/src/routes/config.ts` exists with GET `/` handler
 - `resolveClaudeCliPath` is exported from `agent-manager.ts`
 - Route returns JSON matching `ServerConfigSchema` shape
@@ -191,6 +200,7 @@ export function resolveClaudeCliPath(): string | undefined {
 ### Task 1.5: Register config route in app.ts
 
 **Files modified:**
+
 - `apps/server/src/app.ts`
 
 **Steps:**
@@ -219,6 +229,7 @@ app.use('/api/config', configRoutes);
 ```
 
 **Acceptance criteria:**
+
 - `GET /api/config` is accessible when the server runs
 - `npx turbo build --filter=@dorkos/server` passes
 
@@ -227,6 +238,7 @@ app.use('/api/config', configRoutes);
 ### Task 1.6: Implement getConfig() in HttpTransport
 
 **Files modified:**
+
 - `apps/client/src/lib/http-transport.ts`
 
 **Steps:**
@@ -244,7 +256,7 @@ import type {
   HistoryMessage,
   StreamEvent,
   TaskItem,
-  ServerConfig,  // <-- add this
+  ServerConfig, // <-- add this
 } from '@dorkos/shared/types';
 ```
 
@@ -257,6 +269,7 @@ getConfig(): Promise<ServerConfig> {
 ```
 
 **Acceptance criteria:**
+
 - `HttpTransport` implements `getConfig()` that calls `GET /api/config`
 - `npx turbo typecheck` passes for `@dorkos/client`
 
@@ -265,6 +278,7 @@ getConfig(): Promise<ServerConfig> {
 ### Task 1.7: Implement getConfig() in DirectTransport
 
 **Files modified:**
+
 - `apps/client/src/lib/direct-transport.ts`
 
 **Steps:**
@@ -283,7 +297,7 @@ import type {
   HistoryMessage,
   CommandRegistry,
   TaskItem,
-  ServerConfig,  // <-- add this
+  ServerConfig, // <-- add this
 } from '@dorkos/shared/types';
 ```
 
@@ -310,6 +324,7 @@ async getConfig(): Promise<ServerConfig> {
 ```
 
 **Acceptance criteria:**
+
 - `DirectTransport` implements `getConfig()` returning static mock values
 - `npx turbo typecheck` passes for all packages
 - `npx turbo build` passes
@@ -321,6 +336,7 @@ async getConfig(): Promise<ServerConfig> {
 ### Task 2.1: Add client settings state to app-store.ts
 
 **Files modified:**
+
 - `apps/client/src/stores/app-store.ts`
 
 **Steps:**
@@ -386,6 +402,7 @@ setFontSize: (v) => {
 3. **Note:** The existing `devtoolsOpen` / `toggleDevtools` are reused directly in the settings dialog. The theme uses `useTheme()` hook, not app-store.
 
 **Acceptance criteria:**
+
 - All four new state fields (`showTimestamps`, `expandToolCalls`, `verboseLogging`, `fontSize`) are in the store
 - Each field persists to/from `localStorage` with `gateway-` prefix
 - `setFontSize` sets `--user-font-scale` CSS custom property on `document.documentElement`
@@ -396,6 +413,7 @@ setFontSize: (v) => {
 ### Task 2.2: Wire font size CSS custom property in index.css
 
 **Files modified:**
+
 - `apps/client/src/index.css`
 
 **Steps:**
@@ -405,7 +423,7 @@ setFontSize: (v) => {
 ```css
 :root {
   --mobile-scale: 1.25;
-  --user-font-scale: 1;  /* <-- add this line */
+  --user-font-scale: 1; /* <-- add this line */
   /* ... rest of existing properties ... */
 }
 ```
@@ -425,6 +443,7 @@ setFontSize: (v) => {
 ```
 
 **Acceptance criteria:**
+
 - `--user-font-scale` defaults to `1` in `:root`
 - All `--text-*` tokens include `* var(--user-font-scale, 1)` in their `calc()` expressions
 - Changing `--user-font-scale` via JS visibly changes text sizes
@@ -434,6 +453,7 @@ setFontSize: (v) => {
 ### Task 2.3: Create SettingsDialog.tsx
 
 **Files created:**
+
 - `apps/client/src/components/settings/SettingsDialog.tsx`
 
 **Steps:**
@@ -473,11 +493,16 @@ interface SettingsDialogProps {
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
   const {
-    showTimestamps, setShowTimestamps,
-    expandToolCalls, setExpandToolCalls,
-    devtoolsOpen, toggleDevtools,
-    verboseLogging, setVerboseLogging,
-    fontSize, setFontSize,
+    showTimestamps,
+    setShowTimestamps,
+    expandToolCalls,
+    setExpandToolCalls,
+    devtoolsOpen,
+    toggleDevtools,
+    verboseLogging,
+    setVerboseLogging,
+    fontSize,
+    setFontSize,
   } = useAppStore();
 
   const transport = useTransport();
@@ -490,21 +515,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-lg p-0 gap-0">
+      <ResponsiveDialogContent className="max-w-lg gap-0 p-0">
         <ResponsiveDialogHeader>
           <ResponsiveDialogTitle>Settings</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 
-        <div className="overflow-y-auto flex-1 p-4 space-y-6">
+        <div className="flex-1 space-y-6 overflow-y-auto p-4">
           {/* Preferences Section */}
           <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+            <h3 className="text-foreground text-sm font-semibold">Preferences</h3>
 
             {/* Theme */}
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Theme</Label>
-                <p className="text-xs text-muted-foreground">Choose your preferred color scheme</p>
+                <p className="text-muted-foreground text-xs">Choose your preferred color scheme</p>
               </div>
               <Select value={theme} onValueChange={setTheme}>
                 <SelectTrigger className="w-32">
@@ -522,9 +547,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Font size</Label>
-                <p className="text-xs text-muted-foreground">Adjust the text size across the interface</p>
+                <p className="text-muted-foreground text-xs">
+                  Adjust the text size across the interface
+                </p>
               </div>
-              <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
+              <Select
+                value={fontSize}
+                onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}
+              >
                 <SelectTrigger className="w-32">
                   <SelectValue />
                 </SelectTrigger>
@@ -540,7 +570,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Show timestamps</Label>
-                <p className="text-xs text-muted-foreground">Display message timestamps in chat</p>
+                <p className="text-muted-foreground text-xs">Display message timestamps in chat</p>
               </div>
               <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
             </div>
@@ -549,7 +579,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Expand tool calls</Label>
-                <p className="text-xs text-muted-foreground">Auto-expand tool call details in messages</p>
+                <p className="text-muted-foreground text-xs">
+                  Auto-expand tool call details in messages
+                </p>
               </div>
               <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
             </div>
@@ -558,7 +590,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Show dev tools</Label>
-                <p className="text-xs text-muted-foreground">Enable developer tools panel</p>
+                <p className="text-muted-foreground text-xs">Enable developer tools panel</p>
               </div>
               <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
             </div>
@@ -567,7 +599,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <div className="flex items-center justify-between">
               <div>
                 <Label className="text-sm font-medium">Verbose logging</Label>
-                <p className="text-xs text-muted-foreground">Show detailed logs in the console</p>
+                <p className="text-muted-foreground text-xs">Show detailed logs in the console</p>
               </div>
               <Switch checked={verboseLogging} onCheckedChange={setVerboseLogging} />
             </div>
@@ -577,13 +609,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
           {/* Server Section */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Server</h3>
+            <h3 className="text-foreground text-sm font-semibold">Server</h3>
 
             {isLoading ? (
               <div className="space-y-2">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center justify-between py-1">
-                    <span className="text-sm text-muted-foreground/50 animate-pulse">Loading...</span>
+                    <span className="text-muted-foreground/50 animate-pulse text-sm">
+                      Loading...
+                    </span>
                   </div>
                 ))}
               </div>
@@ -592,12 +626,22 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <ConfigRow label="Version" value={config.version} />
                 <ConfigRow label="Port" value={String(config.port)} />
                 <ConfigRow label="Uptime" value={formatUptime(config.uptime)} />
-                <ConfigRow label="Working Directory" value={config.workingDirectory} mono truncate />
+                <ConfigRow
+                  label="Working Directory"
+                  value={config.workingDirectory}
+                  mono
+                  truncate
+                />
                 <ConfigRow label="Node.js" value={config.nodeVersion} />
-                <ConfigRow label="Claude CLI" value={config.claudeCliPath || 'Not found'} mono muted={!config.claudeCliPath} />
+                <ConfigRow
+                  label="Claude CLI"
+                  value={config.claudeCliPath || 'Not found'}
+                  mono
+                  muted={!config.claudeCliPath}
+                />
 
                 <div className="flex items-center justify-between py-1">
-                  <span className="text-sm text-muted-foreground">Tunnel</span>
+                  <span className="text-muted-foreground text-sm">Tunnel</span>
                   <Badge variant={config.tunnel.enabled ? 'default' : 'secondary'}>
                     {config.tunnel.enabled ? 'Enabled' : 'Disabled'}
                   </Badge>
@@ -606,7 +650,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 {config.tunnel.enabled && (
                   <>
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-sm text-muted-foreground">Tunnel Status</span>
+                      <span className="text-muted-foreground text-sm">Tunnel Status</span>
                       <Badge variant={config.tunnel.connected ? 'default' : 'secondary'}>
                         {config.tunnel.connected ? 'Connected' : 'Disconnected'}
                       </Badge>
@@ -616,10 +660,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       <ConfigRow label="Tunnel URL" value={config.tunnel.url} mono />
                     )}
 
-                    <ConfigRow label="Tunnel Auth" value={config.tunnel.authEnabled ? 'Enabled' : 'Disabled'} />
+                    <ConfigRow
+                      label="Tunnel Auth"
+                      value={config.tunnel.authEnabled ? 'Enabled' : 'Disabled'}
+                    />
 
                     <div className="flex items-center justify-between py-1">
-                      <span className="text-sm text-muted-foreground">ngrok Token</span>
+                      <span className="text-muted-foreground text-sm">ngrok Token</span>
                       <Badge variant={config.tunnel.tokenConfigured ? 'default' : 'secondary'}>
                         {config.tunnel.tokenConfigured ? 'Configured' : 'Not configured'}
                       </Badge>
@@ -650,7 +697,7 @@ function ConfigRow({
 }) {
   return (
     <div className="flex items-center justify-between py-1">
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-sm">{label}</span>
       <span
         className={`text-sm ${mono ? 'font-mono' : ''} ${truncate ? 'max-w-48 truncate' : ''} ${muted ? 'text-muted-foreground' : ''}`}
         title={truncate ? value : undefined}
@@ -682,6 +729,7 @@ function formatUptime(seconds: number): string {
    - `useTheme` (existing)
 
 **Acceptance criteria:**
+
 - Component renders a responsive dialog with "Settings" title
 - Preferences section has 6 controls: Theme (select), Font size (select), 4 switches
 - Server section fetches config via `useQuery` with 30s stale time, only when `open=true`
@@ -695,6 +743,7 @@ function formatUptime(seconds: number): string {
 ### Task 2.4: Add gear icon to SessionSidebar.tsx footer
 
 **Files modified:**
+
 - `apps/client/src/components/sessions/SessionSidebar.tsx`
 
 **Steps:**
@@ -718,7 +767,7 @@ const [settingsOpen, setSettingsOpen] = useState(false);
 ```tsx
 <button
   onClick={() => setSettingsOpen(true)}
-  className="p-1 max-md:p-2 rounded-md text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-150"
+  className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
   aria-label="Settings"
 >
   <Settings className="size-(--size-icon-sm)" />
@@ -732,6 +781,7 @@ const [settingsOpen, setSettingsOpen] = useState(false);
 ```
 
 **Acceptance criteria:**
+
 - Gear icon appears as the first icon in the sidebar footer right-aligned button group
 - Clicking the gear icon opens the SettingsDialog
 - Closing the dialog resets the open state
@@ -745,6 +795,7 @@ const [settingsOpen, setSettingsOpen] = useState(false);
 ### Task 3.1: Write SettingsDialog tests
 
 **Files created:**
+
 - `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx`
 
 **Steps:**
@@ -762,16 +813,19 @@ import { SettingsDialog } from '../SettingsDialog';
 
 // Mock motion/react to render plain elements (existing pattern)
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target, prop) => {
-      if (typeof prop === 'string') {
-        return ({ children, ...props }: Record<string, unknown>) => {
-          const Tag = prop as keyof JSX.IntrinsicElements;
-          return <Tag {...props}>{children}</Tag>;
-        };
-      }
-    },
-  }),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target, prop) => {
+        if (typeof prop === 'string') {
+          return ({ children, ...props }: Record<string, unknown>) => {
+            const Tag = prop as keyof JSX.IntrinsicElements;
+            return <Tag {...props}>{children}</Tag>;
+          };
+        }
+      },
+    }
+  ),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   MotionConfig: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -831,28 +885,19 @@ function createWrapper(transport?: Transport) {
 describe('SettingsDialog', () => {
   // Verifies the dialog renders without crashing
   it('renders without error', () => {
-    render(
-      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
-      { wrapper: createWrapper() },
-    );
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(screen.getByText('Settings')).toBeDefined();
   });
 
   // Verifies the dialog title is visible to users
   it('shows "Settings" title', () => {
-    render(
-      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
-      { wrapper: createWrapper() },
-    );
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(screen.getByText('Settings')).toBeDefined();
   });
 
   // Verifies all six preference controls are present
   it('displays all preference controls', () => {
-    render(
-      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
-      { wrapper: createWrapper() },
-    );
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(screen.getByText('Theme')).toBeDefined();
     expect(screen.getByText('Font size')).toBeDefined();
     expect(screen.getByText('Show timestamps')).toBeDefined();
@@ -864,10 +909,9 @@ describe('SettingsDialog', () => {
   // Verifies sensitive values show badges, not raw token values
   it('shows badges for sensitive values', async () => {
     const transport = createMockTransport();
-    render(
-      <SettingsDialog open={true} onOpenChange={vi.fn()} />,
-      { wrapper: createWrapper(transport) },
-    );
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, {
+      wrapper: createWrapper(transport),
+    });
     // Wait for config to load
     const badge = await screen.findByText('Configured');
     expect(badge).toBeDefined();
@@ -875,10 +919,7 @@ describe('SettingsDialog', () => {
 
   // Verifies the dialog is not rendered when closed
   it('does not render content when closed', () => {
-    render(
-      <SettingsDialog open={false} onOpenChange={vi.fn()} />,
-      { wrapper: createWrapper() },
-    );
+    render(<SettingsDialog open={false} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(screen.queryByText('Settings')).toBeNull();
   });
 });
@@ -893,6 +934,7 @@ describe('SettingsDialog', () => {
 3. The `createMockTransport` must include `getConfig` in its return (in addition to all existing Transport methods).
 
 **Acceptance criteria:**
+
 - All tests pass: `npx vitest run apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx`
 - Tests cover: render, title display, all 6 preference controls, sensitive value badges, closed state
 - `npx turbo test` passes with no regressions
@@ -919,17 +961,17 @@ Task 3.1 (tests)                 ← depends on 2.3, 2.4
 
 ## Summary
 
-| Task | Phase | Description |
-|------|-------|-------------|
-| 1.1 | P1 | Install shadcn/ui Switch, Label, Separator, Badge |
-| 1.2 | P1 | Add ServerConfigSchema to schemas.ts and types.ts |
-| 1.3 | P1 | Add getConfig() to Transport interface |
-| 1.4 | P1 | Create server config route (config.ts) + export resolveClaudeCliPath |
-| 1.5 | P1 | Register config route in app.ts |
-| 1.6 | P1 | Implement getConfig() in HttpTransport |
-| 1.7 | P1 | Implement getConfig() in DirectTransport |
-| 2.1 | P2 | Add client settings state to app-store.ts |
-| 2.2 | P2 | Wire --user-font-scale CSS custom property |
-| 2.3 | P2 | Create SettingsDialog.tsx |
-| 2.4 | P2 | Add gear icon to SessionSidebar.tsx |
-| 3.1 | P3 | Write SettingsDialog tests |
+| Task | Phase | Description                                                          |
+| ---- | ----- | -------------------------------------------------------------------- |
+| 1.1  | P1    | Install shadcn/ui Switch, Label, Separator, Badge                    |
+| 1.2  | P1    | Add ServerConfigSchema to schemas.ts and types.ts                    |
+| 1.3  | P1    | Add getConfig() to Transport interface                               |
+| 1.4  | P1    | Create server config route (config.ts) + export resolveClaudeCliPath |
+| 1.5  | P1    | Register config route in app.ts                                      |
+| 1.6  | P1    | Implement getConfig() in HttpTransport                               |
+| 1.7  | P1    | Implement getConfig() in DirectTransport                             |
+| 2.1  | P2    | Add client settings state to app-store.ts                            |
+| 2.2  | P2    | Wire --user-font-scale CSS custom property                           |
+| 2.3  | P2    | Create SettingsDialog.tsx                                            |
+| 2.4  | P2    | Add gear icon to SessionSidebar.tsx                                  |
+| 3.1  | P3    | Write SettingsDialog tests                                           |

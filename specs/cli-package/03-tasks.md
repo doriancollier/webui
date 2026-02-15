@@ -24,8 +24,7 @@ Make four targeted changes to `apps/server` to support CLI-mode operation via en
 const distPath = path.join(__dirname, '../../client/dist');
 
 // After:
-const distPath = process.env.CLIENT_DIST_PATH
-  ?? path.join(__dirname, '../../client/dist');
+const distPath = process.env.CLIENT_DIST_PATH ?? path.join(__dirname, '../../client/dist');
 ```
 
 #### 2. `apps/server/src/index.ts` — Conditional .env loading (section 7.5 item 1)
@@ -72,6 +71,7 @@ this.cwd = cwd ?? process.env.GATEWAY_CWD ?? path.resolve(__dirname, '../../../.
 ```
 
 **Acceptance Criteria**:
+
 - All existing tests still pass (`turbo test`)
 - Without any env vars set, server behavior is identical to before
 - With `CLIENT_DIST_PATH` set, server uses that path for static file serving
@@ -113,9 +113,7 @@ packages/cli/
   "bin": {
     "dorkos": "./dist/bin/cli.js"
   },
-  "files": [
-    "dist/"
-  ],
+  "files": ["dist/"],
   "engines": {
     "node": ">=18.0.0"
   },
@@ -161,6 +159,7 @@ Extends shared TypeScript config with appropriate settings for the CLI package.
 ```
 
 **Acceptance Criteria**:
+
 - `npm install` from root succeeds and resolves `dorkos` workspace
 - `turbo` recognizes the new workspace in `npx turbo ls`
 - The `pack` task is listed in turbo tasks
@@ -193,17 +192,19 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
   options: {
-    port:    { type: 'string',  short: 'p', default: '6942' },
-    tunnel:  { type: 'boolean', short: 't', default: false },
-    dir:     { type: 'string',  short: 'd', default: process.cwd() },
-    help:    { type: 'boolean', short: 'h' },
+    port: { type: 'string', short: 'p', default: '6942' },
+    tunnel: { type: 'boolean', short: 't', default: false },
+    dir: { type: 'string', short: 'd', default: process.cwd() },
+    help: { type: 'boolean', short: 'h' },
     version: { type: 'boolean', short: 'v' },
   },
   allowPositionals: false,
 });
 
 // --help
-if (values.help) { /* print usage, exit */ }
+if (values.help) {
+  /* print usage, exit */
+}
 
 // --version
 if (values.version) {
@@ -252,6 +253,7 @@ Options:
 ```
 
 **Acceptance Criteria**:
+
 - `--help` prints usage and exits with code 0
 - `--version` reads version from package.json and exits with code 0
 - `--port 8080` sets `GATEWAY_PORT=8080`
@@ -294,6 +296,7 @@ export function checkClaude(): void {
 ```
 
 **Acceptance Criteria**:
+
 - When `claude` is in PATH, function returns silently (no output)
 - When `claude` is NOT in PATH, function prints error with install instructions and exits with code 1
 - Error message includes `npm install -g @anthropic-ai/claude-code`
@@ -356,7 +359,9 @@ async function buildCLI() {
       'zod',
     ],
     sourcemap: true,
-    banner: { js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);" },
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
   });
 
   // 3. Compile CLI entry
@@ -382,6 +387,7 @@ buildCLI();
 ```
 
 **Acceptance Criteria**:
+
 - Running `npm run build` in `packages/cli/` produces:
   - `dist/bin/cli.js` — executable CLI entry with shebang
   - `dist/server/index.js` — bundled server with `@dorkos/shared` inlined
@@ -410,6 +416,7 @@ Write unit tests for the two CLI source files. Tests live in `packages/cli/src/_
 #### `packages/cli/src/__tests__/check-claude.test.ts` (section 9)
 
 Tests for the Claude CLI availability check:
+
 - Exits with error when `claude` not found (mock `execSync` to throw)
 - Succeeds silently when `claude` is found (mock `execSync` to return)
 - Error message includes install instructions (`npm install -g @anthropic-ai/claude-code`)
@@ -433,7 +440,9 @@ describe('checkClaude', () => {
   });
 
   it('exits with error when claude not found', () => {
-    vi.mocked(execSync).mockImplementation(() => { throw new Error('not found'); });
+    vi.mocked(execSync).mockImplementation(() => {
+      throw new Error('not found');
+    });
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     const mockError = vi.spyOn(console, 'error').mockImplementation(() => {});
     // import and call checkClaude
@@ -444,11 +453,15 @@ describe('checkClaude', () => {
   });
 
   it('error message includes install instructions', () => {
-    vi.mocked(execSync).mockImplementation(() => { throw new Error('not found'); });
+    vi.mocked(execSync).mockImplementation(() => {
+      throw new Error('not found');
+    });
     const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     const mockError = vi.spyOn(console, 'error').mockImplementation(() => {});
     // import and call checkClaude
-    expect(mockError).toHaveBeenCalledWith(expect.stringContaining('npm install -g @anthropic-ai/claude-code'));
+    expect(mockError).toHaveBeenCalledWith(
+      expect.stringContaining('npm install -g @anthropic-ai/claude-code')
+    );
     mockExit.mockRestore();
     mockError.mockRestore();
   });
@@ -458,6 +471,7 @@ describe('checkClaude', () => {
 #### `packages/cli/src/__tests__/cli.test.ts` (section 9)
 
 Tests for CLI argument parsing:
+
 - `--help` prints usage and exits 0
 - `--version` reads package.json version and exits 0
 - `--port 8080` sets `GATEWAY_PORT` env var
@@ -466,6 +480,7 @@ Tests for CLI argument parsing:
 - Default values: port 6942, no tunnel, cwd = process.cwd()
 
 **Acceptance Criteria**:
+
 - All new tests pass (`npx vitest run packages/cli/src/__tests__/`)
 - All existing tests still pass (`turbo test`)
 - Tests properly mock `execSync`, `process.exit`, `console.error`
@@ -486,6 +501,7 @@ Validate that the full build pipeline works and the CLI serves the web UI.
 #### Build Integration Test (section 9)
 
 Verify after build:
+
 - `dist/bin/cli.js` exists and has shebang (`#!/usr/bin/env node`)
 - `dist/server/index.js` exists and is a valid ESM module
 - `dist/client/index.html` exists
@@ -507,6 +523,7 @@ cd packages/cli && npm pack --dry-run
 ```
 
 Verify `npm pack --dry-run` shows expected files:
+
 - `dist/bin/cli.js`
 - `dist/server/index.js`
 - `dist/client/index.html`
@@ -516,11 +533,13 @@ Verify `npm pack --dry-run` shows expected files:
 #### Update CLAUDE.md
 
 Add `packages/cli` to the monorepo structure section and document the new commands:
+
 - `npm run build` in `packages/cli` — build the CLI package
 - `turbo run pack --filter=dorkos` — build via turbo
 - `node packages/cli/dist/bin/cli.js` — run locally
 
 **Acceptance Criteria**:
+
 - Full build completes without errors
 - `node packages/cli/dist/bin/cli.js --help` prints usage
 - `node packages/cli/dist/bin/cli.js --version` prints `0.1.0`
@@ -552,12 +571,12 @@ Task 1.2 (package scaffold) ──┬──────────────�
 
 ## Summary
 
-| Phase | Tasks | Description |
-|-------|-------|-------------|
-| P1 | 1.1, 1.2 | Server modifications + package scaffold |
-| P2 | 2.1, 2.2 | CLI entry point + Claude check |
-| P3 | 3.1 | Build pipeline |
-| P4 | 4.1, 4.2 | Tests + validation |
+| Phase | Tasks    | Description                             |
+| ----- | -------- | --------------------------------------- |
+| P1    | 1.1, 1.2 | Server modifications + package scaffold |
+| P2    | 2.1, 2.2 | CLI entry point + Claude check          |
+| P3    | 3.1      | Build pipeline                          |
+| P4    | 4.1, 4.2 | Tests + validation                      |
 
 **Total**: 7 tasks across 4 phases
 **Critical path**: 1.2 → 2.1 → 3.1 → 4.2

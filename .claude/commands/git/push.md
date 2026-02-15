@@ -1,6 +1,6 @@
 ---
 description: Validate and push commits with lint, type, and build checks
-argument-hint: "(no arguments)"
+argument-hint: '(no arguments)'
 allowed-tools: Bash, Read, Grep
 category: git
 ---

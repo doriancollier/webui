@@ -10,7 +10,9 @@ vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();
   return {
     ...actual,
-    execFileSync: vi.fn(() => { throw new Error('not found'); }),
+    execFileSync: vi.fn(() => {
+      throw new Error('not found');
+    }),
   };
 });
 vi.mock('fs', async (importOriginal) => {
@@ -172,9 +174,10 @@ describe('AgentManager interactive tools', () => {
         // We create a mock SDK that triggers canUseTool with a tool approval
         const mockAsyncIterable = {
           [Symbol.asyncIterator]: () => ({
-            next: () => new Promise<{ done: boolean; value?: unknown }>(() => {
-              // Never resolves - simulates waiting for SDK
-            }),
+            next: () =>
+              new Promise<{ done: boolean; value?: unknown }>(() => {
+                // Never resolves - simulates waiting for SDK
+              }),
           }),
         };
         mockedQuery.mockReturnValue(mockAsyncIterable as unknown as ReturnType<typeof query>);
@@ -202,7 +205,8 @@ describe('AgentManager interactive tools', () => {
     it('auto-creates session if it does not exist', async () => {
       // Mock SDK to return an async iterable that immediately completes
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: {
@@ -245,7 +249,8 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'bypassPermissions' });
 
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: {
@@ -294,7 +299,8 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'bypassPermissions' });
 
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
@@ -362,7 +368,8 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'bypassPermissions' });
 
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
@@ -407,7 +414,8 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'bypassPermissions' });
 
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
@@ -432,8 +440,7 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'bypassPermissions' });
 
       const mockIterator = {
-        next: vi.fn()
-          .mockRejectedValueOnce(new Error('SDK connection failed')),
+        next: vi.fn().mockRejectedValueOnce(new Error('SDK connection failed')),
       };
       mockedQuery.mockReturnValue({
         [Symbol.asyncIterator]: () => mockIterator,
@@ -457,7 +464,8 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'bypassPermissions' });
 
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: {
@@ -487,7 +495,8 @@ describe('AgentManager interactive tools', () => {
       manager.ensureSession('sess-1', { permissionMode: 'plan' });
 
       const mockIterator = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
@@ -513,7 +522,8 @@ describe('AgentManager interactive tools', () => {
 
       // First message: init sets hasStarted = true
       const mockIterator1 = {
-        next: vi.fn()
+        next: vi
+          .fn()
           .mockResolvedValueOnce({
             done: false,
             value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
@@ -540,8 +550,7 @@ describe('AgentManager interactive tools', () => {
 
       // Second message: should have resume set
       const mockIterator2 = {
-        next: vi.fn()
-          .mockResolvedValueOnce({ done: true }),
+        next: vi.fn().mockResolvedValueOnce({ done: true }),
       };
       mockedQuery.mockReturnValue({
         [Symbol.asyncIterator]: () => mockIterator2,
@@ -566,31 +575,35 @@ describe('AgentManager interactive tools', () => {
       let canUseToolFn: (
         toolName: string,
         input: Record<string, unknown>,
-        context: { signal: AbortSignal; toolUseID: string },
+        context: { signal: AbortSignal; toolUseID: string }
       ) => Promise<unknown>;
 
       // Capture the canUseTool callback from query options
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockedQuery as any).mockImplementation((args: { options: { canUseTool?: typeof canUseToolFn } }) => {
-        canUseToolFn = args.options.canUseTool!;
 
-        const mockIterator = {
-          next: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
-            })
-            // This next() will block until we resolve the canUseTool promise
-            .mockImplementationOnce(
-              () => new Promise(() => {
-                // Never resolves - we test the interaction flow before SDK continues
-              }),
-            ),
-        };
-        return {
-          [Symbol.asyncIterator]: () => mockIterator,
-        } as unknown as ReturnType<typeof query>;
-      });
+      (mockedQuery as any).mockImplementation(
+        (args: { options: { canUseTool?: typeof canUseToolFn } }) => {
+          canUseToolFn = args.options.canUseTool!;
+
+          const mockIterator = {
+            next: vi
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
+              })
+              // This next() will block until we resolve the canUseTool promise
+              .mockImplementationOnce(
+                () =>
+                  new Promise(() => {
+                    // Never resolves - we test the interaction flow before SDK continues
+                  })
+              ),
+          };
+          return {
+            [Symbol.asyncIterator]: () => mockIterator,
+          } as unknown as ReturnType<typeof query>;
+        }
+      );
 
       // Start consuming sendMessage
       const gen = manager.sendMessage('sess-1', 'ask me');
@@ -603,11 +616,13 @@ describe('AgentManager interactive tools', () => {
       const pullPromise = gen.next();
 
       // Now invoke canUseTool as if the SDK called it
-      const questions = [{ header: 'Test', question: 'Pick one?', options: [{ label: 'A' }], multiSelect: false }];
+      const questions = [
+        { header: 'Test', question: 'Pick one?', options: [{ label: 'A' }], multiSelect: false },
+      ];
       const permissionPromise = canUseToolFn!(
         'AskUserQuestion',
         { questions },
-        { signal: new AbortController().signal, toolUseID: 'tool-q1' },
+        { signal: new AbortController().signal, toolUseID: 'tool-q1' }
       );
 
       // The question_prompt event should be in the queue, so the generator should yield it
@@ -634,25 +649,27 @@ describe('AgentManager interactive tools', () => {
       let canUseToolFn: (
         toolName: string,
         input: Record<string, unknown>,
-        context: { signal: AbortSignal; toolUseID: string },
+        context: { signal: AbortSignal; toolUseID: string }
       ) => Promise<unknown>;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockedQuery as any).mockImplementation((args: { options: { canUseTool?: typeof canUseToolFn } }) => {
-        canUseToolFn = args.options.canUseTool!;
+      (mockedQuery as any).mockImplementation(
+        (args: { options: { canUseTool?: typeof canUseToolFn } }) => {
+          canUseToolFn = args.options.canUseTool!;
 
-        const mockIterator = {
-          next: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
-            })
-            .mockImplementationOnce(() => new Promise(() => {})),
-        };
-        return {
-          [Symbol.asyncIterator]: () => mockIterator,
-        } as unknown as ReturnType<typeof query>;
-      });
+          const mockIterator = {
+            next: vi
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
+              })
+              .mockImplementationOnce(() => new Promise(() => {})),
+          };
+          return {
+            [Symbol.asyncIterator]: () => mockIterator,
+          } as unknown as ReturnType<typeof query>;
+        }
+      );
 
       const gen = manager.sendMessage('sess-1', 'do something');
       const pullPromise = gen.next();
@@ -661,7 +678,7 @@ describe('AgentManager interactive tools', () => {
       const permissionPromise = canUseToolFn!(
         'Write',
         { file_path: '/tmp/test.txt', content: 'hello' },
-        { signal: new AbortController().signal, toolUseID: 'tool-w1' },
+        { signal: new AbortController().signal, toolUseID: 'tool-w1' }
       );
 
       const firstEvent = await pullPromise;
@@ -674,7 +691,10 @@ describe('AgentManager interactive tools', () => {
       expect(approved).toBe(true);
 
       const permissionResult = await permissionPromise;
-      expect(permissionResult).toEqual({ behavior: 'allow', updatedInput: { file_path: '/tmp/test.txt', content: 'hello' } });
+      expect(permissionResult).toEqual({
+        behavior: 'allow',
+        updatedInput: { file_path: '/tmp/test.txt', content: 'hello' },
+      });
     });
 
     it('denying a tool approval resolves with deny', async () => {
@@ -683,25 +703,27 @@ describe('AgentManager interactive tools', () => {
       let canUseToolFn: (
         toolName: string,
         input: Record<string, unknown>,
-        context: { signal: AbortSignal; toolUseID: string },
+        context: { signal: AbortSignal; toolUseID: string }
       ) => Promise<unknown>;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockedQuery as any).mockImplementation((args: { options: { canUseTool?: typeof canUseToolFn } }) => {
-        canUseToolFn = args.options.canUseTool!;
+      (mockedQuery as any).mockImplementation(
+        (args: { options: { canUseTool?: typeof canUseToolFn } }) => {
+          canUseToolFn = args.options.canUseTool!;
 
-        const mockIterator = {
-          next: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
-            })
-            .mockImplementationOnce(() => new Promise(() => {})),
-        };
-        return {
-          [Symbol.asyncIterator]: () => mockIterator,
-        } as unknown as ReturnType<typeof query>;
-      });
+          const mockIterator = {
+            next: vi
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
+              })
+              .mockImplementationOnce(() => new Promise(() => {})),
+          };
+          return {
+            [Symbol.asyncIterator]: () => mockIterator,
+          } as unknown as ReturnType<typeof query>;
+        }
+      );
 
       const gen = manager.sendMessage('sess-1', 'do something');
       const pullPromise = gen.next();
@@ -709,7 +731,7 @@ describe('AgentManager interactive tools', () => {
       const permissionPromise = canUseToolFn!(
         'Bash',
         { command: 'rm -rf /' },
-        { signal: new AbortController().signal, toolUseID: 'tool-b1' },
+        { signal: new AbortController().signal, toolUseID: 'tool-b1' }
       );
 
       await pullPromise; // drain approval_required event
@@ -731,25 +753,27 @@ describe('AgentManager interactive tools', () => {
       let canUseToolFn: (
         toolName: string,
         input: Record<string, unknown>,
-        context: { signal: AbortSignal; toolUseID: string },
+        context: { signal: AbortSignal; toolUseID: string }
       ) => Promise<unknown>;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockedQuery as any).mockImplementation((args: { options: { canUseTool?: typeof canUseToolFn } }) => {
-        canUseToolFn = args.options.canUseTool!;
+      (mockedQuery as any).mockImplementation(
+        (args: { options: { canUseTool?: typeof canUseToolFn } }) => {
+          canUseToolFn = args.options.canUseTool!;
 
-        const mockIterator = {
-          next: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
-            })
-            .mockImplementationOnce(() => new Promise(() => {})),
-        };
-        return {
-          [Symbol.asyncIterator]: () => mockIterator,
-        } as unknown as ReturnType<typeof query>;
-      });
+          const mockIterator = {
+            next: vi
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
+              })
+              .mockImplementationOnce(() => new Promise(() => {})),
+          };
+          return {
+            [Symbol.asyncIterator]: () => mockIterator,
+          } as unknown as ReturnType<typeof query>;
+        }
+      );
 
       // Start consuming sendMessage to register canUseTool
       const gen = manager.sendMessage('sess-1', 'go');
@@ -762,7 +786,7 @@ describe('AgentManager interactive tools', () => {
       const result = await canUseToolFn!(
         'Write',
         { file_path: '/tmp/test.txt' },
-        { signal: new AbortController().signal, toolUseID: 'tool-w1' },
+        { signal: new AbortController().signal, toolUseID: 'tool-w1' }
       );
 
       expect(result).toEqual({ behavior: 'allow', updatedInput: { file_path: '/tmp/test.txt' } });
@@ -778,25 +802,27 @@ describe('AgentManager interactive tools', () => {
       let canUseToolFn: (
         toolName: string,
         input: Record<string, unknown>,
-        context: { signal: AbortSignal; toolUseID: string },
+        context: { signal: AbortSignal; toolUseID: string }
       ) => Promise<unknown>;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockedQuery as any).mockImplementation((args: { options: { canUseTool?: typeof canUseToolFn } }) => {
-        canUseToolFn = args.options.canUseTool!;
+      (mockedQuery as any).mockImplementation(
+        (args: { options: { canUseTool?: typeof canUseToolFn } }) => {
+          canUseToolFn = args.options.canUseTool!;
 
-        const mockIterator = {
-          next: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
-            })
-            .mockImplementationOnce(() => new Promise(() => {})),
-        };
-        return {
-          [Symbol.asyncIterator]: () => mockIterator,
-        } as unknown as ReturnType<typeof query>;
-      });
+          const mockIterator = {
+            next: vi
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
+              })
+              .mockImplementationOnce(() => new Promise(() => {})),
+          };
+          return {
+            [Symbol.asyncIterator]: () => mockIterator,
+          } as unknown as ReturnType<typeof query>;
+        }
+      );
 
       const gen = manager.sendMessage('sess-1', 'ask');
       gen.next(); // kick off
@@ -806,7 +832,7 @@ describe('AgentManager interactive tools', () => {
       const permissionPromise = canUseToolFn!(
         'AskUserQuestion',
         { questions: [] },
-        { signal: new AbortController().signal, toolUseID: 'tool-q-timeout' },
+        { signal: new AbortController().signal, toolUseID: 'tool-q-timeout' }
       );
 
       // Advance past the 10-minute timeout
@@ -828,25 +854,27 @@ describe('AgentManager interactive tools', () => {
       let canUseToolFn: (
         toolName: string,
         input: Record<string, unknown>,
-        context: { signal: AbortSignal; toolUseID: string },
+        context: { signal: AbortSignal; toolUseID: string }
       ) => Promise<unknown>;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (mockedQuery as any).mockImplementation((args: { options: { canUseTool?: typeof canUseToolFn } }) => {
-        canUseToolFn = args.options.canUseTool!;
+      (mockedQuery as any).mockImplementation(
+        (args: { options: { canUseTool?: typeof canUseToolFn } }) => {
+          canUseToolFn = args.options.canUseTool!;
 
-        const mockIterator = {
-          next: vi.fn()
-            .mockResolvedValueOnce({
-              done: false,
-              value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
-            })
-            .mockImplementationOnce(() => new Promise(() => {})),
-        };
-        return {
-          [Symbol.asyncIterator]: () => mockIterator,
-        } as unknown as ReturnType<typeof query>;
-      });
+          const mockIterator = {
+            next: vi
+              .fn()
+              .mockResolvedValueOnce({
+                done: false,
+                value: { type: 'system', subtype: 'init', session_id: 'sess-1' },
+              })
+              .mockImplementationOnce(() => new Promise(() => {})),
+          };
+          return {
+            [Symbol.asyncIterator]: () => mockIterator,
+          } as unknown as ReturnType<typeof query>;
+        }
+      );
 
       const gen = manager.sendMessage('sess-1', 'do');
       gen.next(); // kick off
@@ -856,7 +884,7 @@ describe('AgentManager interactive tools', () => {
       const permissionPromise = canUseToolFn!(
         'Bash',
         { command: 'ls' },
-        { signal: new AbortController().signal, toolUseID: 'tool-a-timeout' },
+        { signal: new AbortController().signal, toolUseID: 'tool-a-timeout' }
       );
 
       await vi.advanceTimersByTimeAsync(10 * 60 * 1000 + 1);

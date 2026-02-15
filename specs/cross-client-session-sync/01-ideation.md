@@ -13,6 +13,7 @@
 **Task brief:** Investigate options for keeping the chat message list in sync across multiple clients viewing the same session. Two scenarios: (1) CLI activity reflected in the WebUI without refresh, (2) same session open in multiple browser tabs/devices with both staying current.
 
 **Assumptions:**
+
 - Single server instance (no horizontal scaling needed)
 - Local-first architecture (no cloud dependencies)
 - JSONL transcript files are the single source of truth
@@ -21,6 +22,7 @@
 - Near-real-time sync is desirable but sub-second latency is not strictly required
 
 **Out of scope:**
+
 - Multi-user collaboration features (shared cursors, presence)
 - Conflict resolution for simultaneous message sends from multiple clients
 - Server-side changes to the Claude Agent SDK
@@ -47,24 +49,26 @@
 
 **Primary components/modules:**
 
-| File | Role |
-|------|------|
-| `apps/server/src/services/stream-adapter.ts` | SSE wire protocol helpers (1:1 response) |
+| File                                            | Role                                                 |
+| ----------------------------------------------- | ---------------------------------------------------- |
+| `apps/server/src/services/stream-adapter.ts`    | SSE wire protocol helpers (1:1 response)             |
 | `apps/server/src/services/transcript-reader.ts` | Reads JSONL files, session metadata with mtime cache |
-| `apps/server/src/services/agent-manager.ts` | SDK session lifecycle, `sendMessage()` generator |
-| `apps/server/src/routes/sessions.ts` | REST/SSE endpoints for sessions and messages |
-| `apps/client/src/hooks/use-chat-session.ts` | Client chat state, history loading, streaming |
-| `apps/client/src/lib/http-transport.ts` | HTTP + SSE transport adapter |
-| `packages/shared/src/transport.ts` | Transport interface (pull-based) |
-| `packages/shared/src/schemas.ts` | Zod schemas for all event/message types |
+| `apps/server/src/services/agent-manager.ts`     | SDK session lifecycle, `sendMessage()` generator     |
+| `apps/server/src/routes/sessions.ts`            | REST/SSE endpoints for sessions and messages         |
+| `apps/client/src/hooks/use-chat-session.ts`     | Client chat state, history loading, streaming        |
+| `apps/client/src/lib/http-transport.ts`         | HTTP + SSE transport adapter                         |
+| `packages/shared/src/transport.ts`              | Transport interface (pull-based)                     |
+| `packages/shared/src/schemas.ts`                | Zod schemas for all event/message types              |
 
 **Shared dependencies:**
+
 - TanStack Query v5 (client data fetching, has built-in `refetchInterval`)
 - Zustand (client UI state)
 - Express 4.21 (server routing, response handling)
 - No WebSocket, file watching, or pub/sub libraries installed
 
 **Data flow (current):**
+
 ```
 Client A sends message
   → POST /api/sessions/:id/messages
@@ -83,6 +87,7 @@ CLI user on same session:
 ```
 
 **Potential blast radius:**
+
 - Transport interface (`packages/shared/src/transport.ts`) — would need new subscription method
 - SSE streaming (`stream-adapter.ts`, `routes/sessions.ts`) — new broadcast endpoint
 - Client chat hook (`use-chat-session.ts`) — subscribe to updates or poll
@@ -221,6 +226,7 @@ N/A — this is a feature investigation, not a bug fix.
 **Primary: Chokidar + better-sse Channels (#1)**
 
 This is the best fit because:
+
 - Solves both scenarios with a single mechanism
 - Leverages existing SSE infrastructure rather than adding WebSocket
 - Native file watching catches CLI writes that the SDK can't observe
@@ -231,6 +237,7 @@ This is the best fit because:
 **Fallback: TanStack Query Smart Polling (#2)**
 
 If file watching proves problematic (Electron compat, performance, etc.), polling is the simplest backup:
+
 - 10 lines of code, zero server changes
 - 80% of the benefit with 20% of the effort
 - Can be implemented as Phase 1 while building toward file watching
@@ -266,15 +273,18 @@ If file watching proves problematic (Electron compat, performance, etc.), pollin
 ```
 
 **New SSE endpoint:** `GET /api/sessions/:id/stream`
+
 - Persistent EventSource connection (not tied to sending a message)
 - Client connects when viewing a session
 - Receives all new messages regardless of source (CLI, SDK, other client)
 
 **New server components:**
+
 - `services/session-broadcaster.ts` — manages channels, file watchers, and broadcasting
 - Extends `transcript-reader.ts` with incremental reading (track file offset per session)
 
 **New client hook or extension:**
+
 - `useSessionSync(sessionId)` — connects EventSource, merges incoming messages into chat state
 - Or extend `useChatSession` with an EventSource subscription alongside existing streaming
 

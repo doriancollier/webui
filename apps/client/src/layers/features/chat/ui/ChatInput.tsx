@@ -26,22 +26,25 @@ interface ChatInputProps {
   onCursorChange?: (pos: number) => void;
 }
 
-export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput({
-  value,
-  onChange,
-  onSubmit,
-  isLoading,
-  sessionBusy = false,
-  onStop,
-  onEscape,
-  onClear,
-  isPaletteOpen,
-  onArrowUp,
-  onArrowDown,
-  onCommandSelect,
-  activeDescendantId,
-  onCursorChange,
-}, ref) {
+export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function ChatInput(
+  {
+    value,
+    onChange,
+    onSubmit,
+    isLoading,
+    sessionBusy = false,
+    onStop,
+    onEscape,
+    onClear,
+    isPaletteOpen,
+    onArrowUp,
+    onArrowDown,
+    onCommandSelect,
+    activeDescendantId,
+    onCursorChange,
+  },
+  ref
+) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const lastEscapeRef = useRef(0);
 
@@ -108,7 +111,18 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
         }
       }
     },
-    [isLoading, isMobile, value, onSubmit, onEscape, onClear, isPaletteOpen, onArrowUp, onArrowDown, onCommandSelect]
+    [
+      isLoading,
+      isMobile,
+      value,
+      onSubmit,
+      onEscape,
+      onClear,
+      isPaletteOpen,
+      onArrowUp,
+      onArrowDown,
+      onCommandSelect,
+    ]
   );
 
   const handleFocus = useCallback(() => setIsFocused(true), []);
@@ -171,7 +185,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
   return (
     <div className="flex flex-col gap-1.5">
       {sessionBusy && (
-        <div className="text-xs text-amber-600 dark:text-amber-500 px-1">
+        <div className="px-1 text-xs text-amber-600 dark:text-amber-500">
           Session is busy. Please wait...
         </div>
       )}
@@ -191,29 +205,35 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
           onSelect={handleSelect}
           role="combobox"
           aria-autocomplete="list"
-          aria-controls={isPaletteOpen ? (activeDescendantId?.startsWith('file-') ? 'file-palette-listbox' : 'command-palette-listbox') : undefined}
+          aria-controls={
+            isPaletteOpen
+              ? activeDescendantId?.startsWith('file-')
+                ? 'file-palette-listbox'
+                : 'command-palette-listbox'
+              : undefined
+          }
           aria-expanded={isPaletteOpen ?? false}
           aria-activedescendant={isPaletteOpen ? activeDescendantId : undefined}
           placeholder="Message Claude..."
-          className="flex-1 resize-none bg-transparent py-0.5 text-sm focus:outline-none min-h-[24px] max-h-[200px]"
+          className="max-h-[200px] min-h-[24px] flex-1 resize-none bg-transparent py-0.5 text-sm focus:outline-none"
           rows={1}
           disabled={isDisabled}
         />
-      <motion.button
-        animate={{ opacity: showClear ? 0.5 : 0, scale: showClear ? 1 : 0.8 }}
-        transition={{ duration: 0.15 }}
-        whileHover={showClear ? { opacity: 1 } : undefined}
-        onClick={onClear}
-        disabled={!showClear}
-        type="button"
-        className={cn(
-          'shrink-0 rounded-lg p-1 transition-colors text-muted-foreground hover:text-foreground',
-          !showClear && 'pointer-events-none'
-        )}
-        aria-label="Clear message"
-      >
-        <X className="size-(--size-icon-sm)" />
-      </motion.button>
+        <motion.button
+          animate={{ opacity: showClear ? 0.5 : 0, scale: showClear ? 1 : 0.8 }}
+          transition={{ duration: 0.15 }}
+          whileHover={showClear ? { opacity: 1 } : undefined}
+          onClick={onClear}
+          disabled={!showClear}
+          type="button"
+          className={cn(
+            'text-muted-foreground hover:text-foreground shrink-0 rounded-lg p-1 transition-colors',
+            !showClear && 'pointer-events-none'
+          )}
+          aria-label="Clear message"
+        >
+          <X className="size-(--size-icon-sm)" />
+        </motion.button>
         <motion.button
           animate={{ opacity: showButton ? 1 : 0, scale: showButton ? 1 : 0.8 }}
           transition={{ duration: 0.15 }}
@@ -222,7 +242,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
           onClick={isLoading ? onStop : onSubmit}
           disabled={!showButton || sessionBusy}
           className={cn(
-            'shrink-0 rounded-lg p-1.5 max-md:p-2 transition-colors',
+            'shrink-0 rounded-lg p-1.5 transition-colors max-md:p-2',
             isLoading
               ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
               : 'bg-primary text-primary-foreground hover:bg-primary/90',

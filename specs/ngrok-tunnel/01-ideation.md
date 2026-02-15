@@ -13,6 +13,7 @@
 **Task brief:** Integrate ngrok tunnel support directly into the DorkOS server so users can access the gateway externally without manual network configuration. The tunnel should optionally auto-start when the server boots, be controlled via environment variables, support HTTP basic auth, and work in both production and dev mode.
 
 **Assumptions:**
+
 - Users have (or will create) a free ngrok account for an auth token
 - The tunnel is a server-side concern only — no client UI changes needed initially
 - In production mode, Express serves the built React client, so tunneling Express port is sufficient
@@ -21,6 +22,7 @@
 - CORS is currently set to allow all origins via `cors()` middleware in `app.ts`
 
 **Out of scope:**
+
 - Client-side UI for tunnel management (start/stop/display URL in the web app)
 - Obsidian plugin tunnel support (DirectTransport bypasses HTTP entirely)
 - Paid ngrok features (custom domains documented but not required)
@@ -53,6 +55,7 @@
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/server/src/index.ts` — Server entry point, startup flow, will wire tunnel startup here
 - `apps/server/src/app.ts` — Express app factory with CORS and middleware (already permissive CORS)
 - `apps/server/src/routes/health.ts` — Health endpoint, will expose tunnel status
@@ -62,6 +65,7 @@
 - `packages/shared/src/transport.ts` — Transport interface (health() method signature)
 
 **Shared Dependencies:**
+
 - `packages/shared/` — Types, schemas, Transport interface (cross-app contract)
 - `apps/server/src/services/openapi-registry.ts` — OpenAPI spec generation
 - `turbo.json` — Build environment variable declarations
@@ -71,6 +75,7 @@
 Server boots → `index.ts` creates app → `app.listen()` on PORT → (if TUNNEL_ENABLED) → TunnelManager.start() → ngrok.forward() → Public URL generated → Logged to console → Health endpoint includes tunnel status
 
 **Feature Flags/Config:**
+
 - `TUNNEL_ENABLED` — Master switch (env var, default: undefined/disabled)
 - `NGROK_AUTHTOKEN` — Auth token (env var, read by SDK from env by default)
 - `TUNNEL_PORT` — Port to tunnel (env var, default: GATEWAY_PORT)
@@ -78,6 +83,7 @@ Server boots → `index.ts` creates app → `app.listen()` on PORT → (if TUNNE
 - `TUNNEL_DOMAIN` — Custom/reserved domain (env var, optional)
 
 **Potential Blast Radius:**
+
 - **Direct (new):** 1 file — `apps/server/src/services/tunnel-manager.ts`
 - **Direct (modify):** 5 files — `index.ts`, `health.ts`, `schemas.ts`, `types.ts`, `transport.ts`
 - **Config:** 3 files — `apps/server/package.json`, `turbo.json`, `.env`
@@ -173,6 +179,7 @@ N/A — This is a new feature, not a bug fix.
 ### Recommendation
 
 **`@ngrok/ngrok` (Official SDK)** is the clear winner for this project:
+
 1. TypeScript-native — aligns with the codebase
 2. Programmatic API — no subprocess management or binary downloads
 3. Dynamic import — zero cost when not enabled
@@ -201,6 +208,7 @@ N/A — This is a new feature, not a bug fix.
 ## Sources
 
 ### Official Documentation
+
 - [@ngrok/ngrok - npm](https://www.npmjs.com/package/@ngrok/ngrok)
 - [JavaScript SDK Quickstart](https://ngrok.com/docs/getting-started/javascript)
 - [forward() API Docs](https://ngrok.github.io/ngrok-javascript/functions/forward.html)
@@ -210,16 +218,19 @@ N/A — This is a new feature, not a bug fix.
 - [Static dev domains for free users](https://ngrok.com/blog/free-static-domains-ngrok-users/)
 
 ### Security
+
 - [Basic Auth Action](https://ngrok.com/docs/traffic-policy/actions/basic-auth)
 - [Authentication with ngrok](https://ngrok.com/blog/authentication-with-ngrok)
 
 ### Vite HMR
+
 - [Using reverse proxy like Ngrok with Vite HMR](https://github.com/vitejs/vite/discussions/5399)
 - [HMR over ngrok with 1 tunnel](https://github.com/vitejs/vite/discussions/13552)
 - [Vite Server Options](https://vite.dev/config/server-options)
 - [vite-plugin-ngrok](https://github.com/aphex/vite-plugin-ngrok)
 
 ### Alternatives
+
 - [Cloudflare Tunnel vs ngrok](https://instatunnel.my/blog/comparing-the-big-three-a-comprehensive-analysis-of-ngrok-cloudflare-tunnel-and-tailscale-for-modern-development-teams)
 - [localtunnel - npm](https://www.npmjs.com/package/localtunnel)
 - [Speed Test Comparison](https://www.localcan.com/blog/ngrok-vs-cloudflare-tunnel-vs-localcan-speed-test-2025)

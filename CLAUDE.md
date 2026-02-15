@@ -44,6 +44,10 @@ npm run build -w packages/cli  # Build CLI package (esbuild bundles server+clien
 npm publish -w packages/cli   # Publish dorkos to npm (prepublishOnly auto-builds)
 npm start              # Production server (serves built React app)
 npm run dev:tunnel -w apps/server   # Dev server + ngrok tunnel (tunnels Vite on :3000)
+turbo lint             # ESLint across all packages
+turbo lint -- --fix    # Auto-fix ESLint issues
+npm run format         # Prettier format all files
+npm run format:check   # Check formatting without writing
 ```
 
 Run a single test file: `npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts`
@@ -91,20 +95,20 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 
 **FSD Layers** (`apps/client/src/layers/`):
 
-| Layer | Modules | Purpose |
-|-------|---------|---------|
-| `shared/ui/` | 14 shadcn primitives (Badge, Dialog, Select, Tabs, etc.) | Reusable UI primitives |
-| `shared/model/` | TransportContext, app-store, 8 hooks (useTheme, useIsMobile, etc.) | Hooks, stores, context |
-| `shared/lib/` | cn, Transports, font-config, favicon-utils, celebrations, etc. | Domain-agnostic utilities |
-| `entities/session/` | useSessionId, useSessions, useDirectoryState, useDefaultCwd | Session domain hooks |
-| `entities/command/` | useCommands | Command domain hook |
-| `features/chat/` | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession | Chat interface |
-| `features/session-list/` | SessionSidebar, SessionItem, DirectoryPicker | Session management |
-| `features/commands/` | CommandPalette | Slash command palette |
-| `features/settings/` | SettingsDialog | Settings UI |
-| `features/files/` | FilePalette, useFiles | File browser |
-| `features/status/` | StatusLine, GitStatusItem, ModelItem, etc. | Status bar |
-| `widgets/app-layout/` | PermissionBanner | App-level layout components |
+| Layer                    | Modules                                                            | Purpose                     |
+| ------------------------ | ------------------------------------------------------------------ | --------------------------- |
+| `shared/ui/`             | 14 shadcn primitives (Badge, Dialog, Select, Tabs, etc.)           | Reusable UI primitives      |
+| `shared/model/`          | TransportContext, app-store, 8 hooks (useTheme, useIsMobile, etc.) | Hooks, stores, context      |
+| `shared/lib/`            | cn, Transports, font-config, favicon-utils, celebrations, etc.     | Domain-agnostic utilities   |
+| `entities/session/`      | useSessionId, useSessions, useDirectoryState, useDefaultCwd        | Session domain hooks        |
+| `entities/command/`      | useCommands                                                        | Command domain hook         |
+| `features/chat/`         | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession  | Chat interface              |
+| `features/session-list/` | SessionSidebar, SessionItem, DirectoryPicker                       | Session management          |
+| `features/commands/`     | CommandPalette                                                     | Slash command palette       |
+| `features/settings/`     | SettingsDialog                                                     | Settings UI                 |
+| `features/files/`        | FilePalette, useFiles                                              | File browser                |
+| `features/status/`       | StatusLine, GitStatusItem, ModelItem, etc.                         | Status bar                  |
+| `widgets/app-layout/`    | PermissionBanner                                                   | App-level layout components |
 
 **Layer dependency rule**: `shared` ← `entities` ← `features` ← `widgets` ← `app` (strictly unidirectional). See `.claude/rules/fsd-layers.md` for full import rules.
 
@@ -143,6 +147,7 @@ Event types: `text_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`
 Clients can subscribe to session changes via a persistent SSE connection: `GET /api/sessions/:id/stream`. This provides real-time sync across multiple clients (including CLI changes).
 
 Events:
+
 - `sync_connected` — Sent on initial connection. Data: `{ sessionId }`
 - `sync_update` — Sent when new content is written to the session's JSONL file. Data: `{ sessionId, timestamp }`
 
@@ -176,23 +181,34 @@ The `dorkos` npm package bundles the server + client into a standalone CLI tool.
 
 Detailed documentation lives in `guides/`:
 
-| Guide | Contents |
-|-------|----------|
-| [`guides/architecture.md`](guides/architecture.md) | Hexagonal architecture, Transport interface, dependency injection, Electron compatibility layer, build plugins, data flow diagrams, module layout, testing patterns |
-| [`guides/design-system.md`](guides/design-system.md) | Color palette, typography, spacing (8pt grid), motion specs, component conventions |
-| [`guides/obsidian-plugin-development.md`](guides/obsidian-plugin-development.md) | Plugin lifecycle, ItemView pattern, React mounting, active file tracking, drag-and-drop, Vite build config, Electron quirks, debugging, common issues |
-| [`guides/api-reference.md`](guides/api-reference.md) | OpenAPI spec, Scalar docs UI, Zod schema patterns, adding endpoints, SSE streaming, validation errors |
-| [`guides/interactive-tools.md`](guides/interactive-tools.md) | Tool approval, AskUserQuestion, TaskList interactive flows |
-| [`guides/keyboard-shortcuts.md`](guides/keyboard-shortcuts.md) | Keyboard shortcuts and hotkeys |
-| [`guides/05-data-fetching.md`](guides/05-data-fetching.md) | TanStack Query patterns, mutations |
-| [`guides/06-state-management.md`](guides/06-state-management.md) | Zustand vs TanStack Query decision guide |
-| [`guides/07-animations.md`](guides/07-animations.md) | Motion library patterns |
-| [`guides/08-styling-theming.md`](guides/08-styling-theming.md) | Tailwind v4, dark mode, Shadcn |
-| [`guides/11-parallel-execution.md`](guides/11-parallel-execution.md) | Parallel agent execution patterns, batching, context savings |
-| [`guides/13-autonomous-roadmap-execution.md`](guides/13-autonomous-roadmap-execution.md) | Autonomous workflow, `/roadmap:work` |
+| Guide                                                                                    | Contents                                                                                                                                                            |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`guides/architecture.md`](guides/architecture.md)                                       | Hexagonal architecture, Transport interface, dependency injection, Electron compatibility layer, build plugins, data flow diagrams, module layout, testing patterns |
+| [`guides/design-system.md`](guides/design-system.md)                                     | Color palette, typography, spacing (8pt grid), motion specs, component conventions                                                                                  |
+| [`guides/obsidian-plugin-development.md`](guides/obsidian-plugin-development.md)         | Plugin lifecycle, ItemView pattern, React mounting, active file tracking, drag-and-drop, Vite build config, Electron quirks, debugging, common issues               |
+| [`guides/api-reference.md`](guides/api-reference.md)                                     | OpenAPI spec, Scalar docs UI, Zod schema patterns, adding endpoints, SSE streaming, validation errors                                                               |
+| [`guides/interactive-tools.md`](guides/interactive-tools.md)                             | Tool approval, AskUserQuestion, TaskList interactive flows                                                                                                          |
+| [`guides/keyboard-shortcuts.md`](guides/keyboard-shortcuts.md)                           | Keyboard shortcuts and hotkeys                                                                                                                                      |
+| [`guides/05-data-fetching.md`](guides/05-data-fetching.md)                               | TanStack Query patterns, mutations                                                                                                                                  |
+| [`guides/06-state-management.md`](guides/06-state-management.md)                         | Zustand vs TanStack Query decision guide                                                                                                                            |
+| [`guides/07-animations.md`](guides/07-animations.md)                                     | Motion library patterns                                                                                                                                             |
+| [`guides/08-styling-theming.md`](guides/08-styling-theming.md)                           | Tailwind v4, dark mode, Shadcn                                                                                                                                      |
+| [`guides/11-parallel-execution.md`](guides/11-parallel-execution.md)                     | Parallel agent execution patterns, batching, context savings                                                                                                        |
+| [`guides/13-autonomous-roadmap-execution.md`](guides/13-autonomous-roadmap-execution.md) | Autonomous workflow, `/roadmap:work`                                                                                                                                |
 
 ## Testing
 
 Tests use Vitest with `vi.mock()` for Node modules. A shared `vitest.workspace.ts` at the repo root configures test projects for each app. Server tests mock `fs/promises` for transcript reading. Client tests use React Testing Library with jsdom and inject mock `Transport` objects via `TransportProvider` wrappers (see `guides/architecture.md` for the pattern). Shared test utilities (mock factories, helpers) live in `packages/test-utils/`.
 
 Tests live alongside source in `__tests__/` directories within each app and package (e.g., `apps/server/src/services/__tests__/transcript-reader.test.ts`).
+
+## Code Quality
+
+**ESLint 9** (flat config at `eslint.config.js`) + **Prettier** (`.prettierrc`) enforce code quality and formatting across the monorepo.
+
+- **Warn-first approach**: Most rules are warnings to avoid blocking development. Only critical issues (FSD layer violations) are errors.
+- **No type-checked lint rules**: The typecheck hook already runs `tsc --noEmit` — ESLint uses syntax-only TypeScript rules (`tseslint.configs.recommended`).
+- **FSD layer enforcement**: `no-restricted-imports` rules enforce the unidirectional layer dependency hierarchy as hard errors. Cross-feature model imports are enforced by the Claude Code rule in `.claude/rules/fsd-layers.md`.
+- **React Compiler rules**: Bundled with `eslint-plugin-react-hooks` v7, downgraded to warnings.
+- **Prettier + Tailwind**: `prettier-plugin-tailwindcss` sorts Tailwind classes automatically.
+- **Claude Code rules**: `.claude/rules/file-size.md`, `.claude/rules/documentation.md`, `.claude/rules/code-quality.md` provide additional guidelines for file size limits, documentation standards, and code quality practices.

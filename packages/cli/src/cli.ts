@@ -12,10 +12,10 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
   options: {
-    port:    { type: 'string',  short: 'p', default: '6942' },
-    tunnel:  { type: 'boolean', short: 't', default: false },
-    dir:     { type: 'string',  short: 'd', default: process.cwd() },
-    help:    { type: 'boolean', short: 'h' },
+    port: { type: 'string', short: 'p', default: '6942' },
+    tunnel: { type: 'boolean', short: 't', default: false },
+    dir: { type: 'string', short: 'd', default: process.cwd() },
+    help: { type: 'boolean', short: 'h' },
     version: { type: 'boolean', short: 'v' },
   },
   allowPositionals: false,

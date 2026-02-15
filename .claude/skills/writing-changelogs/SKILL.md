@@ -42,26 +42,26 @@ Write changelog entries and release notes that humans actually want to read. Thi
 
 ## Good vs Bad Examples
 
-| Bad (Developer-focused) | Good (User-focused) |
-|------------------------|---------------------|
-| Add obsidian_manager.py for auto vault registration | Open files in Obsidian without manual vault setup |
-| fix: Use relative paths in theme commands | Fix theme commands failing when run from different directories |
-| Accept 'default' as theme alias | Use 'default' to quickly apply the standard theme |
-| Add changelog-populator.py hook | Changelog entries are now auto-generated from commits |
-| Update CLAUDE.md with new patterns | (Skip - internal documentation, not user-facing) |
-| refactor: Extract helper function | (Skip - internal refactoring, no user impact) |
+| Bad (Developer-focused)                             | Good (User-focused)                                            |
+| --------------------------------------------------- | -------------------------------------------------------------- |
+| Add obsidian_manager.py for auto vault registration | Open files in Obsidian without manual vault setup              |
+| fix: Use relative paths in theme commands           | Fix theme commands failing when run from different directories |
+| Accept 'default' as theme alias                     | Use 'default' to quickly apply the standard theme              |
+| Add changelog-populator.py hook                     | Changelog entries are now auto-generated from commits          |
+| Update CLAUDE.md with new patterns                  | (Skip - internal documentation, not user-facing)               |
+| refactor: Extract helper function                   | (Skip - internal refactoring, no user impact)                  |
 
 ## Imperative Verbs Reference
 
-| Verb | Use For | Example |
-|------|---------|---------|
-| **Add** | New features, capabilities | Add dark mode support |
-| **Fix** | Bug corrections | Fix login failing on Safari |
-| **Change** | Modifications to existing behavior | Change default timeout to 30 seconds |
-| **Remove** | Deleted features | Remove deprecated v1 API |
-| **Improve** | Performance, UX enhancements | Improve search speed by 50% |
-| **Update** | Dependencies, configurations | Update to React 18 |
-| **Deprecate** | Scheduled for removal | Deprecate XML export (use JSON instead) |
+| Verb          | Use For                            | Example                                 |
+| ------------- | ---------------------------------- | --------------------------------------- |
+| **Add**       | New features, capabilities         | Add dark mode support                   |
+| **Fix**       | Bug corrections                    | Fix login failing on Safari             |
+| **Change**    | Modifications to existing behavior | Change default timeout to 30 seconds    |
+| **Remove**    | Deleted features                   | Remove deprecated v1 API                |
+| **Improve**   | Performance, UX enhancements       | Improve search speed by 50%             |
+| **Update**    | Dependencies, configurations       | Update to React 18                      |
+| **Deprecate** | Scheduled for removal              | Deprecate XML export (use JSON instead) |
 
 ## What to Skip
 
@@ -113,16 +113,16 @@ When creating GitHub releases, use this narrative format (different from the cha
 
 ### Emoji Reference for Highlights
 
-| Emoji | Use For |
-|-------|---------|
-| ✨ | Major new feature |
-| 🎨 | UI/UX improvements, themes |
-| 📂 | File handling, organization |
-| 🔧 | Fixes, improvements |
-| ⚡ | Performance |
-| 🔒 | Security |
-| 📝 | Documentation |
-| 🗑️ | Removals, deprecations |
+| Emoji | Use For                     |
+| ----- | --------------------------- |
+| ✨    | Major new feature           |
+| 🎨    | UI/UX improvements, themes  |
+| 📂    | File handling, organization |
+| 🔧    | Fixes, improvements         |
+| ⚡    | Performance                 |
+| 🔒    | Security                    |
+| 📝    | Documentation               |
+| 🗑️    | Removals, deprecations      |
 
 ## Pre-Release Checklist
 
@@ -144,13 +144,13 @@ For the overall release:
 
 When converting conventional commits to changelog entries:
 
-| Commit Message | Changelog Entry |
-|---------------|-----------------|
-| `feat: Add obsidian_manager.py` | Add automatic Obsidian vault registration |
-| `fix(theme): Use relative paths` | Fix theme commands failing outside project root |
-| `feat!: Change config format` | **BREAKING**: Change configuration format (see migration guide) |
-| `chore: Update deps` | (skip) |
-| `docs: Fix typo` | (skip) |
+| Commit Message                   | Changelog Entry                                                 |
+| -------------------------------- | --------------------------------------------------------------- |
+| `feat: Add obsidian_manager.py`  | Add automatic Obsidian vault registration                       |
+| `fix(theme): Use relative paths` | Fix theme commands failing outside project root                 |
+| `feat!: Change config format`    | **BREAKING**: Change configuration format (see migration guide) |
+| `chore: Update deps`             | (skip)                                                          |
+| `docs: Fix typo`                 | (skip)                                                          |
 
 ### Breaking Changes
 

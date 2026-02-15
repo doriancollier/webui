@@ -13,40 +13,51 @@ afterEach(() => {
 });
 
 const mockCommands = [
-  { namespace: 'daily', command: 'plan', fullCommand: '/daily:plan', description: 'Morning planning', filePath: '' },
-  { namespace: 'daily', command: 'eod', fullCommand: '/daily:eod', description: 'End of day review', filePath: '' },
-  { namespace: 'meeting', command: 'prep', fullCommand: '/meeting:prep', description: 'Prepare for meeting', argumentHint: '[name]', filePath: '' },
+  {
+    namespace: 'daily',
+    command: 'plan',
+    fullCommand: '/daily:plan',
+    description: 'Morning planning',
+    filePath: '',
+  },
+  {
+    namespace: 'daily',
+    command: 'eod',
+    fullCommand: '/daily:eod',
+    description: 'End of day review',
+    filePath: '',
+  },
+  {
+    namespace: 'meeting',
+    command: 'prep',
+    fullCommand: '/meeting:prep',
+    description: 'Prepare for meeting',
+    argumentHint: '[name]',
+    filePath: '',
+  },
 ];
 
 describe('CommandPalette', () => {
   it('renders command items', () => {
-    render(
-      <CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />
-    );
+    render(<CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('/daily:plan')).toBeDefined();
     expect(screen.getByText('/daily:eod')).toBeDefined();
     expect(screen.getByText('/meeting:prep')).toBeDefined();
   });
 
   it('shows descriptions', () => {
-    render(
-      <CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />
-    );
+    render(<CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('Morning planning')).toBeDefined();
     expect(screen.getByText('End of day review')).toBeDefined();
   });
 
   it('shows argument hints', () => {
-    render(
-      <CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />
-    );
+    render(<CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('[name]')).toBeDefined();
   });
 
   it('groups commands by namespace', () => {
-    render(
-      <CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />
-    );
+    render(<CommandPalette filteredCommands={mockCommands} selectedIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('daily')).toBeDefined();
     expect(screen.getByText('meeting')).toBeDefined();
   });
@@ -89,9 +100,7 @@ describe('CommandPalette', () => {
   });
 
   it('renders empty state when no commands match', () => {
-    render(
-      <CommandPalette filteredCommands={[]} selectedIndex={0} onSelect={vi.fn()} />
-    );
+    render(<CommandPalette filteredCommands={[]} selectedIndex={0} onSelect={vi.fn()} />);
     expect(screen.getByText('No commands found.')).toBeDefined();
   });
 

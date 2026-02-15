@@ -167,6 +167,7 @@ In Electron's renderer, `new AbortController().signal` is Chromium's Web API `Ab
 2. `child_process.spawn(cmd, args, { signal })` -- throws `ERR_INVALID_ARG_TYPE`
 
 **Fix:** `patchElectronCompat()` plugin prepends a preamble that monkey-patches both APIs:
+
 - `spawn()` -- strips the `signal` option, manually listens for abort to kill the process
 - `setMaxListeners()` -- wraps in try/catch, silently ignores `ERR_INVALID_ARG_TYPE`
 
@@ -175,6 +176,7 @@ In Electron's renderer, `new AbortController().signal` is Chromium's Web API `Ab
 The SDK resolves its `cli.js` relative to `import.meta.url`. In the bundled plugin, this resolves inside `Obsidian.app`, which doesn't have a `cli.js`.
 
 **Fix:** `AgentManager` resolves the CLI path dynamically via `resolveClaudeCliPath()`:
+
 1. Try `require.resolve('@anthropic-ai/claude-agent-sdk/cli.js')` (works in dev)
 2. Fall back to `which claude` (finds the globally installed CLI)
 3. Pass via `pathToClaudeCodeExecutable` in SDK options

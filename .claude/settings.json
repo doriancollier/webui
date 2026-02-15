@@ -16,15 +16,7 @@
       "Bash(rm:*)",
       "Bash(ls:*)"
     ],
-    "deny": [
-      ".env",
-      ".env.*",
-      "**/*.key",
-      "**/*.pem",
-      "Secrets/**",
-      "Credentials/**",
-      ".git/**"
-    ]
+    "deny": [".env", ".env.*", "**/*.key", "**/*.pem", "Secrets/**", "Credentials/**", ".git/**"]
   },
   "hooks": {
     "PreToolUse": [

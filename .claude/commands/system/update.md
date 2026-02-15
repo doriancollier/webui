@@ -18,16 +18,16 @@ Add new processes, update existing ones, or improve the Claude Code workflow bas
 
 ## Process Files Reference
 
-| Type | Location | When to Create/Modify |
-|------|----------|----------------------|
-| **Commands** | `/.claude/commands/[namespace]/[name].md` | New quick actions, workflows (user-invoked) |
-| **Agents** | `/.claude/agents/[category]/[name].md` | Complex multi-step workflows needing isolation (tool-invoked) |
-| **Skills** | `/.claude/skills/[skill-name]/SKILL.md` | Reusable expertise Claude applies automatically (model-invoked) |
-| **Rules** | `/.claude/rules/[topic].md` | Path-specific guidelines that apply to certain file types (path-triggered) |
-| **Hooks** | `/.claude/settings.json` | Automated validation/actions (via ClaudeKit, event-triggered) |
-| **Developer Guides** | `/guides/[name].md` | Detailed patterns and conventions (see `writing-developer-guides` skill) |
-| **Memory** | `/CLAUDE.md` | Core instructions, high-level documentation |
-| **Harness README** | `/.claude/README.md` | Harness structure, component inventory, maintenance guides |
+| Type                 | Location                                  | When to Create/Modify                                                      |
+| -------------------- | ----------------------------------------- | -------------------------------------------------------------------------- |
+| **Commands**         | `/.claude/commands/[namespace]/[name].md` | New quick actions, workflows (user-invoked)                                |
+| **Agents**           | `/.claude/agents/[category]/[name].md`    | Complex multi-step workflows needing isolation (tool-invoked)              |
+| **Skills**           | `/.claude/skills/[skill-name]/SKILL.md`   | Reusable expertise Claude applies automatically (model-invoked)            |
+| **Rules**            | `/.claude/rules/[topic].md`               | Path-specific guidelines that apply to certain file types (path-triggered) |
+| **Hooks**            | `/.claude/settings.json`                  | Automated validation/actions (via ClaudeKit, event-triggered)              |
+| **Developer Guides** | `/guides/[name].md`                       | Detailed patterns and conventions (see `writing-developer-guides` skill)   |
+| **Memory**           | `/CLAUDE.md`                              | Core instructions, high-level documentation                                |
+| **Harness README**   | `/.claude/README.md`                      | Harness structure, component inventory, maintenance guides                 |
 
 ## Order of Operations
 
@@ -52,6 +52,7 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
   - Understand existing patterns and what's already documented
 
 - [ ] **2.2** Search for related existing processes:
+
   ```bash
   # Find related commands
   grep -r "[relevant keywords]" ".claude/commands" --include="*.md" -l
@@ -86,6 +87,7 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
   - Has Claude Code released new features that might affect this?
 
 - [ ] **2.5.2** If research is needed, use `claude-code-guide`:
+
   ```
   Task(
     description="Research Claude Code [component type] best practices",
@@ -103,6 +105,7 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
   - Highlight new features that could improve the implementation
 
 **Research triggers:**
+
 - Creating new commands, agents, skills, or hooks
 - Modifying hook lifecycle events or tool permissions
 - Implementing features that might have official support
@@ -117,6 +120,7 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
   - **Referenced**: Files that should link to new content
 
 - [ ] **3.2** Create a detailed action plan using TodoWrite:
+
   ```
   1. [First action] - [file affected]
   2. [Second action] - [file affected]
@@ -125,13 +129,16 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
   ```
 
 - [ ] **3.3** Present the plan to user:
+
   ```markdown
   ## Implementation Plan: [Brief Title]
 
   ### Understanding
+
   You want to: [summary of goal]
 
   ### Research Findings
+
   - Related existing process: [what exists]
   - Pattern to follow: [which existing file is a good model]
   - Connections: [what will interact with this]
@@ -139,18 +146,22 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
   ### Proposed Actions
 
   #### New Files to Create
+
   1. `[path/to/new/file.md]` - [purpose]
 
   #### Files to Modify
+
   1. `[path/to/existing.md]` - [what changes]
   2. `/CLAUDE.md` - Add documentation for new process (if significant)
 
   #### Validation
+
   - [ ] Follows existing patterns
   - [ ] Documentation updated
   - [ ] No conflicts with existing processes
 
   ### Questions Before Proceeding
+
   - [Any decisions needed]
 
   **Does this plan look correct?**
@@ -168,6 +179,7 @@ Execute these steps sequentially. This is an **interactive, research-first** pro
 - [ ] **4.2** For each new file, follow the appropriate template:
 
 **Command Template:**
+
 ```markdown
 ---
 description: [clear description]
@@ -187,9 +199,11 @@ category: [workflow|validation|documentation|etc]
 ## Task
 
 ### Step 1: [First Step]
+
 [Instructions]
 
 ### Step 2: [Next Step]
+
 [Instructions]
 
 ## Output Format
@@ -202,6 +216,7 @@ category: [workflow|validation|documentation|etc]
 ```
 
 **Agent Template:**
+
 ```markdown
 ---
 name: [agent-name]
@@ -234,6 +249,7 @@ color: [blue|purple|red|green]
 ```
 
 **Skill Template:**
+
 ```markdown
 ---
 name: [verb-ing-noun]
@@ -286,12 +302,14 @@ For detailed information, see: `reference.md`
 ```
 
 **Skill Naming Requirements:**
+
 - Use gerund form (verb + -ing): `processing-pdfs`, `reviewing-code`, `implementing-fsm`
 - Lowercase letters, numbers, hyphens only
 - Max 64 characters
 - No vague names like "helper", "utils", "tools"
 
 **Skill Description Requirements:**
+
 - Must explain WHAT it does AND WHEN to use it
 - Include "Use when..." phrase
 - Third person, max 1024 characters
@@ -299,6 +317,7 @@ For detailed information, see: `reference.md`
 - Bad: "Helps with PDFs."
 
 **Skill Directory Structure:**
+
 ```
 .claude/skills/[skill-name]/
 ├── SKILL.md          # Required: Main instructions (under 500 lines)
@@ -309,7 +328,8 @@ For detailed information, see: `reference.md`
 ```
 
 **Rule Template (Path-Specific):**
-```markdown
+
+````markdown
 ---
 paths: [glob patterns for files this rule applies to]
 ---
@@ -327,6 +347,7 @@ These rules apply to [description of what files/patterns].
 ```typescript
 // Example code showing the pattern
 ```
+````
 
 ## Anti-Patterns (Never Do)
 
@@ -342,7 +363,8 @@ These rules apply to [description of what files/patterns].
 
 - [ ] [Verification item 1]
 - [ ] [Verification item 2]
-```
+
+````
 
 **Rule Naming Conventions:**
 - Use kebab-case: `api.md`, `dal.md`, `security.md`, `testing.md`
@@ -423,12 +445,14 @@ After creating/updating a guide, update `guides/INDEX.md` with:
   ### Preview of Key Changes
 
   **[filename]:**
-  ```
-  [Key content snippet]
-  ```
+````
 
-  **Proceed with these changes?**
-  ```
+[Key content snippet]
+
+```
+
+**Proceed with these changes?**
+```
 
 - [ ] **5.2** Wait for explicit confirmation
 
@@ -442,19 +466,24 @@ After creating/updating a guide, update `guides/INDEX.md` with:
   - Verify no broken references
 
 - [ ] **6.2** Report completion:
+
   ```markdown
   ## Implementation Complete
 
   ### Created
+
   - `[path]` - [description]
 
   ### Modified
+
   - `[path]` - [what changed]
 
   ### How to Use
+
   [Quick instructions for the new/updated process]
 
   ### Testing Suggestion
+
   Try: `[example usage]`
   ```
 
@@ -480,21 +509,23 @@ Understanding HOW each component is invoked is critical for choosing the right f
 
 ### Invocation Models
 
-| Component | Invocation | When to Use | Example |
-|-----------|------------|-------------|---------|
-| **Slash Command** | **User-invoked** - User types `/command` | User wants explicit control over when this runs | `/spec:create`, `/git:commit` |
-| **Agent** | **Tool-invoked** - Invoked via Task tool | Complex multi-step workflows needing separate context | `typescript-expert`, `database-expert` |
-| **Hook** | **Event-triggered** - Runs at specific lifecycle events | Deterministic behavior that MUST happen at specific points | `file-guard`, `lint-changed` |
+| Component         | Invocation                                              | When to Use                                                | Example                                |
+| ----------------- | ------------------------------------------------------- | ---------------------------------------------------------- | -------------------------------------- |
+| **Slash Command** | **User-invoked** - User types `/command`                | User wants explicit control over when this runs            | `/spec:create`, `/git:commit`          |
+| **Agent**         | **Tool-invoked** - Invoked via Task tool                | Complex multi-step workflows needing separate context      | `typescript-expert`, `database-expert` |
+| **Hook**          | **Event-triggered** - Runs at specific lifecycle events | Deterministic behavior that MUST happen at specific points | `file-guard`, `lint-changed`           |
 
 ### Key Architecture Concepts
 
 **Slash Commands:**
+
 - User explicitly types `/command` to trigger them
 - They are expanded prompts - Markdown files containing instructions
 - User controls when they execute
 - Live in `.claude/commands/[namespace]/[name].md`
 
 **Agents:**
+
 - Invoked via the **Task tool** for complex isolated workflows
 - Have **separate context windows** (prevents context pollution)
 - Cannot spawn other agents (prevents infinite nesting)
@@ -503,6 +534,7 @@ Understanding HOW each component is invoked is critical for choosing the right f
 - Live in `.claude/agents/[category]/[name].md`
 
 **Hooks:**
+
 - Automatically run at specific **lifecycle events** via ClaudeKit
 - Provide deterministic control (always happen at certain points)
 - Don't rely on LLM decisions - they execute based on events
@@ -527,98 +559,105 @@ Understanding HOW each component is invoked is critical for choosing the right f
 
 ### Lifecycle Events (for Hooks)
 
-| Event | When It Fires | Common Uses |
-|-------|---------------|-------------|
-| `SessionStart` | New/resumed session starts | Load context, set env vars |
-| `UserPromptSubmit` | User submits a prompt | Add contextual information |
-| `PreToolUse` | Before tool executes | Permission gating, validation |
-| `PostToolUse` | After tool completes | Validation, formatting checks |
-| `Stop` | Session ends | Cleanup, auto-commit, final checks |
-| `SubagentStop` | Agent completes | Checkpoint creation |
+| Event              | When It Fires              | Common Uses                        |
+| ------------------ | -------------------------- | ---------------------------------- |
+| `SessionStart`     | New/resumed session starts | Load context, set env vars         |
+| `UserPromptSubmit` | User submits a prompt      | Add contextual information         |
+| `PreToolUse`       | Before tool executes       | Permission gating, validation      |
+| `PostToolUse`      | After tool completes       | Validation, formatting checks      |
+| `Stop`             | Session ends               | Cleanup, auto-commit, final checks |
+| `SubagentStop`     | Agent completes            | Checkpoint creation                |
 
 ## Decision Framework
 
 ### Choosing File Type
 
-| If the need is... | Create a... | Why |
-|-------------------|-------------|-----|
-| User wants explicit control over execution | Command | User-invoked via `/command` |
-| Complex task needs isolation/separate context | Agent | Tool-invoked via Task tool |
-| Reusable expertise Claude applies automatically | Skill | Model-invoked when relevant |
-| Guidelines for specific file types/paths | Rule | Path-triggered when editing matching files |
-| Deterministic behavior at lifecycle events | Hook | Event-triggered automatically |
-| Detailed patterns for developers | Developer Guide | Reference documentation |
+| If the need is...                               | Create a...     | Why                                        |
+| ----------------------------------------------- | --------------- | ------------------------------------------ |
+| User wants explicit control over execution      | Command         | User-invoked via `/command`                |
+| Complex task needs isolation/separate context   | Agent           | Tool-invoked via Task tool                 |
+| Reusable expertise Claude applies automatically | Skill           | Model-invoked when relevant                |
+| Guidelines for specific file types/paths        | Rule            | Path-triggered when editing matching files |
+| Deterministic behavior at lifecycle events      | Hook            | Event-triggered automatically              |
+| Detailed patterns for developers                | Developer Guide | Reference documentation                    |
 
 ### Agents vs Skills Decision
 
 **Create an AGENT when:**
+
 - Task requires isolated context window
 - Task needs specific tool restrictions different from main conversation
 - Task benefits from parallel execution
 - Task EXECUTES something (runs code, makes changes)
 
 **Create a SKILL when:**
+
 - Content teaches reusable expertise
 - Claude should apply it automatically when relevant
 - Content doesn't need context isolation
 - Content PREPARES Claude to solve problems (methodology, approach)
 
 **Key Test:** Does it TEACH or EXECUTE?
+
 - TEACH (how to approach) → **Skill**
 - EXECUTE (run tasks) → **Agent**
 
 ### Rules vs CLAUDE.md vs Skills
 
 **Create a RULE when:**
+
 - Guidelines apply ONLY to specific file patterns (e.g., `apps/server/src/routes/**/*.ts`)
 - Content would clutter CLAUDE.md but is important for those file types
 - Different files need different guidelines (e.g., API routes vs components)
 - You want automatic context injection when editing matching files
 
 **Keep in CLAUDE.md when:**
+
 - Guidelines apply to ALL files in the project
 - It's core project architecture or conventions
 - It's high-level documentation needed in every context
 
 **Create a SKILL when:**
+
 - Expertise is reusable across many projects
 - Claude should apply it automatically based on task type (not file type)
 - Content teaches methodology, not file-specific patterns
 
 **Key Test:** Does it apply to specific FILE TYPES or specific TASK TYPES?
+
 - Specific files/paths → **Rule**
 - Specific task categories → **Skill**
 - Everything → **CLAUDE.md**
 
 ### Choosing Location
 
-| Command type | Namespace |
-|--------------|-----------|
-| Specification workflow | `spec/` |
-| Git operations | `git/` |
-| Developer guides | `guides/` |
-| Checkpoints | `checkpoint/` |
-| System/meta | `system/` |
-| Code analysis | `dev/` |
-| Configuration | `config/` |
-| AGENTS.md management | `agents-md/` |
-| Other | Create new namespace or use root |
+| Command type           | Namespace                        |
+| ---------------------- | -------------------------------- |
+| Specification workflow | `spec/`                          |
+| Git operations         | `git/`                           |
+| Developer guides       | `guides/`                        |
+| Checkpoints            | `checkpoint/`                    |
+| System/meta            | `system/`                        |
+| Code analysis          | `dev/`                           |
+| Configuration          | `config/`                        |
+| AGENTS.md management   | `agents-md/`                     |
+| Other                  | Create new namespace or use root |
 
 ### Agent Categories
 
-| Agent type | Category |
-|------------|----------|
-| Database operations | `database/` |
-| TypeScript/types | `typescript/` |
-| React/frontend | `react/` |
-| Testing | `testing/` |
-| Build tools | `build-tools/` |
-| Code quality | `code-quality/` |
-| Documentation | `documentation/` |
-| Framework-specific | `framework/` |
-| Git operations | `git/` |
-| E2E testing | `e2e/` |
-| Refactoring | `refactoring/` |
+| Agent type          | Category         |
+| ------------------- | ---------------- |
+| Database operations | `database/`      |
+| TypeScript/types    | `typescript/`    |
+| React/frontend      | `react/`         |
+| Testing             | `testing/`       |
+| Build tools         | `build-tools/`   |
+| Code quality        | `code-quality/`  |
+| Documentation       | `documentation/` |
+| Framework-specific  | `framework/`     |
+| Git operations      | `git/`           |
+| E2E testing         | `e2e/`           |
+| Refactoring         | `refactoring/`   |
 
 ### Naming Conventions
 
@@ -651,12 +690,14 @@ Before presenting changes for approval:
 - [ ] File paths are correct and consistent
 
 **Additional checks for Skills:**
+
 - [ ] Name uses gerund form (verb-ing)
 - [ ] Description includes "Use when..." phrase
 - [ ] SKILL.md under 500 lines (progressive disclosure)
 - [ ] Supporting files organized in skill directory
 
 **Additional checks for Rules:**
+
 - [ ] `paths:` frontmatter uses valid glob patterns
 - [ ] Patterns don't overlap excessively with other rules
 - [ ] Rule content is specific to the file types (not generic)

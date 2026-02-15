@@ -40,8 +40,7 @@ export function createApp() {
 
   // In production, serve the built React app
   if (process.env.NODE_ENV === 'production') {
-    const distPath = process.env.CLIENT_DIST_PATH
-      ?? path.join(__dirname, '../../client/dist');
+    const distPath = process.env.CLIENT_DIST_PATH ?? path.join(__dirname, '../../client/dist');
     app.use(express.static(distPath));
     app.get('*', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));

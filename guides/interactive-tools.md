@@ -77,11 +77,11 @@ The generator races between the SDK's next message and the queue notification:
 
 ```typescript
 // From agent-manager.ts sendMessage()
-const queuePromise = new Promise<'queue'>(resolve => {
+const queuePromise = new Promise<'queue'>((resolve) => {
   session.eventQueueNotify = () => resolve('queue');
 });
 
-const sdkPromise = sdkIterator.next().then(result => ({ sdk: true, result }));
+const sdkPromise = sdkIterator.next().then((result) => ({ sdk: true, result }));
 
 const winner = await Promise.race([queuePromise, sdkPromise]);
 ```
@@ -128,7 +128,9 @@ function handleAskUserQuestion(session, toolUseId, input) {
         session.pendingInteractions.delete(toolUseId);
         resolve({ behavior: 'allow', updatedInput: { ...input, answers } });
       },
-      reject: () => { /* deny on cancel */ },
+      reject: () => {
+        /* deny on cancel */
+      },
       timeout,
     });
   });
@@ -211,9 +213,15 @@ function handleToolApproval(session, toolUseId, toolName, input) {
       resolve: (approved) => {
         clearTimeout(timeout);
         session.pendingInteractions.delete(toolUseId);
-        resolve(approved ? { behavior: 'allow' } : { behavior: 'deny', message: 'User denied tool execution' });
+        resolve(
+          approved
+            ? { behavior: 'allow' }
+            : { behavior: 'deny', message: 'User denied tool execution' }
+        );
       },
-      reject: () => { /* deny on cancel */ },
+      reject: () => {
+        /* deny on cancel */
+      },
       timeout,
     });
   });
@@ -278,7 +286,7 @@ Define the event data interface and add the event type to `StreamEventType`:
 export type StreamEventType =
   | 'text_delta'
   // ... existing types ...
-  | 'my_new_interactive';  // Add here
+  | 'my_new_interactive'; // Add here
 
 export interface MyNewInteractiveEvent {
   toolCallId: string;
@@ -287,9 +295,15 @@ export interface MyNewInteractiveEvent {
 
 export interface StreamEvent {
   type: StreamEventType;
-  data: TextDelta | ToolCallEvent | ApprovalEvent | QuestionPromptEvent
-    | MyNewInteractiveEvent  // Add here
-    | ErrorEvent | DoneEvent | SessionStatusEvent;
+  data:
+    | TextDelta
+    | ToolCallEvent
+    | ApprovalEvent
+    | QuestionPromptEvent
+    | MyNewInteractiveEvent // Add here
+    | ErrorEvent
+    | DoneEvent
+    | SessionStatusEvent;
 }
 ```
 
@@ -303,7 +317,7 @@ Create a handler function following the deferred promise pattern, and wire it in
 function handleMyNewInteractive(
   session: AgentSession,
   toolUseId: string,
-  input: Record<string, unknown>,
+  input: Record<string, unknown>
 ): Promise<PermissionResult> {
   session.eventQueue.push({
     type: 'my_new_interactive',
@@ -321,7 +335,7 @@ function handleMyNewInteractive(
     }, INTERACTION_TIMEOUT_MS);
 
     session.pendingInteractions.set(toolUseId, {
-      type: 'my_new_type',  // Add to PendingInteraction type union
+      type: 'my_new_type', // Add to PendingInteraction type union
       toolCallId: toolUseId,
       resolve: (result) => {
         clearTimeout(timeout);
@@ -343,7 +357,9 @@ Then add to `canUseTool`:
 
 ```typescript
 sdkOptions.canUseTool = async (toolName, input, context) => {
-  if (toolName === 'AskUserQuestion') { /* ... */ }
+  if (toolName === 'AskUserQuestion') {
+    /* ... */
+  }
   if (toolName === 'MyNewTool') {
     return handleMyNewInteractive(session, context.toolUseID, input);
   }
@@ -359,7 +375,11 @@ Add a method to the `Transport` interface and implement it in both transports:
 // packages/shared/src/transport.ts
 export interface Transport {
   // ... existing methods ...
-  submitMyNewResult(sessionId: string, toolCallId: string, result: MyResult): Promise<{ ok: boolean }>;
+  submitMyNewResult(
+    sessionId: string,
+    toolCallId: string,
+    result: MyResult
+  ): Promise<{ ok: boolean }>;
 }
 ```
 
@@ -416,6 +436,7 @@ You may need to extend `ToolCallState` to hold your tool's specific data fields,
 ### Step 6: Build UI component
 
 Create a component in `apps/client/src/components/chat/` that:
+
 - Accepts `sessionId`, `toolCallId`, and your event-specific data as props
 - Renders the interactive UI (form, buttons, picker, etc.)
 - Calls the transport method on user action
@@ -540,7 +561,11 @@ const session: AgentSession = {
   eventQueue: [],
 };
 
-const promise = handleAskUserQuestion(session, 'tc-1', { questions: [/* ... */] });
+const promise = handleAskUserQuestion(session, 'tc-1', {
+  questions: [
+    /* ... */
+  ],
+});
 
 // Verify event was queued
 expect(session.eventQueue).toHaveLength(1);

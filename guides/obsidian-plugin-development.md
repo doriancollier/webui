@@ -33,6 +33,7 @@ my-plugin/
 ```
 
 Key fields:
+
 - `id`: Unique identifier, must match the plugin folder name
 - `minAppVersion`: Minimum Obsidian version required
 - `isDesktopOnly`: Set `true` since we depend on Node.js APIs (child_process, fs) via Electron
@@ -40,7 +41,7 @@ Key fields:
 ### Plugin Lifecycle
 
 ```typescript
-import { Plugin } from "obsidian";
+import { Plugin } from 'obsidian';
 
 export default class CopilotPlugin extends Plugin {
   async onload() {
@@ -112,20 +113,17 @@ export class CopilotView extends ItemView {
 
 ```typescript
 // In plugin onload()
-this.registerView(
-  VIEW_TYPE_COPILOT,
-  (leaf) => new CopilotView(leaf)
-);
+this.registerView(VIEW_TYPE_COPILOT, (leaf) => new CopilotView(leaf));
 
 // Add ribbon icon to open
-this.addRibbonIcon("bot", "Open Copilot", () => {
+this.addRibbonIcon('bot', 'Open Copilot', () => {
   this.activateView();
 });
 
 // Add command palette entry
 this.addCommand({
-  id: "open-copilot",
-  name: "Open Copilot",
+  id: 'open-copilot',
+  name: 'Open Copilot',
   callback: () => this.activateView(),
 });
 ```
@@ -210,14 +208,14 @@ export function useObsidian(): ObsidianContextValue {
 
 ### Why Not Iframe?
 
-| Factor | Direct Mount | Iframe |
-| --- | --- | --- |
-| Obsidian API access | Direct (React Context) | Indirect (postMessage) |
-| CSS isolation | Needs scoping | Full isolation |
-| Drag-and-drop | Standard React handlers | Cross-boundary complexity |
-| Performance | No serialization | postMessage overhead |
-| Build complexity | One build (Vite library mode) | Two builds + message protocol |
-| Code sharing | Import directly | Duplicate or postMessage bridge |
+| Factor              | Direct Mount                  | Iframe                          |
+| ------------------- | ----------------------------- | ------------------------------- |
+| Obsidian API access | Direct (React Context)        | Indirect (postMessage)          |
+| CSS isolation       | Needs scoping                 | Full isolation                  |
+| Drag-and-drop       | Standard React handlers       | Cross-boundary complexity       |
+| Performance         | No serialization              | postMessage overhead            |
+| Build complexity    | One build (Vite library mode) | Two builds + message protocol   |
+| Code sharing        | Import directly               | Duplicate or postMessage bridge |
 
 Direct mount wins for our use case because deep Obsidian integration (active file tracking, file opening, drag-drop) requires frequent API calls that would be painful through postMessage.
 
@@ -232,11 +230,11 @@ Obsidian fires `active-leaf-change` when the user switches tabs/panes.
 ```typescript
 // In plugin or view setup
 this.registerEvent(
-  this.app.workspace.on("active-leaf-change", (leaf) => {
+  this.app.workspace.on('active-leaf-change', (leaf) => {
     const file = this.app.workspace.getActiveFile();
     // file is TFile | null
     if (file) {
-      console.log("Active file:", file.path, file.basename);
+      console.log('Active file:', file.path, file.basename);
     }
   })
 );
@@ -245,15 +243,13 @@ this.registerEvent(
 ### React Hook for Active File
 
 ```typescript
-import { useState, useEffect } from "react";
-import { TFile } from "obsidian";
-import { useObsidian } from "../contexts/ObsidianContext";
+import { useState, useEffect } from 'react';
+import { TFile } from 'obsidian';
+import { useObsidian } from '../contexts/ObsidianContext';
 
 export function useActiveFile(): TFile | null {
   const { app } = useObsidian();
-  const [activeFile, setActiveFile] = useState<TFile | null>(
-    app.workspace.getActiveFile()
-  );
+  const [activeFile, setActiveFile] = useState<TFile | null>(app.workspace.getActiveFile());
 
   useEffect(() => {
     const handler = () => {
@@ -261,7 +257,7 @@ export function useActiveFile(): TFile | null {
     };
 
     // Obsidian event registration
-    const ref = app.workspace.on("active-leaf-change", handler);
+    const ref = app.workspace.on('active-leaf-change', handler);
 
     return () => {
       app.workspace.offref(ref);
@@ -275,7 +271,7 @@ export function useActiveFile(): TFile | null {
 ### Reading File Contents
 
 ```typescript
-import { TFile } from "obsidian";
+import { TFile } from 'obsidian';
 
 // Read full content
 const content = await app.vault.read(file);
@@ -297,13 +293,13 @@ When the chat client references a file (e.g., in a tool call or response), we ne
 
 ```typescript
 // Open by path
-const file = app.vault.getAbstractFileByPath("path/to/note.md");
+const file = app.vault.getAbstractFileByPath('path/to/note.md');
 if (file instanceof TFile) {
   await app.workspace.getLeaf(false).openFile(file);
 }
 
 // Open by link text (handles aliases, headings)
-await app.workspace.openLinkText("note-name", "", false);
+await app.workspace.openLinkText('note-name', '', false);
 ```
 
 ### Open in New Pane vs Existing
@@ -314,7 +310,7 @@ const leaf = app.workspace.getLeaf(false);
 await leaf.openFile(file);
 
 // Open in a specific position
-const leaf = app.workspace.getLeaf("split", "vertical");
+const leaf = app.workspace.getLeaf('split', 'vertical');
 await leaf.openFile(file);
 ```
 
@@ -416,8 +412,8 @@ The context bar shows the active file and any drag-dropped files as dismissible 
 
 ```typescript
 interface ContextState {
-  activeFile: TFile | null;       // Auto-tracked, not dismissible
-  contextFiles: ContextFile[];     // Manually added via drag-drop
+  activeFile: TFile | null; // Auto-tracked, not dismissible
+  contextFiles: ContextFile[]; // Manually added via drag-drop
   addContextFile: (file: ContextFile) => void;
   removeContextFile: (id: string) => void;
   clearContextFiles: () => void;
@@ -497,7 +493,7 @@ The client needs to know whether it's running standalone (browser) or embedded i
 ```typescript
 // Option A: Check for Obsidian's global app object
 export function isObsidianEnvironment(): boolean {
-  return typeof (window as any).app?.vault !== "undefined";
+  return typeof (window as any).app?.vault !== 'undefined';
 }
 
 // Option B: Check for injected flag (set by plugin before mounting)
@@ -507,8 +503,7 @@ export function isObsidianEnvironment(): boolean {
 
 // Option C: Check for Electron (Obsidian runs in Electron)
 export function isElectronEnvironment(): boolean {
-  return typeof (window as any).require === "function"
-    && typeof process !== "undefined";
+  return typeof (window as any).require === 'function' && typeof process !== 'undefined';
 }
 ```
 
@@ -516,16 +511,16 @@ export function isElectronEnvironment(): boolean {
 
 ### Conditional Behavior Map
 
-| Feature | Standalone (Browser) | Obsidian |
-| --- | --- | --- |
-| Transport | `HttpTransport` (HTTP/SSE to Express) | `DirectTransport` (in-process services) |
-| Session ID storage | URL query param (nuqs) | Zustand store |
-| Layout | Full viewport, responsive | Fixed sidebar width (~300px) |
-| Active file context | N/A | Tracked via workspace events |
-| File drag-drop | N/A | From Obsidian file explorer |
-| Open file action | N/A | `workspace.openFile()` |
-| Theme | CSS custom properties | Obsidian CSS variables (theme bridge) |
-| Text selection | Default browser behavior | Explicit `user-select: text` override |
+| Feature             | Standalone (Browser)                  | Obsidian                                |
+| ------------------- | ------------------------------------- | --------------------------------------- |
+| Transport           | `HttpTransport` (HTTP/SSE to Express) | `DirectTransport` (in-process services) |
+| Session ID storage  | URL query param (nuqs)                | Zustand store                           |
+| Layout              | Full viewport, responsive             | Fixed sidebar width (~300px)            |
+| Active file context | N/A                                   | Tracked via workspace events            |
+| File drag-drop      | N/A                                   | From Obsidian file explorer             |
+| Open file action    | N/A                                   | `workspace.openFile()`                  |
+| Theme               | CSS custom properties                 | Obsidian CSS variables (theme bridge)   |
+| Text selection      | Default browser behavior              | Explicit `user-select: text` override   |
 
 ### Platform Adapter Pattern
 
@@ -539,15 +534,17 @@ interface PlatformAdapter {
 
 // Standalone adapter
 const webAdapter: PlatformAdapter = {
-  getApiBaseUrl: () => "/api",
-  getSessionId: () => new URLSearchParams(location.search).get("session"),
-  setSessionId: (id) => { /* nuqs or pushState */ },
+  getApiBaseUrl: () => '/api',
+  getSessionId: () => new URLSearchParams(location.search).get('session'),
+  setSessionId: (id) => {
+    /* nuqs or pushState */
+  },
   isEmbedded: () => false,
 };
 
 // Obsidian adapter
 const obsidianAdapter: PlatformAdapter = {
-  getApiBaseUrl: () => "http://localhost:6942/api",
+  getApiBaseUrl: () => 'http://localhost:6942/api',
   getSessionId: () => store.getState().sessionId,
   setSessionId: (id) => store.setState({ sessionId: id }),
   isEmbedded: () => true,
@@ -563,7 +560,14 @@ const obsidianAdapter: PlatformAdapter = {
 The plugin uses its own Vite build (`apps/obsidian-plugin/vite.config.ts`) that outputs a single CJS `main.js` with four custom build plugins (in `apps/obsidian-plugin/build-plugins/`) for Electron compatibility:
 
 ```typescript
-plugins: [react(), tailwindcss(), copyManifest(), safeRequires(), fixDirnamePolyfill(), patchElectronCompat()]
+plugins: [
+  react(),
+  tailwindcss(),
+  copyManifest(),
+  safeRequires(),
+  fixDirnamePolyfill(),
+  patchElectronCompat(),
+];
 ```
 
 Key config:
@@ -596,11 +600,11 @@ build: {
 
 ### Build Plugins
 
-| Plugin | Phase | Purpose |
-| --- | --- | --- |
-| `copyManifest()` | closeBundle | Copies `manifest.json` to `dist/` |
-| `safeRequires()` | renderChunk | Wraps optional `require()` calls in try/catch |
-| `fixDirnamePolyfill()` | writeBundle | Replaces Vite's `import.meta.url` polyfill with `__dirname`/`__filename` |
+| Plugin                  | Phase       | Purpose                                                                   |
+| ----------------------- | ----------- | ------------------------------------------------------------------------- |
+| `copyManifest()`        | closeBundle | Copies `manifest.json` to `dist/`                                         |
+| `safeRequires()`        | renderChunk | Wraps optional `require()` calls in try/catch                             |
+| `fixDirnamePolyfill()`  | writeBundle | Replaces Vite's `import.meta.url` polyfill with `__dirname`/`__filename`  |
 | `patchElectronCompat()` | writeBundle | Monkey-patches `spawn()` and `setMaxListeners()` for Electron AbortSignal |
 
 See `guides/architecture.md` > "Electron Compatibility Layer" for details on why each plugin exists.
@@ -654,17 +658,17 @@ This approach lets the existing components work because they already reference C
 
 ### Key Obsidian CSS Variables
 
-| Variable | Purpose |
-| --- | --- |
-| `--background-primary` | Main background |
-| `--background-secondary` | Sidebar background |
-| `--text-normal` | Primary text |
-| `--text-muted` | Secondary text |
-| `--interactive-accent` | Accent color (links, buttons) |
-| `--interactive-accent-hover` | Accent hover state |
-| `--text-on-accent` | Text on accent backgrounds |
-| `--background-modifier-border` | Borders |
-| `--background-modifier-form-field` | Input backgrounds |
+| Variable                           | Purpose                       |
+| ---------------------------------- | ----------------------------- |
+| `--background-primary`             | Main background               |
+| `--background-secondary`           | Sidebar background            |
+| `--text-normal`                    | Primary text                  |
+| `--text-muted`                     | Secondary text                |
+| `--interactive-accent`             | Accent color (links, buttons) |
+| `--interactive-accent-hover`       | Accent hover state            |
+| `--text-on-accent`                 | Text on accent backgrounds    |
+| `--background-modifier-border`     | Borders                       |
+| `--background-modifier-form-field` | Input backgrounds             |
 
 ---
 
@@ -681,7 +685,7 @@ function buildMessageWithContext(
   userMessage: string,
   activeFile: TFile | null,
   contextFiles: ContextFile[],
-  vault: Vault,
+  vault: Vault
 ): string {
   const parts: string[] = [];
 
@@ -699,7 +703,7 @@ function buildMessageWithContext(
   }
 
   if (parts.length > 0) {
-    return parts.join("\n\n") + "\n\n" + userMessage;
+    return parts.join('\n\n') + '\n\n' + userMessage;
   }
   return userMessage;
 }
@@ -733,7 +737,7 @@ POST /api/sessions/:id/messages
 const files = app.vault.getMarkdownFiles();
 
 // Get file by path
-const file = app.vault.getAbstractFileByPath("path/to/file.md");
+const file = app.vault.getAbstractFileByPath('path/to/file.md');
 
 // Read content
 const content = await app.vault.read(file as TFile);
@@ -750,7 +754,7 @@ const cache = app.metadataCache.getFileCache(file as TFile);
 const file = app.workspace.getActiveFile();
 
 // Listen for changes
-const ref = app.workspace.on("active-leaf-change", callback);
+const ref = app.workspace.on('active-leaf-change', callback);
 app.workspace.offref(ref); // unsubscribe
 
 // Open file
@@ -844,6 +848,7 @@ ln -s /path/to/gateway/apps/obsidian-plugin/dist workspace/.obsidian/plugins/dor
 ```
 
 The Vite build outputs all three required files:
+
 - `main.js` — bundled plugin code
 - `styles.css` — extracted CSS (renamed via `assetFileNames` in Vite config)
 - `manifest.json` — copied by `copyManifest()` Vite plugin
@@ -858,6 +863,7 @@ The Vite build outputs all three required files:
 > If the shortcut doesn't work, go to **View > Toggle Developer Tools** in the Obsidian menu bar, or press `Cmd+P` and search for "Toggle Developer Tools".
 
 In the Console tab, look for:
+
 - Red error messages with stack traces
 - `[DorkOS Copilot]` prefixed log messages (our debug logging)
 - `Uncaught` or `TypeError` messages during plugin load
@@ -891,22 +897,22 @@ If you don't see "main.js module loaded", the error is in module evaluation (top
 
 ### Common Issues
 
-| Issue | Cause | Solution |
-| --- | --- | --- |
-| "Failed to load plugin" | See dev console for actual error | Open `Cmd+Option+I` and check Console tab |
-| "Cannot find module 'obsidian'" | Not externalized in Vite config | Add to `external` in `apps/obsidian-plugin/vite.config.ts` rollupOptions |
-| "Cannot find module 'X'" | Node built-in not externalized | Ensure `builtinModules` are in `external` array |
-| "The URL must be of scheme file" | Vite `import.meta.url` polyfill uses `document.baseURI` | `fixDirnamePolyfill()` plugin replaces with `__dirname` |
-| "must be EventEmitter or EventTarget" | SDK passes browser AbortSignal to Node.js APIs | `patchElectronCompat()` plugin patches spawn + setMaxListeners |
-| "Claude Code executable not found" | SDK resolves `cli.js` inside `Obsidian.app` | `AgentManager.resolveClaudeCliPath()` finds CLI via PATH |
-| ENOENT for `.claude/commands/` | Service receives vault path instead of repo root | Pass `repoRoot = path.resolve(vaultPath, '..')` to services |
-| Optional dep crashes on require | `@emotion/is-prop-valid`, `ajv-*` etc | Add to `safeRequires()` plugin in Vite config |
-| Text not selectable | Obsidian sets `user-select: none` on views | Override with `user-select: text` in `.copilot-view-content` |
-| Styles not applying | Wrong CSS filename or missing file | Verify `styles.css` exists in plugin dir |
-| React not re-rendering | Obsidian events not wired to state | Use `registerEvent()` + React state updates |
-| Drag-drop not firing | Missing preventDefault | Call `preventDefault()` on both `dragOver` and `drop` |
-| Memory leaks | React root not unmounted | Always `root.unmount()` in `onClose()` |
-| Hot reload not working | Missing .hotreload file | Create `.hotreload` file in plugin dir |
+| Issue                                 | Cause                                                   | Solution                                                                 |
+| ------------------------------------- | ------------------------------------------------------- | ------------------------------------------------------------------------ |
+| "Failed to load plugin"               | See dev console for actual error                        | Open `Cmd+Option+I` and check Console tab                                |
+| "Cannot find module 'obsidian'"       | Not externalized in Vite config                         | Add to `external` in `apps/obsidian-plugin/vite.config.ts` rollupOptions |
+| "Cannot find module 'X'"              | Node built-in not externalized                          | Ensure `builtinModules` are in `external` array                          |
+| "The URL must be of scheme file"      | Vite `import.meta.url` polyfill uses `document.baseURI` | `fixDirnamePolyfill()` plugin replaces with `__dirname`                  |
+| "must be EventEmitter or EventTarget" | SDK passes browser AbortSignal to Node.js APIs          | `patchElectronCompat()` plugin patches spawn + setMaxListeners           |
+| "Claude Code executable not found"    | SDK resolves `cli.js` inside `Obsidian.app`             | `AgentManager.resolveClaudeCliPath()` finds CLI via PATH                 |
+| ENOENT for `.claude/commands/`        | Service receives vault path instead of repo root        | Pass `repoRoot = path.resolve(vaultPath, '..')` to services              |
+| Optional dep crashes on require       | `@emotion/is-prop-valid`, `ajv-*` etc                   | Add to `safeRequires()` plugin in Vite config                            |
+| Text not selectable                   | Obsidian sets `user-select: none` on views              | Override with `user-select: text` in `.copilot-view-content`             |
+| Styles not applying                   | Wrong CSS filename or missing file                      | Verify `styles.css` exists in plugin dir                                 |
+| React not re-rendering                | Obsidian events not wired to state                      | Use `registerEvent()` + React state updates                              |
+| Drag-drop not firing                  | Missing preventDefault                                  | Call `preventDefault()` on both `dragOver` and `drop`                    |
+| Memory leaks                          | React root not unmounted                                | Always `root.unmount()` in `onClose()`                                   |
+| Hot reload not working                | Missing .hotreload file                                 | Create `.hotreload` file in plugin dir                                   |
 
 ### Build Quirks
 
@@ -939,10 +945,10 @@ The plugin uses a **hexagonal architecture** with a `Transport` interface that d
 
 ### Transport Adapters
 
-| Adapter | Used By | How It Works |
-| --- | --- | --- |
-| `HttpTransport` | Standalone web client | HTTP fetch + SSE to Express server |
-| `DirectTransport` | Obsidian plugin | In-process service calls, no HTTP |
+| Adapter           | Used By               | How It Works                       |
+| ----------------- | --------------------- | ---------------------------------- |
+| `HttpTransport`   | Standalone web client | HTTP fetch + SSE to Express server |
+| `DirectTransport` | Obsidian plugin       | In-process service calls, no HTTP  |
 
 ### Plugin Data Flow
 
@@ -956,15 +962,15 @@ User input → ObsidianApp → useChatSession.handleSubmit()
 
 ### Key Files
 
-| File | Purpose |
-| --- | --- |
-| `apps/obsidian-plugin/src/main.ts` | Plugin entry (onload/onunload) |
-| `apps/obsidian-plugin/src/views/CopilotView.tsx` | ItemView — creates services, mounts React |
+| File                                                  | Purpose                                            |
+| ----------------------------------------------------- | -------------------------------------------------- |
+| `apps/obsidian-plugin/src/main.ts`                    | Plugin entry (onload/onunload)                     |
+| `apps/obsidian-plugin/src/views/CopilotView.tsx`      | ItemView — creates services, mounts React          |
 | `apps/obsidian-plugin/src/components/ObsidianApp.tsx` | Plugin-specific App (auto-session, compact layout) |
-| `packages/shared/src/transport.ts` | Transport interface definition |
-| `apps/client/src/lib/direct-transport.ts` | In-process transport wrapping services |
-| `apps/client/src/contexts/TransportContext.tsx` | React Context for DI |
-| `apps/obsidian-plugin/vite.config.ts` | Plugin build config |
+| `packages/shared/src/transport.ts`                    | Transport interface definition                     |
+| `apps/client/src/lib/direct-transport.ts`             | In-process transport wrapping services             |
+| `apps/client/src/contexts/TransportContext.tsx`       | React Context for DI                               |
+| `apps/obsidian-plugin/vite.config.ts`                 | Plugin build config                                |
 
 ### Path Resolution
 
@@ -972,7 +978,7 @@ The Obsidian vault directory is `workspace/`, but services need the **repo root*
 
 ```typescript
 const vaultPath = (this.app.vault.adapter as any).basePath as string;
-const repoRoot = path.resolve(vaultPath, '..');  // workspace/ -> repo root
+const repoRoot = path.resolve(vaultPath, '..'); // workspace/ -> repo root
 ```
 
 ### Service Initialization
@@ -980,10 +986,15 @@ const repoRoot = path.resolve(vaultPath, '..');  // workspace/ -> repo root
 Services are created in `CopilotView.onOpen()` with the repo root path:
 
 ```typescript
-const agentManager = new AgentManager(repoRoot);       // cwd for SDK, resolves Claude CLI
-const transcriptReader = new TranscriptReader();         // reads ~/.claude/projects/{slug}/
+const agentManager = new AgentManager(repoRoot); // cwd for SDK, resolves Claude CLI
+const transcriptReader = new TranscriptReader(); // reads ~/.claude/projects/{slug}/
 const commandRegistry = new CommandRegistryService(repoRoot); // scans repoRoot/.claude/commands/
-const transport = new DirectTransport({ agentManager, transcriptReader, commandRegistry, vaultRoot: repoRoot });
+const transport = new DirectTransport({
+  agentManager,
+  transcriptReader,
+  commandRegistry,
+  vaultRoot: repoRoot,
+});
 ```
 
 These are injected via `<TransportProvider transport={transport}>`.

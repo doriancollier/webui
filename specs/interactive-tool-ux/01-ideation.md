@@ -11,11 +11,13 @@
 ## 1) Intent & Assumptions
 
 **Task brief:** Improve UX for interactive tool calls (ToolApproval for permissions, QuestionPrompt for AskUser) with three improvements:
+
 1. **Format JSON data** — tool arguments currently display as raw `JSON.stringify(parsed, null, 2)` in a `<pre>` block; instead, render them as formatted key-value displays
 2. **"Waiting for response" status** — when tools are waiting for user input, the InferenceIndicator still shows rotating inference verbs ("Contemplating...", "Reasoning..."); it should show a clear "Waiting for your response" message instead
 3. **Keyboard shortcuts** — add shortcut keys for approve/deny (Enter/Esc), number keys (1-9) for selecting question options, and Next/Back for multi-question navigation; display shortcuts using a Kbd component hidden on mobile
 
 **Assumptions:**
+
 - No server-side changes needed — all improvements are client-side rendering changes
 - The existing interactive tools architecture (deferred promise pattern, Transport abstraction) is stable and does not need modification
 - We can create a new Kbd shadcn/ui component (none exists currently)
@@ -23,6 +25,7 @@
 - `react-json-view-lite` or similar library is NOT needed — we can build a simple custom key-value formatter using the existing `tool-labels.ts` pattern and a lightweight recursive renderer
 
 **Out of scope:**
+
 - Changes to the server, SDK, or transport layer
 - Adding new interactive tool types
 - Auto-approve/auto-deny based on rules
@@ -50,6 +53,7 @@
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/components/chat/ToolApproval.tsx` — Permission approval UI (Approve/Deny buttons)
 - `apps/client/src/components/chat/QuestionPrompt.tsx` — AskUser question form (radio/checkbox + tabs)
 - `apps/client/src/components/chat/ToolCallCard.tsx` — Collapsible tool call display with raw JSON
@@ -59,6 +63,7 @@
 - `apps/client/src/lib/tool-labels.ts` — Tool name → human-readable label mapping
 
 **Shared Dependencies:**
+
 - `apps/client/src/hooks/use-chat-session.ts` — Chat state, `ToolCallState` type, streaming status
 - `apps/client/src/contexts/TransportContext.tsx` — `useTransport()` for calling approve/deny/submitAnswers
 - `apps/client/src/stores/app-store.ts` — Zustand store for tool display preferences
@@ -66,6 +71,7 @@
 - `packages/shared/src/types.ts` — `QuestionItem`, `StreamEvent`, `ApprovalEvent` types
 
 **Data Flow:**
+
 ```
 SDK canUseTool → agent-manager pushes event → SSE stream → useChatSession adds ToolCallState
   → MessageItem renders ToolApproval or QuestionPrompt → user clicks → transport.approveTool/denyTool/submitAnswers
@@ -73,10 +79,12 @@ SDK canUseTool → agent-manager pushes event → SSE stream → useChatSession 
 ```
 
 **Feature Flags/Config:**
+
 - `expandToolCalls` (app-store) — Whether tool cards are expanded by default
 - `autoHideToolCalls` (app-store) — Whether completed tool calls fade out
 
 **Potential Blast Radius:**
+
 - Direct: 5 files (ToolApproval, QuestionPrompt, ToolCallCard, InferenceIndicator, new Kbd component)
 - Indirect: 3 files (MessageItem, use-chat-session, ChatPanel — may need to propagate "waiting for response" state)
 - Tests: 4 test files (ToolCallCard.test, QuestionPrompt.test, InferenceIndicator.test, plus new Kbd test)
@@ -104,6 +112,7 @@ Looking at `ChatInput.tsx:191`, the textarea has `disabled={isLoading}`. When a 
 **When does the conflict arise?**
 
 The conflict would only arise if:
+
 1. A tool is waiting AND the textarea is enabled (impossible in current architecture — the SSE stream keeps `isLoading=true` until the SDK finishes)
 2. The QuestionPrompt's "Other" textarea is focused (user is typing a free-text answer) while number-key shortcuts are active
 
@@ -146,6 +155,7 @@ The conflict would only arise if:
 **Implementation approach: `useInteractiveShortcuts` hook**
 
 A custom hook that:
+
 1. Reads current chat status and checks if any interactive tool is pending
 2. Attaches a `document.addEventListener('keydown', ...)` listener ONLY when interactive tools are active
 3. Filters out events from `<textarea>` and `<input>` elements (for the "Other" text field case)
@@ -193,6 +203,7 @@ function useInteractiveShortcuts({
 ```
 
 **Edge Cases:**
+
 1. **Multiple approval requests simultaneously** — The SDK can call `canUseTool` multiple times before the user responds. We should handle the most recent one or the first pending one. The current UI already renders them all inline; shortcuts should target the first unanswered one and scroll to it.
 2. **"Other" textarea in QuestionPrompt** — When the user clicks "Other" and starts typing, number-key shortcuts must be disabled. The `target.tagName === 'TEXTAREA'` check handles this.
 3. **Rapid key presses** — The approve/deny handlers set `responding=true` which disables the buttons. The hook should also gate on this to prevent double-fire.
@@ -207,6 +218,7 @@ function useInteractiveShortcuts({
 Instead of a generic JSON tree viewer (overkill for tool args which are typically flat objects), create a `ToolArgumentsDisplay` component that:
 
 1. **For known tools** (Read, Write, Edit, Bash, Grep, Glob, etc.) — render a clean key-value layout using labels from `tool-labels.ts` pattern:
+
    ```
    ┌─────────────────────────────────────┐
    │ 📁 File    /src/components/App.tsx  │
@@ -227,13 +239,15 @@ Instead of a generic JSON tree viewer (overkill for tool args which are typicall
 
 ```typescript
 // In useChatSession, derive:
-const pendingInteraction = messages.flatMap(m => m.toolCalls || [])
-  .find(tc => tc.interactiveType && tc.status === 'pending');
+const pendingInteraction = messages
+  .flatMap((m) => m.toolCalls || [])
+  .find((tc) => tc.interactiveType && tc.status === 'pending');
 
 // Expose: isWaitingForUser: boolean
 ```
 
 Then in `InferenceIndicator` (or a new wrapper), when `isWaitingForUser` is true:
+
 - Replace the rotating verb with a static "Waiting for your response" message
 - Change the icon from shimmer to a static attention icon (e.g., `MessageSquare` or `Hand`)
 - Optionally pulse the border or use amber color to draw attention
@@ -243,11 +257,11 @@ Then in `InferenceIndicator` (or a new wrapper), when `isWaitingForUser` is true
 No Kbd component exists in the project. We'll create `apps/client/src/components/ui/kbd.tsx` following shadcn/ui patterns:
 
 ```tsx
-function Kbd({ className, children, ...props }: React.ComponentProps<"kbd">) {
+function Kbd({ className, children, ...props }: React.ComponentProps<'kbd'>) {
   return (
     <kbd
       className={cn(
-        "pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground",
+        'bg-muted text-muted-foreground pointer-events-none inline-flex h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium select-none',
         className
       )}
       {...props}
@@ -263,6 +277,7 @@ Hidden on mobile via: `<Kbd className="hidden md:inline-flex">Enter</Kbd>`
 ### Potential Solutions
 
 **Solution 1: Minimal — Format + Status Only**
+
 - Format JSON as key-value in ToolApproval and ToolCallCard
 - Add "Waiting for your response" status message
 - No keyboard shortcuts
@@ -270,6 +285,7 @@ Hidden on mobile via: `<Kbd className="hidden md:inline-flex">Enter</Kbd>`
 - Cons: Doesn't address the main UX friction (clicking)
 
 **Solution 2: Full Implementation (Recommended)**
+
 - Format JSON as context-aware key-value display
 - Add "Waiting for your response" status
 - Keyboard shortcuts for approve/deny (Enter/Esc)
@@ -281,6 +297,7 @@ Hidden on mobile via: `<Kbd className="hidden md:inline-flex">Enter</Kbd>`
 - Cons: Larger scope
 
 **Solution 3: Phased**
+
 - Phase 1: JSON formatting + status message + Kbd component + Enter/Esc for approve/deny
 - Phase 2: Number keys for questions + Next/Back navigation
 - Pros: Delivers value incrementally

@@ -2,7 +2,7 @@
 description: Implement a validated specification by orchestrating concurrent agents
 category: validation
 allowed-tools: Task, TaskOutput, Read, Write, Grep, Glob, Bash(jq:*), Bash(grep:*), Bash(cat:*), Bash(echo:*), Bash(date:*), Bash(mkdir:*), TaskCreate, TaskList, TaskGet, TaskUpdate, AskUserQuestion
-argument-hint: "<path-to-spec-file>"
+argument-hint: '<path-to-spec-file>'
 ---
 
 # Implement Specification
@@ -35,6 +35,7 @@ IMPL_FILE="specs/$SLUG/04-implementation.md"
 ```
 
 Display:
+
 ```
 📋 Executing specification: $ARGUMENTS
    Feature slug: [slug]
@@ -54,6 +55,7 @@ Perform lightweight checks in main context:
    - If not → New session
 
 Display:
+
 ```
 🔍 Quick validation:
    ✅ Specification found
@@ -77,11 +79,13 @@ Task(
 ```
 
 Display:
+
 ```
 🔄 Analyzing tasks and building execution plan...
 ```
 
 Then immediately wait for the analysis to complete:
+
 ```
 TaskOutput(task_id: "<analysis-agent-id>", block: true)
 ```
@@ -148,6 +152,7 @@ for task in batch.tasks:
 ```
 
 Display:
+
 ```
 🚀 Batch [N]: Launching [X] parallel agents
    → [Task 1.1] Implement user authentication schema
@@ -165,6 +170,7 @@ for agent_id in batch.agent_ids:
 ```
 
 Display (as each completes):
+
 ```
    ✅ [Task 1.1] Completed (2m 34s)
    ✅ [Task 1.2] Completed (1m 45s)
@@ -174,6 +180,7 @@ Display (as each completes):
 **Step C: Handle failures**
 
 If any task failed:
+
 ```
 ⚠️ Batch [N] had failures:
    ❌ [Task 1.3]: [Error description]
@@ -195,6 +202,7 @@ for task in batch.successful_tasks:
 ```
 
 Display:
+
 ```
 ✅ Batch [N] complete: [X]/[Y] tasks succeeded
    Proceeding to Batch [N+1]...
@@ -209,6 +217,7 @@ After all batches complete:
 ### 4.1 Update Implementation Summary
 
 The final batch agent updates `specs/<slug>/04-implementation.md` with:
+
 - All completed tasks
 - Files modified
 - Tests added
@@ -248,6 +257,7 @@ The final batch agent updates `specs/<slug>/04-implementation.md` with:
 ### 4.3 Roadmap Integration
 
 If spec has `roadmapId` in frontmatter:
+
 ```bash
 python3 roadmap/scripts/update_status.py $ROADMAP_ID completed
 python3 roadmap/scripts/link_spec.py $ROADMAP_ID $SLUG
@@ -272,8 +282,10 @@ You are analyzing a specification execution to build an optimized execution plan
 
 Use `TaskList()` to get all tasks for this feature:
 ```
+
 tasks = TaskList()
 feature_tasks = tasks.filter(t => t.subject.includes("[<slug>]"))
+
 ```
 
 Categorize by status:
@@ -298,28 +310,33 @@ Build cross-session context string for agents.
 Group tasks into parallel batches using dependency analysis:
 
 ```
+
 # Get pending/in-progress tasks
+
 executable_tasks = feature_tasks.filter(t =>
-  t.status === "pending" || t.status === "in_progress"
+t.status === "pending" || t.status === "in_progress"
 )
 
 # Build batches based on blockedBy
+
 batches = []
 remaining = [...executable_tasks]
 
 while remaining.length > 0:
-  # Find tasks with no remaining dependencies (or all deps completed)
-  ready = remaining.filter(t =>
-    t.blockedBy.length === 0 ||
-    all_completed(t.blockedBy)
-  )
 
-  if ready.length === 0:
-    # Circular dependency or missing task - break cycle
-    ready = [remaining[0]]
+# Find tasks with no remaining dependencies (or all deps completed)
 
-  batches.push(ready)
-  remaining = remaining.filter(t => !ready.includes(t))
+ready = remaining.filter(t =>
+t.blockedBy.length === 0 ||
+all_completed(t.blockedBy)
+)
+
+if ready.length === 0: # Circular dependency or missing task - break cycle
+ready = [remaining[0]]
+
+batches.push(ready)
+remaining = remaining.filter(t => !ready.includes(t))
+
 ```
 
 ### 4. Determine Agent Types
@@ -341,42 +358,51 @@ For each task, determine the appropriate specialist agent:
 Return a structured execution plan in this format:
 
 ```
+
 ## EXECUTION PLAN
 
 ### Session Info
+
 - **Session Number**: [N]
 - **Resume Mode**: [true/false]
 - **Previous Session Date**: [date or N/A]
 
 ### Task Summary
+
 - **Completed (skip)**: [count]
 - **In Progress (resume)**: [count]
 - **Pending (execute)**: [count]
 - **Total Executable**: [count]
 
 ### Cross-Session Context
+
 [If resuming, include the context string to pass to agents]
 
 ### Execution Batches
 
 #### Batch 1 (No dependencies)
-| Task ID | Subject | Agent Type | Size |
-|---------|---------|------------|------|
-| [id] | [subject] | [agent] | [S/M/L] |
+
+| Task ID | Subject   | Agent Type | Size    |
+| ------- | --------- | ---------- | ------- |
+| [id]    | [subject] | [agent]    | [S/M/L] |
 
 #### Batch 2 (Depends on Batch 1)
-| Task ID | Subject | Agent Type | Size |
-|---------|---------|------------|------|
-| [id] | [subject] | [agent] | [S/M/L] |
+
+| Task ID | Subject   | Agent Type | Size    |
+| ------- | --------- | ---------- | ------- |
+| [id]    | [subject] | [agent]    | [S/M/L] |
 
 [Continue for all batches...]
 
 ### Parallelization Summary
+
 - **Total batches**: [N]
 - **Max parallel tasks**: [M] (in Batch [X])
 - **Sequential equivalent**: [T] tasks
 - **Parallelization factor**: [T/N]x speedup potential
+
 ```
+
 ```
 
 ---
@@ -427,30 +453,38 @@ The task description contains ALL implementation details including:
 Return a structured report:
 
 ```
+
 ## TASK COMPLETE
 
 ### Task
+
 - **ID**: [task_id]
 - **Subject**: [subject]
 - **Status**: [SUCCESS / PARTIAL / FAILED]
 
 ### Files Modified
+
 - [file1.ts] - [description]
 - [file2.ts] - [description]
 
 ### Tests Added
+
 - [test1.test.ts] - [what it tests]
 
 ### Acceptance Criteria
+
 - [x] Criteria 1
 - [x] Criteria 2
 - [ ] Criteria 3 (partial - reason)
 
 ### Issues Encountered
+
 - [Issue 1] - [how resolved / still open]
 
 ### Notes for Next Tasks
+
 - [Any context that dependent tasks should know]
+
 ```
 
 ## Important Guidelines
@@ -467,17 +501,23 @@ Return a structured report:
 ## Execution Modes
 
 ### Full Execution (Default)
+
 Execute all batches to completion. Best for:
+
 - Dedicated implementation sessions
 - When you can wait for all tasks
 
 ### Single Batch Mode
+
 Execute one batch at a time, pause for review. Best for:
+
 - Large implementations with many tasks
 - When you want to review progress between phases
 
 ### Dry Run Mode
+
 Show execution plan without executing. Best for:
+
 - Understanding the scope before committing
 - Verifying task dependencies are correct
 
@@ -486,18 +526,24 @@ Show execution plan without executing. Best for:
 ## Error Handling
 
 ### Agent Timeout
+
 If an agent doesn't complete within expected time:
+
 1. Check agent status with `TaskOutput(task_id, block: false)`
 2. Offer to wait longer or cancel
 
 ### Task Failure
+
 If an agent reports failure:
+
 1. Display the error details
 2. Offer options: retry, skip, or stop
 3. If skipping, mark dependent tasks as blocked
 
 ### Dependency Issues
+
 If circular dependencies detected:
+
 1. Display the cycle
 2. Ask user which task to execute first
 3. Or suggest running `/spec:decompose` to fix dependencies
@@ -523,35 +569,45 @@ If circular dependencies detected:
 **Spec:** specs/[slug]/02-specification.md
 
 ## Progress
+
 **Status:** [In Progress / Complete]
 **Tasks Completed:** [X] / [Total]
 
 ## Tasks Completed
 
 ### Session 2 - [date]
+
 - ✅ [Task 2.1] Implement user dashboard
 - ✅ [Task 2.2] Add settings page
 
 ### Session 1 - [date]
+
 - ✅ [Task 1.1] Set up authentication
 - ✅ [Task 1.2] Create user schema
 
 ## Files Modified/Created
+
 **Source files:**
-  - src/layers/features/auth/ui/LoginForm.tsx
-  - src/layers/entities/user/api/queries.ts
+
+- src/layers/features/auth/ui/LoginForm.tsx
+- src/layers/entities/user/api/queries.ts
 
 **Test files:**
-  - __tests__/features/auth/LoginForm.test.tsx
+
+- **tests**/features/auth/LoginForm.test.tsx
 
 ## Known Issues
+
 - [Issue description]
 
 ## Implementation Notes
+
 ### Session 2
+
 - Design decision: Used Zustand for local state...
 
 ### Session 1
+
 - Initial architecture established...
 ```
 
@@ -572,36 +628,40 @@ If circular dependencies detected:
 
 ## Integration with Other Commands
 
-| Command | Relationship |
-|---------|--------------|
-| `/spec:decompose` | **Run first** - Creates the tasks to execute |
-| `/spec:feedback` | Run after to incorporate feedback, then re-decompose and re-execute |
-| `/git:commit` | Run after execution to commit changes |
-| `/docs:reconcile` | Run after to check if guides need updates |
+| Command           | Relationship                                                        |
+| ----------------- | ------------------------------------------------------------------- |
+| `/spec:decompose` | **Run first** - Creates the tasks to execute                        |
+| `/spec:feedback`  | Run after to incorporate feedback, then re-decompose and re-execute |
+| `/git:commit`     | Run after execution to commit changes                               |
+| `/docs:reconcile` | Run after to check if guides need updates                           |
 
 ---
 
 ## Troubleshooting
 
 ### "No tasks found"
+
 Run `/spec:decompose` first to create tasks from the specification.
 
 ### "All tasks already completed"
+
 The implementation is done. Check `04-implementation.md` for summary.
 
 ### Agents taking too long
+
 Large tasks may take several minutes. Use `TaskOutput(block: false)` to check progress.
 
 ### Context limits in agents
+
 Each agent has isolated context. If a single task is too large, consider splitting it in the decompose phase.
 
 ---
 
 ## Performance Characteristics
 
-| Metric | Sequential | Parallel (This Command) |
-|--------|-----------|------------------------|
-| 10 independent tasks | ~30 min | ~5 min (6x faster) |
-| Context usage | 100% in main | ~15% in main |
-| Failure impact | Blocks all | Only blocks dependents |
-| Progress visibility | After each task | Real-time per batch |
+| Metric               | Sequential      | Parallel (This Command) |
+| -------------------- | --------------- | ----------------------- |
+| 10 independent tasks | ~30 min         | ~5 min (6x faster)      |
+| Context usage        | 100% in main    | ~15% in main            |
+| Failure impact       | Blocks all      | Only blocks dependents  |
+| Progress visibility  | After each task | Real-time per batch     |

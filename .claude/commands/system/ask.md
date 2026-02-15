@@ -19,32 +19,40 @@ Answer questions about how to accomplish tasks in this repository using Claude C
 Search these sources to find the relevant process:
 
 **Harness README (structure overview)**:
+
 - Read `.claude/README.md` for complete harness inventory and component documentation
 - This file documents all commands, agents, skills, rules, and hooks
 - Contains architecture diagrams, naming conventions, and maintenance guides
 
 **CLAUDE.md (primary project documentation)**:
+
 - Read the `CLAUDE.md` file in the project root for project instructions and conventions
 - Contains technology stack, architecture patterns, and code conventions
 
 **Developer guides**:
+
 - Check `guides/` for detailed implementation patterns and best practices
 
 **Path-specific rules**:
+
 - Check `.claude/rules/` for contextual rules that apply to specific file patterns
 - Rules have `paths:` frontmatter specifying which files trigger them
 - Include: `api.md`, `dal.md`, `security.md`, `testing.md`, `components.md`
 
 **Available slash commands**:
+
 - List all commands in `.claude/commands/` directory
 
 **Available agents**:
+
 - List all agents in `.claude/agents/` directory
 
 **Available skills**:
+
 - List all skills in `.claude/skills/` directory
 
 **Hooks (automated behaviors)**:
+
 - Check `.claude/settings.json` for configured hooks (via ClaudeKit)
 
 ### 2. External Research (When Needed)
@@ -52,6 +60,7 @@ Search these sources to find the relevant process:
 **CRITICAL**: If the question involves Claude Code features, capabilities, or best practices NOT found in local documentation:
 
 1. **Use the `claude-code-guide` agent** (preferred for Claude Code questions):
+
    ```
    Task(
      description="Lookup Claude Code [topic]",
@@ -80,6 +89,7 @@ Search these sources to find the relevant process:
 ### 3. Read Relevant Files
 
 Based on the question, read the relevant documentation files to understand:
+
 - What the harness README says about the component in question (`.claude/README.md`)
 - What slash commands are available for this task
 - What developer guides provide patterns for this
@@ -91,6 +101,7 @@ Based on the question, read the relevant documentation files to understand:
 ### 4. Identify the Best Approaches
 
 Determine:
+
 1. **Claude Code Method**: Is there a slash command, agent, or skill that can do this?
 2. **Manual Method**: What's the step-by-step process to do it by hand?
 3. **Process Exists?**: Is there a clearly defined process, or is this undocumented?
@@ -104,6 +115,7 @@ If NO clear process exists for the user's question:
 3. **Offer appropriate next steps**: Based on the nature of the question
 
 Use AskUserQuestion:
+
 ```
 "I couldn't find a defined process for [topic]. How would you like to proceed?"
 - Learn through experimentation first → I'll run `/system:learn`
@@ -112,6 +124,7 @@ Use AskUserQuestion:
 ```
 
 **When to suggest each option:**
+
 - `/system:learn` — When the user wants to "figure out how to" do something new, experiment with approaches, or discover capabilities
 - `/system:update` — When the solution is known and just needs to be codified into the system
 
@@ -129,13 +142,17 @@ Use the command: `/command:name [arguments]`
 
 Example:
 ```
+
 /spec:create Add user authentication feature
+
 ```
 
 **Option 2: Direct Prompt** (if no slash command)
 Send this to Claude Code:
 ```
+
 [Example prompt that accomplishes the task]
+
 ```
 
 **Option 3: Agent** (if an agent helps)
@@ -176,12 +193,14 @@ Based on similar patterns, here's how you might approach this:
 ### Create a Process?
 
 Would you like me to create a defined process for this? This would:
+
 - Add documentation to CLAUDE.md
 - Create a slash command (if appropriate)
 - Create a path-specific rule (if file-type specific)
 - Establish a consistent workflow
 
 **Options:**
+
 - Yes, create a new process → I'll run `/system:update`
 - No, the guidance above is enough
 ```
@@ -190,32 +209,34 @@ Would you like me to create a defined process for this? This would:
 
 Reference these when answering:
 
-| Question Pattern | Claude Code | Manual |
-|-----------------|-------------|--------|
-| "create a spec" | `/spec:create [description]` | Create file in `specs/` |
-| "ideate a feature" | `/ideate [task-brief]` | Create ideation document |
-| "commit changes" | `/git:commit` | Use git commands |
-| "push to remote" | `/git:push` | `git push` |
-| "create a branch" | Direct prompt: "Create branch X" | `git checkout -b` |
-| "run database migration" | `/db:migrate` | `pnpm prisma migrate deploy` |
-| "scaffold a feature" | Direct prompt: "Create feature X" | Create FSD directory structure per `guides/01-project-structure.md` |
-| "review recent work" | `/review-recent-work` | Manual code inspection |
-| "manage roadmap" | `/roadmap [subcommand]` | Edit `roadmap/roadmap.json` |
-| "git status" | Direct prompt: "Show git status" | `git status && git diff` |
-| "learn how to X" | `/system:learn [topic]` | Research, experiment, document manually |
-| "codify what worked" | `/system:learn we successfully [X]` | Create skill/command manually |
+| Question Pattern         | Claude Code                         | Manual                                                              |
+| ------------------------ | ----------------------------------- | ------------------------------------------------------------------- |
+| "create a spec"          | `/spec:create [description]`        | Create file in `specs/`                                             |
+| "ideate a feature"       | `/ideate [task-brief]`              | Create ideation document                                            |
+| "commit changes"         | `/git:commit`                       | Use git commands                                                    |
+| "push to remote"         | `/git:push`                         | `git push`                                                          |
+| "create a branch"        | Direct prompt: "Create branch X"    | `git checkout -b`                                                   |
+| "run database migration" | `/db:migrate`                       | `pnpm prisma migrate deploy`                                        |
+| "scaffold a feature"     | Direct prompt: "Create feature X"   | Create FSD directory structure per `guides/01-project-structure.md` |
+| "review recent work"     | `/review-recent-work`               | Manual code inspection                                              |
+| "manage roadmap"         | `/roadmap [subcommand]`             | Edit `roadmap/roadmap.json`                                         |
+| "git status"             | Direct prompt: "Show git status"    | `git status && git diff`                                            |
+| "learn how to X"         | `/system:learn [topic]`             | Research, experiment, document manually                             |
+| "codify what worked"     | `/system:learn we successfully [X]` | Create skill/command manually                                       |
 
 ## Claude Code Architecture Notes
 
 When explaining processes, clarify the invocation model:
 
 **Slash Commands (User-Invoked):**
+
 - User explicitly types `/command` to trigger them
 - Example: `/spec:create`, `/git:commit`, `/roadmap`
 - Use when: User wants explicit control over execution
 - Location: `.claude/commands/[namespace]/[name].md`
 
 **Agents (Tool-Invoked):**
+
 - Invoked via Task tool for complex isolated workflows
 - Have separate context windows (prevents context pollution)
 - Example: `typescript-expert`, `database-expert`, `react-expert`
@@ -224,6 +245,7 @@ When explaining processes, clarify the invocation model:
 - Cannot spawn other agents (prevents infinite nesting)
 
 **Skills (Model-Invoked):**
+
 - Reusable expertise packages that Claude applies automatically when relevant
 - Can be project-local (`.claude/skills/`) or external plugins
 - Invoked automatically by Claude based on context matching
@@ -232,12 +254,14 @@ When explaining processes, clarify the invocation model:
 - Discover available skills via the Skill tool's available_skills list
 
 **Hooks (Event-Triggered):**
+
 - Automatically run at lifecycle events via ClaudeKit
 - Configured in `.claude/settings.json`
 - Events: SessionStart, PreToolUse, PostToolUse, UserPromptSubmit, Stop
 - Use when: Behavior must happen at specific points
 
 **Path-Specific Rules (Path-Triggered):**
+
 - Automatically loaded when Claude works with matching files
 - Located in `.claude/rules/*.md` with `paths:` YAML frontmatter
 - Example: `api.md` with `paths: apps/server/src/routes/**/*.ts`
@@ -246,15 +270,16 @@ When explaining processes, clarify the invocation model:
 
 ### Choosing Between Agents and Skills
 
-| Criteria | Use Agent | Use Skill |
-|----------|-----------|-----------|
-| **Scope** | Project-specific complex task | Domain-wide capability |
-| **Context** | Needs isolation/separate context | Operates in main conversation |
-| **Customization** | Highly customizable per project | Standardized behavior |
-| **Definition** | Local `.md` file in `.claude/agents/` | External plugin |
-| **Examples** | `database-expert`, `typescript-expert` | `designing-frontend` |
+| Criteria          | Use Agent                              | Use Skill                     |
+| ----------------- | -------------------------------------- | ----------------------------- |
+| **Scope**         | Project-specific complex task          | Domain-wide capability        |
+| **Context**       | Needs isolation/separate context       | Operates in main conversation |
+| **Customization** | Highly customizable per project        | Standardized behavior         |
+| **Definition**    | Local `.md` file in `.claude/agents/`  | External plugin               |
+| **Examples**      | `database-expert`, `typescript-expert` | `designing-frontend`          |
 
 **Key Distinction:**
+
 - **Agents** = Custom project experts defined locally, run in isolated context
 - **Skills** = Packaged domain capabilities (plugins), run in main conversation
 

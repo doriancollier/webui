@@ -12,6 +12,7 @@
 **Task brief:** Add elegant celebration animations to the task pane when tasks complete. Mini celebrations for individual task completions, a bigger celebration when all tasks are done. Celebrations should be toggleable (on by default), idle-aware (replay if user was away), and feel premium/delightful without being cheesy.
 
 **Assumptions:**
+
 - Celebrations are visual-only (no sound effects in initial scope)
 - The task pane (`TaskListPanel`) is the anchor point — celebrations originate near/around it
 - Task completion events already flow through `use-task-state.ts` via `TaskUpdateEvent` stream events
@@ -22,6 +23,7 @@
 - Celebrations should respect `prefers-reduced-motion` (no particles, subtle fade only)
 
 **Out of scope:**
+
 - Sound effects / audio feedback
 - Custom celebration themes or skins
 - Celebration sharing or social features
@@ -48,6 +50,7 @@
 ## 3) Codebase Map
 
 **Primary components/modules:**
+
 - `apps/client/src/components/chat/TaskListPanel.tsx` — Task pane UI, status display, collapse/expand
 - `apps/client/src/hooks/use-task-state.ts` — Task state management, event handling, completion tracking
 - `apps/client/src/hooks/use-chat-session.ts` — SSE stream event dispatcher, `task_update` handler
@@ -56,12 +59,14 @@
 - `apps/client/src/components/settings/SettingsDialog.tsx` — Settings UI (new toggle goes here)
 
 **Shared dependencies:**
+
 - `motion/react` (v12.33.0) — AnimatePresence, motion.div for orchestration animations
 - `packages/shared/src/schemas.ts` — TaskStatusSchema, TaskUpdateEventSchema
 - `apps/client/src/stores/app-store.ts` — Zustand preferences store
 - Lucide icons: `CheckCircle2`, `Loader2`, `Circle` (already in TaskListPanel)
 
 **Data flow:**
+
 1. Server streams `task_update` SSE event
 2. `useChatSession` dispatches to `onTaskEvent` callback
 3. `useTaskState.handleTaskEvent()` merges task into Map
@@ -69,10 +74,12 @@
 5. **NEW**: Celebration hook detects completion transitions, triggers animation
 
 **Feature flags/config:**
+
 - New: `showTaskCelebrations` boolean in app-store (default: `true`)
 - localStorage key: `'gateway-show-task-celebrations'`
 
 **Potential blast radius:**
+
 - Direct: `app-store.ts`, `SettingsDialog.tsx`, `use-task-state.ts`, `ChatPanel.tsx`
 - New files: Celebration component, idle detection hook, confetti utilities
 - Tests: Extend existing + 3 new test files
@@ -90,26 +97,29 @@ N/A — this is a new feature, not a bug fix.
 
 ### Library Comparison
 
-| Library | Bundle Size | Performance | Customization | Fit |
-|---------|------------|-------------|---------------|-----|
-| **canvas-confetti** | ~28KB | 60fps Canvas | High (colors, physics, origin) | Best |
-| tsParticles | ~82KB+ | Good | Very high (overkill) | Too heavy |
-| Lottie | ~82KB + animation files | ~17fps | Requires After Effects | Too elaborate |
-| Pure CSS | 0KB | Limited particles | Low | Too simple for "premium" |
-| Custom Canvas | 0KB | 60fps | Full control | Reinventing the wheel |
+| Library             | Bundle Size             | Performance       | Customization                  | Fit                      |
+| ------------------- | ----------------------- | ----------------- | ------------------------------ | ------------------------ |
+| **canvas-confetti** | ~28KB                   | 60fps Canvas      | High (colors, physics, origin) | Best                     |
+| tsParticles         | ~82KB+                  | Good              | Very high (overkill)           | Too heavy                |
+| Lottie              | ~82KB + animation files | ~17fps            | Requires After Effects         | Too elaborate            |
+| Pure CSS            | 0KB                     | Limited particles | Low                            | Too simple for "premium" |
+| Custom Canvas       | 0KB                     | 60fps             | Full control                   | Reinventing the wheel    |
 
 ### Celebration UX Best Practices
 
 **What makes celebrations feel premium vs cheesy:**
+
 - **Premium**: Restrained particle count (50-200), warm gold/amber tones, physics-based motion (spring easing), short duration (1-3s), fades gracefully
 - **Cheesy**: Rainbow colors, too many particles, cartoon-style bouncing, lingers too long, accompanied by sound effects
 
 **The FEAT framework** (Frequency, Effort, Appropriateness, Timing):
+
 - Don't celebrate everything — reserve major celebrations for meaningful milestones
 - Mini celebrations should be subtle enough to not break flow
 - Major celebrations should be prominent but brief
 
 **Precedent — Asana:**
+
 - Celebration creatures fly bottom-left to top-right on task completion
 - Random (not every task), toggleable in settings
 - Evolved over time to match brand expression
@@ -117,12 +127,14 @@ N/A — this is a new feature, not a bug fix.
 ### Idle-Aware Replay
 
 **Document Visibility API** (`document.hidden`, `visibilitychange`):
+
 - Detect when user switches tabs or minimizes window
 - Queue celebrations when document is hidden
 - Replay queued celebrations when document becomes visible again
 - Small delay (500ms) after visibility change for smooth context switch
 
 **Custom idle detection** (mouse/keyboard/scroll inactivity):
+
 - Track last interaction timestamp
 - After 30s of inactivity, mark as "idle"
 - On next interaction, replay any queued celebrations
@@ -131,12 +143,14 @@ N/A — this is a new feature, not a bug fix.
 ### Architecture Recommendations
 
 **Event-driven celebration registry:**
+
 - `CelebrationRegistry` class: register celebration types by level (mini/major)
 - `CelebrationStateMachine`: idle → queued → playing lifecycle
 - Queue aggregation: if 3 tasks complete rapidly, show 1 major celebration instead of 3 minis
 - Debounce window: 1 second between rapid completions
 
 **Recommended approach: canvas-confetti + Motion.dev hybrid**
+
 - `canvas-confetti` for particle effects (GPU-accelerated Canvas)
 - `motion/react` for orchestration animations (spring-based banner/badge)
 - Event-driven trigger from `use-task-state.ts` completion detection
@@ -145,6 +159,7 @@ N/A — this is a new feature, not a bug fix.
 ### Color Palette for Celebrations
 
 Gold tones for premium feel (aligns with neutral gray design system):
+
 - Primary: `#FFD700` (gold)
 - Secondary: `#FFC107` (amber)
 - Tertiary: `#F7B500` (warm yellow)

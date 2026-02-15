@@ -37,7 +37,11 @@ describe('Health Route', () => {
   beforeEach(() => {
     // Reset to disabled state
     (tunnelManager as unknown as Record<string, unknown>).status = {
-      enabled: false, connected: false, url: null, port: null, startedAt: null,
+      enabled: false,
+      connected: false,
+      url: null,
+      port: null,
+      startedAt: null,
     };
   });
 

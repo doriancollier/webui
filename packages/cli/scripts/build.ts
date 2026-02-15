@@ -44,7 +44,9 @@ async function buildCLI() {
       'zod',
     ],
     sourcemap: true,
-    banner: { js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);" },
+    banner: {
+      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+    },
   });
 
   // 3. Compile CLI entry

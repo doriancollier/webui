@@ -9,7 +9,7 @@ vi.mock('@/layers/shared/lib', () => ({
   hashToHslColor: vi.fn(() => 'hsl(180, 70%, 55%)'),
   generateCircleFavicon: vi.fn(() => 'data:image/png;base64,solid'),
   generatePulseFrames: vi.fn(() =>
-    Promise.resolve(['data:frame0', 'data:frame1', 'data:frame2', 'data:frame3']),
+    Promise.resolve(['data:frame0', 'data:frame1', 'data:frame2', 'data:frame3'])
   ),
   setFavicon: vi.fn(),
 }));
@@ -33,10 +33,9 @@ describe('useFavicon', () => {
   });
 
   it('regenerates favicon when cwd changes', () => {
-    const { rerender } = renderHook(
-      ({ cwd }) => useFavicon({ cwd, isStreaming: false }),
-      { initialProps: { cwd: '/project-a' as string | null } },
-    );
+    const { rerender } = renderHook(({ cwd }) => useFavicon({ cwd, isStreaming: false }), {
+      initialProps: { cwd: '/project-a' as string | null },
+    });
     const initialCalls = vi.mocked(setFavicon).mock.calls.length;
 
     rerender({ cwd: '/project-b' });
@@ -47,7 +46,7 @@ describe('useFavicon', () => {
     vi.useFakeTimers();
     const { rerender } = renderHook(
       ({ isStreaming }) => useFavicon({ cwd: '/test', isStreaming }),
-      { initialProps: { isStreaming: false } },
+      { initialProps: { isStreaming: false } }
     );
 
     // Let the pulse frames promise resolve
@@ -78,7 +77,7 @@ describe('useFavicon', () => {
     vi.useFakeTimers();
     const { rerender } = renderHook(
       ({ isStreaming }) => useFavicon({ cwd: '/test', isStreaming }),
-      { initialProps: { isStreaming: true } },
+      { initialProps: { isStreaming: true } }
     );
 
     await act(async () => {

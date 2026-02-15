@@ -25,35 +25,38 @@ export function ObsidianApp() {
     });
   }, [transport, setSessionId]);
 
-  const transformContent = useCallback(async (content: string): Promise<string> => {
-    const parts: string[] = [];
+  const transformContent = useCallback(
+    async (content: string): Promise<string> => {
+      const parts: string[] = [];
 
-    if (activeFile) {
-      const file = app.vault.getAbstractFileByPath(activeFile.path);
-      if (file instanceof TFile) {
-        const text = await app.vault.cachedRead(file);
-        parts.push(`<context file="${activeFile.path}">\n${text}\n</context>`);
+      if (activeFile) {
+        const file = app.vault.getAbstractFileByPath(activeFile.path);
+        if (file instanceof TFile) {
+          const text = await app.vault.cachedRead(file);
+          parts.push(`<context file="${activeFile.path}">\n${text}\n</context>`);
+        }
       }
-    }
 
-    for (const cf of contextFiles) {
-      if (activeFile && cf.path === activeFile.path) continue;
-      const file = app.vault.getAbstractFileByPath(cf.path);
-      if (file instanceof TFile) {
-        const text = await app.vault.cachedRead(file);
-        parts.push(`<context file="${cf.path}">\n${text}\n</context>`);
+      for (const cf of contextFiles) {
+        if (activeFile && cf.path === activeFile.path) continue;
+        const file = app.vault.getAbstractFileByPath(cf.path);
+        if (file instanceof TFile) {
+          const text = await app.vault.cachedRead(file);
+          parts.push(`<context file="${cf.path}">\n${text}\n</context>`);
+        }
       }
-    }
 
-    if (parts.length > 0) {
-      return parts.join('\n\n') + '\n\n' + content;
-    }
-    return content;
-  }, [app, activeFile, contextFiles]);
+      if (parts.length > 0) {
+        return parts.join('\n\n') + '\n\n' + content;
+      }
+      return content;
+    },
+    [app, activeFile, contextFiles]
+  );
 
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center px-3 py-1.5 border-b">
+    <div className="flex h-full flex-col">
+      <div className="flex items-center border-b px-3 py-1.5">
         <ContextBar
           activeFile={activeFile}
           contextFiles={contextFiles}

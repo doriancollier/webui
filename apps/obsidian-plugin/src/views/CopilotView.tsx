@@ -26,12 +26,20 @@ export class CopilotView extends ItemView {
   constructor(leaf: WorkspaceLeaf, plugin: CopilotPlugin) {
     super(leaf);
     this.plugin = plugin;
-    this.queryClient = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, retry: 1 } } });
+    this.queryClient = new QueryClient({
+      defaultOptions: { queries: { staleTime: 30_000, retry: 1 } },
+    });
   }
 
-  getViewType(): string { return VIEW_TYPE_COPILOT; }
-  getDisplayText(): string { return 'Copilot'; }
-  getIcon(): string { return 'bot'; }
+  getViewType(): string {
+    return VIEW_TYPE_COPILOT;
+  }
+  getDisplayText(): string {
+    return 'Copilot';
+  }
+  getIcon(): string {
+    return 'bot';
+  }
 
   async onOpen(): Promise<void> {
     setPlatformAdapter(createObsidianAdapter(this.app));

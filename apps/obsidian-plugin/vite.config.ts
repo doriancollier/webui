@@ -11,7 +11,14 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat.js';
 const nodeBuiltins = builtinModules.flatMap((m) => [m, `node:${m}`]);
 
 export default defineConfig({
-  plugins: [react(), tailwindcss(), copyManifest(), safeRequires(), fixDirnamePolyfill(), patchElectronCompat()],
+  plugins: [
+    react(),
+    tailwindcss(),
+    copyManifest(),
+    safeRequires(),
+    fixDirnamePolyfill(),
+    patchElectronCompat(),
+  ],
   build: {
     lib: {
       entry: path.resolve(__dirname, 'src/main.ts'),
@@ -20,11 +27,19 @@ export default defineConfig({
     },
     rollupOptions: {
       external: [
-        'obsidian', 'electron',
-        '@codemirror/autocomplete', '@codemirror/collab', '@codemirror/commands',
-        '@codemirror/language', '@codemirror/lint', '@codemirror/search',
-        '@codemirror/state', '@codemirror/view',
-        '@lezer/common', '@lezer/highlight', '@lezer/lr',
+        'obsidian',
+        'electron',
+        '@codemirror/autocomplete',
+        '@codemirror/collab',
+        '@codemirror/commands',
+        '@codemirror/language',
+        '@codemirror/lint',
+        '@codemirror/search',
+        '@codemirror/state',
+        '@codemirror/view',
+        '@lezer/common',
+        '@lezer/highlight',
+        '@lezer/lr',
         ...nodeBuiltins,
       ],
       output: {

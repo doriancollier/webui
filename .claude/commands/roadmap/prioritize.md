@@ -1,6 +1,6 @@
 ---
 description: Analyze priorities and suggest rebalancing
-argument-hint: "(no arguments)"
+argument-hint: '(no arguments)'
 allowed-tools: Read, Bash, Task, AskUserQuestion
 category: roadmap
 ---
@@ -26,6 +26,7 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
 ### Step 2: Analyze Distribution
 
 Check:
+
 - Must-Have percentage (should be <60% of total effort)
 - Items that could be deprioritized
 - Quick wins being missed (high value, low effort items not in "Now")
@@ -46,6 +47,7 @@ Task(
 ### Step 4: Present Recommendations
 
 Display:
+
 - Current MoSCoW distribution
 - Specific items recommended for priority changes
 - Rationale for each recommendation
@@ -60,6 +62,7 @@ If user approves recommendations, update the roadmap.json accordingly.
 ## Priority Analysis
 
 ### Current Distribution
+
 - Must-Have: X items (Y% of effort) ⚠️ Over 60% threshold
 - Should-Have: X items
 - Could-Have: X items

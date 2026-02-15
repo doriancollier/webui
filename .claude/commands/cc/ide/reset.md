@@ -11,10 +11,10 @@ Remove the custom `workbench.colorCustomizations` from `.vscode/settings.json`, 
 
 **IMPORTANT: This command ONLY modifies project-level settings.**
 
-| Setting | Path | Modified? |
-|---------|------|-----------|
-| Project settings | `.vscode/settings.json` | YES |
-| User settings | `~/.config/Code/User/settings.json` | **NEVER** |
+| Setting               | Path                                                    | Modified? |
+| --------------------- | ------------------------------------------------------- | --------- |
+| Project settings      | `.vscode/settings.json`                                 | YES       |
+| User settings         | `~/.config/Code/User/settings.json`                     | **NEVER** |
 | User settings (macOS) | `~/Library/Application Support/Code/User/settings.json` | **NEVER** |
 
 **NEVER read, write, or modify any file outside the project's `.vscode/` directory.**

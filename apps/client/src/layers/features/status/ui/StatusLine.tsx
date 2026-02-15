@@ -99,7 +99,7 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
           transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
           className="overflow-hidden"
         >
-          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 px-1 pt-2 text-xs text-muted-foreground whitespace-nowrap">
+          <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 px-1 pt-2 text-xs whitespace-nowrap sm:justify-start">
             <AnimatePresence initial={false} mode="popLayout">
               {entries.map((entry, i) => (
                 <motion.div

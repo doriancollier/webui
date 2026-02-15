@@ -6,51 +6,51 @@ This guide covers data fetching patterns using TanStack Query for client-side da
 
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
-| Query client setup | `src/app/providers.tsx` |
-| Query key factory | `src/layers/shared/lib/query-client.ts` |
-| DAL functions | `src/layers/entities/*/api/queries.ts` and `mutations.ts` |
-| Server Actions | `src/app/actions/*.ts` or feature-specific locations |
-| API Routes | `src/app/api/*/route.ts` |
-| Auth utilities | `src/layers/shared/api/auth.ts` |
+| Concept            | Location                                                  |
+| ------------------ | --------------------------------------------------------- |
+| Query client setup | `src/app/providers.tsx`                                   |
+| Query key factory  | `src/layers/shared/lib/query-client.ts`                   |
+| DAL functions      | `src/layers/entities/*/api/queries.ts` and `mutations.ts` |
+| Server Actions     | `src/app/actions/*.ts` or feature-specific locations      |
+| API Routes         | `src/app/api/*/route.ts`                                  |
+| Auth utilities     | `src/layers/shared/api/auth.ts`                           |
 
 ## When to Use What
 
 ### Data Fetching Approach
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| Static page data | Server Component → DAL | No client JS, faster initial load, direct DB access |
-| Dynamic client data (polling, filters) | Client Component → TanStack Query → API Route | Reactive, cacheable, refetch on demand |
-| User-triggered mutation | Client Component → Server Action → DAL | Built-in CSRF, progressive enhancement, type-safe |
-| Form submission | Server Action with `formData` | Works without JS, automatic revalidation |
-| Webhook from external service | API Route | External services cannot call Server Actions |
-| Large file upload (>1MB) | API Route | Server Actions have 1MB body limit |
-| Streaming response | API Route | Server Actions don't support streaming |
+| Scenario                               | Approach                                      | Why                                                 |
+| -------------------------------------- | --------------------------------------------- | --------------------------------------------------- |
+| Static page data                       | Server Component → DAL                        | No client JS, faster initial load, direct DB access |
+| Dynamic client data (polling, filters) | Client Component → TanStack Query → API Route | Reactive, cacheable, refetch on demand              |
+| User-triggered mutation                | Client Component → Server Action → DAL        | Built-in CSRF, progressive enhancement, type-safe   |
+| Form submission                        | Server Action with `formData`                 | Works without JS, automatic revalidation            |
+| Webhook from external service          | API Route                                     | External services cannot call Server Actions        |
+| Large file upload (>1MB)               | API Route                                     | Server Actions have 1MB body limit                  |
+| Streaming response                     | API Route                                     | Server Actions don't support streaming              |
 
 ### Server Actions vs API Routes
 
 > **Decision Rule:** "Will anything outside my Next.js app need to call this?"
 > **Yes → API Route** | **No → Server Action**
 
-| Use Case | Choose | Reason |
-|----------|--------|--------|
-| Form submission from UI | Server Action | CSRF protection, progressive enhancement |
-| Like/vote button | Server Action | Simple mutation, optimistic UI support |
-| Webhook (Stripe, GitHub) | API Route | External services need HTTP endpoint |
-| Mobile app backend | API Route | External client requires HTTP access |
-| GET request with caching | API Route | Server Actions are POST-only |
-| Server-Sent Events (SSE) | API Route | Server Actions don't support streaming |
+| Use Case                 | Choose        | Reason                                   |
+| ------------------------ | ------------- | ---------------------------------------- |
+| Form submission from UI  | Server Action | CSRF protection, progressive enhancement |
+| Like/vote button         | Server Action | Simple mutation, optimistic UI support   |
+| Webhook (Stripe, GitHub) | API Route     | External services need HTTP endpoint     |
+| Mobile app backend       | API Route     | External client requires HTTP access     |
+| GET request with caching | API Route     | Server Actions are POST-only             |
+| Server-Sent Events (SSE) | API Route     | Server Actions don't support streaming   |
 
 ### Query Invalidation Strategy
 
-| Scenario | Invalidation Pattern | Example |
-|----------|---------------------|---------|
-| Created new item | Invalidate list query | `queryClient.invalidateQueries({ queryKey: queryKeys.users.all })` |
-| Updated specific item | Invalidate detail + list | `invalidateQueries({ queryKey: queryKeys.users.detail(id) })` |
-| Deleted item | Invalidate all related | `invalidateQueries({ queryKey: queryKeys.users.all })` |
-| Mutation affects multiple entities | Invalidate multiple keys | Invalidate both `users.all` and `posts.all` if related |
+| Scenario                           | Invalidation Pattern     | Example                                                            |
+| ---------------------------------- | ------------------------ | ------------------------------------------------------------------ |
+| Created new item                   | Invalidate list query    | `queryClient.invalidateQueries({ queryKey: queryKeys.users.all })` |
+| Updated specific item              | Invalidate detail + list | `invalidateQueries({ queryKey: queryKeys.users.detail(id) })`      |
+| Deleted item                       | Invalidate all related   | `invalidateQueries({ queryKey: queryKeys.users.all })`             |
+| Mutation affects multiple entities | Invalidate multiple keys | Invalidate both `users.all` and `posts.all` if related             |
 
 ## Core Patterns
 
@@ -134,11 +134,10 @@ export const queryKeys = {
   },
   posts: {
     all: ['posts'] as const,
-    list: (filters?: { authorId?: string }) =>
-      [...queryKeys.posts.all, 'list', filters] as const,
+    list: (filters?: { authorId?: string }) => [...queryKeys.posts.all, 'list', filters] as const,
     detail: (id: string) => [...queryKeys.posts.all, 'detail', id] as const,
   },
-} as const
+} as const;
 ```
 
 ### Mutation with Cache Invalidation
@@ -201,23 +200,23 @@ Server Actions work with FormData for progressive enhancement:
 
 ```typescript
 // src/app/actions/user.ts
-'use server'
+'use server';
 
-import { userSchema } from '@/layers/entities/user/model/types'
-import { createUser } from '@/layers/entities/user'
-import { revalidatePath } from 'next/cache'
+import { userSchema } from '@/layers/entities/user/model/types';
+import { createUser } from '@/layers/entities/user';
+import { revalidatePath } from 'next/cache';
 
 export async function createUserAction(formData: FormData) {
   // 1. Validate input with Zod
-  const validated = userSchema.parse(Object.fromEntries(formData))
+  const validated = userSchema.parse(Object.fromEntries(formData));
 
   // 2. Call DAL function (handles auth internally)
-  const user = await createUser(validated)
+  const user = await createUser(validated);
 
   // 3. Revalidate cache for affected pages
-  revalidatePath('/users')
+  revalidatePath('/users');
 
-  return user
+  return user;
 }
 ```
 
@@ -286,55 +285,52 @@ export function UserListWithSuspense() {
 Show immediate feedback while mutation is in flight:
 
 ```typescript
-'use client'
+'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { queryKeys } from '@/layers/shared/lib/query-client'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { queryKeys } from '@/layers/shared/lib/query-client';
 
 async function updateUser(data: { id: string; name: string }) {
   const response = await fetch(`/api/users/${data.id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: data.name }),
-  })
-  if (!response.ok) throw new Error('Failed to update user')
-  return response.json()
+  });
+  if (!response.ok) throw new Error('Failed to update user');
+  return response.json();
 }
 
 export function useUpdateUser() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: updateUser,
     // Optimistically update cache before server responds
     onMutate: async (newData) => {
       // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: queryKeys.users.detail(newData.id) })
+      await queryClient.cancelQueries({ queryKey: queryKeys.users.detail(newData.id) });
 
       // Snapshot current value
-      const previousUser = queryClient.getQueryData(queryKeys.users.detail(newData.id))
+      const previousUser = queryClient.getQueryData(queryKeys.users.detail(newData.id));
 
       // Optimistically update cache
       queryClient.setQueryData(queryKeys.users.detail(newData.id), (old: any) => ({
         ...old,
         ...newData,
-      }))
+      }));
 
       // Return snapshot for rollback
-      return { previousUser }
+      return { previousUser };
     },
     // Rollback on error
     onError: (err, newData, context) => {
-      queryClient.setQueryData(
-        queryKeys.users.detail(newData.id),
-        context?.previousUser
-      )
+      queryClient.setQueryData(queryKeys.users.detail(newData.id), context?.previousUser);
     },
     // Refetch after success or error
     onSettled: (data, error, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.id) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.id) });
     },
-  })
+  });
 }
 ```
 
@@ -344,28 +340,25 @@ API Routes call DAL functions, never Prisma directly:
 
 ```typescript
 // src/app/api/users/route.ts
-import { NextRequest, NextResponse } from 'next/server'
-import { listUsers } from '@/layers/entities/user'
-import { getCurrentUser } from '@/layers/shared/api/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { listUsers } from '@/layers/entities/user';
+import { getCurrentUser } from '@/layers/shared/api/auth';
 
 export async function GET(request: NextRequest) {
   try {
     // Auth check (if needed)
-    const user = await getCurrentUser()
+    const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Call DAL function
-    const users = await listUsers()
+    const users = await listUsers();
 
-    return NextResponse.json(users)
+    return NextResponse.json(users);
   } catch (error) {
-    console.error('Failed to fetch users:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    console.error('Failed to fetch users:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -414,29 +407,29 @@ export default async function UsersPage() {
 const mutation = useMutation({
   mutationFn: createUser,
   // Missing onSuccess - UI shows stale data
-})
+});
 
 // ✅ Always invalidate affected queries
 const mutation = useMutation({
   mutationFn: createUser,
   onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
+    queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
   },
-})
+});
 ```
 
 ```typescript
 // ❌ Don't use hardcoded query keys
 const { data } = useQuery({
-  queryKey: ['users'],  // Not type-safe, hard to maintain
+  queryKey: ['users'], // Not type-safe, hard to maintain
   queryFn: fetchUsers,
-})
+});
 
 // ✅ Use query key factory
 const { data } = useQuery({
-  queryKey: queryKeys.users.list(),  // Type-safe, consistent, hierarchical
+  queryKey: queryKeys.users.list(), // Type-safe, consistent, hierarchical
   queryFn: fetchUsers,
-})
+});
 ```
 
 ```typescript
@@ -463,19 +456,20 @@ export default async function UsersPage() {
 
 ```typescript
 // ❌ Don't skip validation in Server Actions
-'use server'
-export async function createUser(data: any) {  // No validation
-  return prisma.user.create({ data })  // Unsafe, bypasses schema checks
+'use server';
+export async function createUser(data: any) {
+  // No validation
+  return prisma.user.create({ data }); // Unsafe, bypasses schema checks
 }
 
 // ✅ Always validate with Zod before calling DAL
-'use server'
-import { userSchema } from '@/layers/entities/user/model/types'
-import { createUser } from '@/layers/entities/user'
+('use server');
+import { userSchema } from '@/layers/entities/user/model/types';
+import { createUser } from '@/layers/entities/user';
 
 export async function createUserAction(formData: FormData) {
-  const validated = userSchema.parse(Object.fromEntries(formData))  // Runtime validation
-  return createUser(validated)  // Type-safe, validated data
+  const validated = userSchema.parse(Object.fromEntries(formData)); // Runtime validation
+  return createUser(validated); // Type-safe, validated data
 }
 ```
 
@@ -515,6 +509,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
 ```
 
 **Default options explained:**
+
 - `staleTime: 60 * 1000` - Data is considered fresh for 1 minute, preventing unnecessary refetches
 - `refetchOnWindowFocus: false` - Disabled to avoid aggressive refetching (enable per-query if needed)
 
@@ -564,9 +559,9 @@ const mutation = useMutation({
   mutationFn: updateUser,
   onSuccess: () => {
     // Invalidate all queries starting with ['users']
-    queryClient.invalidateQueries({ queryKey: queryKeys.users.all })
+    queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
   },
-})
+});
 ```
 
 ### Hydration mismatch errors
@@ -611,14 +606,14 @@ export function Component() {
 ```typescript
 // Define query
 const { data } = useQuery({
-  queryKey: queryKeys.users.list(),  // Must match exactly
+  queryKey: queryKeys.users.list(), // Must match exactly
   queryFn: fetchUsers,
-})
+});
 
 // Invalidate
 queryClient.invalidateQueries({
-  queryKey: queryKeys.users.all  // Invalidates all users.* keys
-})
+  queryKey: queryKeys.users.all, // Invalidates all users.* keys
+});
 ```
 
 ### "Cannot read properties of undefined" in query function

@@ -13,18 +13,25 @@ interface TaskListPanelProps {
 
 const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
   in_progress: <Loader2 className="size-(--size-icon-xs) shrink-0 animate-spin text-blue-400" />,
-  pending: <Circle className="size-(--size-icon-xs) shrink-0 text-muted-foreground" />,
+  pending: <Circle className="text-muted-foreground size-(--size-icon-xs) shrink-0" />,
   completed: <CheckCircle2 className="size-(--size-icon-xs) shrink-0 text-green-500" />,
 };
 
 const MAX_VISIBLE = 10;
 
-export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse, celebratingTaskId, onCelebrationComplete }: TaskListPanelProps) {
+export function TaskListPanel({
+  tasks,
+  activeForm,
+  isCollapsed,
+  onToggleCollapse,
+  celebratingTaskId,
+  onCelebrationComplete,
+}: TaskListPanelProps) {
   if (tasks.length === 0) return null;
 
-  const done = tasks.filter(t => t.status === 'completed').length;
-  const inProgress = tasks.filter(t => t.status === 'in_progress').length;
-  const open = tasks.filter(t => t.status === 'pending').length;
+  const done = tasks.filter((t) => t.status === 'completed').length;
+  const inProgress = tasks.filter((t) => t.status === 'in_progress').length;
+  const open = tasks.filter((t) => t.status === 'pending').length;
   const visibleTasks = tasks.slice(0, MAX_VISIBLE);
   const overflow = tasks.length - MAX_VISIBLE;
 
@@ -36,7 +43,7 @@ export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
-            className="flex items-center gap-2 text-xs text-blue-400 mb-1"
+            className="mb-1 flex items-center gap-2 text-xs text-blue-400"
           >
             <Loader2 className="size-(--size-icon-xs) shrink-0 animate-spin" />
             <span className="truncate">{activeForm}</span>
@@ -46,13 +53,17 @@ export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse
 
       <button
         onClick={onToggleCollapse}
-        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground w-full"
+        className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1.5 text-xs"
       >
-        {isCollapsed ? <ChevronRight className="size-(--size-icon-xs)" /> : <ChevronDown className="size-(--size-icon-xs)" />}
+        {isCollapsed ? (
+          <ChevronRight className="size-(--size-icon-xs)" />
+        ) : (
+          <ChevronDown className="size-(--size-icon-xs)" />
+        )}
         <ListTodo className="size-(--size-icon-xs)" />
         <span>
-          {tasks.length} task{tasks.length !== 1 ? 's' : ''}
-          {' '}({done} done{inProgress > 0 ? `, ${inProgress} in progress` : ''}, {open} open)
+          {tasks.length} task{tasks.length !== 1 ? 's' : ''} ({done} done
+          {inProgress > 0 ? `, ${inProgress} in progress` : ''}, {open} open)
           {overflow > 0 && ` +${overflow} more`}
         </span>
       </button>
@@ -65,23 +76,29 @@ export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse
             exit={{ opacity: 0, height: 0 }}
             className="mt-1 space-y-0.5"
           >
-            {visibleTasks.map(task => {
+            {visibleTasks.map((task) => {
               const isCelebrating = task.id === celebratingTaskId && task.status === 'completed';
 
               return (
                 <motion.li
                   key={task.id}
-                  className={`relative flex items-center gap-2 text-xs py-0.5 ${
+                  className={`relative flex items-center gap-2 py-0.5 text-xs ${
                     task.status === 'completed'
                       ? 'text-muted-foreground/50 line-through'
                       : task.status === 'in_progress'
-                      ? 'text-foreground font-medium'
-                      : 'text-muted-foreground'
+                        ? 'text-foreground font-medium'
+                        : 'text-muted-foreground'
                   }`}
-                  animate={isCelebrating ? {
-                    scale: [1, 1.05, 1],
-                  } : undefined}
-                  transition={isCelebrating ? { type: 'spring', stiffness: 400, damping: 10 } : undefined}
+                  animate={
+                    isCelebrating
+                      ? {
+                          scale: [1, 1.05, 1],
+                        }
+                      : undefined
+                  }
+                  transition={
+                    isCelebrating ? { type: 'spring', stiffness: 400, damping: 10 } : undefined
+                  }
                   onAnimationComplete={() => {
                     if (isCelebrating) onCelebrationComplete?.();
                   }}
@@ -95,7 +112,8 @@ export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse
                       animate={{ backgroundPosition: '200% 0' }}
                       transition={{ duration: 0.4, ease: 'easeOut' }}
                       style={{
-                        backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+                        backgroundImage:
+                          'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
                         backgroundSize: '200% 100%',
                       }}
                     />

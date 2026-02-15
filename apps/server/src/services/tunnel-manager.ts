@@ -16,10 +16,16 @@ export interface TunnelStatus {
 export class TunnelManager {
   private listener: { close(): Promise<void>; url(): string | null } | null = null;
   private _status: TunnelStatus = {
-    enabled: false, connected: false, url: null, port: null, startedAt: null,
+    enabled: false,
+    connected: false,
+    url: null,
+    port: null,
+    startedAt: null,
   };
 
-  get status(): TunnelStatus { return { ...this._status }; }
+  get status(): TunnelStatus {
+    return { ...this._status };
+  }
 
   async start(config: TunnelConfig): Promise<string> {
     if (this.listener) throw new Error('Tunnel is already running');
@@ -42,7 +48,10 @@ export class TunnelManager {
     const url = this.listener.url() ?? '';
 
     this._status = {
-      enabled: true, connected: true, url, port: config.port,
+      enabled: true,
+      connected: true,
+      url,
+      port: config.port,
       startedAt: new Date().toISOString(),
     };
     return url;
@@ -54,8 +63,11 @@ export class TunnelManager {
       this.listener = null;
     }
     this._status = {
-      enabled: this._status.enabled, connected: false, url: null,
-      port: this._status.port, startedAt: this._status.startedAt,
+      enabled: this._status.enabled,
+      connected: false,
+      url: null,
+      port: this._status.port,
+      startedAt: this._status.startedAt,
     };
   }
 }

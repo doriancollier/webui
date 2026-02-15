@@ -39,33 +39,34 @@ We avoid pure extremes. Pure white on screens produces glare; pure black creates
 
 ### Light Mode
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--bg-primary` | `#FAFAFA` | Page background |
-| `--bg-secondary` | `#F5F5F5` | User message tint, code blocks |
-| `--bg-surface` | `#FFFFFF` | Elevated cards, popovers |
-| `--text-primary` | `#171717` | Body text |
-| `--text-secondary` | `#525252` | Labels, metadata |
-| `--text-tertiary` | `#A3A3A3` | Placeholders, timestamps |
-| `--border-subtle` | `#E5E5E5` | Dividers |
-| `--border-default` | `#D4D4D4` | Card borders, inputs |
+| Token              | Value     | Usage                          |
+| ------------------ | --------- | ------------------------------ |
+| `--bg-primary`     | `#FAFAFA` | Page background                |
+| `--bg-secondary`   | `#F5F5F5` | User message tint, code blocks |
+| `--bg-surface`     | `#FFFFFF` | Elevated cards, popovers       |
+| `--text-primary`   | `#171717` | Body text                      |
+| `--text-secondary` | `#525252` | Labels, metadata               |
+| `--text-tertiary`  | `#A3A3A3` | Placeholders, timestamps       |
+| `--border-subtle`  | `#E5E5E5` | Dividers                       |
+| `--border-default` | `#D4D4D4` | Card borders, inputs           |
 
 ### Dark Mode
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--bg-primary` | `#0A0A0A` | Page background |
-| `--bg-secondary` | `#171717` | User message tint, code blocks |
-| `--bg-surface` | `#262626` | Elevated cards, popovers |
-| `--text-primary` | `#EDEDED` | Body text |
-| `--text-secondary` | `#A3A3A3` | Labels, metadata |
-| `--text-tertiary` | `#737373` | Placeholders, timestamps |
-| `--border-subtle` | `#262626` | Dividers |
-| `--border-default` | `#404040` | Card borders, inputs |
+| Token              | Value     | Usage                          |
+| ------------------ | --------- | ------------------------------ |
+| `--bg-primary`     | `#0A0A0A` | Page background                |
+| `--bg-secondary`   | `#171717` | User message tint, code blocks |
+| `--bg-surface`     | `#262626` | Elevated cards, popovers       |
+| `--text-primary`   | `#EDEDED` | Body text                      |
+| `--text-secondary` | `#A3A3A3` | Labels, metadata               |
+| `--text-tertiary`  | `#737373` | Placeholders, timestamps       |
+| `--border-subtle`  | `#262626` | Dividers                       |
+| `--border-default` | `#404040` | Card borders, inputs           |
 
 ### Accent
 
 One accent color, used sparingly: **blue** (`#3B82F6` light / `#60A5FA` dark`). Reserved for:
+
 - Focus rings
 - Active links
 - The send button
@@ -87,12 +88,12 @@ Mono:  ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, m
 
 ### Scale
 
-| Token | Size | Line Height | Usage |
-|-------|------|-------------|-------|
-| `text-xs` | 11px | 1.4 | Timestamps, tool status |
-| `text-sm` | 13px | 1.5 | Code, metadata, labels |
-| `text-base` | 15px | 1.6 | Message body text |
-| `text-lg` | 17px | 1.5 | In-message headings (h3+) |
+| Token       | Size | Line Height | Usage                     |
+| ----------- | ---- | ----------- | ------------------------- |
+| `text-xs`   | 11px | 1.4         | Timestamps, tool status   |
+| `text-sm`   | 13px | 1.5         | Code, metadata, labels    |
+| `text-base` | 15px | 1.6         | Message body text         |
+| `text-lg`   | 17px | 1.5         | In-message headings (h3+) |
 
 ### Weights
 
@@ -112,14 +113,14 @@ We use an **8-point grid**. All spacing values are multiples of 4px, with 8px as
 
 ### Scale (Tailwind mapping)
 
-| Token | Value | Tailwind | Usage |
-|-------|-------|----------|-------|
-| `space-1` | 4px | `p-1` | Tight padding (icon containers) |
-| `space-2` | 8px | `p-2` | Base unit, small gaps |
-| `space-3` | 12px | `p-3` | Component padding |
-| `space-4` | 16px | `p-4` | Card padding, message gap |
-| `space-6` | 24px | `p-6` | Section spacing |
-| `space-8` | 32px | `p-8` | Major divisions |
+| Token     | Value | Tailwind | Usage                           |
+| --------- | ----- | -------- | ------------------------------- |
+| `space-1` | 4px   | `p-1`    | Tight padding (icon containers) |
+| `space-2` | 8px   | `p-2`    | Base unit, small gaps           |
+| `space-3` | 12px  | `p-3`    | Component padding               |
+| `space-4` | 16px  | `p-4`    | Card padding, message gap       |
+| `space-6` | 24px  | `p-6`    | Section spacing                 |
+| `space-8` | 32px  | `p-8`    | Major divisions                 |
 
 ### Message Rhythm
 
@@ -132,7 +133,7 @@ We use an **8-point grid**. All spacing values are multiples of 4px, with 8px as
 
 ## Motion
 
-Animation should feel like physics, not decoration. Things should move because they *are* moving — entering the viewport, responding to interaction, settling into place.
+Animation should feel like physics, not decoration. Things should move because they _are_ moving — entering the viewport, responding to interaction, settling into place.
 
 ### Library
 
@@ -140,24 +141,24 @@ Animation should feel like physics, not decoration. Things should move because t
 
 ### Timing
 
-| Duration | Value | Usage |
-|----------|-------|-------|
-| Instant | 100ms | Active states, color changes |
-| Fast | 150ms | Hover states, focus rings |
-| Normal | 200ms | Enter/exit, layout shifts |
-| Slow | 300ms | Expand/collapse, overlays |
+| Duration | Value | Usage                        |
+| -------- | ----- | ---------------------------- |
+| Instant  | 100ms | Active states, color changes |
+| Fast     | 150ms | Hover states, focus rings    |
+| Normal   | 200ms | Enter/exit, layout shifts    |
+| Slow     | 300ms | Expand/collapse, overlays    |
 
 ### Easing
 
-| Curve | Value | Usage |
-|-------|-------|-------|
-| `ease-out` | `cubic-bezier(0, 0, 0.2, 1)` | Entrances (fast start, gentle stop) |
-| `ease-in` | `cubic-bezier(0.4, 0, 1, 1)` | Exits (gentle start, fast finish) |
-| `spring` | `type: "spring", stiffness: 400, damping: 30` | Interactive elements |
+| Curve      | Value                                         | Usage                               |
+| ---------- | --------------------------------------------- | ----------------------------------- |
+| `ease-out` | `cubic-bezier(0, 0, 0.2, 1)`                  | Entrances (fast start, gentle stop) |
+| `ease-in`  | `cubic-bezier(0.4, 0, 1, 1)`                  | Exits (gentle start, fast finish)   |
+| `spring`   | `type: "spring", stiffness: 400, damping: 30` | Interactive elements                |
 
 ### Animation Catalog
 
-**Message entrance:** Fade in + slide up 8px, 200ms ease-out. Only animate the *newest* message; history loads instantly.
+**Message entrance:** Fade in + slide up 8px, 200ms ease-out. Only animate the _newest_ message; history loads instantly.
 
 **Tool card expand:** Height + opacity transition, 300ms ease-in-out.
 
@@ -313,29 +314,29 @@ The app uses a CSS custom property scale multiplier system that makes text, icon
 
 ### Scaled Values at 1.25x
 
-| Element | Desktop | Mobile (x1.25) |
-|---------|---------|----------------|
-| Body text (`text-sm`) | 14px | 17.5px |
-| Small text (`text-xs`) | 12px | 15px |
-| Tiny text (`text-2xs`) | 11px | 13.75px |
-| Micro text (`text-3xs`) | 10px | 12.5px |
-| Large text (`text-base`) | 16px | 20px |
-| Icon xs | 12px | 15px |
-| Icon sm | 16px | 20px |
-| Icon md | 20px | 25px |
-| Button sm | 32px | 40px |
-| Button md | 36px | 45px |
-| Button lg | 40px | 50px |
+| Element                  | Desktop | Mobile (x1.25) |
+| ------------------------ | ------- | -------------- |
+| Body text (`text-sm`)    | 14px    | 17.5px         |
+| Small text (`text-xs`)   | 12px    | 15px           |
+| Tiny text (`text-2xs`)   | 11px    | 13.75px        |
+| Micro text (`text-3xs`)  | 10px    | 12.5px         |
+| Large text (`text-base`) | 16px    | 20px           |
+| Icon xs                  | 12px    | 15px           |
+| Icon sm                  | 16px    | 20px           |
+| Icon md                  | 20px    | 25px           |
+| Button sm                | 32px    | 40px           |
+| Button md                | 36px    | 45px           |
+| Button lg                | 40px    | 50px           |
 
 ### Icon Size Convention
 
 Three standard sizes, use `size-[--size-icon-*]` for all icon sizing:
 
-| Token | Desktop | Use Case |
-|-------|---------|----------|
-| `icon-xs` | 12px | Decorative, status indicators, inline affordances |
-| `icon-sm` | 16px | Interactive icons in compact UI (sidebar, tool cards) |
-| `icon-md` | 20px | Primary action icons (buttons, navigation, prominent UI) |
+| Token     | Desktop | Use Case                                                 |
+| --------- | ------- | -------------------------------------------------------- |
+| `icon-xs` | 12px    | Decorative, status indicators, inline affordances        |
+| `icon-sm` | 16px    | Interactive icons in compact UI (sidebar, tool cards)    |
+| `icon-md` | 20px    | Primary action icons (buttons, navigation, prominent UI) |
 
 Usage:
 
@@ -347,32 +348,32 @@ Usage:
 
 ### Hover Pattern Mobile Alternatives
 
-| Pattern | Desktop | Mobile |
-|---------|---------|--------|
-| Message timestamps | Hidden, shown on hover | Always visible at 40% opacity |
+| Pattern                | Desktop                | Mobile                            |
+| ---------------------- | ---------------------- | --------------------------------- |
+| Message timestamps     | Hidden, shown on hover | Always visible at 40% opacity     |
 | Session expand chevron | Hidden, shown on hover | Hidden; tap session row to expand |
-| Table action icons | Hidden, shown on hover | Always visible at 60% opacity |
+| Table action icons     | Hidden, shown on hover | Always visible at 60% opacity     |
 
 ### Safe Area Classes
 
-| Class | Applied To | Purpose |
-|-------|-----------|---------|
-| `chat-input-container` | ChatPanel input wrapper | Bottom safe area inset |
-| `sidebar-container` | SessionSidebar root | Left + bottom safe area insets |
-| `chat-scroll-area` | MessageList scroll container | `touch-action: pan-y` on mobile |
+| Class                  | Applied To                   | Purpose                         |
+| ---------------------- | ---------------------------- | ------------------------------- |
+| `chat-input-container` | ChatPanel input wrapper      | Bottom safe area inset          |
+| `sidebar-container`    | SessionSidebar root          | Left + bottom safe area insets  |
+| `chat-scroll-area`     | MessageList scroll container | `touch-action: pan-y` on mobile |
 
 ### Adjusting the Scale
 
 ```css
 :root {
-  --mobile-scale: 1.0;   /* No mobile scaling */
-  --mobile-scale: 1.25;  /* Default: 25% larger */
-  --mobile-scale: 1.5;   /* 50% larger */
+  --mobile-scale: 1; /* No mobile scaling */
+  --mobile-scale: 1.25; /* Default: 25% larger */
+  --mobile-scale: 1.5; /* 50% larger */
 
   /* Per-category overrides */
   --mobile-scale-text: 1.15;
   --mobile-scale-icon: 1.25;
-  --mobile-scale-interactive: 1.30;
+  --mobile-scale-interactive: 1.3;
 }
 ```
 
@@ -386,24 +387,24 @@ Interactive overlays that need different UX on desktop vs mobile use responsive 
 
 Use instead of plain `DropdownMenu` when the menu appears in a touch-accessible area (status bars, toolbars, settings). Plain `DropdownMenu` is fine for desktop-only contexts (right-click menus, dense data tables).
 
-| Sub-component | Desktop (≥768px) | Mobile (<768px) |
-|---|---|---|
-| `ResponsiveDropdownMenu` | `DropdownMenu` | `Drawer` |
-| `ResponsiveDropdownMenuTrigger` | `DropdownMenuTrigger` | `DrawerTrigger` |
-| `ResponsiveDropdownMenuContent` | `DropdownMenuContent` | `DrawerContent` (auto-height) |
-| `ResponsiveDropdownMenuLabel` | `DropdownMenuLabel` | `DrawerHeader` + `DrawerTitle` |
-| `ResponsiveDropdownMenuRadioGroup` | `DropdownMenuRadioGroup` | `<div role="radiogroup">` |
-| `ResponsiveDropdownMenuRadioItem` | `DropdownMenuRadioItem` | Custom button with iOS sizing |
+| Sub-component                      | Desktop (≥768px)         | Mobile (<768px)                |
+| ---------------------------------- | ------------------------ | ------------------------------ |
+| `ResponsiveDropdownMenu`           | `DropdownMenu`           | `Drawer`                       |
+| `ResponsiveDropdownMenuTrigger`    | `DropdownMenuTrigger`    | `DrawerTrigger`                |
+| `ResponsiveDropdownMenuContent`    | `DropdownMenuContent`    | `DrawerContent` (auto-height)  |
+| `ResponsiveDropdownMenuLabel`      | `DropdownMenuLabel`      | `DrawerHeader` + `DrawerTitle` |
+| `ResponsiveDropdownMenuRadioGroup` | `DropdownMenuRadioGroup` | `<div role="radiogroup">`      |
+| `ResponsiveDropdownMenuRadioItem`  | `DropdownMenuRadioItem`  | Custom button with iOS sizing  |
 
 #### RadioItem Props
 
-| Prop | Type | Required | Description |
-|------|------|----------|-------------|
-| `value` | `string` | Yes | Radio value |
-| `children` | `ReactNode` | Yes | Label text |
-| `icon` | `LucideIcon` | No | Leading icon (renders in both modes) |
-| `description` | `string` | No | Secondary text below label |
-| `className` | `string` | No | Additional classes (e.g., danger styling) |
+| Prop          | Type         | Required | Description                               |
+| ------------- | ------------ | -------- | ----------------------------------------- |
+| `value`       | `string`     | Yes      | Radio value                               |
+| `children`    | `ReactNode`  | Yes      | Label text                                |
+| `icon`        | `LucideIcon` | No       | Leading icon (renders in both modes)      |
+| `description` | `string`     | No       | Secondary text below label                |
+| `className`   | `string`     | No       | Additional classes (e.g., danger styling) |
 
 #### Mobile Sizing (Apple HIG)
 
@@ -450,12 +451,12 @@ Use instead of plain `Dialog` when the dialog content needs full-screen treatmen
 
 ## File Reference
 
-| Concern | File |
-|---------|------|
-| CSS variables & Tailwind | `apps/client/src/index.css` |
-| shadcn config | `apps/client/components.json` |
-| Component library | `apps/client/src/components/ui/` |
-| Chat components | `apps/client/src/components/chat/` |
-| Session components | `apps/client/src/components/sessions/` |
-| App state | `apps/client/src/stores/app-store.ts` |
-| Chat state | `apps/client/src/hooks/use-chat-session.ts` |
+| Concern                  | File                                        |
+| ------------------------ | ------------------------------------------- |
+| CSS variables & Tailwind | `apps/client/src/index.css`                 |
+| shadcn config            | `apps/client/components.json`               |
+| Component library        | `apps/client/src/components/ui/`            |
+| Chat components          | `apps/client/src/components/chat/`          |
+| Session components       | `apps/client/src/components/sessions/`      |
+| App state                | `apps/client/src/stores/app-store.ts`       |
+| Chat state               | `apps/client/src/hooks/use-chat-session.ts` |

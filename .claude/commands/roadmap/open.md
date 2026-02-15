@@ -1,6 +1,6 @@
 ---
 description: Open the roadmap visualization in a browser
-argument-hint: "(no arguments)"
+argument-hint: '(no arguments)'
 allowed-tools: Bash
 category: roadmap
 ---

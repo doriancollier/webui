@@ -49,11 +49,13 @@ setAutoHideToolCalls: (v) => {
 #### 3. Update `resetPreferences()` (around line 123-138)
 
 Add to the try block:
+
 ```typescript
 localStorage.removeItem('gateway-auto-hide-tool-calls');
 ```
 
 Add to the `set()` call:
+
 ```typescript
 autoHideToolCalls: true,
 ```
@@ -84,14 +86,21 @@ Add a new toggle row for the "Auto-hide tool calls" setting in the Settings dial
 #### 1. Destructure new state from `useAppStore()` (line ~33)
 
 Update the destructuring to include:
+
 ```typescript
 const {
-  showTimestamps, setShowTimestamps,
-  expandToolCalls, setExpandToolCalls,
-  autoHideToolCalls, setAutoHideToolCalls,  // ADD THIS LINE
-  devtoolsOpen, toggleDevtools,
-  verboseLogging, setVerboseLogging,
-  fontSize, setFontSize,
+  showTimestamps,
+  setShowTimestamps,
+  expandToolCalls,
+  setExpandToolCalls,
+  autoHideToolCalls,
+  setAutoHideToolCalls, // ADD THIS LINE
+  devtoolsOpen,
+  toggleDevtools,
+  verboseLogging,
+  setVerboseLogging,
+  fontSize,
+  setFontSize,
   resetPreferences,
 } = useAppStore();
 ```
@@ -101,7 +110,10 @@ const {
 Insert this JSX block immediately after the "Expand tool calls" `<SettingRow>`:
 
 ```tsx
-<SettingRow label="Auto-hide tool calls" description="Fade out completed tool calls after a few seconds">
+<SettingRow
+  label="Auto-hide tool calls"
+  description="Fade out completed tool calls after a few seconds"
+>
   <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
 </SettingRow>
 ```
@@ -143,10 +155,7 @@ import { motion, AnimatePresence } from 'motion/react';
 #### 2. Add `useToolCallVisibility` hook (before the `MessageItem` component)
 
 ```typescript
-function useToolCallVisibility(
-  status: string,
-  autoHide: boolean,
-): boolean {
+function useToolCallVisibility(status: string, autoHide: boolean): boolean {
   // Track initial status on mount — if already 'complete', it's from history
   const initialStatusRef = useRef(status);
   const [visible, setVisible] = useState(
@@ -157,11 +166,7 @@ function useToolCallVisibility(
   useEffect(() => {
     // Only trigger timer when status transitions TO 'complete' during session
     // (not when it was already complete on mount)
-    if (
-      autoHide &&
-      status === 'complete' &&
-      initialStatusRef.current !== 'complete'
-    ) {
+    if (autoHide && status === 'complete' && initialStatusRef.current !== 'complete') {
       const timer = setTimeout(() => setVisible(false), 5_000);
       return () => clearTimeout(timer);
     }
@@ -286,6 +291,7 @@ return (
 ### Description
 
 Add unit tests for:
+
 1. The `autoHideToolCalls` store property (default, persistence, reset)
 2. The auto-hide behavior in MessageItem (history hiding, live fade-out, error preservation, setting toggle, interactive tools)
 

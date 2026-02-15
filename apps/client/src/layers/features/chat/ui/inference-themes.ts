@@ -2,11 +2,11 @@ import { DEFAULT_INFERENCE_VERBS } from './inference-verbs';
 
 export interface IndicatorTheme {
   name: string;
-  icon: string;                    // e.g. "*", "✦", "❄"
-  iconAnimation: string | null;    // CSS @keyframes name, or null for static
+  icon: string; // e.g. "*", "✦", "❄"
+  iconAnimation: string | null; // CSS @keyframes name, or null for static
   verbs: readonly string[];
-  verbInterval: number;            // ms between rotations (default: 3500)
-  completionVerb?: string;         // optional verb for complete state
+  verbInterval: number; // ms between rotations (default: 3500)
+  completionVerb?: string; // optional verb for complete state
 }
 
 export const DEFAULT_THEME: IndicatorTheme = {

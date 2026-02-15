@@ -35,6 +35,7 @@ Add two tiers of celebration animations to the task pane when tasks complete dur
 Celebrations are toggleable in settings (on by default), idle-aware (queued when user is away, replayed when they return), and respect `prefers-reduced-motion`. Rapid completions (3+ within 2s) debounce into a single mini celebration instead of rapid-fire animations.
 
 **Key design choices:**
+
 - Client-side only -- no server changes, no transport changes, no shared type changes
 - `canvas-confetti` (~28KB) lazy-loaded via dynamic import for code-splitting
 - `motion/react` (already installed) handles orchestration animations (spring physics, AnimatePresence)
@@ -48,11 +49,13 @@ Celebrations are toggleable in settings (on by default), idle-aware (queued when
 The task pane (`TaskListPanel`) currently displays task status with static icons -- a spinning `Loader2` for in-progress, a green `CheckCircle2` for completed. When tasks complete, the icon simply swaps with no visual fanfare. This misses an opportunity to provide positive reinforcement and delight when Claude finishes work.
 
 **Why celebrations matter:**
+
 - Task completions are meaningful milestones in a coding session (unlike, say, checkboxes in a todo app where celebrations can feel trivial)
 - Subtle positive feedback reinforces the sense of progress and keeps the user engaged
 - Premium-feeling micro-interactions differentiate the product and build emotional connection
 
 **Current task completion flow:**
+
 1. Server streams `task_update` SSE event with `action: 'update'` and `status: 'completed'`
 2. `useChatSession` dispatches to `onTaskEvent` callback
 3. `useTaskState.handleTaskEvent()` merges the updated task into the Map
@@ -91,17 +94,17 @@ The task pane (`TaskListPanel`) currently displays task status with static icons
 
 ### Existing Dependencies (No Changes)
 
-| Package | Version | Usage |
-|---------|---------|-------|
+| Package        | Version  | Usage                                                             |
+| -------------- | -------- | ----------------------------------------------------------------- |
 | `motion/react` | ^12.33.0 | Spring animations, AnimatePresence, motion.div for inline effects |
-| `zustand` | existing | Settings toggle persistence |
-| `react` | ^19 | Hooks, refs, effects |
+| `zustand`      | existing | Settings toggle persistence                                       |
+| `react`        | ^19      | Hooks, refs, effects                                              |
 
 ### New Dependencies
 
-| Package | Version | Size | Usage |
-|---------|---------|------|-------|
-| `canvas-confetti` | ^1.9 | ~28KB | Gold confetti particle shower for major celebrations |
+| Package           | Version | Size  | Usage                                                |
+| ----------------- | ------- | ----- | ---------------------------------------------------- |
+| `canvas-confetti` | ^1.9    | ~28KB | Gold confetti particle shower for major celebrations |
 
 `canvas-confetti` is lazy-loaded via `import()` so it does not affect initial bundle size. It is only downloaded when the first major celebration fires.
 
@@ -314,7 +317,8 @@ export const MINI_SPRING_CONFIG = {
  * Applied as a CSS background-position animation via motion.div.
  */
 export const SHIMMER_STYLE = {
-  backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+  backgroundImage:
+    'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
   backgroundSize: '200% 100%',
 };
 ```
@@ -327,7 +331,7 @@ Detects user idle state via Document Visibility API + mouse/keyboard/scroll inac
 
 ```typescript
 export interface IdleDetectorOptions {
-  timeoutMs?: number;  // Default: 30000 (30s)
+  timeoutMs?: number; // Default: 30000 (30s)
   onIdle?: () => void;
   onReturn?: () => void;
 }
@@ -345,8 +349,12 @@ export function useIdleDetector(options: IdleDetectorOptions = {}): IdleDetector
   const onReturnRef = useRef(onReturn);
 
   // Keep callback refs current
-  useEffect(() => { onIdleRef.current = onIdle; }, [onIdle]);
-  useEffect(() => { onReturnRef.current = onReturn; }, [onReturn]);
+  useEffect(() => {
+    onIdleRef.current = onIdle;
+  }, [onIdle]);
+  useEffect(() => {
+    onReturnRef.current = onReturn;
+  }, [onReturn]);
 
   useEffect(() => {
     const markIdle = () => {
@@ -487,19 +495,12 @@ export function useCelebrations(): CelebrationsAPI {
     }
   }, [isIdle]);
 
-  const handleTaskEvent = useCallback(
-    (event: TaskUpdateEvent, allTasks: TaskItem[]) => {
-      // Only celebrate live update transitions to 'completed'
-      if (
-        event.action === 'update' &&
-        event.task.status === 'completed' &&
-        event.task.id
-      ) {
-        engineRef.current?.onTaskCompleted(event.task.id, allTasks);
-      }
-    },
-    [],
-  );
+  const handleTaskEvent = useCallback((event: TaskUpdateEvent, allTasks: TaskItem[]) => {
+    // Only celebrate live update transitions to 'completed'
+    if (event.action === 'update' && event.task.status === 'completed' && event.task.id) {
+      engineRef.current?.onTaskCompleted(event.task.id, allTasks);
+    }
+  }, []);
 
   const clearCelebration = useCallback(() => {
     setActiveCelebration(null);
@@ -599,7 +600,7 @@ interface TaskListPanelProps {
   activeForm: string | null;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  celebratingTaskId?: string | null;  // NEW
+  celebratingTaskId?: string | null; // NEW
   onCelebrationComplete?: () => void; // NEW
 }
 ```
@@ -607,60 +608,67 @@ interface TaskListPanelProps {
 **Task row modification** (within the `visibleTasks.map()` block):
 
 ```tsx
-{visibleTasks.map(task => {
-  const isCelebrating = task.id === celebratingTaskId && task.status === 'completed';
+{
+  visibleTasks.map((task) => {
+    const isCelebrating = task.id === celebratingTaskId && task.status === 'completed';
 
-  return (
-    <motion.li
-      key={task.id}
-      className={`flex items-center gap-2 text-xs py-0.5 ${
-        task.status === 'completed'
-          ? 'text-muted-foreground/50 line-through'
-          : task.status === 'in_progress'
-          ? 'text-foreground font-medium'
-          : 'text-muted-foreground'
-      }`}
-      animate={isCelebrating ? {
-        scale: [1, 1.05, 1],
-        transition: { type: 'spring', stiffness: 400, damping: 10 }
-      } : undefined}
-      onAnimationComplete={() => {
-        if (isCelebrating) onCelebrationComplete?.();
-      }}
-      aria-hidden={isCelebrating ? 'true' : undefined}
-    >
-      {/* Shimmer background for celebrating row */}
-      {isCelebrating && (
-        <motion.div
-          aria-hidden="true"
-          className="absolute inset-0 rounded"
-          initial={{ backgroundPosition: '-200% 0' }}
-          animate={{ backgroundPosition: '200% 0' }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          style={{
-            backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
-            backgroundSize: '200% 100%',
-          }}
-        />
-      )}
+    return (
+      <motion.li
+        key={task.id}
+        className={`flex items-center gap-2 py-0.5 text-xs ${
+          task.status === 'completed'
+            ? 'text-muted-foreground/50 line-through'
+            : task.status === 'in_progress'
+              ? 'text-foreground font-medium'
+              : 'text-muted-foreground'
+        }`}
+        animate={
+          isCelebrating
+            ? {
+                scale: [1, 1.05, 1],
+                transition: { type: 'spring', stiffness: 400, damping: 10 },
+              }
+            : undefined
+        }
+        onAnimationComplete={() => {
+          if (isCelebrating) onCelebrationComplete?.();
+        }}
+        aria-hidden={isCelebrating ? 'true' : undefined}
+      >
+        {/* Shimmer background for celebrating row */}
+        {isCelebrating && (
+          <motion.div
+            aria-hidden="true"
+            className="absolute inset-0 rounded"
+            initial={{ backgroundPosition: '-200% 0' }}
+            animate={{ backgroundPosition: '200% 0' }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            style={{
+              backgroundImage:
+                'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        )}
 
-      {/* Checkmark spring-pop */}
-      {isCelebrating ? (
-        <motion.span
-          initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.4, 1] }}
-          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-        >
-          {STATUS_ICON[task.status]}
-        </motion.span>
-      ) : (
-        STATUS_ICON[task.status]
-      )}
+        {/* Checkmark spring-pop */}
+        {isCelebrating ? (
+          <motion.span
+            initial={{ scale: 1 }}
+            animate={{ scale: [1, 1.4, 1] }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
+            {STATUS_ICON[task.status]}
+          </motion.span>
+        ) : (
+          STATUS_ICON[task.status]
+        )}
 
-      <span className="truncate">{task.subject}</span>
-    </motion.li>
-  );
-})}
+        <span className="truncate">{task.subject}</span>
+      </motion.li>
+    );
+  });
+}
 ```
 
 ### 6.8 Zustand Store Extension
@@ -671,11 +679,12 @@ Add `showTaskCelebrations` boolean following the existing pattern (`showShortcut
 
 **New state fields:**
 
-| Field | Type | Storage Key | Default |
-|-------|------|------------|---------|
-| `showTaskCelebrations` | `boolean` | `gateway-show-task-celebrations` | `true` |
+| Field                  | Type      | Storage Key                      | Default |
+| ---------------------- | --------- | -------------------------------- | ------- |
+| `showTaskCelebrations` | `boolean` | `gateway-show-task-celebrations` | `true`  |
 
 **Getter pattern:**
+
 ```typescript
 showTaskCelebrations: (() => {
   try { return localStorage.getItem('gateway-show-task-celebrations') !== 'false'; }
@@ -684,6 +693,7 @@ showTaskCelebrations: (() => {
 ```
 
 **Setter pattern:**
+
 ```typescript
 setShowTaskCelebrations: (v) => {
   try { localStorage.setItem('gateway-show-task-celebrations', String(v)); } catch {}
@@ -692,6 +702,7 @@ setShowTaskCelebrations: (v) => {
 ```
 
 **Update `resetPreferences()`:**
+
 ```typescript
 resetPreferences: () => {
   try {
@@ -713,18 +724,17 @@ Add a new `SettingRow` in the Preferences tab, grouped with other behavioral tog
 
 ```tsx
 <SettingRow label="Task celebrations" description="Show animations when tasks complete">
-  <Switch
-    checked={showTaskCelebrations}
-    onCheckedChange={setShowTaskCelebrations}
-  />
+  <Switch checked={showTaskCelebrations} onCheckedChange={setShowTaskCelebrations} />
 </SettingRow>
 ```
 
 **Store access addition:**
+
 ```typescript
 const {
   // ... existing destructuring ...
-  showTaskCelebrations, setShowTaskCelebrations,
+  showTaskCelebrations,
+  setShowTaskCelebrations,
 } = useAppStore();
 ```
 
@@ -735,12 +745,14 @@ const {
 Wire the celebrations hook into the existing task event pipeline.
 
 **New imports:**
+
 ```typescript
 import { useCelebrations } from '../../hooks/use-celebrations';
 import { CelebrationOverlay } from './CelebrationOverlay';
 ```
 
 **Hook wiring (inside `ChatPanel` function body):**
+
 ```typescript
 const celebrations = useCelebrations();
 
@@ -752,11 +764,12 @@ const handleTaskEventWithCelebrations = useCallback(
     const allTasks = taskState.tasks;
     celebrations.handleTaskEvent(event, allTasks);
   },
-  [taskState, celebrations],
+  [taskState, celebrations]
 );
 ```
 
 **Update the `useChatSession` call:**
+
 ```typescript
 const { ... } = useChatSession(sessionId, {
   transformContent,
@@ -766,14 +779,19 @@ const { ... } = useChatSession(sessionId, {
 ```
 
 **Render celebration components:**
+
 ```tsx
-{/* Celebration overlay for major celebrations */}
+{
+  /* Celebration overlay for major celebrations */
+}
 <CelebrationOverlay
   celebration={celebrations.activeCelebration}
   onComplete={celebrations.clearCelebration}
-/>
+/>;
 
-{/* Pass celebrating task ID to TaskListPanel */}
+{
+  /* Pass celebrating task ID to TaskListPanel */
+}
 <TaskListPanel
   tasks={taskState.tasks}
   activeForm={taskState.activeForm}
@@ -781,7 +799,7 @@ const { ... } = useChatSession(sessionId, {
   onToggleCollapse={taskState.toggleCollapse}
   celebratingTaskId={celebrations.celebratingTaskId}
   onCelebrationComplete={celebrations.clearCelebration}
-/>
+/>;
 ```
 
 ### 6.11 Task State Completion Detection
@@ -791,6 +809,7 @@ const { ... } = useChatSession(sessionId, {
 The existing `handleTaskEvent` already processes `action: 'update'` events and merges status changes. No modifications are needed to the task state hook itself -- the celebration detection happens in the `useCelebrations` hook which receives the raw `TaskUpdateEvent` and current task list from `ChatPanel`.
 
 The key distinction is:
+
 - `action === 'snapshot'` = historical/replay data (loaded on session open) -- **no celebrations**
 - `action === 'create'` = new task created -- **no celebrations**
 - `action === 'update'` with `status: 'completed'` = live completion -- **celebrate**
@@ -801,12 +820,12 @@ This filtering happens in `useCelebrations.handleTaskEvent()`.
 
 When `prefers-reduced-motion: reduce` is active:
 
-| Effect | Normal behavior | Reduced motion behavior |
-|--------|----------------|------------------------|
-| Mini spring-pop | scale [1, 1.4, 1] with spring physics | opacity [0.5, 1] fade (100ms) |
-| Mini shimmer | Sliding gold gradient | No shimmer |
-| Major radial glow | Scale + opacity animation | Subtle opacity fade (0 -> 0.1 -> 0, 300ms) |
-| Major confetti | 30-50 canvas particles | Disabled entirely (`disableForReducedMotion: true`) |
+| Effect            | Normal behavior                       | Reduced motion behavior                             |
+| ----------------- | ------------------------------------- | --------------------------------------------------- |
+| Mini spring-pop   | scale [1, 1.4, 1] with spring physics | opacity [0.5, 1] fade (100ms)                       |
+| Mini shimmer      | Sliding gold gradient                 | No shimmer                                          |
+| Major radial glow | Scale + opacity animation             | Subtle opacity fade (0 -> 0.1 -> 0, 300ms)          |
+| Major confetti    | 30-50 canvas particles                | Disabled entirely (`disableForReducedMotion: true`) |
 
 The `motion/react` library respects `<MotionConfig reducedMotion="user">` (already configured in `App.tsx`). This automatically converts spring/complex animations to simple opacity transitions. The `canvas-confetti` library has its own `disableForReducedMotion` flag which is set to `true`.
 
@@ -1143,37 +1162,37 @@ None -- all decisions were resolved during ideation:
 
 ### Files Created
 
-| File | Purpose |
-|------|---------|
-| `apps/client/src/lib/celebrations/celebration-engine.ts` | Core orchestration: event types, queue, debounce, probabilistic mini, major detection |
-| `apps/client/src/lib/celebrations/effects.ts` | Visual effect implementations: confetti wrapper, glow styles, shimmer styles |
-| `apps/client/src/hooks/use-idle-detector.ts` | Idle detection: Document Visibility API + activity tracking |
-| `apps/client/src/hooks/use-celebrations.ts` | React hook connecting engine to task state and Zustand settings |
-| `apps/client/src/components/chat/CelebrationOverlay.tsx` | Major celebration rendering: radial glow + confetti |
-| `apps/client/src/lib/celebrations/__tests__/celebration-engine.test.ts` | Engine unit tests |
-| `apps/client/src/lib/celebrations/__tests__/effects.test.ts` | Effects unit tests |
-| `apps/client/src/hooks/__tests__/use-idle-detector.test.ts` | Idle detector hook tests |
-| `apps/client/src/components/chat/__tests__/CelebrationOverlay.test.tsx` | Overlay component tests |
+| File                                                                    | Purpose                                                                               |
+| ----------------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `apps/client/src/lib/celebrations/celebration-engine.ts`                | Core orchestration: event types, queue, debounce, probabilistic mini, major detection |
+| `apps/client/src/lib/celebrations/effects.ts`                           | Visual effect implementations: confetti wrapper, glow styles, shimmer styles          |
+| `apps/client/src/hooks/use-idle-detector.ts`                            | Idle detection: Document Visibility API + activity tracking                           |
+| `apps/client/src/hooks/use-celebrations.ts`                             | React hook connecting engine to task state and Zustand settings                       |
+| `apps/client/src/components/chat/CelebrationOverlay.tsx`                | Major celebration rendering: radial glow + confetti                                   |
+| `apps/client/src/lib/celebrations/__tests__/celebration-engine.test.ts` | Engine unit tests                                                                     |
+| `apps/client/src/lib/celebrations/__tests__/effects.test.ts`            | Effects unit tests                                                                    |
+| `apps/client/src/hooks/__tests__/use-idle-detector.test.ts`             | Idle detector hook tests                                                              |
+| `apps/client/src/components/chat/__tests__/CelebrationOverlay.test.tsx` | Overlay component tests                                                               |
 
 ### Files Modified
 
-| File | Change |
-|------|--------|
-| `apps/client/package.json` | Add `canvas-confetti` dependency |
-| `apps/client/src/stores/app-store.ts` | Add `showTaskCelebrations` boolean + setter + localStorage + resetPreferences |
-| `apps/client/src/components/settings/SettingsDialog.tsx` | Add celebration toggle in Preferences tab |
-| `apps/client/src/components/chat/TaskListPanel.tsx` | Add `celebratingTaskId` prop, inline spring-pop + shimmer |
-| `apps/client/src/components/chat/ChatPanel.tsx` | Wire celebrations hook, render overlay, pass props |
-| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | Add celebration toggle test |
+| File                                                                    | Change                                                                        |
+| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `apps/client/package.json`                                              | Add `canvas-confetti` dependency                                              |
+| `apps/client/src/stores/app-store.ts`                                   | Add `showTaskCelebrations` boolean + setter + localStorage + resetPreferences |
+| `apps/client/src/components/settings/SettingsDialog.tsx`                | Add celebration toggle in Preferences tab                                     |
+| `apps/client/src/components/chat/TaskListPanel.tsx`                     | Add `celebratingTaskId` prop, inline spring-pop + shimmer                     |
+| `apps/client/src/components/chat/ChatPanel.tsx`                         | Wire celebrations hook, render overlay, pass props                            |
+| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | Add celebration toggle test                                                   |
 
 ### Key Context Files (Not Modified)
 
-| File | Relevance |
-|------|-----------|
-| `apps/client/src/hooks/use-task-state.ts` | Task state management -- celebration detection reads from here |
-| `apps/client/src/hooks/use-chat-session.ts` | SSE event pipeline -- `onTaskEvent` callback interface |
-| `packages/shared/src/schemas.ts` | `TaskUpdateEventSchema` -- `action: 'update'` vs `'snapshot'` distinction |
-| `guides/design-system.md` | Timing specs, animation guidelines, color palette |
+| File                                        | Relevance                                                                 |
+| ------------------------------------------- | ------------------------------------------------------------------------- |
+| `apps/client/src/hooks/use-task-state.ts`   | Task state management -- celebration detection reads from here            |
+| `apps/client/src/hooks/use-chat-session.ts` | SSE event pipeline -- `onTaskEvent` callback interface                    |
+| `packages/shared/src/schemas.ts`            | `TaskUpdateEventSchema` -- `action: 'update'` vs `'snapshot'` distinction |
+| `guides/design-system.md`                   | Timing specs, animation guidelines, color palette                         |
 
 ### Ideation Document
 
@@ -1181,19 +1200,19 @@ None -- all decisions were resolved during ideation:
 
 ### Acceptance Criteria Summary
 
-| # | Criterion |
-|---|-----------|
-| 1 | Mini celebration (spring-pop + shimmer) appears ~30% of time on individual task completions |
-| 2 | Major celebration (radial glow + confetti) appears when all 3+ tasks reach completed status |
-| 3 | No celebrations on history/snapshot replay (only live `action: 'update'` transitions) |
-| 4 | Rapid completions (3+ within 2s) debounce into a single celebration |
-| 5 | Settings toggle in Preferences tab, on by default |
-| 6 | Celebrations queue when user is away (tab hidden or 30s idle), replay on return |
-| 7 | `prefers-reduced-motion` disables particles/animations entirely (subtle opacity fade only) |
-| 8 | `aria-hidden="true"` on all celebration elements |
-| 9 | Canvas cleanup on unmount (cancelAnimationFrame, clear particles) |
-| 10 | 60fps during celebrations, no main thread blocking |
-| 11 | Celebration is non-blocking -- user can continue interacting during animation |
-| 12 | Reset preferences clears celebration setting |
-| 13 | Works in both light and dark themes |
-| 14 | canvas-confetti lazy-loaded (code-split) |
+| #   | Criterion                                                                                   |
+| --- | ------------------------------------------------------------------------------------------- |
+| 1   | Mini celebration (spring-pop + shimmer) appears ~30% of time on individual task completions |
+| 2   | Major celebration (radial glow + confetti) appears when all 3+ tasks reach completed status |
+| 3   | No celebrations on history/snapshot replay (only live `action: 'update'` transitions)       |
+| 4   | Rapid completions (3+ within 2s) debounce into a single celebration                         |
+| 5   | Settings toggle in Preferences tab, on by default                                           |
+| 6   | Celebrations queue when user is away (tab hidden or 30s idle), replay on return             |
+| 7   | `prefers-reduced-motion` disables particles/animations entirely (subtle opacity fade only)  |
+| 8   | `aria-hidden="true"` on all celebration elements                                            |
+| 9   | Canvas cleanup on unmount (cancelAnimationFrame, clear particles)                           |
+| 10  | 60fps during celebrations, no main thread blocking                                          |
+| 11  | Celebration is non-blocking -- user can continue interacting during animation               |
+| 12  | Reset preferences clears celebration setting                                                |
+| 13  | Works in both light and dark themes                                                         |
+| 14  | canvas-confetti lazy-loaded (code-split)                                                    |

@@ -8,13 +8,13 @@ A visual roadmap management system using MoSCoW prioritization, built with vanil
 
 ## Technology Stack
 
-| Technology | Purpose |
-|------------|---------|
-| HTML5 | Single-page application |
-| CSS3 | Calm Tech design system (standalone, no Tailwind) |
-| Vanilla JS | IIFE pattern, no framework |
-| JSON | Data storage (`roadmap.json`) |
-| Python 3 | Utility scripts (stdlib only, no pip) |
+| Technology | Purpose                                           |
+| ---------- | ------------------------------------------------- |
+| HTML5      | Single-page application                           |
+| CSS3       | Calm Tech design system (standalone, no Tailwind) |
+| Vanilla JS | IIFE pattern, no framework                        |
+| JSON       | Data storage (`roadmap.json`)                     |
+| Python 3   | Utility scripts (stdlib only, no pip)             |
 
 ## Directory Structure
 
@@ -41,6 +41,7 @@ roadmap/
 ### Standalone CSS (Not Tailwind)
 
 This project uses its own CSS file with the Calm Tech design system. Do NOT:
+
 - Import Tailwind classes
 - Reference the parent app's `globals.css`
 - Use `@theme` directives
@@ -50,6 +51,7 @@ The CSS is self-contained with CSS custom properties for theming.
 ### Vanilla JavaScript (No React)
 
 The visualization uses vanilla JS with an IIFE pattern. Do NOT:
+
 - Import React components
 - Use JSX
 - Reference files from `src/`
@@ -114,21 +116,21 @@ python3 roadmap/scripts/clear_roadmap.py "<project-name>" "<project-summary>"
 
 ### Item Fields
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `id` | UUID v4 | Yes | Unique identifier |
-| `title` | string | Yes | Item title (3-200 chars) |
-| `description` | string | No | Detailed description |
-| `type` | enum | Yes | feature, bugfix, technical-debt, research, epic |
-| `moscow` | enum | Yes | must-have, should-have, could-have, wont-have |
-| `status` | enum | Yes | not-started, in-progress, completed, on-hold |
-| `health` | enum | Yes | on-track, at-risk, off-track, blocked |
-| `timeHorizon` | enum | Yes | now, next, later |
-| `effort` | number | No | Story points (1-13 Fibonacci) |
-| `dependencies` | array | No | Array of item UUIDs |
-| `labels` | array | No | Categorization tags |
-| `linkedArtifacts` | object | No | Spec file paths |
-| `ideationContext` | object | No | Context for ideation prompts |
+| Field             | Type    | Required | Description                                     |
+| ----------------- | ------- | -------- | ----------------------------------------------- |
+| `id`              | UUID v4 | Yes      | Unique identifier                               |
+| `title`           | string  | Yes      | Item title (3-200 chars)                        |
+| `description`     | string  | No       | Detailed description                            |
+| `type`            | enum    | Yes      | feature, bugfix, technical-debt, research, epic |
+| `moscow`          | enum    | Yes      | must-have, should-have, could-have, wont-have   |
+| `status`          | enum    | Yes      | not-started, in-progress, completed, on-hold    |
+| `health`          | enum    | Yes      | on-track, at-risk, off-track, blocked           |
+| `timeHorizon`     | enum    | Yes      | now, next, later                                |
+| `effort`          | number  | No       | Story points (1-13 Fibonacci)                   |
+| `dependencies`    | array   | No       | Array of item UUIDs                             |
+| `labels`          | array   | No       | Categorization tags                             |
+| `linkedArtifacts` | object  | No       | Spec file paths                                 |
+| `ideationContext` | object  | No       | Context for ideation prompts                    |
 
 ### linkedArtifacts
 
@@ -185,6 +187,7 @@ python3 roadmap/scripts/clear_roadmap.py "<project-name>" "<project-summary>"
 ### With Claude Code Skills
 
 The `managing-roadmap-moscow` skill (`.claude/skills/managing-roadmap-moscow/`) provides:
+
 - Validation scripts
 - Health checking
 - Summary generation

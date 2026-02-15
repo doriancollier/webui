@@ -12,6 +12,7 @@
 **Task brief:** Add file and folder autocomplete to the chat input, triggered by `@` (mirroring how `/` triggers slash command autocomplete). The system should support fuzzy matching, file names, folder names, partial names, and be efficient for projects with thousands of files. When the user switches directories (cwd), the available file list should update automatically.
 
 **Assumptions:**
+
 - `@` is the trigger character (matches Claude Code CLI convention where `@filename` references files)
 - Files should use paths relative to the current working directory
 - The `@path/to/file` text stays in the message as-is (Claude Code natively understands this syntax)
@@ -20,6 +21,7 @@
 - The existing `fuzzyMatch` utility can be reused for client-side filtering
 
 **Out of scope:**
+
 - MCP resource references (`@server:protocol://resource`)
 - Image/binary file preview in the palette
 - File content preview on hover
@@ -48,6 +50,7 @@
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx` — Chat orchestrator, owns autocomplete state
 - `apps/client/src/components/chat/ChatInput.tsx` — Textarea with palette keyboard interception
 - `apps/client/src/components/commands/CommandPalette.tsx` — Autocomplete dropdown (model for FilePalette)
@@ -55,11 +58,13 @@
 - `apps/client/src/lib/fuzzy-match.ts` — Reusable fuzzy matcher
 
 **Shared Dependencies:**
+
 - `packages/shared/src/transport.ts` — Transport interface (needs new method)
 - `packages/shared/src/schemas.ts` — Zod schemas (needs new schemas)
 - `apps/client/src/hooks/use-directory-state.ts` — cwd state management
 
 **Data Flow (slash commands — the model to follow):**
+
 ```
 User types "/"
   → ChatPanel regex detects trigger, extracts query
@@ -70,6 +75,7 @@ User types "/"
 ```
 
 **Proposed data flow (file autocomplete):**
+
 ```
 User types "@"
   → ChatPanel regex detects trigger, extracts query
@@ -81,6 +87,7 @@ User types "@"
 ```
 
 **Blast Radius:**
+
 - **New files (5):** FileListService, files route, FilePalette component, useFiles hook, file-lister tests
 - **Modified files (6):** schemas.ts, transport.ts, http-transport.ts, direct-transport.ts, ChatPanel.tsx, server index.ts (mount route)
 - **Unchanged:** ChatInput.tsx (palette-open mode already generic), CommandPalette.tsx
@@ -92,6 +99,7 @@ User types "@"
 ### How Claude Code handles `@` file references
 
 Claude Code CLI uses `@filename` syntax to reference files. Key findings:
+
 - `@` followed by a relative path references a file from the project root
 - Tab completion is available in the CLI after typing `@`
 - Files are included as context in the model's input
@@ -102,36 +110,36 @@ Claude Code CLI uses `@filename` syntax to reference files. Key findings:
 
 ### File listing strategies for large projects
 
-| Strategy | Speed | .gitignore | node_modules | Simplicity |
-|----------|-------|------------|--------------|------------|
-| `git ls-files` | Very fast (index-based) | Automatic | Excluded | High |
-| Recursive `readdir` | Slow for large trees | Must parse manually | Must exclude manually | Low |
-| `fd` / `ripgrep --files` | Fast | Via .gitignore | Via .gitignore | Medium (external dep) |
-| Hybrid (git + readdir fallback) | Fast for git repos | Best of both | Handled | Medium |
+| Strategy                        | Speed                   | .gitignore          | node_modules          | Simplicity            |
+| ------------------------------- | ----------------------- | ------------------- | --------------------- | --------------------- |
+| `git ls-files`                  | Very fast (index-based) | Automatic           | Excluded              | High                  |
+| Recursive `readdir`             | Slow for large trees    | Must parse manually | Must exclude manually | Low                   |
+| `fd` / `ripgrep --files`        | Fast                    | Via .gitignore      | Via .gitignore        | Medium (external dep) |
+| Hybrid (git + readdir fallback) | Fast for git repos      | Best of both        | Handled               | Medium                |
 
 **Recommendation:** Use `git ls-files` as primary strategy. It's fast (reads the git index, not the filesystem), respects .gitignore, excludes node_modules/build artifacts, and works correctly for monorepos. Fall back to `readdir` with smart exclusion patterns for non-git directories.
 
 ### Performance patterns
 
-| Concern | Approach |
-|---------|----------|
-| Large file lists (10k+ files) | Server returns full list, cached. Client fuzzy-filters locally. |
-| Network latency | Prefetch file list when cwd changes (React Query background refetch) |
-| Rendering many items | Cap displayed results at 50. No virtual scrolling needed. |
-| Typing latency | No debounce needed — fuzzy filtering is O(n) on cached array, ~1ms for 10k items |
-| Memory | File list is string array of relative paths. 10k paths ~ 500KB. Acceptable. |
+| Concern                       | Approach                                                                         |
+| ----------------------------- | -------------------------------------------------------------------------------- |
+| Large file lists (10k+ files) | Server returns full list, cached. Client fuzzy-filters locally.                  |
+| Network latency               | Prefetch file list when cwd changes (React Query background refetch)             |
+| Rendering many items          | Cap displayed results at 50. No virtual scrolling needed.                        |
+| Typing latency                | No debounce needed — fuzzy filtering is O(n) on cached array, ~1ms for 10k items |
+| Memory                        | File list is string array of relative paths. 10k paths ~ 500KB. Acceptable.      |
 
 ### UX patterns
 
-| Pattern | Decision |
-|---------|----------|
-| Trigger | `@` at end of input (same position rules as `/`) |
-| Display | Flat list (no grouping by directory — unlike commands which group by namespace) |
-| Path display | Show relative path with directory dimmed, filename emphasized |
-| Selection | Insert `@relative/path ` with trailing space |
-| Empty state | "No files found" when query matches nothing |
-| Keyboard | Arrow up/down, Enter/Tab to select, Escape to dismiss (reuse ChatInput palette mode) |
-| Max visible | Show top 50 matches (sorted by fuzzy score) |
+| Pattern      | Decision                                                                             |
+| ------------ | ------------------------------------------------------------------------------------ |
+| Trigger      | `@` at end of input (same position rules as `/`)                                     |
+| Display      | Flat list (no grouping by directory — unlike commands which group by namespace)      |
+| Path display | Show relative path with directory dimmed, filename emphasized                        |
+| Selection    | Insert `@relative/path ` with trailing space                                         |
+| Empty state  | "No files found" when query matches nothing                                          |
+| Keyboard     | Arrow up/down, Enter/Tab to select, Escape to dismiss (reuse ChatInput palette mode) |
+| Max visible  | Show top 50 matches (sorted by fuzzy score)                                          |
 
 ---
 

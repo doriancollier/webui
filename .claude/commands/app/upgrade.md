@@ -1,6 +1,6 @@
 ---
 description: Comprehensive dependency upgrade with security audit, prioritization, and validation
-argument-hint: "[check|audit|plan|interactive] [package...] [--patch|--minor|--major] [--security] [--no-cooldown]"
+argument-hint: '[check|audit|plan|interactive] [package...] [--patch|--minor|--major] [--security] [--no-cooldown]'
 allowed-tools: Bash, Read, Grep, Glob, Edit, WebSearch, WebFetch, AskUserQuestion, TodoWrite
 category: application
 ---
@@ -15,23 +15,23 @@ Parse `$ARGUMENTS` for these options:
 
 ### Modes (mutually exclusive, default: interactive)
 
-| Mode | Description |
-|------|-------------|
-| `check` | Show outdated packages only, no changes |
-| `audit` | Security audit only, suggest fixes |
-| `plan` | Generate prioritized upgrade plan, no changes |
-| `interactive` | Full guided upgrade workflow (default) |
+| Mode          | Description                                   |
+| ------------- | --------------------------------------------- |
+| `check`       | Show outdated packages only, no changes       |
+| `audit`       | Security audit only, suggest fixes            |
+| `plan`        | Generate prioritized upgrade plan, no changes |
+| `interactive` | Full guided upgrade workflow (default)        |
 
 ### Flags
 
-| Flag | Effect |
-|------|--------|
-| `--patch` | Only patch version upgrades (x.x.PATCH) |
-| `--minor` | Patch + minor version upgrades (x.MINOR.x) |
-| `--major` | All versions including major (default for plan/interactive) |
-| `--security` | Only security-related upgrades |
-| `--no-cooldown` | Skip 21-day cooldown check for new releases |
-| `[package...]` | Specific packages to upgrade |
+| Flag            | Effect                                                      |
+| --------------- | ----------------------------------------------------------- |
+| `--patch`       | Only patch version upgrades (x.x.PATCH)                     |
+| `--minor`       | Patch + minor version upgrades (x.MINOR.x)                  |
+| `--major`       | All versions including major (default for plan/interactive) |
+| `--security`    | Only security-related upgrades                              |
+| `--no-cooldown` | Skip 21-day cooldown check for new releases                 |
+| `[package...]`  | Specific packages to upgrade                                |
 
 ### Examples
 
@@ -69,34 +69,38 @@ pnpm audit
 
 Analyze the output and categorize packages:
 
-| Category | Priority | Description |
-|----------|----------|-------------|
-| **Security Critical** | Immediate | Known CVEs with active exploits |
-| **Security High** | This Sprint | Known CVEs without known exploits |
-| **Framework Core** | High | Next.js, React, Prisma, TypeScript |
-| **Breaking Changes** | Careful | Major version bumps |
-| **Feature Updates** | Normal | Minor version bumps with new features |
-| **Patches** | Low Risk | Bug fixes only (x.x.PATCH) |
+| Category              | Priority    | Description                           |
+| --------------------- | ----------- | ------------------------------------- |
+| **Security Critical** | Immediate   | Known CVEs with active exploits       |
+| **Security High**     | This Sprint | Known CVEs without known exploits     |
+| **Framework Core**    | High        | Next.js, React, Prisma, TypeScript    |
+| **Breaking Changes**  | Careful     | Major version bumps                   |
+| **Feature Updates**   | Normal      | Minor version bumps with new features |
+| **Patches**           | Low Risk    | Bug fixes only (x.x.PATCH)            |
 
 ### Step 1.4: Identify Peer Dependency Clusters
 
 These packages MUST upgrade together:
 
 **React Cluster:**
+
 - react, react-dom
 - @types/react, @types/react-dom
-- All @radix-ui/* packages
+- All @radix-ui/\* packages
 
 **Prisma Cluster:**
+
 - prisma
 - @prisma/client
 - @prisma/adapter-pg
 
 **TanStack Cluster:**
+
 - @tanstack/react-query
 - @tanstack/react-query-devtools
 
 **Tailwind Cluster:**
+
 - tailwindcss
 - @tailwindcss/postcss
 
@@ -106,27 +110,33 @@ These packages MUST upgrade together:
 ## Dependency Analysis
 
 ### Security Issues
-| Package | Current | Fixed In | Severity | CVE |
-|---------|---------|----------|----------|-----|
+
+| Package   | Current   | Fixed In  | Severity                   | CVE      |
+| --------- | --------- | --------- | -------------------------- | -------- |
 | [package] | [version] | [version] | [Critical/High/Medium/Low] | [CVE-ID] |
 
 ### Outdated Packages by Category
 
 #### Framework Core (upgrade with care)
-| Package | Current | Latest | Type | Notes |
-|---------|---------|--------|------|-------|
-| next | 16.0.8 | 16.1.0 | minor | Check migration guide |
+
+| Package | Current | Latest | Type  | Notes                 |
+| ------- | ------- | ------ | ----- | --------------------- |
+| next    | 16.0.8  | 16.1.0 | minor | Check migration guide |
 
 #### UI Layer
+
 [...]
 
 #### Data Layer
+
 [...]
 
 #### Utilities
+
 [...]
 
 ### Peer Dependency Clusters
+
 - React cluster: X packages need coordinated upgrade
 - Prisma cluster: X packages need coordinated upgrade
 ```
@@ -144,11 +154,13 @@ git status
 ```
 
 If there are uncommitted changes, warn:
+
 ```
 ⚠️  You have uncommitted changes. Consider committing or stashing before upgrading.
 ```
 
 Use AskUserQuestion:
+
 - Proceed anyway
 - Stop and let me commit first
 
@@ -198,19 +210,20 @@ mcp__context7__query-docs: {
 
 For key packages, specifically look for:
 
-| Package | Key Migration Concerns |
-|---------|----------------------|
-| **Next.js** | App Router changes, middleware changes, config format |
-| **React** | Hook changes, concurrent features, StrictMode behavior |
-| **Prisma** | Schema syntax, client API, migration format |
-| **TypeScript** | Stricter type checking, removed features |
-| **Tailwind** | Config format, class name changes |
-| **TanStack Query** | Hook API, devtools changes |
-| **Zod** | Schema API, error format |
+| Package            | Key Migration Concerns                                 |
+| ------------------ | ------------------------------------------------------ |
+| **Next.js**        | App Router changes, middleware changes, config format  |
+| **React**          | Hook changes, concurrent features, StrictMode behavior |
+| **Prisma**         | Schema syntax, client API, migration format            |
+| **TypeScript**     | Stricter type checking, removed features               |
+| **Tailwind**       | Config format, class name changes                      |
+| **TanStack Query** | Hook API, devtools changes                             |
+| **Zod**            | Schema API, error format                               |
 
 ### Step 3.4: Identify Documentation Updates Needed
 
 Check if upgrade will require changes to:
+
 - `CLAUDE.md` Technology Stack table
 - `guides/` patterns
 - Breaking Changes Notes section
@@ -240,23 +253,26 @@ Recommended order (security-first, dependencies-aware):
 
 ### Recommended Order
 
-| Priority | Package(s) | Current → Target | Type | Risk |
-|----------|-----------|------------------|------|------|
-| 1 | [security packages] | ... | security | Low |
-| 2 | react, react-dom, @types/react* | 19.2.0 → 19.3.0 | cluster | Medium |
-| 3 | next | 16.0.8 → 16.1.0 | minor | Low |
-| ... | ... | ... | ... | ... |
+| Priority | Package(s)                       | Current → Target | Type     | Risk   |
+| -------- | -------------------------------- | ---------------- | -------- | ------ |
+| 1        | [security packages]              | ...              | security | Low    |
+| 2        | react, react-dom, @types/react\* | 19.2.0 → 19.3.0  | cluster  | Medium |
+| 3        | next                             | 16.0.8 → 16.1.0  | minor    | Low    |
+| ...      | ...                              | ...              | ...      | ...    |
 
 ### Estimated Effort
+
 - Patches only: ~15 minutes
 - Including minors: ~1 hour
 - Including majors: ~2-4 hours (depends on breaking changes)
 
 ### Packages Skipped (21-day cooldown)
+
 - [package] v2.0.0 released 5 days ago — waiting for stability
 ```
 
 Use AskUserQuestion:
+
 - Proceed with all recommended upgrades
 - Upgrade security patches only
 - Upgrade patches and minors only
@@ -273,14 +289,14 @@ For each **major version upgrade**, evaluate:
 
 ### Decision Matrix
 
-| Factor | Favor Upgrade | Favor Delay |
-|--------|---------------|-------------|
-| **Security** | Has CVE fixes | No security issues |
-| **Features** | Need new features | Current features sufficient |
-| **Maintenance** | Old version EOL | Old version still supported |
-| **Breaking Changes** | Minimal, well-documented | Extensive, poorly documented |
-| **Ecosystem** | Dependencies support new version | Dependencies lag behind |
-| **Cooldown** | Release >21 days old | Just released (<21 days) |
+| Factor               | Favor Upgrade                    | Favor Delay                  |
+| -------------------- | -------------------------------- | ---------------------------- |
+| **Security**         | Has CVE fixes                    | No security issues           |
+| **Features**         | Need new features                | Current features sufficient  |
+| **Maintenance**      | Old version EOL                  | Old version still supported  |
+| **Breaking Changes** | Minimal, well-documented         | Extensive, poorly documented |
+| **Ecosystem**        | Dependencies support new version | Dependencies lag behind      |
+| **Cooldown**         | Release >21 days old             | Just released (<21 days)     |
 
 ### Step 5.1: For Each Major Upgrade, Present Decision
 
@@ -289,15 +305,16 @@ For each **major version upgrade**, evaluate:
 
 **Recommendation**: [Upgrade/Defer]
 
-| Factor | Status |
-|--------|--------|
-| Security fixes | [Yes/No] |
-| Breaking changes | [Minimal/Moderate/Extensive] |
-| Migration guide | [Available/Incomplete/Missing] |
-| Days since release | [X days] |
-| Ecosystem ready | [Yes/Partial/No] |
+| Factor             | Status                         |
+| ------------------ | ------------------------------ |
+| Security fixes     | [Yes/No]                       |
+| Breaking changes   | [Minimal/Moderate/Extensive]   |
+| Migration guide    | [Available/Incomplete/Missing] |
+| Days since release | [X days]                       |
+| Ecosystem ready    | [Yes/Partial/No]               |
 
 **Key breaking changes:**
+
 1. [change 1]
 2. [change 2]
 
@@ -305,6 +322,7 @@ For each **major version upgrade**, evaluate:
 ```
 
 Use AskUserQuestion for each major upgrade:
+
 - Proceed with this upgrade
 - Defer this upgrade
 - Need more information
@@ -320,6 +338,7 @@ git checkout -b deps/upgrade-$(date +%Y%m%d)
 ```
 
 Or for single package:
+
 ```bash
 git checkout -b deps/upgrade-[package-name]
 ```
@@ -329,11 +348,13 @@ git checkout -b deps/upgrade-[package-name]
 For each approved upgrade:
 
 **Single package:**
+
 ```bash
 pnpm add [package]@[version]
 ```
 
 **Cluster upgrade (example: React):**
+
 ```bash
 pnpm add react@latest react-dom@latest
 pnpm add -D @types/react@latest @types/react-dom@latest
@@ -347,6 +368,7 @@ pnpm typecheck
 ```
 
 If validation fails:
+
 - Stop and report the error
 - Provide specific fix suggestions
 - Ask if user wants to continue or rollback
@@ -400,7 +422,7 @@ Verify no new vulnerabilities were introduced.
 
 ### Step 7.3: Manual Smoke Test Suggestion
 
-```markdown
+````markdown
 ## Manual Testing Recommended
 
 Start the dev server and verify:
@@ -408,8 +430,10 @@ Start the dev server and verify:
 ```bash
 pnpm dev
 ```
+````
 
 Check these critical paths:
+
 - [ ] Home page loads
 - [ ] Authentication flows (if applicable)
 - [ ] Form submissions work
@@ -417,7 +441,8 @@ Check these critical paths:
 - [ ] No console errors in browser
 
 Check for visual regressions if UI libraries were upgraded.
-```
+
+````
 
 ---
 
@@ -431,7 +456,7 @@ If major versions changed, update `CLAUDE.md` Technology Stack table:
 | Technology | Version | Purpose |
 |------------|---------|---------|
 | Next.js | [new version] | React framework (App Router) |
-```
+````
 
 ### Step 8.2: Update Breaking Changes Notes (if needed)
 
@@ -464,12 +489,14 @@ EOF
 ### If Upgrades Need to Be Reverted
 
 **Full rollback:**
+
 ```bash
 git checkout main -- package.json pnpm-lock.yaml
 pnpm install
 ```
 
 **Specific package rollback:**
+
 ```bash
 git log --oneline -- package.json  # Find the commit before the upgrade
 git checkout [commit-hash] -- package.json pnpm-lock.yaml
@@ -477,6 +504,7 @@ pnpm install
 ```
 
 **Or revert specific commit:**
+
 ```bash
 git revert [upgrade-commit-hash]
 pnpm install

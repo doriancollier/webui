@@ -1,6 +1,6 @@
 ---
 description: Check developer guides for documentation drift against recent code changes
-argument-hint: "[guide-name | --commit <sha> | --since <timeframe> | --all]"
+argument-hint: '[guide-name | --commit <sha> | --since <timeframe> | --all]'
 allowed-tools: Read, Grep, Glob, Bash, Task, AskUserQuestion, TodoWrite
 category: documentation
 ---
@@ -13,15 +13,16 @@ Check if developer guides are in sync with the codebase by analyzing recent comm
 
 Parse `$ARGUMENTS` to determine the mode:
 
-| Argument | Mode | Description |
-|----------|------|-------------|
-| `<guide-name>` | Single guide | Check one specific guide (e.g., `03-database-prisma.md`) |
-| `--commit <sha>` | Commit review | Analyze a specific commit for documentation impact |
-| `--since <timeframe>` | Time range | Check commits within a timeframe (e.g., `1 week`, `3 days`, `2024-12-01`) |
-| `--all` | Full reconciliation | Check all guides against their last-reviewed dates |
-| *(no args)* | Smart mode | Check guides touched by uncommitted changes + commits since last session |
+| Argument              | Mode                | Description                                                               |
+| --------------------- | ------------------- | ------------------------------------------------------------------------- |
+| `<guide-name>`        | Single guide        | Check one specific guide (e.g., `03-database-prisma.md`)                  |
+| `--commit <sha>`      | Commit review       | Analyze a specific commit for documentation impact                        |
+| `--since <timeframe>` | Time range          | Check commits within a timeframe (e.g., `1 week`, `3 days`, `2024-12-01`) |
+| `--all`               | Full reconciliation | Check all guides against their last-reviewed dates                        |
+| _(no args)_           | Smart mode          | Check guides touched by uncommitted changes + commits since last session  |
 
 **Examples:**
+
 ```bash
 /docs:reconcile 03-database-prisma.md          # Check specific guide
 /docs:reconcile --commit abc123                # Analyze one commit
@@ -62,6 +63,7 @@ fi
 ### Phase 2: Load Guide Mapping
 
 Read `guides/INDEX.md` to get:
+
 - Pattern-to-guide mappings
 - Last reviewed dates
 - Guide descriptions
@@ -78,22 +80,27 @@ INDEX_FILE="guides/INDEX.md"
 ### Phase 3: Gather Commits Based on Mode
 
 **Smart Mode (no args):**
+
 1. Get uncommitted changes: `git diff --name-only HEAD`
 2. Get commits from today: `git log --since="midnight" --oneline`
 3. If no commits today, get last 5 commits: `git log -5 --oneline`
 
 **All Mode (--all):**
+
 1. For each guide, get last-reviewed date from INDEX.md
 2. Get commits since that date: `git log --since="<date>" --oneline`
 
 **Commit Mode (--commit <sha>):**
+
 1. Get files changed in that commit: `git show --name-only --format="" <sha>`
 
 **Since Mode (--since <timeframe>):**
+
 1. Parse timeframe (supports: "X days", "X weeks", "YYYY-MM-DD")
 2. Get commits: `git log --since="<timeframe>" --oneline`
 
 **Guide Mode (<guide-name>):**
+
 1. Get last-reviewed date for that guide from INDEX.md
 2. Get commits since that date
 3. Filter to commits touching files matching guide patterns
@@ -254,7 +261,7 @@ For each high-priority guide:
 3. Analyze what's documented vs. what's in code
 4. Present specific suggestions:
 
-```
+````
 ═══════════════════════════════════════════════════════════════
             DETAILED REVIEW: 03-database-prisma.md
 ═══════════════════════════════════════════════════════════════
@@ -282,12 +289,13 @@ Code shows:
     cursor: { id: lastId },
     orderBy: { id: 'asc' }
   })
-  ```
+````
 
 ───────────────────────────────────────────────────────────────
 
 Would you like me to apply this update? [Yes / No / Modify first]
-```
+
+````
 
 **If "Update INDEX.md dates" selected:**
 
@@ -296,7 +304,7 @@ Update the Maintenance Tracking table in INDEX.md:
 ```bash
 # For each guide marked as reviewed
 sed -i '' "s/| $GUIDE |.*|/| $GUIDE | $(date +%Y-%m-%d) | Claude | Reconciled via /docs:reconcile |/" guides/INDEX.md
-```
+````
 
 ## Smart Mode Algorithm
 
@@ -339,6 +347,7 @@ git show $COMMIT
 ```
 
 For significant commits, extract:
+
 - What changed (from diff)
 - Why it changed (from commit message)
 - Whether it introduces new patterns

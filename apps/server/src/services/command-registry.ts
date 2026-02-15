@@ -70,13 +70,16 @@ class CommandRegistryService {
               fullCommand: `/${entry.name}:${commandName}`,
               description: frontmatter.description || '',
               argumentHint: frontmatter['argument-hint'],
-              allowedTools: typeof allowedToolsRaw === 'string'
-                ? allowedToolsRaw.split(',').map((t: string) => t.trim())
-                : allowedToolsRaw,
+              allowedTools:
+                typeof allowedToolsRaw === 'string'
+                  ? allowedToolsRaw.split(',').map((t: string) => t.trim())
+                  : allowedToolsRaw,
               filePath: path.relative(process.cwd(), filePath),
             });
           } catch (fileErr) {
-            console.warn(`[CommandRegistry] Skipping ${entry.name}/${file}: ${(fileErr as Error).message}`);
+            console.warn(
+              `[CommandRegistry] Skipping ${entry.name}/${file}: ${(fileErr as Error).message}`
+            );
           }
         }
       }

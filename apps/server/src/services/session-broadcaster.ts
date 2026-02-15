@@ -139,7 +139,10 @@ export class SessionBroadcaster {
       const timer = setTimeout(() => {
         this.debounceTimers.delete(sessionId);
         this.broadcastUpdate(sessionId, vaultRoot).catch((err) => {
-          console.error(`[SessionBroadcaster] Failed to broadcast update for session ${sessionId}:`, err);
+          console.error(
+            `[SessionBroadcaster] Failed to broadcast update for session ${sessionId}:`,
+            err
+          );
         });
       }, 100);
 
@@ -211,7 +214,10 @@ export class SessionBroadcaster {
           client.write(eventData);
         } catch (err) {
           // Client may have disconnected, will be cleaned up on 'close' event
-          console.error(`[SessionBroadcaster] Failed to write to client for session ${sessionId}:`, err);
+          console.error(
+            `[SessionBroadcaster] Failed to write to client for session ${sessionId}:`,
+            err
+          );
         }
       }
     } catch (err) {
@@ -225,20 +231,20 @@ export class SessionBroadcaster {
    */
   shutdown(): void {
     // Clear all timers
-    Array.from(this.debounceTimers.values()).forEach(timer => {
+    Array.from(this.debounceTimers.values()).forEach((timer) => {
       clearTimeout(timer);
     });
     this.debounceTimers.clear();
 
     // Close all watchers
-    Array.from(this.watchers.values()).forEach(watcher => {
+    Array.from(this.watchers.values()).forEach((watcher) => {
       watcher.close();
     });
     this.watchers.clear();
 
     // End all client responses
-    Array.from(this.clients.values()).forEach(clientSet => {
-      Array.from(clientSet).forEach(client => {
+    Array.from(this.clients.values()).forEach((clientSet) => {
+      Array.from(clientSet).forEach((client) => {
         try {
           client.end();
         } catch {

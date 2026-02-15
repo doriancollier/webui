@@ -7,7 +7,13 @@ export interface GroupedSessions {
   sessions: Session[];
 }
 
-const GROUP_ORDER: TimeGroup[] = ['Today', 'Yesterday', 'Previous 7 Days', 'Previous 30 Days', 'Older'];
+const GROUP_ORDER: TimeGroup[] = [
+  'Today',
+  'Yesterday',
+  'Previous 7 Days',
+  'Previous 30 Days',
+  'Older',
+];
 
 /**
  * Group sessions into temporal buckets based on updatedAt.
@@ -25,11 +31,11 @@ export function groupSessionsByTime(sessions: Session[]): GroupedSessions[] {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
   const groups: Record<TimeGroup, Session[]> = {
-    'Today': [],
-    'Yesterday': [],
+    Today: [],
+    Yesterday: [],
     'Previous 7 Days': [],
     'Previous 30 Days': [],
-    'Older': [],
+    Older: [],
   };
 
   for (const session of sessions) {
@@ -41,9 +47,9 @@ export function groupSessionsByTime(sessions: Session[]): GroupedSessions[] {
     else groups['Older'].push(session);
   }
 
-  return GROUP_ORDER
-    .map(label => ({ label, sessions: groups[label] }))
-    .filter(group => group.sessions.length > 0);
+  return GROUP_ORDER.map((label) => ({ label, sessions: groups[label] })).filter(
+    (group) => group.sessions.length > 0
+  );
 }
 
 /**

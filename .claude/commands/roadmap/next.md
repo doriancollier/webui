@@ -1,6 +1,6 @@
 ---
 description: Intelligently select the next roadmap item to work on
-argument-hint: "(no arguments)"
+argument-hint: '(no arguments)'
 allowed-tools: Bash, Read
 category: roadmap
 ---
@@ -37,10 +37,10 @@ cat roadmap/roadmap.json
    b. Get list of completed item IDs
    c. Filter out items whose dependencies are not all in the completed list
    d. Sort remaining items by:
-      - MoSCoW priority (must-have=1, should-have=2, could-have=3, wont-have=4)
-      - Time horizon (now=1, next=2, later=3)
-      - Health (at-risk/blocked get 0 bonus, on-track/off-track get 1)
-      - Dependency impact (count how many other items list this one in dependencies)
+   - MoSCoW priority (must-have=1, should-have=2, could-have=3, wont-have=4)
+   - Time horizon (now=1, next=2, later=3)
+   - Health (at-risk/blocked get 0 bonus, on-track/off-track get 1)
+   - Dependency impact (count how many other items list this one in dependencies)
 
 3. Output the recommendation in this format:
 
@@ -53,12 +53,15 @@ cat roadmap/roadmap.json
 **Health:** {health} | **Effort:** {effort} points
 
 ### Rationale
+
 {Explain why this item was selected over others}
 
 ### Dependencies
+
 {List any dependencies and their status, or "None"}
 
 ### To start work:
+
 \`\`\`
 /roadmap:work {uuid}
 \`\`\`
@@ -73,18 +76,18 @@ cat roadmap/roadmap.json
 
 ## Priority Scoring Reference
 
-| Factor | Values | Score |
-|--------|--------|-------|
-| MoSCoW | must-have | 1 |
-| | should-have | 2 |
-| | could-have | 3 |
-| | wont-have | 4 |
-| Time Horizon | now | 1 |
-| | next | 2 |
-| | later | 3 |
-| Health | at-risk, blocked | 0 (prioritize) |
-| | on-track, off-track | 1 |
-| Unblocks Others | Each dependent | -0.1 per dependent |
+| Factor          | Values              | Score              |
+| --------------- | ------------------- | ------------------ |
+| MoSCoW          | must-have           | 1                  |
+|                 | should-have         | 2                  |
+|                 | could-have          | 3                  |
+|                 | wont-have           | 4                  |
+| Time Horizon    | now                 | 1                  |
+|                 | next                | 2                  |
+|                 | later               | 3                  |
+| Health          | at-risk, blocked    | 0 (prioritize)     |
+|                 | on-track, off-track | 1                  |
+| Unblocks Others | Each dependent      | -0.1 per dependent |
 
 **Lower total score = higher priority**
 
@@ -99,15 +102,19 @@ cat roadmap/roadmap.json
 **Health:** at-risk | **Effort:** 2 points
 
 ### Rationale
+
 This is the highest priority item because:
+
 1. It's a must-have bugfix in the "now" horizon
 2. Its health is at-risk, indicating it needs immediate attention
 3. No unmet dependencies
 
 ### Dependencies
+
 None
 
 ### To start work:
+
 \`\`\`
 /roadmap:work 550e8400-e29b-41d4-a716-446655440004
 \`\`\`

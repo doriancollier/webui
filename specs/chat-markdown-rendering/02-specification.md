@@ -36,12 +36,12 @@ The component already has a placeholder comment referencing Streamdown, and the 
 
 ## Technical Dependencies
 
-| Dependency | Version | Status | Purpose |
-|-----------|---------|--------|---------|
-| `streamdown` | latest | Installed in node_modules | Streaming markdown renderer |
-| `tailwindcss` | ^4.0.0 | Installed | CSS framework |
-| `@tailwindcss/vite` | ^4.0.0 | Installed | Vite plugin for Tailwind |
-| `react` | ^19.0.0 | Installed | UI framework |
+| Dependency          | Version | Status                    | Purpose                     |
+| ------------------- | ------- | ------------------------- | --------------------------- |
+| `streamdown`        | latest  | Installed in node_modules | Streaming markdown renderer |
+| `tailwindcss`       | ^4.0.0  | Installed                 | CSS framework               |
+| `@tailwindcss/vite` | ^4.0.0  | Installed                 | Vite plugin for Tailwind    |
+| `react`             | ^19.0.0 | Installed                 | UI framework                |
 
 No new dependencies need to be installed.
 
@@ -70,17 +70,12 @@ interface StreamingTextProps {
 }
 
 export function StreamingText({ content }: StreamingTextProps) {
-  return (
-    <Streamdown
-      shikiTheme={['github-light', 'github-dark']}
-    >
-      {content}
-    </Streamdown>
-  );
+  return <Streamdown shikiTheme={['github-light', 'github-dark']}>{content}</Streamdown>;
 }
 ```
 
 Key details:
+
 - Remove the `useMemo` wrapper (Streamdown handles memoization internally via block-level caching)
 - Remove the `whitespace-pre-wrap` wrapper div (Streamdown renders its own wrapper)
 - `parseIncompleteMarkdown` defaults to `true` - handles unterminated syntax during streaming
@@ -96,7 +91,7 @@ Two changes needed:
 ```tsx
 <div className={isUser ? '' : 'max-w-prose'}>
   {isUser ? (
-    <div className="whitespace-pre-wrap break-words">{message.content}</div>
+    <div className="break-words whitespace-pre-wrap">{message.content}</div>
   ) : (
     <StreamingText content={message.content} />
   )}
@@ -106,6 +101,7 @@ Two changes needed:
 **b) Remove the `prose` classes from the wrapper:**
 
 The current wrapper has `prose prose-sm dark:prose-invert max-w-none`. Since:
+
 - `@tailwindcss/typography` is not installed, `prose` classes have no effect today
 - Streamdown provides its own built-in Tailwind styling for markdown elements
 - We want `max-w-prose` (not `max-w-none`) for readable width
@@ -117,8 +113,8 @@ Replace the prose wrapper with a simpler container that applies `max-w-prose` fo
 Add a `@source` directive so Tailwind v4 scans Streamdown's distribution files for utility classes:
 
 ```css
-@import "tailwindcss";
-@source "../node_modules/streamdown/dist/*.js";
+@import 'tailwindcss';
+@source '../node_modules/streamdown/dist/*.js';
 ```
 
 This is the Tailwind v4 equivalent of adding `content` paths in `tailwind.config.js`. Without it, Streamdown's built-in Tailwind classes won't be included in the CSS output.
@@ -137,6 +133,7 @@ This is the Tailwind v4 equivalent of adding `content` paths in `tailwind.config
 **Before:** Assistant messages show raw markdown text like `**bold** and \`code\`` in a monospace-looking plain text block.
 
 **After:** Assistant messages render as formatted HTML with:
+
 - Styled headings (h1-h6)
 - Bold, italic, strikethrough text
 - Inline code and fenced code blocks with syntax highlighting
@@ -162,11 +159,14 @@ The existing tests use `screen.getByText('Hello world')` which should still work
 ```tsx
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 ```
 
 **Tests to verify:**
+
 - `renders user message content` - Should still pass (user messages are plain text, not using Streamdown)
 - `renders assistant message content` - May need update to query by `data-testid="streamdown"` then check text within
 - `renders multiple messages` - Should still pass
@@ -257,7 +257,7 @@ it('renders assistant messages with Streamdown', () => {
 
 ## Open Questions
 
-*None - all clarifications from ideation have been resolved.*
+_None - all clarifications from ideation have been resolved._
 
 ## References
 

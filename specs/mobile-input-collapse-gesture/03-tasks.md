@@ -18,6 +18,7 @@ slug: mobile-input-collapse-gesture
 Create a small, accessible button component rendered as a horizontal pill bar for mobile drag-to-collapse affordance.
 
 **Props interface:**
+
 ```tsx
 interface DragHandleProps {
   collapsed: boolean;
@@ -26,6 +27,7 @@ interface DragHandleProps {
 ```
 
 **Visual spec:**
+
 - Container: `h-6` (24px) flex center, full width — provides 48px effective touch target with surrounding padding
 - Pill: `w-9 h-1 rounded-full bg-muted-foreground/30` (36x4px, subtle gray)
 - Hover/active: `bg-muted-foreground/50`
@@ -34,6 +36,7 @@ interface DragHandleProps {
 - `tabIndex={0}`, keyboard Enter/Space triggers toggle
 
 **Implementation:**
+
 ```tsx
 export function DragHandle({ collapsed, onToggle }: DragHandleProps) {
   return (
@@ -48,15 +51,16 @@ export function DragHandle({ collapsed, onToggle }: DragHandleProps) {
           onToggle();
         }
       }}
-      className="flex items-center justify-center h-6 w-full cursor-pointer"
+      className="flex h-6 w-full cursor-pointer items-center justify-center"
     >
-      <div className="w-9 h-1 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 active:bg-muted-foreground/50 transition-colors" />
+      <div className="bg-muted-foreground/30 hover:bg-muted-foreground/50 active:bg-muted-foreground/50 h-1 w-9 rounded-full transition-colors" />
     </div>
   );
 }
 ```
 
 **Acceptance criteria:**
+
 - Renders a 36x4px pill bar centered in a 24px tall container
 - `role="button"` and correct `aria-label` based on `collapsed` prop
 - Click and Enter/Space key call `onToggle`
@@ -73,6 +77,7 @@ Add mobile-only collapse/expand behavior for ShortcutChips and StatusLine, with 
 **Changes:**
 
 1. Add imports:
+
 ```tsx
 import { useIsMobile } from '../../hooks/use-is-mobile';
 import { DragHandle } from './DragHandle';
@@ -80,12 +85,14 @@ import type { PanInfo } from 'motion/react';
 ```
 
 2. Add local state inside `ChatPanel`:
+
 ```tsx
 const isMobile = useIsMobile();
 const [collapsed, setCollapsed] = useState(false);
 ```
 
 3. Add drag handler:
+
 ```tsx
 const SWIPE_THRESHOLD = 80;
 const VELOCITY_THRESHOLD = 500;
@@ -102,46 +109,61 @@ const handleDragEnd = (_: unknown, info: PanInfo) => {
 4. Replace the existing ShortcutChips + StatusLine rendering (after ChatInput) with:
 
 **Mobile path:**
+
 ```tsx
-{isMobile && (
-  <>
-    <DragHandle collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
-    <AnimatePresence initial={false}>
-      {!collapsed && (
-        <motion.div
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: 'auto', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-          className="overflow-hidden"
-          drag="y"
-          dragConstraints={{ top: 0, bottom: 0 }}
-          dragElastic={0.2}
-          onDragEnd={handleDragEnd}
-          style={{ touchAction: 'pan-y' }}
-        >
-          {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
-          <StatusLine sessionId={sessionId} sessionStatus={sessionStatus} isStreaming={status === 'streaming'} />
-        </motion.div>
-      )}
-    </AnimatePresence>
-  </>
-)}
+{
+  isMobile && (
+    <>
+      <DragHandle collapsed={collapsed} onToggle={() => setCollapsed((c) => !c)} />
+      <AnimatePresence initial={false}>
+        {!collapsed && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="overflow-hidden"
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={0.2}
+            onDragEnd={handleDragEnd}
+            style={{ touchAction: 'pan-y' }}
+          >
+            {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
+            <StatusLine
+              sessionId={sessionId}
+              sessionStatus={sessionStatus}
+              isStreaming={status === 'streaming'}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
 ```
 
 **Desktop path (unchanged rendering):**
+
 ```tsx
-{!isMobile && (
-  <>
-    <AnimatePresence>
-      {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
-    </AnimatePresence>
-    <StatusLine sessionId={sessionId} sessionStatus={sessionStatus} isStreaming={status === 'streaming'} />
-  </>
-)}
+{
+  !isMobile && (
+    <>
+      <AnimatePresence>
+        {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
+      </AnimatePresence>
+      <StatusLine
+        sessionId={sessionId}
+        sessionStatus={sessionStatus}
+        isStreaming={status === 'streaming'}
+      />
+    </>
+  );
+}
 ```
 
 **Acceptance criteria:**
+
 - Mobile: DragHandle appears between ChatInput and collapsible content
 - Mobile: Swipe down (80px or 500px/s) collapses chips + status bar
 - Mobile: Swipe up (80px or 500px/s) expands chips + status bar
@@ -158,21 +180,33 @@ const handleDragEnd = (_: unknown, info: PanInfo) => {
 **File:** `apps/client/src/components/chat/__tests__/DragHandle.test.tsx` (NEW)
 
 **Mock pattern:** Use established Proxy pattern from ShortcutChips.test.tsx:
+
 ```tsx
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target: unknown, prop: string) => {
-      return ({ children, initial: _i, animate: _a, exit: _e, transition: _t, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-        const Tag = prop as keyof React.JSX.IntrinsicElements;
-        return <Tag {...props}>{children}</Tag>;
-      };
-    },
-  }),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target: unknown, prop: string) => {
+        return ({
+          children,
+          initial: _i,
+          animate: _a,
+          exit: _e,
+          transition: _t,
+          ...props
+        }: Record<string, unknown> & { children?: React.ReactNode }) => {
+          const Tag = prop as keyof React.JSX.IntrinsicElements;
+          return <Tag {...props}>{children}</Tag>;
+        };
+      },
+    }
+  ),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 ```
 
 **Test cases:**
+
 1. **Renders pill element** — Validates the handle bar element exists with correct styling classes (`w-9 h-1 rounded-full`)
 2. **Displays correct aria-label when expanded** — `aria-label="Collapse input extras"` when `collapsed=false`
 3. **Displays correct aria-label when collapsed** — `aria-label="Expand input extras"` when `collapsed=true`
@@ -187,6 +221,7 @@ vi.mock('motion/react', () => ({
 **File:** `apps/client/src/components/chat/__tests__/ChatPanel.test.tsx` (NEW)
 
 **Required mocks:**
+
 - `motion/react` — Proxy pattern (same as DragHandle tests)
 - `../../hooks/use-is-mobile` — mock to control mobile/desktop
 - `../../hooks/use-chat-session` — return stable defaults
@@ -203,6 +238,7 @@ vi.mock('motion/react', () => ({
 - `../status/StatusLine` — render identifiable div (adjust path as needed)
 
 **Test cases:**
+
 1. **Mobile: renders drag handle** — When `useIsMobile` returns true, element with `role="button"` and `aria-label` containing "input extras" appears
 2. **Desktop: does not render drag handle** — When `useIsMobile` returns false, no drag handle in DOM
 3. **Mobile: chips and status bar visible by default** — On initial render with `showShortcutChips=true`, both ShortcutChips and StatusLine are present
@@ -210,6 +246,7 @@ vi.mock('motion/react', () => ({
 5. **Mobile: tap handle again shows chips and status bar** — Toggle back to expanded state
 
 **Acceptance criteria:**
+
 - All 5 tests pass
 - Existing tests in ShortcutChips.test.tsx and ChatInput.test.tsx still pass (verify with `npx vitest run`)
 
@@ -225,6 +262,7 @@ vi.mock('motion/react', () => ({
 Add a first-use hint that teaches mobile users about the swipe gesture. Shown on the first 3 mobile visits, auto-dismisses after 4 seconds.
 
 **State logic:**
+
 ```tsx
 const [showHint, setShowHint] = useState(() => {
   if (!isMobile) return false;
@@ -244,28 +282,33 @@ useEffect(() => {
 ```
 
 **Render hint below DragHandle when `showHint` is true:**
+
 ```tsx
-{showHint && (
-  <motion.p
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    onClick={() => {
-      setShowHint(false);
-      const count = parseInt(localStorage.getItem('gateway-gesture-hint-count') || '0', 10);
-      localStorage.setItem('gateway-gesture-hint-count', String(count + 1));
-    }}
-    className="text-center text-xs text-muted-foreground cursor-pointer"
-  >
-    Swipe to collapse
-  </motion.p>
-)}
+{
+  showHint && (
+    <motion.p
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={() => {
+        setShowHint(false);
+        const count = parseInt(localStorage.getItem('gateway-gesture-hint-count') || '0', 10);
+        localStorage.setItem('gateway-gesture-hint-count', String(count + 1));
+      }}
+      className="text-muted-foreground cursor-pointer text-center text-xs"
+    >
+      Swipe to collapse
+    </motion.p>
+  );
+}
 ```
 
 **DragHandle bounce animation when hint is showing:**
+
 - The DragHandle (or its container) gets `animate={{ y: [0, 8, 0] }}` with `transition={{ duration: 1.2, repeat: 2 }}` when `showHint` is true
 
 **Acceptance criteria:**
+
 - On mobile, when localStorage `gateway-gesture-hint-count` < 3, hint text "Swipe to collapse" appears below DragHandle
 - Hint auto-dismisses after 4 seconds with fade out
 - Tapping hint dismisses immediately
@@ -281,12 +324,14 @@ useEffect(() => {
 **Depends on:** Task 1.4, Task 2.1
 
 **Additional test cases for the hint:**
+
 1. **Shows hint when localStorage count < 3 on mobile** — With `useIsMobile` returning true and localStorage `gateway-gesture-hint-count` set to "1", the text "Swipe to collapse" appears
 2. **Does not show hint when count >= 3** — With localStorage `gateway-gesture-hint-count` set to "3", no hint text appears
 3. **Increments count on dismiss** — After hint auto-dismisses (use `vi.useFakeTimers` and `vi.advanceTimersByTime(4000)`), localStorage value is incremented
 4. **Does not show hint on desktop regardless of count** — With `useIsMobile` returning false and localStorage count at "0", no hint text appears
 
 **Acceptance criteria:**
+
 - All 4 hint tests pass
 - All previous ChatPanel collapse tests still pass
 - Use `vi.useFakeTimers()` for timer-based tests
@@ -308,6 +353,7 @@ Task 1.1 (DragHandle component)
 ## Verification
 
 After all tasks are complete:
+
 1. `npx vitest run apps/client/src/components/chat/__tests__/DragHandle.test.tsx` — all pass
 2. `npx vitest run apps/client/src/components/chat/__tests__/ChatPanel.test.tsx` — all pass
 3. `npx vitest run apps/client/src/components/chat/__tests__/ShortcutChips.test.tsx` — existing tests still pass

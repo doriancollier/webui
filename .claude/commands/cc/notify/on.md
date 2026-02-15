@@ -25,6 +25,7 @@ Options:
 If user selected "User level":
 
 1. Read the current settings:
+
    ```bash
    cat ~/.claude/settings.json 2>/dev/null || echo '{}'
    ```
@@ -32,6 +33,7 @@ If user selected "User level":
 2. Check if Stop hook already exists. If not, add it.
 
 3. Use a script to safely merge the Stop hook:
+
    ```bash
    # Create the hook configuration
    node -e "
@@ -71,11 +73,13 @@ If user selected "User level":
 If user selected "Project level":
 
 1. Read the current project settings:
+
    ```bash
    cat .claude/settings.json 2>/dev/null || echo '{}'
    ```
 
 2. Use a script to safely merge the Stop hook:
+
    ```bash
    node -e "
    const fs = require('fs');
@@ -111,6 +115,7 @@ If user selected "Project level":
 ## Step 3: Confirm
 
 Report to the user:
+
 - Where notifications were enabled
 - Remind them to restart Claude Code for changes to take effect
 

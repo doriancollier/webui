@@ -27,7 +27,21 @@ function createMockTransport(): Transport {
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getConfig: vi.fn().mockResolvedValue({ version: '1.0.0', port: 6942, uptime: 0, workingDirectory: '/test', nodeVersion: 'v20.0.0', claudeCliPath: null, tunnel: { enabled: false, connected: false, url: null, authEnabled: false, tokenConfigured: false } }),
+    getConfig: vi.fn().mockResolvedValue({
+      version: '1.0.0',
+      port: 6942,
+      uptime: 0,
+      workingDirectory: '/test',
+      nodeVersion: 'v20.0.0',
+      claudeCliPath: null,
+      tunnel: {
+        enabled: false,
+        connected: false,
+        url: null,
+        authEnabled: false,
+        tokenConfigured: false,
+      },
+    }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
   };
 }
@@ -49,18 +63,16 @@ function createWrapper(sessionData?: Record<string, unknown>) {
 
 describe('PermissionBanner', () => {
   it('returns null when sessionId is null', () => {
-    const { container } = render(
-      <PermissionBanner sessionId={null} />,
-      { wrapper: createWrapper() }
-    );
+    const { container } = render(<PermissionBanner sessionId={null} />, {
+      wrapper: createWrapper(),
+    });
     expect(container.textContent).toBe('');
   });
 
   it('returns null when session has no data yet', () => {
-    const { container } = render(
-      <PermissionBanner sessionId="s-unknown" />,
-      { wrapper: createWrapper() }
-    );
+    const { container } = render(<PermissionBanner sessionId="s-unknown" />, {
+      wrapper: createWrapper(),
+    });
     expect(container.textContent).toBe('');
   });
 
@@ -72,10 +84,9 @@ describe('PermissionBanner', () => {
       createdAt: '',
       updatedAt: '',
     };
-    const { container } = render(
-      <PermissionBanner sessionId="s1" />,
-      { wrapper: createWrapper(session) }
-    );
+    const { container } = render(<PermissionBanner sessionId="s1" />, {
+      wrapper: createWrapper(session),
+    });
     expect(container.textContent).toBe('');
   });
 
@@ -87,10 +98,9 @@ describe('PermissionBanner', () => {
       createdAt: '',
       updatedAt: '',
     };
-    const { container } = render(
-      <PermissionBanner sessionId="s2" />,
-      { wrapper: createWrapper(session) }
-    );
+    const { container } = render(<PermissionBanner sessionId="s2" />, {
+      wrapper: createWrapper(session),
+    });
     expect(container.textContent).toBe('');
   });
 });

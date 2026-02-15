@@ -37,13 +37,13 @@ The SDK's `AskUserQuestion` tool needs to present structured questions to the us
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|------------|---------|---------|
-| `@anthropic-ai/claude-agent-sdk` | latest | `canUseTool` callback, `PermissionResult` type, `AskUserQuestionInput` type |
-| `react` | ^19.0.0 | UI components |
-| `lucide-react` | latest | Icons for the QuestionPrompt component |
-| `motion` | ^12.33.0 | Animations for component transitions |
-| `tailwindcss` | ^4.0.0 | Styling |
+| Dependency                       | Version  | Purpose                                                                     |
+| -------------------------------- | -------- | --------------------------------------------------------------------------- |
+| `@anthropic-ai/claude-agent-sdk` | latest   | `canUseTool` callback, `PermissionResult` type, `AskUserQuestionInput` type |
+| `react`                          | ^19.0.0  | UI components                                                               |
+| `lucide-react`                   | latest   | Icons for the QuestionPrompt component                                      |
+| `motion`                         | ^12.33.0 | Animations for component transitions                                        |
+| `tailwindcss`                    | ^4.0.0   | Styling                                                                     |
 
 No new dependencies are required.
 
@@ -101,7 +101,7 @@ interface AgentSession {
   pendingInteractions: Map<string, PendingInteraction>;
   // Event queue for canUseTool-emitted events:
   eventQueue: StreamEvent[];
-  eventQueueNotify?: () => void;  // resolve fn to wake generator
+  eventQueueNotify?: () => void; // resolve fn to wake generator
 }
 ```
 
@@ -155,10 +155,13 @@ async function handleAskUserQuestion(
 
   // Create deferred promise
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      session.pendingInteractions.delete(toolUseId);
-      resolve({ behavior: 'deny', message: 'User did not respond within 10 minutes' });
-    }, 10 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        session.pendingInteractions.delete(toolUseId);
+        resolve({ behavior: 'deny', message: 'User did not respond within 10 minutes' });
+      },
+      10 * 60 * 1000
+    );
 
     session.pendingInteractions.set(toolUseId, {
       type: 'question',
@@ -204,10 +207,13 @@ async function handleToolApproval(
   session.eventQueueNotify?.();
 
   return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      session.pendingInteractions.delete(toolUseId);
-      resolve({ behavior: 'deny', message: 'Tool approval timed out after 10 minutes' });
-    }, 10 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        session.pendingInteractions.delete(toolUseId);
+        resolve({ behavior: 'deny', message: 'Tool approval timed out after 10 minutes' });
+      },
+      10 * 60 * 1000
+    );
 
     session.pendingInteractions.set(toolUseId, {
       type: 'approval',
@@ -215,9 +221,10 @@ async function handleToolApproval(
       resolve: (approved) => {
         clearTimeout(timeout);
         session.pendingInteractions.delete(toolUseId);
-        resolve(approved
-          ? { behavior: 'allow' }
-          : { behavior: 'deny', message: 'User denied tool execution' }
+        resolve(
+          approved
+            ? { behavior: 'allow' }
+            : { behavior: 'deny', message: 'User denied tool execution' }
         );
       },
       reject: (reason) => {
@@ -263,7 +270,7 @@ async *sendMessage(sessionId, content, opts?) {
 }
 ```
 
-**Important timing note**: The `canUseTool` callback is called by the SDK *before* it yields the corresponding `stream_event` message. This means the event queue will have the `question_prompt` or `approval_required` event ready to drain on the next iteration of the `for await` loop. The callback blocks (via the deferred promise) until the user responds, so the SDK won't yield further messages until the interaction is resolved.
+**Important timing note**: The `canUseTool` callback is called by the SDK _before_ it yields the corresponding `stream_event` message. This means the event queue will have the `question_prompt` or `approval_required` event ready to drain on the next iteration of the `for await` loop. The callback blocks (via the deferred promise) until the user responds, so the SDK won't yield further messages until the interaction is resolved.
 
 However, there's a subtlety: the `for await (const message of agentQuery)` loop only advances when the SDK yields a message. If `canUseTool` is blocking, the SDK won't yield, so we need `eventQueueNotify` to wake the generator. The solution is to use a secondary polling mechanism or restructure the loop to also await the queue. A practical approach:
 
@@ -350,7 +357,7 @@ export type StreamEventType =
   | 'tool_call_end'
   | 'tool_result'
   | 'approval_required'
-  | 'question_prompt'     // NEW
+  | 'question_prompt' // NEW
   | 'error'
   | 'done'
   | 'session_status';
@@ -361,9 +368,9 @@ export interface QuestionOption {
 }
 
 export interface QuestionItem {
-  header: string;       // Max 12 chars, displayed as chip/tag
-  question: string;     // Full question text
-  options: QuestionOption[];  // 2-4 predefined options
+  header: string; // Max 12 chars, displayed as chip/tag
+  question: string; // Full question text
+  options: QuestionOption[]; // 2-4 predefined options
   multiSelect: boolean;
 }
 
@@ -375,7 +382,14 @@ export interface QuestionPromptEvent {
 // Update StreamEvent.data union to include QuestionPromptEvent
 export interface StreamEvent {
   type: StreamEventType;
-  data: TextDelta | ToolCallEvent | ApprovalEvent | QuestionPromptEvent | ErrorEvent | DoneEvent | SessionStatusEvent;
+  data:
+    | TextDelta
+    | ToolCallEvent
+    | ApprovalEvent
+    | QuestionPromptEvent
+    | ErrorEvent
+    | DoneEvent
+    | SessionStatusEvent;
 }
 ```
 
@@ -389,7 +403,7 @@ export interface Transport {
   submitAnswers(
     sessionId: string,
     toolCallId: string,
-    answers: Record<string, string>,
+    answers: Record<string, string>
   ): Promise<{ ok: boolean }>;
 }
 ```
@@ -445,6 +459,7 @@ async submitAnswers(sessionId: string, toolCallId: string, answers: Record<strin
 Create `src/client/components/chat/QuestionPrompt.tsx`:
 
 **Props:**
+
 ```typescript
 interface QuestionPromptProps {
   sessionId: string;
@@ -454,11 +469,13 @@ interface QuestionPromptProps {
 ```
 
 **States:**
+
 - `pending` (default): Renders questions with options, "Other" input, submit button
 - `submitting`: Disabled inputs, loading indicator on submit button
 - `submitted`: Collapsed compact summary showing selected answers
 
 **Rendering logic per question:**
+
 - Display `header` as a colored chip/tag (similar to ToolApproval's shield icon area)
 - Display `question` as the main text
 - If `multiSelect === false`: render radio buttons for each option
@@ -467,6 +484,7 @@ interface QuestionPromptProps {
 - Each option shows `label` prominently and `description` as muted subtext
 
 **Post-submission collapsed state:**
+
 ```
 ┌──────────────────────────────────────────────┐
 │ ✓  [header chip] Selected: "Option Label"    │
@@ -475,6 +493,7 @@ interface QuestionPromptProps {
 ```
 
 **Styling:**
+
 - Pending: amber border/bg (matching ToolApproval pending state)
 - Submitted: emerald border/bg (matching ToolApproval approved state)
 - Uses `useTransport()` hook for `submitAnswers` call
@@ -533,30 +552,32 @@ export interface ToolCallState {
 Update `src/client/components/chat/MessageItem.tsx` to render interactive components:
 
 ```tsx
-{message.toolCalls?.map((tc) => {
-  if (tc.interactiveType === 'question' && tc.questions) {
-    return (
-      <QuestionPrompt
-        key={tc.toolCallId}
-        sessionId={sessionId}
-        toolCallId={tc.toolCallId}
-        questions={tc.questions}
-      />
-    );
-  }
-  if (tc.interactiveType === 'approval') {
-    return (
-      <ToolApproval
-        key={tc.toolCallId}
-        sessionId={sessionId}
-        toolCallId={tc.toolCallId}
-        toolName={tc.toolName}
-        input={tc.input}
-      />
-    );
-  }
-  return <ToolCallCard key={tc.toolCallId} toolCall={tc} />;
-})}
+{
+  message.toolCalls?.map((tc) => {
+    if (tc.interactiveType === 'question' && tc.questions) {
+      return (
+        <QuestionPrompt
+          key={tc.toolCallId}
+          sessionId={sessionId}
+          toolCallId={tc.toolCallId}
+          questions={tc.questions}
+        />
+      );
+    }
+    if (tc.interactiveType === 'approval') {
+      return (
+        <ToolApproval
+          key={tc.toolCallId}
+          sessionId={sessionId}
+          toolCallId={tc.toolCallId}
+          toolName={tc.toolName}
+          input={tc.input}
+        />
+      );
+    }
+    return <ToolCallCard key={tc.toolCallId} toolCall={tc} />;
+  });
+}
 ```
 
 This requires `sessionId` to be passed down through `MessageItem`. Add it as a prop.
@@ -594,6 +615,7 @@ If the user doesn't respond within 10 minutes, the tool call is automatically de
 ### Unit Tests
 
 **`src/server/services/__tests__/agent-manager-interactive.test.ts`:**
+
 - Test `canUseTool` callback registers correctly
 - Test `handleAskUserQuestion` creates pending interaction and emits event to queue
 - Test `handleToolApproval` creates pending interaction for default permission mode
@@ -606,6 +628,7 @@ If the user doesn't respond within 10 minutes, the tool call is automatically de
 - Test `canUseTool` skips approval when permissionMode is not `'default'`
 
 **`src/client/components/chat/__tests__/QuestionPrompt.test.tsx`:**
+
 - Test renders single question with radio buttons
 - Test renders multiple questions with checkboxes for multiSelect
 - Test "Other" free-text input is always present
@@ -616,12 +639,14 @@ If the user doesn't respond within 10 minutes, the tool call is automatically de
 - Test handles submission error gracefully
 
 **`src/client/hooks/__tests__/use-chat-session-interactive.test.ts`:**
+
 - Test `question_prompt` event adds tool call with `interactiveType: 'question'`
 - Test `approval_required` event adds tool call with `interactiveType: 'approval'`
 
 ### Integration Tests
 
 **`src/server/routes/__tests__/sessions-interactive.test.ts`:**
+
 - Test POST `/submit-answers` returns 200 with valid pending question
 - Test POST `/submit-answers` returns 404 when no pending question
 - Test POST `/submit-answers` returns 400 when missing toolCallId or answers
@@ -723,32 +748,32 @@ If the user doesn't respond within 10 minutes, the tool call is automatically de
 
 ### Modified Files (8)
 
-| File | Changes |
-|------|---------|
-| `src/server/services/agent-manager.ts` | `canUseTool` callback, event queue, `pendingInteractions` Map, `submitAnswers()`, refactored `approveTool()` |
-| `src/shared/types.ts` | `question_prompt` event type, `QuestionPromptEvent`, `QuestionItem`, `QuestionOption` interfaces, `interactiveType` on `ToolCallState` (if exported) |
-| `src/shared/transport.ts` | `submitAnswers()` method on Transport interface |
-| `src/client/hooks/use-chat-session.ts` | `question_prompt` + `approval_required` handlers, `interactiveType`/`questions` on `ToolCallState` |
-| `src/client/components/chat/MessageItem.tsx` | Conditional rendering for interactive tool calls, `sessionId` prop |
-| `src/client/lib/http-transport.ts` | `submitAnswers()` implementation |
-| `src/client/lib/direct-transport.ts` | `submitAnswers()` implementation |
-| `src/server/routes/sessions.ts` | POST `/submit-answers` endpoint |
+| File                                         | Changes                                                                                                                                              |
+| -------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/server/services/agent-manager.ts`       | `canUseTool` callback, event queue, `pendingInteractions` Map, `submitAnswers()`, refactored `approveTool()`                                         |
+| `src/shared/types.ts`                        | `question_prompt` event type, `QuestionPromptEvent`, `QuestionItem`, `QuestionOption` interfaces, `interactiveType` on `ToolCallState` (if exported) |
+| `src/shared/transport.ts`                    | `submitAnswers()` method on Transport interface                                                                                                      |
+| `src/client/hooks/use-chat-session.ts`       | `question_prompt` + `approval_required` handlers, `interactiveType`/`questions` on `ToolCallState`                                                   |
+| `src/client/components/chat/MessageItem.tsx` | Conditional rendering for interactive tool calls, `sessionId` prop                                                                                   |
+| `src/client/lib/http-transport.ts`           | `submitAnswers()` implementation                                                                                                                     |
+| `src/client/lib/direct-transport.ts`         | `submitAnswers()` implementation                                                                                                                     |
+| `src/server/routes/sessions.ts`              | POST `/submit-answers` endpoint                                                                                                                      |
 
 ### New Files (2+)
 
-| File | Purpose |
-|------|---------|
-| `src/client/components/chat/QuestionPrompt.tsx` | Interactive question UI component |
-| `guides/interactive-tools.md` | Developer guide for the interactive tool pattern |
+| File                                            | Purpose                                          |
+| ----------------------------------------------- | ------------------------------------------------ |
+| `src/client/components/chat/QuestionPrompt.tsx` | Interactive question UI component                |
+| `guides/interactive-tools.md`                   | Developer guide for the interactive tool pattern |
 
 ### Test Files (3-4)
 
-| File | Purpose |
-|------|---------|
-| `src/server/services/__tests__/agent-manager-interactive.test.ts` | canUseTool, submitAnswers, timeout tests |
-| `src/client/components/chat/__tests__/QuestionPrompt.test.tsx` | Component rendering, submission, collapse tests |
-| `src/server/routes/__tests__/sessions-interactive.test.ts` | Route integration tests |
-| `src/client/hooks/__tests__/use-chat-session-interactive.test.ts` | Event handling tests (optional, can combine) |
+| File                                                              | Purpose                                         |
+| ----------------------------------------------------------------- | ----------------------------------------------- |
+| `src/server/services/__tests__/agent-manager-interactive.test.ts` | canUseTool, submitAnswers, timeout tests        |
+| `src/client/components/chat/__tests__/QuestionPrompt.test.tsx`    | Component rendering, submission, collapse tests |
+| `src/server/routes/__tests__/sessions-interactive.test.ts`        | Route integration tests                         |
+| `src/client/hooks/__tests__/use-chat-session-interactive.test.ts` | Event handling tests (optional, can combine)    |
 
 ## 14. Open Questions
 

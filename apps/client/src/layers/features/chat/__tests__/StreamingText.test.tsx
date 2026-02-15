@@ -9,7 +9,9 @@ afterEach(() => {
 
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 
 describe('StreamingText', () => {

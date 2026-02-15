@@ -55,7 +55,8 @@ export const FONT_CONFIGS = [
     description: 'Inter + JetBrains Mono',
     sans: "'Inter', system-ui, sans-serif",
     mono: "'JetBrains Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap',
   },
   {
     key: 'geist',
@@ -63,7 +64,8 @@ export const FONT_CONFIGS = [
     description: 'Geist + Geist Mono',
     sans: "'Geist', system-ui, sans-serif",
     mono: "'Geist Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono&display=swap',
   },
   {
     key: 'ibm-plex',
@@ -71,7 +73,8 @@ export const FONT_CONFIGS = [
     description: 'IBM Plex Sans + IBM Plex Mono',
     sans: "'IBM Plex Sans', system-ui, sans-serif",
     mono: "'IBM Plex Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono&display=swap',
   },
   {
     key: 'roboto',
@@ -79,7 +82,8 @@ export const FONT_CONFIGS = [
     description: 'Roboto + Roboto Mono',
     sans: "'Roboto', system-ui, sans-serif",
     mono: "'Roboto Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap',
   },
   {
     key: 'source',
@@ -87,7 +91,8 @@ export const FONT_CONFIGS = [
     description: 'Source Sans 3 + Source Code Pro',
     sans: "'Source Sans 3', system-ui, sans-serif",
     mono: "'Source Code Pro', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro&display=swap',
   },
   {
     key: 'fira',
@@ -95,7 +100,8 @@ export const FONT_CONFIGS = [
     description: 'Fira Sans + Fira Code',
     sans: "'Fira Sans', system-ui, sans-serif",
     mono: "'Fira Code', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&family=Fira+Code&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&family=Fira+Code&display=swap',
   },
   {
     key: 'space',
@@ -103,28 +109,32 @@ export const FONT_CONFIGS = [
     description: 'Space Grotesk + Space Mono',
     sans: "'Space Grotesk', system-ui, sans-serif",
     mono: "'Space Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono&display=swap',
   },
 ] as const satisfies readonly FontConfig[];
 
 /** Union type of all valid font keys — derived from the config array */
-export type FontFamilyKey = typeof FONT_CONFIGS[number]['key'];
+export type FontFamilyKey = (typeof FONT_CONFIGS)[number]['key'];
 
 /** Default font key for new users / reset */
 export const DEFAULT_FONT: FontFamilyKey = 'inter';
 
 /** Look up a font config by key. Returns default font config if key is invalid. */
 export function getFontConfig(key: string): FontConfig {
-  return FONT_CONFIGS.find(f => f.key === key) ?? FONT_CONFIGS.find(f => f.key === DEFAULT_FONT)!;
+  return (
+    FONT_CONFIGS.find((f) => f.key === key) ?? FONT_CONFIGS.find((f) => f.key === DEFAULT_FONT)!
+  );
 }
 
 /** Check if a string is a valid FontFamilyKey */
 export function isValidFontKey(key: string): key is FontFamilyKey {
-  return FONT_CONFIGS.some(f => f.key === key);
+  return FONT_CONFIGS.some((f) => f.key === key);
 }
 ```
 
 **Acceptance criteria**:
+
 - File exports `FontConfig` interface, `FONT_CONFIGS` array (8 entries), `FontFamilyKey` type, `DEFAULT_FONT` constant ('inter'), `getFontConfig()`, `isValidFontKey()`
 - All 8 font configs have unique keys
 - All non-system configs have a `googleFontsUrl`
@@ -171,6 +181,7 @@ export function removeFontCSS(): void {
 ```
 
 **Acceptance criteria**:
+
 - `loadGoogleFont(url)` creates a `<link>` element with `id="google-fonts-link"`, `rel="stylesheet"`, and the given `href`, appended to `document.head`
 - `loadGoogleFont(url)` reuses existing link element if present (updates `href`)
 - `removeGoogleFont()` removes the link element from the DOM
@@ -186,8 +197,8 @@ Modify two existing files to support font loading.
 **File**: `apps/client/index.html` — Add Google Fonts preconnect hints in `<head>` before the theme script:
 
 ```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 ```
 
 The `<head>` section should look like:
@@ -197,12 +208,13 @@ The `<head>` section should look like:
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>DorkOS</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <script>
-    (function() {
+    (function () {
       var t = localStorage.getItem('gateway-theme');
-      var dark = t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
+      var dark =
+        t === 'dark' || (t !== 'light' && matchMedia('(prefers-color-scheme: dark)').matches);
       if (dark) document.documentElement.classList.add('dark');
     })();
   </script>
@@ -229,6 +241,7 @@ The `<head>` section should look like:
 ```
 
 **Acceptance criteria**:
+
 - `index.html` has two preconnect `<link>` tags for `fonts.googleapis.com` and `fonts.gstatic.com` (with `crossorigin`)
 - `index.css` defines `--font-mono` in `:root` with the system monospace fallback stack
 - Preconnect hints appear before the theme script in `<head>`
@@ -251,7 +264,13 @@ setFontFamily: (key: FontFamilyKey) => void;
 **Add imports** at the top of the file:
 
 ```typescript
-import { type FontFamilyKey, DEFAULT_FONT, getFontConfig, isValidFontKey, FONT_CONFIGS } from '@/lib/font-config';
+import {
+  type FontFamilyKey,
+  DEFAULT_FONT,
+  getFontConfig,
+  isValidFontKey,
+  FONT_CONFIGS,
+} from '@/lib/font-config';
 import { loadGoogleFont, removeGoogleFont, applyFontCSS, removeFontCSS } from '@/lib/font-loader';
 ```
 
@@ -313,6 +332,7 @@ applyFontCSS(defaultConfig.sans, defaultConfig.mono);
 Add `fontFamily: DEFAULT_FONT,` to the `set({...})` call in `resetPreferences`.
 
 **Acceptance criteria**:
+
 - `fontFamily` initializes to stored value from localStorage (or `DEFAULT_FONT` if missing/invalid)
 - On init, if font has `googleFontsUrl`, injects the link tag; if not 'system', applies CSS
 - `setFontFamily(key)` persists to localStorage, loads/removes Google Font link, applies/removes CSS
@@ -366,10 +386,13 @@ const [activeTab, setActiveTab] = useState('appearance');
 <TabsContent value="appearance" className="mt-0 space-y-6">
   <div className="space-y-4">
     <div className="flex items-center justify-between">
-      <h3 className="text-sm font-semibold text-foreground">Appearance</h3>
+      <h3 className="text-foreground text-sm font-semibold">Appearance</h3>
       <button
-        onClick={() => { resetPreferences(); setTheme('system'); }}
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+        onClick={() => {
+          resetPreferences();
+          setTheme('system');
+        }}
+        className="text-muted-foreground hover:text-foreground text-xs transition-colors duration-150"
       >
         Reset to defaults
       </button>
@@ -398,7 +421,7 @@ const [activeTab, setActiveTab] = useState('appearance');
             <SelectItem key={font.key} value={font.key}>
               <div className="flex flex-col">
                 <span>{font.displayName}</span>
-                <span className="text-xs text-muted-foreground">{font.description}</span>
+                <span className="text-muted-foreground text-xs">{font.description}</span>
               </div>
             </SelectItem>
           ))}
@@ -407,7 +430,10 @@ const [activeTab, setActiveTab] = useState('appearance');
     </SettingRow>
 
     <SettingRow label="Font size" description="Adjust the text size across the interface">
-      <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
+      <Select
+        value={fontSize}
+        onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}
+      >
         <SelectTrigger className="w-32">
           <SelectValue />
         </SelectTrigger>
@@ -425,6 +451,7 @@ const [activeTab, setActiveTab] = useState('appearance');
 **Remove Theme and Font size from Preferences tab** — the Preferences tab should only contain: "Reset to defaults" header, Show timestamps, Expand tool calls, Auto-hide tool calls, Show shortcut chips, Show dev tools, Verbose logging.
 
 **Acceptance criteria**:
+
 - Settings dialog has 4 tabs: Appearance, Preferences, Status Bar, Server
 - Appearance tab is the default active tab
 - Appearance tab contains Theme, Font family, and Font size selectors
@@ -450,18 +477,18 @@ import { FONT_CONFIGS, DEFAULT_FONT, getFontConfig, isValidFontKey } from '../fo
 
 describe('font-config', () => {
   it('all FONT_CONFIGS have unique keys', () => {
-    const keys = FONT_CONFIGS.map(f => f.key);
+    const keys = FONT_CONFIGS.map((f) => f.key);
     expect(new Set(keys).size).toBe(keys.length);
   });
 
   it('all non-system configs have a googleFontsUrl', () => {
-    FONT_CONFIGS.filter(f => f.key !== 'system').forEach(f => {
+    FONT_CONFIGS.filter((f) => f.key !== 'system').forEach((f) => {
       expect(f.googleFontsUrl).toBeTruthy();
     });
   });
 
   it('system config has null googleFontsUrl', () => {
-    const system = FONT_CONFIGS.find(f => f.key === 'system');
+    const system = FONT_CONFIGS.find((f) => f.key === 'system');
     expect(system?.googleFontsUrl).toBeNull();
   });
 
@@ -471,7 +498,7 @@ describe('font-config', () => {
 
   describe('getFontConfig', () => {
     it('returns correct config for each valid key', () => {
-      FONT_CONFIGS.forEach(config => {
+      FONT_CONFIGS.forEach((config) => {
         expect(getFontConfig(config.key)).toEqual(config);
       });
     });
@@ -489,7 +516,7 @@ describe('font-config', () => {
 
   describe('isValidFontKey', () => {
     it('returns true for all valid keys', () => {
-      FONT_CONFIGS.forEach(config => {
+      FONT_CONFIGS.forEach((config) => {
         expect(isValidFontKey(config.key)).toBe(true);
       });
     });
@@ -556,7 +583,9 @@ describe('font-loader', () => {
     it('sets inline styles on documentElement', () => {
       applyFontCSS("'Inter', sans-serif", "'JetBrains Mono', monospace");
       expect(document.documentElement.style.fontFamily).toBe("'Inter', sans-serif");
-      expect(document.documentElement.style.getPropertyValue('--font-mono')).toBe("'JetBrains Mono', monospace");
+      expect(document.documentElement.style.getPropertyValue('--font-mono')).toBe(
+        "'JetBrains Mono', monospace"
+      );
     });
   });
 
@@ -610,6 +639,7 @@ it('displays Theme and Font size in Appearance tab (not Preferences)', () => {
 Update the existing test `'renders three tabs: Preferences, Status Bar, Server'` to check for four tabs including Appearance. Update `'displays all preference controls'` to reflect that Theme and Font size are now in Appearance, not Preferences.
 
 **Acceptance criteria**:
+
 - `font-config.test.ts`: Tests for unique keys, googleFontsUrl presence, getFontConfig valid/invalid, isValidFontKey valid/invalid
 - `font-loader.test.ts`: Tests for link creation, link reuse, link removal, CSS application, CSS removal
 - `SettingsDialog.test.tsx`: Updated to check for 4 tabs, font family selector presence, Theme/Font size in Appearance tab

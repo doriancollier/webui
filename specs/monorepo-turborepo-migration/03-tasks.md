@@ -20,11 +20,13 @@ This document breaks the Turborepo monorepo migration specification into 16 acti
 **Implementation:**
 
 1. Install turbo as a root devDependency:
+
 ```bash
 npm install --save-dev turbo
 ```
 
 2. Create `turbo.json` at the project root:
+
 ```json
 {
   "$schema": "https://turbo.build/schema.json",
@@ -58,6 +60,7 @@ npm install --save-dev turbo
 ```
 
 3. Update root `package.json` scripts to delegate to turbo (keep old scripts as `*:legacy`):
+
 ```json
 {
   "scripts": {
@@ -72,6 +75,7 @@ npm install --save-dev turbo
 ```
 
 4. Add `packageManager` field to root `package.json`:
+
 ```json
 {
   "packageManager": "npm@10.x.x"
@@ -81,6 +85,7 @@ npm install --save-dev turbo
 5. Add `.turbo/` to `.gitignore`.
 
 **Acceptance Criteria:**
+
 - `turbo.json` exists with correct schema and task definitions
 - `turbo` is listed in root `devDependencies`
 - `turbo build` runs the existing build successfully
@@ -101,6 +106,7 @@ npm install --save-dev turbo
 1. Create directory `packages/typescript-config/`.
 
 2. Create `packages/typescript-config/package.json`:
+
 ```json
 {
   "name": "@dorkos/typescript-config",
@@ -111,6 +117,7 @@ npm install --save-dev turbo
 ```
 
 3. Create `packages/typescript-config/base.json`:
+
 ```json
 {
   "compilerOptions": {
@@ -128,6 +135,7 @@ npm install --save-dev turbo
 ```
 
 4. Create `packages/typescript-config/react.json`:
+
 ```json
 {
   "extends": "./base.json",
@@ -140,6 +148,7 @@ npm install --save-dev turbo
 ```
 
 5. Create `packages/typescript-config/node.json`:
+
 ```json
 {
   "extends": "./base.json",
@@ -155,6 +164,7 @@ npm install --save-dev turbo
 7. Run `npm install` to link the workspace.
 
 **Acceptance Criteria:**
+
 - `packages/typescript-config/` exists with `package.json`, `base.json`, `react.json`, `node.json`
 - `npm ls @dorkos/typescript-config` resolves the workspace package
 - Each config file contains the correct compiler options as specified
@@ -173,6 +183,7 @@ npm install --save-dev turbo
 1. Create directory `packages/shared/src/`.
 
 2. Create `packages/shared/package.json`:
+
 ```json
 {
   "name": "@dorkos/shared",
@@ -196,6 +207,7 @@ npm install --save-dev turbo
 ```
 
 3. Create `packages/shared/tsconfig.json`:
+
 ```json
 {
   "extends": "@dorkos/typescript-config/base",
@@ -215,6 +227,7 @@ npm install --save-dev turbo
 5. Run `npm install` to link the workspace.
 
 **Acceptance Criteria:**
+
 - `packages/shared/src/` contains `schemas.ts`, `transport.ts`, `types.ts`
 - `package.json` exports map points to `.ts` source files (JIT pattern)
 - `npm ls @dorkos/shared` resolves the workspace package
@@ -224,7 +237,7 @@ npm install --save-dev turbo
 
 ---
 
-### Task 2.3: Update all imports from @shared/* and ../../shared/* to @dorkos/shared/*
+### Task 2.3: Update all imports from @shared/_ and ../../shared/_ to @dorkos/shared/\*
 
 **Objective:** Replace all existing imports referencing the old shared location with the new `@dorkos/shared/*` package imports.
 
@@ -247,6 +260,7 @@ npm install --save-dev turbo
 5. Add `@dorkos/shared` as a workspace dependency in the root `package.json` (temporary, until client/server are extracted).
 
 **Acceptance Criteria:**
+
 - Zero files import from `@shared/*` (verify with `grep -r "from '@shared/" src/`)
 - Zero files import from `../../shared/` (verify with `grep -r "from '../../shared/" src/`)
 - All imports use `@dorkos/shared/schemas`, `@dorkos/shared/transport`, or `@dorkos/shared/types`
@@ -267,6 +281,7 @@ npm install --save-dev turbo
 1. Create directory structure: `apps/client/src/`, `apps/client/public/`.
 
 2. Create `apps/client/package.json`:
+
 ```json
 {
   "name": "@dorkos/client",
@@ -328,6 +343,7 @@ npm install --save-dev turbo
 ```
 
 3. Create `apps/client/tsconfig.json`:
+
 ```json
 {
   "extends": "@dorkos/typescript-config/react",
@@ -353,9 +369,10 @@ npm install --save-dev turbo
    - `components.json` -> `apps/client/components.json`
 
 6. Update `apps/client/src/index.css` `@source` directive:
+
 ```css
-@import "tailwindcss";
-@source "../node_modules/streamdown/dist/*.js";
+@import 'tailwindcss';
+@source '../node_modules/streamdown/dist/*.js';
 ```
 
 7. Update root `package.json` workspaces to `["apps/*", "packages/*"]`.
@@ -365,6 +382,7 @@ npm install --save-dev turbo
 9. Run `npm install` to relink.
 
 **Acceptance Criteria:**
+
 - `apps/client/` contains all 62 client source files, `index.html`, `public/`, `components.json`
 - `apps/client/package.json` lists all client dependencies
 - `vite` dev server starts from `apps/client/`: `cd apps/client && npx vite`
@@ -388,6 +406,7 @@ npm install --save-dev turbo
 1. Create directory: `apps/server/src/`.
 
 2. Create `apps/server/package.json`:
+
 ```json
 {
   "name": "@dorkos/server",
@@ -433,6 +452,7 @@ npm install --save-dev turbo
 ```
 
 3. Create `apps/server/tsconfig.json`:
+
 ```json
 {
   "extends": "@dorkos/typescript-config/node",
@@ -458,6 +478,7 @@ npm install --save-dev turbo
 7. Run `npm install` to relink.
 
 **Acceptance Criteria:**
+
 - `apps/server/` contains all 25 server source files
 - `apps/server/package.json` lists all server dependencies
 - Exports field exposes 3 service modules for the Obsidian plugin
@@ -482,6 +503,7 @@ npm install --save-dev turbo
 1. Create directories: `apps/obsidian-plugin/src/`, `apps/obsidian-plugin/build-plugins/`.
 
 2. Create `apps/obsidian-plugin/package.json`:
+
 ```json
 {
   "name": "@dorkos/obsidian-plugin",
@@ -513,6 +535,7 @@ npm install --save-dev turbo
 ```
 
 3. Create `apps/obsidian-plugin/tsconfig.json`:
+
 ```json
 {
   "extends": "@dorkos/typescript-config/react",
@@ -534,15 +557,18 @@ npm install --save-dev turbo
    Each file exports a function returning a Vite `Plugin` object.
 
 5. Create `apps/obsidian-plugin/vite.config.ts` that imports and uses the build plugins:
+
 ```typescript
 import { copyManifest } from './build-plugins/copy-manifest';
 import { fixDirnamePolyfill } from './build-plugins/fix-dirname-polyfill';
 import { safeRequires } from './build-plugins/safe-requires';
 import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 ```
-   - Update output paths from `dist-obsidian/` to `dist/` (relative to plugin package)
+
+- Update output paths from `dist-obsidian/` to `dist/` (relative to plugin package)
 
 **Acceptance Criteria:**
+
 - `apps/obsidian-plugin/` has `package.json`, `tsconfig.json`, `vite.config.ts`
 - `build-plugins/` contains 4 separate plugin modules
 - Each build plugin exports a named function returning a Vite `Plugin`
@@ -577,6 +603,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 5. Run `npm install` to relink.
 
 **Acceptance Criteria:**
+
 - `apps/obsidian-plugin/src/` contains all 10 plugin source files
 - `manifest.json` is in `apps/obsidian-plugin/`
 - Zero imports use `../../server/` (verify: `grep -r "from '../../server/" apps/obsidian-plugin/`)
@@ -600,6 +627,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 1. Create directory: `packages/test-utils/src/`.
 
 2. Create `packages/test-utils/package.json`:
+
 ```json
 {
   "name": "@dorkos/test-utils",
@@ -626,6 +654,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 ```
 
 3. Create `packages/test-utils/tsconfig.json`:
+
 ```json
 {
   "extends": "@dorkos/typescript-config/react",
@@ -634,6 +663,7 @@ import { patchElectronCompat } from './build-plugins/patch-electron-compat';
 ```
 
 4. Create `packages/test-utils/src/index.ts` that re-exports from all modules:
+
 ```typescript
 export * from './mock-factories';
 export * from './react-helpers';
@@ -651,6 +681,7 @@ export * from './sse-helpers';
 7. Run `npm install` to relink.
 
 **Acceptance Criteria:**
+
 - `packages/test-utils/src/` contains `index.ts`, `mock-factories.ts`, `react-helpers.tsx`, `sse-helpers.ts`
 - `package.json` exports map provides individual and barrel imports
 - All test files import from `@dorkos/test-utils/*` not relative paths
@@ -665,17 +696,15 @@ export * from './sse-helpers';
 **Implementation:**
 
 1. Create `vitest.workspace.ts` at the project root:
+
 ```typescript
 import { defineWorkspace } from 'vitest/config';
 
-export default defineWorkspace([
-  'apps/client',
-  'apps/server',
-  'packages/shared',
-]);
+export default defineWorkspace(['apps/client', 'apps/server', 'packages/shared']);
 ```
 
 2. Ensure `apps/client/vite.config.ts` includes vitest config:
+
 ```typescript
 export default defineConfig({
   // ... existing vite config
@@ -688,6 +717,7 @@ export default defineConfig({
 ```
 
 3. Create or update `apps/server/vitest.config.ts` if needed:
+
 ```typescript
 import { defineConfig } from 'vitest/config';
 
@@ -705,6 +735,7 @@ export default defineConfig({
    - Verify `src/` directory is empty and remove it
 
 **Acceptance Criteria:**
+
 - `vitest.workspace.ts` exists at root with correct workspace paths
 - Client tests run with `jsdom` environment
 - Server tests run with `node` environment
@@ -760,6 +791,7 @@ Update the following sections:
 9. **Vault Root Resolution** - Update `__dirname` resolution table
 
 **Acceptance Criteria:**
+
 - All command examples in CLAUDE.md work correctly when executed
 - All file paths referenced in CLAUDE.md exist in the new structure
 - Architecture section accurately describes the monorepo layout
@@ -799,6 +831,7 @@ Update the following sections:
    - Update component path references from `src/client/` to `apps/client/src/`
 
 **Acceptance Criteria:**
+
 - All 5 guide files reference correct monorepo paths
 - No remaining references to old paths (`src/client/`, `src/server/`, `src/shared/`)
 - Build command references use turbo
@@ -832,6 +865,7 @@ Update the following sections:
    - `.claude/scripts/hooks/file-guard.mjs`: Update allowed file paths to match monorepo structure
 
 **Acceptance Criteria:**
+
 - All `.claude/rules/*.md` files use correct monorepo glob patterns
 - All `.claude/commands/*.md` files reference correct paths and use turbo commands
 - All hook scripts work with the new directory structure
@@ -847,6 +881,7 @@ Update the following sections:
 **Implementation:**
 
 1. Run import verification (should return zero results):
+
 ```bash
 grep -r "from '\.\./\.\./server/" apps/
 grep -r "from '\.\./\.\./client/" apps/
@@ -855,29 +890,37 @@ grep -r "from '\.\./\.\./shared/" apps/
 ```
 
 2. Run all builds:
+
 ```bash
 turbo build
 ```
-   Verify outputs:
-   - `apps/client/dist/` contains built React SPA
-   - `apps/server/dist/` contains compiled JS
-   - `apps/obsidian-plugin/dist/` contains `main.js`, `styles.css`, `manifest.json`
+
+Verify outputs:
+
+- `apps/client/dist/` contains built React SPA
+- `apps/server/dist/` contains compiled JS
+- `apps/obsidian-plugin/dist/` contains `main.js`, `styles.css`, `manifest.json`
 
 3. Run all tests:
+
 ```bash
 turbo test
 ```
-   All 30 existing test files pass.
+
+All 30 existing test files pass.
 
 4. Run dev mode:
+
 ```bash
 turbo dev
 ```
-   Verify:
-   - Vite dev server starts on port 3000
-   - Express server starts on port 6942
-   - HMR works
-   - API proxy works
+
+Verify:
+
+- Vite dev server starts on port 3000
+- Express server starts on port 6942
+- HMR works
+- API proxy works
 
 5. Verify old files are removed:
    - `src/` directory does not exist
@@ -886,6 +929,7 @@ turbo dev
    - Root `tsconfig.server.json` does not exist
 
 6. Verify turbo caching works:
+
 ```bash
 turbo build  # First run
 turbo build  # Second run should show cache hits
@@ -897,6 +941,7 @@ turbo build  # Second run should show cache hits
    - Workspaces set to `["apps/*", "packages/*"]`
 
 **Acceptance Criteria:**
+
 - Zero deep relative cross-package imports
 - Zero `@shared/` imports
 - All 3 build targets produce correct output

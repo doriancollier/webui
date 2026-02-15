@@ -3,7 +3,7 @@
  * Loads roadmap.json and renders Kanban/List views
  */
 
-(function() {
+(function () {
   'use strict';
 
   // State
@@ -13,7 +13,7 @@
     type: '',
     moscow: '',
     status: '',
-    hideCompleted: false
+    hideCompleted: false,
   };
 
   // DOM Elements
@@ -82,7 +82,7 @@
     markdownModalClose: document.getElementById('markdown-modal-close'),
     markdownModalTitle: document.getElementById('markdown-modal-title'),
     markdownModalBody: document.getElementById('markdown-modal-body'),
-    markdownTypeIcon: document.querySelector('.markdown-type-icon')
+    markdownTypeIcon: document.querySelector('.markdown-type-icon'),
   };
 
   // Current modal item ID
@@ -100,8 +100,8 @@
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
-        'Pragma': 'no-cache'
-      }
+        Pragma: 'no-cache',
+      },
     });
     if (!response.ok) throw new Error('Failed to load roadmap.json');
     return response.json();
@@ -189,7 +189,7 @@
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     })}`;
   }
 
@@ -200,12 +200,10 @@
     // Calculate Must-Have percentage
     const totalEffort = items.reduce((sum, item) => sum + (item.effort || 0), 0);
     const mustHaveEffort = items
-      .filter(item => item.moscow === 'must-have')
+      .filter((item) => item.moscow === 'must-have')
       .reduce((sum, item) => sum + (item.effort || 0), 0);
 
-    const mustHavePercent = totalEffort > 0
-      ? Math.round((mustHaveEffort / totalEffort) * 100)
-      : 0;
+    const mustHavePercent = totalEffort > 0 ? Math.round((mustHaveEffort / totalEffort) * 100) : 0;
 
     elements.mustHavePercent.textContent = `${mustHavePercent}%`;
 
@@ -220,15 +218,15 @@
 
     // Other stats
     elements.totalItems.textContent = items.length;
-    elements.inProgressCount.textContent = items.filter(i => i.status === 'in-progress').length;
-    elements.atRiskCount.textContent = items.filter(i =>
-      i.health === 'at-risk' || i.health === 'off-track' || i.health === 'blocked'
+    elements.inProgressCount.textContent = items.filter((i) => i.status === 'in-progress').length;
+    elements.atRiskCount.textContent = items.filter(
+      (i) => i.health === 'at-risk' || i.health === 'off-track' || i.health === 'blocked'
     ).length;
   }
 
   // Get filtered items
   function getFilteredItems() {
-    return roadmapData.items.filter(item => {
+    return roadmapData.items.filter((item) => {
       if (filters.type && item.type !== filters.type) return false;
       if (filters.moscow && item.moscow !== filters.moscow) return false;
       if (filters.status && item.status !== filters.status) return false;
@@ -252,23 +250,31 @@
           <span class="badge status ${item.status}">${formatStatus(item.status)}</span>
         </div>
       </div>
-      ${item.description ? `
+      ${
+        item.description
+          ? `
         <div class="description-wrapper">
           <p class="item-description collapsed">${escapeHtml(item.description)}</p>
           <button class="description-toggle" onclick="event.stopPropagation(); toggleDescription(this)">Show more</button>
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       <div class="item-meta">
         <span class="badge moscow ${item.moscow}">${formatMoscow(item.moscow)}</span>
         <span class="badge type">${formatType(item.type)}</span>
         ${item.effort ? `<span class="meta-item">Effort: ${item.effort}</span>` : ''}
       </div>
       ${hasDependencies ? renderDependencyPills(item.dependencies) : ''}
-      ${item.labels && item.labels.length > 0 ? `
+      ${
+        item.labels && item.labels.length > 0
+          ? `
         <div class="item-labels">
-          ${item.labels.map(label => `<span class="label-tag">${escapeHtml(label)}</span>`).join('')}
+          ${item.labels.map((label) => `<span class="label-tag">${escapeHtml(label)}</span>`).join('')}
         </div>
-      ` : ''}
+      `
+          : ''
+      }
       ${renderSpecLinks(item)}
       <div class="item-actions">
         <button class="command-btn" onclick="copyIdeationCommand('${item.id}')" title="Copy ideation command to clipboard">
@@ -283,18 +289,21 @@
 
   // Render dependency pills with status dots
   function renderDependencyPills(dependencyIds) {
-    const pills = dependencyIds.map(depId => {
-      const depItem = roadmapData.items.find(i => i.id === depId);
-      if (!depItem) return '';
+    const pills = dependencyIds
+      .map((depId) => {
+        const depItem = roadmapData.items.find((i) => i.id === depId);
+        if (!depItem) return '';
 
-      const title = depItem.title;
-      const status = depItem.status;
+        const title = depItem.title;
+        const status = depItem.status;
 
-      return `<span class="dependency-pill" title="${escapeHtml(title)} (${formatStatus(status)})">
+        return `<span class="dependency-pill" title="${escapeHtml(title)} (${formatStatus(status)})">
         <span class="status-dot ${status}"></span>
         <span class="dependency-title">${escapeHtml(title)}</span>
       </span>`;
-    }).filter(Boolean).join('');
+      })
+      .filter(Boolean)
+      .join('');
 
     return pills ? `<div class="item-dependencies">${pills}</div>` : '';
   }
@@ -337,15 +346,15 @@
 
     // Group by time horizon
     const grouped = {
-      now: items.filter(i => i.timeHorizon === 'now'),
-      next: items.filter(i => i.timeHorizon === 'next'),
-      later: items.filter(i => i.timeHorizon === 'later')
+      now: items.filter((i) => i.timeHorizon === 'now'),
+      next: items.filter((i) => i.timeHorizon === 'next'),
+      later: items.filter((i) => i.timeHorizon === 'later'),
     };
 
     // Render each group
-    grouped.now.forEach(item => elements.nowItems.appendChild(createItemCard(item)));
-    grouped.next.forEach(item => elements.nextItems.appendChild(createItemCard(item)));
-    grouped.later.forEach(item => elements.laterItems.appendChild(createItemCard(item)));
+    grouped.now.forEach((item) => elements.nowItems.appendChild(createItemCard(item)));
+    grouped.next.forEach((item) => elements.nextItems.appendChild(createItemCard(item)));
+    grouped.later.forEach((item) => elements.laterItems.appendChild(createItemCard(item)));
 
     // Update column headers with counts
     document.querySelector('[data-horizon="now"] .column-header').textContent =
@@ -366,17 +375,23 @@
 
     // Group by status
     const grouped = {
-      'not-started': items.filter(i => i.status === 'not-started'),
-      'in-progress': items.filter(i => i.status === 'in-progress'),
-      'completed': items.filter(i => i.status === 'completed'),
-      'on-hold': items.filter(i => i.status === 'on-hold')
+      'not-started': items.filter((i) => i.status === 'not-started'),
+      'in-progress': items.filter((i) => i.status === 'in-progress'),
+      completed: items.filter((i) => i.status === 'completed'),
+      'on-hold': items.filter((i) => i.status === 'on-hold'),
     };
 
     // Render each group
-    grouped['not-started'].forEach(item => elements.notStartedItems.appendChild(createItemCard(item)));
-    grouped['in-progress'].forEach(item => elements.inProgressItems.appendChild(createItemCard(item)));
-    grouped['completed'].forEach(item => elements.completedItems.appendChild(createItemCard(item)));
-    grouped['on-hold'].forEach(item => elements.onHoldItems.appendChild(createItemCard(item)));
+    grouped['not-started'].forEach((item) =>
+      elements.notStartedItems.appendChild(createItemCard(item))
+    );
+    grouped['in-progress'].forEach((item) =>
+      elements.inProgressItems.appendChild(createItemCard(item))
+    );
+    grouped['completed'].forEach((item) =>
+      elements.completedItems.appendChild(createItemCard(item))
+    );
+    grouped['on-hold'].forEach((item) => elements.onHoldItems.appendChild(createItemCard(item)));
 
     // Update column headers with counts
     document.querySelector('[data-status="not-started"] .column-header').textContent =
@@ -409,17 +424,25 @@
 
     // Group by MoSCoW
     const grouped = {
-      'must-have': items.filter(i => i.moscow === 'must-have'),
-      'should-have': items.filter(i => i.moscow === 'should-have'),
-      'could-have': items.filter(i => i.moscow === 'could-have'),
-      'wont-have': items.filter(i => i.moscow === 'wont-have')
+      'must-have': items.filter((i) => i.moscow === 'must-have'),
+      'should-have': items.filter((i) => i.moscow === 'should-have'),
+      'could-have': items.filter((i) => i.moscow === 'could-have'),
+      'wont-have': items.filter((i) => i.moscow === 'wont-have'),
     };
 
     // Render each group
-    grouped['must-have'].forEach(item => elements.mustHaveItems.appendChild(createItemCard(item)));
-    grouped['should-have'].forEach(item => elements.shouldHaveItems.appendChild(createItemCard(item)));
-    grouped['could-have'].forEach(item => elements.couldHaveItems.appendChild(createItemCard(item)));
-    grouped['wont-have'].forEach(item => elements.wontHaveItems.appendChild(createItemCard(item)));
+    grouped['must-have'].forEach((item) =>
+      elements.mustHaveItems.appendChild(createItemCard(item))
+    );
+    grouped['should-have'].forEach((item) =>
+      elements.shouldHaveItems.appendChild(createItemCard(item))
+    );
+    grouped['could-have'].forEach((item) =>
+      elements.couldHaveItems.appendChild(createItemCard(item))
+    );
+    grouped['wont-have'].forEach((item) =>
+      elements.wontHaveItems.appendChild(createItemCard(item))
+    );
   }
 
   // Setup event listeners
@@ -577,7 +600,7 @@
 
   // Copy ideation command to clipboard
   async function copyIdeationCommand(itemId) {
-    const item = roadmapData.items.find(i => i.id === itemId);
+    const item = roadmapData.items.find((i) => i.id === itemId);
     if (!item) {
       console.error('Item not found:', itemId);
       return;
@@ -632,16 +655,24 @@
 
     // Use relative paths - served via HTTP server at same origin
     if (artifacts.ideationPath) {
-      links.push(`<a href="../${artifacts.ideationPath}" class="spec-link" target="_blank"><i data-lucide="lightbulb" class="icon"></i> Ideation</a>`);
+      links.push(
+        `<a href="../${artifacts.ideationPath}" class="spec-link" target="_blank"><i data-lucide="lightbulb" class="icon"></i> Ideation</a>`
+      );
     }
     if (artifacts.specPath) {
-      links.push(`<a href="../${artifacts.specPath}" class="spec-link" target="_blank"><i data-lucide="file-text" class="icon"></i> Spec</a>`);
+      links.push(
+        `<a href="../${artifacts.specPath}" class="spec-link" target="_blank"><i data-lucide="file-text" class="icon"></i> Spec</a>`
+      );
     }
     if (artifacts.tasksPath) {
-      links.push(`<a href="../${artifacts.tasksPath}" class="spec-link" target="_blank"><i data-lucide="list-checks" class="icon"></i> Tasks</a>`);
+      links.push(
+        `<a href="../${artifacts.tasksPath}" class="spec-link" target="_blank"><i data-lucide="list-checks" class="icon"></i> Tasks</a>`
+      );
     }
     if (artifacts.implementationPath) {
-      links.push(`<a href="../${artifacts.implementationPath}" class="spec-link" target="_blank"><i data-lucide="check-circle" class="icon"></i> Done</a>`);
+      links.push(
+        `<a href="../${artifacts.implementationPath}" class="spec-link" target="_blank"><i data-lucide="check-circle" class="icon"></i> Done</a>`
+      );
     }
 
     // If no path links but specSlug exists, show it as a reference badge
@@ -649,9 +680,7 @@
       return `<div class="spec-links"><span class="spec-slug-badge"><i data-lucide="bookmark" class="icon"></i> ${escapeHtml(artifacts.specSlug)}</span></div>`;
     }
 
-    return links.length > 0
-      ? `<div class="spec-links">${links.join('')}</div>`
-      : '';
+    return links.length > 0 ? `<div class="spec-links">${links.join('')}</div>` : '';
   }
 
   // Initialize Lucide icons
@@ -702,7 +731,7 @@
 
   // Open modal with item details
   function openModal(itemId) {
-    const item = roadmapData.items.find(i => i.id === itemId);
+    const item = roadmapData.items.find((i) => i.id === itemId);
     if (!item) return;
 
     currentModalItemId = itemId;
@@ -727,7 +756,7 @@
     // Labels (same as card)
     if (item.labels && item.labels.length > 0) {
       elements.modalLabels.innerHTML = item.labels
-        .map(label => `<span class="label-tag">${escapeHtml(label)}</span>`)
+        .map((label) => `<span class="label-tag">${escapeHtml(label)}</span>`)
         .join('');
       elements.modalLabels.style.display = '';
     } else {
@@ -741,16 +770,24 @@
       const links = [];
 
       if (artifacts.ideationPath) {
-        links.push(`<a href="../${artifacts.ideationPath}" class="spec-link" target="_blank"><i data-lucide="lightbulb" class="icon"></i> Ideation</a>`);
+        links.push(
+          `<a href="../${artifacts.ideationPath}" class="spec-link" target="_blank"><i data-lucide="lightbulb" class="icon"></i> Ideation</a>`
+        );
       }
       if (artifacts.specPath) {
-        links.push(`<a href="../${artifacts.specPath}" class="spec-link" target="_blank"><i data-lucide="file-text" class="icon"></i> Spec</a>`);
+        links.push(
+          `<a href="../${artifacts.specPath}" class="spec-link" target="_blank"><i data-lucide="file-text" class="icon"></i> Spec</a>`
+        );
       }
       if (artifacts.tasksPath) {
-        links.push(`<a href="../${artifacts.tasksPath}" class="spec-link" target="_blank"><i data-lucide="list-checks" class="icon"></i> Tasks</a>`);
+        links.push(
+          `<a href="../${artifacts.tasksPath}" class="spec-link" target="_blank"><i data-lucide="list-checks" class="icon"></i> Tasks</a>`
+        );
       }
       if (artifacts.implementationPath) {
-        links.push(`<a href="../${artifacts.implementationPath}" class="spec-link" target="_blank"><i data-lucide="check-circle" class="icon"></i> Done</a>`);
+        links.push(
+          `<a href="../${artifacts.implementationPath}" class="spec-link" target="_blank"><i data-lucide="check-circle" class="icon"></i> Done</a>`
+        );
       }
 
       // If no path links but specSlug exists, show it as a reference badge
@@ -773,8 +810,8 @@
     if (hasDependencies) {
       elements.modalDependenciesSection.classList.remove('hidden');
       elements.modalDependencies.innerHTML = item.dependencies
-        .map(depId => {
-          const depItem = roadmapData.items.find(i => i.id === depId);
+        .map((depId) => {
+          const depItem = roadmapData.items.find((i) => i.id === depId);
           const title = depItem ? depItem.title : depId;
           const status = depItem ? depItem.status : 'not-started';
           return `<li class="modal-dependency-pill" data-id="${depId}" title="${escapeHtml(title)} (${formatStatus(status)})">
@@ -785,7 +822,7 @@
         .join('');
 
       // Add click handlers to dependencies
-      elements.modalDependencies.querySelectorAll('li').forEach(li => {
+      elements.modalDependencies.querySelectorAll('li').forEach((li) => {
         li.addEventListener('click', () => {
           const depId = li.dataset.id;
           if (depId) {
@@ -806,25 +843,25 @@
       if (ctx.targetUsers && ctx.targetUsers.length > 0) {
         html += `<div class="context-group">
           <h4>Target Users</h4>
-          <ul>${ctx.targetUsers.map(u => `<li>${escapeHtml(u)}</li>`).join('')}</ul>
+          <ul>${ctx.targetUsers.map((u) => `<li>${escapeHtml(u)}</li>`).join('')}</ul>
         </div>`;
       }
       if (ctx.painPoints && ctx.painPoints.length > 0) {
         html += `<div class="context-group">
           <h4>Pain Points</h4>
-          <ul>${ctx.painPoints.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
+          <ul>${ctx.painPoints.map((p) => `<li>${escapeHtml(p)}</li>`).join('')}</ul>
         </div>`;
       }
       if (ctx.successCriteria && ctx.successCriteria.length > 0) {
         html += `<div class="context-group">
           <h4>Success Criteria</h4>
-          <ul>${ctx.successCriteria.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
+          <ul>${ctx.successCriteria.map((s) => `<li>${escapeHtml(s)}</li>`).join('')}</ul>
         </div>`;
       }
       if (ctx.constraints && ctx.constraints.length > 0) {
         html += `<div class="context-group">
           <h4>Constraints</h4>
-          <ul>${ctx.constraints.map(c => `<li>${escapeHtml(c)}</li>`).join('')}</ul>
+          <ul>${ctx.constraints.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}</ul>
         </div>`;
       }
 
@@ -876,7 +913,7 @@
       'must-have': 'Must Have',
       'should-have': 'Should Have',
       'could-have': 'Could Have',
-      'wont-have': "Won't Have"
+      'wont-have': "Won't Have",
     };
     return map[moscow] || moscow;
   }
@@ -886,7 +923,7 @@
       'on-track': 'On Track',
       'at-risk': 'At Risk',
       'off-track': 'Off Track',
-      'blocked': 'Blocked'
+      blocked: 'Blocked',
     };
     return map[health] || health || 'Unknown';
   }
@@ -907,7 +944,7 @@
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
     });
   }
 
@@ -931,7 +968,7 @@
   function checkDescriptionOverflows() {
     const descriptions = document.querySelectorAll('.item-description.collapsed');
 
-    descriptions.forEach(desc => {
+    descriptions.forEach((desc) => {
       const wrapper = desc.closest('.description-wrapper');
       if (!wrapper) return;
 
@@ -963,21 +1000,24 @@
       'must-have': 'Must',
       'should-have': 'Should',
       'could-have': 'Could',
-      'wont-have': "Won't"
+      'wont-have': "Won't",
     };
     return map[moscow] || moscow;
   }
 
   function formatType(type) {
-    return type.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    return type
+      .split('-')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
   }
 
   function formatStatus(status) {
     const map = {
       'not-started': 'Not Started',
       'in-progress': 'In Progress',
-      'completed': 'Completed',
-      'on-hold': 'On Hold'
+      completed: 'Completed',
+      'on-hold': 'On Hold',
     };
     return map[status] || status;
   }
@@ -1011,12 +1051,16 @@
       '01-ideation': 'Ideation',
       '02-spec': 'Specification',
       '03-tasks': 'Tasks',
-      '04-done': 'Implementation Complete'
+      '04-done': 'Implementation Complete',
     };
 
-    return titleMap[name] || name.split('-').map(w =>
-      w.charAt(0).toUpperCase() + w.slice(1)
-    ).join(' ');
+    return (
+      titleMap[name] ||
+      name
+        .split('-')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
+    );
   }
 
   // Open markdown modal
@@ -1049,7 +1093,7 @@
       // Fetch the markdown file
       const cacheBuster = `?_=${Date.now()}`;
       const response = await fetch(`${url}${cacheBuster}`, {
-        cache: 'no-store'
+        cache: 'no-store',
       });
 
       if (!response.ok) {
@@ -1061,12 +1105,11 @@
       // Parse markdown to HTML using marked
       const html = marked.parse(markdown, {
         gfm: true,
-        breaks: true
+        breaks: true,
       });
 
       // Render the content
       elements.markdownModalBody.innerHTML = `<div class="markdown-content">${html}</div>`;
-
     } catch (error) {
       console.error('Error loading markdown:', error);
       elements.markdownModalBody.innerHTML = `

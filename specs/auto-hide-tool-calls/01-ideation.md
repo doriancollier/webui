@@ -19,7 +19,7 @@ slug: auto-hide-tool-calls
   - Only non-interactive tool calls (ToolCallCard) auto-hide. Interactive tools (ToolApproval, QuestionPrompt) never auto-hide.
   - Tool calls already loaded from history (status already `complete`) should not be shown at all when the setting is on — they were already hidden.
   - The "Expand tool calls" setting becomes irrelevant for hidden tool calls (expand only matters for visible ones).
-  - The animation happens *inside* each MessageItem, not at the virtualized list level. TanStack Virtual doesn't need to know about the animation.
+  - The animation happens _inside_ each MessageItem, not at the virtualized list level. TanStack Virtual doesn't need to know about the animation.
 
 - **Out of scope:**
   - Changing how tool calls are stored in JSONL transcripts
@@ -31,7 +31,7 @@ slug: auto-hide-tool-calls
 
 - `apps/client/src/components/chat/ToolCallCard.tsx`: Renders individual tool call with expandable details. Already uses AnimatePresence for expand/collapse animation. Accepts `toolCall: ToolCallState` with `status` field and `defaultExpanded` prop.
 - `apps/client/src/components/chat/MessageItem.tsx`: Renders message parts via `parts.map()`. Routes to ToolCallCard, ToolApproval, or QuestionPrompt based on part type/interactiveType. Reads `expandToolCalls` from app-store.
-- `apps/client/src/components/chat/MessageList.tsx`: Virtualized list using TanStack Virtual. Each message is a virtual item. Animation of tool calls happens *inside* each message item — the virtualizer doesn't need to know.
+- `apps/client/src/components/chat/MessageList.tsx`: Virtualized list using TanStack Virtual. Each message is a virtual item. Animation of tool calls happens _inside_ each message item — the virtualizer doesn't need to know.
 - `apps/client/src/components/chat/ChatPanel.tsx`: Already imports `AnimatePresence` from `motion/react` for the scroll-to-bottom button.
 - `apps/client/src/hooks/use-chat-session.ts`: Manages tool call lifecycle. `ToolCallState.status` transitions: `pending` -> `running` -> `complete` (or `error`). The status is already tracked — no changes needed.
 - `apps/client/src/stores/app-store.ts`: Zustand store with localStorage persistence. Pattern: boolean setting with `gateway-*` key prefix. `expandToolCalls` is the closest analog.
@@ -43,12 +43,14 @@ slug: auto-hide-tool-calls
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/components/chat/ToolCallCard.tsx` — Tool call display with expand/collapse
 - `apps/client/src/components/chat/MessageItem.tsx` — Message renderer, dispatches to tool components
 - `apps/client/src/stores/app-store.ts` — Client preferences store
 - `apps/client/src/components/settings/SettingsDialog.tsx` — Settings UI
 
 **Shared Dependencies:**
+
 - `motion/react` — AnimatePresence, motion.div (already used in ToolCallCard, ChatPanel)
 - `apps/client/src/hooks/use-chat-session.ts` — ToolCallState type with status field
 
@@ -56,9 +58,11 @@ slug: auto-hide-tool-calls
 SSE stream -> useChatSession (tracks tool status transitions) -> MessageItem (renders parts) -> ToolCallCard (displays tool call, reads autoHide setting, manages hide timer)
 
 **Feature Flags/Config:**
+
 - New: `autoHideToolCalls` boolean in Zustand store (localStorage key: `gateway-auto-hide-tool-calls`)
 
 **Potential Blast Radius:**
+
 - Direct: 4 files (ToolCallCard, MessageItem, app-store, SettingsDialog)
 - Tests: 3 test files (ToolCallCard.test, MessageItem.test, app-store.test)
 - No server changes, no shared package changes
@@ -71,7 +75,7 @@ N/A — this is a new feature, not a bug fix.
 
 ### Animation Approach: AnimatePresence Inside MessageItem
 
-The key architectural insight is that tool calls animate *within* their parent message container, not as list items being removed from the virtualized list. This means:
+The key architectural insight is that tool calls animate _within_ their parent message container, not as list items being removed from the virtualized list. This means:
 
 - **No conflict with TanStack Virtual** — the virtualizer manages message-level items; tool call visibility is an internal concern of each MessageItem
 - **No `layout` prop needed** — we're not reordering siblings across different messages
@@ -98,6 +102,7 @@ The consensus best practice from multiple sources:
 ```
 
 Why this works:
+
 - Height collapses smoothly (motion measures actual height, interpolates to 0)
 - Opacity fades simultaneously
 - `overflow-hidden` prevents content from overflowing during collapse
@@ -105,15 +110,16 @@ Why this works:
 
 ### Naming Research
 
-| Option | Assessment |
-|--------|-----------|
-| "Auto-hide tool calls" | Clear, uses familiar "auto-hide" UX pattern (VS Code, browser toolbars) |
-| "Fade completed tools" | Describes the visual effect but sounds decorative |
-| "Minimize completed tools" | Implies collapsing rather than hiding |
-| "Clean chat" | Too vague — what does "clean" mean? |
-| "Compact mode" | Usually means density/spacing, not hiding elements |
+| Option                     | Assessment                                                              |
+| -------------------------- | ----------------------------------------------------------------------- |
+| "Auto-hide tool calls"     | Clear, uses familiar "auto-hide" UX pattern (VS Code, browser toolbars) |
+| "Fade completed tools"     | Describes the visual effect but sounds decorative                       |
+| "Minimize completed tools" | Implies collapsing rather than hiding                                   |
+| "Clean chat"               | Too vague — what does "clean" mean?                                     |
+| "Compact mode"             | Usually means density/spacing, not hiding elements                      |
 
 **Recommendation: "Auto-hide tool calls"**
+
 - Internal name: `autoHideToolCalls`
 - Setting label: **"Auto-hide tool calls"**
 - Setting description: **"Fade out completed tool calls after a few seconds"**
@@ -123,6 +129,7 @@ Why this works:
 The user wants auto-hide ON by default. But all other preferences default to OFF (false). Two options:
 
 **Option A: Store as `autoHideToolCalls` (default true)**
+
 - Setting label: "Auto-hide tool calls"
 - Toggle ON = tool calls hide (default)
 - Toggle OFF = tool calls persist
@@ -130,6 +137,7 @@ The user wants auto-hide ON by default. But all other preferences default to OFF
 - Con: Breaks the pattern where all prefs default to false
 
 **Option B: Store as `showCompletedToolCalls` (default false)**
+
 - Setting label: "Show completed tool calls"
 - Toggle ON = tool calls persist
 - Toggle OFF = tool calls hide (default)
@@ -146,7 +154,7 @@ When a user opens a session with history, completed tool calls are already `stat
 2. **Show them briefly, then hide** — animate every historical tool call on load. Terrible UX — the whole chat would be shimmering.
 3. **Show them collapsed/dimmed** — show a minimal indicator. Adds complexity.
 
-**Recommendation: Option 1** — Simply don't render completed non-interactive tool calls from history when the setting is on. Only animate the exit for tool calls that *become* complete during the current session (i.e., the user watches them transition from running → complete → fade out).
+**Recommendation: Option 1** — Simply don't render completed non-interactive tool calls from history when the setting is on. Only animate the exit for tool calls that _become_ complete during the current session (i.e., the user watches them transition from running → complete → fade out).
 
 ## 6) Clarifications
 

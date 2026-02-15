@@ -1,7 +1,7 @@
 ---
 description: Review documentation for updates needed based on a spec file
 allowed-tools: Task, Read, Glob
-argument-hint: "<path-to-spec-file>"
+argument-hint: '<path-to-spec-file>'
 category: workflow
 ---
 
@@ -14,6 +14,7 @@ You are tasked with reviewing all documentation to identify what needs to be upd
 Read the specification file provided by the user: `{{ARGUMENT}}`
 
 Analyze the spec to identify:
+
 1. **Deprecated functionality** - Features, APIs, components explicitly marked as deprecated or removed
 2. **Changed functionality** - Modified behaviors, interfaces, or workflows
 3. **New functionality** - Added features, components, or capabilities that should be documented
@@ -21,6 +22,7 @@ Analyze the spec to identify:
 ## Step 2: Gather All Documentation Files
 
 Use the Glob tool to find all markdown files in:
+
 - Root directory: `*.md`
 - Developer guides: `guides/*.md`
 
@@ -85,6 +87,7 @@ If the file requires no updates, respond with: "[FILENAME]: No updates required.
 ```
 
 **Example of parallel launch** (in a single message):
+
 - Agent 1: Review README.md
 - Agent 2: Review CLAUDE.md
 - Agent 3: Review TESTING.md
@@ -98,6 +101,7 @@ After ALL agents complete (they run in parallel):
 
 1. **Aggregate findings** from all agent reports
 2. **Create summary table**:
+
    ```
    | File | P0 | P1 | P2 | P3 | Status |
    |------|----|----|----|----|--------|
@@ -120,6 +124,7 @@ After ALL agents complete (they run in parallel):
 ---
 
 **Usage Example:**
+
 ```bash
 /spec:doc-update specs/text-generator-spec.md
 ```

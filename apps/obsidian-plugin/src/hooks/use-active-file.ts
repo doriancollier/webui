@@ -18,10 +18,14 @@ export function useActiveFile(): ActiveFileInfo | null {
   useEffect(() => {
     const handler = () => {
       const file = app.workspace.getActiveFile();
-      setActiveFile(file ? { path: file.path, basename: file.basename, extension: file.extension } : null);
+      setActiveFile(
+        file ? { path: file.path, basename: file.basename, extension: file.extension } : null
+      );
     };
     const ref = app.workspace.on('active-leaf-change', handler);
-    return () => { app.workspace.offref(ref); };
+    return () => {
+      app.workspace.offref(ref);
+    };
   }, [app]);
 
   return activeFile;

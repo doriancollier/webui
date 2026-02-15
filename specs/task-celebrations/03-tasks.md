@@ -28,6 +28,7 @@ Install `canvas-confetti` dependency and add `showTaskCelebrations` boolean to t
 **Implementation Steps**:
 
 1. Install canvas-confetti:
+
 ```bash
 cd apps/client && npm install canvas-confetti && npm install -D @types/canvas-confetti
 ```
@@ -35,12 +36,14 @@ cd apps/client && npm install canvas-confetti && npm install -D @types/canvas-co
 2. Modify `apps/client/src/stores/app-store.ts`:
 
 Add to `AppState` interface:
+
 ```typescript
 showTaskCelebrations: boolean;
 setShowTaskCelebrations: (v: boolean) => void;
 ```
 
 Add state initializer (following the `showShortcutChips` pattern -- defaults to `true`):
+
 ```typescript
 showTaskCelebrations: (() => {
   try {
@@ -56,16 +59,19 @@ setShowTaskCelebrations: (v) => {
 ```
 
 Update `resetPreferences()` -- add to the `localStorage.removeItem` block:
+
 ```typescript
 localStorage.removeItem('gateway-show-task-celebrations');
 ```
 
 Add to the `set()` call in `resetPreferences`:
+
 ```typescript
 showTaskCelebrations: true,
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `canvas-confetti` and `@types/canvas-confetti` added to client package.json
 - [ ] `showTaskCelebrations` defaults to `true` in store
 - [ ] Setting persists to localStorage under key `gateway-show-task-celebrations`
@@ -99,18 +105,18 @@ export interface CelebrationEvent {
 
 export interface CelebrationEngineConfig {
   enabled: boolean;
-  miniProbability: number;       // 0.3 (30%)
-  debounceWindowMs: number;      // 2000
-  debounceThreshold: number;     // 3 completions within window
-  minTasksForMajor: number;      // 3
-  idleTimeoutMs: number;         // 30000
+  miniProbability: number; // 0.3 (30%)
+  debounceWindowMs: number; // 2000
+  debounceThreshold: number; // 3 completions within window
+  minTasksForMajor: number; // 3
+  idleTimeoutMs: number; // 30000
   onCelebrate: (event: CelebrationEvent) => void;
 }
 
 export class CelebrationEngine {
   private config: CelebrationEngineConfig;
   private queue: CelebrationEvent[];
-  private recentCompletions: number[];  // timestamps for debounce
+  private recentCompletions: number[]; // timestamps for debounce
   private isIdle: boolean;
   private debounceTimer: ReturnType<typeof setTimeout> | null;
 
@@ -133,7 +139,7 @@ export class CelebrationEngine {
     const now = Date.now();
     this.recentCompletions.push(now);
     this.recentCompletions = this.recentCompletions.filter(
-      t => now - t < this.config.debounceWindowMs
+      (t) => now - t < this.config.debounceWindowMs
     );
 
     // Check if this triggers the debounce threshold (3+ in 2s)
@@ -148,7 +154,7 @@ export class CelebrationEngine {
     }
 
     // Check for major celebration: all tasks completed, 3+ total
-    const allCompleted = allTasks.every(t => t.status === 'completed');
+    const allCompleted = allTasks.every((t) => t.status === 'completed');
     if (allCompleted && allTasks.length >= this.config.minTasksForMajor) {
       this.emit({ level: 'major', taskId, timestamp: now });
       return;
@@ -166,7 +172,7 @@ export class CelebrationEngine {
    */
   private flushDebounce(allTasks: Array<{ id: string; status: string }>): void {
     this.debounceTimer = null;
-    const allCompleted = allTasks.every(t => t.status === 'completed');
+    const allCompleted = allTasks.every((t) => t.status === 'completed');
     const lastTaskId = allTasks[allTasks.length - 1]?.id ?? 'unknown';
 
     if (allCompleted && allTasks.length >= this.config.minTasksForMajor) {
@@ -200,9 +206,9 @@ export class CelebrationEngine {
     if (this.queue.length === 0) return;
     const queued = [...this.queue];
     this.queue = [];
-    const hasMajor = queued.some(e => e.level === 'major');
+    const hasMajor = queued.some((e) => e.level === 'major');
     const toPlay = hasMajor
-      ? queued.filter(e => e.level === 'major').slice(0, 1)
+      ? queued.filter((e) => e.level === 'major').slice(0, 1)
       : queued.slice(-1);
     for (const event of toPlay) {
       this.config.onCelebrate(event);
@@ -230,7 +236,11 @@ export class CelebrationEngine {
 
 ```typescript
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { CelebrationEngine, type CelebrationEngineConfig, type CelebrationEvent } from '../celebration-engine';
+import {
+  CelebrationEngine,
+  type CelebrationEngineConfig,
+  type CelebrationEvent,
+} from '../celebration-engine';
 
 function createConfig(overrides?: Partial<CelebrationEngineConfig>): CelebrationEngineConfig {
   return {
@@ -248,7 +258,7 @@ function createConfig(overrides?: Partial<CelebrationEngineConfig>): Celebration
 function makeTasks(count: number, allCompleted = false) {
   return Array.from({ length: count }, (_, i) => ({
     id: String(i + 1),
-    status: allCompleted ? 'completed' : (i < count - 1 ? 'completed' : 'in_progress'),
+    status: allCompleted ? 'completed' : i < count - 1 ? 'completed' : 'in_progress',
   }));
 }
 
@@ -442,6 +452,7 @@ describe('CelebrationEngine', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `CelebrationEngine` class created with all methods
 - [ ] Probabilistic mini fires ~30% of the time (controlled via Math.random spy in tests)
 - [ ] Major fires when all 3+ tasks are completed
@@ -470,7 +481,7 @@ Create `apps/client/src/hooks/use-idle-detector.ts` -- a React hook that detects
 import { useState, useEffect, useRef } from 'react';
 
 export interface IdleDetectorOptions {
-  timeoutMs?: number;  // Default: 30000 (30s)
+  timeoutMs?: number; // Default: 30000 (30s)
   onIdle?: () => void;
   onReturn?: () => void;
 }
@@ -488,8 +499,12 @@ export function useIdleDetector(options: IdleDetectorOptions = {}): IdleDetector
   const onReturnRef = useRef(onReturn);
 
   // Keep callback refs current
-  useEffect(() => { onIdleRef.current = onIdle; }, [onIdle]);
-  useEffect(() => { onReturnRef.current = onReturn; }, [onReturn]);
+  useEffect(() => {
+    onIdleRef.current = onIdle;
+  }, [onIdle]);
+  useEffect(() => {
+    onReturnRef.current = onReturn;
+  }, [onReturn]);
 
   useEffect(() => {
     const markIdle = () => {
@@ -680,6 +695,7 @@ describe('useIdleDetector', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Hook starts in active state (`isIdle: false`)
 - [ ] Transitions to idle after `timeoutMs` of inactivity
 - [ ] Mouse/keyboard/scroll/touch events reset the timer
@@ -760,7 +776,8 @@ export const MINI_SPRING_CONFIG = {
  * Applied as a CSS background-position animation via motion.div.
  */
 export const SHIMMER_STYLE = {
-  backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+  backgroundImage:
+    'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
   backgroundSize: '200% 100%',
 };
 ```
@@ -835,6 +852,7 @@ describe('style constants', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `fireConfetti` lazy-loads `canvas-confetti` via dynamic import
 - [ ] Returns cleanup function calling `confetti.reset()`
 - [ ] Passes `disableForReducedMotion: true` by default
@@ -1046,6 +1064,7 @@ describe('CelebrationOverlay', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Renders nothing when `celebration` is null
 - [ ] Renders nothing for mini celebrations (overlay is for major only)
 - [ ] Renders radial glow `motion.div` for major celebrations
@@ -1072,82 +1091,93 @@ Modify `apps/client/src/components/chat/TaskListPanel.tsx` to accept `celebratin
 **Modifications to `TaskListPanel.tsx`**:
 
 1. Update the `TaskListPanelProps` interface:
+
 ```typescript
 interface TaskListPanelProps {
   tasks: TaskItem[];
   activeForm: string | null;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
-  celebratingTaskId?: string | null;  // NEW
+  celebratingTaskId?: string | null; // NEW
   onCelebrationComplete?: () => void; // NEW
 }
 ```
 
 2. Update the function signature:
+
 ```typescript
 export function TaskListPanel({ tasks, activeForm, isCollapsed, onToggleCollapse, celebratingTaskId, onCelebrationComplete }: TaskListPanelProps) {
 ```
 
 3. Replace the `visibleTasks.map()` block. Change each `<li>` to `<motion.li>` with celebration effects:
+
 ```tsx
-{visibleTasks.map(task => {
-  const isCelebrating = task.id === celebratingTaskId && task.status === 'completed';
+{
+  visibleTasks.map((task) => {
+    const isCelebrating = task.id === celebratingTaskId && task.status === 'completed';
 
-  return (
-    <motion.li
-      key={task.id}
-      className={`relative flex items-center gap-2 text-xs py-0.5 ${
-        task.status === 'completed'
-          ? 'text-muted-foreground/50 line-through'
-          : task.status === 'in_progress'
-          ? 'text-foreground font-medium'
-          : 'text-muted-foreground'
-      }`}
-      animate={isCelebrating ? {
-        scale: [1, 1.05, 1],
-      } : undefined}
-      transition={isCelebrating ? { type: 'spring', stiffness: 400, damping: 10 } : undefined}
-      onAnimationComplete={() => {
-        if (isCelebrating) onCelebrationComplete?.();
-      }}
-    >
-      {/* Shimmer background for celebrating row */}
-      {isCelebrating && (
-        <motion.div
-          aria-hidden="true"
-          className="absolute inset-0 rounded"
-          initial={{ backgroundPosition: '-200% 0' }}
-          animate={{ backgroundPosition: '200% 0' }}
-          transition={{ duration: 0.4, ease: 'easeOut' }}
-          style={{
-            backgroundImage: 'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
-            backgroundSize: '200% 100%',
-          }}
-        />
-      )}
+    return (
+      <motion.li
+        key={task.id}
+        className={`relative flex items-center gap-2 py-0.5 text-xs ${
+          task.status === 'completed'
+            ? 'text-muted-foreground/50 line-through'
+            : task.status === 'in_progress'
+              ? 'text-foreground font-medium'
+              : 'text-muted-foreground'
+        }`}
+        animate={
+          isCelebrating
+            ? {
+                scale: [1, 1.05, 1],
+              }
+            : undefined
+        }
+        transition={isCelebrating ? { type: 'spring', stiffness: 400, damping: 10 } : undefined}
+        onAnimationComplete={() => {
+          if (isCelebrating) onCelebrationComplete?.();
+        }}
+      >
+        {/* Shimmer background for celebrating row */}
+        {isCelebrating && (
+          <motion.div
+            aria-hidden="true"
+            className="absolute inset-0 rounded"
+            initial={{ backgroundPosition: '-200% 0' }}
+            animate={{ backgroundPosition: '200% 0' }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            style={{
+              backgroundImage:
+                'linear-gradient(90deg, transparent 0%, rgba(255,215,0,0.2) 50%, transparent 100%)',
+              backgroundSize: '200% 100%',
+            }}
+          />
+        )}
 
-      {/* Checkmark spring-pop */}
-      {isCelebrating ? (
-        <motion.span
-          initial={{ scale: 1 }}
-          animate={{ scale: [1, 1.4, 1] }}
-          transition={{ type: 'spring', stiffness: 400, damping: 10 }}
-        >
-          {STATUS_ICON[task.status]}
-        </motion.span>
-      ) : (
-        STATUS_ICON[task.status]
-      )}
+        {/* Checkmark spring-pop */}
+        {isCelebrating ? (
+          <motion.span
+            initial={{ scale: 1 }}
+            animate={{ scale: [1, 1.4, 1] }}
+            transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+          >
+            {STATUS_ICON[task.status]}
+          </motion.span>
+        ) : (
+          STATUS_ICON[task.status]
+        )}
 
-      <span className="truncate">{task.subject}</span>
-    </motion.li>
-  );
-})}
+        <span className="truncate">{task.subject}</span>
+      </motion.li>
+    );
+  });
+}
 ```
 
 4. Also add `motion.li` and `motion.span` to the mock in tests.
 
 **Test additions to `TaskListPanel.test.tsx`**:
+
 ```typescript
 // Add motion.li and motion.span to the mock:
 vi.mock('motion/react', () => ({
@@ -1242,6 +1272,7 @@ it('handles celebratingTaskId being null gracefully', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `celebratingTaskId` and `onCelebrationComplete` props added to `TaskListPanelProps`
 - [ ] Spring-pop animation on matching completed task row
 - [ ] Shimmer background rendered with `aria-hidden="true"`
@@ -1343,19 +1374,12 @@ export function useCelebrations(): CelebrationsAPI {
     return () => engine.destroy();
   }, [showTaskCelebrations]);
 
-  const handleTaskEvent = useCallback(
-    (event: TaskUpdateEvent, allTasks: TaskItem[]) => {
-      // Only celebrate live update transitions to 'completed'
-      if (
-        event.action === 'update' &&
-        event.task.status === 'completed' &&
-        event.task.id
-      ) {
-        engineRef.current?.onTaskCompleted(event.task.id, allTasks);
-      }
-    },
-    [],
-  );
+  const handleTaskEvent = useCallback((event: TaskUpdateEvent, allTasks: TaskItem[]) => {
+    // Only celebrate live update transitions to 'completed'
+    if (event.action === 'update' && event.task.status === 'completed' && event.task.id) {
+      engineRef.current?.onTaskCompleted(event.task.id, allTasks);
+    }
+  }, []);
 
   const clearCelebration = useCallback(() => {
     setActiveCelebration(null);
@@ -1372,6 +1396,7 @@ export function useCelebrations(): CelebrationsAPI {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Hook reads `showTaskCelebrations` from Zustand store
 - [ ] Creates and manages `CelebrationEngine` lifecycle
 - [ ] Connects idle detector to engine via `setIdle`/`onUserReturn`
@@ -1397,12 +1422,14 @@ Integrate the celebrations hook into `ChatPanel.tsx`, render `CelebrationOverlay
 **Modifications to `apps/client/src/components/chat/ChatPanel.tsx`**:
 
 1. Add imports:
+
 ```typescript
 import { useCelebrations } from '../../hooks/use-celebrations';
 import { CelebrationOverlay } from './CelebrationOverlay';
 ```
 
 2. Inside `ChatPanel` function body, add the celebrations hook and wrapper:
+
 ```typescript
 const celebrations = useCelebrations();
 
@@ -1413,26 +1440,45 @@ const handleTaskEventWithCelebrations = useCallback(
     // After state update, pass current task list to celebrations
     celebrations.handleTaskEvent(event, taskState.tasks);
   },
-  [taskState, celebrations],
+  [taskState, celebrations]
 );
 ```
 
 3. Add `TaskUpdateEvent` import:
+
 ```typescript
 import type { TaskUpdateEvent } from '@dorkos/shared/types';
 ```
 
 4. Update the `useChatSession` call to use the wrapped handler:
+
 ```typescript
-const { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction } =
-  useChatSession(sessionId, {
-    transformContent,
-    onTaskEvent: handleTaskEventWithCelebrations,
-    onSessionIdChange: setSessionId,
-  });
+const {
+  messages,
+  input,
+  setInput,
+  handleSubmit,
+  status,
+  error,
+  sessionBusy,
+  stop,
+  isLoadingHistory,
+  sessionStatus,
+  streamStartTime,
+  estimatedTokens,
+  isTextStreaming,
+  isWaitingForUser,
+  waitingType,
+  activeInteraction,
+} = useChatSession(sessionId, {
+  transformContent,
+  onTaskEvent: handleTaskEventWithCelebrations,
+  onSessionIdChange: setSessionId,
+});
 ```
 
 5. Add `CelebrationOverlay` before `TaskListPanel` in the JSX:
+
 ```tsx
 <CelebrationOverlay
   celebration={celebrations.activeCelebration}
@@ -1452,20 +1498,20 @@ const { messages, input, setInput, handleSubmit, status, error, sessionBusy, sto
 **Modifications to `apps/client/src/components/settings/SettingsDialog.tsx`**:
 
 1. Add `showTaskCelebrations` and `setShowTaskCelebrations` to the store destructuring:
+
 ```typescript
 const {
   // ... existing destructuring ...
-  showTaskCelebrations, setShowTaskCelebrations,
+  showTaskCelebrations,
+  setShowTaskCelebrations,
 } = useAppStore();
 ```
 
 2. Add a new `SettingRow` in the Preferences tab, after "Show shortcut chips":
+
 ```tsx
 <SettingRow label="Task celebrations" description="Show animations when tasks complete">
-  <Switch
-    checked={showTaskCelebrations}
-    onCheckedChange={setShowTaskCelebrations}
-  />
+  <Switch checked={showTaskCelebrations} onCheckedChange={setShowTaskCelebrations} />
 </SettingRow>
 ```
 
@@ -1495,6 +1541,7 @@ it('has task celebrations toggle enabled by default', () => {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] `CelebrationOverlay` rendered in `ChatPanel` above `TaskListPanel`
 - [ ] Task events flow through celebrations hook before reaching task state
 - [ ] `celebratingTaskId` passed to `TaskListPanel`

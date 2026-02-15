@@ -18,12 +18,12 @@ app → widgets → features → entities → shared
 
 Determine the current file's layer from its path, then enforce:
 
-| If editing in... | Can import from... | CANNOT import from... |
-|------------------|--------------------|-----------------------|
-| `layers/shared/` | Nothing in layers/ (base layer) | entities, features, widgets |
-| `layers/entities/` | `layers/shared/` only | features, widgets |
-| `layers/features/` | `layers/entities/`, `layers/shared/` | widgets, other features |
-| `layers/widgets/` | `layers/features/`, `layers/entities/`, `layers/shared/` | other widgets |
+| If editing in...   | Can import from...                                       | CANNOT import from...       |
+| ------------------ | -------------------------------------------------------- | --------------------------- |
+| `layers/shared/`   | Nothing in layers/ (base layer)                          | entities, features, widgets |
+| `layers/entities/` | `layers/shared/` only                                    | features, widgets           |
+| `layers/features/` | `layers/entities/`, `layers/shared/`                     | widgets, other features     |
+| `layers/widgets/`  | `layers/features/`, `layers/entities/`, `layers/shared/` | other widgets               |
 
 ### Cross-Module Rule
 
@@ -36,16 +36,16 @@ Modules at the **same layer level** have restricted cross-imports:
 ```typescript
 // ALLOWED: UI composition (feature renders sibling component)
 // In features/chat/ui/ChatPanel.tsx
-import { CommandPalette } from '@/layers/features/commands'
-import { StatusLine } from '@/layers/features/status'
+import { CommandPalette } from '@/layers/features/commands';
+import { StatusLine } from '@/layers/features/status';
 
 // FORBIDDEN: Model/hook cross-import (business logic coupling)
 // In features/chat/model/use-chat-session.ts
-import { useFiles } from '@/layers/features/files'  // WRONG — lift to entities or shared
+import { useFiles } from '@/layers/features/files'; // WRONG — lift to entities or shared
 
 // FORBIDDEN: Entity importing sibling entity
 // In entities/session/model/hooks.ts
-import { useCommands } from '@/layers/entities/command'  // WRONG
+import { useCommands } from '@/layers/entities/command'; // WRONG
 ```
 
 ## Import Conventions
@@ -54,29 +54,29 @@ import { useCommands } from '@/layers/entities/command'  // WRONG
 
 ```typescript
 // CORRECT
-import { Button } from '@/layers/shared/ui'
-import { useSession } from '@/layers/entities/session'
+import { Button } from '@/layers/shared/ui';
+import { useSession } from '@/layers/entities/session';
 
 // WRONG — relative imports across layers
-import { Button } from '../../../shared/ui/button'
+import { Button } from '../../../shared/ui/button';
 ```
 
 ### Always Import from index.ts
 
 ```typescript
 // CORRECT — from module's public API
-import { SessionBadge, useSession } from '@/layers/entities/session'
+import { SessionBadge, useSession } from '@/layers/entities/session';
 
 // WRONG — from internal path
-import { SessionBadge } from '@/layers/entities/session/ui/SessionBadge'
+import { SessionBadge } from '@/layers/entities/session/ui/SessionBadge';
 ```
 
 ### Cross-Package Imports Are Fine
 
 ```typescript
 // These are NOT layer violations — they come from monorepo packages
-import type { Session } from '@dorkos/shared/types'
-import { createMockTransport } from '@dorkos/test-utils'
+import type { Session } from '@dorkos/shared/types';
+import { createMockTransport } from '@dorkos/test-utils';
 ```
 
 ## Segment Structure

@@ -11,6 +11,7 @@
 ## 1. Overview
 
 Improve the `QuestionPrompt` component (AskUserQuestion tool UI) with two changes:
+
 1. **Tabbed navigation** for multi-question prompts — users answer one question at a time via a pill-styled tab bar
 2. **Vertical stacked answer summary** — replace the broken inline `flex-wrap` layout with a clean vertical list of Q&A pairs
 
@@ -40,11 +41,11 @@ The `QuestionPrompt` component renders the AskUserQuestion tool's interactive UI
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| `@radix-ui/react-tabs` | `^1.1.13` | Tab primitives (already installed) |
-| `apps/client/src/components/ui/tabs.tsx` | N/A | Shadcn-style Tabs wrapper (already exists) |
-| `lucide-react` | `latest` | `Check`, `MessageSquare` icons (already used) |
+| Dependency                               | Version   | Purpose                                       |
+| ---------------------------------------- | --------- | --------------------------------------------- |
+| `@radix-ui/react-tabs`                   | `^1.1.13` | Tab primitives (already installed)            |
+| `apps/client/src/components/ui/tabs.tsx` | N/A       | Shadcn-style Tabs wrapper (already exists)    |
+| `lucide-react`                           | `latest`  | `Check`, `MessageSquare` icons (already used) |
 
 No new dependencies required.
 
@@ -53,6 +54,7 @@ No new dependencies required.
 ### 6.1 Architecture — No Structural Changes
 
 This is a component-level modification to `QuestionPrompt.tsx`. No changes to:
+
 - Server routes or transport interface
 - Type definitions (`QuestionItem`, `QuestionOption`)
 - `MessageItem.tsx` (parent component)
@@ -100,7 +102,7 @@ return (
     <TabsList>
       {questions.map((q, idx) => (
         <TabsTrigger key={idx} value={String(idx)}>
-          {hasAnswer(idx) && <Check className="size-3 mr-1" />}
+          {hasAnswer(idx) && <Check className="mr-1 size-3" />}
           <span className="max-w-[120px] truncate">{q.header}</span>
         </TabsTrigger>
       ))}
@@ -133,13 +135,10 @@ function hasAnswer(idx: number): boolean {
 Override the default `TabsList` / `TabsTrigger` styling for the compact tool-card context:
 
 ```tsx
-<TabsList className="h-auto bg-transparent p-0 gap-1.5 mb-3 flex-wrap">
+<TabsList className="mb-3 h-auto flex-wrap gap-1.5 bg-transparent p-0">
   <TabsTrigger
     value={String(idx)}
-    className="h-auto rounded-full px-2.5 py-1 text-xs font-medium
-               data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-700
-               dark:data-[state=active]:text-amber-300
-               data-[state=inactive]:bg-muted/50"
+    className="data-[state=inactive]:bg-muted/50 h-auto rounded-full px-2.5 py-1 text-xs font-medium data-[state=active]:bg-amber-500/20 data-[state=active]:text-amber-700 dark:data-[state=active]:text-amber-300"
   >
     ...
   </TabsTrigger>
@@ -147,6 +146,7 @@ Override the default `TabsList` / `TabsTrigger` styling for the compact tool-car
 ```
 
 Key styling decisions:
+
 - `rounded-full` for pill shape
 - `text-xs` for compact sizing
 - Amber active state to match the form's amber theme
@@ -191,6 +191,7 @@ Replace the inline `flex flex-wrap gap-2` layout with vertical stacking:
 ```
 
 Key changes:
+
 - Check icon aligned to top-left with `mt-0.5 shrink-0`
 - Each Q&A pair gets its own `<div>` with header above, value below
 - `break-words` on value text prevents horizontal overflow
@@ -206,8 +207,11 @@ function getDisplayValue(q: QuestionItem, idx: number): string | null {
   if (preAnswers && preAnswers[String(idx)]) {
     const raw = preAnswers[String(idx)];
     if (q.multiSelect) {
-      try { return (JSON.parse(raw) as string[]).join(', '); }
-      catch { return raw; }
+      try {
+        return (JSON.parse(raw) as string[]).join(', ');
+      } catch {
+        return raw;
+      }
     }
     return raw;
   }
@@ -215,7 +219,7 @@ function getDisplayValue(q: QuestionItem, idx: number): string | null {
     const sel = selections[idx];
     if (!sel) return null;
     if (q.multiSelect) {
-      return (sel as string[]).map(v => v === '__other__' ? otherText[idx] : v).join(', ');
+      return (sel as string[]).map((v) => (v === '__other__' ? otherText[idx] : v)).join(', ');
     }
     return sel === '__other__' ? otherText[idx] : (sel as string);
   }
@@ -237,9 +241,15 @@ The submit button remains **outside** the tabs, at the bottom of the form contai
   <button
     onClick={handleSubmit}
     disabled={!isComplete() || submitting}
-    className="mt-3 flex items-center gap-1 rounded bg-amber-600 px-3 py-1.5 text-white text-xs ..."
+    className="mt-3 flex items-center gap-1 rounded bg-amber-600 px-3 py-1.5 text-xs text-white ..."
   >
-    {submitting ? 'Submitting...' : <><Check /> Submit</>}
+    {submitting ? (
+      'Submitting...'
+    ) : (
+      <>
+        <Check /> Submit
+      </>
+    )}
   </button>
 </div>
 ```
@@ -247,12 +257,14 @@ The submit button remains **outside** the tabs, at the bottom of the form contai
 ## 7. User Experience
 
 ### Single Question Flow (unchanged)
+
 1. Assistant sends AskUserQuestion with 1 question
 2. QuestionPrompt renders with header, question text, options — no tab bar
 3. User selects option, clicks Submit
 4. Prompt collapses to vertical summary
 
 ### Multi-Question Flow (new)
+
 1. Assistant sends AskUserQuestion with 2-4 questions
 2. QuestionPrompt renders with pill tab bar showing question headers
 3. First tab is active by default
@@ -263,6 +275,7 @@ The submit button remains **outside** the tabs, at the bottom of the form contai
 8. Prompt collapses to vertical stacked summary showing all Q&A pairs
 
 ### History Restoration (unchanged behavior)
+
 1. User opens a session with previously answered questions
 2. QuestionPrompt receives `answers` prop from history
 3. Immediately renders in collapsed state with vertical summary
@@ -345,7 +358,10 @@ describe('Answer summary layout', () => {
       <QuestionPrompt
         {...baseProps}
         questions={[singleQ, multiQ]}
-        answers={{ '0': 'Reschedule the internal meeting', '1': JSON.stringify(['Dark mode', 'Search']) }}
+        answers={{
+          '0': 'Reschedule the internal meeting',
+          '1': JSON.stringify(['Dark mode', 'Search']),
+        }}
       />
     );
     expect(screen.getByText('Approach')).toBeDefined();
@@ -359,6 +375,7 @@ describe('Answer summary layout', () => {
 ### Mock Strategy
 
 The existing mock pattern is sufficient — no new mocks needed:
+
 - `motion/react` mocked to plain elements
 - `TransportContext` mocked with `submitAnswers` spy
 - Radix Tabs renders natively in jsdom (no mock needed — Radix handles headless rendering)
@@ -391,10 +408,10 @@ No documentation changes needed. The `guides/interactive-tools.md` guide describ
 
 ### Files Modified
 
-| File | Action | Description |
-|------|--------|-------------|
-| `apps/client/src/components/chat/QuestionPrompt.tsx` | Modify | Add Tabs for multi-question, redesign summary |
-| `apps/client/src/components/chat/__tests__/QuestionPrompt.test.tsx` | Modify | Update + add tests for tabs and summary |
+| File                                                                | Action | Description                                   |
+| ------------------------------------------------------------------- | ------ | --------------------------------------------- |
+| `apps/client/src/components/chat/QuestionPrompt.tsx`                | Modify | Add Tabs for multi-question, redesign summary |
+| `apps/client/src/components/chat/__tests__/QuestionPrompt.test.tsx` | Modify | Update + add tests for tabs and summary       |
 
 ## 13. Open Questions
 

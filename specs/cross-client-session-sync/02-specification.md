@@ -38,6 +38,7 @@ Add cross-client session synchronization so that multiple clients (browser tabs,
 - **Phase 2 (File Watching + SSE Broadcast):** Chokidar file watching on active JSONL transcript files with persistent SSE broadcast to all connected clients. Detects CLI-originated changes and pushes completed messages within 100ms.
 
 **Key design choices:**
+
 - Sync scope is completed messages only (no streaming text deltas to passive clients)
 - HttpTransport only (no changes to shared Transport interface or DirectTransport)
 - Roll-our-own SSE broadcasting (~50 lines, extends existing `stream-adapter.ts`)
@@ -57,6 +58,7 @@ The current architecture has three synchronization gaps:
 **Gap 3: No write coordination.** Two clients can simultaneously call `POST /api/sessions/:id/messages`, causing two SDK `query()` processes to write to the same JSONL file. This is a race condition that can corrupt session state.
 
 **Current data flow:**
+
 ```
 Client A sends message
   -> POST /api/sessions/:id/messages
@@ -104,16 +106,16 @@ CLI user on same session:
 
 ### Existing Dependencies (No Changes)
 
-| Package | Version | Usage |
-|---------|---------|-------|
-| `@tanstack/react-query` | v5 | Client polling via `refetchInterval` |
-| `express` | 4.21 | Server routing, SSE responses |
+| Package                 | Version | Usage                                |
+| ----------------------- | ------- | ------------------------------------ |
+| `@tanstack/react-query` | v5      | Client polling via `refetchInterval` |
+| `express`               | 4.21    | Server routing, SSE responses        |
 
 ### New Dependencies
 
-| Package | Version | Phase | Size | Usage |
-|---------|---------|-------|------|-------|
-| `chokidar` | ^4.0 | Phase 2 | ~12MB | File watching on JSONL transcripts |
+| Package    | Version | Phase   | Size  | Usage                              |
+| ---------- | ------- | ------- | ----- | ---------------------------------- |
+| `chokidar` | ^4.0    | Phase 2 | ~12MB | File watching on JSONL transcripts |
 
 Phase 1 requires zero new dependencies.
 
@@ -172,10 +174,10 @@ Add a session lock mechanism to prevent concurrent sends. The lock is acquired w
 
 ```typescript
 interface SessionLock {
-  clientId: string;       // Unique identifier for the locking client
-  acquiredAt: number;     // Date.now() when lock was acquired
-  ttl: number;            // 5 * 60 * 1000 (5 minutes)
-  response: Response;     // Express Response for connection-tied cleanup
+  clientId: string; // Unique identifier for the locking client
+  acquiredAt: number; // Date.now() when lock was acquired
+  ttl: number; // 5 * 60 * 1000 (5 minutes)
+  response: Response; // Express Response for connection-tied cleanup
 }
 ```
 
@@ -353,7 +355,7 @@ router.post('/:id/messages', async (req, res) => {
   const sessionId = req.params.id;
 
   // Generate a unique client ID for this request
-  const clientId = req.headers['x-client-id'] as string || crypto.randomUUID();
+  const clientId = (req.headers['x-client-id'] as string) || crypto.randomUUID();
 
   // Check session lock
   if (agentManager.isLocked(sessionId, clientId)) {
@@ -361,9 +363,7 @@ router.post('/:id/messages', async (req, res) => {
     return res.status(409).json({
       error: 'Session is busy',
       code: 'SESSION_LOCKED',
-      lockedSince: lockInfo?.acquiredAt
-        ? new Date(lockInfo.acquiredAt).toISOString()
-        : undefined,
+      lockedSince: lockInfo?.acquiredAt ? new Date(lockInfo.acquiredAt).toISOString() : undefined,
     });
   }
 
@@ -445,14 +445,14 @@ useEffect(() => {
   if (!historySeededRef.current) {
     if (history.length > 0) {
       historySeededRef.current = true;
-      setMessages(history.map(m => mapHistoryMessage(m)));
+      setMessages(history.map((m) => mapHistoryMessage(m)));
     }
     return;
   }
 
   // Polling update: merge new messages if history grew
   if (history.length > messages.length) {
-    setMessages(history.map(m => mapHistoryMessage(m)));
+    setMessages(history.map((m) => mapHistoryMessage(m)));
   }
 }, [historyQuery.data, status]);
 ```
@@ -473,11 +473,13 @@ function mapHistoryMessage(m: HistoryMessage): ChatMessage {
           input: tc.input,
           result: tc.result,
           status: tc.status,
-          ...(tc.questions ? {
-            interactiveType: 'question' as const,
-            questions: tc.questions,
-            answers: tc.answers,
-          } : {}),
+          ...(tc.questions
+            ? {
+                interactiveType: 'question' as const,
+                questions: tc.questions,
+                answers: tc.answers,
+              }
+            : {}),
         });
       }
     }
@@ -683,11 +685,7 @@ export class SessionBroadcaster {
    * Register a client SSE connection for a session.
    * Starts file watching when the first client subscribes.
    */
-  async register(
-    sessionId: string,
-    res: Response,
-    vaultRoot: string,
-  ): Promise<void> {
+  async register(sessionId: string, res: Response, vaultRoot: string): Promise<void> {
     let watch = this.watches.get(sessionId);
 
     if (!watch) {
@@ -797,7 +795,7 @@ export class SessionBroadcaster {
         watch.byteOffset = stat.size;
 
         const newContent = buffer.toString('utf-8');
-        const lines = newContent.split('\n').filter(l => l.trim());
+        const lines = newContent.split('\n').filter((l) => l.trim());
 
         // Parse new completed messages
         const newMessages: HistoryMessage[] = [];
@@ -823,7 +821,7 @@ export class SessionBroadcaster {
         // If we found new user/assistant messages, broadcast a sync event
         // that tells clients to re-fetch. This is simpler and more reliable
         // than trying to parse individual messages incrementally.
-        const hasNewMessages = lines.some(line => {
+        const hasNewMessages = lines.some((line) => {
           try {
             const p = JSON.parse(line);
             return p.type === 'user' || p.type === 'assistant';
@@ -852,10 +850,7 @@ export class SessionBroadcaster {
   /**
    * Broadcast an SSE event to all connected clients for a session.
    */
-  private broadcast(
-    sessionId: string,
-    event: { type: string; data: unknown },
-  ): void {
+  private broadcast(sessionId: string, event: { type: string; data: unknown }): void {
     const watch = this.watches.get(sessionId);
     if (!watch) return;
 
@@ -878,7 +873,9 @@ export class SessionBroadcaster {
       for (const client of watch.clients) {
         try {
           client.end();
-        } catch { /* ignore */ }
+        } catch {
+          /* ignore */
+        }
       }
     }
     this.watches.clear();
@@ -1052,6 +1049,7 @@ async readFromOffset(
 ### Phase 1: Polling
 
 **Passive client viewing a session:**
+
 1. Messages appear within 3 seconds when the session was recently active (last message < 5 min ago)
 2. Messages appear within 10 seconds for idle sessions (last message > 5 min ago)
 3. No visual indicator of polling -- messages simply appear in the list
@@ -1059,6 +1057,7 @@ async readFromOffset(
 5. Polling pauses when this client is actively streaming
 
 **Client attempting to send to a locked session:**
+
 1. User types message and hits send
 2. Server returns 409 Conflict
 3. Chat input shows a brief "Session is busy" indicator (fades after 5 seconds)
@@ -1068,6 +1067,7 @@ async readFromOffset(
 ### Phase 2: File Watching
 
 **All connected clients:**
+
 1. Messages from any source (CLI, SDK, another browser tab) appear within 100ms
 2. A persistent SSE connection is maintained while viewing a session
 3. The connection auto-reconnects on network interruption (native EventSource behavior)
@@ -1191,34 +1191,40 @@ describe('GET /:id/stream', () => {
 ### Polling Overhead (Phase 1)
 
 **Server load per poll request:**
+
 - `fs.stat()` call for ETag generation: ~0.1ms
 - String comparison for If-None-Match: negligible
 - 304 response: no JSONL parsing, no JSON serialization, ~0.1ms total
 
 **Worst case polling load:**
+
 - 10 browser tabs on the same session, all polling at 3s intervals
 - = ~3.3 `fs.stat()` calls/second
 - This is negligible on any modern filesystem
 
 **Best case (304 responses):**
+
 - When nothing changes, the server performs only `fs.stat()` + string comparison
 - No file reads, no JSON parsing, no response body serialization
 
 ### File Watching (Phase 2)
 
 **Watcher resource usage:**
+
 - One chokidar watcher per active session (only sessions with connected clients)
 - macOS uses `fsevents` (kernel-level, zero polling)
 - Linux uses `inotify` (kernel-level, zero polling)
 - Windows uses `ReadDirectoryChangesW`
 
 **Incremental reading:**
+
 - Track byte offset per session
 - Read only new bytes appended since last check
 - Parse only new JSONL lines
 - Never re-read the full transcript file
 
 **Memory:**
+
 - `Map<sessionId, SessionWatch>` grows only with actively-watched sessions
 - Each `SessionWatch` holds a `Set<Response>` (just object references)
 - Byte offsets are single numbers
@@ -1283,35 +1289,41 @@ Document the 409 response:
 **Estimated effort:** 2-3 days
 
 #### Step 1: Session Locking (Server)
+
 - [ ] Add `SessionLock` interface and lock state to `apps/server/src/services/agent-manager.ts`
 - [ ] Implement `acquireLock()`, `releaseLock()`, `isLocked()`, `getLockInfo()` methods
 - [ ] Add lock cleanup to `checkSessionHealth()`
 - [ ] Write tests: `apps/server/src/services/__tests__/agent-manager-locking.test.ts`
 
 #### Step 2: ETag Support (Server)
+
 - [ ] Add `getTranscriptETag()` to `apps/server/src/services/transcript-reader.ts`
 - [ ] Modify `GET /:id/messages` in `apps/server/src/routes/sessions.ts` to set ETag and handle If-None-Match
 - [ ] Write tests for ETag in `apps/server/src/services/__tests__/transcript-reader.test.ts`
 - [ ] Write tests for 304 in `apps/server/src/routes/__tests__/sessions.test.ts`
 
 #### Step 3: Lock Check on Send (Server)
+
 - [ ] Modify `POST /:id/messages` in `apps/server/src/routes/sessions.ts` to acquire lock and return 409
 - [ ] Add `SessionLockedErrorSchema` to `packages/shared/src/schemas.ts`
 - [ ] Write tests for 409 in `apps/server/src/routes/__tests__/sessions.test.ts`
 
 #### Step 4: Client Polling
+
 - [ ] Extract `mapHistoryMessage()` helper in `apps/client/src/hooks/use-chat-session.ts`
 - [ ] Modify `useQuery` to add `refetchInterval` with adaptive logic
 - [ ] Add merge logic for polled updates (replace `historySeededRef` pattern)
 - [ ] Write client tests: `apps/client/src/hooks/__tests__/use-chat-session-polling.test.tsx`
 
 #### Step 5: Client Error Handling
+
 - [ ] Add `clientId`, `etagCache`, `messageCache` to `apps/client/src/lib/http-transport.ts`
 - [ ] Handle 304 responses in `getMessages()`
 - [ ] Handle 409 responses in `sendMessage()` with `SESSION_LOCKED` error code
 - [ ] Add `sessionBusy` state and UI indicator to `use-chat-session.ts`
 
 #### Step 6: Validation
+
 - [ ] Run `turbo test`
 - [ ] Run `turbo typecheck`
 - [ ] Run `turbo build`
@@ -1323,30 +1335,36 @@ Document the 409 response:
 **Estimated effort:** 2-3 days
 
 #### Step 7: Dependencies
+
 - [ ] Add `chokidar` to `apps/server/package.json`
 - [ ] Run `npm install`
 - [ ] Add `sync_update` and `sync_connected` to `StreamEventTypeSchema` in `packages/shared/src/schemas.ts`
 
 #### Step 8: Session Broadcaster (Server)
+
 - [ ] Create `apps/server/src/services/session-broadcaster.ts`
 - [ ] Implement `register()`, `deregister()`, `onFileChange()`, `readAndBroadcast()`, `broadcast()`, `shutdown()`
 - [ ] Write tests: `apps/server/src/services/__tests__/session-broadcaster.test.ts`
 
 #### Step 9: Incremental Reading
+
 - [ ] Add `readFromOffset()` to `apps/server/src/services/transcript-reader.ts`
 - [ ] Write tests for incremental reading
 
 #### Step 10: Stream Endpoint
+
 - [ ] Add `GET /:id/stream` to `apps/server/src/routes/sessions.ts`
 - [ ] Import `sessionBroadcaster` singleton
 - [ ] Add graceful shutdown call in `apps/server/src/index.ts`
 
 #### Step 11: Client EventSource
+
 - [ ] Add `EventSource` subscription in `apps/client/src/hooks/use-chat-session.ts`
 - [ ] Invalidate TanStack Query on `sync_update` event
 - [ ] Reduce polling interval or disable when EventSource is connected (optional optimization)
 
 #### Step 12: Validation
+
 - [ ] Run `turbo test`
 - [ ] Run `turbo typecheck`
 - [ ] Run `turbo build`
@@ -1376,63 +1394,63 @@ Document the 409 response:
 
 ### Files Modified (Phase 1)
 
-| File | Change |
-|------|--------|
-| `apps/server/src/services/agent-manager.ts` | Add session lock mechanism |
-| `apps/server/src/services/transcript-reader.ts` | Add `getTranscriptETag()` method |
-| `apps/server/src/routes/sessions.ts` | ETag on GET /messages, lock check on POST /messages |
-| `apps/client/src/hooks/use-chat-session.ts` | Adaptive polling, session busy state, message merge |
-| `apps/client/src/lib/http-transport.ts` | ETag cache, 409 handling, client ID |
-| `packages/shared/src/schemas.ts` | `SessionLockedErrorSchema` |
+| File                                            | Change                                              |
+| ----------------------------------------------- | --------------------------------------------------- |
+| `apps/server/src/services/agent-manager.ts`     | Add session lock mechanism                          |
+| `apps/server/src/services/transcript-reader.ts` | Add `getTranscriptETag()` method                    |
+| `apps/server/src/routes/sessions.ts`            | ETag on GET /messages, lock check on POST /messages |
+| `apps/client/src/hooks/use-chat-session.ts`     | Adaptive polling, session busy state, message merge |
+| `apps/client/src/lib/http-transport.ts`         | ETag cache, 409 handling, client ID                 |
+| `packages/shared/src/schemas.ts`                | `SessionLockedErrorSchema`                          |
 
 ### Files Created (Phase 2)
 
-| File | Purpose |
-|------|---------|
+| File                                              | Purpose                              |
+| ------------------------------------------------- | ------------------------------------ |
 | `apps/server/src/services/session-broadcaster.ts` | File watcher + SSE broadcast manager |
 
 ### Files Modified (Phase 2)
 
-| File | Change |
-|------|--------|
-| `apps/server/src/services/transcript-reader.ts` | Add `readFromOffset()` method |
-| `apps/server/src/routes/sessions.ts` | New `GET /:id/stream` endpoint |
-| `apps/server/src/index.ts` | Graceful shutdown for broadcaster |
-| `apps/client/src/hooks/use-chat-session.ts` | EventSource subscription |
-| `packages/shared/src/schemas.ts` | `sync_update`, `sync_connected` event types |
-| `apps/server/package.json` | Add `chokidar` dependency |
+| File                                            | Change                                      |
+| ----------------------------------------------- | ------------------------------------------- |
+| `apps/server/src/services/transcript-reader.ts` | Add `readFromOffset()` method               |
+| `apps/server/src/routes/sessions.ts`            | New `GET /:id/stream` endpoint              |
+| `apps/server/src/index.ts`                      | Graceful shutdown for broadcaster           |
+| `apps/client/src/hooks/use-chat-session.ts`     | EventSource subscription                    |
+| `packages/shared/src/schemas.ts`                | `sync_update`, `sync_connected` event types |
+| `apps/server/package.json`                      | Add `chokidar` dependency                   |
 
 ### Key Context Files (Not Modified)
 
-| File | Relevance |
-|------|-----------|
-| `packages/shared/src/transport.ts` | Transport interface -- NOT modified |
-| `apps/server/src/services/stream-adapter.ts` | SSE wire protocol -- reused, not modified |
-| `guides/architecture.md` | Hexagonal architecture documentation |
-| `guides/interactive-tools.md` | Tool approval flow (relevant for lock interaction) |
+| File                                         | Relevance                                          |
+| -------------------------------------------- | -------------------------------------------------- |
+| `packages/shared/src/transport.ts`           | Transport interface -- NOT modified                |
+| `apps/server/src/services/stream-adapter.ts` | SSE wire protocol -- reused, not modified          |
+| `guides/architecture.md`                     | Hexagonal architecture documentation               |
+| `guides/interactive-tools.md`                | Tool approval flow (relevant for lock interaction) |
 
 ### Acceptance Criteria Summary
 
-| # | Criterion | Phase |
-|---|-----------|-------|
-| 1 | Passive clients see new messages within 3-5s (polling) | 1 |
-| 2 | Adaptive polling: 3s active, 10s idle | 1 |
-| 3 | Server returns ETag; returns 304 when unchanged | 1 |
-| 4 | Only one client can send at a time (session lock) | 1 |
-| 5 | Locked session returns 409 with SESSION_LOCKED code | 1 |
-| 6 | Lock auto-releases after 5 minutes TTL | 1 |
-| 7 | Lock releases on SSE connection close | 1 |
-| 8 | Client shows "session is busy" on 409 | 1 |
-| 9 | New persistent SSE endpoint: GET /stream | 2 |
-| 10 | Chokidar watches only active session JSONL files | 2 |
-| 11 | New messages broadcast within 100ms of file change | 2 |
-| 12 | CLI-originated messages appear in WebUI without refresh | 2 |
-| 13 | Multiple tabs viewing same session all stay in sync | 2 |
-| 14 | File watcher uses awaitWriteFinish for stability | 2 |
-| 15 | Incremental reading (byte offset, not full file) | 2 |
-| 16 | Watchers and SSE connections cleaned up on disconnect | 2 |
-| 17 | No changes to Transport interface or DirectTransport | Both |
-| 18 | No new runtime dependencies in Phase 1 | 1 |
-| 19 | Phase 2 adds only chokidar | 2 |
-| 20 | All existing tests pass | Both |
-| 21 | New tests for locking, ETag, and broadcast logic | Both |
+| #   | Criterion                                               | Phase |
+| --- | ------------------------------------------------------- | ----- |
+| 1   | Passive clients see new messages within 3-5s (polling)  | 1     |
+| 2   | Adaptive polling: 3s active, 10s idle                   | 1     |
+| 3   | Server returns ETag; returns 304 when unchanged         | 1     |
+| 4   | Only one client can send at a time (session lock)       | 1     |
+| 5   | Locked session returns 409 with SESSION_LOCKED code     | 1     |
+| 6   | Lock auto-releases after 5 minutes TTL                  | 1     |
+| 7   | Lock releases on SSE connection close                   | 1     |
+| 8   | Client shows "session is busy" on 409                   | 1     |
+| 9   | New persistent SSE endpoint: GET /stream                | 2     |
+| 10  | Chokidar watches only active session JSONL files        | 2     |
+| 11  | New messages broadcast within 100ms of file change      | 2     |
+| 12  | CLI-originated messages appear in WebUI without refresh | 2     |
+| 13  | Multiple tabs viewing same session all stay in sync     | 2     |
+| 14  | File watcher uses awaitWriteFinish for stability        | 2     |
+| 15  | Incremental reading (byte offset, not full file)        | 2     |
+| 16  | Watchers and SSE connections cleaned up on disconnect   | 2     |
+| 17  | No changes to Transport interface or DirectTransport    | Both  |
+| 18  | No new runtime dependencies in Phase 1                  | 1     |
+| 19  | Phase 2 adds only chokidar                              | 2     |
+| 20  | All existing tests pass                                 | Both  |
+| 21  | New tests for locking, ETag, and broadcast logic        | Both  |

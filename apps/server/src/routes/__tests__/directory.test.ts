@@ -76,9 +76,7 @@ describe('Directory Routes', () => {
 
     it('defaults to home directory when no path given', async () => {
       mockRealpath.mockResolvedValue(HOME);
-      mockReaddir.mockResolvedValue([
-        { name: 'Documents', isDirectory: () => true },
-      ]);
+      mockReaddir.mockResolvedValue([{ name: 'Documents', isDirectory: () => true }]);
 
       const res = await request(app).get('/api/directory');
 
@@ -142,7 +140,7 @@ describe('Directory Routes', () => {
       ]);
 
       const res = await request(app).get(
-        `/api/directory?path=${encodeURIComponent(testPath)}&showHidden=true`,
+        `/api/directory?path=${encodeURIComponent(testPath)}&showHidden=true`
       );
 
       expect(res.status).toBe(200);

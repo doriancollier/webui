@@ -34,11 +34,11 @@ Currently, the selected directory (`selectedCwd`) lives only in Zustand in-memor
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Status |
-|-----------|---------|--------|
-| `nuqs` | `^2.8.8` | Already installed in `apps/client/package.json` |
-| `<NuqsAdapter>` | — | Already wraps app in `apps/client/src/main.tsx` |
-| `getPlatform()` | — | `apps/client/src/lib/platform.ts` |
+| Dependency      | Version  | Status                                          |
+| --------------- | -------- | ----------------------------------------------- |
+| `nuqs`          | `^2.8.8` | Already installed in `apps/client/package.json` |
+| `<NuqsAdapter>` | —        | Already wraps app in `apps/client/src/main.tsx` |
+| `getPlatform()` | —        | `apps/client/src/lib/platform.ts`               |
 
 No new dependencies required.
 
@@ -73,12 +73,15 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
   const [, setSessionId] = useSessionId();
 
   if (platform.isEmbedded) {
-    return [storeDir, (dir) => {
-      if (dir) {
-        setStoreDir(dir);
-        setSessionId(null); // Clear session on dir change
-      }
-    }];
+    return [
+      storeDir,
+      (dir) => {
+        if (dir) {
+          setStoreDir(dir);
+          setSessionId(null); // Clear session on dir change
+        }
+      },
+    ];
   }
 
   // Standalone: URL is source of truth, sync to Zustand
@@ -87,10 +90,10 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
     (dir) => {
       if (dir) {
         setUrlDir(dir);
-        setStoreDir(dir);  // Sync to Zustand for localStorage + consumers
+        setStoreDir(dir); // Sync to Zustand for localStorage + consumers
         setSessionId(null); // Clear session on dir change
       } else {
-        setUrlDir(null);    // Remove from URL
+        setUrlDir(null); // Remove from URL
       }
     },
   ];
@@ -127,6 +130,7 @@ Replace `useAppStore` directory access with `useDirectoryState`:
 ```
 
 Both `handleSelect` (line 59) and `handleRecentSelect` (line 78) call `setSelectedCwd()`, which now:
+
 1. Updates `?dir=` in URL (standalone)
 2. Syncs to Zustand (localStorage tracking)
 3. Clears `?session=` from URL
@@ -262,6 +266,7 @@ This ensures that when the page loads with `?dir=/path`, the Zustand store is im
 ```
 
 **Mocking strategy:**
+
 - Mock `getPlatform()` to toggle standalone/embedded
 - Use nuqs `NuqsTestingAdapter` for URL state testing
 - Mock `useAppStore` for Zustand assertions
@@ -269,10 +274,12 @@ This ensures that when the page loads with `?dir=/path`, the Zustand store is im
 ### 8.2 Component Tests
 
 **Update `SessionSidebar.test.tsx`:**
+
 - Mock `useDirectoryState` instead of direct store access
 - Test auto-select behavior: when sessions load and no active session, first session is selected
 
 **Update `DirectoryPicker` tests (if they exist):**
+
 - Verify `setSelectedCwd` from hook is called on directory selection
 
 ### 8.3 Integration Tests (Manual)
@@ -317,13 +324,13 @@ This ensures that when the page loads with `?dir=/path`, the Zustand store is im
 
 ## 13. File Change Summary
 
-| File | Change | Lines |
-|------|--------|-------|
-| `apps/client/src/hooks/use-directory-state.ts` | **New** | ~40 |
-| `apps/client/src/hooks/__tests__/use-directory-state.test.tsx` | **New** | ~80 |
-| `apps/client/src/components/sessions/DirectoryPicker.tsx` | Modify | ~3 |
-| `apps/client/src/components/sessions/SessionSidebar.tsx` | Modify | ~10 |
-| `CLAUDE.md` | Modify | ~2 |
+| File                                                           | Change  | Lines |
+| -------------------------------------------------------------- | ------- | ----- |
+| `apps/client/src/hooks/use-directory-state.ts`                 | **New** | ~40   |
+| `apps/client/src/hooks/__tests__/use-directory-state.test.tsx` | **New** | ~80   |
+| `apps/client/src/components/sessions/DirectoryPicker.tsx`      | Modify  | ~3    |
+| `apps/client/src/components/sessions/SessionSidebar.tsx`       | Modify  | ~10   |
+| `CLAUDE.md`                                                    | Modify  | ~2    |
 
 **Files that don't change** (verified): `use-default-cwd.ts`, `use-chat-session.ts`, `use-task-state.ts`, `use-sessions.ts`, `app-store.ts`, `main.tsx`, `platform.ts`
 

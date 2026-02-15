@@ -70,7 +70,7 @@ describe('groupSessionsByTime', () => {
       makeSession({ id: 'old', updatedAt: '2025-01-01T10:00:00Z' }),
     ];
     const groups = groupSessionsByTime(sessions);
-    const labels = groups.map(g => g.label);
+    const labels = groups.map((g) => g.label);
     expect(labels).toEqual(['Today', 'Yesterday', 'Older']);
   });
 
@@ -81,7 +81,7 @@ describe('groupSessionsByTime', () => {
     ];
     const groups = groupSessionsByTime(sessions);
     expect(groups).toHaveLength(2);
-    expect(groups.map(g => g.label)).toEqual(['Today', 'Older']);
+    expect(groups.map((g) => g.label)).toEqual(['Today', 'Older']);
   });
 
   it('preserves input order within each group', () => {
@@ -91,7 +91,7 @@ describe('groupSessionsByTime', () => {
       makeSession({ id: 'third', updatedAt: '2026-02-07T10:00:00Z' }),
     ];
     const groups = groupSessionsByTime(sessions);
-    expect(groups[0].sessions.map(s => s.id)).toEqual(['first', 'second', 'third']);
+    expect(groups[0].sessions.map((s) => s.id)).toEqual(['first', 'second', 'third']);
   });
 });
 

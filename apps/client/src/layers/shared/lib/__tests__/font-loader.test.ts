@@ -44,10 +44,10 @@ describe('font-loader', () => {
     it('sets CSS custom properties on documentElement', () => {
       applyFontCSS("'Inter', sans-serif", "'JetBrains Mono', monospace");
       expect(document.documentElement.style.getPropertyValue('--font-sans')).toBe(
-        "'Inter', sans-serif",
+        "'Inter', sans-serif"
       );
       expect(document.documentElement.style.getPropertyValue('--font-mono')).toBe(
-        "'JetBrains Mono', monospace",
+        "'JetBrains Mono', monospace"
       );
     });
   });

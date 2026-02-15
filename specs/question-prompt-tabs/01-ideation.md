@@ -34,11 +34,13 @@
 ## 3) Codebase Map
 
 **Primary components/modules:**
+
 - `apps/client/src/components/chat/QuestionPrompt.tsx` — The component being modified
 - `apps/client/src/components/ui/tabs.tsx` — Existing Radix Tabs primitive to reuse
 - `apps/client/src/components/chat/MessageItem.tsx` — Parent that renders QuestionPrompt
 
 **Shared dependencies:**
+
 - `@dorkos/shared/types` — `QuestionItem`, `QuestionOption` types
 - `../../contexts/TransportContext` — `useTransport()` for `submitAnswers()`
 - `lucide-react` — `Check`, `MessageSquare` icons
@@ -47,11 +49,13 @@
 SDK `question_prompt` event → server SSE → `useChatSession` adds tool call part with `interactiveType: 'question'` → `MessageItem` renders `<QuestionPrompt>` → user selects answers → `transport.submitAnswers()` → server resolves deferred promise → SDK resumes
 
 **Answer format:**
+
 - Key: question index as string (`"0"`, `"1"`, etc.)
 - Value: selected label string (single-select) or `JSON.stringify([...labels])` (multi-select)
 - `__other__` sentinel replaced with user's typed text before submission
 
 **Potential blast radius:**
+
 - Direct: `QuestionPrompt.tsx` (rewrite pending/collapsed states)
 - Tests: `__tests__/QuestionPrompt.test.tsx` (update for tabs, new summary tests)
 - No changes to server, transport, types, or MessageItem
@@ -65,16 +69,19 @@ N/A — this is a feature improvement, not a bug fix.
 ### Navigation Approaches Compared
 
 **1. Pill-styled Radix Tabs (question headers as tab labels)**
+
 - Pros: Built-in a11y (keyboard nav, ARIA), controlled state, compact pill styling, non-linear navigation (users can jump between questions)
 - Cons: Longer headers can overflow horizontally, requires truncation for long labels
 - Complexity: Low (reuses existing `ui/tabs.tsx`)
 
 **2. Step indicators (1/3, 2/3) with Next/Prev buttons**
+
 - Pros: Clear linear progression, minimal horizontal space, checkmarks on completed steps
 - Cons: No built-in component (manual ARIA needed), harder to jump to specific question, requires multiple clicks to go back
 - Complexity: Medium
 
 **3. Pure pill tabs without navigation buttons**
+
 - Pros: Simplest implementation
 - Cons: Users may not realize they should click tabs, no guided flow
 - Complexity: Low
@@ -82,16 +89,19 @@ N/A — this is a feature improvement, not a bug fix.
 ### Answer Summary Approaches Compared
 
 **1. Vertical stacked cards (header above, value below)**
+
 - Pros: Clear visual hierarchy, handles long answers well, scannable
 - Cons: Takes more vertical space
 - Complexity: Low
 
 **2. Inline flex-wrap chips (current approach)**
+
 - Pros: Compact when answers are short
 - Cons: Wraps awkwardly with long values, poor readability with multiple answers
 - Complexity: N/A (current)
 
 **3. Accordion/collapsible summary**
+
 - Pros: Saves space collapsed
 - Cons: Requires interaction to see answers, overkill for 1-4 items
 - Complexity: Medium
@@ -109,7 +119,7 @@ N/A — this is a feature improvement, not a bug fix.
 2. **Answer summary layout:** The current inline `flex-wrap` chips layout breaks with long answers. Two options:
    - **A) Vertical stack** — Each Q&A pair on its own row: `Header:` label on top, answer value below. Clean and handles any length.
    - **B) Inline but improved** — Keep horizontal but use pill/badge styling with `max-width` and truncation on long values.
-   Recommendation: A (vertical stack) since it handles all answer lengths gracefully.
+     Recommendation: A (vertical stack) since it handles all answer lengths gracefully.
 
 3. **Single submit vs per-question:** Currently all answers are submitted in one batch. Should we keep the single "Submit All" button, or add individual "Next" buttons that auto-advance? Recommendation: Keep single submit — the SDK expects all answers at once, and adding per-question submission would require protocol changes.
 

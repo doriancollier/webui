@@ -1,6 +1,6 @@
 ---
 description: Analyze server logs to diagnose errors, exceptions, and unexpected behavior
-argument-hint: "[search-term] [--tail <lines>]"
+argument-hint: '[search-term] [--tail <lines>]'
 allowed-tools: Read, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion
 ---
 
@@ -11,6 +11,7 @@ Systematically analyze server logs from the `.logs/` directory to diagnose error
 ## Project Logging
 
 The dev server outputs logs to `.logs/` with timestamped filenames:
+
 - **Location**: `.logs/`
 - **Format**: `YYYY-MM-DD_HH-MM-SS.log`
 - **Latest log**: `ls -t .logs/ | head -1`
@@ -18,6 +19,7 @@ The dev server outputs logs to `.logs/` with timestamped filenames:
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If argument is a search term, grep for it in logs
 - If `--tail <lines>` provided, show last N lines
 - If empty, analyze latest log for errors
@@ -101,6 +103,7 @@ grep -i -E "prisma|database|postgres|neon|query|constraint" ".logs/$(ls -t .logs
 ### 2.4 Find Specific Patterns
 
 If user provided a search term:
+
 ```bash
 grep -i "[search-term]" ".logs/$(ls -t .logs/ | head -1)" | tail -50
 ```
@@ -111,15 +114,15 @@ grep -i "[search-term]" ".logs/$(ls -t .logs/ | head -1)" | tail -50
 
 Common error categories:
 
-| Category | Pattern | Typical Cause |
-|----------|---------|---------------|
-| **Unhandled Promise** | `UnhandledPromiseRejection` | Missing await or catch |
-| **Type Error** | `TypeError` | Null/undefined access |
-| **Prisma Error** | `PrismaClientKnownRequestError` | Query/constraint issue |
-| **Auth Error** | `UnauthorizedError`, `401` | Session/token issue |
-| **Validation Error** | `ZodError`, `ValidationError` | Invalid input data |
-| **Module Error** | `ModuleNotFoundError` | Import path issue |
-| **Connection Error** | `ECONNREFUSED`, `timeout` | Network/DB connection |
+| Category              | Pattern                         | Typical Cause          |
+| --------------------- | ------------------------------- | ---------------------- |
+| **Unhandled Promise** | `UnhandledPromiseRejection`     | Missing await or catch |
+| **Type Error**        | `TypeError`                     | Null/undefined access  |
+| **Prisma Error**      | `PrismaClientKnownRequestError` | Query/constraint issue |
+| **Auth Error**        | `UnauthorizedError`, `401`      | Session/token issue    |
+| **Validation Error**  | `ZodError`, `ValidationError`   | Invalid input data     |
+| **Module Error**      | `ModuleNotFoundError`           | Import path issue      |
+| **Connection Error**  | `ECONNREFUSED`, `timeout`       | Network/DB connection  |
 
 ### 3.2 Ask About Error Priority
 
@@ -145,6 +148,7 @@ AskUserQuestion:
 ### 4.1 Extract Error Context
 
 For a specific error, extract:
+
 - **Timestamp**: When did it occur?
 - **Request context**: What endpoint/action was called?
 - **Stack trace**: Where in the code did it happen?
@@ -163,6 +167,7 @@ Understand the context that caused the error.
 ### 4.3 Check Related Logs
 
 Look for context before/after the error:
+
 ```bash
 # Get lines around the error
 grep -B 5 -A 10 "[error-pattern]" ".logs/$(ls -t .logs/ | head -1)"
@@ -185,18 +190,20 @@ git diff --name-only HEAD~3
 **Log Pattern**: `UnhandledPromiseRejectionWarning` or `unhandledRejection`
 
 **Common Causes**:
+
 - Missing `await` on async function
 - Missing `.catch()` on promise
 - Async error not propagated
 
 **Fix Pattern**:
+
 ```typescript
 // Add try/catch
 try {
-  await riskyOperation()
+  await riskyOperation();
 } catch (error) {
-  console.error('Operation failed:', error)
-  throw error // or handle appropriately
+  console.error('Operation failed:', error);
+  throw error; // or handle appropriately
 }
 ```
 
@@ -205,11 +212,13 @@ try {
 **Log Pattern**: `PrismaClientKnownRequestError`, `P2002` (unique), `P2003` (foreign key)
 
 **Common Causes**:
+
 - Duplicate unique value
 - Missing related record
 - Invalid foreign key
 
 **Debugging**:
+
 ```bash
 # Check the constraint name in the error
 grep -i "constraint" ".logs/$(ls -t .logs/ | head -1)"
@@ -220,11 +229,13 @@ grep -i "constraint" ".logs/$(ls -t .logs/ | head -1)"
 **Log Pattern**: `401`, `UnauthorizedError`, `session`
 
 **Common Causes**:
+
 - Expired session
 - Missing auth token
 - `requireAuth()` failing
 
 **Check**:
+
 - Is user authenticated?
 - Is session cookie present?
 - Is session valid in database?
@@ -234,11 +245,13 @@ grep -i "constraint" ".logs/$(ls -t .logs/ | head -1)"
 **Log Pattern**: `ETIMEDOUT`, `timeout`, `ECONNREFUSED`
 
 **Common Causes**:
+
 - Database connection pool exhausted
 - External API slow/down
 - Network issues
 
 **Debugging**:
+
 ```bash
 # Check for connection patterns
 grep -i -E "connect|timeout|refused" ".logs/$(ls -t .logs/ | head -1)" | tail -20
@@ -300,6 +313,7 @@ TodoWrite:
 ### 7.2 Monitoring Recommendation
 
 Suggest improvements:
+
 - Better error logging in the affected area
 - Alerting for critical errors
 - Error tracking setup
@@ -346,26 +360,26 @@ tail -f "$LATEST"
 
 ### Common Prisma Error Codes
 
-| Code | Meaning |
-|------|---------|
-| P2002 | Unique constraint violation |
+| Code  | Meaning                          |
+| ----- | -------------------------------- |
+| P2002 | Unique constraint violation      |
 | P2003 | Foreign key constraint violation |
-| P2025 | Record not found |
-| P2014 | Required relation violation |
-| P2021 | Table does not exist |
+| P2025 | Record not found                 |
+| P2014 | Required relation violation      |
+| P2021 | Table does not exist             |
 
 ### HTTP Status Codes
 
-| Code | Meaning |
-|------|---------|
-| 400 | Bad Request - Invalid input |
-| 401 | Unauthorized - Auth required |
-| 403 | Forbidden - No permission |
-| 404 | Not Found - Resource missing |
-| 409 | Conflict - Resource conflict |
-| 500 | Internal Server Error |
-| 502 | Bad Gateway - Upstream error |
-| 503 | Service Unavailable |
+| Code | Meaning                      |
+| ---- | ---------------------------- |
+| 400  | Bad Request - Invalid input  |
+| 401  | Unauthorized - Auth required |
+| 403  | Forbidden - No permission    |
+| 404  | Not Found - Resource missing |
+| 409  | Conflict - Resource conflict |
+| 500  | Internal Server Error        |
+| 502  | Bad Gateway - Upstream error |
+| 503  | Service Unavailable          |
 
 ## Important Behaviors
 

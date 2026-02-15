@@ -138,9 +138,7 @@ describe('SessionBroadcaster', () => {
 
     it('handles file not existing yet (offset starts at 0)', async () => {
       const sessionId = 'session-new';
-      vi.mocked(mockTranscriptReader.readFromOffset).mockRejectedValue(
-        new Error('ENOENT')
-      );
+      vi.mocked(mockTranscriptReader.readFromOffset).mockRejectedValue(new Error('ENOENT'));
 
       broadcaster.registerClient(sessionId, '/vault', mockRes);
 
@@ -209,9 +207,9 @@ describe('SessionBroadcaster', () => {
       broadcaster.registerClient(sessionId, '/vault', mockRes);
 
       // Trigger file change to create debounce timer
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
       expect(changeHandler).toBeDefined();
       changeHandler!();
 
@@ -253,33 +251,30 @@ describe('SessionBroadcaster', () => {
       broadcaster.registerClient(sessionId, '/vault', mockRes2);
 
       // Wait for initialization to complete
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
 
       // Clear previous write calls (sync_connected)
       vi.mocked(mockRes.write).mockClear();
       vi.mocked(mockRes2.write).mockClear();
 
       // Trigger file change
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
       expect(changeHandler).toBeDefined();
       changeHandler!();
 
       // Wait for debounce (100ms) + async operations
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Both clients should receive update
-      expect(mockRes.write).toHaveBeenCalledWith(
-        expect.stringContaining('event: sync_update')
-      );
-      expect(mockRes2.write).toHaveBeenCalledWith(
-        expect.stringContaining('event: sync_update')
-      );
+      expect(mockRes.write).toHaveBeenCalledWith(expect.stringContaining('event: sync_update'));
+      expect(mockRes2.write).toHaveBeenCalledWith(expect.stringContaining('event: sync_update'));
 
       const eventData = JSON.parse(
-        vi.mocked(mockRes.write).mock.calls[0][0]
-          .toString()
+        vi
+          .mocked(mockRes.write)
+          .mock.calls[0][0].toString()
           .replace('event: sync_update\ndata: ', '')
           .replace('\n\n', '')
       );
@@ -304,9 +299,9 @@ describe('SessionBroadcaster', () => {
       vi.mocked(mockRes.write).mockClear();
 
       // Trigger change with no new content
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
       changeHandler!();
 
       await vi.runOnlyPendingTimersAsync();
@@ -331,9 +326,9 @@ describe('SessionBroadcaster', () => {
       await vi.runOnlyPendingTimersAsync();
 
       // Trigger change
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
       changeHandler!();
 
       await vi.runOnlyPendingTimersAsync();
@@ -367,13 +362,13 @@ describe('SessionBroadcaster', () => {
         throw new Error('Connection reset');
       });
 
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
       changeHandler!();
 
       // Wait for debounce
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       // Should log error but not throw
       expect(consoleErrorSpy).toHaveBeenCalledWith(
@@ -399,9 +394,9 @@ describe('SessionBroadcaster', () => {
 
       vi.mocked(mockRes.write).mockClear();
 
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
 
       // Trigger multiple rapid changes
       changeHandler!();
@@ -469,9 +464,9 @@ describe('SessionBroadcaster', () => {
 
       broadcaster.registerClient(sessionId, '/vault', mockRes);
 
-      const changeHandler = mockWatcher.on.mock.calls.find(
-        ([event]) => event === 'change'
-      )?.[1] as (() => void) | undefined;
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
       changeHandler!();
 
       // Shutdown before timer fires

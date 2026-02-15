@@ -19,18 +19,22 @@ Add a web-native inference status indicator to the chat UI that appears below th
 ### Visual States
 
 **Streaming:**
+
 ```
 * Droppin' Science    2m 14s    ~3.2k tokens
 ```
+
 - Asterisk pulses with shimmer animation (2s loop)
 - Verb crossfades to a new random phrase every 3.5s
 - Elapsed time updates every second
 - Token estimate grows as text arrives
 
 **Complete:**
+
 ```
 2m 14s · ~3.2k tokens
 ```
+
 - Compact, muted summary — same vertical space, no layout shift
 - Persists as a subtle timestamp on the turn
 
@@ -85,11 +89,11 @@ useChatSession
 ```typescript
 export interface IndicatorTheme {
   name: string;
-  icon: string;                    // e.g. "*", "✦", "❄"
-  iconAnimation: string | null;    // CSS @keyframes name, or null for static
+  icon: string; // e.g. "*", "✦", "❄"
+  iconAnimation: string | null; // CSS @keyframes name, or null for static
   verbs: readonly string[];
-  verbInterval: number;            // ms between rotations (default: 3500)
-  completionVerb?: string;         // optional verb for complete state
+  verbInterval: number; // ms between rotations (default: 3500)
+  completionVerb?: string; // optional verb for complete state
 }
 ```
 
@@ -99,7 +103,7 @@ No per-turn output token counts from the server. Client-side heuristic:
 
 ```typescript
 // In handleStreamEvent('text_delta'):
-estimatedTokensRef.current += text.length / 4;  // ~1 token ≈ 4 chars
+estimatedTokensRef.current += text.length / 4; // ~1 token ≈ 4 chars
 ```
 
 Displayed as `~1.2k tokens` (>= 1000) or `~450 tokens` (< 1000).
@@ -121,6 +125,7 @@ Exported as `const DEFAULT_INFERENCE_VERBS = [...] as const`.
 #### 2. `apps/client/src/components/chat/inference-themes.ts`
 
 Theme interface + `DEFAULT_THEME` definition:
+
 - `icon: '*'`
 - `iconAnimation: 'shimmer-pulse'`
 - `verbs: DEFAULT_INFERENCE_VERBS`
@@ -131,6 +136,7 @@ Includes commented-out example of a holiday theme for documentation.
 #### 3. `apps/client/src/hooks/use-elapsed-time.ts`
 
 Hook that returns `{ formatted: string, ms: number }`:
+
 - Accepts `startTime: number | null`
 - 1s `setInterval` (not sub-second — sufficient for long inferences)
 - Formats: `0m 05s`, `2m 14s`, `1h 23m`
@@ -139,6 +145,7 @@ Hook that returns `{ formatted: string, ms: number }`:
 #### 4. `apps/client/src/hooks/use-rotating-verb.ts`
 
 Hook that returns `{ verb: string, key: string }`:
+
 - Accepts `verbs: string[]`, `intervalMs: number`
 - Random selection (no consecutive repeats)
 - Incrementing `key` for AnimatePresence crossfade tracking
@@ -148,6 +155,7 @@ Hook that returns `{ verb: string, key: string }`:
 Main component with two visual states:
 
 **Props:**
+
 ```typescript
 interface InferenceIndicatorProps {
   status: 'idle' | 'streaming' | 'error';
@@ -158,6 +166,7 @@ interface InferenceIndicatorProps {
 ```
 
 **Streaming state:**
+
 - `motion.div` entrance: 200ms fade-in + 4px y-slide
 - Shimmer asterisk via CSS `animation` property referencing theme's `iconAnimation`
 - Nested `AnimatePresence mode="wait"` for verb crossfade (300ms, opacity + 2px y-shift)
@@ -166,6 +175,7 @@ interface InferenceIndicatorProps {
 - All text in `text-2xs`
 
 **Complete state:**
+
 - Transitions in-place (same container height)
 - Summary: `{elapsed} · {tokens}` in `text-3xs text-muted-foreground/50`
 - 150ms opacity fade to 60%
@@ -177,10 +187,12 @@ interface InferenceIndicatorProps {
 #### 6. `apps/client/src/hooks/use-chat-session.ts`
 
 Add to the hook:
+
 - `streamStartTimeRef = useRef<number | null>(null)`
 - `estimatedTokensRef = useRef<number>(0)`
 
 In `handleStreamEvent`:
+
 - `text_delta`: Set `streamStartTimeRef.current = Date.now()` on first delta, accumulate `text.length / 4` into `estimatedTokensRef`
 - `done`: Reset both refs to null/0
 
@@ -198,7 +210,11 @@ Render `<InferenceIndicator>` after virtual items, inside the scroll container. 
 
 ```tsx
 <div style={{ position: 'absolute', top: virtualizer.getTotalSize(), left: 0, width: '100%' }}>
-  <InferenceIndicator status={status} streamStartTime={streamStartTime} estimatedTokens={estimatedTokens} />
+  <InferenceIndicator
+    status={status}
+    streamStartTime={streamStartTime}
+    estimatedTokens={estimatedTokens}
+  />
 </div>
 ```
 
@@ -210,8 +226,15 @@ Add after existing `blink-cursor` keyframe:
 
 ```css
 @keyframes shimmer-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 ```
 
@@ -302,4 +325,4 @@ Add after existing `blink-cursor` keyframe:
 
 ## Open Questions
 
-*None — all design decisions finalized in ideation phase.*
+_None — all design decisions finalized in ideation phase._

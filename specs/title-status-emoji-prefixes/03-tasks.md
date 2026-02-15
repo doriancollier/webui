@@ -78,7 +78,12 @@ interface UseDocumentTitleOptions {
   isWaitingForUser: boolean;
 }
 
-export function useDocumentTitle({ cwd, activeForm, isStreaming, isWaitingForUser }: UseDocumentTitleOptions) {
+export function useDocumentTitle({
+  cwd,
+  activeForm,
+  isStreaming,
+  isWaitingForUser,
+}: UseDocumentTitleOptions) {
   const isTabHiddenRef = useRef(document.hidden);
   const hasUnseenResponseRef = useRef(false);
   const wasStreamingRef = useRef(isStreaming);
@@ -125,10 +130,7 @@ export function useDocumentTitle({ cwd, activeForm, isStreaming, isWaitingForUse
     let title = `${prefix}${emoji} ${dirName}`;
 
     if (activeForm) {
-      const truncated =
-        activeForm.length > 40
-          ? activeForm.slice(0, 40) + '\u2026'
-          : activeForm;
+      const truncated = activeForm.length > 40 ? activeForm.slice(0, 40) + '\u2026' : activeForm;
       title += ` \u2014 ${truncated}`;
     }
 
@@ -150,9 +152,7 @@ export function useDocumentTitle({ cwd, activeForm, isStreaming, isWaitingForUse
           let title = `${emoji} ${dirName}`;
           if (activeForm) {
             const truncated =
-              activeForm.length > 40
-                ? activeForm.slice(0, 40) + '\u2026'
-                : activeForm;
+              activeForm.length > 40 ? activeForm.slice(0, 40) + '\u2026' : activeForm;
             title += ` \u2014 ${truncated}`;
           }
           title += ' \u2014 DorkOS';
@@ -210,26 +210,40 @@ Add all 7 test cases from the spec's Testing Strategy section to the existing te
 ```typescript
 describe('status prefixes', () => {
   it('shows 🔔 prefix when isWaitingForUser is true', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: '/test', activeForm: null, isStreaming: false, isWaitingForUser: true
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: '/test',
+        activeForm: null,
+        isStreaming: false,
+        isWaitingForUser: true,
+      })
+    );
     expect(document.title).toMatch(/^🔔 /);
   });
 
   it('does not show 🔔 when isWaitingForUser is false', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: '/test', activeForm: null, isStreaming: false, isWaitingForUser: false
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: '/test',
+        activeForm: null,
+        isStreaming: false,
+        isWaitingForUser: false,
+      })
+    );
     expect(document.title).not.toMatch(/^🔔/);
   });
 
   it('shows 🏁 when streaming ends while tab is hidden', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser: false
-      }),
-      { initialProps: { isStreaming: true } },
+      ({ isStreaming }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser: false,
+        }),
+      { initialProps: { isStreaming: true } }
     );
     rerender({ isStreaming: false });
     expect(document.title).toMatch(/^🏁 /);
@@ -239,10 +253,14 @@ describe('status prefixes', () => {
   it('clears 🏁 when tab becomes visible', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser: false
-      }),
-      { initialProps: { isStreaming: true } },
+      ({ isStreaming }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser: false,
+        }),
+      { initialProps: { isStreaming: true } }
     );
     rerender({ isStreaming: false });
     expect(document.title).toMatch(/^🏁 /);
@@ -256,10 +274,14 @@ describe('status prefixes', () => {
   it('🔔 takes priority over 🏁', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming, isWaitingForUser }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser
-      }),
-      { initialProps: { isStreaming: true, isWaitingForUser: false } },
+      ({ isStreaming, isWaitingForUser }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser,
+        }),
+      { initialProps: { isStreaming: true, isWaitingForUser: false } }
     );
     // Streaming ends while hidden (sets unseen flag)
     rerender({ isStreaming: false, isWaitingForUser: false });
@@ -273,16 +295,26 @@ describe('status prefixes', () => {
   });
 
   it('no prefix when cwd is null (embedded mode)', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: null, activeForm: null, isStreaming: false, isWaitingForUser: true
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: null,
+        activeForm: null,
+        isStreaming: false,
+        isWaitingForUser: true,
+      })
+    );
     expect(document.title).toBe('DorkOS');
   });
 
   it('preserves activeForm with prefix', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: '/test', activeForm: 'Running tests', isStreaming: false, isWaitingForUser: true
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: '/test',
+        activeForm: 'Running tests',
+        isStreaming: false,
+        isWaitingForUser: true,
+      })
+    );
     expect(document.title).toMatch(/^🔔 /);
     expect(document.title).toContain('Running tests');
     expect(document.title).toContain('— DorkOS');

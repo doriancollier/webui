@@ -34,9 +34,9 @@ The main module. Exports a `TunnelManager` class with a clean interface:
 ```typescript
 export interface TunnelConfig {
   port: number;
-  authtoken?: string;       // Falls back to NGROK_AUTHTOKEN env var
-  basicAuth?: string;        // Format: "user:pass" — requires paid ngrok plan
-  domain?: string;           // Static domain — requires paid ngrok plan
+  authtoken?: string; // Falls back to NGROK_AUTHTOKEN env var
+  basicAuth?: string; // Format: "user:pass" — requires paid ngrok plan
+  domain?: string; // Static domain — requires paid ngrok plan
 }
 
 export interface TunnelInfo {
@@ -49,12 +49,13 @@ export interface TunnelInfo {
 export class TunnelManager {
   start(config: TunnelConfig): Promise<TunnelInfo>;
   stop(): Promise<void>;
-  getInfo(): TunnelInfo | null;          // null if not running
+  getInfo(): TunnelInfo | null; // null if not running
   isRunning(): boolean;
 }
 ```
 
 **Implementation details:**
+
 - `start()` calls `ngrok.forward()` with the provided config, stores the listener reference, and returns the tunnel info.
 - `stop()` calls `listener.close()` and clears state.
 - `getInfo()` returns the current tunnel URL and config (used by health endpoint).
@@ -65,6 +66,7 @@ export class TunnelManager {
 ### 3. `packages/tunnel/src/__tests__/tunnel-manager.test.ts`
 
 Unit tests that mock `@ngrok/ngrok`:
+
 - Tunnel starts and returns URL
 - Tunnel stop closes the listener
 - Missing auth token produces helpful error
@@ -109,7 +111,7 @@ async function start() {
         const info = await tunnelManager.start({
           port: PORT,
           authtoken: process.env.NGROK_AUTHTOKEN,
-          basicAuth: process.env.TUNNEL_BASIC_AUTH,  // "user:pass"
+          basicAuth: process.env.TUNNEL_BASIC_AUTH, // "user:pass"
           domain: process.env.TUNNEL_DOMAIN,
         });
         console.log(`\n🌐 Tunnel active: ${info.url}`);
@@ -156,6 +158,7 @@ router.get('/', (req, res) => {
 ```
 
 Response when tunnel is active:
+
 ```json
 {
   "status": "ok",
@@ -197,12 +200,12 @@ Response when tunnel is active:
 
 ## Environment Variables Reference
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `TUNNEL_ENABLED` | No | `false` | Set to `"true"` to start ngrok tunnel on server boot |
-| `NGROK_AUTHTOKEN` | When tunnel enabled | — | Your ngrok auth token (free at ngrok.com) |
-| `TUNNEL_BASIC_AUTH` | No | — | Basic auth credentials as `"user:pass"` (paid plan) |
-| `TUNNEL_DOMAIN` | No | — | Static ngrok domain (paid plan) |
+| Variable            | Required            | Default | Description                                          |
+| ------------------- | ------------------- | ------- | ---------------------------------------------------- |
+| `TUNNEL_ENABLED`    | No                  | `false` | Set to `"true"` to start ngrok tunnel on server boot |
+| `NGROK_AUTHTOKEN`   | When tunnel enabled | —       | Your ngrok auth token (free at ngrok.com)            |
+| `TUNNEL_BASIC_AUTH` | No                  | —       | Basic auth credentials as `"user:pass"` (paid plan)  |
+| `TUNNEL_DOMAIN`     | No                  | —       | Static ngrok domain (paid plan)                      |
 
 ---
 
@@ -218,6 +221,7 @@ Response when tunnel is active:
 ## User Experience
 
 ### Quick start (free tier)
+
 ```bash
 # 1. Sign up at https://ngrok.com and get your auth token
 # 2. Set environment variables
@@ -229,18 +233,21 @@ turbo dev
 ```
 
 Console output:
+
 ```
 Gateway server running on http://localhost:6942
 🌐 Tunnel active: https://abc123.ngrok-free.app
 ```
 
 ### With basic auth (paid tier)
+
 ```bash
 echo "TUNNEL_BASIC_AUTH=myuser:mypassword" >> .env
 turbo dev
 ```
 
 Console output:
+
 ```
 Gateway server running on http://localhost:6942
 🌐 Tunnel active: https://abc123.ngrok-free.app
@@ -248,6 +255,7 @@ Gateway server running on http://localhost:6942
 ```
 
 ### Checking the tunnel URL programmatically
+
 ```bash
 curl http://localhost:6942/api/health
 # → { "status": "ok", "tunnel": { "url": "https://abc123.ngrok-free.app", ... } }

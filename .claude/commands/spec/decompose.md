@@ -2,7 +2,7 @@
 description: Break down a validated specification into actionable implementation tasks
 category: validation
 allowed-tools: Read, Task, TaskOutput, Write, Bash(mkdir:*), Bash(cat:*), Bash(grep:*), Bash(echo:*), Bash(basename:*), Bash(date:*), TaskCreate, TaskList, TaskGet, TaskUpdate
-argument-hint: "<path-to-spec-file>"
+argument-hint: '<path-to-spec-file>'
 ---
 
 # Decompose Specification into Tasks
@@ -14,6 +14,7 @@ Decompose the specification at: $ARGUMENTS
 This command uses a **background agent** to perform the heavy decomposition work. This saves ~90% of context in the main conversation by isolating all spec reading, analysis, and task creation.
 
 **Flow:**
+
 1. Main context: Extract slug, detect mode, spawn background agent
 2. Background agent: Read spec, analyze, create tasks, write breakdown
 3. Main context: Wait for results
@@ -24,6 +25,7 @@ This command uses a **background agent** to perform the heavy decomposition work
 ### 1.1 Extract Feature Slug
 
 Extract the feature slug from the spec path:
+
 - If path is `specs/<slug>/02-specification.md` → slug is `<slug>`
 - If path is `specs/feat-<slug>.md` (legacy) → slug is `feat-<slug>`
 - If path is `specs/fix-<issue>-<desc>.md` (legacy) → slug is `fix-<issue>-<desc>`
@@ -53,8 +55,9 @@ Perform lightweight checks to determine mode:
    - Display mode indicator
 
 If **Skip mode** detected (no changelog changes):
+
 - Display: "✅ No changes since last decompose (<date>)"
-- Display: "   To force re-decompose, delete <tasks-file>"
+- Display: " To force re-decompose, delete <tasks-file>"
 - **Exit early** - do not spawn background agent
 
 ## Phase 2: Spawn Background Agent
@@ -71,6 +74,7 @@ Task(
 ```
 
 Display to user:
+
 ```
 🚀 Decomposition started in background
    Spec: $ARGUMENTS
@@ -94,6 +98,7 @@ The decomposition is running in the background. Would you like me to:
 ```
 
 If user chooses to wait, use:
+
 ```
 TaskOutput(task_id: "<agent-task-id>", block: true)
 ```
@@ -107,6 +112,7 @@ After receiving results from the background agent, validate that tasks were actu
 ### 4.1 Check Task Creation Status
 
 Parse the background agent's summary for the "Task Creation Status" section:
+
 - If status is `SUCCESS` and counts match → proceed to reporting
 - If status is `TASK_CREATION_INCOMPLETE` → attempt auto-recovery
 
@@ -133,6 +139,7 @@ If `actual_count < expected_count`:
 5. **Set up dependencies** using TaskUpdate
 
 Display during recovery:
+
 ```
 ⚠️ Task creation incomplete. Auto-recovering...
    Expected: [X] tasks
@@ -141,6 +148,7 @@ Display during recovery:
 ```
 
 After recovery:
+
 ```
 ✅ Recovery complete
    Tasks now registered: [new count]
@@ -167,6 +175,7 @@ Options:
 ### 4.5 Report Results
 
 Display the final summary to the user:
+
 - Task creation status (success/recovered/incomplete)
 - Task counts by phase
 - Parallel execution opportunities
@@ -178,7 +187,7 @@ Display the final summary to the user:
 
 The following is the complete prompt sent to the background agent. It contains all the detailed decomposition instructions.
 
-```
+````
 You are decomposing a specification into actionable implementation tasks.
 
 ## Context
@@ -340,13 +349,14 @@ Last Decompose: [Today's Date]
 
 ## Phase 2: Core Features
 [Continue pattern...]
-```
+````
 
 ### Step 5: Create Task Management Entries
 
 Use Claude Code's built-in task tools to create tasks.
 
 **For each task in your breakdown:**
+
 ```
 TaskCreate({
   subject: "[SLUG] [P<phase>] <imperative title>",
@@ -356,6 +366,7 @@ TaskCreate({
 ```
 
 🚨 **WRONG** (Don't do this):
+
 ```
 TaskCreate({
   subject: "[auth-flow] [P1] Implement utilities",
@@ -365,6 +376,7 @@ TaskCreate({
 ```
 
 ✅ **CORRECT** (Do this):
+
 ```
 TaskCreate({
   subject: "[auth-flow] [P1] Implement utilities",
@@ -390,6 +402,7 @@ import { exec } from 'child_process';
 ```
 
 **Setting up dependencies:**
+
 ```
 TaskUpdate({
   taskId: "<new-task-id>",
@@ -452,7 +465,8 @@ Compare `created_count` against the number of tasks in your breakdown.
 ### Next Steps
 Run `/spec:execute specs/[SLUG]/02-specification.md` to begin implementation.
 ```
-```
+
+````
 
 ---
 
@@ -509,7 +523,7 @@ After receiving results from the background agent:
 
 # Decompose a system enhancement spec
 /spec:decompose specs/feat-api-rate-limiting/02-specification.md
-```
+````
 
 ## Incremental Mode
 
@@ -538,6 +552,7 @@ rm specs/<slug>/03-tasks.md
 ### Background Agent Not Completing
 
 If the background agent takes too long:
+
 1. Use `/tasks` to check status
 2. Use `TaskOutput(task_id, block: false)` to check progress
 3. Large specs may take several minutes - this is normal
@@ -549,6 +564,7 @@ If the background agent takes too long:
 **Cause**: Background agent wrote the document but TaskCreate calls failed or weren't executed
 
 **Solutions**:
+
 1. **Auto-recovery** should trigger automatically in Phase 4
 2. **Manual sync**: Run `/spec:tasks-sync specs/[slug]/03-tasks.md`
 3. **Re-run decompose**: Delete `03-tasks.md` and run `/spec:decompose` again
@@ -560,6 +576,7 @@ If the background agent takes too long:
 **Cause**: Background agent may have hit context limits or TaskCreate failed for some tasks
 
 **Solutions**:
+
 1. Phase 4 auto-recovery will attempt to create missing tasks
 2. Check `03-tasks.md` for the complete breakdown
 3. Use `/spec:tasks-sync` to sync remaining tasks
@@ -569,6 +586,7 @@ If the background agent takes too long:
 **Symptom**: Background agent reports TaskCreate failures
 
 **Possible causes**:
+
 - Task description too long (try splitting into smaller tasks)
 - Invalid characters in subject
 - System resource limits
@@ -578,6 +596,7 @@ If the background agent takes too long:
 ### Context Benefits
 
 Running decomposition in background saves ~90% context:
+
 - **Without background**: All spec content, analysis, task creation in main context
 - **With background**: Only slug extraction and summary in main context
 

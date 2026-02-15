@@ -10,6 +10,7 @@
 Create `apps/client/src/lib/favicon-utils.ts` with all pure utility functions for hashing, color generation, emoji mapping, canvas favicon creation, and DOM favicon setting. Also create `apps/client/src/lib/__tests__/favicon-utils.test.ts` with comprehensive unit tests.
 
 **Files to create:**
+
 - `apps/client/src/lib/favicon-utils.ts`
 - `apps/client/src/lib/__tests__/favicon-utils.test.ts`
 
@@ -17,9 +18,36 @@ Create `apps/client/src/lib/favicon-utils.ts` with all pure utility functions fo
 
 ```typescript
 const EMOJI_SET = [
-  '\u{1F600}', '\u{1F60E}', '\u{1F916}', '\u{1F98A}', '\u{1F431}', '\u{1F436}', '\u{1F981}', '\u{1F438}', '\u{1F435}', '\u{1F984}',
-  '\u{1F432}', '\u{1F989}', '\u{1F427}', '\u{1F43C}', '\u{1F98B}', '\u{1F338}', '\u{1F52E}', '\u{1F3AF}', '\u{1F680}', '\u{26A1}',
-  '\u{1F30A}', '\u{1F340}', '\u{1F3A8}', '\u{1F3B5}', '\u{1F48E}', '\u{1F525}', '\u{1F308}', '\u{2B50}', '\u{1F9E0}', '\u{1F47E}',
+  '\u{1F600}',
+  '\u{1F60E}',
+  '\u{1F916}',
+  '\u{1F98A}',
+  '\u{1F431}',
+  '\u{1F436}',
+  '\u{1F981}',
+  '\u{1F438}',
+  '\u{1F435}',
+  '\u{1F984}',
+  '\u{1F432}',
+  '\u{1F989}',
+  '\u{1F427}',
+  '\u{1F43C}',
+  '\u{1F98B}',
+  '\u{1F338}',
+  '\u{1F52E}',
+  '\u{1F3AF}',
+  '\u{1F680}',
+  '\u{26A1}',
+  '\u{1F30A}',
+  '\u{1F340}',
+  '\u{1F3A8}',
+  '\u{1F3B5}',
+  '\u{1F48E}',
+  '\u{1F525}',
+  '\u{1F308}',
+  '\u{2B50}',
+  '\u{1F9E0}',
+  '\u{1F47E}',
 ];
 
 export function fnv1aHash(str: string): number {
@@ -86,7 +114,7 @@ describe('fnv1aHash', () => {
   it('returns a uint32', () => {
     const hash = fnv1aHash('/any/path');
     expect(hash).toBeGreaterThanOrEqual(0);
-    expect(hash).toBeLessThanOrEqual(0xFFFFFFFF);
+    expect(hash).toBeLessThanOrEqual(0xffffffff);
   });
 });
 
@@ -119,7 +147,7 @@ describe('hashToEmoji', () => {
 describe('setFavicon', () => {
   beforeEach(() => {
     // Clean up any link elements from previous tests
-    document.querySelectorAll("link[rel*='icon']").forEach(el => el.remove());
+    document.querySelectorAll("link[rel*='icon']").forEach((el) => el.remove());
   });
 
   it('creates a link element if none exists', () => {
@@ -145,6 +173,7 @@ describe('setFavicon', () => {
 Note: `generateCircleFavicon` requires Canvas API which is not available in jsdom. It will be tested indirectly via hook tests that mock `favicon-utils`. The pure functions (`fnv1aHash`, `hashToHslColor`, `hashToEmoji`) and DOM manipulation (`setFavicon`) can be tested directly.
 
 **Acceptance criteria:**
+
 - `fnv1aHash` returns consistent uint32 hashes; different inputs produce different outputs
 - `hashToHslColor` returns valid `hsl(H, 70%, 55%)` format strings
 - `hashToEmoji` returns an emoji from the curated 30-item EMOJI_SET
@@ -163,6 +192,7 @@ Note: `generateCircleFavicon` requires Canvas API which is not available in jsdo
 Create `apps/client/src/hooks/use-document-title.ts` hook that sets `document.title` based on the working directory and optional active task form. Also create `apps/client/src/hooks/__tests__/use-document-title.test.ts`.
 
 **Files to create:**
+
 - `apps/client/src/hooks/use-document-title.ts`
 - `apps/client/src/hooks/__tests__/use-document-title.test.ts`
 
@@ -190,10 +220,7 @@ export function useDocumentTitle({ cwd, activeForm }: UseDocumentTitleOptions) {
     let title = `${emoji} ${dirName}`;
 
     if (activeForm) {
-      const truncated =
-        activeForm.length > 40
-          ? activeForm.slice(0, 40) + '\u2026'
-          : activeForm;
+      const truncated = activeForm.length > 40 ? activeForm.slice(0, 40) + '\u2026' : activeForm;
       title += ` \u2014 ${truncated}`;
     }
 
@@ -204,6 +231,7 @@ export function useDocumentTitle({ cwd, activeForm }: UseDocumentTitleOptions) {
 ```
 
 **Title format examples:**
+
 - No cwd: `DorkOS`
 - With cwd `/Users/test/webui`: `{emoji} webui — DorkOS`
 - With task: `{emoji} webui — Running tests — DorkOS`
@@ -256,6 +284,7 @@ describe('useDocumentTitle', () => {
 ```
 
 **Acceptance criteria:**
+
 - Title shows emoji + directory basename + " — DorkOS" when cwd is set
 - Title falls back to "DorkOS" when cwd is null
 - Active form text is appended with em-dash separator
@@ -273,6 +302,7 @@ describe('useDocumentTitle', () => {
 Create `apps/client/src/hooks/use-favicon.ts` hook that generates and sets a colored circle favicon based on the cwd. This task implements the static favicon only (no pulsing animation — that comes in Phase 2). Also create `apps/client/src/hooks/__tests__/use-favicon.test.ts`.
 
 **Files to create:**
+
 - `apps/client/src/hooks/use-favicon.ts`
 - `apps/client/src/hooks/__tests__/use-favicon.test.ts`
 
@@ -280,11 +310,7 @@ Create `apps/client/src/hooks/use-favicon.ts` hook that generates and sets a col
 
 ```typescript
 import { useEffect, useRef } from 'react';
-import {
-  hashToHslColor,
-  generateCircleFavicon,
-  setFavicon,
-} from '@/lib/favicon-utils';
+import { hashToHslColor, generateCircleFavicon, setFavicon } from '@/lib/favicon-utils';
 
 interface UseFaviconOptions {
   cwd: string | null;
@@ -343,10 +369,9 @@ describe('useFavicon', () => {
   });
 
   it('regenerates favicon when cwd changes', () => {
-    const { rerender } = renderHook(
-      ({ cwd }) => useFavicon({ cwd, isStreaming: false }),
-      { initialProps: { cwd: '/project-a' as string | null } },
-    );
+    const { rerender } = renderHook(({ cwd }) => useFavicon({ cwd, isStreaming: false }), {
+      initialProps: { cwd: '/project-a' as string | null },
+    });
     expect(setFavicon).toHaveBeenCalledTimes(1);
 
     rerender({ cwd: '/project-b' });
@@ -356,6 +381,7 @@ describe('useFavicon', () => {
 ```
 
 **Acceptance criteria:**
+
 - Favicon is generated and set when cwd is provided
 - Favicon is not generated when cwd is null
 - Favicon regenerates when cwd changes
@@ -373,10 +399,12 @@ describe('useFavicon', () => {
 Wire `useFavicon` and `useDocumentTitle` into `App.tsx` at the root level. Add a static `<link rel="icon">` fallback to `apps/client/index.html`. Create a simple 32x32 neutral favicon PNG at `apps/client/public/favicon.png`.
 
 **Files to modify:**
+
 - `apps/client/src/App.tsx`
 - `apps/client/index.html`
 
 **Files to create:**
+
 - `apps/client/public/favicon.png` (simple 32x32 PNG — can be a neutral gray circle or DorkOS-branded icon)
 
 **Changes to `App.tsx`:**
@@ -405,16 +433,18 @@ Note: In Phase 1, `isStreaming` is hardcoded to `false` and `activeForm` is hard
 Add inside the `<head>` section, after the viewport meta tag:
 
 ```html
-<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/png" href="/favicon.png" />
 ```
 
 **Creating `favicon.png`:**
 
 Generate a simple 32x32 PNG file. This can be a neutral gray circle (matching the design system's muted color) or a simple branded icon. It serves as:
+
 1. The default favicon before React hydrates
 2. The permanent favicon for Safari (which blocks JS favicon updates)
 
 **Acceptance criteria:**
+
 - `useFavicon` and `useDocumentTitle` are called in `App.tsx`
 - Both hooks receive `selectedCwd` from `useDirectoryState()`
 - `index.html` has a `<link rel="icon">` fallback
@@ -436,6 +466,7 @@ Generate a simple 32x32 PNG file. This can be a neutral gray circle (matching th
 Add `generateDimmedFavicon` to `favicon-utils.ts`, add `isStreaming` boolean to `app-store.ts`, wire `ChatPanel` to write streaming status to the store, and add pulsing logic to `use-favicon.ts`. Write tests for interval lifecycle.
 
 **Files to modify:**
+
 - `apps/client/src/lib/favicon-utils.ts`
 - `apps/client/src/stores/app-store.ts`
 - `apps/client/src/components/chat/ChatPanel.tsx`
@@ -443,15 +474,13 @@ Add `generateDimmedFavicon` to `favicon-utils.ts`, add `isStreaming` boolean to 
 - `apps/client/src/App.tsx`
 
 **Files to modify (tests):**
+
 - `apps/client/src/hooks/__tests__/use-favicon.test.ts`
 
 **1. Add `generateDimmedFavicon` to `favicon-utils.ts`:**
 
 ```typescript
-export function generateDimmedFavicon(
-  solidDataUrl: string,
-  opacity = 0.4,
-): Promise<string> {
+export function generateDimmedFavicon(solidDataUrl: string, opacity = 0.4): Promise<string> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     canvas.width = 32;
@@ -606,6 +635,7 @@ it('starts pulsing interval when streaming', async () => {
 ```
 
 **Acceptance criteria:**
+
 - `generateDimmedFavicon` creates a dimmed version of a favicon data URI
 - `app-store.ts` has `isStreaming` and `setIsStreaming`
 - `ChatPanel` writes streaming status to the store via `useEffect`
@@ -627,11 +657,13 @@ it('starts pulsing interval when streaming', async () => {
 Wire `useTaskState().activeForm` into `useDocumentTitle` so the tab title shows the current task description. Since `useTaskState` requires a `sessionId` and lives in `ChatPanel`, use a Zustand atom approach: add `activeForm` to `app-store.ts`, have `ChatPanel` write it, and have `App.tsx` read it for `useDocumentTitle`.
 
 **Files to modify:**
+
 - `apps/client/src/stores/app-store.ts`
 - `apps/client/src/components/chat/ChatPanel.tsx`
 - `apps/client/src/App.tsx`
 
 **Files to modify (tests):**
+
 - `apps/client/src/hooks/__tests__/use-document-title.test.ts` (if additional tests needed)
 
 **1. Add `activeForm` to `app-store.ts`:**
@@ -671,12 +703,14 @@ useDocumentTitle({ cwd: selectedCwd, activeForm });
 ```
 
 **Title format examples after this task:**
+
 - No cwd: `DorkOS`
 - With cwd: `{emoji} webui — DorkOS`
 - With task: `{emoji} webui — Running tests — DorkOS`
 - Long task: `{emoji} webui — AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA... — DorkOS` (truncated at 40 chars with ellipsis)
 
 **Acceptance criteria:**
+
 - `app-store.ts` has `activeForm` and `setActiveForm`
 - `ChatPanel` writes `taskState.activeForm` to the store
 - `App.tsx` passes `activeForm` from the store to `useDocumentTitle`

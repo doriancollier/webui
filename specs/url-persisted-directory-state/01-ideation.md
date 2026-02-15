@@ -38,12 +38,14 @@
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/hooks/use-session-id.ts` — Template hook: `useQueryState('session')` for standalone, Zustand for embedded
 - `apps/client/src/stores/app-store.ts` — Zustand store with `selectedCwd`, `setSelectedCwd`, `recentCwds`
 - `apps/client/src/components/sessions/DirectoryPicker.tsx` — Directory selection dialog, calls `setSelectedCwd()`
 - `apps/client/src/components/sessions/SessionSidebar.tsx` — Displays selected directory breadcrumb
 
 **Shared Dependencies:**
+
 - `apps/client/src/lib/platform.ts` — `getPlatform()` returns `{ isEmbedded }` flag
 - `apps/client/src/contexts/TransportContext.tsx` — Transport injection
 - `nuqs` — Already installed, adapter already wrapping app
@@ -52,6 +54,7 @@
 User selects directory in DirectoryPicker → `setSelectedCwd(path)` → Zustand store updates → dependent hooks (`use-chat-session`, `use-sessions`, `use-task-state`) re-query with new cwd
 
 **Potential Blast Radius:**
+
 - **New file:** `apps/client/src/hooks/use-directory-state.ts` (new hook)
 - **Modified:** `DirectoryPicker.tsx`, `SessionSidebar.tsx`, `use-default-cwd.ts`
 - **Consumers to verify:** `use-chat-session.ts`, `use-task-state.ts`, `use-sessions.ts`
@@ -64,6 +67,7 @@ N/A — Not a bug fix.
 ## 5) Research
 
 **nuqs in this project:**
+
 - Already installed and configured (`<NuqsAdapter>` in `main.tsx`)
 - For Vite/React SPA: import from `nuqs/adapters/react`
 - `useQueryState('key', parseAsString)` manages a single URL query param
@@ -72,6 +76,7 @@ N/A — Not a bug fix.
 **Potential Solutions:**
 
 **1. Parallel State with Platform Hook (Recommended)**
+
 - Create `useDirectoryState()` mirroring `useSessionId()` pattern
 - URL state via nuqs in standalone mode, Zustand in embedded mode
 - Sync URL changes back to Zustand via `useEffect` for browser back/forward
@@ -80,12 +85,14 @@ N/A — Not a bug fix.
 - Complexity: Low
 
 **2. URL-Only (Remove Zustand)**
+
 - Remove `selectedCwd` from Zustand, use `useQueryState('dir')` everywhere
 - Pros: Simpler single source of truth
 - Cons: Breaks Obsidian embedded mode (no URL bar), larger refactor
 - Complexity: Medium
 
 **3. useQueryStates for Session + Directory Together**
+
 - Manage both params atomically
 - Pros: Atomic updates prevent inconsistency
 - Cons: Over-engineered since session and directory have different lifecycles
@@ -94,6 +101,7 @@ N/A — Not a bug fix.
 **Recommendation:** Approach 1 — Parallel State with Platform Hook. Follows the established `useSessionId` pattern exactly, minimal changes, works in both standalone and embedded modes.
 
 **Key Design Decisions:**
+
 - **Encoding:** Default `parseAsString` handles path encoding automatically (paths get `%2F` encoded)
 - **History:** Use `history: 'replace'` (default) to avoid cluttering browser history
 - **Default:** When no `?dir=` param exists, fall back to server default (keeps URLs clean)

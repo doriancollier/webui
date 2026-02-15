@@ -32,12 +32,12 @@ The SDK is designed for **API key authentication only** (pay-per-token via `ANTH
 
 ## Affected Tools
 
-| Tool | What it did | Outcome |
-|------|-------------|---------|
+| Tool                            | What it did                               | Outcome             |
+| ------------------------------- | ----------------------------------------- | ------------------- |
 | OpenCode (formerly opencode-ai) | Used Claude Max subscription OAuth tokens | Blocked server-side |
-| Cline | Routed through subscription auth | Blocked |
-| Roo Code | Routed through subscription auth | Blocked |
-| aider | Similar pattern | Affected |
+| Cline                           | Routed through subscription auth          | Blocked             |
+| Roo Code                        | Routed through subscription auth          | Blocked             |
+| aider                           | Similar pattern                           | Affected            |
 
 Some users reported temporary account suspensions that were later reversed.
 
@@ -49,11 +49,11 @@ Some users reported temporary account suspensions that were later reversed.
 
 ## The Three Authentication Models
 
-| Model | Auth method | Billing | Programmatic use allowed? |
-|-------|-------------|---------|---------------------------|
-| Claude API | `ANTHROPIC_API_KEY` | Pay-per-token | Yes — this is the intended use |
-| Claude Code CLI (subscription) | OAuth / subscription token | $100-200/month flat | For direct CLI use only |
-| Claude Agent SDK | `ANTHROPIC_API_KEY` | Pay-per-token | Yes — official SDK for building apps |
+| Model                          | Auth method                | Billing             | Programmatic use allowed?            |
+| ------------------------------ | -------------------------- | ------------------- | ------------------------------------ |
+| Claude API                     | `ANTHROPIC_API_KEY`        | Pay-per-token       | Yes — this is the intended use       |
+| Claude Code CLI (subscription) | OAuth / subscription token | $100-200/month flat | For direct CLI use only              |
+| Claude Agent SDK               | `ANTHROPIC_API_KEY`        | Pay-per-token       | Yes — official SDK for building apps |
 
 ## The Claude Agent SDK
 
@@ -84,21 +84,23 @@ Authentication is delegated to the locally installed Claude Code CLI via `pathTo
 
 ### Comparison with banned tools
 
-| Aspect | DorkOS | Banned tools (OpenCode, etc.) |
-|--------|--------|-------------------------------|
-| SDK used | Official Agent SDK | Intercepted CLI OAuth tokens |
-| Auth method | Delegates to local CLI | Used subscription OAuth |
-| Distribution | Self-hosted, wraps own CLI | Distributed products |
-| Who authenticates | User's own CLI installation | The third-party tool |
+| Aspect            | DorkOS                      | Banned tools (OpenCode, etc.) |
+| ----------------- | --------------------------- | ----------------------------- |
+| SDK used          | Official Agent SDK          | Intercepted CLI OAuth tokens  |
+| Auth method       | Delegates to local CLI      | Used subscription OAuth       |
+| Distribution      | Self-hosted, wraps own CLI  | Distributed products          |
+| Who authenticates | User's own CLI installation | The third-party tool          |
 
 ### Risk assessment: LOW but not zero
 
 **Compliant factors:**
+
 1. Uses the **official Agent SDK** (not reverse-engineered OAuth)
 2. **Self-hosted** — wraps your own local CLI, not offering a product with "claude.ai login"
 3. The SDK itself ships with `pathToClaudeCodeExecutable` support, suggesting this use case is contemplated by Anthropic
 
 **Risk factors:**
+
 1. If a user's CLI is authenticated via Claude Max subscription (not API key), DorkOS effectively wraps subscription-authenticated access — the same pattern Anthropic blocked elsewhere
 2. Anthropic's enforcement has been broad and sometimes caught legitimate use cases
 

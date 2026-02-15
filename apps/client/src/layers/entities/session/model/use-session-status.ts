@@ -1,7 +1,11 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore } from '@/layers/shared/model';
-import type { SessionStatusEvent, PermissionMode, UpdateSessionRequest } from '@dorkos/shared/types';
+import type {
+  SessionStatusEvent,
+  PermissionMode,
+  UpdateSessionRequest,
+} from '@dorkos/shared/types';
 
 /** Default model for new sessions before any SDK interaction. */
 const DEFAULT_MODEL = 'claude-sonnet-4-5-20250929';
@@ -34,7 +38,7 @@ export interface SessionStatusData {
 export function useSessionStatus(
   sessionId: string,
   streamingStatus: SessionStatusEvent | null,
-  isStreaming: boolean,
+  isStreaming: boolean
 ) {
   const transport = useTransport();
   const queryClient = useQueryClient();
@@ -69,24 +73,27 @@ export function useSessionStatus(
     cwd: session?.cwd ?? null,
   };
 
-  const updateSession = useCallback(async (opts: UpdateSessionRequest) => {
-    // Apply optimistic update immediately
-    if (opts.model) setLocalModel(opts.model);
-    if (opts.permissionMode) setLocalPermissionMode(opts.permissionMode);
+  const updateSession = useCallback(
+    async (opts: UpdateSessionRequest) => {
+      // Apply optimistic update immediately
+      if (opts.model) setLocalModel(opts.model);
+      if (opts.permissionMode) setLocalPermissionMode(opts.permissionMode);
 
-    try {
-      const updated = await transport.updateSession(sessionId, opts, selectedCwd ?? undefined);
-      queryClient.setQueryData(['session', sessionId, selectedCwd], updated);
-      // Clear optimistic overrides — server data is now authoritative
-      if (opts.model) setLocalModel(null);
-      if (opts.permissionMode) setLocalPermissionMode(null);
-      return updated;
-    } catch {
-      // Revert optimistic state on failure
-      if (opts.model) setLocalModel(null);
-      if (opts.permissionMode) setLocalPermissionMode(null);
-    }
-  }, [transport, sessionId, selectedCwd, queryClient]);
+      try {
+        const updated = await transport.updateSession(sessionId, opts, selectedCwd ?? undefined);
+        queryClient.setQueryData(['session', sessionId, selectedCwd], updated);
+        // Clear optimistic overrides — server data is now authoritative
+        if (opts.model) setLocalModel(null);
+        if (opts.permissionMode) setLocalPermissionMode(null);
+        return updated;
+      } catch {
+        // Revert optimistic state on failure
+        if (opts.model) setLocalModel(null);
+        if (opts.permissionMode) setLocalPermissionMode(null);
+      }
+    },
+    [transport, sessionId, selectedCwd, queryClient]
+  );
 
   return { ...statusData, updateSession };
 }

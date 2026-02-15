@@ -1,1 +1,1 @@
-export { useCommands } from './model/use-commands'
+export { useCommands } from './model/use-commands';

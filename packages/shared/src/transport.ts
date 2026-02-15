@@ -25,20 +25,14 @@ export interface Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
-    cwd?: string,
+    cwd?: string
   ): Promise<void>;
-  approveTool(
-    sessionId: string,
-    toolCallId: string,
-  ): Promise<{ ok: boolean }>;
-  denyTool(
-    sessionId: string,
-    toolCallId: string,
-  ): Promise<{ ok: boolean }>;
+  approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
+  denyTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
   submitAnswers(
     sessionId: string,
     toolCallId: string,
-    answers: Record<string, string>,
+    answers: Record<string, string>
   ): Promise<{ ok: boolean }>;
   getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }>;
   browseDirectory(dirPath?: string, showHidden?: boolean): Promise<BrowseDirectoryResponse>;

@@ -26,6 +26,7 @@ cat .template.json 2>/dev/null
 ```
 
 If the file exists, parse JSON to extract:
+
 - `template.repository` (e.g., "doriancollier/dorkian-next-stack")
 - `template.version` (e.g., "v0.2.0-alpha.8")
 - `template.lastUpdated` (optional)
@@ -37,6 +38,7 @@ cat VERSION 2>/dev/null
 ```
 
 If VERSION exists but no `.template.json`:
+
 - Version is the content of VERSION file (prepend "v" if not present)
 - Repository defaults to "doriancollier/dorkian-next-stack" (the canonical upstream)
 - Note: First-time detection mode
@@ -49,10 +51,12 @@ If neither file exists, report:
 ## Template Version Unknown
 
 Could not determine current template version:
+
 - No `.template.json` manifest found
 - No `VERSION` file found
 
 **To initialize template tracking:**
+
 1. Create a `VERSION` file with your current version (e.g., `0.2.0-alpha.8`)
 2. Run `/template:update` to create the manifest
 
@@ -72,6 +76,7 @@ npx tsx .claude/scripts/template-fetch.ts tags [repository]
 ```
 
 Parse the JSON output to find the latest version:
+
 - Filter tags that match semver pattern (`v?X.Y.Z` or `v?X.Y.Z-prerelease`)
 - Sort by version (descending)
 - Take the first (latest) tag
@@ -84,6 +89,7 @@ If fetch fails, report the error:
 Failed to fetch tags from GitHub: [error message]
 
 **Possible causes:**
+
 - Network connectivity issue
 - GitHub API rate limit exceeded (resets at [time])
 - Repository not found or private
@@ -117,6 +123,7 @@ Your template is up to date. No updates available.
 **Latest upstream:** v0.2.0-alpha.9
 
 Your version is newer than the latest upstream release. This may happen if:
+
 - You're developing on a fork ahead of the main template
 - Version was manually bumped
 
@@ -150,25 +157,30 @@ If changelog fetch succeeds, display the update summary:
 ## [0.2.0-alpha.9] - 2026-02-02
 
 ### Added
+
 - Enhance system landing page with world-class design
 
 ## [0.2.0-alpha.8] - 2026-02-01
 
 ### Added
+
 - Add GitHub link to system sidebar
 
 ## [0.2.0-alpha.7] - 2026-02-01
 
 ### Added
+
 - Render developer guides as HTML pages at /system/guides
 
 ## [0.2.0-alpha.6] - 2026-02-01
 
 ### Added
+
 - Add roadmap clearing functionality
 - Add autonomous roadmap execution system
 
 ### Changed
+
 - Add roadmap:clear command to documentation
 - Add comprehensive documentation for autonomous roadmap execution
 
@@ -230,6 +242,7 @@ If `--json` flag is present in `$ARGUMENTS`, output structured JSON instead of m
 ```
 
 Possible `status` values:
+
 - `"up_to_date"` - Current version matches latest
 - `"update_available"` - Newer version exists
 - `"ahead"` - Current version is newer than latest (fork scenario)
@@ -245,7 +258,7 @@ When `.template.json` doesn't exist but VERSION does, include additional guidanc
 ```markdown
 ## Template Update Available
 
-**Current version:** v0.2.0-alpha.5 *(from VERSION file)*
+**Current version:** v0.2.0-alpha.5 _(from VERSION file)_
 **Latest version:** v0.2.0-alpha.9
 
 > **First-time setup:** You don't have a `.template.json` manifest yet.
@@ -274,6 +287,7 @@ You've exceeded the GitHub API rate limit for unauthenticated requests.
 **Rate limit resets at:** [time from X-RateLimit-Reset header]
 
 **Options:**
+
 1. Wait until the rate limit resets
 2. Authenticate with a GitHub token for higher limits (coming in v2)
 
@@ -298,6 +312,7 @@ Please check your internet connection and try again.
 Could not find repository: [repository]
 
 **Possible causes:**
+
 - Repository name is incorrect
 - Repository is private (authentication not supported in v1)
 - Repository was deleted or renamed

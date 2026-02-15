@@ -12,6 +12,7 @@
 **Task brief:** Restructure the settings dialog to use a tabbed layout (using shadcn/Base UI tab components) and add a new "Status Bar" section where users can toggle each status bar item on or off. The dialog currently has 2 inline sections (Preferences + Server) that will grow as more configuration surfaces are added (context files, system prompts, etc.).
 
 **Assumptions:**
+
 - Tabs are the right organizational pattern for 3-6 sections in a modal dialog (validated in prior UX discussion)
 - All 5 current status bar items should be individually toggleable
 - Status bar visibility preferences are client-only (localStorage, no server persistence)
@@ -19,6 +20,7 @@
 - The project uses `@radix-ui/react-*` for headless primitives, wrapped in shadcn-style components
 
 **Out of scope:**
+
 - Sidebar navigation (overkill for current section count)
 - New "Context Files" or "System Prompt" tabs (future work, but tabs should accommodate them)
 - Rethinking the Server info section's content
@@ -46,11 +48,13 @@
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/components/settings/SettingsDialog.tsx` — Main settings UI (will be restructured with tabs)
 - `apps/client/src/components/status/StatusLine.tsx` — Status bar (will read new visibility prefs)
 - `apps/client/src/stores/app-store.ts` — Preference state (will add 5 new toggles)
 
 **Shared Dependencies:**
+
 - `apps/client/src/components/ui/switch.tsx` — Toggle control (already used)
 - `apps/client/src/components/ui/separator.tsx` — Section dividers (already used)
 - `apps/client/src/components/ui/responsive-dialog.tsx` — Dialog/Drawer wrapper
@@ -62,6 +66,7 @@ User toggles switch in Settings → Zustand store updates → localStorage persi
 **Feature Flags/Config:** None needed. Pure client-side preferences.
 
 **Potential Blast Radius:**
+
 - Direct: 3 files (SettingsDialog, StatusLine, app-store)
 - New: 1 file (tabs.tsx UI component)
 - Tests: 1 file (SettingsDialog.test.tsx)
@@ -80,6 +85,7 @@ N/A — This is a feature, not a bug fix.
 ### Base UI Tabs Component
 
 Base UI provides `Tabs.Root`, `Tabs.List`, `Tabs.Tab`, `Tabs.Panel`, and `Tabs.Indicator`. Key props:
+
 - `defaultValue` / `value` on Root for controlled/uncontrolled
 - `activateOnFocus` on List (arrow key behavior)
 - `keepMounted` on Panel (preserve DOM when hidden)
@@ -90,16 +96,19 @@ The project already has `@base-ui/react` or can use `@radix-ui/react-tabs` (alre
 ### Tab Organization Approaches
 
 **Approach 1: Three tabs (Preferences / Status Bar / Server)**
+
 - Pros: Minimal change, clean separation, each tab has distinct purpose
 - Cons: Preferences tab stays large (7 items), may need sub-splitting later
 - Complexity: Low
 
 **Approach 2: Four tabs (General / Chat / Status Bar / Server)**
+
 - Pros: Better categorization (theme/font in General, tool calls/timestamps in Chat)
 - Cons: More tabs upfront, some tabs feel thin (General has only 3 items)
 - Complexity: Low-Medium
 
 **Approach 3: Three tabs now, split later**
+
 - Pros: Pragmatic — don't over-organize until there's enough content
 - Cons: Will need a second migration when splitting Preferences
 - Complexity: Lowest now, adds future work
@@ -120,10 +129,10 @@ The project already has `@base-ui/react` or can use `@radix-ui/react-tabs` (alre
 
 ## 6) Decisions (Resolved)
 
-| # | Question | Decision |
-|---|----------|----------|
-| 1 | Tab component library | **Radix UI** (`@radix-ui/react-tabs`) — consistent with all existing UI primitives |
-| 2 | Tab memory | **React state** — remembers last tab across open/close, resets on page refresh |
-| 3 | Reset scope | **Preferences tab only** — `resetPreferences()` resets all prefs including status bar toggles |
-| 4 | Empty status bar | **Collapse completely** — status bar area disappears; re-enable via Settings |
-| 5 | Tab count | **3 tabs** — Preferences / Status Bar / Server. Split Preferences later when content grows |
+| #   | Question              | Decision                                                                                      |
+| --- | --------------------- | --------------------------------------------------------------------------------------------- |
+| 1   | Tab component library | **Radix UI** (`@radix-ui/react-tabs`) — consistent with all existing UI primitives            |
+| 2   | Tab memory            | **React state** — remembers last tab across open/close, resets on page refresh                |
+| 3   | Reset scope           | **Preferences tab only** — `resetPreferences()` resets all prefs including status bar toggles |
+| 4   | Empty status bar      | **Collapse completely** — status bar area disappears; re-enable via Settings                  |
+| 5   | Tab count             | **3 tabs** — Preferences / Status Bar / Server. Split Preferences later when content grows    |

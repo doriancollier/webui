@@ -105,7 +105,7 @@ Security: The `cwd` comes from the client's directory state (which is already re
 
 export function fuzzyMatch(
   query: string,
-  target: string,
+  target: string
 ): { match: boolean; score: number; indices: number[] } {
   if (!query) return { match: true, score: 0, indices: [] };
   // ... same algorithm, but also collects indices of matched chars
@@ -120,9 +120,9 @@ The `indices` array contains the positions in `target` where each query characte
 // apps/client/src/components/files/FilePalette.tsx
 
 interface FileEntry {
-  path: string;       // relative path: "src/components/chat/ChatPanel.tsx"
-  filename: string;   // "ChatPanel.tsx"
-  directory: string;  // "src/components/chat/"
+  path: string; // relative path: "src/components/chat/ChatPanel.tsx"
+  filename: string; // "ChatPanel.tsx"
+  directory: string; // "src/components/chat/"
   isDirectory: boolean;
 }
 
@@ -134,6 +134,7 @@ interface FilePaletteProps {
 ```
 
 **Rendering each item:**
+
 - File icon (Lucide `File`) or folder icon (Lucide `Folder`) on the left
 - Filename rendered with match highlighting: matched chars get `font-semibold text-foreground`, unmatched get default `text-sm`
 - Directory path rendered dimmed: `text-xs text-muted-foreground`
@@ -149,7 +150,7 @@ The `indices` array from fuzzyMatch maps to character positions in the full path
 
 interface ChatInputProps {
   // ... existing props ...
-  onCursorChange?: (pos: number) => void;  // NEW
+  onCursorChange?: (pos: number) => void; // NEW
 }
 ```
 
@@ -314,7 +315,6 @@ const handleArrowDown = useCallback(() => {
       />
     )}
   </AnimatePresence>
-
   <ChatInput
     value={input}
     onChange={handleInputChange}
@@ -322,7 +322,10 @@ const handleArrowDown = useCallback(() => {
     onSubmit={handleSubmit}
     isLoading={status === 'streaming'}
     onStop={stop}
-    onEscape={() => { setShowCommands(false); setShowFiles(false); }}
+    onEscape={() => {
+      setShowCommands(false);
+      setShowFiles(false);
+    }}
     isPaletteOpen={isPaletteOpen}
     onArrowUp={handleArrowUp}
     onArrowDown={handleArrowDown}
@@ -361,6 +364,7 @@ export function useFiles(cwd?: string | null) {
 ### Phase 1: Shared Layer (schemas + transport)
 
 **`packages/shared/src/schemas.ts`** — Add:
+
 ```typescript
 export const FileListQuerySchema = z
   .object({
@@ -382,6 +386,7 @@ export type FileListResponse = z.infer<typeof FileListResponseSchema>;
 ```
 
 **`packages/shared/src/transport.ts`** — Add import and method:
+
 ```typescript
 import type { ..., FileListResponse } from './types.js';
 
@@ -392,6 +397,7 @@ listFiles(cwd: string): Promise<FileListResponse>;
 ### Phase 2: Server (service + route)
 
 **`apps/server/src/services/file-lister.ts`** — New file:
+
 - `FileListService` class with `listFiles(cwd)`, `listViaGit(cwd)`, `listViaReaddir(cwd)`, `invalidateCache(cwd?)`
 - In-memory cache: `Map<string, { files: string[]; timestamp: number }>`
 - Git strategy: `execFile('git', ['ls-files', '--cached', '--others', '--exclude-standard'], { cwd, maxBuffer: 10 * 1024 * 1024 })`
@@ -400,15 +406,18 @@ listFiles(cwd: string): Promise<FileListResponse>;
 - Export singleton: `export const fileLister = new FileListService();`
 
 **`apps/server/src/routes/files.ts`** — New file:
+
 - `GET /` handler: validate with `FileListQuerySchema.safeParse(req.query)`, call `fileLister.listFiles(cwd)`, return JSON
 
 **`apps/server/src/app.ts`** — Modify:
+
 - Add `import fileRoutes from './routes/files.js';`
 - Add `app.use('/api/files', fileRoutes);`
 
 ### Phase 3: Client Transports
 
 **`apps/client/src/lib/http-transport.ts`** — Add:
+
 ```typescript
 listFiles(cwd: string): Promise<FileListResponse> {
   const params = new URLSearchParams({ cwd });
@@ -417,6 +426,7 @@ listFiles(cwd: string): Promise<FileListResponse> {
 ```
 
 **`apps/client/src/lib/direct-transport.ts`** — Add:
+
 ```typescript
 // Add to DirectTransportServices interface:
 fileLister?: {
@@ -436,10 +446,11 @@ async listFiles(cwd: string): Promise<FileListResponse> {
 ### Phase 4: fuzzyMatch Enhancement
 
 **`apps/client/src/lib/fuzzy-match.ts`** — Modify return type:
+
 ```typescript
 export function fuzzyMatch(
   query: string,
-  target: string,
+  target: string
 ): { match: boolean; score: number; indices: number[] } {
   if (!query) return { match: true, score: 0, indices: [] };
 
@@ -466,6 +477,7 @@ export function fuzzyMatch(
 ```
 
 **`apps/client/src/lib/__tests__/fuzzy-match.test.ts`** — Add tests for `indices`:
+
 - Empty query → `indices: []`
 - Exact match → indices are sequential `[0, 1, 2, ...]`
 - Subsequence match → indices are non-sequential
@@ -478,6 +490,7 @@ export function fuzzyMatch(
 ### Phase 6: FilePalette Component
 
 **`apps/client/src/components/files/FilePalette.tsx`** — New file:
+
 - Same animation pattern as CommandPalette (motion.div with scale+opacity)
 - Same `onMouseDown={e => e.preventDefault()}` to prevent blur
 - Flat list (no grouping by namespace)
@@ -487,6 +500,7 @@ export function fuzzyMatch(
 - Cap at 50 displayed items
 
 **Match highlighting helper:**
+
 ```typescript
 function HighlightedText({ text, indices, startOffset = 0 }: {
   text: string;
@@ -512,6 +526,7 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 ### Phase 7: ChatInput + ChatPanel Integration
 
 **`apps/client/src/components/chat/ChatInput.tsx`** — Modify:
+
 - Add `onCursorChange?: (pos: number) => void` to props
 - In `handleChange`: after `onChange(e.target.value)`, call `onCursorChange?.(e.target.selectionStart)`
 - Add `onSelect` handler on `<textarea>` to catch cursor repositioning (click, shift+arrow):
@@ -525,6 +540,7 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 - Add `onSelect={handleSelect}` to `<textarea>`
 
 **`apps/client/src/components/chat/ChatPanel.tsx`** — Modify:
+
 - Add all new state variables (showFiles, fileQuery, fileSelectedIndex, fileTriggerPos, cursorPos)
 - Add useFiles hook
 - Modify `handleInputChange` to use cursor-position-based trigger detection for both `@` and `/`
@@ -538,21 +554,21 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 
 ## 4) File Change Summary
 
-| File | Change | Phase |
-|------|--------|-------|
-| `packages/shared/src/schemas.ts` | **Modify** — Add `FileListQuerySchema`, `FileListResponseSchema` | 1 |
-| `packages/shared/src/transport.ts` | **Modify** — Add `listFiles()` method + import | 1 |
-| `apps/server/src/services/file-lister.ts` | **New** — FileListService with git+readdir strategies | 2 |
-| `apps/server/src/routes/files.ts` | **New** — GET /api/files endpoint | 2 |
-| `apps/server/src/app.ts` | **Modify** — Mount files route | 2 |
-| `apps/client/src/lib/http-transport.ts` | **Modify** — Add `listFiles()` | 3 |
-| `apps/client/src/lib/direct-transport.ts` | **Modify** — Add `listFiles()` + service interface | 3 |
-| `apps/client/src/lib/fuzzy-match.ts` | **Modify** — Add `indices` to return | 4 |
-| `apps/client/src/lib/__tests__/fuzzy-match.test.ts` | **Modify** — Add indices tests | 4 |
-| `apps/client/src/hooks/use-files.ts` | **New** — React Query hook | 5 |
-| `apps/client/src/components/files/FilePalette.tsx` | **New** — File autocomplete palette UI | 6 |
-| `apps/client/src/components/chat/ChatInput.tsx` | **Modify** — Expose cursor position | 7 |
-| `apps/client/src/components/chat/ChatPanel.tsx` | **Modify** — `@` trigger, file state, integration | 7 |
+| File                                                | Change                                                           | Phase |
+| --------------------------------------------------- | ---------------------------------------------------------------- | ----- |
+| `packages/shared/src/schemas.ts`                    | **Modify** — Add `FileListQuerySchema`, `FileListResponseSchema` | 1     |
+| `packages/shared/src/transport.ts`                  | **Modify** — Add `listFiles()` method + import                   | 1     |
+| `apps/server/src/services/file-lister.ts`           | **New** — FileListService with git+readdir strategies            | 2     |
+| `apps/server/src/routes/files.ts`                   | **New** — GET /api/files endpoint                                | 2     |
+| `apps/server/src/app.ts`                            | **Modify** — Mount files route                                   | 2     |
+| `apps/client/src/lib/http-transport.ts`             | **Modify** — Add `listFiles()`                                   | 3     |
+| `apps/client/src/lib/direct-transport.ts`           | **Modify** — Add `listFiles()` + service interface               | 3     |
+| `apps/client/src/lib/fuzzy-match.ts`                | **Modify** — Add `indices` to return                             | 4     |
+| `apps/client/src/lib/__tests__/fuzzy-match.test.ts` | **Modify** — Add indices tests                                   | 4     |
+| `apps/client/src/hooks/use-files.ts`                | **New** — React Query hook                                       | 5     |
+| `apps/client/src/components/files/FilePalette.tsx`  | **New** — File autocomplete palette UI                           | 6     |
+| `apps/client/src/components/chat/ChatInput.tsx`     | **Modify** — Expose cursor position                              | 7     |
+| `apps/client/src/components/chat/ChatPanel.tsx`     | **Modify** — `@` trigger, file state, integration                | 7     |
 
 **Total: 4 new files, 9 modified files**
 
@@ -563,6 +579,7 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 ### Unit Tests
 
 **`apps/server/src/services/__tests__/file-lister.test.ts`** — New:
+
 - Mock `child_process.execFile` for git strategy
 - Mock `fs/promises` for readdir strategy
 - Test: git success → returns file list
@@ -573,6 +590,7 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 - Test: readdir exclusion patterns
 
 **`apps/client/src/lib/__tests__/fuzzy-match.test.ts`** — Extend existing:
+
 - Test: indices for exact match
 - Test: indices for subsequence match
 - Test: indices length equals query length
@@ -598,6 +616,7 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 ## 6) Acceptance Criteria
 
 ### Functional
+
 - [ ] Typing `@` after whitespace or at start of input opens file palette
 - [ ] File palette shows files and directories from current working directory
 - [ ] Fuzzy matching filters results as user types
@@ -610,12 +629,14 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 - [ ] Command palette (`/`) and file palette (`@`) coexist without conflicts
 
 ### Performance
+
 - [ ] File list fetched once per cwd, cached for 5 minutes
 - [ ] Fuzzy filtering completes in <5ms for 10k files
 - [ ] No visible lag when typing in file query
 - [ ] Git-based listing completes in <500ms for typical projects
 
 ### Display
+
 - [ ] Filename rendered bold, directory path rendered dimmed
 - [ ] File icon for files, folder icon for directories
 - [ ] Max 50 items displayed (sorted by fuzzy score)
@@ -623,6 +644,7 @@ function HighlightedText({ text, indices, startOffset = 0 }: {
 - [ ] Matched characters visually highlighted
 
 ### Compatibility
+
 - [ ] Works in standalone mode (HttpTransport)
 - [ ] Works in Obsidian plugin mode (DirectTransport, graceful fallback)
 - [ ] Existing slash command autocomplete unchanged

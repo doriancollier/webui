@@ -48,6 +48,7 @@ ChatPanel (flex flex-col h-full)
 **Remove:** Scroll-to-bottom button JSX, `motion/react` imports, `showScrollButton` state, `AnimatePresence`
 
 **Add:**
+
 - `onScrollStateChange` callback prop: `(state: { isAtBottom: boolean }) => void`
 - `forwardRef` + `useImperativeHandle` exposing `scrollToBottom(): void`
 
@@ -58,6 +59,7 @@ The `isAtBottom` threshold changes from 100px to **200px** (per user decision) t
 #### ChatPanel
 
 **Add:**
+
 - `useRef<MessageListHandle>` to call `scrollToBottom()`
 - `isAtBottom` state (from `onScrollStateChange` callback)
 - `hasNewMessages` state (derived from message count changes while `!isAtBottom`)
@@ -100,6 +102,7 @@ The existing auto-scroll in `MessageList` uses a `scrollTrigger` string (`${mess
 #### Scroll-to-Bottom Button
 
 Moves to ChatPanel's overlay wrapper. Styled as:
+
 - `absolute bottom-4 right-4`
 - `rounded-full bg-background border shadow-sm p-2 hover:shadow-md`
 - `ArrowDown` icon from lucide-react
@@ -110,6 +113,7 @@ Moves to ChatPanel's overlay wrapper. Styled as:
 #### "New Messages" Pill
 
 New element in ChatPanel's overlay wrapper. Styled as:
+
 - `absolute top-2 left-1/2 -translate-x-1/2`
 - `rounded-full bg-primary text-primary-foreground text-sm px-4 py-1.5 shadow-sm cursor-pointer`
 - Text: "New messages" (static, no count)
@@ -120,10 +124,10 @@ New element in ChatPanel's overlay wrapper. Styled as:
 
 ### Animation Specs
 
-| Element | Enter | Exit | Easing |
-|---------|-------|------|--------|
-| Scroll button | opacity 0→1, y 10→0, 150ms | opacity 1→0, y 0→10, 150ms | ease-out / ease-in |
-| New messages pill | opacity 0→1, y -10→0, 200ms | opacity 1→0, 150ms | ease-out / ease-in |
+| Element           | Enter                       | Exit                       | Easing             |
+| ----------------- | --------------------------- | -------------------------- | ------------------ |
+| Scroll button     | opacity 0→1, y 10→0, 150ms  | opacity 1→0, y 0→10, 150ms | ease-out / ease-in |
+| New messages pill | opacity 0→1, y -10→0, 200ms | opacity 1→0, 150ms         | ease-out / ease-in |
 
 Both wrapped in `<AnimatePresence>` for exit animations.
 
@@ -131,10 +135,10 @@ Both wrapped in `<AnimatePresence>` for exit animations.
 
 ## Files to Modify
 
-| File | Changes |
-|------|---------|
+| File                                              | Changes                                                                                                                                                                                                                                    |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `apps/client/src/components/chat/MessageList.tsx` | Remove button/AnimatePresence/motion imports. Add `forwardRef`, `useImperativeHandle`, `onScrollStateChange` prop. Change threshold to 200px. Replace `showScrollButton` with `isAtBottomRef`. Change container from `flex-1` to `h-full`. |
-| `apps/client/src/components/chat/ChatPanel.tsx` | Add overlay wrapper `div`. Add scroll button + pill JSX. Add `isAtBottom`, `hasNewMessages` state. Add `messageListRef`. Import `motion`, `AnimatePresence`, `ArrowDown`. |
+| `apps/client/src/components/chat/ChatPanel.tsx`   | Add overlay wrapper `div`. Add scroll button + pill JSX. Add `isAtBottom`, `hasNewMessages` state. Add `messageListRef`. Import `motion`, `AnimatePresence`, `ArrowDown`.                                                                  |
 
 No server changes. No new dependencies. No changes to `MessageItem.tsx`, `use-chat-session.ts`, or `ChatInput.tsx`.
 
@@ -168,14 +172,17 @@ No server changes. No new dependencies. No changes to `MessageItem.tsx`, `use-ch
 ## Implementation Phases
 
 ### Phase 1: Core Refactor (P1)
+
 1. Refactor `MessageList` — extract scroll state, remove button, add `forwardRef`/callback
 2. Refactor `ChatPanel` — add overlay wrapper, receive scroll state, render button in new position
 
 ### Phase 2: New Features (P2)
+
 3. Implement new messages detection logic in ChatPanel
 4. Add "New messages" pill indicator UI with animations
 5. Verify scroll position preservation works correctly after refactor
 
 ### Phase 3: Quality (P3)
+
 6. Update tests for MessageList and ChatPanel
 7. Manual verification of all acceptance criteria

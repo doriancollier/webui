@@ -1,6 +1,6 @@
 ---
 description: Comprehensive code cleanup using Knip and best practices for codebase maintenance
-argument-hint: "[check|fix|deep] [--deps] [--exports] [--files] [--no-commit]"
+argument-hint: '[check|fix|deep] [--deps] [--exports] [--files] [--no-commit]'
 allowed-tools: Bash, Read, Grep, Glob, Edit, AskUserQuestion, TodoWrite
 category: application
 ---
@@ -15,20 +15,20 @@ Parse `$ARGUMENTS` for these options:
 
 ### Modes (mutually exclusive, default: check)
 
-| Mode | Description |
-|------|-------------|
-| `check` | Report issues only, no changes (default) |
-| `fix` | Auto-fix safe issues (unused imports, exports) |
-| `deep` | Full cleanup with manual review prompts |
+| Mode    | Description                                    |
+| ------- | ---------------------------------------------- |
+| `check` | Report issues only, no changes (default)       |
+| `fix`   | Auto-fix safe issues (unused imports, exports) |
+| `deep`  | Full cleanup with manual review prompts        |
 
 ### Filters (combine with any mode)
 
-| Flag | Effect |
-|------|--------|
-| `--deps` | Focus on unused dependencies only |
-| `--exports` | Focus on unused exports only |
-| `--files` | Focus on unused files only |
-| `--no-commit` | Skip creating cleanup commit |
+| Flag          | Effect                            |
+| ------------- | --------------------------------- |
+| `--deps`      | Focus on unused dependencies only |
+| `--exports`   | Focus on unused exports only      |
+| `--files`     | Focus on unused files only        |
+| `--no-commit` | Skip creating cleanup commit      |
 
 ### Examples
 
@@ -61,6 +61,7 @@ If there are uncommitted changes:
 ```
 
 Use AskUserQuestion:
+
 - Proceed anyway (changes will be mixed with cleanup)
 - Stop and let me commit first
 
@@ -88,13 +89,13 @@ pnpm knip 2>&1
 
 Parse Knip output and categorize:
 
-| Category | Risk | Auto-fixable |
-|----------|------|--------------|
-| **Unused files** | High | No (manual review required) |
-| **Unused dependencies** | Medium | Yes (with `knip --fix`) |
-| **Unused exports** | Low | Yes (with `knip --fix`) |
-| **Unused types** | Low | Yes (with `knip --fix`) |
-| **Duplicate exports** | Info | Manual |
+| Category                  | Risk   | Auto-fixable                         |
+| ------------------------- | ------ | ------------------------------------ |
+| **Unused files**          | High   | No (manual review required)          |
+| **Unused dependencies**   | Medium | Yes (with `knip --fix`)              |
+| **Unused exports**        | Low    | Yes (with `knip --fix`)              |
+| **Unused types**          | Low    | Yes (with `knip --fix`)              |
+| **Duplicate exports**     | Info   | Manual                               |
 | **Unlisted dependencies** | Medium | Manual (need to add to package.json) |
 
 ### Step 2.3: Present Analysis
@@ -103,27 +104,36 @@ Parse Knip output and categorize:
 ## Dead Code Analysis
 
 ### Summary
-| Category | Count | Action |
-|----------|-------|--------|
-| Unused files | X | Manual review |
-| Unused dependencies | X | Auto-removable |
-| Unused exports | X | Auto-removable |
-| Unlisted dependencies | X | Need to add |
+
+| Category              | Count | Action         |
+| --------------------- | ----- | -------------- |
+| Unused files          | X     | Manual review  |
+| Unused dependencies   | X     | Auto-removable |
+| Unused exports        | X     | Auto-removable |
+| Unlisted dependencies | X     | Need to add    |
 
 ### Unused Files
+
 Files that are not imported anywhere:
+
 - `path/to/file.ts` — [brief context if possible]
 
 ### Unused Dependencies
+
 Packages in package.json not used in code:
+
 - `package-name` — [what it's for]
 
 ### Unused Exports
+
 Exported symbols not imported anywhere:
+
 - `functionName` in `path/to/file.ts:line`
 
 ### Unlisted Dependencies
+
 Used in code but not in package.json:
+
 - `package-name` — used in `path/to/file.ts`
 ```
 
@@ -150,11 +160,12 @@ Note which issues are auto-fixable vs require manual intervention.
 ## Lint Analysis
 
 | Category | Count | Auto-fixable |
-|----------|-------|--------------|
-| Errors | X | Y |
-| Warnings | X | Y |
+| -------- | ----- | ------------ |
+| Errors   | X     | Y            |
+| Warnings | X     | Y            |
 
 ### Top Issues
+
 - [issue-type]: X occurrences
 - [issue-type]: X occurrences
 ```
@@ -168,11 +179,13 @@ Note which issues are auto-fixable vs require manual intervention.
 ### Step 4.1: Create Cleanup Branch (if not on feature branch)
 
 Check current branch:
+
 ```bash
 git branch --show-current
 ```
 
 If on `main`:
+
 ```bash
 git checkout -b chore/cleanup-$(date +%Y%m%d)
 ```
@@ -184,6 +197,7 @@ pnpm knip --fix 2>&1
 ```
 
 This will:
+
 - Remove unused dependencies from package.json
 - Remove `export` keyword from unused exports
 - NOT delete files (requires `--allow-remove-files`)
@@ -197,6 +211,7 @@ pnpm lint --fix 2>&1
 ### Step 4.4: Reinstall Dependencies
 
 If dependencies were removed:
+
 ```bash
 pnpm install
 ```
@@ -209,6 +224,7 @@ pnpm lint
 ```
 
 If validation fails:
+
 - Report which fix caused the issue
 - Suggest rollback: `git checkout -- .`
 - Stop and let user decide
@@ -223,21 +239,25 @@ If validation fails:
 
 For each unused file, present:
 
-```markdown
+````markdown
 ### Unused File: `path/to/file.ts`
 
 **Contents preview:**
+
 ```typescript
 [first 20 lines of file]
 ```
+````
 
 **Analysis:**
+
 - File purpose: [inferred from name/contents]
 - Last modified: [git log date]
 - Similar files exist: [yes/no]
 
 **Recommendation:** [Keep as template | Safe to delete | Needs investigation]
-```
+
+````
 
 Use AskUserQuestion for each file:
 - Delete this file
@@ -257,9 +277,10 @@ For each unlisted dependency:
 **Package info:**
 - Purpose: [from npm description]
 - Is it a peer dependency? [check if required by another package]
-```
+````
 
 Use AskUserQuestion:
+
 - Add to dependencies
 - Add to devDependencies
 - Remove usage (it's probably dead code)
@@ -273,10 +294,10 @@ If Knip reports configuration hints:
 
 Knip suggests these config improvements:
 
-| Item | Location | Suggestion |
-|------|----------|------------|
-| `package-name` | knip.config.ts | Remove from ignoreDependencies |
-| `pattern` | knip.config.ts | Refine entry pattern (no matches) |
+| Item           | Location       | Suggestion                        |
+| -------------- | -------------- | --------------------------------- |
+| `package-name` | knip.config.ts | Remove from ignoreDependencies    |
+| `pattern`      | knip.config.ts | Refine entry pattern (no matches) |
 ```
 
 Offer to apply these optimizations.
@@ -319,24 +340,29 @@ EOF
 ## Cleanup Complete
 
 ### Changes Made
-| Category | Before | After | Removed |
-|----------|--------|-------|---------|
-| Dependencies | X | Y | Z |
-| Exports | X | Y | Z |
-| Lint issues | X | Y | Z fixed |
+
+| Category     | Before | After | Removed |
+| ------------ | ------ | ----- | ------- |
+| Dependencies | X      | Y     | Z       |
+| Exports      | X      | Y     | Z       |
+| Lint issues  | X      | Y     | Z fixed |
 
 ### Files Deleted
+
 - `path/to/file.ts`
 
 ### Configuration Updated
+
 - Updated `knip.config.ts` ignore patterns
 
 ### Validation
+
 ✅ Typecheck passed
 ✅ Lint passed
 ✅ Build... [run if major changes]
 
 ### Next Steps
+
 - Review changes with `git diff HEAD~1`
 - Run `pnpm dev` to verify app works
 - Merge to main when ready
@@ -351,23 +377,26 @@ The project uses `knip.config.ts` for configuration. Key patterns:
 ### Adding Exceptions
 
 To keep intentionally unused code, add to `ignore`:
+
 ```typescript
 ignore: [
-  'src/components/ui/**',  // Component library
-  'src/path/to/file.ts',   // Specific file
-]
+  'src/components/ui/**', // Component library
+  'src/path/to/file.ts', // Specific file
+];
 ```
 
 To keep intentionally unused dependencies, add to `ignoreDependencies`:
+
 ```typescript
 ignoreDependencies: [
-  'package-name',  // Reason why it's kept
-]
+  'package-name', // Reason why it's kept
+];
 ```
 
 ### Boilerplate Pattern
 
 This project uses an "add-on-demand" pattern for Shadcn UI components:
+
 - All Shadcn components are in `knip.config.ts` ignore list
 - As components are used, remove them from the ignore list
 - This allows Knip to catch genuinely unused components
@@ -402,11 +431,11 @@ pnpm install
 
 ## Integration with Other Commands
 
-| Command | Relationship |
-|---------|--------------|
+| Command        | Relationship                              |
+| -------------- | ----------------------------------------- |
 | `/app:upgrade` | Run cleanup BEFORE upgrading dependencies |
-| `/git:commit` | Cleanup commits follow same validation |
-| `/git:push` | Full validation before push |
+| `/git:commit`  | Cleanup commits follow same validation    |
+| `/git:push`    | Full validation before push               |
 
 ---
 

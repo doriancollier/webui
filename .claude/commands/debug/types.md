@@ -1,6 +1,6 @@
 ---
 description: Debug and fix TypeScript type errors with systematic analysis and expert guidance
-argument-hint: "[error-message or file-path]"
+argument-hint: '[error-message or file-path]'
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
@@ -11,6 +11,7 @@ Systematically debug and resolve TypeScript type errors using evidence-based tec
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If argument looks like an error message, use it as the starting point
 - If argument is a file path, run typecheck on that file
 - If empty, run full typecheck and analyze errors
@@ -66,6 +67,7 @@ AskUserQuestion:
 ### 2.1 Parse the Error
 
 Extract key information from the TypeScript error:
+
 - **Error code** (e.g., TS2322, TS2345, TS2741)
 - **File and line number**
 - **Expected type** vs **Actual type**
@@ -75,16 +77,16 @@ Extract key information from the TypeScript error:
 
 Common TypeScript error categories:
 
-| Error Code | Category | Common Cause |
-|------------|----------|--------------|
-| TS2322 | Type mismatch | Assigning wrong type to variable |
-| TS2345 | Argument type | Wrong type passed to function |
-| TS2339 | Property missing | Accessing non-existent property |
-| TS2741 | Missing property | Object literal missing required property |
-| TS2352 | Type assertion | Invalid type assertion |
-| TS2589 | Infinite type | Recursive type too deep |
-| TS7006 | Implicit any | Parameter has implicit 'any' type |
-| TS2307 | Module not found | Import path doesn't resolve |
+| Error Code | Category         | Common Cause                             |
+| ---------- | ---------------- | ---------------------------------------- |
+| TS2322     | Type mismatch    | Assigning wrong type to variable         |
+| TS2345     | Argument type    | Wrong type passed to function            |
+| TS2339     | Property missing | Accessing non-existent property          |
+| TS2741     | Missing property | Object literal missing required property |
+| TS2352     | Type assertion   | Invalid type assertion                   |
+| TS2589     | Infinite type    | Recursive type too deep                  |
+| TS7006     | Implicit any     | Parameter has implicit 'any' type        |
+| TS2307     | Module not found | Import path doesn't resolve              |
 
 ### 2.3 Read the Source Code
 
@@ -154,10 +156,11 @@ AskUserQuestion:
 **Problem**: `let status = "success"` infers `string` instead of `"success"`
 
 **Fix**: Use `as const` or explicit type annotation
+
 ```typescript
-const status = "success" as const
+const status = 'success' as const;
 // or
-let status: "success" | "error" = "success"
+let status: 'success' | 'error' = 'success';
 ```
 
 ### 4.2 Union Type Narrowing
@@ -165,6 +168,7 @@ let status: "success" | "error" = "success"
 **Problem**: Can't access property that only exists on one branch of union
 
 **Fix**: Add type guard
+
 ```typescript
 if ('propertyName' in obj) {
   // TypeScript now knows obj has propertyName
@@ -180,6 +184,7 @@ if (obj.kind === 'specific') {
 **Problem**: Generic parameter inferred as `unknown` or wrong type
 
 **Fix**: Provide explicit type parameter
+
 ```typescript
 // Instead of: getData(id)
 // Use: getData<UserType>(id)
@@ -190,6 +195,7 @@ if (obj.kind === 'specific') {
 **Problem**: Object literal missing required property
 
 **Fix Options**:
+
 1. Add the missing property
 2. Make property optional in interface (`property?: type`)
 3. Use `Partial<Type>` if appropriate
@@ -223,6 +229,7 @@ TodoWrite:
 ### 5.2 Make Changes
 
 For each change:
+
 1. **Read the file first** - never edit without reading
 2. **Make targeted edits** - minimal changes to fix the error
 3. **Preserve existing patterns** - follow project conventions
@@ -234,6 +241,7 @@ pnpm typecheck
 ```
 
 Check that:
+
 - The original error is resolved
 - No new errors were introduced
 - Related code still works
@@ -312,19 +320,20 @@ AskUserQuestion:
 
 ### Common Error Codes
 
-| Code | Meaning | Quick Fix |
-|------|---------|-----------|
-| TS2322 | Type 'X' is not assignable to type 'Y' | Check type compatibility |
-| TS2345 | Argument type mismatch | Verify function signature |
-| TS2339 | Property doesn't exist | Check spelling, add to interface |
-| TS2532 | Object possibly undefined | Add null check or optional chaining |
-| TS2571 | Object is of type 'unknown' | Add type guard or assertion |
-| TS7006 | Implicit any | Add type annotation |
-| TS2307 | Cannot find module | Check import path, install types |
+| Code   | Meaning                                | Quick Fix                           |
+| ------ | -------------------------------------- | ----------------------------------- |
+| TS2322 | Type 'X' is not assignable to type 'Y' | Check type compatibility            |
+| TS2345 | Argument type mismatch                 | Verify function signature           |
+| TS2339 | Property doesn't exist                 | Check spelling, add to interface    |
+| TS2532 | Object possibly undefined              | Add null check or optional chaining |
+| TS2571 | Object is of type 'unknown'            | Add type guard or assertion         |
+| TS7006 | Implicit any                           | Add type annotation                 |
+| TS2307 | Cannot find module                     | Check import path, install types    |
 
 ### Project-Specific Patterns
 
 This project uses:
+
 - **Zod schemas** for runtime validation (`z.infer<typeof schema>`)
 - **Prisma types** from `@/generated/prisma`
 - **TanStack Query** with typed hooks

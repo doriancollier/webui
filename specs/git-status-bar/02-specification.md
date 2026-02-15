@@ -130,11 +130,13 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResponse | Git
 **Parsing logic for `--porcelain=v1 --branch` output:**
 
 The first line is the branch header:
+
 ```
 ## main...origin/main [ahead 2, behind 1]
 ```
 
 Remaining lines are file status entries with 2-char codes:
+
 ```
  M file1.txt       (modified, unstaged)
 M  file2.txt       (modified, staged)
@@ -144,6 +146,7 @@ UU file5.txt       (conflicted)
 ```
 
 The parser:
+
 1. Extracts branch name from `## <branch>` (before `...` if tracking remote)
 2. Extracts `tracking` branch (after `...`, before `[`)
 3. Extracts `ahead`/`behind` from `[ahead N, behind M]` bracket notation
@@ -374,22 +377,23 @@ Place after the existing "Show working directory" toggle since they're related.
 
 ### Display States
 
-| State | Display |
-|-------|---------|
-| Clean, no remote | `[GitBranch] main` |
-| Clean, synced | `[GitBranch] main` |
-| Dirty | `[GitBranch] main · 3 changes` |
-| Dirty + ahead | `[GitBranch] main ↑2 · 3 changes` |
-| Dirty + behind | `[GitBranch] main ↓1 · 3 changes` |
+| State                  | Display                              |
+| ---------------------- | ------------------------------------ |
+| Clean, no remote       | `[GitBranch] main`                   |
+| Clean, synced          | `[GitBranch] main`                   |
+| Dirty                  | `[GitBranch] main · 3 changes`       |
+| Dirty + ahead          | `[GitBranch] main ↑2 · 3 changes`    |
+| Dirty + behind         | `[GitBranch] main ↓1 · 3 changes`    |
 | Dirty + ahead + behind | `[GitBranch] main ↑2 ↓1 · 3 changes` |
-| Detached HEAD | `[GitBranch] abc1234 · 3 changes` |
-| Not a git repo | `[GitBranch] No repo` (grayed out) |
-| Toggle off | Item hidden from status bar |
-| Loading (first fetch) | Item not shown until data arrives |
+| Detached HEAD          | `[GitBranch] abc1234 · 3 changes`    |
+| Not a git repo         | `[GitBranch] No repo` (grayed out)   |
+| Toggle off             | Item hidden from status bar          |
+| Loading (first fetch)  | Item not shown until data arrives    |
 
 ### Tooltip Content
 
 On hover, the native `title` attribute shows:
+
 - Full branch name (useful when truncated)
 - Detailed breakdown: `feature/my-long-branch-name · 3 modified, 1 staged, 2 untracked`
 - Or `main · clean` if no changes
@@ -469,6 +473,7 @@ Mock `child_process.execFile` to return known porcelain output strings.
 ### Phase 1: Core (MVP)
 
 All items in this spec constitute Phase 1:
+
 1. Shared schema + types + transport interface
 2. Server service (git porcelain parser) + route + mount
 3. Client hook (useGitStatus with polling)

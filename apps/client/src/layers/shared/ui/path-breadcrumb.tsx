@@ -30,7 +30,7 @@ export function PathBreadcrumb({
   const maxWidth = size === 'sm' ? 'max-w-[80px]' : 'max-w-[120px]';
 
   return (
-    <div className="flex items-center gap-0.5 min-w-0 overflow-hidden">
+    <div className="flex min-w-0 items-center gap-0.5 overflow-hidden">
       {truncated && (
         <>
           <span className={`${textClass} text-muted-foreground/50 flex-shrink-0`}>...</span>
@@ -47,14 +47,17 @@ export function PathBreadcrumb({
         }`;
 
         return (
-          <span key={segPath} className={`flex items-center ${isLast ? 'flex-shrink-0' : 'min-w-0'}`}>
+          <span
+            key={segPath}
+            className={`flex items-center ${isLast ? 'flex-shrink-0' : 'min-w-0'}`}
+          >
             {i > 0 && (
               <ChevronRight className={`${chevronClass} text-muted-foreground/40 flex-shrink-0`} />
             )}
             {onSegmentClick ? (
               <button
                 onClick={() => onSegmentClick(segPath)}
-                className={`px-1 py-0.5 rounded hover:bg-accent transition-colors ${labelClass}`}
+                className={`hover:bg-accent rounded px-1 py-0.5 transition-colors ${labelClass}`}
               >
                 {segment}
               </button>

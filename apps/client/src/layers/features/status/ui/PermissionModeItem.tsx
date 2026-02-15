@@ -51,7 +51,7 @@ export function PermissionModeItem({ mode, onChangeMode }: PermissionModeItemPro
     <ResponsiveDropdownMenu>
       <ResponsiveDropdownMenuTrigger asChild>
         <button
-          className={`inline-flex items-center gap-1 hover:text-foreground transition-colors duration-150 ${isDangerous ? 'text-red-500' : ''}`}
+          className={`hover:text-foreground inline-flex items-center gap-1 transition-colors duration-150 ${isDangerous ? 'text-red-500' : ''}`}
         >
           <Icon className="size-(--size-icon-xs)" />
           <span>{current.label}</span>
@@ -59,7 +59,10 @@ export function PermissionModeItem({ mode, onChangeMode }: PermissionModeItemPro
       </ResponsiveDropdownMenuTrigger>
       <ResponsiveDropdownMenuContent side="top" align="start" className="w-56">
         <ResponsiveDropdownMenuLabel>Permission Mode</ResponsiveDropdownMenuLabel>
-        <ResponsiveDropdownMenuRadioGroup value={mode} onValueChange={(v) => onChangeMode(v as PermissionMode)}>
+        <ResponsiveDropdownMenuRadioGroup
+          value={mode}
+          onValueChange={(v) => onChangeMode(v as PermissionMode)}
+        >
           {PERMISSION_MODES.map((m) => {
             const isWarn = m.value === 'bypassPermissions';
             return (

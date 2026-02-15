@@ -16,7 +16,7 @@ describe('fnv1aHash', () => {
   it('returns a uint32', () => {
     const hash = fnv1aHash('/any/path');
     expect(hash).toBeGreaterThanOrEqual(0);
-    expect(hash).toBeLessThanOrEqual(0xFFFFFFFF);
+    expect(hash).toBeLessThanOrEqual(0xffffffff);
   });
 
   it('handles empty string', () => {
@@ -51,9 +51,7 @@ describe('hashToEmoji', () => {
   });
 
   it('returns different emojis for different cwds', () => {
-    const emojis = new Set(
-      ['/a', '/b', '/c', '/d', '/e', '/f', '/g', '/h'].map(hashToEmoji),
-    );
+    const emojis = new Set(['/a', '/b', '/c', '/d', '/e', '/f', '/g', '/h'].map(hashToEmoji));
     expect(emojis.size).toBeGreaterThan(1);
   });
 });

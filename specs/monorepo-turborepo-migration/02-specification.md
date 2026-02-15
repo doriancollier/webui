@@ -46,14 +46,14 @@ The hexagonal architecture (Transport interface with HttpTransport/DirectTranspo
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| `turbo` | latest | Monorepo task runner (new) |
-| `npm` workspaces | built-in | Package linking and dependency management |
-| `vite` | ^6.0.0 | Client and plugin builds (existing) |
-| `typescript` | ^5.7.0 | Type checking and server compilation (existing) |
-| `vitest` | ^2.1.0 | Test runner (existing, needs workspace config) |
-| `tailwindcss` | ^4.0.0 | CSS framework (existing, needs `@source` updates) |
+| Dependency       | Version  | Purpose                                           |
+| ---------------- | -------- | ------------------------------------------------- |
+| `turbo`          | latest   | Monorepo task runner (new)                        |
+| `npm` workspaces | built-in | Package linking and dependency management         |
+| `vite`           | ^6.0.0   | Client and plugin builds (existing)               |
+| `typescript`     | ^5.7.0   | Type checking and server compilation (existing)   |
+| `vitest`         | ^2.1.0   | Test runner (existing, needs workspace config)    |
+| `tailwindcss`    | ^4.0.0   | CSS framework (existing, needs `@source` updates) |
 
 No new runtime dependencies. `turbo` is the only new devDependency at the root level.
 
@@ -229,6 +229,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 ```
 
 **base.json:**
+
 ```json
 {
   "compilerOptions": {
@@ -246,6 +247,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 ```
 
 **react.json:**
+
 ```json
 {
   "extends": "./base.json",
@@ -258,6 +260,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 ```
 
 **node.json:**
+
 ```json
 {
   "extends": "./base.json",
@@ -331,6 +334,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 ```
 
 **apps/client/tsconfig.json:**
+
 ```json
 {
   "extends": "@dorkos/typescript-config/react",
@@ -344,6 +348,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 ```
 
 **apps/client/vite.config.ts** — Key changes from current:
+
 - `resolve.alias`: `@` → `path.resolve(__dirname, './src')` (no more `@shared`)
 - `server.proxy`: unchanged (proxies `/api` to Express)
 - `build.outDir`: `dist` (relative to package)
@@ -398,6 +403,7 @@ Just-in-Time pattern: `exports` point directly to `.ts` source files. Consumers 
 **Note:** The `exports` field with `./services/*` allows the Obsidian plugin to import `@dorkos/server/services/agent-manager` etc. This maps to TypeScript source (JIT pattern).
 
 **apps/server/tsconfig.json:**
+
 ```json
 {
   "extends": "@dorkos/typescript-config/node",
@@ -473,45 +479,42 @@ The plugin's `vite.config.ts` moves the 4 custom build plugins from the root `vi
 
 #### Client imports (62 files)
 
-| Current Pattern | New Pattern |
-|----------------|-------------|
-| `import { X } from '@shared/types'` | `import { X } from '@dorkos/shared/types'` |
-| `import { X } from '@shared/transport'` | `import { X } from '@dorkos/shared/transport'` |
-| `import { X } from '@shared/schemas'` | `import { X } from '@dorkos/shared/schemas'` |
-| `import { X } from '@/components/...'` | `import { X } from '@/components/...'` (unchanged) |
+| Current Pattern                         | New Pattern                                        |
+| --------------------------------------- | -------------------------------------------------- |
+| `import { X } from '@shared/types'`     | `import { X } from '@dorkos/shared/types'`         |
+| `import { X } from '@shared/transport'` | `import { X } from '@dorkos/shared/transport'`     |
+| `import { X } from '@shared/schemas'`   | `import { X } from '@dorkos/shared/schemas'`       |
+| `import { X } from '@/components/...'`  | `import { X } from '@/components/...'` (unchanged) |
 
 #### Server imports (25 files)
 
-| Current Pattern | New Pattern |
-|----------------|-------------|
+| Current Pattern                               | New Pattern                                  |
+| --------------------------------------------- | -------------------------------------------- |
 | `import { X } from '../../shared/schemas.js'` | `import { X } from '@dorkos/shared/schemas'` |
-| `import { X } from '../../shared/types.js'` | `import { X } from '@dorkos/shared/types'` |
-| Relative service imports | Unchanged (within same package) |
+| `import { X } from '../../shared/types.js'`   | `import { X } from '@dorkos/shared/types'`   |
+| Relative service imports                      | Unchanged (within same package)              |
 
 #### Plugin imports (10 files)
 
-| Current Pattern | New Pattern |
-|----------------|-------------|
-| `import { AgentManager } from '../../server/services/agent-manager'` | `import { AgentManager } from '@dorkos/server/services/agent-manager'` |
-| `import { TranscriptReader } from '../../server/services/transcript-reader'` | `import { TranscriptReader } from '@dorkos/server/services/transcript-reader'` |
+| Current Pattern                                                                   | New Pattern                                                                         |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `import { AgentManager } from '../../server/services/agent-manager'`              | `import { AgentManager } from '@dorkos/server/services/agent-manager'`              |
+| `import { TranscriptReader } from '../../server/services/transcript-reader'`      | `import { TranscriptReader } from '@dorkos/server/services/transcript-reader'`      |
 | `import { CommandRegistryService } from '../../server/services/command-registry'` | `import { CommandRegistryService } from '@dorkos/server/services/command-registry'` |
-| `import { App } from '../../client/App'` | `import { App } from '@dorkos/client/App'` |
-| `import { useAppStore } from '../../client/stores/app-store'` | `import { useAppStore } from '@dorkos/client/stores/app-store'` |
-| `import { TransportProvider } from '../../client/contexts/TransportContext'` | `import { TransportProvider } from '@dorkos/client/contexts/TransportContext'` |
-| `import { DirectTransport } from '../../client/lib/direct-transport'` | `import { DirectTransport } from '@dorkos/client/lib/direct-transport'` |
-| `import { X } from '@shared/types'` | `import { X } from '@dorkos/shared/types'` |
+| `import { App } from '../../client/App'`                                          | `import { App } from '@dorkos/client/App'`                                          |
+| `import { useAppStore } from '../../client/stores/app-store'`                     | `import { useAppStore } from '@dorkos/client/stores/app-store'`                     |
+| `import { TransportProvider } from '../../client/contexts/TransportContext'`      | `import { TransportProvider } from '@dorkos/client/contexts/TransportContext'`      |
+| `import { DirectTransport } from '../../client/lib/direct-transport'`             | `import { DirectTransport } from '@dorkos/client/lib/direct-transport'`             |
+| `import { X } from '@shared/types'`                                               | `import { X } from '@dorkos/shared/types'`                                          |
 
 ### 6.7 Vitest Workspace Configuration
 
 **vitest.workspace.ts** (root):
+
 ```typescript
 import { defineWorkspace } from 'vitest/config';
 
-export default defineWorkspace([
-  'apps/client',
-  'apps/server',
-  'packages/shared',
-]);
+export default defineWorkspace(['apps/client', 'apps/server', 'packages/shared']);
 ```
 
 Each app has its own vitest config in its `vite.config.ts` (client: jsdom) or a standalone `vitest.config.ts` (server: node).
@@ -521,28 +524,29 @@ Each app has its own vitest config in its `vite.config.ts` (client: jsdom) or a 
 Only `apps/client` uses Tailwind. The `@source` directive in `apps/client/src/index.css` must be updated:
 
 ```css
-@import "tailwindcss";
-@source "../node_modules/streamdown/dist/*.js";
+@import 'tailwindcss';
+@source '../node_modules/streamdown/dist/*.js';
 ```
 
 The streamdown `@source` directive is **critical** — it ensures the `streamdown` library's Tailwind classes are included in the CSS output for markdown rendering. The path changes from `../node_modules/streamdown/dist/*.js` (relative to `src/client/`) to the same pattern relative to `apps/client/src/`.
 
 If shared components are added later from other packages, add:
+
 ```css
-@source "../../packages/shared/src";
+@source '../../packages/shared/src';
 ```
 
 ### 6.9 Server `__dirname` Resolution Updates
 
 Five server files use `__dirname` with relative path resolution that must change:
 
-| File | Current Resolution | New Resolution | Purpose |
-|------|-------------------|----------------|---------|
-| `app.ts` | `path.join(__dirname, '../../dist')` | `path.join(__dirname, '../../client/dist')` | Static file serving (production) |
-| `index.ts` | `path.join(__dirname, '../../.env')` | `path.join(__dirname, '../../../.env')` | .env file loading |
-| `services/agent-manager.ts` | `path.resolve(__dirname, '../../../../')` | `path.resolve(__dirname, '../../../../')` | SDK working directory (vault root) |
-| `routes/sessions.ts` | `path.resolve(__dirname, '../../../../')` | `path.resolve(__dirname, '../../../../')` | Vault root |
-| `routes/commands.ts` | `path.resolve(__dirname, '../../../../')` | `path.resolve(__dirname, '../../../../')` | Vault root for .claude/commands |
+| File                        | Current Resolution                        | New Resolution                              | Purpose                            |
+| --------------------------- | ----------------------------------------- | ------------------------------------------- | ---------------------------------- |
+| `app.ts`                    | `path.join(__dirname, '../../dist')`      | `path.join(__dirname, '../../client/dist')` | Static file serving (production)   |
+| `index.ts`                  | `path.join(__dirname, '../../.env')`      | `path.join(__dirname, '../../../.env')`     | .env file loading                  |
+| `services/agent-manager.ts` | `path.resolve(__dirname, '../../../../')` | `path.resolve(__dirname, '../../../../')`   | SDK working directory (vault root) |
+| `routes/sessions.ts`        | `path.resolve(__dirname, '../../../../')` | `path.resolve(__dirname, '../../../../')`   | Vault root                         |
+| `routes/commands.ts`        | `path.resolve(__dirname, '../../../../')` | `path.resolve(__dirname, '../../../../')`   | Vault root for .claude/commands    |
 
 **Note:** Files resolving to vault root (`../../../../`) remain the same depth because: current = `dist-server/server/services/` (3 levels from root) → new = `apps/server/dist/services/` (still 4 levels from monorepo root, matching compiled output). The `.env` and static serving paths change because they reference sibling files/directories.
 
@@ -576,6 +580,7 @@ Path references within these plugins change from `path.resolve(__dirname, 'dist-
 No user-facing changes. The web UI, API endpoints, and Obsidian plugin all behave identically after migration.
 
 Developer experience improves:
+
 - `turbo dev` replaces `concurrently` for dev mode
 - `turbo build` with caching skips unchanged packages
 - Clear package boundaries make it obvious where code belongs
@@ -585,6 +590,7 @@ Developer experience improves:
 ### Existing Tests (must pass after migration)
 
 All 30 existing test files continue to work:
+
 - **Server tests** (9 files): Route tests with supertest, service unit tests with mocked `fs/promises`
 - **Client tests** (10+ files): Component tests with React Testing Library, hook tests with mock Transport injection
 - **No plugin tests** currently exist (unchanged)
@@ -592,6 +598,7 @@ All 30 existing test files continue to work:
 ### Migration Verification Tests
 
 After each phase, verify:
+
 1. `turbo test` — all tests pass
 2. `turbo build` — all 3 build targets produce output
 3. `turbo dev` — dev servers start and HMR works
@@ -623,52 +630,54 @@ No security implications. All packages are private (`"private": true`). No new n
 
 ### CLAUDE.md (complete rewrite of key sections)
 
-| Section | Changes |
-|---------|---------|
-| Commands | `npm run dev` → `turbo dev`, `npm run build` → `turbo build`, etc. |
-| Architecture | New directory structure, package descriptions |
-| Path Aliases | `@/*` scoped per-app, `@shared/*` → `@dorkos/shared/*` |
-| Server section | `apps/server/src/` paths |
-| Client section | `apps/client/src/` paths |
-| Plugin section | `apps/obsidian-plugin/src/` paths, build-plugins/ |
-| Shared section | `packages/shared/src/` paths, JIT exports |
-| Testing | Vitest workspace, per-package configs |
-| Vault Root Resolution | Updated `__dirname` resolution paths |
+| Section               | Changes                                                            |
+| --------------------- | ------------------------------------------------------------------ |
+| Commands              | `npm run dev` → `turbo dev`, `npm run build` → `turbo build`, etc. |
+| Architecture          | New directory structure, package descriptions                      |
+| Path Aliases          | `@/*` scoped per-app, `@shared/*` → `@dorkos/shared/*`             |
+| Server section        | `apps/server/src/` paths                                           |
+| Client section        | `apps/client/src/` paths                                           |
+| Plugin section        | `apps/obsidian-plugin/src/` paths, build-plugins/                  |
+| Shared section        | `packages/shared/src/` paths, JIT exports                          |
+| Testing               | Vitest workspace, per-package configs                              |
+| Vault Root Resolution | Updated `__dirname` resolution paths                               |
 
 ### Guide Files (5 files)
 
-| Guide | Key Changes |
-|-------|------------|
-| `guides/architecture.md` | Module layout diagram, source paths, build commands, data flow |
-| `guides/design-system.md` | Component file path references |
-| `guides/obsidian-plugin-development.md` | Build config, Vite plugin paths, plugin file structure |
-| `guides/api-reference.md` | Server file paths, schema import patterns |
-| `guides/interactive-tools.md` | Component path references |
+| Guide                                   | Key Changes                                                    |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `guides/architecture.md`                | Module layout diagram, source paths, build commands, data flow |
+| `guides/design-system.md`               | Component file path references                                 |
+| `guides/obsidian-plugin-development.md` | Build config, Vite plugin paths, plugin file structure         |
+| `guides/api-reference.md`               | Server file paths, schema import patterns                      |
+| `guides/interactive-tools.md`           | Component path references                                      |
 
 ### .claude/ Configuration
 
-| Category | Files | Changes |
-|----------|-------|---------|
-| Rules | `api.md`, `dal.md`, `testing.md` | Update glob patterns (`src/server/` → `apps/server/src/`, etc.). **Note:** `api.md` currently has `paths: src/app/api/**/*.ts` which is incorrect (Next.js convention) — fix to `apps/server/src/routes/**/*.ts` |
-| Commands | `dev/scaffold.md` | Update scaffold target paths |
-| Commands | `git/commit.md`, `git/push.md` | Update build/test commands to turbo |
-| Commands | `app/cleanup.md`, `app/upgrade.md` | Update dependency management for workspaces |
-| Commands | `spec/execute.md` | Update file path patterns |
-| Commands | `docs/reconcile.md` | Update guide file references |
-| Skills | `organizing-fsd-architecture/` | Update to monorepo structure |
-| Skills | `styling-with-tailwind-shadcn/` | Update Tailwind config paths |
-| Hooks | `typecheck-changed.sh` | Update tsconfig references |
-| Hooks | `test-changed.sh` | Update test paths |
-| Hooks | `file-guard.mjs` | Update allowed file paths |
+| Category | Files                              | Changes                                                                                                                                                                                                          |
+| -------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rules    | `api.md`, `dal.md`, `testing.md`   | Update glob patterns (`src/server/` → `apps/server/src/`, etc.). **Note:** `api.md` currently has `paths: src/app/api/**/*.ts` which is incorrect (Next.js convention) — fix to `apps/server/src/routes/**/*.ts` |
+| Commands | `dev/scaffold.md`                  | Update scaffold target paths                                                                                                                                                                                     |
+| Commands | `git/commit.md`, `git/push.md`     | Update build/test commands to turbo                                                                                                                                                                              |
+| Commands | `app/cleanup.md`, `app/upgrade.md` | Update dependency management for workspaces                                                                                                                                                                      |
+| Commands | `spec/execute.md`                  | Update file path patterns                                                                                                                                                                                        |
+| Commands | `docs/reconcile.md`                | Update guide file references                                                                                                                                                                                     |
+| Skills   | `organizing-fsd-architecture/`     | Update to monorepo structure                                                                                                                                                                                     |
+| Skills   | `styling-with-tailwind-shadcn/`    | Update Tailwind config paths                                                                                                                                                                                     |
+| Hooks    | `typecheck-changed.sh`             | Update tsconfig references                                                                                                                                                                                       |
+| Hooks    | `test-changed.sh`                  | Update test paths                                                                                                                                                                                                |
+| Hooks    | `file-guard.mjs`                   | Update allowed file paths                                                                                                                                                                                        |
 
 ## 12. Implementation Phases
 
 ### Phase 1: Add Turborepo to Existing Structure
 
 **Files created:**
+
 - `turbo.json`
 
 **Files modified:**
+
 - `package.json` — add `turbo` devDependency, `packageManager` field, update scripts to delegate to turbo
 
 **Verification:** `turbo build` and `turbo dev` produce same results as current `npm run build` / `npm run dev`.
@@ -676,6 +685,7 @@ No security implications. All packages are private (`"private": true`). No new n
 ### Phase 2: Extract Shared Package + TypeScript Config
 
 **Files created:**
+
 - `packages/shared/package.json`
 - `packages/shared/tsconfig.json`
 - `packages/typescript-config/package.json`
@@ -684,11 +694,13 @@ No security implications. All packages are private (`"private": true`). No new n
 - `packages/typescript-config/node.json`
 
 **Files moved:**
+
 - `src/shared/schemas.ts` → `packages/shared/src/schemas.ts`
 - `src/shared/transport.ts` → `packages/shared/src/transport.ts`
 - `src/shared/types.ts` → `packages/shared/src/types.ts`
 
 **Files modified:**
+
 - `package.json` — add `"workspaces": ["packages/*"]`
 - All client files importing `@shared/*` → `@dorkos/shared/*` (~25 files)
 - All server files importing `../../shared/*` → `@dorkos/shared/*` (~8 files)
@@ -698,17 +710,20 @@ No security implications. All packages are private (`"private": true`). No new n
 ### Phase 3: Extract Client App
 
 **Files created:**
+
 - `apps/client/package.json`
 - `apps/client/tsconfig.json`
 - `apps/client/vite.config.ts`
 
 **Files moved:**
+
 - `src/client/**/*` → `apps/client/src/**/*` (62 files)
 - `index.html` → `apps/client/index.html`
 - `public/` → `apps/client/public/`
 - `components.json` → `apps/client/components.json`
 
 **Files modified:**
+
 - Root `package.json` — update workspaces to `["apps/*", "packages/*"]`, move client deps to `apps/client/package.json`
 - `apps/client/vite.config.ts` — update `@` alias to `./src`, remove `@shared` alias
 - `apps/client/src/index.css` — update `@source` directive if needed
@@ -718,13 +733,16 @@ No security implications. All packages are private (`"private": true`). No new n
 ### Phase 4: Extract Server App
 
 **Files created:**
+
 - `apps/server/package.json`
 - `apps/server/tsconfig.json`
 
 **Files moved:**
+
 - `src/server/**/*` → `apps/server/src/**/*` (25 files)
 
 **Files modified:**
+
 - Root `package.json` — move server deps to `apps/server/package.json`
 - `apps/server/src/app.ts` or `index.ts` — update static file serving path for production
 
@@ -733,6 +751,7 @@ No security implications. All packages are private (`"private": true`). No new n
 ### Phase 5: Extract Obsidian Plugin
 
 **Files created:**
+
 - `apps/obsidian-plugin/package.json`
 - `apps/obsidian-plugin/tsconfig.json`
 - `apps/obsidian-plugin/vite.config.ts`
@@ -742,14 +761,17 @@ No security implications. All packages are private (`"private": true`). No new n
 - `apps/obsidian-plugin/build-plugins/patch-electron-compat.ts`
 
 **Files moved:**
+
 - `src/plugin/**/*` → `apps/obsidian-plugin/src/**/*` (10 files)
 - `manifest.json` → `apps/obsidian-plugin/manifest.json`
 
 **Files modified:**
+
 - All plugin files with `../../server/` imports → `@dorkos/server/...` (~3 files)
 - All plugin files with `../../client/` imports → `@dorkos/client/...` (~5 files)
 
 **Files deleted:**
+
 - `vite.config.obsidian.ts` (root) — logic moves to `apps/obsidian-plugin/vite.config.ts`
 
 **Verification:** Plugin builds, `main.js` + `styles.css` + `manifest.json` in output, loads in Obsidian.
@@ -757,20 +779,24 @@ No security implications. All packages are private (`"private": true`). No new n
 ### Phase 6: Extract Test Utils & Configure Vitest
 
 **Files created:**
+
 - `packages/test-utils/package.json`
 - `packages/test-utils/tsconfig.json`
 - `packages/test-utils/src/index.ts`
 - `vitest.workspace.ts` (root)
 
 **Files moved:**
+
 - `src/test-utils/**/*` → `packages/test-utils/src/**/*` (3 files)
 
 **Files modified:**
+
 - Client test files importing from `../../test-utils/` → `@dorkos/test-utils/...`
 - `apps/client/vite.config.ts` — vitest config for jsdom
 - `apps/server/` — add vitest config for node environment
 
 **Files deleted:**
+
 - Root `vite.config.ts` — test config moves to per-package, build config moves to `apps/client/vite.config.ts`
 - `tsconfig.server.json` — replaced by `apps/server/tsconfig.json`
 - `src/` directory (should be empty after all moves)
@@ -780,6 +806,7 @@ No security implications. All packages are private (`"private": true`). No new n
 ### Phase 7: Update Documentation & Claude Code
 
 **Files modified:**
+
 - `CLAUDE.md` — complete update of architecture, commands, paths
 - `guides/architecture.md` — module layout, paths, build commands
 - `guides/design-system.md` — component path references

@@ -84,5 +84,16 @@ export function parsePorcelainOutput(stdout: string): GitStatusResponse {
 
   const clean = modified === 0 && staged === 0 && untracked === 0 && conflicted === 0;
 
-  return { branch, ahead, behind, modified, staged, untracked, conflicted, clean, detached, tracking };
+  return {
+    branch,
+    ahead,
+    behind,
+    modified,
+    staged,
+    untracked,
+    conflicted,
+    clean,
+    detached,
+    tracking,
+  };
 }

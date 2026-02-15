@@ -18,10 +18,13 @@ Six changes across client, server, and shared packages to fix bugs and add featu
 **File:** `apps/client/src/components/chat/ChatPanel.tsx`
 
 **Line 96** — Change:
+
 ```ts
 const match = value.match(/(^|\s)\/(\w*)$/);
 ```
+
 To:
+
 ```ts
 const match = value.match(/(^|\s)\/([\w:-]*)$/);
 ```
@@ -64,6 +67,7 @@ export function fuzzyMatch(query: string, target: string): { match: boolean; sco
 **File:** `apps/client/src/components/chat/ChatPanel.tsx` — Lines 72-79
 
 Replace the `filteredCommands` useMemo:
+
 ```ts
 const filteredCommands = useMemo(() => {
   if (!commandQuery) return allCommands;
@@ -82,6 +86,7 @@ const filteredCommands = useMemo(() => {
 **New test file:** `apps/client/src/lib/__tests__/fuzzy-match.test.ts`
 
 Test cases:
+
 - Empty query matches everything
 - Exact match scores highest
 - Subsequence match works (`drt` matches `debug:rubber-duck-test`)
@@ -96,11 +101,13 @@ Test cases:
 **File:** `apps/client/src/components/chat/ChatPanel.tsx`
 
 Add state to track where the slash trigger starts:
+
 ```ts
 const [slashTriggerPos, setSlashTriggerPos] = useState(-1);
 ```
 
 In `handleInputChange`, when the regex matches, record the trigger position:
+
 ```ts
 function handleInputChange(value: string) {
   setInput(value);
@@ -117,6 +124,7 @@ function handleInputChange(value: string) {
 ```
 
 In `handleCommandSelect`, splice the command into the existing text:
+
 ```ts
 function handleCommandSelect(cmd: CommandEntry) {
   const before = input.slice(0, slashTriggerPos);
@@ -136,6 +144,7 @@ This requires changes across all layers:
 **File:** `packages/shared/src/schemas.ts`
 
 Update `CommandsQuerySchema`:
+
 ```ts
 export const CommandsQuerySchema = z
   .object({
@@ -150,6 +159,7 @@ export const CommandsQuerySchema = z
 **File:** `packages/shared/src/transport.ts`
 
 Change signature:
+
 ```ts
 getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
 ```
@@ -159,6 +169,7 @@ getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
 **File:** `apps/client/src/lib/http-transport.ts`
 
 Update `getCommands`:
+
 ```ts
 async getCommands(refresh = false, cwd?: string): Promise<CommandRegistry> {
   const params = new URLSearchParams();
@@ -174,6 +185,7 @@ async getCommands(refresh = false, cwd?: string): Promise<CommandRegistry> {
 **File:** `apps/client/src/lib/direct-transport.ts`
 
 Update `getCommands` to pass cwd through (the direct transport's `CommandRegistryService` may need to support this — but for the Obsidian plugin the cwd is fixed at construction, so this is a no-op pass-through for now):
+
 ```ts
 async getCommands(refresh?: boolean, _cwd?: string): Promise<CommandRegistry> {
   return this.services.commandRegistry.getCommands(refresh);
@@ -185,6 +197,7 @@ async getCommands(refresh?: boolean, _cwd?: string): Promise<CommandRegistry> {
 **File:** `apps/server/src/routes/commands.ts`
 
 Replace the singleton pattern with a registry cache:
+
 ```ts
 const defaultRoot = process.env.GATEWAY_CWD ?? path.resolve(__dirname, '../../../../');
 const registryCache = new Map<string, CommandRegistryService>();
@@ -287,18 +300,18 @@ const groupedWithIndices = useMemo(() => {
 
 ## File Change Summary
 
-| File | Change Type |
-|------|-------------|
-| `apps/client/src/lib/fuzzy-match.ts` | **New** — fuzzy subsequence matcher |
-| `apps/client/src/lib/__tests__/fuzzy-match.test.ts` | **New** — tests for matcher |
-| `apps/client/src/components/chat/ChatPanel.tsx` | **Modified** — regex fix, fuzzy filter, trigger pos tracking, cwd passthrough |
-| `apps/client/src/components/commands/CommandPalette.tsx` | **Modified** — remove onClose, pre-compute indices |
-| `apps/client/src/hooks/use-commands.ts` | **Modified** — cwd in query key, remove useRefreshCommands |
-| `packages/shared/src/schemas.ts` | **Modified** — add cwd to CommandsQuerySchema |
-| `packages/shared/src/transport.ts` | **Modified** — add cwd param to getCommands |
-| `apps/client/src/lib/http-transport.ts` | **Modified** — pass cwd query param |
-| `apps/client/src/lib/direct-transport.ts` | **Modified** — accept cwd param (pass-through) |
-| `apps/server/src/routes/commands.ts` | **Modified** — registry cache per cwd |
+| File                                                     | Change Type                                                                   |
+| -------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `apps/client/src/lib/fuzzy-match.ts`                     | **New** — fuzzy subsequence matcher                                           |
+| `apps/client/src/lib/__tests__/fuzzy-match.test.ts`      | **New** — tests for matcher                                                   |
+| `apps/client/src/components/chat/ChatPanel.tsx`          | **Modified** — regex fix, fuzzy filter, trigger pos tracking, cwd passthrough |
+| `apps/client/src/components/commands/CommandPalette.tsx` | **Modified** — remove onClose, pre-compute indices                            |
+| `apps/client/src/hooks/use-commands.ts`                  | **Modified** — cwd in query key, remove useRefreshCommands                    |
+| `packages/shared/src/schemas.ts`                         | **Modified** — add cwd to CommandsQuerySchema                                 |
+| `packages/shared/src/transport.ts`                       | **Modified** — add cwd param to getCommands                                   |
+| `apps/client/src/lib/http-transport.ts`                  | **Modified** — pass cwd query param                                           |
+| `apps/client/src/lib/direct-transport.ts`                | **Modified** — accept cwd param (pass-through)                                |
+| `apps/server/src/routes/commands.ts`                     | **Modified** — registry cache per cwd                                         |
 
 ## Implementation Order
 

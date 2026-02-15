@@ -1,6 +1,6 @@
 ---
 description: Structured problem articulation using rubber duck debugging methodology to systematically work through complex bugs
-argument-hint: "[brief-problem-description]"
+argument-hint: '[brief-problem-description]'
 allowed-tools: Read, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
@@ -13,6 +13,7 @@ A structured approach to debugging using the classic "rubber duck" methodology, 
 From "The Pragmatic Programmer": The act of explaining your code line-by-line to an inanimate object (like a rubber duck) forces you to think through your logic and often reveals bugs. Research shows this "self-debugging" approach significantly improves bug detection.
 
 **This command formalizes that methodology with:**
+
 1. Structured problem articulation
 2. Step-by-step code explanation
 3. Comparison against expected behavior
@@ -21,6 +22,7 @@ From "The Pragmatic Programmer": The act of explaining your code line-by-line to
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If argument provided, use as initial problem context
 - If empty, begin the structured interview
 
@@ -125,12 +127,14 @@ AskUserQuestion:
 ### 2.2 Find the Code
 
 If user knows the file, read it:
+
 ```
 Read the file at the specified path.
 Focus on the relevant function or section.
 ```
 
 If user doesn't know, search:
+
 ```bash
 # Search for relevant patterns
 rg "[feature-name]" src/ --type ts -l
@@ -163,6 +167,7 @@ AskUserQuestion:
 Read the relevant code section and explain it line-by-line:
 
 **For each logical block:**
+
 1. What is the input/state at this point?
 2. What operation is being performed?
 3. What is the expected result?
@@ -195,6 +200,7 @@ AskUserQuestion:
 Based on the walkthrough, generate possible causes:
 
 **Common Bug Categories:**
+
 1. **Data issues**: Wrong type, missing field, null/undefined
 2. **Logic issues**: Wrong condition, off-by-one, missing case
 3. **Timing issues**: Race condition, wrong order, async problems
@@ -248,13 +254,15 @@ AskUserQuestion:
 Based on chosen approach, gather information:
 
 **If adding logging:**
+
 ```typescript
-console.log('[DEBUG] Variable value:', variable)
-console.log('[DEBUG] Function input:', input)
-console.log('[DEBUG] State at this point:', state)
+console.log('[DEBUG] Variable value:', variable);
+console.log('[DEBUG] Function input:', input);
+console.log('[DEBUG] State at this point:', state);
 ```
 
 **If using tests:**
+
 ```typescript
 describe('problematic function', () => {
   it('should handle the edge case', () => {
@@ -415,12 +423,12 @@ AskUserQuestion:
 
 ### Common Revelations
 
-| Articulation | Revelation |
-|--------------|------------|
-| "It should return..." | "Oh, I forgot the return statement!" |
-| "This assumes..." | "But that assumption is wrong here!" |
-| "Then it calls..." | "Wait, that's not awaited!" |
-| "If x is true..." | "Oh, I used = instead of ===" |
+| Articulation             | Revelation                           |
+| ------------------------ | ------------------------------------ |
+| "It should return..."    | "Oh, I forgot the return statement!" |
+| "This assumes..."        | "But that assumption is wrong here!" |
+| "Then it calls..."       | "Wait, that's not awaited!"          |
+| "If x is true..."        | "Oh, I used = instead of ==="        |
 | "The data comes from..." | "That field is spelled differently!" |
 
 ## Important Behaviors
@@ -435,6 +443,7 @@ AskUserQuestion:
 ## The Power of Articulation
 
 Research shows that the act of explaining forces you to:
+
 - Think through logic sequentially
 - Surface implicit assumptions
 - Notice gaps in understanding

@@ -17,16 +17,16 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 ## Harness Inventory
 
-| Component | Count | Location |
-|-----------|-------|----------|
-| Commands | 45 | `.claude/commands/` |
-| Agents | 5 | `.claude/agents/` |
-| Skills | 9 | `.claude/skills/` |
-| Rules | 5 | `.claude/rules/` |
-| Claude Hooks | 9 | `.claude/hooks/`, configured in `.claude/settings.json` |
-| Git Hooks | 1 | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
-| MCP Servers | 3 | `.mcp.json` |
-| Guides | 13 | `guides/` |
+| Component    | Count | Location                                                                   |
+| ------------ | ----- | -------------------------------------------------------------------------- |
+| Commands     | 45    | `.claude/commands/`                                                        |
+| Agents       | 5     | `.claude/agents/`                                                          |
+| Skills       | 9     | `.claude/skills/`                                                          |
+| Rules        | 5     | `.claude/rules/`                                                           |
+| Claude Hooks | 9     | `.claude/hooks/`, configured in `.claude/settings.json`                    |
+| Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
+| MCP Servers  | 3     | `.mcp.json`                                                                |
+| Guides       | 13    | `guides/`                                                                  |
 
 ## Component Types
 
@@ -34,19 +34,19 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 Slash commands are triggered explicitly by typing `/command`. They're expanded prompts that provide step-by-step instructions.
 
-| Namespace | Commands | Purpose |
-|-----------|----------|---------|
-| `spec/` | create, decompose, execute, feedback, doc-update, migrate, tasks-sync | Specification workflow (uses built-in task tools with `[slug] [P#]` subject convention) |
-| `git/` | commit, push | Version control with validation |
-| `debug/` | browser, types, test, api, data, logs, rubber-duck, performance | Systematic debugging |
-| `docs/` | reconcile | Documentation drift detection |
-| `roadmap/` | show, add, open, validate, analyze, prioritize, enrich, next, work, clear | Product roadmap management |
-| `system/` | ask, update, review, learn, release | Harness maintenance |
-| `app/` | upgrade, cleanup | Application dependency and code management |
-| `cc/notify/` | on, off, status | Notification sounds |
-| `cc/ide/` | set, reset | VS Code color schemes |
-| `template/` | check, update | Upstream template updates |
-| root | ideate, ideate-to-spec, review-recent-work | Feature development |
+| Namespace    | Commands                                                                  | Purpose                                                                                 |
+| ------------ | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `spec/`      | create, decompose, execute, feedback, doc-update, migrate, tasks-sync     | Specification workflow (uses built-in task tools with `[slug] [P#]` subject convention) |
+| `git/`       | commit, push                                                              | Version control with validation                                                         |
+| `debug/`     | browser, types, test, api, data, logs, rubber-duck, performance           | Systematic debugging                                                                    |
+| `docs/`      | reconcile                                                                 | Documentation drift detection                                                           |
+| `roadmap/`   | show, add, open, validate, analyze, prioritize, enrich, next, work, clear | Product roadmap management                                                              |
+| `system/`    | ask, update, review, learn, release                                       | Harness maintenance                                                                     |
+| `app/`       | upgrade, cleanup                                                          | Application dependency and code management                                              |
+| `cc/notify/` | on, off, status                                                           | Notification sounds                                                                     |
+| `cc/ide/`    | set, reset                                                                | VS Code color schemes                                                                   |
+| `template/`  | check, update                                                             | Upstream template updates                                                               |
+| root         | ideate, ideate-to-spec, review-recent-work                                | Feature development                                                                     |
 
 ### Agents (Tool-Invoked)
 
@@ -54,22 +54,23 @@ Agents run in isolated context windows via the Task tool. Use for complex, multi
 
 **Built-in agents** (provided by Claude Code):
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
-| `Explore` | Codebase exploration, understanding how things work | Open-ended questions, architecture understanding, comprehensive answers |
-| `claude-code-guide` | Claude Code documentation | Questions about Claude Code features, hooks, skills, MCP |
+| Agent               | Specialty                                           | When to Use                                                             |
+| ------------------- | --------------------------------------------------- | ----------------------------------------------------------------------- |
+| `Explore`           | Codebase exploration, understanding how things work | Open-ended questions, architecture understanding, comprehensive answers |
+| `claude-code-guide` | Claude Code documentation                           | Questions about Claude Code features, hooks, skills, MCP                |
 
 **Project agents** (defined in `.claude/agents/`):
 
-| Agent | Specialty | When to Use |
-|-------|-----------|-------------|
+| Agent                   | Specialty                                       | When to Use                                             |
+| ----------------------- | ----------------------------------------------- | ------------------------------------------------------- |
 | `react-tanstack-expert` | React, TanStack Query, server/client components | Data fetching, state management, component architecture |
-| `typescript-expert` | Type system, generics, build errors | Complex types, build failures, type patterns |
-| `product-manager` | Roadmap, prioritization, scope management | Strategic decisions, feature prioritization |
-| `research-expert` | Web research, information gathering | External research (non-Claude Code topics) |
-| `code-search` | Finding files, patterns, functions | Locating code by pattern or content |
+| `typescript-expert`     | Type system, generics, build errors             | Complex types, build failures, type patterns            |
+| `product-manager`       | Roadmap, prioritization, scope management       | Strategic decisions, feature prioritization             |
+| `research-expert`       | Web research, information gathering             | External research (non-Claude Code topics)              |
+| `code-search`           | Finding files, patterns, functions              | Locating code by pattern or content                     |
 
 **Explore vs code-search:**
+
 - `Explore` — Returns comprehensive answers with explanations ("How does the transport layer work?")
 - `code-search` — Returns focused file lists only ("Find files using useSessionId")
 
@@ -79,28 +80,28 @@ Agents run in isolated context windows via the Task tool. Use for complex, multi
 
 Skills provide reusable expertise that Claude applies automatically when relevant. They teach "how to think" about problems.
 
-| Skill | Expertise | When Applied |
-|-------|-----------|--------------|
-| `clarifying-requirements` | Identifying gaps, asking clarifying questions | Vague requests, ambiguous scope, hidden complexity |
-| `debugging-systematically` | Debugging methodology, troubleshooting patterns | Investigating bugs, tracing issues |
-| `designing-frontend` | Calm Tech design language, UI decisions | Planning UI, reviewing designs, hierarchy decisions |
-| `styling-with-tailwind-shadcn` | Tailwind CSS v4, Shadcn UI implementation | Writing styles, building components, theming |
-| `managing-roadmap-moscow` | MoSCoW prioritization, roadmap utilities | Product planning, prioritization decisions |
-| `writing-developer-guides` | Developer guide structure for AI agents | Creating/updating files in guides/ |
-| `orchestrating-parallel-work` | Parallel agent execution, batch scheduling | Coordinating multiple concurrent tasks, optimizing task ordering |
-| `writing-changelogs` | Human-friendly changelog entries, release notes | Populating changelog, preparing releases |
-| `organizing-fsd-architecture` | Feature-Sliced Design layer placement, imports | Structuring client code, creating features, reviewing architecture |
+| Skill                          | Expertise                                       | When Applied                                                       |
+| ------------------------------ | ----------------------------------------------- | ------------------------------------------------------------------ |
+| `clarifying-requirements`      | Identifying gaps, asking clarifying questions   | Vague requests, ambiguous scope, hidden complexity                 |
+| `debugging-systematically`     | Debugging methodology, troubleshooting patterns | Investigating bugs, tracing issues                                 |
+| `designing-frontend`           | Calm Tech design language, UI decisions         | Planning UI, reviewing designs, hierarchy decisions                |
+| `styling-with-tailwind-shadcn` | Tailwind CSS v4, Shadcn UI implementation       | Writing styles, building components, theming                       |
+| `managing-roadmap-moscow`      | MoSCoW prioritization, roadmap utilities        | Product planning, prioritization decisions                         |
+| `writing-developer-guides`     | Developer guide structure for AI agents         | Creating/updating files in guides/                                 |
+| `orchestrating-parallel-work`  | Parallel agent execution, batch scheduling      | Coordinating multiple concurrent tasks, optimizing task ordering   |
+| `writing-changelogs`           | Human-friendly changelog entries, release notes | Populating changelog, preparing releases                           |
+| `organizing-fsd-architecture`  | Feature-Sliced Design layer placement, imports  | Structuring client code, creating features, reviewing architecture |
 
 ### Rules (Path-Triggered)
 
 Rules inject context-specific guidance when Claude works with matching files. Each rule has `paths:` frontmatter with glob patterns.
 
-| Rule | Applies To | Key Guidance |
-|------|------------|--------------|
-| `api.md` | `apps/server/src/routes/**/*.ts` | Zod validation, service layer usage, error handling |
-| `testing.md` | `**/__tests__/**/*.ts`, `**/*.test.ts` | Vitest patterns, mocking, component testing |
-| `components.md` | `apps/client/src/**/*.tsx` | Shadcn patterns, accessibility, styling |
-| `fsd-layers.md` | `apps/client/src/layers/**/*.ts(x)` | FSD layer dependency rules, barrel imports |
+| Rule                  | Applies To                                           | Key Guidance                                         |
+| --------------------- | ---------------------------------------------------- | ---------------------------------------------------- |
+| `api.md`              | `apps/server/src/routes/**/*.ts`                     | Zod validation, service layer usage, error handling  |
+| `testing.md`          | `**/__tests__/**/*.ts`, `**/*.test.ts`               | Vitest patterns, mocking, component testing          |
+| `components.md`       | `apps/client/src/**/*.tsx`                           | Shadcn patterns, accessibility, styling              |
+| `fsd-layers.md`       | `apps/client/src/layers/**/*.ts(x)`                  | FSD layer dependency rules, barrel imports           |
 | `server-structure.md` | `apps/server/src/services/**/*.ts`, `routes/**/*.ts` | Service count monitoring, domain grouping thresholds |
 
 ### Hooks (Event-Triggered)
@@ -111,46 +112,47 @@ Hooks run automatically at lifecycle events. Configured in `settings.json` with 
 
 Git hooks (post-commit, etc.) are separate and live in `.claude/git-hooks/`. Install via `.claude/scripts/install-git-hooks.sh`.
 
-| Event | Hooks | Purpose |
-|-------|-------|---------|
-| `PreToolUse` | file-guard | Block access to sensitive files (.env, .key, .pem) |
-| `PostToolUse` | typecheck-changed, lint-changed, check-any-changed, test-changed | Validate code after edits |
-| `UserPromptSubmit` | thinking-level | Adjust Claude's thinking mode based on prompt complexity |
-| `Stop` | create-checkpoint, check-docs-changed, autonomous-check | Session cleanup, checkpoint creation, doc reminders, prevent premature stop during autonomous work |
+| Event              | Hooks                                                            | Purpose                                                                                            |
+| ------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `PreToolUse`       | file-guard                                                       | Block access to sensitive files (.env, .key, .pem)                                                 |
+| `PostToolUse`      | typecheck-changed, lint-changed, check-any-changed, test-changed | Validate code after edits                                                                          |
+| `UserPromptSubmit` | thinking-level                                                   | Adjust Claude's thinking mode based on prompt complexity                                           |
+| `Stop`             | create-checkpoint, check-docs-changed, autonomous-check          | Session cleanup, checkpoint creation, doc reminders, prevent premature stop during autonomous work |
 
 ### MCP Servers
 
 External tools available via Model Context Protocol.
 
-| Server | Purpose |
-|--------|---------|
-| `playwright` | Browser automation and visual debugging |
-| `context7` | Library documentation lookup |
-| `shadcn` | Shadcn UI component registry, examples, and installation commands |
+| Server       | Purpose                                                           |
+| ------------ | ----------------------------------------------------------------- |
+| `playwright` | Browser automation and visual debugging                           |
+| `context7`   | Library documentation lookup                                      |
+| `shadcn`     | Shadcn UI component registry, examples, and installation commands |
 
 ### Guides
 
 All documentation lives in `guides/`:
 
-| Guide | Content |
-|-------|---------|
-| `01-project-structure.md` | FSD layer hierarchy, directory layout, adding features |
-| `architecture.md` | Hexagonal architecture, Transport interface, Electron compatibility |
-| `design-system.md` | Color palette, typography, spacing, motion specs |
-| `api-reference.md` | OpenAPI spec, Scalar docs UI, Zod schema patterns |
-| `interactive-tools.md` | Tool approval, AskUserQuestion, TaskList flows |
-| `keyboard-shortcuts.md` | Keyboard shortcuts and hotkeys |
-| `obsidian-plugin-development.md` | Plugin lifecycle, Vite build, Electron quirks |
-| `05-data-fetching.md` | TanStack Query patterns, mutations |
-| `06-state-management.md` | Zustand vs TanStack Query decision guide |
-| `07-animations.md` | Motion library patterns |
-| `08-styling-theming.md` | Tailwind v4, dark mode, Shadcn |
-| `11-parallel-execution.md` | Parallel agent execution patterns, batching |
-| `13-autonomous-roadmap-execution.md` | Autonomous workflow, `/roadmap:work` |
+| Guide                                | Content                                                             |
+| ------------------------------------ | ------------------------------------------------------------------- |
+| `01-project-structure.md`            | FSD layer hierarchy, directory layout, adding features              |
+| `architecture.md`                    | Hexagonal architecture, Transport interface, Electron compatibility |
+| `design-system.md`                   | Color palette, typography, spacing, motion specs                    |
+| `api-reference.md`                   | OpenAPI spec, Scalar docs UI, Zod schema patterns                   |
+| `interactive-tools.md`               | Tool approval, AskUserQuestion, TaskList flows                      |
+| `keyboard-shortcuts.md`              | Keyboard shortcuts and hotkeys                                      |
+| `obsidian-plugin-development.md`     | Plugin lifecycle, Vite build, Electron quirks                       |
+| `05-data-fetching.md`                | TanStack Query patterns, mutations                                  |
+| `06-state-management.md`             | Zustand vs TanStack Query decision guide                            |
+| `07-animations.md`                   | Motion library patterns                                             |
+| `08-styling-theming.md`              | Tailwind v4, dark mode, Shadcn                                      |
+| `11-parallel-execution.md`           | Parallel agent execution patterns, batching                         |
+| `13-autonomous-roadmap-execution.md` | Autonomous workflow, `/roadmap:work`                                |
 
 Skills often reference these guides for detailed patterns while keeping SKILL.md files concise.
 
 **Keeping guides up to date:**
+
 - `/docs:reconcile` — Check for documentation drift against recent commits
 - `/spec:execute` — Suggests doc review when implementation touches guide areas
 - `check-docs-changed` hook — Session-end reminder for affected guides
@@ -197,13 +199,13 @@ Project-wide documentation? ─────────────► CLAUDE.md
 
 ### Naming Conventions
 
-| Component | Pattern | Examples |
-|-----------|---------|----------|
-| Commands | `verb` or `noun` | create, commit, execute |
-| Agents | `domain-expert` | typescript-expert, react-tanstack-expert |
-| Skills | `verb-ing-noun` | debugging-systematically, designing-frontend |
-| Rules | `topic` (kebab-case) | api, testing, components |
-| Hooks | `action-target` | file-guard, lint-changed |
+| Component | Pattern              | Examples                                     |
+| --------- | -------------------- | -------------------------------------------- |
+| Commands  | `verb` or `noun`     | create, commit, execute                      |
+| Agents    | `domain-expert`      | typescript-expert, react-tanstack-expert     |
+| Skills    | `verb-ing-noun`      | debugging-systematically, designing-frontend |
+| Rules     | `topic` (kebab-case) | api, testing, components                     |
+| Hooks     | `action-target`      | file-guard, lint-changed                     |
 
 ## Directory Structure
 
@@ -309,13 +311,13 @@ Several commands use parallel background agents for efficiency. This pattern pro
 
 ### Commands with Parallel Execution
 
-| Command | Pattern | Agents |
-|---------|---------|--------|
-| `/ideate` | Parallel research | `Explore` + `research-expert` run simultaneously |
-| `/spec:execute` | Dependency-aware batching | Tasks grouped by dependencies, each batch runs in parallel |
-| `/spec:decompose` | Analysis isolation | Heavy decomposition runs in background agent |
-| `/debug:api` | Parallel diagnostics | Component, action, DAL agents investigate simultaneously |
-| `/debug:browser` | Parallel diagnostics | Visual, console, network, accessibility checks in parallel |
+| Command           | Pattern                   | Agents                                                     |
+| ----------------- | ------------------------- | ---------------------------------------------------------- |
+| `/ideate`         | Parallel research         | `Explore` + `research-expert` run simultaneously           |
+| `/spec:execute`   | Dependency-aware batching | Tasks grouped by dependencies, each batch runs in parallel |
+| `/spec:decompose` | Analysis isolation        | Heavy decomposition runs in background agent               |
+| `/debug:api`      | Parallel diagnostics      | Component, action, DAL agents investigate simultaneously   |
+| `/debug:browser`  | Parallel diagnostics      | Visual, console, network, accessibility checks in parallel |
 
 ### How It Works
 
@@ -436,6 +438,7 @@ See `guides/11-parallel-execution.md` for complete patterns and decision framewo
 ### Review Cycle
 
 Run `/system:review` periodically to:
+
 - Validate cross-references between components
 - Check for outdated documentation
 - Identify missing or conflicting patterns
@@ -447,12 +450,14 @@ Run `/system:review` periodically to:
 ### With CLAUDE.md
 
 CLAUDE.md is the **primary source of truth** for project context. This README documents the harness structure; CLAUDE.md documents:
+
 - Technology stack and versions
 - Architecture patterns (hexagonal, Transport interface)
 - Code conventions
 - Monorepo structure and commands
 
 **Update CLAUDE.md when**:
+
 - Adding significant new commands or agents
 - Changing core workflows
 - Modifying architectural patterns
@@ -464,6 +469,7 @@ Developer guides in `guides/` provide detailed patterns. Skills often reference 
 ### With Roadmap
 
 The roadmap system (`/roadmap/*`) integrates with the spec workflow:
+
 - Roadmap items link to specifications
 - `/ideate --roadmap-id` connects ideation to roadmap
 - Status updates flow bidirectionally

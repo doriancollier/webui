@@ -4,9 +4,7 @@ import type { StreamEvent } from '@dorkos/shared/types';
  * Creates an AsyncGenerator that yields StreamEvent objects.
  * Used to mock agentManager.sendMessage().
  */
-export async function* mockStreamGenerator(
-  events: StreamEvent[]
-): AsyncGenerator<StreamEvent> {
+export async function* mockStreamGenerator(events: StreamEvent[]): AsyncGenerator<StreamEvent> {
   for (const event of events) {
     yield event;
   }

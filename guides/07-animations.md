@@ -6,25 +6,25 @@ This project uses [Motion](https://motion.dev/) (version 12.x, formerly Framer M
 
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
-| Motion library import | `motion/react` package |
-| Animation utilities (CSS) | `src/app/globals.css` (transition classes, keyframes) |
-| Tailwind animation utilities | `tw-animate-css` (imported in globals.css) |
-| Accordion animations | CSS keyframes in `globals.css` |
-| Common UI patterns | `src/components/ui/*` (dropdowns, tooltips, etc.) |
+| Concept                      | Location                                              |
+| ---------------------------- | ----------------------------------------------------- |
+| Motion library import        | `motion/react` package                                |
+| Animation utilities (CSS)    | `src/app/globals.css` (transition classes, keyframes) |
+| Tailwind animation utilities | `tw-animate-css` (imported in globals.css)            |
+| Accordion animations         | CSS keyframes in `globals.css`                        |
+| Common UI patterns           | `src/components/ui/*` (dropdowns, tooltips, etc.)     |
 
 ## When to Use What
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| Simple transitions (fade, slide) | CSS transitions with Tailwind | Performant, no JS overhead |
-| Complex multi-property animations | Motion with `motion.div` | Declarative, supports spring physics |
-| Conditional rendering with exit animations | `<AnimatePresence>` wrapper | Waits for exit animation before unmounting |
-| List items appearing sequentially | Motion variants with `staggerChildren` | Coordinated animations with one declaration |
-| Interactive hover/tap effects | `whileHover` / `whileTap` props | Built-in gesture handling |
-| Layout animations (reordering, resizing) | `layout` prop | Automatically animates layout changes |
-| Accessibility concerns | `useReducedMotion` hook or CSS media query | Respects user preferences |
+| Scenario                                   | Approach                                   | Why                                         |
+| ------------------------------------------ | ------------------------------------------ | ------------------------------------------- |
+| Simple transitions (fade, slide)           | CSS transitions with Tailwind              | Performant, no JS overhead                  |
+| Complex multi-property animations          | Motion with `motion.div`                   | Declarative, supports spring physics        |
+| Conditional rendering with exit animations | `<AnimatePresence>` wrapper                | Waits for exit animation before unmounting  |
+| List items appearing sequentially          | Motion variants with `staggerChildren`     | Coordinated animations with one declaration |
+| Interactive hover/tap effects              | `whileHover` / `whileTap` props            | Built-in gesture handling                   |
+| Layout animations (reordering, resizing)   | `layout` prop                              | Automatically animates layout changes       |
+| Accessibility concerns                     | `useReducedMotion` hook or CSS media query | Respects user preferences                   |
 
 ## Core Patterns
 
@@ -470,11 +470,11 @@ const item = {
 Only these properties are GPU-accelerated for 60fps animations:
 
 | GPU-Accelerated | Triggers Layout Recalc |
-|----------------|------------------------|
-| `opacity` | `width`, `height` |
-| `scale` | `top`, `left` |
-| `x`, `y` | `margin`, `padding` |
-| `rotate` | `border-width` |
+| --------------- | ---------------------- |
+| `opacity`       | `width`, `height`      |
+| `scale`         | `top`, `left`          |
+| `x`, `y`        | `margin`, `padding`    |
+| `rotate`        | `border-width`         |
 
 ### 2. Use will-change Sparingly
 
@@ -515,11 +515,11 @@ const shouldReduceMotion = useReducedMotion()
 
 Follow the Calm Tech design system:
 
-| Animation Type | Duration | Example |
-|----------------|----------|---------|
+| Animation Type     | Duration  | Example                       |
+| ------------------ | --------- | ----------------------------- |
 | Micro-interactions | 100-150ms | Button hover, checkbox toggle |
-| Component entrance | 200-300ms | Modal open, card fade in |
-| Page transitions | 300-500ms | Route change, drawer slide |
+| Component entrance | 200-300ms | Modal open, card fade in      |
+| Page transitions   | 300-500ms | Route change, drawer slide    |
 
 Faster animations feel more responsive; slower animations can feel laggy.
 

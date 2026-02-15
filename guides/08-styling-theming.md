@@ -6,30 +6,30 @@ This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI compo
 
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
+| Concept             | Location                                       |
+| ------------------- | ---------------------------------------------- |
 | Theme configuration | `src/app/globals.css` (via `@theme` directive) |
-| Design system spec | `guides/design-system.md` |
-| Shadcn components | `src/layers/shared/ui/` (barrel export) |
-| Base UI primitives | `src/components/ui/` (installed components) |
-| Animation patterns | `guides/07-animations.md` |
-| cn() utility | `src/layers/shared/lib/utils.ts` |
-| ThemeProvider | `src/app/providers.tsx` |
+| Design system spec  | `guides/design-system.md`                      |
+| Shadcn components   | `src/layers/shared/ui/` (barrel export)        |
+| Base UI primitives  | `src/components/ui/` (installed components)    |
+| Animation patterns  | `guides/07-animations.md`                      |
+| cn() utility        | `src/layers/shared/lib/utils.ts`               |
+| ThemeProvider       | `src/app/providers.tsx`                        |
 
 ## When to Use What
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| Need semantic color (background, text) | Use tokens (`bg-background`, `text-foreground`) | Automatic dark mode, consistent design |
-| Need arbitrary color (brand not in tokens) | Add to `@theme` in globals.css | Reusable, theme-aware |
-| Need conditional classes | Use `cn()` utility | Type-safe, handles conflicts correctly |
-| Need component variants | Use built-in variants (`variant="outline"`) | Consistent API, pre-styled |
-| Need custom component styling | Pass `className` prop | Override defaults without editing source |
-| Need dark mode variant | Use `dark:` prefix (`dark:bg-black`) | Class-based, automatic toggle |
-| Need responsive design | Use breakpoint prefixes (`md:grid-cols-2`) | Mobile-first, standard breakpoints |
-| Need animation | Use Motion library (see 07-animations.md) | Performance, accessibility, spring physics |
-| Need complex state-dependent styles | Use `cn()` with conditionals | Readable, maintainable |
-| Need one-off styles not in design system | Avoid if possible, or use arbitrary values sparingly | Prefer extending theme |
+| Scenario                                   | Approach                                             | Why                                        |
+| ------------------------------------------ | ---------------------------------------------------- | ------------------------------------------ |
+| Need semantic color (background, text)     | Use tokens (`bg-background`, `text-foreground`)      | Automatic dark mode, consistent design     |
+| Need arbitrary color (brand not in tokens) | Add to `@theme` in globals.css                       | Reusable, theme-aware                      |
+| Need conditional classes                   | Use `cn()` utility                                   | Type-safe, handles conflicts correctly     |
+| Need component variants                    | Use built-in variants (`variant="outline"`)          | Consistent API, pre-styled                 |
+| Need custom component styling              | Pass `className` prop                                | Override defaults without editing source   |
+| Need dark mode variant                     | Use `dark:` prefix (`dark:bg-black`)                 | Class-based, automatic toggle              |
+| Need responsive design                     | Use breakpoint prefixes (`md:grid-cols-2`)           | Mobile-first, standard breakpoints         |
+| Need animation                             | Use Motion library (see 07-animations.md)            | Performance, accessibility, spring physics |
+| Need complex state-dependent styles        | Use `cn()` with conditionals                         | Readable, maintainable                     |
+| Need one-off styles not in design system   | Avoid if possible, or use arbitrary values sparingly | Prefer extending theme                     |
 
 ## Core Patterns
 
@@ -50,8 +50,8 @@ All design tokens live in `src/app/globals.css`:
   --color-muted-foreground: oklch(45% 0 0);
 
   /* Radius tokens */
-  --radius: 0.625rem;           /* 10px - buttons, inputs */
-  --radius-lg: 1rem;            /* 16px - cards */
+  --radius: 0.625rem; /* 10px - buttons, inputs */
+  --radius-lg: 1rem; /* 16px - cards */
 
   /* Fonts */
   --font-sans: 'Geist Sans', system-ui, sans-serif;
@@ -81,11 +81,11 @@ Always prefer semantic tokens over arbitrary values:
 // Component using semantic tokens
 export function FeatureCard({ title, description }: FeatureCardProps) {
   return (
-    <div className="bg-background text-foreground rounded-xl p-6 shadow-soft">
+    <div className="bg-background text-foreground shadow-soft rounded-xl p-6">
       <h3 className="text-primary font-semibold">{title}</h3>
       <p className="text-muted-foreground text-sm">{description}</p>
     </div>
-  )
+  );
 }
 ```
 
@@ -95,27 +95,27 @@ Dark mode uses next-themes with class strategy:
 
 ```tsx
 // Toggle theme
-'use client'
-import { useTheme } from 'next-themes'
+'use client';
+import { useTheme } from 'next-themes';
 
 export function ThemeToggle() {
-  const { theme, setTheme } = useTheme()
+  const { theme, setTheme } = useTheme();
 
   return (
     <button
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="p-2 rounded-md hover:bg-muted"
+      className="hover:bg-muted rounded-md p-2"
     >
       {theme === 'dark' ? '☀️' : '🌙'}
     </button>
-  )
+  );
 }
 ```
 
 Apply dark mode variants with `dark:` prefix:
 
 ```tsx
-<div className="bg-white dark:bg-black text-black dark:text-white">
+<div className="bg-white text-black dark:bg-black dark:text-white">
   <p className="text-gray-600 dark:text-gray-400">Muted text</p>
 </div>
 ```
@@ -165,9 +165,9 @@ Import from barrel export in `shared/ui/`:
 
 ```tsx
 // Import components
-import { Button } from '@/layers/shared/ui'
-import { Card, CardContent, CardHeader, CardTitle } from '@/layers/shared/ui'
-import { Form, FormControl, FormField, FormItem, FormLabel } from '@/layers/shared/ui'
+import { Button } from '@/layers/shared/ui';
+import { Card, CardContent, CardHeader, CardTitle } from '@/layers/shared/ui';
+import { Form, FormControl, FormField, FormItem, FormLabel } from '@/layers/shared/ui';
 
 // Use with variants
 export function Example() {
@@ -184,7 +184,7 @@ export function Example() {
         <Button variant="link">Link</Button>
       </CardContent>
     </Card>
-  )
+  );
 }
 ```
 
@@ -195,22 +195,22 @@ Use Tailwind breakpoints (mobile-first):
 ```tsx
 export function ResponsiveGrid() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
       {/* Stacks on mobile, 2 cols on tablet, 3 cols on desktop */}
       <Card>Item 1</Card>
       <Card>Item 2</Card>
       <Card>Item 3</Card>
     </div>
-  )
+  );
 }
 
 export function ResponsiveText() {
   return (
-    <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold">
+    <h1 className="text-2xl font-bold md:text-3xl lg:text-4xl">
       {/* 32px mobile, 48px tablet, 64px desktop */}
       Responsive Heading
     </h1>
-  )
+  );
 }
 ```
 
@@ -267,7 +267,7 @@ Define custom utilities for project-specific patterns:
 
   /* Interactive card */
   .card-interactive {
-    @apply transition-all duration-200 hover:shadow-elevated hover:-translate-y-1;
+    @apply hover:shadow-elevated transition-all duration-200 hover:-translate-y-1;
   }
 }
 ```
@@ -363,15 +363,15 @@ Usage:
 // ❌ Don't modify Shadcn component source files
 // File: src/components/ui/button.tsx
 export function Button() {
-  return <button className="px-4 py-2 bg-primary">...</button>
+  return <button className="bg-primary px-4 py-2">...</button>;
   // Changes lost on shadcn update
 }
 
 // ✅ Use className prop or create wrapper
-import { Button as BaseButton } from '@/components/ui/button'
+import { Button as BaseButton } from '@/components/ui/button';
 
 export function Button(props) {
-  return <BaseButton className="custom-override" {...props} />
+  return <BaseButton className="custom-override" {...props} />;
   // Safe, preserves updates
 }
 ```
@@ -380,61 +380,63 @@ export function Button(props) {
 
 The "Calm Tech" design language specifications:
 
-| Element | Specification |
-|---------|---------------|
-| **Fonts** | Geist Sans (UI), Geist Mono (code) |
-| **Colors** | OKLCH tokens — never pure black/white |
-| **Card radius** | 16px (`rounded-xl` or `--radius-lg`) |
-| **Button/Input radius** | 10px (`rounded-md` or `--radius`) |
-| **Button height** | 40px default (`h-10`) |
-| **Card padding** | 24px (`p-6`) |
-| **Animation duration** | 100-300ms (fast to slower) |
-| **Shadow hierarchy** | soft → elevated → floating → modal |
-| **Container widths** | narrow (42rem), default (56rem), wide (72rem) |
+| Element                 | Specification                                 |
+| ----------------------- | --------------------------------------------- |
+| **Fonts**               | Geist Sans (UI), Geist Mono (code)            |
+| **Colors**              | OKLCH tokens — never pure black/white         |
+| **Card radius**         | 16px (`rounded-xl` or `--radius-lg`)          |
+| **Button/Input radius** | 10px (`rounded-md` or `--radius`)             |
+| **Button height**       | 40px default (`h-10`)                         |
+| **Card padding**        | 24px (`p-6`)                                  |
+| **Animation duration**  | 100-300ms (fast to slower)                    |
+| **Shadow hierarchy**    | soft → elevated → floating → modal            |
+| **Container widths**    | narrow (42rem), default (56rem), wide (72rem) |
 
 ### Core Principles
 
-| Principle | Application |
-|-----------|-------------|
-| **Clarity over decoration** | Every element earns its place |
-| **Soft depth over flat** | Subtle shadows create hierarchy |
-| **Generous space** | Breathing room makes content shine |
-| **Micro-delight** | Thoughtful, restrained animations |
+| Principle                   | Application                        |
+| --------------------------- | ---------------------------------- |
+| **Clarity over decoration** | Every element earns its place      |
+| **Soft depth over flat**    | Subtle shadows create hierarchy    |
+| **Generous space**          | Breathing room makes content shine |
+| **Micro-delight**           | Thoughtful, restrained animations  |
 
 ## Adding a New Theme Token
 
 1. **Add to `@theme` block** in `src/app/globals.css`:
+
    ```css
    @theme {
-     --color-accent: oklch(60% 0.15 270);  /* Purple accent */
+     --color-accent: oklch(60% 0.15 270); /* Purple accent */
      --color-accent-foreground: oklch(98% 0 0);
    }
    ```
 
 2. **Add dark mode variant** in `.dark` block:
+
    ```css
    .dark {
-     --color-accent: oklch(70% 0.15 270);  /* Lighter in dark mode */
+     --color-accent: oklch(70% 0.15 270); /* Lighter in dark mode */
      --color-accent-foreground: oklch(10% 0 0);
    }
    ```
 
 3. **Use in components**:
+
    ```tsx
-   <button className="bg-accent text-accent-foreground">
-     Accent Button
-   </button>
+   <button className="bg-accent text-accent-foreground">Accent Button</button>
    ```
 
 4. **Add to TypeScript types** (optional, for autocomplete):
+
    ```typescript
    // src/types/tailwind.d.ts
    declare module 'tailwindcss/types/config' {
      export interface ThemeConfig {
        colors: {
-         accent: string
-         'accent-foreground': string
-       }
+         accent: string;
+         'accent-foreground': string;
+       };
      }
    }
    ```
@@ -447,30 +449,33 @@ The "Calm Tech" design language specifications:
 
 **Cause**: Tailwind couldn't find the classes during build (content paths issue).
 **Fix**: Ensure `content` paths in `postcss.config.js` include all component locations:
+
 ```javascript
 // postcss.config.js
 module.exports = {
   plugins: {
     '@tailwindcss/postcss': {
       content: [
-        './src/**/*.{ts,tsx}',  // Catches all TypeScript/React files
+        './src/**/*.{ts,tsx}', // Catches all TypeScript/React files
       ],
     },
   },
-}
+};
 ```
 
 ### "Dark mode not working"
 
 **Cause**: One of:
+
 1. ThemeProvider not wrapping app
 2. `suppressHydrationWarning` missing from `<html>` tag
 3. Using wrong strategy (should be `class`)
 
 **Fix**:
+
 ```tsx
 // src/app/layout.tsx
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from 'next-themes';
 
 export default function RootLayout({ children }) {
   return (
@@ -481,7 +486,7 @@ export default function RootLayout({ children }) {
         </ThemeProvider>
       </body>
     </html>
-  )
+  );
 }
 ```
 
@@ -489,13 +494,14 @@ export default function RootLayout({ children }) {
 
 **Cause**: Class conflicts not resolved (e.g., `p-4` and `p-6` both present).
 **Fix**: Ensure `cn()` uses `clsx` + `tailwind-merge`:
+
 ```typescript
 // src/layers/shared/lib/utils.ts
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))  // twMerge handles conflicts
+  return twMerge(clsx(inputs)); // twMerge handles conflicts
 }
 ```
 
@@ -503,6 +509,7 @@ export function cn(...inputs: ClassValue[]) {
 
 **Cause**: Defined in wrong layer or not using `@layer`.
 **Fix**: Always use `@layer utilities` in globals.css:
+
 ```css
 /* src/app/globals.css */
 @layer utilities {
@@ -516,13 +523,14 @@ export function cn(...inputs: ClassValue[]) {
 
 **Cause**: Forgot to override in `.dark` class.
 **Fix**: Every color token needs a dark mode variant:
+
 ```css
 @theme {
-  --color-custom: oklch(60% 0.1 200);  /* Light mode */
+  --color-custom: oklch(60% 0.1 200); /* Light mode */
 }
 
 .dark {
-  --color-custom: oklch(80% 0.1 200);  /* Dark mode - lighter */
+  --color-custom: oklch(80% 0.1 200); /* Dark mode - lighter */
 }
 ```
 
@@ -530,13 +538,14 @@ export function cn(...inputs: ClassValue[]) {
 
 **Cause**: CSS specificity — component styles override `className` prop.
 **Fix**: Use `!important` sparingly, or modify component variant:
+
 ```tsx
 // Option 1: Force override (use sparingly)
-<Button className="!bg-accent !text-white">Custom</Button>
+<Button className="!bg-accent !text-white">Custom</Button>;
 
 // Option 2: Create wrapper with default variant
 export function AccentButton(props) {
-  return <Button variant="ghost" className="bg-accent text-white" {...props} />
+  return <Button variant="ghost" className="bg-accent text-white" {...props} />;
 }
 ```
 
@@ -544,6 +553,7 @@ export function AccentButton(props) {
 
 **Cause**: Using max-width breakpoints instead of min-width (Tailwind is mobile-first).
 **Fix**: Apply base styles first, then override with breakpoints:
+
 ```tsx
 // ❌ WRONG (desktop-first)
 <div className="grid-cols-3 md:grid-cols-1">

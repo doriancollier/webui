@@ -2,10 +2,11 @@
 allowed-tools: Read, Write, Grep, Glob, Task, mcp__context7__resolve-library-id, mcp__context7__query-docs, Bash(ls:*), Bash(echo:*), Bash(command:*), Bash(npm:*), Bash(claude:*)
 description: Generate a spec file for a new feature or bugfix
 category: validation
-argument-hint: "<feature-or-bugfix-description>"
+argument-hint: '<feature-or-bugfix-description>'
 ---
 
 ## Context
+
 - Existing specs: !`ls -la specs/ 2>/dev/null || echo "No specs directory found"`
 
 ## Optional: Enhanced Library Documentation Support
@@ -15,6 +16,7 @@ Context7 MCP server provides up-to-date library documentation for better spec cr
 Check if Context7 is available: !`command -v context7-mcp || echo "NOT_INSTALLED"`
 
 If NOT_INSTALLED and the feature involves external libraries, offer to enable Context7:
+
 ```
 ████ Optional: Enable Context7 for Enhanced Documentation ████
 
@@ -29,11 +31,13 @@ Or you can install it manually later if you prefer.
 ```
 
 If user agrees to installation:
+
 - Run: `npm install -g @upstash/context7-mcp`
 - Then run: `claude mcp add context7 context7-mcp`
 - Verify installation and proceed with enhanced documentation support
 
 If user declines or wants to continue without it:
+
 - Proceed with spec creation using existing knowledge
 
 ## FIRST PRINCIPLES PROBLEM ANALYSIS
@@ -41,6 +45,7 @@ If user declines or wants to continue without it:
 Before defining any solution, validate the problem from first principles:
 
 ### Core Problem Investigation
+
 - **Strip Away Solution Assumptions**: What is the core problem, completely separate from any proposed solution?
 - **Root Cause Analysis**: Why does this problem exist? What created this need?
 - **Goal Decomposition**: What are we fundamentally trying to achieve for users/business?
@@ -48,6 +53,7 @@ Before defining any solution, validate the problem from first principles:
 - **Alternative Approaches**: Could we achieve the underlying goal without building anything? Are there simpler approaches?
 
 ### Problem Validation Questions
+
 - **Real vs. Perceived**: Is this solving a real problem that users actually have?
 - **Assumption Audit**: What assumptions about user needs, technical constraints, or business requirements might be wrong?
 - **Value Proposition**: What is the minimum viable solution that delivers core value?
@@ -60,6 +66,7 @@ Before defining any solution, validate the problem from first principles:
 After validating the problem from first principles, complete these technical checks:
 
 ### 1. Context Discovery Phase
+
 - Search existing codebase for similar features/specs using AgentTool
 - **Use specialized subagents** when research involves specific domains (TypeScript, React, testing, databases, etc.)
 - Check available specialized experts in `.claude/agents/` directory
@@ -70,11 +77,13 @@ After validating the problem from first principles, complete these technical che
 - Document any missing prerequisites
 
 ### 2. Request Validation
+
 - Confirm request is well-defined and actionable
 - If vague or incomplete, STOP and ask clarifying questions
 - Validate scope is appropriate (not too broad/narrow)
 
 ### 3. Quality Gate
+
 - Only proceed if you have 80%+ confidence in implementation approach
 - If uncertain, request additional context before continuing
 - Document any assumptions being made
@@ -86,6 +95,7 @@ After validating the problem from first principles, complete these technical che
 Check if $ARGUMENTS contains: "IMPORTANT: Save this specification to: <path>"
 
 If found:
+
 1. Extract the full path (e.g., `specs/my-feature/02-specification.md`)
 2. Store as OUTPUT_PATH variable
 3. Create parent directory: `mkdir -p $(dirname OUTPUT_PATH)`
@@ -93,6 +103,7 @@ If found:
 5. Use OUTPUT_PATH as the location to write the spec
 
 If not found (legacy direct usage):
+
 1. Generate filename from task description:
    - Features: `specs/feat-{kebab-case-name}.md`
    - Bugfixes: `specs/fix-{issue-number}-{brief-description}.md`
@@ -103,12 +114,14 @@ If not found (legacy direct usage):
 Create a comprehensive specification document for the following feature/bugfix: $ARGUMENTS
 
 First, analyze the request to understand:
+
 1. Whether this is a feature or bugfix
 2. The scope and complexity
 3. Related existing code/features
 4. External libraries/frameworks involved
 
 If the feature involves external libraries or frameworks AND Context7 is available:
+
 - Use `mcp__context7__resolve-library-id` to find the library
 - Use `mcp__context7__query-docs` to get up-to-date documentation
 - Reference official patterns and best practices from the docs
@@ -118,18 +131,21 @@ If the feature involves external libraries or frameworks AND Context7 is availab
 Before writing the detailed specification, map the complete system impact:
 
 ### System Integration Mapping
+
 - **Data Flow Tracing**: Trace data flow from user action → processing → storage → response
 - **Service Dependencies**: Identify all affected services, APIs, databases, and external systems
 - **Integration Points**: Map every place this feature touches existing functionality
 - **Cross-System Impact**: How does this change affect other teams, services, or user workflows?
 
 ### Complete User Journey Analysis
+
 - **Entry Points**: How do users discover and access this feature?
 - **Step-by-Step Flow**: What is the complete sequence from start to finish?
 - **Error Scenarios**: What happens when things go wrong at each step?
 - **Exit Points**: How does this connect to what users do next?
 
 ### Deployment and Rollback Considerations
+
 - **Migration Path**: How do we get from current state to new state?
 - **Rollback Strategy**: What if we need to undo this feature?
 - **Deployment Dependencies**: What must be deployed together vs. independently?
@@ -147,16 +163,16 @@ Then create a spec document that includes:
 6. **Goals**: What we aim to achieve (bullet points)
 7. **Non-Goals**: What is explicitly out of scope (bullet points)
 8. **Technical Dependencies**:
-    - External libraries/frameworks used
-    - Version requirements
-    - Links to relevant documentation
+   - External libraries/frameworks used
+   - Version requirements
+   - Links to relevant documentation
 9. **Detailed Design**:
-    - Architecture changes
-    - Implementation approach
-    - Code structure and file organization
-    - API changes (if any)
-    - Data model changes (if any)
-    - Integration with external libraries (with examples from docs)
+   - Architecture changes
+   - Implementation approach
+   - Code structure and file organization
+   - API changes (if any)
+   - Data model changes (if any)
+   - Integration with external libraries (with examples from docs)
 10. **User Experience**: How users will interact with this feature
 11. **Testing Strategy**:
     - Unit tests
@@ -180,6 +196,7 @@ Then create a spec document that includes:
     - Relevant design patterns or architectural decisions
 
 Follow these guidelines:
+
 - Use Markdown format similar to existing specs
 - Be thorough and technical but also accessible
 - Include code examples where helpful (especially from library docs)
@@ -205,12 +222,14 @@ At each checkpoint, if quality is insufficient, revise before proceeding.
 ## FINAL SPECIFICATION VALIDATION
 
 Before marking complete:
+
 1. **Completeness Check**: All 17 sections meaningfully filled
-2. **Consistency Check**: No contradictions between sections  
+2. **Consistency Check**: No contradictions between sections
 3. **Implementability Check**: Someone could build this from the spec
 4. **Quality Score**: Rate spec 1-10, only accept 8+
 
 Before writing, use AgentTool to search for:
+
 - Related existing features or code
 - Similar patterns in the codebase
 - Potential conflicts or dependencies

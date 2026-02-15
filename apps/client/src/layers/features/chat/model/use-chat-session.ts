@@ -1,6 +1,17 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { TextDelta, ToolCallEvent, ApprovalEvent, QuestionPromptEvent, ErrorEvent, SessionStatusEvent, QuestionItem, TaskUpdateEvent, MessagePart, HistoryMessage } from '@dorkos/shared/types';
+import type {
+  TextDelta,
+  ToolCallEvent,
+  ApprovalEvent,
+  QuestionPromptEvent,
+  ErrorEvent,
+  SessionStatusEvent,
+  QuestionItem,
+  TaskUpdateEvent,
+  MessagePart,
+  HistoryMessage,
+} from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 
 export interface ChatMessage {
@@ -90,11 +101,13 @@ function mapHistoryMessage(m: HistoryMessage): ChatMessage {
           input: tc.input,
           result: tc.result,
           status: tc.status,
-          ...(tc.questions ? {
-            interactiveType: 'question' as const,
-            questions: tc.questions,
-            answers: tc.answers,
-          } : {}),
+          ...(tc.questions
+            ? {
+                interactiveType: 'question' as const,
+                questions: tc.questions,
+                answers: tc.answers,
+              }
+            : {}),
         });
       }
     }
@@ -206,7 +219,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       const newMessages = history.slice(currentMessages.length);
 
       if (newMessages.length > 0) {
-        setMessages(prev => [...prev, ...newMessages.map(mapHistoryMessage)]);
+        setMessages((prev) => [...prev, ...newMessages.map(mapHistoryMessage)]);
       }
     }
   }, [historyQuery.data, isStreaming]);
@@ -253,7 +266,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setStatus('streaming');
     setError(null);
@@ -281,7 +294,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         finalContent,
         (event) => handleStreamEvent(event.type, event.data, assistantIdRef.current),
         abortController.signal,
-        selectedCwd ?? undefined,
+        selectedCwd ?? undefined
       );
 
       setStatus('idle');
@@ -490,23 +503,26 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   function ensureAssistantMessage(assistantId: string) {
     if (!assistantCreatedRef.current) {
       assistantCreatedRef.current = true;
-      setMessages(prev => [...prev, {
-        id: assistantId,
-        role: 'assistant',
-        content: '',
-        toolCalls: [],
-        parts: [],
-        timestamp: new Date().toISOString(),
-      }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: assistantId,
+          role: 'assistant',
+          content: '',
+          toolCalls: [],
+          parts: [],
+          timestamp: new Date().toISOString(),
+        },
+      ]);
     }
   }
 
   function updateAssistantMessage(assistantId: string) {
     ensureAssistantMessage(assistantId);
-    const parts = currentPartsRef.current.map(p => ({ ...p }));
+    const parts = currentPartsRef.current.map((p) => ({ ...p }));
     const derived = deriveFromParts(parts);
-    setMessages(prev =>
-      prev.map(m =>
+    setMessages((prev) =>
+      prev.map((m) =>
         m.id === assistantId
           ? {
               ...m,
@@ -531,13 +547,30 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   const pendingInteractions = useMemo(() => {
     return messages
-      .flatMap(m => m.toolCalls || [])
-      .filter(tc => tc.interactiveType && tc.status === 'pending');
+      .flatMap((m) => m.toolCalls || [])
+      .filter((tc) => tc.interactiveType && tc.status === 'pending');
   }, [messages]);
 
   const activeInteraction = pendingInteractions[0] || null;
   const isWaitingForUser = activeInteraction !== null;
   const waitingType = activeInteraction?.interactiveType || null;
 
-  return { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction };
+  return {
+    messages,
+    input,
+    setInput,
+    handleSubmit,
+    status,
+    error,
+    sessionBusy,
+    stop,
+    isLoadingHistory,
+    sessionStatus,
+    streamStartTime,
+    estimatedTokens,
+    isTextStreaming,
+    isWaitingForUser,
+    waitingType,
+    activeInteraction,
+  };
 }

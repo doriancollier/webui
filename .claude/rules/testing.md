@@ -37,9 +37,9 @@ Component tests need jsdom environment:
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
-import '@testing-library/jest-dom'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 ```
 
 ### Mock Transport (Required for Client Components)
@@ -80,8 +80,8 @@ beforeAll(() => {
       removeEventListener: vi.fn(),
       dispatchEvent: vi.fn(),
     })),
-  })
-})
+  });
+});
 ```
 
 ### Wrapper Components
@@ -133,60 +133,60 @@ describe('ComponentName', () => {
 describe('TranscriptReader', () => {
   it('returns session when found', async () => {
     // Mock fs/promises for transcript reading
-    vi.mocked(readFile).mockResolvedValue(Buffer.from(mockJsonl))
+    vi.mocked(readFile).mockResolvedValue(Buffer.from(mockJsonl));
 
-    const result = await transcriptReader.getSession('test-id')
-    expect(result).toEqual(expect.objectContaining({ id: 'test-id' }))
-  })
+    const result = await transcriptReader.getSession('test-id');
+    expect(result).toEqual(expect.objectContaining({ id: 'test-id' }));
+  });
 
   it('throws when session not found', async () => {
-    vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'))
+    vi.mocked(readFile).mockRejectedValue(new Error('ENOENT'));
 
-    await expect(transcriptReader.getSession('missing')).rejects.toThrow()
-  })
-})
+    await expect(transcriptReader.getSession('missing')).rejects.toThrow();
+  });
+});
 ```
 
 ### Hook Tests
 
 ```typescript
-import { renderHook, waitFor } from '@testing-library/react'
+import { renderHook, waitFor } from '@testing-library/react';
 
 describe('useCustomHook', () => {
   it('returns expected state', async () => {
     const { result } = renderHook(() => useCustomHook(), {
       wrapper: Wrapper,
-    })
+    });
 
     await waitFor(() => {
-      expect(result.current.data).toBeDefined()
-    })
-  })
-})
+      expect(result.current.data).toBeDefined();
+    });
+  });
+});
 ```
 
 ## Naming Conventions
 
-| Pattern | Example |
-|---------|---------|
-| Describe block | Component/function name |
-| Test case | `it('does specific behavior', ...)` |
-| Mock files | `__mocks__/moduleName.ts` |
+| Pattern        | Example                             |
+| -------------- | ----------------------------------- |
+| Describe block | Component/function name             |
+| Test case      | `it('does specific behavior', ...)` |
+| Mock files     | `__mocks__/moduleName.ts`           |
 
 ## Anti-Patterns (Never Do)
 
 ```typescript
 // NEVER test implementation details
-expect(component.state.isOpen).toBe(true)  // Wrong - test behavior
+expect(component.state.isOpen).toBe(true); // Wrong - test behavior
 
 // NEVER use waitFor without assertion
-await waitFor(() => {})  // Wrong
+await waitFor(() => {}); // Wrong
 
 // NEVER leave console mocks without cleanup
-vi.spyOn(console, 'error')  // Add mockRestore in afterEach
+vi.spyOn(console, 'error'); // Add mockRestore in afterEach
 
 // NEVER use arbitrary timeouts
-await new Promise(r => setTimeout(r, 1000))  // Wrong - use waitFor
+await new Promise((r) => setTimeout(r, 1000)); // Wrong - use waitFor
 ```
 
 ## Running Tests

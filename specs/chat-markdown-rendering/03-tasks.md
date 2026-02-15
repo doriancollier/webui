@@ -8,13 +8,13 @@
 
 ## Task Summary
 
-| # | Phase | Task | Status | Depends On |
-|---|-------|------|--------|------------|
-| 1 | P1 | Add Streamdown `@source` directive to `index.css` | TODO | -- |
-| 2 | P1 | Replace StreamingText with Streamdown component | TODO | -- |
-| 3 | P1 | Update MessageItem for conditional rendering | TODO | T2 |
-| 4 | P2 | Update existing tests and add new test coverage | TODO | T1, T2, T3 |
-| 5 | P3 | Update gateway CLAUDE.md documentation | TODO | T1, T2, T3 |
+| #   | Phase | Task                                              | Status | Depends On |
+| --- | ----- | ------------------------------------------------- | ------ | ---------- |
+| 1   | P1    | Add Streamdown `@source` directive to `index.css` | TODO   | --         |
+| 2   | P1    | Replace StreamingText with Streamdown component   | TODO   | --         |
+| 3   | P1    | Update MessageItem for conditional rendering      | TODO   | T2         |
+| 4   | P2    | Update existing tests and add new test coverage   | TODO   | T1, T2, T3 |
+| 5   | P3    | Update gateway CLAUDE.md documentation            | TODO   | T1, T2, T3 |
 
 **Parallel opportunities:** T1 and T2 can be done in parallel. T4 and T5 can be done in parallel once P1 tasks complete.
 
@@ -31,19 +31,20 @@ Add a `@source` directive immediately after the existing `@import "tailwindcss"`
 **Current state (line 1):**
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 ```
 
 **Target state:**
 
 ```css
-@import "tailwindcss";
-@source "../node_modules/streamdown/dist/*.js";
+@import 'tailwindcss';
+@source '../node_modules/streamdown/dist/*.js';
 ```
 
 This is the Tailwind v4 equivalent of adding `content` paths in `tailwind.config.js`. The `@source` directive tells Tailwind to scan the specified glob for class names to include in its generated output.
 
 **Acceptance criteria:**
+
 - `@source "../node_modules/streamdown/dist/*.js";` appears on the line immediately after `@import "tailwindcss";`
 - No other lines in `index.css` are changed
 - Vite dev server starts without errors
@@ -73,11 +74,7 @@ export function StreamingText({ content }: StreamingTextProps) {
     return content;
   }, [content]);
 
-  return (
-    <div className="whitespace-pre-wrap break-words">
-      {rendered}
-    </div>
-  );
+  return <div className="break-words whitespace-pre-wrap">{rendered}</div>;
 }
 ```
 
@@ -91,17 +88,12 @@ interface StreamingTextProps {
 }
 
 export function StreamingText({ content }: StreamingTextProps) {
-  return (
-    <Streamdown
-      shikiTheme={['github-light', 'github-dark']}
-    >
-      {content}
-    </Streamdown>
-  );
+  return <Streamdown shikiTheme={['github-light', 'github-dark']}>{content}</Streamdown>;
 }
 ```
 
 **Key details:**
+
 - Remove the `useMemo` import and wrapper -- Streamdown handles memoization internally via block-level caching
 - Remove the `whitespace-pre-wrap break-words` wrapper div -- Streamdown renders its own wrapper
 - `parseIncompleteMarkdown` defaults to `true` so unterminated syntax during streaming is handled automatically
@@ -109,6 +101,7 @@ export function StreamingText({ content }: StreamingTextProps) {
 - `children` receives the accumulated markdown string
 
 **Acceptance criteria:**
+
 - File imports `Streamdown` from `'streamdown'`
 - No `useMemo` import remains
 - No wrapper `div` with `whitespace-pre-wrap` remains
@@ -146,24 +139,25 @@ User messages should remain plain text. Only assistant messages should use `Stre
 **Current lines 30-32:**
 
 ```tsx
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <StreamingText content={message.content} />
-        </div>
+<div className="prose prose-sm dark:prose-invert max-w-none">
+  <StreamingText content={message.content} />
+</div>
 ```
 
 **Target lines 30-35:**
 
 ```tsx
-        <div className={isUser ? '' : 'max-w-prose'}>
-          {isUser ? (
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
-          ) : (
-            <StreamingText content={message.content} />
-          )}
-        </div>
+<div className={isUser ? '' : 'max-w-prose'}>
+  {isUser ? (
+    <div className="break-words whitespace-pre-wrap">{message.content}</div>
+  ) : (
+    <StreamingText content={message.content} />
+  )}
+</div>
 ```
 
 **Acceptance criteria:**
+
 - No `prose`, `prose-sm`, or `dark:prose-invert` classes remain in the file
 - `max-w-none` is replaced with conditional `max-w-prose` (assistant only)
 - User messages render as plain text in a `whitespace-pre-wrap break-words` div
@@ -191,11 +185,14 @@ Add a `vi.mock('streamdown')` call after the existing `vi.mock('@tanstack/react-
 ```tsx
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 ```
 
 **Verify all 5 existing tests still pass:**
+
 - `renders empty list without error` -- no messages, unaffected
 - `renders user message content` -- user messages now render as plain text (not through StreamingText/Streamdown), so `screen.getByText('Hello world')` should still find the text
 - `renders assistant message content` -- assistant messages now render through mocked Streamdown which outputs the text in a `div`, so `screen.getByText('Hi there, how can I help?')` should still find the text
@@ -221,7 +218,9 @@ afterEach(() => {
 
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 
 describe('StreamingText', () => {
@@ -262,12 +261,19 @@ afterEach(() => {
 
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 
 describe('MessageItem', () => {
   it('renders user messages as plain text', () => {
-    const msg = { id: '1', role: 'user' as const, content: '**not bold**', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'user' as const,
+      content: '**not bold**',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} />);
     // User messages should show raw markdown syntax, not rendered
     expect(screen.getByText('**not bold**')).toBeDefined();
@@ -276,7 +282,12 @@ describe('MessageItem', () => {
   });
 
   it('renders assistant messages with Streamdown', () => {
-    const msg = { id: '1', role: 'assistant' as const, content: '# Heading', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: '# Heading',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} />);
     // Assistant messages should use Streamdown
     expect(screen.getByTestId('streamdown')).toBeDefined();
@@ -284,13 +295,23 @@ describe('MessageItem', () => {
   });
 
   it('shows correct label for user messages', () => {
-    const msg = { id: '1', role: 'user' as const, content: 'Test', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'user' as const,
+      content: 'Test',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} />);
     expect(screen.getByText('You')).toBeDefined();
   });
 
   it('shows correct label for assistant messages', () => {
-    const msg = { id: '1', role: 'assistant' as const, content: 'Reply', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: 'Reply',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} />);
     expect(screen.getByText('Claude')).toBeDefined();
   });
@@ -320,6 +341,7 @@ npx vitest run src/client/components/chat/__tests__/
 ```
 
 **Acceptance criteria:**
+
 - All 5 existing `MessageList.test.tsx` tests pass with the Streamdown mock
 - All 3 new `StreamingText.test.tsx` tests pass
 - All 5 new `MessageItem.test.tsx` tests pass
@@ -350,6 +372,7 @@ Add after it:
 ```
 
 **Acceptance criteria:**
+
 - New bullet appears in the Client section of `CLAUDE.md`
 - Mentions `streamdown`, Shiki themes, user vs assistant distinction, and the `@source` directive
 - No other sections of `CLAUDE.md` are changed

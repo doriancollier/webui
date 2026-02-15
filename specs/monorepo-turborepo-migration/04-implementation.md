@@ -27,14 +27,14 @@ dorkos/
 
 ## Verification Results
 
-| Check | Result |
-|-------|--------|
-| `turbo build` (all 3 apps) | 3/3 successful |
-| Client tests | 17 files, 206 tests passed |
-| Server tests | 13 files, 128 tests passed |
-| Obsidian plugin output | main.js + manifest.json + styles.css |
-| Old import patterns (`@shared/`, `../../shared/`, `../../server/`, `../../client/`) | None remaining in source |
-| Root package.json cleaned | Only turbo + workspaces |
+| Check                                                                               | Result                               |
+| ----------------------------------------------------------------------------------- | ------------------------------------ |
+| `turbo build` (all 3 apps)                                                          | 3/3 successful                       |
+| Client tests                                                                        | 17 files, 206 tests passed           |
+| Server tests                                                                        | 13 files, 128 tests passed           |
+| Obsidian plugin output                                                              | main.js + manifest.json + styles.css |
+| Old import patterns (`@shared/`, `../../shared/`, `../../server/`, `../../client/`) | None remaining in source             |
+| Root package.json cleaned                                                           | Only turbo + workspaces              |
 
 ## Key Decisions Made During Implementation
 

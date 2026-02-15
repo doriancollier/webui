@@ -1,6 +1,6 @@
 ---
 description: Review processes for clarity, consistency, and improvements
-argument-hint: "[area to review (optional)]"
+argument-hint: '[area to review (optional)]'
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, AskUserQuestion, Task, WebSearch
 ---
 
@@ -19,17 +19,17 @@ Review Claude Code processes (commands, agents, hooks, configuration) for clarit
 
 ### Files and Directories to Review
 
-| Area | Location | What to Check |
-|------|----------|---------------|
-| **Harness README** | `/.claude/README.md` | Inventory accuracy, component tables, structure |
-| **Memory/Instructions** | `/CLAUDE.md` | Main instructions, accuracy, completeness |
-| **Commands** | `/.claude/commands/**/*.md` | Clarity, consistency, functionality |
-| **Agents** | `/.claude/agents/**/*.md` | Purpose clarity, tool access, instructions |
-| **Skills** | `/.claude/skills/**/SKILL.md` | Skill definitions, descriptions, progressive disclosure |
-| **Rules** | `/.claude/rules/*.md` | Path patterns, content relevance, no overlaps |
-| **Hooks** | `/.claude/settings.json` | Hook configuration, lifecycle events |
-| **Developer Guides** | `/guides/*.md` | Patterns, best practices |
-| **UI Documentation** | `apps/client/src/**/*.tsx` | Stats accuracy, component lists, content currency |
+| Area                    | Location                      | What to Check                                           |
+| ----------------------- | ----------------------------- | ------------------------------------------------------- |
+| **Harness README**      | `/.claude/README.md`          | Inventory accuracy, component tables, structure         |
+| **Memory/Instructions** | `/CLAUDE.md`                  | Main instructions, accuracy, completeness               |
+| **Commands**            | `/.claude/commands/**/*.md`   | Clarity, consistency, functionality                     |
+| **Agents**              | `/.claude/agents/**/*.md`     | Purpose clarity, tool access, instructions              |
+| **Skills**              | `/.claude/skills/**/SKILL.md` | Skill definitions, descriptions, progressive disclosure |
+| **Rules**               | `/.claude/rules/*.md`         | Path patterns, content relevance, no overlaps           |
+| **Hooks**               | `/.claude/settings.json`      | Hook configuration, lifecycle events                    |
+| **Developer Guides**    | `/guides/*.md`                | Patterns, best practices                                |
+| **UI Documentation**    | `apps/client/src/**/*.tsx`    | Stats accuracy, component lists, content currency       |
 
 ## Order of Operations
 
@@ -42,6 +42,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
   - If specified → focus on that area + its connections
 
 - [ ] **1.2** Build inventory of files to review:
+
   ```bash
   # Commands
   find ".claude/commands" -name "*.md" -type f
@@ -97,24 +98,28 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **2.2** Read each file in scope, checking for:
 
 **Clarity Issues:**
+
 - Ambiguous instructions
 - Missing context
 - Unclear when to use
 - Missing examples
 
 **Consistency Issues:**
+
 - Conflicting instructions between files
 - Different terminology for same concepts
 - Inconsistent formatting
 - Mismatched YAML frontmatter
 
 **Functionality Issues:**
+
 - Broken file paths
 - Outdated references
 - Missing dependencies
 - Logic errors
 
 **Completeness Issues:**
+
 - Missing documentation
 - Incomplete instructions
 - Missing edge case handling
@@ -128,11 +133,11 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 
 - [ ] **3.1** Categorize findings:
 
-| Severity | Meaning | Action |
-|----------|---------|--------|
-| **Critical** | Broken functionality, blocking errors | Must fix |
-| **Warning** | Inconsistency, confusion risk | Should fix |
-| **Suggestion** | Improvement opportunity | Optional |
+| Severity       | Meaning                               | Action     |
+| -------------- | ------------------------------------- | ---------- |
+| **Critical**   | Broken functionality, blocking errors | Must fix   |
+| **Warning**    | Inconsistency, confusion risk         | Should fix |
+| **Suggestion** | Improvement opportunity               | Optional   |
 
 - [ ] **3.2** For each issue, determine:
   - Can it be fixed automatically?
@@ -142,6 +147,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 ### Phase 4: Present Findings
 
 - [ ] **4.1** Present summary to user:
+
   ```markdown
   ## Process Review Summary
 
@@ -149,12 +155,15 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
   **Files Reviewed**: X
 
   ### Critical Issues (must fix)
+
   - [ ] [Issue description] in `file.md`
 
   ### Warnings (should fix)
+
   - [ ] [Issue description] in `file.md`
 
   ### Suggestions (optional improvements)
+
   - [ ] [Improvement idea]
   ```
 
@@ -168,14 +177,17 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **5.1** Group proposed changes by file
 
 - [ ] **5.2** Present batch of changes:
+
   ```markdown
   ## Proposed Changes
 
   ### File: `.claude/commands/spec/create.md`
+
   - Change 1: [description]
   - Change 2: [description]
 
   ### File: `CLAUDE.md`
+
   - Change 1: [description]
 
   **Proceed with these X changes?**
@@ -186,6 +198,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **5.4** Apply approved changes using Edit tool
 
 - [ ] **5.5** Report completion:
+
   ```markdown
   ## Changes Applied
 
@@ -193,19 +206,23 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
   - [x] Updated `file2.md`: [what changed]
 
   ## Remaining Items
+
   - [ ] [Any deferred items]
   ```
 
 ### Phase 6: Recommendations
 
 - [ ] **6.1** Present improvement opportunities:
+
   ```markdown
   ## Improvement Recommendations
 
   ### High Value
+
   1. **[Recommendation]**: [Why and how]
 
   ### Nice to Have
+
   1. **[Recommendation]**: [Why and how]
   ```
 
@@ -214,11 +231,13 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 ### Phase 7: Skill Extraction Analysis
 
 **This phase identifies content that should be extracted to Skills.** Run this phase when:
+
 - `$ARGUMENTS` includes `skill-extraction`
 - Full review finds patterns that would benefit from Skill extraction
 - User asks about improving agent/command organization
 
 - [ ] **7.1** Research current Claude Code Skills best practices:
+
   ```
   Task(
     description="Lookup Claude Code Skills best practices",
@@ -233,25 +252,30 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **7.2** Scan for Skill extraction candidates in these locations:
 
 **Developer Guides** (`guides/*.md`):
+
 - Step-by-step procedures that teach expertise
 - Best practices sections that guide behavior
 - Patterns that apply across multiple features
 
 **Agents** (`.claude/agents/**/*.md`):
+
 - Agents that primarily teach "how to think" rather than "execute tasks"
 - Agents that don't need tool isolation
 - Agents whose expertise could be useful outside isolated contexts
 
 **CLAUDE.md**:
+
 - Repeated coding standards and patterns
 - Architectural guidelines
 - Security/quality checklists
 
 **Commands** (`.claude/commands/**/*.md`):
+
 - Commands that primarily provide expertise/guidance
 - Commands that could work automatically (model-invoked)
 
 - [ ] **7.3** Apply Skill Extraction Decision Tree to each candidate:
+
   ```
   For each piece of content:
 
@@ -279,27 +303,28 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
   - **Progressive Disclosure**: Can details go in separate reference files?
 
 - [ ] **7.5** Present Skill extraction recommendations:
+
   ```markdown
   ## Skill Extraction Analysis
 
   ### High-Priority Candidates (Strong Skill Fit)
 
-  | Source | Proposed Skill Name | Why Extract? |
-  |--------|---------------------|--------------|
-  | `guides/xyz.md` | `reviewing-xyz` | Reusable expertise, auto-activation beneficial |
+  | Source          | Proposed Skill Name | Why Extract?                                   |
+  | --------------- | ------------------- | ---------------------------------------------- |
+  | `guides/xyz.md` | `reviewing-xyz`     | Reusable expertise, auto-activation beneficial |
 
   ### Medium-Priority Candidates (Consider Converting)
 
-  | Source | Proposed Skill Name | Trade-offs |
-  |--------|---------------------|------------|
-  | `.claude/agents/abc-expert.md` | `analyzing-abc` | Currently Agent, could work as Skill |
+  | Source                         | Proposed Skill Name | Trade-offs                           |
+  | ------------------------------ | ------------------- | ------------------------------------ |
+  | `.claude/agents/abc-expert.md` | `analyzing-abc`     | Currently Agent, could work as Skill |
 
   ### Keep as Current Type (Not Skill Candidates)
 
-  | Source | Current Type | Why Keep? |
-  |--------|--------------|-----------|
-  | `.claude/agents/xyz.md` | Agent | Needs isolated context |
-  | `.claude/commands/foo.md` | Command | User-invoked preferred |
+  | Source                    | Current Type | Why Keep?              |
+  | ------------------------- | ------------ | ---------------------- |
+  | `.claude/agents/xyz.md`   | Agent        | Needs isolated context |
+  | `.claude/commands/foo.md` | Command      | User-invoked preferred |
 
   ### Recommended Actions
 
@@ -320,6 +345,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 ## Review Checklists
 
 ### For Harness README
+
 - [ ] Inventory counts match actual file counts
 - [ ] All commands are listed in Commands table
 - [ ] All agents are listed in Agents table
@@ -330,6 +356,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] Naming conventions section is up to date
 
 ### For Commands
+
 - [ ] Has valid YAML frontmatter (description, argument-hint, allowed-tools)
 - [ ] Clear purpose statement
 - [ ] Arguments documented
@@ -340,6 +367,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] Referenced agents exist
 
 ### For Agents
+
 - [ ] Has valid YAML frontmatter (name, description, tools, model)
 - [ ] Description clearly indicates when to use this agent
 - [ ] Tools in frontmatter are appropriate for agent's purpose
@@ -350,6 +378,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **Skill Check**: Could this Agent work as a Skill instead? (See Agents vs Skills)
 
 ### For Skills
+
 - [ ] Has valid YAML frontmatter (name, description, optional allowed-tools)
 - [ ] **Name**: Uses gerund form (verb-ing: `processing-pdfs`, `reviewing-code`)
 - [ ] **Name**: Lowercase letters, numbers, hyphens only, max 64 chars
@@ -362,6 +391,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] Supporting files organized: `reference.md`, `examples.md`, `scripts/`, `templates/`
 
 ### For Rules
+
 - [ ] Has valid YAML frontmatter with `paths:` field
 - [ ] **Paths**: Uses valid glob syntax (`src/**/*.ts`, `__tests__/**/*.tsx`)
 - [ ] **Paths**: Patterns correctly match intended files (test with `ls` or `find`)
@@ -374,12 +404,14 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **Relevance**: Content wouldn't fit better in CLAUDE.md, a Skill, or Developer Guide
 
 ### For Hooks
+
 - [ ] Configured in `.claude/settings.json`
 - [ ] Matches appropriate lifecycle event (PreToolUse, PostToolUse, etc.)
 - [ ] Tool matcher is correct
 - [ ] ClaudeKit hook command exists
 
 ### For CLAUDE.md
+
 - [ ] Project conventions are accurate
 - [ ] Directory structure is correct
 - [ ] Code patterns are current
@@ -387,6 +419,7 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] Examples work correctly
 
 ### For UI Documentation Pages (`apps/client/src/`)
+
 - [ ] `harnessStats` array counts match actual file counts in `.claude/`
 - [ ] `commandNamespaces` array lists all command namespaces accurately
 - [ ] `agents` array matches actual agents in `.claude/agents/`
@@ -430,17 +463,20 @@ UI Pages ←→ CLAUDE.md (is displayed info consistent?)
 ### Architecture-Specific Validations
 
 **For Commands:**
+
 - Are tools in `allowed-tools` appropriate for the command's purpose?
 - Does the command reference any project-specific paths incorrectly?
 - Are bash commands using relative paths?
 
 **For Agents:**
+
 - Is there a clear reason why this needs context isolation?
 - Are the tools listed actually needed?
 - Does the model choice (sonnet/haiku/opus) match the complexity?
 - **Skill Check**: Could this be converted to a Skill? (See Phase 7)
 
 **For Skills:**
+
 - Is the name in gerund form (verb-ing)?
 - Does the description include both "does what" AND "use when"?
 - Is SKILL.md under 500 lines? (use progressive disclosure if not)
@@ -449,6 +485,7 @@ UI Pages ←→ CLAUDE.md (is displayed info consistent?)
 - Does similar content exist in an Agent? (potential duplication)
 
 **For Rules:**
+
 - Does the `paths:` pattern actually match the intended files?
   ```bash
   # Test patterns - should return expected files
@@ -465,6 +502,7 @@ UI Pages ←→ CLAUDE.md (is displayed info consistent?)
 - Are examples using project-specific conventions?
 
 **For Hooks (in settings.json):**
+
 - Is the lifecycle event correct for the hook's purpose?
   - Validation/blocking → PreToolUse
   - Checking/logging → PostToolUse
@@ -493,39 +531,45 @@ UI Pages ←→ CLAUDE.md (is displayed info consistent?)
 
 ### Component Comparison Matrix
 
-| Aspect | Slash Command | Agent | Skill | Rule | Hook |
-|--------|---------------|-------|-------|------|------|
-| **Invocation** | User types `/command` | Tool-invoked via Task | Model-invoked (automatic) | Path-triggered | Event-triggered |
-| **Context** | Shared with main conversation | Isolated context window | Shared with main conversation | Shared (injected) | N/A (scripts) |
-| **Purpose** | Quick actions/workflows | Complex isolated tasks | Reusable expertise | File-type guidelines | Deterministic behavior |
-| **Location** | `.claude/commands/` | `.claude/agents/` | `.claude/skills/` | `.claude/rules/` | `.claude/settings.json` |
-| **When Runs** | User explicitly invokes | Spawned for specific task | Claude decides automatically | When editing matching files | At lifecycle events |
+| Aspect         | Slash Command                 | Agent                     | Skill                         | Rule                        | Hook                    |
+| -------------- | ----------------------------- | ------------------------- | ----------------------------- | --------------------------- | ----------------------- |
+| **Invocation** | User types `/command`         | Tool-invoked via Task     | Model-invoked (automatic)     | Path-triggered              | Event-triggered         |
+| **Context**    | Shared with main conversation | Isolated context window   | Shared with main conversation | Shared (injected)           | N/A (scripts)           |
+| **Purpose**    | Quick actions/workflows       | Complex isolated tasks    | Reusable expertise            | File-type guidelines        | Deterministic behavior  |
+| **Location**   | `.claude/commands/`           | `.claude/agents/`         | `.claude/skills/`             | `.claude/rules/`            | `.claude/settings.json` |
+| **When Runs**  | User explicitly invokes       | Spawned for specific task | Claude decides automatically  | When editing matching files | At lifecycle events     |
 
 ### Agents vs Skills: Deep Comparison
 
 #### Use an AGENT When:
 
 ✅ **Task requires isolated context**
+
 - Agent has its own conversation history
 - Prevents context pollution in main conversation
 - Useful for exploratory or messy tasks
 
 ✅ **Task requires specific tool restrictions**
+
 - Agent can have different tools than main conversation
 - Useful for security (read-only agents, etc.)
 
 ✅ **Task requires independent execution**
+
 - Running multiple agents in parallel
 - Long-running tasks that should be isolated
 
 ✅ **Task requires custom model selection**
+
 - Agent can use different model (haiku for speed, opus for complexity)
 
 ✅ **Task EXECUTES something** (vs. teaches)
+
 - Runs tests, makes changes, searches code
 - Produces concrete outputs
 
 **Agent Signals in Existing Content:**
+
 - Uses phrase "execute", "run", "perform"
 - Needs tool isolation (`allowed-tools` very different from main)
 - Benefits from parallel execution
@@ -534,27 +578,33 @@ UI Pages ←→ CLAUDE.md (is displayed info consistent?)
 #### Use a SKILL When:
 
 ✅ **Content teaches reusable expertise**
+
 - How to approach a problem
 - Best practices and guidelines
 - Patterns to follow
 
 ✅ **Content should apply automatically**
+
 - Claude should use it when relevant without being asked
 - Context-matching is valuable
 
 ✅ **Content is used across multiple conversations**
+
 - Not project-specific
 - Applicable to many different tasks
 
 ✅ **Content doesn't need isolated context**
+
 - Works fine in main conversation
 - Doesn't pollute context
 
 ✅ **Content PREPARES Claude to solve problems** (vs. solves them)
+
 - Teaching expertise, not executing tasks
 - Provides framework for thinking
 
 **Skill Signals in Existing Content:**
+
 - Uses phrase "how to", "best practices", "guidelines"
 - Provides step-by-step thinking framework
 - Could apply to many different situations
@@ -566,56 +616,72 @@ UI Pages ←→ CLAUDE.md (is displayed info consistent?)
 #### Agent → Skill Conversion
 
 **Good Candidate:**
+
 ```markdown
 # Code Review Expert (Agent)
+
 ---
-tools: Read, Grep
----
+
+## tools: Read, Grep
+
 Reviews code for architecture, quality, security...
 
 ## What to Check
+
 1. Architecture patterns...
 2. Code quality...
 ```
 
 **Converted to Skill:**
+
 ```markdown
 # reviewing-code-quality (Skill)
+
 ---
+
 name: reviewing-code-quality
 description: Reviews code for architecture, quality, security, and performance. Use when asked to review code or assess code quality.
+
 ---
 
 ## Code Review Framework
+
 1. Architecture patterns...
 2. Code quality...
 ```
 
 **Bad Candidate (Keep as Agent):**
+
 ```markdown
 # Database Expert (Agent)
+
 ---
-tools: Bash, Read
----
+
+## tools: Bash, Read
+
 Executes database queries and migrations...
 ```
+
 → Keep as Agent because it EXECUTES database operations (needs tool isolation)
 
 #### CLAUDE.md → Skill Extraction
 
 **Good Candidate:**
+
 ```markdown
 ## AsyncButton Usage (MANDATORY)
 
 CRITICAL: For buttons that trigger async operations...
 
 **When to Use AsyncButton:**
+
 - Button triggers a React Query mutation
 - Button calls a server action
-...
+  ...
 ```
 
 **Could become Skill:**
+
 ```markdown
 ---
 name: using-async-buttons
@@ -625,30 +691,37 @@ description: Guides correct usage of AsyncButton component for React async opera
 # AsyncButton Usage
 
 ## When to Use
+
 - Button triggers a React Query mutation...
 ```
 
 **Bad Candidate (Keep in CLAUDE.md):**
+
 ```markdown
 ## Database Protection Rules
+
 CRITICAL: Migration-First Approach
 ...
 ```
+
 → Keep in CLAUDE.md because it's project-specific policy, not reusable expertise
 
 #### Developer Guide → Skill Extraction
 
 **Good Candidate:**
+
 ```markdown
 # FSM Developer Guide
 
 ## FSM Lifecycle Hooks
+
 1. guard → Check if transition allowed
 2. do → Run event-specific effects
-...
+   ...
 ```
 
 **Could become Skill:**
+
 ```markdown
 ---
 name: implementing-fsm-workflows
@@ -658,6 +731,7 @@ description: Guides implementation of FSM (Finite State Machine) workflow patter
 # FSM Implementation
 
 ## Lifecycle Hooks
+
 ...
 ```
 
@@ -666,6 +740,7 @@ description: Guides implementation of FSM (Finite State Machine) workflow patter
 When scanning content, look for these signals:
 
 **Strong Skill Signals (Extract):**
+
 - [ ] Contains "how to" methodology
 - [ ] Has numbered step-by-step approach
 - [ ] Defines "when to use" patterns
@@ -674,6 +749,7 @@ When scanning content, look for these signals:
 - [ ] Would benefit from automatic activation
 
 **Weak Skill Signals (Keep Current):**
+
 - [ ] Project-specific configuration
 - [ ] Executes concrete tasks
 - [ ] Requires tool isolation
@@ -682,13 +758,13 @@ When scanning content, look for these signals:
 
 ### Naming Conventions Summary
 
-| Component | Naming Pattern | Examples |
-|-----------|---------------|----------|
-| **Commands** | `verb` or `noun` | `create`, `validate`, `commit` |
-| **Agents** | `domain-expert` | `typescript-expert`, `database-expert` |
-| **Skills** | `verb-ing-noun` (gerund) | `reviewing-code`, `processing-pdfs` |
-| **Rules** | `topic` (kebab-case) | `api`, `dal`, `security`, `testing`, `components` |
-| **Hooks** | `action-target` | `file-guard`, `lint-changed` |
+| Component    | Naming Pattern           | Examples                                          |
+| ------------ | ------------------------ | ------------------------------------------------- |
+| **Commands** | `verb` or `noun`         | `create`, `validate`, `commit`                    |
+| **Agents**   | `domain-expert`          | `typescript-expert`, `database-expert`            |
+| **Skills**   | `verb-ing-noun` (gerund) | `reviewing-code`, `processing-pdfs`               |
+| **Rules**    | `topic` (kebab-case)     | `api`, `dal`, `security`, `testing`, `components` |
+| **Hooks**    | `action-target`          | `file-guard`, `lint-changed`                      |
 
 ### Quick Reference: Component Selection
 

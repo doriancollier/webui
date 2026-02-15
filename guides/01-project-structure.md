@@ -2,7 +2,7 @@
 
 ## Overview
 
-DorkOS uses Feature-Sliced Design (FSD) to organize frontend code by business domains with clear layer boundaries. The server uses a layered architecture (routes + services) with size-aware guidance for when to adopt domain grouping. The monorepo structure (Turborepo + npm workspaces) is orthogonal to FSD — FSD applies *within* each app.
+DorkOS uses Feature-Sliced Design (FSD) to organize frontend code by business domains with clear layer boundaries. The server uses a layered architecture (routes + services) with size-aware guidance for when to adopt domain grouping. The monorepo structure (Turborepo + npm workspaces) is orthogonal to FSD — FSD applies _within_ each app.
 
 ## Monorepo Layout
 
@@ -71,15 +71,16 @@ Unidirectional dependencies from top to bottom:
 app → widgets → features → entities → shared
 ```
 
-| Layer | Purpose | Can Import From |
-|-------|---------|-----------------|
-| `app/` | App.tsx, main.tsx, providers | All lower layers |
-| `widgets/` | Large compositions (layout, workspace) | features, entities, shared |
-| `features/` | Complete user functionality (chat, commands) | entities, shared |
-| `entities/` | Business domain objects (Session, Command) | shared only |
-| `shared/` | UI primitives, utilities, Transport | Nothing (base layer) |
+| Layer       | Purpose                                      | Can Import From            |
+| ----------- | -------------------------------------------- | -------------------------- |
+| `app/`      | App.tsx, main.tsx, providers                 | All lower layers           |
+| `widgets/`  | Large compositions (layout, workspace)       | features, entities, shared |
+| `features/` | Complete user functionality (chat, commands) | entities, shared           |
+| `entities/` | Business domain objects (Session, Command)   | shared only                |
+| `shared/`   | UI primitives, utilities, Transport          | Nothing (base layer)       |
 
 **Critical rules:**
+
 - Higher layers import from lower layers only
 - Never import upward (entities cannot import features)
 - Never import across same-level modules (feature A cannot import feature B)
@@ -108,9 +109,9 @@ Every module MUST have an `index.ts` that exports its public API. Other layers i
 
 ```typescript
 // entities/session/index.ts
-export { SessionBadge } from './ui/SessionBadge'
-export { useSession, useSessions } from './model/hooks'
-export type { Session, SessionMetadata } from './model/types'
+export { SessionBadge } from './ui/SessionBadge';
+export { useSession, useSessions } from './model/hooks';
+export type { Session, SessionMetadata } from './model/types';
 
 // DON'T export internals
 // export { parseTranscript } from './lib/transcript-parser'  // Keep internal
@@ -118,77 +119,85 @@ export type { Session, SessionMetadata } from './model/types'
 
 ```typescript
 // Consumer imports from index
-import { SessionBadge, useSession } from '@/layers/entities/session'
+import { SessionBadge, useSession } from '@/layers/entities/session';
 
 // NEVER import internal paths
-import { SessionBadge } from '@/layers/entities/session/ui/SessionBadge'  // WRONG
+import { SessionBadge } from '@/layers/entities/session/ui/SessionBadge'; // WRONG
 ```
 
 ## Adding a New Feature
 
 1. **Create directory structure:**
+
    ```bash
    mkdir -p apps/client/src/layers/features/my-feature/{ui,model,api}
    touch apps/client/src/layers/features/my-feature/index.ts
    ```
 
 2. **Add types** in `model/types.ts`:
+
    ```typescript
    export interface MyFeatureState {
-     isActive: boolean
-     data: SomeEntity[]
+     isActive: boolean;
+     data: SomeEntity[];
    }
    ```
 
 3. **Add hooks** in `model/`:
+
    ```typescript
    // model/use-my-feature.ts
-   import { useTransport } from '@/layers/shared/model'
-   import type { Session } from '@/layers/entities/session'
+   import { useTransport } from '@/layers/shared/model';
+   import type { Session } from '@/layers/entities/session';
    ```
 
 4. **Build UI** in `ui/`:
+
    ```typescript
    // ui/MyFeature.tsx
-   import { Button } from '@/layers/shared/ui'
-   import { useSession } from '@/layers/entities/session'
-   import { useMyFeature } from '../model/use-my-feature'
+   import { Button } from '@/layers/shared/ui';
+   import { useSession } from '@/layers/entities/session';
+   import { useMyFeature } from '../model/use-my-feature';
    ```
 
 5. **Export public API** in `index.ts`:
+
    ```typescript
-   export { MyFeature } from './ui/MyFeature'
-   export { useMyFeature } from './model/use-my-feature'
+   export { MyFeature } from './ui/MyFeature';
+   export { useMyFeature } from './model/use-my-feature';
    ```
 
 6. **Use in widget or app:**
    ```typescript
    // widgets/app-layout/ui/Layout.tsx
-   import { MyFeature } from '@/layers/features/my-feature'
+   import { MyFeature } from '@/layers/features/my-feature';
    ```
 
 ## Adding a New Entity
 
 1. **Create directory:**
+
    ```bash
    mkdir -p apps/client/src/layers/entities/my-entity/{ui,model,api}
    touch apps/client/src/layers/entities/my-entity/index.ts
    ```
 
 2. **Define types** (typically mirrors `@dorkos/shared` schemas):
+
    ```typescript
    // model/types.ts
-   import type { Session } from '@dorkos/shared/types'
-   export type { Session }  // Re-export for layer consumers
+   import type { Session } from '@dorkos/shared/types';
+   export type { Session }; // Re-export for layer consumers
    ```
 
 3. **Add data access** via Transport:
+
    ```typescript
    // api/queries.ts
-   import { useTransport } from '@/layers/shared/model'
+   import { useTransport } from '@/layers/shared/model';
 
    export function useSessionQuery(id: string) {
-     const transport = useTransport()
+     const transport = useTransport();
      // TanStack Query integration
    }
    ```
@@ -242,42 +251,42 @@ Routes stay flat regardless — they're thin HTTP handlers.
 
 ```typescript
 // FSD layer imports (within apps/client)
-import { ChatPanel } from '@/layers/features/chat'
-import { useSession } from '@/layers/entities/session'
-import { Button } from '@/layers/shared/ui'
-import { cn } from '@/layers/shared/lib/utils'
+import { ChatPanel } from '@/layers/features/chat';
+import { useSession } from '@/layers/entities/session';
+import { Button } from '@/layers/shared/ui';
+import { cn } from '@/layers/shared/lib/utils';
 
 // Cross-package imports (monorepo level — always allowed)
-import type { Session, StreamEvent } from '@dorkos/shared/types'
-import { SessionSchema } from '@dorkos/shared/schemas'
+import type { Session, StreamEvent } from '@dorkos/shared/types';
+import { SessionSchema } from '@dorkos/shared/schemas';
 ```
 
 ## File Naming
 
-| Type | Convention | Example |
-|------|------------|---------|
-| React components | PascalCase | `ChatPanel.tsx`, `SessionBadge.tsx` |
-| Hooks | `use-` prefix, kebab-case | `use-chat-session.ts` |
-| Stores | `-store` suffix, kebab-case | `app-store.ts` |
-| Types | `types.ts` in `model/` | `entities/session/model/types.ts` |
-| Utilities | kebab-case | `stream-parser.ts` |
-| Index | `index.ts` | Public API barrel export |
+| Type             | Convention                  | Example                             |
+| ---------------- | --------------------------- | ----------------------------------- |
+| React components | PascalCase                  | `ChatPanel.tsx`, `SessionBadge.tsx` |
+| Hooks            | `use-` prefix, kebab-case   | `use-chat-session.ts`               |
+| Stores           | `-store` suffix, kebab-case | `app-store.ts`                      |
+| Types            | `types.ts` in `model/`      | `entities/session/model/types.ts`   |
+| Utilities        | kebab-case                  | `stream-parser.ts`                  |
+| Index            | `index.ts`                  | Public API barrel export            |
 
 ## Anti-Patterns
 
 ```typescript
 // NEVER import upward in layer hierarchy
 // In entities/session/model/hooks.ts
-import { ChatPanel } from '@/layers/features/chat'  // features is higher!
+import { ChatPanel } from '@/layers/features/chat'; // features is higher!
 
 // NEVER import across same-level modules
 // In features/chat/ui/ChatPanel.tsx
-import { CommandPalette } from '@/layers/features/commands'  // Cross-feature!
+import { CommandPalette } from '@/layers/features/commands'; // Cross-feature!
 // FIX: Compose both in widgets/app-layout/
 
 // NEVER import from internal paths
-import { Button } from '@/layers/shared/ui/button'  // WRONG
-import { Button } from '@/layers/shared/ui'          // CORRECT (from index)
+import { Button } from '@/layers/shared/ui/button'; // WRONG
+import { Button } from '@/layers/shared/ui'; // CORRECT (from index)
 
 // NEVER put business logic in shared/
 // shared/lib/session-utils.ts → WRONG
@@ -299,12 +308,15 @@ layers/features/*/model/        → Hooks composing entity data
 ## Troubleshooting
 
 ### "Cannot find module '@/layers/...'"
+
 Verify `tsconfig.json` has `"@/*": ["./src/*"]` path alias and `vite.config.ts` has matching resolve alias.
 
 ### Circular dependency detected
+
 Usually indicates wrong layer placement. Check for upward imports or cross-module imports at the same level.
 
 ### "Where does this code go?"
+
 Use the layer decision tree in the `organizing-fsd-architecture` skill.
 
 ## References

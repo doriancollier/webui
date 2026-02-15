@@ -52,6 +52,7 @@ ChatPanel.tsx
 **File:** `apps/client/src/stores/app-store.ts`
 
 Add to the store interface and implementation:
+
 - `showShortcutChips: boolean` (default: `true`)
 - `setShowShortcutChips: (v: boolean) => void`
 - localStorage key: `gateway-show-shortcut-chips`
@@ -63,6 +64,7 @@ Add to the store interface and implementation:
 **File:** `apps/client/src/components/settings/SettingsDialog.tsx`
 
 Add a new `<SettingRow>` in the Preferences tab:
+
 - Label: "Show shortcut chips"
 - Description: "Display shortcut hints below the message input"
 - Child: `<Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />`
@@ -75,6 +77,7 @@ Add a new `<SettingRow>` in the Preferences tab:
 A small, self-contained component that renders the chip row.
 
 **Props:**
+
 ```typescript
 interface ShortcutChipsProps {
   onChipClick: (trigger: string) => void;
@@ -82,6 +85,7 @@ interface ShortcutChipsProps {
 ```
 
 **Chips data:**
+
 ```typescript
 const chips = [
   { trigger: '/', label: 'Commands', icon: Terminal },
@@ -90,6 +94,7 @@ const chips = [
 ```
 
 **Visual spec:**
+
 - Container: `flex items-center gap-2 mt-1.5`
 - Each chip: `<button>` element with:
   - `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs`
@@ -103,11 +108,13 @@ const chips = [
 - Chips stay visible and unchanged regardless of palette state
 
 **Accessibility:**
+
 - Each chip is a `<button>` with `type="button"`
 - `aria-label` like "Insert slash command trigger" / "Insert file mention trigger"
 - Focusable via Tab key
 
 **Mobile:**
+
 - Chips stay inline (two small pills fit on any screen width)
 - Touch targets: `py-1` + line-height gives ~28px height, but the `gap-2` + `mt-1.5` spacing ensures the effective tap area is adequate. If needed, add `min-h-[32px]` for safety.
 
@@ -123,9 +130,7 @@ const chips = [
 3. Render `<ShortcutChips>` between `<ChatInput>` and `<StatusLine>`, wrapped in `<AnimatePresence>`:
    ```tsx
    <AnimatePresence>
-     {showShortcutChips && (
-       <ShortcutChips onChipClick={handleChipClick} />
-     )}
+     {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
    </AnimatePresence>
    ```
 4. Chips remain visible when palettes are open (per user decision)
@@ -135,6 +140,7 @@ const chips = [
 **New file:** `apps/client/src/components/chat/__tests__/ShortcutChips.test.tsx`
 
 Test cases:
+
 - Renders both chips with correct labels ("Commands", "Files")
 - Calls `onChipClick` with "/" when Commands chip clicked
 - Calls `onChipClick` with "@" when Files chip clicked
@@ -142,6 +148,7 @@ Test cases:
 - Renders Lucide icons
 
 **Modified:** `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx`
+
 - Verify "Show shortcut chips" label appears in Preferences tab
 - Verify the toggle switch is present and defaults to checked
 
@@ -149,14 +156,14 @@ Test cases:
 
 ## File Change Summary
 
-| File | Action | Description |
-|------|--------|-------------|
-| `apps/client/src/stores/app-store.ts` | Modify | Add `showShortcutChips` + setter + localStorage |
-| `apps/client/src/components/settings/SettingsDialog.tsx` | Modify | Add SettingRow for shortcut chips toggle |
-| `apps/client/src/components/chat/ShortcutChips.tsx` | Create | New chip row component |
-| `apps/client/src/components/chat/ChatPanel.tsx` | Modify | Render ShortcutChips, add handleChipClick |
-| `apps/client/src/components/chat/__tests__/ShortcutChips.test.tsx` | Create | Unit tests for ShortcutChips |
-| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | Modify | Add test for new toggle |
+| File                                                                    | Action | Description                                     |
+| ----------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| `apps/client/src/stores/app-store.ts`                                   | Modify | Add `showShortcutChips` + setter + localStorage |
+| `apps/client/src/components/settings/SettingsDialog.tsx`                | Modify | Add SettingRow for shortcut chips toggle        |
+| `apps/client/src/components/chat/ShortcutChips.tsx`                     | Create | New chip row component                          |
+| `apps/client/src/components/chat/ChatPanel.tsx`                         | Modify | Render ShortcutChips, add handleChipClick       |
+| `apps/client/src/components/chat/__tests__/ShortcutChips.test.tsx`      | Create | Unit tests for ShortcutChips                    |
+| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | Modify | Add test for new toggle                         |
 
 ---
 

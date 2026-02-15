@@ -51,10 +51,6 @@ describe('errorHandler', () => {
 
     errorHandler(error, mockReq, res, mockNext);
 
-    expect(consoleSpy).toHaveBeenCalledWith(
-      '[Gateway Error]',
-      'Log me',
-      expect.any(String)
-    );
+    expect(consoleSpy).toHaveBeenCalledWith('[Gateway Error]', 'Log me', expect.any(String));
   });
 });

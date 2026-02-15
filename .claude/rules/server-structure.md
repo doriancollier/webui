@@ -23,11 +23,11 @@ apps/server/src/
 
 ### Thresholds
 
-| Service Count | Guidance |
-|---------------|----------|
-| **< 15** | Current flat structure is fine. No action needed. |
-| **15-20** | Suggest domain grouping. Mention to the user: "The server has [N] service files. Consider grouping into domain directories (session/, agent/, commands/, shared/) for clearer ownership." |
-| **20+** | Strongly recommend domain grouping. The flat structure is becoming hard to navigate. |
+| Service Count | Guidance                                                                                                                                                                                  |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **< 15**      | Current flat structure is fine. No action needed.                                                                                                                                         |
+| **15-20**     | Suggest domain grouping. Mention to the user: "The server has [N] service files. Consider grouping into domain directories (session/, agent/, commands/, shared/) for clearer ownership." |
+| **20+**       | Strongly recommend domain grouping. The flat structure is becoming hard to navigate.                                                                                                      |
 
 ### Domain Grouping Template
 
@@ -55,6 +55,7 @@ Routes stay flat regardless of service count — they're thin HTTP handlers.
 ### When to Proactively Suggest
 
 Also suggest restructuring when:
+
 - A single domain has **4+ service files** (e.g., 4 session-related services)
 - A developer asks "where does this new service go?"
 - Two services have circular or unclear dependencies

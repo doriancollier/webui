@@ -13,6 +13,7 @@
 **Task brief:** Migrate the DorkOS project from a single-package structure to a Turborepo monorepo with proper package boundaries. The project currently has three distinct build targets (web client, Express server, Obsidian plugin) sharing a common types layer, all in one `package.json`. The migration should also update all developer guides in `guides/` and Claude Code commands/skills in `.claude/` to reflect the new structure.
 
 **Assumptions:**
+
 - npm workspaces will be the workspace protocol (project already uses npm)
 - Four natural packages: `@dorkos/shared`, `@dorkos/server`, `@dorkos/client`, `@dorkos/obsidian-plugin`
 - The existing hexagonal architecture and Transport abstraction remain unchanged
@@ -22,6 +23,7 @@
 - No CI/CD pipeline changes in this migration (can follow up)
 
 **Out of scope:**
+
 - Changing the runtime architecture (Express, React, Obsidian plugin patterns)
 - Adding new features during migration
 - CI/CD pipeline setup
@@ -34,6 +36,7 @@
 ## 2) Pre-reading Log
 
 ### Config Files
+
 - `package.json`: Single package with 22 dependencies + 14 devDependencies. Scripts: `dev` (concurrently tsx+vite), `build` (tsc+vite sequential), `build:obsidian` (vite+cp+mv). All deps are flat — React, Express, Obsidian, Zod, etc. in one file.
 - `tsconfig.json`: Target ES2022, module ESNext, bundler resolution, paths `@/*` → `./src/client/*` and `@shared/*` → `./src/shared/*`. Includes all of `src/**/*`.
 - `tsconfig.server.json`: Extends base, overrides to NodeNext module/resolution, outputs to `dist-server/`, includes `src/server/**/*` and `src/shared/**/*`.
@@ -44,6 +47,7 @@
 - `components.json`: shadcn/ui configuration (new-york style, neutral palette).
 
 ### Source Code
+
 - `src/shared/` (3 files): `schemas.ts` (393 lines, Zod schemas with OpenAPI metadata), `transport.ts` (Transport interface), `types.ts` (re-exports from schemas). Zero external dependencies beyond `zod` and `@asteasolutions/zod-to-openapi`.
 - `src/client/` (62 files): React 19, Zustand store, TanStack Query hooks, shadcn/ui components, Streamdown markdown rendering. All imports from shared use `@shared/*` alias.
 - `src/server/` (25 files): Express routes (sessions, commands, health), 3 services (AgentManager, TranscriptReader, CommandRegistryService), SSE streaming. Uses relative imports to shared (e.g., `../../shared/schemas.js`).
@@ -51,6 +55,7 @@
 - `src/test-utils/`: Mock factories, transport helpers shared across client tests.
 
 ### Guide Files (5)
+
 - `guides/architecture.md`: Hexagonal architecture, Transport pattern, Electron compat layer, data flow diagrams
 - `guides/design-system.md`: Color palette, typography, spacing, motion specs
 - `guides/obsidian-plugin-development.md`: Plugin lifecycle, Vite build, Electron quirks
@@ -58,9 +63,10 @@
 - `guides/interactive-tools.md`: Tool approval, AskUserQuestion flows
 
 ### Claude Code Configuration (90+ files)
+
 - `.claude/settings.json` and `.claude/settings.local.json`: Project settings
 - `.claude/rules/` (4 files): api.md, dal.md, security.md, testing.md
-- `.claude/commands/` (~30 commands): debug/*, spec/*, roadmap/*, git/*, system/*, app/*, db/*, cc/*
+- `.claude/commands/` (~30 commands): debug/_, spec/_, roadmap/_, git/_, system/_, app/_, db/_, cc/_
 - `.claude/skills/` (~10 skills): designing-frontend, styling-with-tailwind-shadcn, working-with-prisma, organizing-fsd-architecture, etc.
 - `.claude/agents/` (6 agents): research-expert, product-manager, code-search, typescript-expert, prisma-expert, react-tanstack-expert, zod-forms-expert
 - `.claude/scripts/hooks/` (7 hooks): file-guard.mjs, typecheck-changed.sh, test-changed.sh, lint-changed.sh, etc.
@@ -71,36 +77,41 @@
 
 ### Primary Modules & Build Targets
 
-| Module | Source | Build Tool | Output | Format |
-|--------|--------|-----------|--------|--------|
-| Web Client | `src/client/` | Vite 6 | `dist/` | ESM (browser) |
-| Express Server | `src/server/` | tsc (NodeNext) | `dist-server/` | ESM (Node) |
-| Obsidian Plugin | `src/plugin/` | Vite 6 (lib mode) | `dist-obsidian/` | CJS (Electron) |
-| Shared Types | `src/shared/` | (consumed raw) | — | TypeScript source |
+| Module          | Source        | Build Tool        | Output           | Format            |
+| --------------- | ------------- | ----------------- | ---------------- | ----------------- |
+| Web Client      | `src/client/` | Vite 6            | `dist/`          | ESM (browser)     |
+| Express Server  | `src/server/` | tsc (NodeNext)    | `dist-server/`   | ESM (Node)        |
+| Obsidian Plugin | `src/plugin/` | Vite 6 (lib mode) | `dist-obsidian/` | CJS (Electron)    |
+| Shared Types    | `src/shared/` | (consumed raw)    | —                | TypeScript source |
 
 ### Cross-Boundary Import Map
 
 **Client → Shared** (25+ imports via `@shared/*` alias):
+
 - `@shared/types` (Session, Message, StreamEvent, etc.)
 - `@shared/transport` (Transport interface, HttpTransport)
 - `@shared/schemas` (Zod schemas for validation)
 
 **Server → Shared** (via relative imports `../../shared/schemas.js`):
+
 - Zod schemas for request validation
 - Type definitions for StreamEvent, Session, etc.
 
 **Plugin → Server** (6 deep relative imports):
+
 - `../../server/services/agent-manager` → AgentManager class
 - `../../server/services/transcript-reader` → TranscriptReader class
 - `../../server/services/command-registry` → CommandRegistryService class
 
 **Plugin → Client** (direct component imports):
+
 - `../../client/App` → Root React component
 - `../../client/stores/app-store` → Zustand store
 - `../../client/contexts/TransportContext` → React context
 - `../../client/hooks/*` → Various hooks
 
 ### Dependency Graph
+
 ```
 @dorkos/shared (schemas, transport interface, types)
   ├─→ @dorkos/server (Express app + services)
@@ -111,12 +122,14 @@
 ```
 
 ### Shared Dependencies (used by multiple modules)
+
 - `zod` — shared, server, client (validation)
 - `react`, `react-dom` — client, plugin
 - `@asteasolutions/zod-to-openapi` — shared, server (OpenAPI)
 - `uuid` — server, client
 
 ### Potential Blast Radius
+
 - **Direct**: package.json, all tsconfig files, both vite configs, CLAUDE.md, all 5 guides
 - **Import paths**: Every file in `src/plugin/` (deep relative → package imports), all `@shared/*` imports
 - **Config**: `.claude/` commands/skills that reference file paths or build scripts
@@ -135,6 +148,7 @@ N/A — this is a migration, not a bug fix.
 ### Potential Solutions
 
 **1. Turborepo + npm Workspaces (Recommended)**
+
 - Description: Add Turborepo as the task runner on top of npm workspaces. Split into `apps/` and `packages/` directories. Use Just-in-Time compilation (export TypeScript source from shared packages, let consumers compile).
 - Pros:
   - Minimal config — Turborepo is lightweight compared to Nx
@@ -151,6 +165,7 @@ N/A — this is a migration, not a bug fix.
 - Maintenance: Low (Turborepo is minimal config)
 
 **2. Nx**
+
 - Description: Full-featured monorepo tool with generators, project graph, and extensive plugin ecosystem.
 - Pros:
   - More features (generators, affected commands, project graph visualization)
@@ -165,6 +180,7 @@ N/A — this is a migration, not a bug fix.
 - Maintenance: Medium-High
 
 **3. npm Workspaces Only (No Task Runner)**
+
 - Description: Use npm workspaces for package management without Turborepo or Nx.
 - Pros:
   - Zero additional dependencies
@@ -180,6 +196,7 @@ N/A — this is a migration, not a bug fix.
 ### Key Research Findings
 
 **TypeScript Configuration:**
+
 - Turborepo explicitly advises against TypeScript Project References — use their task graph instead
 - Use a `@dorkos/typescript-config` package with base/react/node configs
 - Internal packages should use "Just-in-Time" pattern: export `.ts` source directly via `package.json` exports, let Vite/tsc consumers compile it
@@ -187,21 +204,25 @@ N/A — this is a migration, not a bug fix.
 - Keep `@/*` as a local alias within each app
 
 **Vitest:**
+
 - Use root-level `vitest.workspace.ts` pointing to `apps/*` and `packages/*`
 - Each package can have its own vitest config extending a shared base
 - Turborepo caches test results per-package
 
 **Tailwind CSS 4:**
+
 - Per-app configuration is simplest (only client uses Tailwind heavily)
 - Use `@source` directives to point to workspace package source directories
 - No shared Tailwind config package needed until 5+ apps exist
 
 **Dependency Management:**
+
 - Install dependencies in the packages that use them, not the root
 - Root should only have monorepo tools: `turbo`, `concurrently` (if kept), `typescript`
 - Use `"@dorkos/shared": "workspace:*"` for internal dependencies
 
 **Migration Strategy:**
+
 - Incremental, phased approach is strongly recommended
 - Keep `dev:legacy` scripts during migration as fallback
 - Verify tests pass after each phase
@@ -287,6 +308,7 @@ dorkos/
 ## 8) Migration Phases
 
 ### Phase 1: Add Turborepo to Existing Structure
+
 - Install `turbo` as devDependency
 - Create minimal `turbo.json`
 - Add `packageManager` field to root `package.json`
@@ -295,6 +317,7 @@ dorkos/
 - **Commit: "chore: add Turborepo to existing project"**
 
 ### Phase 2: Extract Shared Package
+
 - Create `packages/shared/` with `package.json` using exports map
 - Move `src/shared/` → `packages/shared/src/`
 - Create `packages/typescript-config/` with base/react/node configs
@@ -305,6 +328,7 @@ dorkos/
 - **Commit: "refactor: extract shared and typescript-config packages"**
 
 ### Phase 3: Extract Client App
+
 - Create `apps/client/` with its own `package.json` and `vite.config.ts`
 - Move `src/client/` → `apps/client/src/`
 - Move `index.html` → `apps/client/`
@@ -316,6 +340,7 @@ dorkos/
 - **Commit: "refactor: extract client app"**
 
 ### Phase 4: Extract Server App
+
 - Create `apps/server/` with its own `package.json` and `tsconfig.json`
 - Move `src/server/` → `apps/server/src/`
 - Update Express static file serving path
@@ -323,6 +348,7 @@ dorkos/
 - **Commit: "refactor: extract server app"**
 
 ### Phase 5: Extract Obsidian Plugin
+
 - Create `apps/obsidian-plugin/` with its own `package.json` and `vite.config.ts`
 - Move `src/plugin/` → `apps/obsidian-plugin/src/`
 - Move custom Vite plugins to `apps/obsidian-plugin/build-plugins/`
@@ -332,6 +358,7 @@ dorkos/
 - **Commit: "refactor: extract Obsidian plugin app"**
 
 ### Phase 6: Extract Test Utils & Finalize
+
 - Create `packages/test-utils/` with shared mock factories
 - Configure `vitest.workspace.ts` at root
 - Set up per-package vitest configs
@@ -340,6 +367,7 @@ dorkos/
 - **Commit: "refactor: extract test-utils and configure Vitest workspace"**
 
 ### Phase 7: Update Documentation & Claude Code
+
 - Update all 5 guide files with new paths and monorepo-aware instructions
 - Update `CLAUDE.md` with new architecture, commands, directory structure
 - Update `.claude/commands/` that reference file paths or build scripts
@@ -353,15 +381,17 @@ dorkos/
 ## 9) Files Requiring Updates (Documentation & Claude Code)
 
 ### Guide Files
-| File | Changes Needed |
-|------|---------------|
-| `guides/architecture.md` | Update all source paths, build commands, module layout diagram, data flow |
-| `guides/design-system.md` | Update component file paths if referenced |
-| `guides/obsidian-plugin-development.md` | Update build config paths, Vite plugin locations, file structure |
-| `guides/api-reference.md` | Update server file paths, schema import paths |
-| `guides/interactive-tools.md` | Update component paths if referenced |
+
+| File                                    | Changes Needed                                                            |
+| --------------------------------------- | ------------------------------------------------------------------------- |
+| `guides/architecture.md`                | Update all source paths, build commands, module layout diagram, data flow |
+| `guides/design-system.md`               | Update component file paths if referenced                                 |
+| `guides/obsidian-plugin-development.md` | Update build config paths, Vite plugin locations, file structure          |
+| `guides/api-reference.md`               | Update server file paths, schema import paths                             |
+| `guides/interactive-tools.md`           | Update component paths if referenced                                      |
 
 ### CLAUDE.md
+
 - Complete rewrite of Architecture section (new directory structure)
 - Update all Commands (`npm run dev` → `turbo dev`, etc.)
 - Update Path Aliases section
@@ -369,19 +399,20 @@ dorkos/
 - Update build instructions
 
 ### .claude/ Files
-| Category | Files | Changes |
-|----------|-------|---------|
-| Commands | `dev/scaffold.md` | Update scaffold paths |
-| Commands | `git/commit.md`, `git/push.md` | Update build/test commands |
-| Commands | `app/cleanup.md`, `app/upgrade.md` | Update dependency management |
-| Commands | `spec/execute.md` | Update file path patterns |
-| Commands | `docs/reconcile.md` | Update guide file paths |
-| Rules | `api.md`, `dal.md`, `testing.md` | Update import patterns, file paths |
-| Skills | `organizing-fsd-architecture/` | Update to monorepo structure |
-| Skills | `styling-with-tailwind-shadcn/` | Update Tailwind config paths |
-| Hooks | `typecheck-changed.sh` | Update tsconfig references |
-| Hooks | `test-changed.sh` | Update test paths |
-| Hooks | `file-guard.mjs` | Update allowed paths |
+
+| Category | Files                              | Changes                            |
+| -------- | ---------------------------------- | ---------------------------------- |
+| Commands | `dev/scaffold.md`                  | Update scaffold paths              |
+| Commands | `git/commit.md`, `git/push.md`     | Update build/test commands         |
+| Commands | `app/cleanup.md`, `app/upgrade.md` | Update dependency management       |
+| Commands | `spec/execute.md`                  | Update file path patterns          |
+| Commands | `docs/reconcile.md`                | Update guide file paths            |
+| Rules    | `api.md`, `dal.md`, `testing.md`   | Update import patterns, file paths |
+| Skills   | `organizing-fsd-architecture/`     | Update to monorepo structure       |
+| Skills   | `styling-with-tailwind-shadcn/`    | Update Tailwind config paths       |
+| Hooks    | `typecheck-changed.sh`             | Update tsconfig references         |
+| Hooks    | `test-changed.sh`                  | Update test paths                  |
+| Hooks    | `file-guard.mjs`                   | Update allowed paths               |
 
 ---
 
@@ -426,12 +457,12 @@ dorkos/
 
 ## 11) Risk Assessment
 
-| Risk | Likelihood | Impact | Mitigation |
-|------|-----------|--------|-----------|
-| Obsidian plugin build breaks due to path changes | High | High | Test early in Phase 5, keep legacy build script as fallback |
-| Path alias resolution breaks in Vite | Medium | Medium | Use `vite-tsconfig-paths` plugin if needed |
-| Deep relative imports in plugin miss conversion | Medium | High | Grep for `../../server/` and `../../client/` patterns |
-| Tailwind CSS stops finding classes after move | Medium | Medium | Update `@source` directives, verify visually |
-| Claude Code hooks break due to path changes | High | Low | Update hooks in Phase 7, test manually |
-| npm workspace hoisting causes module resolution issues | Low | High | Use `.npmrc` with `hoist=true` if needed |
-| Dev HMR breaks for cross-package changes | Medium | Medium | Vite resolves workspace symlinks, but may need config |
+| Risk                                                   | Likelihood | Impact | Mitigation                                                  |
+| ------------------------------------------------------ | ---------- | ------ | ----------------------------------------------------------- |
+| Obsidian plugin build breaks due to path changes       | High       | High   | Test early in Phase 5, keep legacy build script as fallback |
+| Path alias resolution breaks in Vite                   | Medium     | Medium | Use `vite-tsconfig-paths` plugin if needed                  |
+| Deep relative imports in plugin miss conversion        | Medium     | High   | Grep for `../../server/` and `../../client/` patterns       |
+| Tailwind CSS stops finding classes after move          | Medium     | Medium | Update `@source` directives, verify visually                |
+| Claude Code hooks break due to path changes            | High       | Low    | Update hooks in Phase 7, test manually                      |
+| npm workspace hoisting causes module resolution issues | Low        | High   | Use `.npmrc` with `hoist=true` if needed                    |
+| Dev HMR breaks for cross-package changes               | Medium     | Medium | Vite resolves workspace symlinks, but may need config       |

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 
 export interface IdleDetectorOptions {
-  timeoutMs?: number;  // Default: 30000
+  timeoutMs?: number; // Default: 30000
   onIdle?: () => void;
   onReturn?: () => void;
 }

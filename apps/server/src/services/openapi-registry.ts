@@ -1,7 +1,4 @@
-import {
-  OpenAPIRegistry,
-  OpenApiGeneratorV31,
-} from '@asteasolutions/zod-to-openapi';
+import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
 import {
   SessionSchema,
   CreateSessionRequestSchema,
@@ -301,7 +298,8 @@ registry.registerPath({
   path: '/api/directory',
   tags: ['Directory'],
   summary: 'Browse directories',
-  description: 'Browse directories on the server filesystem. Restricted to the home directory for security.',
+  description:
+    'Browse directories on the server filesystem. Restricted to the home directory for security.',
   request: {
     query: BrowseDirectoryQuerySchema,
   },
@@ -330,7 +328,7 @@ registry.registerPath({
   path: '/api/directory/default',
   tags: ['Directory'],
   summary: 'Get default working directory',
-  description: 'Returns the server\'s default working directory (process.cwd()).',
+  description: "Returns the server's default working directory (process.cwd()).",
   responses: {
     200: {
       description: 'Default directory path',
@@ -374,8 +372,7 @@ export function generateOpenAPISpec() {
     info: {
       title: 'DorkOS API',
       version: '0.1.0',
-      description:
-        'REST/SSE API for Claude Code sessions, built with the Claude Agent SDK.',
+      description: 'REST/SSE API for Claude Code sessions, built with the Claude Agent SDK.',
     },
     servers: [{ url: 'http://localhost:6942' }],
   });

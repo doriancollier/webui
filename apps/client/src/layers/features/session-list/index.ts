@@ -1,1 +1,1 @@
-export { SessionSidebar } from './ui/SessionSidebar'
+export { SessionSidebar } from './ui/SessionSidebar';

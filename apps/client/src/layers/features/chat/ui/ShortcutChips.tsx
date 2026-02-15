@@ -25,7 +25,7 @@ export function ShortcutChips({ onChipClick }: ShortcutChipsProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center justify-center sm:justify-start gap-2 mt-1.5"
+      className="mt-1.5 flex items-center justify-center gap-2 sm:justify-start"
     >
       {chips.map((chip) => (
         <button
@@ -33,7 +33,7 @@ export function ShortcutChips({ onChipClick }: ShortcutChipsProps) {
           type="button"
           aria-label={chip.ariaLabel}
           onClick={() => onChipClick(chip.trigger)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+          className="bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors duration-150"
         >
           <chip.icon className="size-3" />
           <kbd className="font-mono text-[10px] opacity-60">{chip.trigger}</kbd>

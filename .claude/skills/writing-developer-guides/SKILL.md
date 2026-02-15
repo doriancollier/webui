@@ -43,10 +43,10 @@ Each developer guide must include these sections in this sequence:
 ```markdown
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
+| Concept       | Location             |
+| ------------- | -------------------- |
 | Configuration | `src/path/config.ts` |
-| Types | `src/path/types.ts` |
+| Types         | `src/path/types.ts`  |
 ```
 
 **Why early:** Agents need to know WHERE before HOW. This prevents searching.
@@ -56,17 +56,17 @@ Each developer guide must include these sections in this sequence:
 ```markdown
 ## When to Use What
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| Need X | Use Y | Because Z |
-| Need A | Use B | Because C |
+| Scenario | Approach | Why       |
+| -------- | -------- | --------- |
+| Need X   | Use Y    | Because Z |
+| Need A   | Use B    | Because C |
 ```
 
 **Critical for AI:** A good decision matrix eliminates 80% of clarifying questions. Agents can pattern-match their current task to the right approach.
 
 ### 4. Core Patterns (Code Examples)
 
-```markdown
+````markdown
 ## Core Patterns
 
 ### [Pattern Name]
@@ -78,10 +78,12 @@ Each developer guide must include these sections in this sequence:
 // Comments explain WHY, not WHAT
 export function example() {
   // This pattern ensures X because Y
-  return result
+  return result;
 }
 ```
-```
+````
+
+````
 
 **Requirements:**
 - Examples must be complete (copy-paste ready)
@@ -99,8 +101,9 @@ badPattern()  // Causes X problem
 
 // ✅ Do this instead
 goodPattern() // Prevents X, ensures Y
-```
-```
+````
+
+````
 
 **Why essential:** AI agents learn from negative examples. Without anti-patterns, agents may generate common mistakes that "look right" but violate project conventions.
 
@@ -114,15 +117,17 @@ Include when there are procedural tasks (adding X, configuring Y):
 1. **Create the file**: `path/to/file.ts`
    ```typescript
    // Initial content
-   ```
+````
 
 2. **Register in config**: Add to `config.ts`
+
    ```typescript
    // What to add
    ```
 
 3. **Verify**: Run `pnpm [command]` and check for [expected output]
-```
+
+````
 
 **Key:** Each step should have verification. Agents need to confirm success before proceeding.
 
@@ -140,7 +145,7 @@ Include when there are procedural tasks (adding X, configuring Y):
 
 **Cause**: Why this happens
 **Fix**: What to do
-```
+````
 
 **Why this format:** AI agents can grep for error messages and find solutions directly.
 
@@ -148,22 +153,22 @@ Include when there are procedural tasks (adding X, configuring Y):
 
 ### For AI Agent Consumption
 
-| Do | Don't |
-|----|-------|
-| Use tables for structured data | Use prose for comparisons |
-| Put decision criteria in tables | Bury decisions in paragraphs |
-| Make code examples complete | Show fragments requiring context |
-| Use consistent section headers | Vary section names across guides |
-| Include file paths in examples | Assume agents know locations |
+| Do                              | Don't                            |
+| ------------------------------- | -------------------------------- |
+| Use tables for structured data  | Use prose for comparisons        |
+| Put decision criteria in tables | Bury decisions in paragraphs     |
+| Make code examples complete     | Show fragments requiring context |
+| Use consistent section headers  | Vary section names across guides |
+| Include file paths in examples  | Assume agents know locations     |
 
 ### For Human Readability
 
-| Do | Don't |
-|----|-------|
-| Keep overview under 3 sentences | Write lengthy introductions |
-| Use bullet points for lists | Use numbered lists unless order matters |
-| Link to related guides | Duplicate content from other guides |
-| Explain "why" in comments | Over-document obvious code |
+| Do                              | Don't                                   |
+| ------------------------------- | --------------------------------------- |
+| Keep overview under 3 sentences | Write lengthy introductions             |
+| Use bullet points for lists     | Use numbered lists unless order matters |
+| Link to related guides          | Duplicate content from other guides     |
+| Explain "why" in comments       | Over-document obvious code              |
 
 ## Quality Checklist
 

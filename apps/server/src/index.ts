@@ -30,9 +30,12 @@ async function start() {
   });
 
   // Run session health check every 5 minutes
-  setInterval(() => {
-    agentManager.checkSessionHealth();
-  }, 5 * 60 * 1000);
+  setInterval(
+    () => {
+      agentManager.checkSessionHealth();
+    },
+    5 * 60 * 1000
+  );
 
   // Start ngrok tunnel if enabled
   if (process.env.TUNNEL_ENABLED === 'true') {
@@ -50,21 +53,30 @@ async function start() {
       const isDevPort = tunnelPort !== PORT;
 
       console.log('');
-      console.log('\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510');
+      console.log(
+        '\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510'
+      );
       console.log('\u2502  ngrok tunnel active                            \u2502');
       console.log('\u2502                                                 \u2502');
       console.log(`\u2502  URL:  ${url.padEnd(40)} \u2502`);
       console.log(`\u2502  Port: ${String(tunnelPort).padEnd(40)} \u2502`);
-      console.log(`\u2502  Auth: ${(hasAuth ? 'basic auth enabled' : 'none (open)').padEnd(40)} \u2502`);
+      console.log(
+        `\u2502  Auth: ${(hasAuth ? 'basic auth enabled' : 'none (open)').padEnd(40)} \u2502`
+      );
       if (isDevPort) {
         console.log(`\u2502  Mode: ${('dev (Vite on :' + tunnelPort + ')').padEnd(40)} \u2502`);
       }
       console.log('\u2502                                                 \u2502');
       console.log('\u2502  Free tier: 1GB/month bandwidth, session limits \u2502');
-      console.log('\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518');
+      console.log(
+        '\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518'
+      );
       console.log('');
     } catch (err) {
-      console.warn('[Tunnel] Failed to start ngrok tunnel:', err instanceof Error ? err.message : err);
+      console.warn(
+        '[Tunnel] Failed to start ngrok tunnel:',
+        err instanceof Error ? err.message : err
+      );
       console.warn('[Tunnel] Server continues without tunnel.');
     }
   }
@@ -76,7 +88,9 @@ function shutdown() {
   if (sessionBroadcaster) {
     sessionBroadcaster.shutdown();
   }
-  tunnelManager.stop().finally(() => { process.exit(0); });
+  tunnelManager.stop().finally(() => {
+    process.exit(0);
+  });
 }
 
 process.on('SIGINT', shutdown);

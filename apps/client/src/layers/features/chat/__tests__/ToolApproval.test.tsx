@@ -21,7 +21,9 @@ vi.mock('@/layers/shared/model/TransportContext', () => ({
 // Mock ToolArgumentsDisplay to avoid deep dependency chain
 vi.mock('@/layers/shared/lib/tool-arguments-formatter', () => ({
   ToolArgumentsDisplay: ({ toolName, input }: { toolName: string; input: string }) => (
-    <div data-testid="tool-args">{toolName}: {input}</div>
+    <div data-testid="tool-args">
+      {toolName}: {input}
+    </div>
   ),
 }));
 

@@ -13,12 +13,16 @@ describe('useDocumentTitle', () => {
   });
 
   it('sets title with emoji and directory name', () => {
-    renderHook(() => useDocumentTitle({ cwd: '/Users/test/myproject', activeForm: null, ...defaults }));
+    renderHook(() =>
+      useDocumentTitle({ cwd: '/Users/test/myproject', activeForm: null, ...defaults })
+    );
     expect(document.title).toMatch(/^.{1,2} myproject \u2014 DorkOS$/);
   });
 
   it('includes activeForm in title when present', () => {
-    renderHook(() => useDocumentTitle({ cwd: '/test/proj', activeForm: 'Running tests', ...defaults }));
+    renderHook(() =>
+      useDocumentTitle({ cwd: '/test/proj', activeForm: 'Running tests', ...defaults })
+    );
     expect(document.title).toContain('Running tests');
     expect(document.title).toContain('\u2014 DorkOS');
   });
@@ -36,7 +40,9 @@ describe('useDocumentTitle', () => {
   });
 
   it('uses last path segment as directory name', () => {
-    renderHook(() => useDocumentTitle({ cwd: '/a/b/c/deep-project', activeForm: null, ...defaults }));
+    renderHook(() =>
+      useDocumentTitle({ cwd: '/a/b/c/deep-project', activeForm: null, ...defaults })
+    );
     expect(document.title).toContain('deep-project');
     expect(document.title).not.toContain('/a/b/c');
   });
@@ -44,7 +50,7 @@ describe('useDocumentTitle', () => {
   it('updates when activeForm changes', () => {
     const { rerender } = renderHook(
       ({ activeForm }) => useDocumentTitle({ cwd: '/test', activeForm, ...defaults }),
-      { initialProps: { activeForm: null as string | null } },
+      { initialProps: { activeForm: null as string | null } }
     );
     expect(document.title).not.toContain('\u2014 Running');
 
@@ -64,26 +70,40 @@ describe('status prefixes', () => {
   });
 
   it('shows 🔔 prefix when isWaitingForUser is true', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: '/test', activeForm: null, isStreaming: false, isWaitingForUser: true,
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: '/test',
+        activeForm: null,
+        isStreaming: false,
+        isWaitingForUser: true,
+      })
+    );
     expect(document.title).toMatch(/^🔔 /);
   });
 
   it('does not show 🔔 when isWaitingForUser is false', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: '/test', activeForm: null, isStreaming: false, isWaitingForUser: false,
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: '/test',
+        activeForm: null,
+        isStreaming: false,
+        isWaitingForUser: false,
+      })
+    );
     expect(document.title).not.toMatch(/^🔔/);
   });
 
   it('shows 🏁 when streaming ends while tab is hidden', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser: false,
-      }),
-      { initialProps: { isStreaming: true } },
+      ({ isStreaming }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser: false,
+        }),
+      { initialProps: { isStreaming: true } }
     );
     rerender({ isStreaming: false });
     expect(document.title).toMatch(/^🏁 /);
@@ -92,10 +112,14 @@ describe('status prefixes', () => {
   it('clears 🏁 when tab becomes visible', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser: false,
-      }),
-      { initialProps: { isStreaming: true } },
+      ({ isStreaming }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser: false,
+        }),
+      { initialProps: { isStreaming: true } }
     );
     rerender({ isStreaming: false });
     expect(document.title).toMatch(/^🏁 /);
@@ -109,10 +133,14 @@ describe('status prefixes', () => {
   it('🔔 takes priority over 🏁', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming, isWaitingForUser }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser,
-      }),
-      { initialProps: { isStreaming: true, isWaitingForUser: false } },
+      ({ isStreaming, isWaitingForUser }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser,
+        }),
+      { initialProps: { isStreaming: true, isWaitingForUser: false } }
     );
     // Streaming ends while hidden (sets unseen flag)
     rerender({ isStreaming: false, isWaitingForUser: false });
@@ -125,16 +153,26 @@ describe('status prefixes', () => {
   });
 
   it('no prefix when cwd is null (embedded mode)', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: null, activeForm: null, isStreaming: false, isWaitingForUser: true,
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: null,
+        activeForm: null,
+        isStreaming: false,
+        isWaitingForUser: true,
+      })
+    );
     expect(document.title).toBe('DorkOS');
   });
 
   it('preserves activeForm with prefix', () => {
-    renderHook(() => useDocumentTitle({
-      cwd: '/test', activeForm: 'Running tests', isStreaming: false, isWaitingForUser: true,
-    }));
+    renderHook(() =>
+      useDocumentTitle({
+        cwd: '/test',
+        activeForm: 'Running tests',
+        isStreaming: false,
+        isWaitingForUser: true,
+      })
+    );
     expect(document.title).toMatch(/^🔔 /);
     expect(document.title).toContain('Running tests');
     expect(document.title).toContain('— DorkOS');
@@ -143,10 +181,14 @@ describe('status prefixes', () => {
   it('preserves 🔔 when user returns while still waiting', () => {
     Object.defineProperty(document, 'hidden', { value: true, configurable: true });
     const { rerender } = renderHook(
-      ({ isStreaming, isWaitingForUser }) => useDocumentTitle({
-        cwd: '/test', activeForm: null, isStreaming, isWaitingForUser,
-      }),
-      { initialProps: { isStreaming: true, isWaitingForUser: false } },
+      ({ isStreaming, isWaitingForUser }) =>
+        useDocumentTitle({
+          cwd: '/test',
+          activeForm: null,
+          isStreaming,
+          isWaitingForUser,
+        }),
+      { initialProps: { isStreaming: true, isWaitingForUser: false } }
     );
     // Streaming ends while hidden — sets unseen flag
     rerender({ isStreaming: false, isWaitingForUser: false });

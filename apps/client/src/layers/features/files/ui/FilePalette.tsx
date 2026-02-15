@@ -29,10 +29,12 @@ function HighlightedText({
     <>
       {text.split('').map((char, i) =>
         highlightSet.has(i) ? (
-          <span key={i} className="font-semibold text-foreground">{char}</span>
+          <span key={i} className="text-foreground font-semibold">
+            {char}
+          </span>
         ) : (
           <span key={i}>{char}</span>
-        ),
+        )
       )}
     </>
   );
@@ -50,12 +52,12 @@ export function FilePalette({ filteredFiles, selectedIndex, onSelect }: FilePale
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 4 }}
       transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-      className="absolute bottom-full left-0 right-0 mb-2 max-h-80 overflow-hidden rounded-lg border bg-popover shadow-lg"
+      className="bg-popover absolute right-0 bottom-full left-0 mb-2 max-h-80 overflow-hidden rounded-lg border shadow-lg"
       onMouseDown={(e) => e.preventDefault()}
     >
       <div id="file-palette-listbox" role="listbox" className="max-h-72 overflow-y-auto p-2">
         {filteredFiles.length === 0 ? (
-          <div className="px-2 py-4 text-center text-sm text-muted-foreground">No files found.</div>
+          <div className="text-muted-foreground px-2 py-4 text-center text-sm">No files found.</div>
         ) : (
           filteredFiles.map((entry, index) => {
             const isSelected = index === selectedIndex;
@@ -68,14 +70,18 @@ export function FilePalette({ filteredFiles, selectedIndex, onSelect }: FilePale
                 aria-selected={isSelected}
                 data-selected={isSelected}
                 onClick={() => onSelect(entry)}
-                className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors duration-100 data-[selected=true]:bg-ring/10 data-[selected=true]:text-foreground hover:bg-muted"
+                className="data-[selected=true]:bg-ring/10 data-[selected=true]:text-foreground hover:bg-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition-colors duration-100"
               >
-                <Icon className="size-4 shrink-0 text-muted-foreground" />
-                <span className="text-sm truncate">
-                  <HighlightedText text={entry.filename} indices={entry.indices} startOffset={entry.directory.length} />
+                <Icon className="text-muted-foreground size-4 shrink-0" />
+                <span className="truncate text-sm">
+                  <HighlightedText
+                    text={entry.filename}
+                    indices={entry.indices}
+                    startOffset={entry.directory.length}
+                  />
                 </span>
                 {entry.directory && (
-                  <span className="text-xs text-muted-foreground truncate">{entry.directory}</span>
+                  <span className="text-muted-foreground truncate text-xs">{entry.directory}</span>
                 )}
               </div>
             );

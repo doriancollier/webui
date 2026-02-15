@@ -7,6 +7,7 @@
 ## 1. Installation
 
 ### Package Name
+
 ```bash
 npm install @ngrok/ngrok
 ```
@@ -24,7 +25,7 @@ import ngrok from '@ngrok/ngrok';
 
 // Start a tunnel
 const listener = await ngrok.forward({
-  addr: 6942,  // Local port
+  addr: 6942, // Local port
   authtoken: 'your_auth_token_here',
 });
 
@@ -41,7 +42,7 @@ console.log(`Tunnel established: ${listener.url()}`);
 const listener = await ngrok.forward({
   addr: 6942,
   authtoken: process.env.NGROK_AUTHTOKEN,
-  basic_auth: ['username:password'],  // Can be array of multiple credentials
+  basic_auth: ['username:password'], // Can be array of multiple credentials
 });
 
 console.log(`Tunnel with basic auth: ${listener.url()}`);
@@ -54,17 +55,17 @@ import ngrok from '@ngrok/ngrok';
 
 const listener = await ngrok.forward({
   // Required
-  addr: 6942,  // or 'localhost:6942' or '0.0.0.0:6942'
+  addr: 6942, // or 'localhost:6942' or '0.0.0.0:6942'
 
   // Auth
   authtoken: process.env.NGROK_AUTHTOKEN,
 
   // HTTP options
   basic_auth: ['user:pass'],
-  domain: 'my-custom-domain.ngrok.app',  // Requires paid plan
+  domain: 'my-custom-domain.ngrok.app', // Requires paid plan
 
   // Security
-  circuit_breaker: 0.5,  // Reject requests when 5XX responses exceed this ratio
+  circuit_breaker: 0.5, // Reject requests when 5XX responses exceed this ratio
 
   // Headers
   request_headers: {
@@ -90,7 +91,7 @@ console.log('Tunnel URL:', listener.url());
 await listener.close();
 
 // Or with a timeout
-await listener.close({ timeout: 5000 });  // Wait up to 5s for graceful shutdown
+await listener.close({ timeout: 5000 }); // Wait up to 5s for graceful shutdown
 ```
 
 ### Express Integration Example
@@ -116,7 +117,7 @@ const server = app.listen(PORT, async () => {
       addr: PORT,
       authtoken: process.env.NGROK_AUTHTOKEN,
       basic_auth: process.env.NGROK_BASIC_AUTH
-        ? [process.env.NGROK_BASIC_AUTH]  // Format: 'user:pass'
+        ? [process.env.NGROK_BASIC_AUTH] // Format: 'user:pass'
         : undefined,
     });
 
@@ -141,22 +142,22 @@ const server = app.listen(PORT, async () => {
 
 ### Common Options
 
-| Option | Type | Description | Requires Paid? |
-|--------|------|-------------|----------------|
-| `addr` | `string \| number` | Local port or address to forward | No |
-| `authtoken` | `string` | ngrok auth token | No |
-| `basic_auth` | `string[]` | Basic auth credentials (format: `'user:pass'`) | **Yes** (paid plan) |
-| `domain` | `string` | Custom/static domain | **Yes** (paid plan) |
-| `circuit_breaker` | `number` | Reject when 5XX ratio exceeds this (0-1) | No |
-| `compression` | `boolean` | Enable gzip compression | No |
-| `mutual_tls_cas` | `Buffer[]` | Mutual TLS certificate authorities | **Yes** |
-| `oauth` | `object` | OAuth configuration | **Yes** |
-| `oidc` | `object` | OIDC configuration | **Yes** |
-| `request_headers` | `object` | Modify request headers | No |
-| `response_headers` | `object` | Modify response headers | No |
-| `websocket_tcp_converter` | `boolean` | Convert WebSocket to TCP | No |
-| `verify_webhook` | `object` | Webhook verification | **Yes** |
-| `policy` | `string` | Traffic policy JSON | **Yes** |
+| Option                    | Type               | Description                                    | Requires Paid?      |
+| ------------------------- | ------------------ | ---------------------------------------------- | ------------------- |
+| `addr`                    | `string \| number` | Local port or address to forward               | No                  |
+| `authtoken`               | `string`           | ngrok auth token                               | No                  |
+| `basic_auth`              | `string[]`         | Basic auth credentials (format: `'user:pass'`) | **Yes** (paid plan) |
+| `domain`                  | `string`           | Custom/static domain                           | **Yes** (paid plan) |
+| `circuit_breaker`         | `number`           | Reject when 5XX ratio exceeds this (0-1)       | No                  |
+| `compression`             | `boolean`          | Enable gzip compression                        | No                  |
+| `mutual_tls_cas`          | `Buffer[]`         | Mutual TLS certificate authorities             | **Yes**             |
+| `oauth`                   | `object`           | OAuth configuration                            | **Yes**             |
+| `oidc`                    | `object`           | OIDC configuration                             | **Yes**             |
+| `request_headers`         | `object`           | Modify request headers                         | No                  |
+| `response_headers`        | `object`           | Modify response headers                        | No                  |
+| `websocket_tcp_converter` | `boolean`          | Convert WebSocket to TCP                       | No                  |
+| `verify_webhook`          | `object`           | Webhook verification                           | **Yes**             |
+| `policy`                  | `string`           | Traffic policy JSON                            | **Yes**             |
 
 ### Advanced Tunnel Types
 
@@ -185,6 +186,7 @@ const tlsListener = await ngrok.forward({
 **Three methods** (in order of precedence):
 
 1. **Inline in code**:
+
    ```typescript
    await ngrok.forward({
      addr: 6942,
@@ -193,12 +195,15 @@ const tlsListener = await ngrok.forward({
    ```
 
 2. **Environment variable**:
+
    ```bash
    export NGROK_AUTHTOKEN=your_token_here
    ```
+
    Then omit from config:
+
    ```typescript
-   await ngrok.forward({ addr: 6942 });  // Reads from env
+   await ngrok.forward({ addr: 6942 }); // Reads from env
    ```
 
 3. **Default config file** (written by `ngrok config add-authtoken`):
@@ -216,6 +221,7 @@ const tlsListener = await ngrok.forward({
 ## 5. Free vs Paid Features
 
 ### Free Tier (No Credit Card Required)
+
 - ✅ HTTP/HTTPS tunnels
 - ✅ Random public URLs (e.g., `https://abc123.ngrok.app`)
 - ✅ 1 online tunnel at a time
@@ -226,6 +232,7 @@ const tlsListener = await ngrok.forward({
 - ✅ Compression
 
 ### Paid Features (Requires Subscription)
+
 - ❌ **Basic Authentication** (requires Personal plan or higher)
 - ❌ **Custom/Static Domains** (e.g., `my-app.ngrok.app`)
 - ❌ **OAuth/OIDC Authentication**
@@ -240,6 +247,7 @@ const tlsListener = await ngrok.forward({
 **Critical for your use case**: Basic auth (`basic_auth` option) **requires a paid plan**. On the free tier, attempting to use `basic_auth` will result in an error.
 
 ### Plan Tiers (as of 2024)
+
 - **Free**: $0/month - 1 tunnel, random URLs only
 - **Personal**: ~$8-10/month - Custom domains, basic auth, OAuth
 - **Pro**: ~$20-30/month - More tunnels, IP restrictions
@@ -272,7 +280,7 @@ try {
 try {
   const listener = await ngrok.forward({
     addr: 6942,
-    basic_auth: ['user:pass'],  // This will fail on free plan
+    basic_auth: ['user:pass'], // This will fail on free plan
   });
 } catch (error) {
   console.error('Failed to start tunnel:', error.message);
@@ -300,13 +308,13 @@ try {
 
 ### Common Error Scenarios
 
-| Error | Cause | Solution |
-|-------|-------|----------|
-| "authtoken required" | No token provided | Set `NGROK_AUTHTOKEN` or pass `authtoken` option |
-| "account limit exceeded" | Using paid feature on free plan | Upgrade plan or remove feature |
-| "tunnel not found" | Invalid domain | Check domain spelling or use random URL |
-| "port already in use" | Port conflict | Change local port or kill existing process |
-| "connection refused" | Local server not running | Start your Express server before ngrok |
+| Error                    | Cause                           | Solution                                         |
+| ------------------------ | ------------------------------- | ------------------------------------------------ |
+| "authtoken required"     | No token provided               | Set `NGROK_AUTHTOKEN` or pass `authtoken` option |
+| "account limit exceeded" | Using paid feature on free plan | Upgrade plan or remove feature                   |
+| "tunnel not found"       | Invalid domain                  | Check domain spelling or use random URL          |
+| "port already in use"    | Port conflict                   | Change local port or kill existing process       |
+| "connection refused"     | Local server not running        | Start your Express server before ngrok           |
 
 ### Robust Startup Pattern
 
@@ -377,24 +385,26 @@ const listener = await ngrok.forward({
   authtoken: process.env.NGROK_AUTHTOKEN,
 });
 
-console.log(listener.url());  // https://abc123.ngrok.app
+console.log(listener.url()); // https://abc123.ngrok.app
 await listener.close();
 
 // With all common options
 const listener = await ngrok.forward({
   addr: 6942,
   authtoken: process.env.NGROK_AUTHTOKEN,
-  domain: 'my-app.ngrok.app',  // Paid only
-  basic_auth: ['user:pass'],    // Paid only
+  domain: 'my-app.ngrok.app', // Paid only
+  basic_auth: ['user:pass'], // Paid only
   circuit_breaker: 0.5,
   request_headers: { add: { 'X-Custom': 'value' } },
 });
 ```
 
 **Environment Variables**:
+
 - `NGROK_AUTHTOKEN` - Auth token (auto-detected)
 
 **Critical Notes**:
+
 - Basic auth requires paid plan ($8-10/month minimum)
 - Free tier allows 1 tunnel with random URLs
 - Auth token is required (get from dashboard)

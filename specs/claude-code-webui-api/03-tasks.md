@@ -1,4 +1,5 @@
 # Task Breakdown: Claude Code WebUI & Reusable API v1
+
 Generated: 2026-02-06
 Source: gateway/specs/claude-code-webui-api/02-specification.md
 Last Decompose: 2026-02-06
@@ -12,6 +13,7 @@ Build a web-based interface for Claude Code backed by a channel-agnostic REST/SS
 ## Phase 1: Server Foundation
 
 ### Task 1.1: Initialize gateway project with dependencies and configuration
+
 **Description**: Set up the `gateway/` TypeScript project with all required dependencies, TypeScript config, environment variables, and npm scripts.
 **Size**: Medium
 **Priority**: High
@@ -150,6 +152,7 @@ GATEWAY_PORT=69420
 ```
 
 **Implementation Steps**:
+
 1. Create `gateway/` directory at vault root
 2. Write `package.json` with all backend and frontend dependencies
 3. Write `tsconfig.json` (shared base) and `tsconfig.server.json` (server-specific)
@@ -160,6 +163,7 @@ GATEWAY_PORT=69420
 8. Verify TypeScript compilation works with `npx tsc --noEmit`
 
 **Acceptance Criteria**:
+
 - [ ] `gateway/` directory exists at vault root
 - [ ] `npm install` completes without errors
 - [ ] `npx tsc --noEmit` completes without errors
@@ -170,6 +174,7 @@ GATEWAY_PORT=69420
 ---
 
 ### Task 1.2: Implement shared types (`src/shared/types.ts`)
+
 **Description**: Create the shared type definitions used by both server and client for API contracts, session management, streaming events, and command registry.
 **Size**: Small
 **Priority**: High
@@ -183,10 +188,10 @@ GATEWAY_PORT=69420
 
 export interface Session {
   id: string;
-  sdkSessionId?: string;       // Claude Agent SDK session ID
+  sdkSessionId?: string; // Claude Agent SDK session ID
   title: string;
-  createdAt: string;           // ISO timestamp
-  updatedAt: string;           // ISO timestamp
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
   lastMessagePreview?: string; // First 100 chars of last message
   permissionMode: 'default' | 'dangerously-skip';
 }
@@ -203,14 +208,14 @@ export interface SendMessageRequest {
 // === Message Types (SSE stream events) ===
 
 export type StreamEventType =
-  | 'text_delta'           // Incremental text chunk
-  | 'tool_call_start'      // Tool execution begins
-  | 'tool_call_delta'      // Tool input streaming
-  | 'tool_call_end'        // Tool execution finished
-  | 'tool_result'          // Tool returned a result
-  | 'approval_required'    // Tool needs user approval
-  | 'error'                // Error occurred
-  | 'done';                // Stream complete
+  | 'text_delta' // Incremental text chunk
+  | 'tool_call_start' // Tool execution begins
+  | 'tool_call_delta' // Tool input streaming
+  | 'tool_call_end' // Tool execution finished
+  | 'tool_result' // Tool returned a result
+  | 'approval_required' // Tool needs user approval
+  | 'error' // Error occurred
+  | 'done'; // Stream complete
 
 export interface StreamEvent {
   type: StreamEventType;
@@ -224,15 +229,15 @@ export interface TextDelta {
 export interface ToolCallEvent {
   toolCallId: string;
   toolName: string;
-  input?: string;           // JSON string of tool input
-  result?: string;          // Tool result (for tool_result type)
+  input?: string; // JSON string of tool input
+  result?: string; // Tool result (for tool_result type)
   status: 'pending' | 'running' | 'complete' | 'error';
 }
 
 export interface ApprovalEvent {
   toolCallId: string;
   toolName: string;
-  input: string;            // JSON string of proposed tool input
+  input: string; // JSON string of proposed tool input
 }
 
 export interface ErrorEvent {
@@ -250,7 +255,7 @@ export interface DoneEvent {
 export interface CommandEntry {
   namespace: string;
   command: string;
-  fullCommand: string;       // "/namespace:command"
+  fullCommand: string; // "/namespace:command"
   description: string;
   argumentHint?: string;
   allowedTools?: string[];
@@ -259,11 +264,12 @@ export interface CommandEntry {
 
 export interface CommandRegistry {
   commands: CommandEntry[];
-  lastScanned: string;       // ISO timestamp
+  lastScanned: string; // ISO timestamp
 }
 ```
 
 **Acceptance Criteria**:
+
 - [ ] File exists at `gateway/src/shared/types.ts`
 - [ ] All interfaces from spec are present: Session, CreateSessionRequest, SendMessageRequest, StreamEvent, StreamEventType, TextDelta, ToolCallEvent, ApprovalEvent, ErrorEvent, DoneEvent, CommandEntry, CommandRegistry
 - [ ] TypeScript compiles without errors
@@ -272,6 +278,7 @@ export interface CommandRegistry {
 ---
 
 ### Task 1.3: Implement session store service (`src/server/services/session-store.ts`)
+
 **Description**: Build the lightweight JSON file-based session persistence store that saves session metadata to `gateway/state/sessions.json`.
 **Size**: Small
 **Priority**: High
@@ -294,7 +301,7 @@ class SessionStore {
     try {
       const data = await fs.readFile(STORE_PATH, 'utf-8');
       const parsed: Session[] = JSON.parse(data);
-      this.sessions = new Map(parsed.map(s => [s.id, s]));
+      this.sessions = new Map(parsed.map((s) => [s.id, s]));
     } catch {
       this.sessions = new Map();
     }
@@ -307,8 +314,9 @@ class SessionStore {
   }
 
   list(): Session[] {
-    return Array.from(this.sessions.values())
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return Array.from(this.sessions.values()).sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt)
+    );
   }
 
   get(id: string): Session | undefined {
@@ -333,6 +341,7 @@ export const sessionStore = new SessionStore();
 **Unit Tests** - Create `gateway/src/server/services/__tests__/session-store.test.ts`:
 
 Test cases:
+
 1. `load()` with empty/missing file initializes empty map
 2. `load()` with corrupt JSON initializes empty map
 3. `set()` persists session and `get()` retrieves it
@@ -342,6 +351,7 @@ Test cases:
 7. Round-trip: set multiple sessions, save, load, verify all present
 
 **Acceptance Criteria**:
+
 - [ ] SessionStore class implemented with load, save, list, get, set, delete methods
 - [ ] Persists to `gateway/state/sessions.json`
 - [ ] Auto-creates `state/` directory on save
@@ -352,6 +362,7 @@ Test cases:
 ---
 
 ### Task 1.4: Implement SSE stream adapter (`src/server/services/stream-adapter.ts`)
+
 **Description**: Build the Server-Sent Events adapter that translates StreamEvent objects into properly formatted SSE responses.
 **Size**: Small
 **Priority**: High
@@ -386,6 +397,7 @@ export function endSSEStream(res: Response): void {
 **Unit Tests** - Create `gateway/src/server/services/__tests__/stream-adapter.test.ts`:
 
 Test cases:
+
 1. `initSSEStream()` sets correct headers (Content-Type, Cache-Control, Connection, X-Accel-Buffering)
 2. `sendSSEEvent()` formats event with `event:` and `data:` lines followed by double newline
 3. `sendSSEEvent()` properly JSON-serializes event data
@@ -393,6 +405,7 @@ Test cases:
 5. Multiple events sent in sequence produce correct SSE format
 
 **Acceptance Criteria**:
+
 - [ ] Three exported functions: initSSEStream, sendSSEEvent, endSSEStream
 - [ ] SSE format: `event: <type>\ndata: <json>\n\n`
 - [ ] Headers include Content-Type: text/event-stream, Cache-Control: no-cache, Connection: keep-alive
@@ -402,6 +415,7 @@ Test cases:
 ---
 
 ### Task 1.5: Implement health route and error handler middleware
+
 **Description**: Create the health check endpoint and global error handling middleware.
 **Size**: Small
 **Priority**: High
@@ -430,12 +444,7 @@ export default router;
 ```typescript
 import type { Request, Response, NextFunction } from 'express';
 
-export function errorHandler(
-  err: Error,
-  _req: Request,
-  res: Response,
-  _next: NextFunction
-): void {
+export function errorHandler(err: Error, _req: Request, res: Response, _next: NextFunction): void {
   console.error('[Gateway Error]', err.message, err.stack);
   res.status(500).json({
     error: err.message || 'Internal Server Error',
@@ -445,6 +454,7 @@ export function errorHandler(
 ```
 
 **Acceptance Criteria**:
+
 - [ ] GET /api/health returns `{ status: 'ok', version: '1.0.0', uptime: <number> }`
 - [ ] Error handler catches unhandled errors and returns 500 with JSON body
 - [ ] Error handler logs to console with stack trace
@@ -453,6 +463,7 @@ export function errorHandler(
 ---
 
 ### Task 1.6: Implement server entry point with Express setup (`src/server/index.ts`)
+
 **Description**: Create the main Express server that wires routes, middleware, static serving, and startup.
 **Size**: Medium
 **Priority**: High
@@ -509,6 +520,7 @@ start();
 ```
 
 **Key Details**:
+
 - Server binds to `localhost` only (security: not `0.0.0.0`)
 - Loads `.env` from gateway root
 - Registers routes under `/api/` prefix
@@ -516,6 +528,7 @@ start();
 - Loads session store on startup
 
 **Acceptance Criteria**:
+
 - [ ] Server starts and listens on port from GATEWAY_PORT env var (default 69420)
 - [ ] Server binds to localhost only
 - [ ] CORS middleware active
@@ -531,6 +544,7 @@ start();
 ## Phase 2: SDK Integration & Chat Streaming
 
 ### Task 2.1: Implement agent manager service (`src/server/services/agent-manager.ts`)
+
 **Description**: Build the core agent manager wrapping the Claude Agent SDK for session lifecycle, message streaming, and memory management.
 **Size**: Large
 **Priority**: High
@@ -561,9 +575,12 @@ class AgentManager {
   private sessions = new Map<string, AgentSession>();
   private readonly SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
-  async createSession(sessionId: string, opts: {
-    permissionMode: 'default' | 'dangerously-skip';
-  }): Promise<string> {
+  async createSession(
+    sessionId: string,
+    opts: {
+      permissionMode: 'default' | 'dangerously-skip';
+    }
+  ): Promise<string> {
     // Will be populated on first message
     this.sessions.set(sessionId, {
       sdkSessionId: '',
@@ -574,10 +591,7 @@ class AgentManager {
     return sessionId;
   }
 
-  async *sendMessage(
-    sessionId: string,
-    content: string
-  ): AsyncGenerator<StreamEvent> {
+  async *sendMessage(sessionId: string, content: string): AsyncGenerator<StreamEvent> {
     const session = this.sessions.get(sessionId);
     if (!session) throw new Error(`Session ${sessionId} not found`);
 
@@ -718,6 +732,7 @@ export const agentManager = new AgentManager();
 ```
 
 **Key Details**:
+
 - Vault root resolved using `path.resolve(__dirname, '../../../../')` to go from `src/server/services/` up to the vault root
 - SESSION_TIMEOUT_MS = 30 minutes (to prevent 400MB -> 4GB memory leak)
 - SDK resume used for session continuity
@@ -725,6 +740,7 @@ export const agentManager = new AgentManager();
 - Tool approval uses Promise-based queue pattern (pendingApproval field)
 
 **Acceptance Criteria**:
+
 - [ ] AgentManager class with createSession, sendMessage (async generator), approveTool, checkSessionHealth methods
 - [ ] sendMessage yields StreamEvent objects matching the shared types
 - [ ] SDK options correctly set cwd to vault root
@@ -736,6 +752,7 @@ export const agentManager = new AgentManager();
 ---
 
 ### Task 2.2: Implement sessions route (`src/server/routes/sessions.ts`)
+
 **Description**: Build all session API endpoints: create, list, get, delete, send message (SSE streaming), approve tool call, deny tool call.
 **Size**: Large
 **Priority**: High
@@ -836,17 +853,18 @@ export default router;
 
 **API Endpoints**:
 
-| Method | Endpoint | Description | Response |
-|--------|----------|-------------|----------|
-| POST | /api/sessions | Create new session | Session JSON |
-| GET | /api/sessions | List all sessions | Session[] JSON |
-| GET | /api/sessions/:id | Get session details | Session JSON |
-| DELETE | /api/sessions/:id | Delete session | { ok: true } |
-| POST | /api/sessions/:id/messages | Send message | SSE stream of StreamEvent |
-| POST | /api/sessions/:id/approve | Approve tool call | { ok: true } |
-| POST | /api/sessions/:id/deny | Deny tool call | { ok: true } |
+| Method | Endpoint                   | Description         | Response                  |
+| ------ | -------------------------- | ------------------- | ------------------------- |
+| POST   | /api/sessions              | Create new session  | Session JSON              |
+| GET    | /api/sessions              | List all sessions   | Session[] JSON            |
+| GET    | /api/sessions/:id          | Get session details | Session JSON              |
+| DELETE | /api/sessions/:id          | Delete session      | { ok: true }              |
+| POST   | /api/sessions/:id/messages | Send message        | SSE stream of StreamEvent |
+| POST   | /api/sessions/:id/approve  | Approve tool call   | { ok: true }              |
+| POST   | /api/sessions/:id/deny     | Deny tool call      | { ok: true }              |
 
 **Acceptance Criteria**:
+
 - [ ] POST /api/sessions creates a session with UUID, stores in session store and agent manager
 - [ ] GET /api/sessions returns all sessions sorted by updatedAt
 - [ ] GET /api/sessions/:id returns session or 404
@@ -861,6 +879,7 @@ export default router;
 ---
 
 ### Task 2.3: Write server unit and integration tests
+
 **Description**: Test session store CRUD, SSE formatting, and session route behavior.
 **Size**: Medium
 **Priority**: High
@@ -874,6 +893,7 @@ export default router;
 4. `gateway/src/server/routes/__tests__/health.test.ts`
 
 **Session Store Tests**:
+
 - Load from empty/missing file
 - Load from corrupt JSON
 - CRUD operations (set, get, list, delete)
@@ -882,12 +902,14 @@ export default router;
 - Auto-creates state directory
 
 **Stream Adapter Tests**:
+
 - initSSEStream sets correct headers
 - sendSSEEvent produces correct SSE format
 - Multiple events produce correct format
 - endSSEStream calls res.end()
 
 **Sessions Route Tests** (integration):
+
 - POST /api/sessions creates session
 - GET /api/sessions lists sessions
 - GET /api/sessions/:id returns specific session
@@ -896,10 +918,12 @@ export default router;
 - POST /api/sessions/:id/messages returns 400 for missing content
 
 **Health Route Tests**:
+
 - GET /api/health returns status ok
 - Response includes version and uptime
 
 **Acceptance Criteria**:
+
 - [ ] All test files created
 - [ ] `npm run test:run` passes all tests
 - [ ] Session store edge cases covered (empty file, corrupt JSON)
@@ -911,6 +935,7 @@ export default router;
 ## Phase 3: Frontend Foundation
 
 ### Task 3.1: Set up Vite + React 19 + TypeScript + Tailwind + shadcn scaffold
+
 **Description**: Initialize the frontend build pipeline with Vite, React 19, TypeScript, Tailwind CSS 4, and shadcn/ui configuration.
 **Size**: Medium
 **Priority**: High
@@ -950,7 +975,7 @@ export default defineConfig({
 **Implementation** - Create `gateway/src/client/index.css`:
 
 ```css
-@import "tailwindcss";
+@import 'tailwindcss';
 ```
 
 **Implementation** - Create `gateway/src/client/main.tsx`:
@@ -1019,6 +1044,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ```
 
 **Implementation Steps**:
+
 1. Create `vite.config.ts` with React plugin, Tailwind plugin, path aliases, and dev proxy
 2. Create `src/client/index.css` with Tailwind import
 3. Create `src/client/index.html` with root div and module script
@@ -1029,6 +1055,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 8. Verify `npm run dev:client` starts Vite dev server
 
 **Acceptance Criteria**:
+
 - [ ] Vite dev server starts on port 3000
 - [ ] API requests proxied to localhost:69420
 - [ ] Tailwind CSS processing works
@@ -1040,6 +1067,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 ---
 
 ### Task 3.2: Implement API client library and app store
+
 **Description**: Create the typed API client for server communication and Zustand store for client state management.
 **Size**: Small
 **Priority**: High
@@ -1048,11 +1076,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 **Implementation** - Create `gateway/src/client/lib/api.ts`:
 
 ```typescript
-import type {
-  Session,
-  CreateSessionRequest,
-  CommandRegistry,
-} from '@shared/types';
+import type { Session, CreateSessionRequest, CommandRegistry } from '@shared/types';
 
 const BASE_URL = '/api';
 
@@ -1084,8 +1108,7 @@ export const api = {
     fetchJSON<{ ok: boolean }>(`/sessions/${id}`, { method: 'DELETE' }),
 
   // Messages (returns EventSource URL for SSE)
-  getMessageStreamUrl: (sessionId: string) =>
-    `${BASE_URL}/sessions/${sessionId}/messages`,
+  getMessageStreamUrl: (sessionId: string) => `${BASE_URL}/sessions/${sessionId}/messages`,
 
   // Tool approval
   approveTool: (sessionId: string, toolCallId: string) =>
@@ -1142,6 +1165,7 @@ export const useAppStore = create<AppState>((set) => ({
 ```
 
 **Acceptance Criteria**:
+
 - [ ] API client covers all endpoints: sessions CRUD, messages, approve/deny, commands, health
 - [ ] API client handles errors with proper error messages
 - [ ] Zustand store manages activeSessionId with localStorage persistence
@@ -1151,6 +1175,7 @@ export const useAppStore = create<AppState>((set) => ({
 ---
 
 ### Task 3.3: Implement base layout components (Header, PermissionBanner, App)
+
 **Description**: Build the Header, PermissionBanner, and root App layout with sidebar + main panel structure.
 **Size**: Medium
 **Priority**: High
@@ -1241,6 +1266,7 @@ export function PermissionBanner({ sessionId }: { sessionId: string | null }) {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] App renders full-height layout with sidebar + main panel
 - [ ] Header shows app title and sidebar toggle
 - [ ] PermissionBanner shows red warning only for dangerously-skip sessions
@@ -1253,6 +1279,7 @@ export function PermissionBanner({ sessionId }: { sessionId: string | null }) {
 ## Phase 4: Chat UI with Streaming
 
 ### Task 4.1: Implement useChatSession hook (custom SSE consumer)
+
 **Description**: Build the custom chat session hook that manages SSE streaming, message state, and tool call tracking using native EventSource/fetch.
 **Size**: Large
 **Priority**: High
@@ -1301,7 +1328,7 @@ export function useChatSession(sessionId: string) {
       timestamp: new Date().toISOString(),
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setStatus('streaming');
     setError(null);
@@ -1310,13 +1337,16 @@ export function useChatSession(sessionId: string) {
 
     // Add placeholder assistant message
     const assistantId = crypto.randomUUID();
-    setMessages(prev => [...prev, {
-      id: assistantId,
-      role: 'assistant',
-      content: '',
-      toolCalls: [],
-      timestamp: new Date().toISOString(),
-    }]);
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: assistantId,
+        role: 'assistant',
+        content: '',
+        toolCalls: [],
+        timestamp: new Date().toISOString(),
+      },
+    ]);
 
     const abortController = new AbortController();
     abortRef.current = abortController;
@@ -1387,7 +1417,7 @@ export function useChatSession(sessionId: string) {
       }
       case 'tool_call_delta': {
         const tc = data as ToolCallEvent;
-        const existing = currentToolCallsRef.current.find(t => t.toolCallId === tc.toolCallId);
+        const existing = currentToolCallsRef.current.find((t) => t.toolCallId === tc.toolCallId);
         if (existing && tc.input) {
           existing.input += tc.input;
         }
@@ -1396,7 +1426,7 @@ export function useChatSession(sessionId: string) {
       }
       case 'tool_call_end': {
         const tc = data as ToolCallEvent;
-        const existing = currentToolCallsRef.current.find(t => t.toolCallId === tc.toolCallId);
+        const existing = currentToolCallsRef.current.find((t) => t.toolCallId === tc.toolCallId);
         if (existing) {
           existing.status = 'complete';
         }
@@ -1405,7 +1435,7 @@ export function useChatSession(sessionId: string) {
       }
       case 'tool_result': {
         const tc = data as ToolCallEvent;
-        const existing = currentToolCallsRef.current.find(t => t.toolCallId === tc.toolCallId);
+        const existing = currentToolCallsRef.current.find((t) => t.toolCallId === tc.toolCallId);
         if (existing) {
           existing.result = tc.result;
           existing.status = 'complete';
@@ -1427,15 +1457,17 @@ export function useChatSession(sessionId: string) {
   }
 
   function updateAssistantMessage(assistantId: string) {
-    setMessages(prev => prev.map(m =>
-      m.id === assistantId
-        ? {
-            ...m,
-            content: currentAssistantRef.current,
-            toolCalls: [...currentToolCallsRef.current],
-          }
-        : m
-    ));
+    setMessages((prev) =>
+      prev.map((m) =>
+        m.id === assistantId
+          ? {
+              ...m,
+              content: currentAssistantRef.current,
+              toolCalls: [...currentToolCallsRef.current],
+            }
+          : m
+      )
+    );
   }
 
   const stop = useCallback(() => {
@@ -1448,6 +1480,7 @@ export function useChatSession(sessionId: string) {
 ```
 
 **Key Details**:
+
 - Uses native fetch + ReadableStream instead of EventSource (POST requests need fetch)
 - Parses SSE format manually from response body
 - Tracks tool calls in refs for efficient updates
@@ -1455,6 +1488,7 @@ export function useChatSession(sessionId: string) {
 - Supports abort/cancel via AbortController
 
 **Acceptance Criteria**:
+
 - [ ] Hook manages messages array with user and assistant messages
 - [ ] SSE stream parsed correctly from POST response body
 - [ ] Text deltas accumulate into assistant message content
@@ -1468,6 +1502,7 @@ export function useChatSession(sessionId: string) {
 ---
 
 ### Task 4.2: Implement MessageList with TanStack Virtual
+
 **Description**: Build the virtualized message list with dynamic row heights, auto-scroll to bottom, and overscan.
 **Size**: Medium
 **Priority**: High
@@ -1536,12 +1571,14 @@ export function MessageList({ messages }: MessageListProps) {
 ```
 
 **Key Details**:
+
 - estimateSize: 80px average per message
 - overscan: 5 (renders 5 extra items above/below viewport)
 - measureElement callback for dynamic heights
 - Auto-scroll on new messages via scrollToIndex with align: 'end'
 
 **Acceptance Criteria**:
+
 - [ ] Renders only visible messages plus 5 overscan items
 - [ ] Dynamic heights measured after render
 - [ ] Auto-scrolls to bottom when new messages arrive
@@ -1551,6 +1588,7 @@ export function MessageList({ messages }: MessageListProps) {
 ---
 
 ### Task 4.3: Implement MessageItem and StreamingText components
+
 **Description**: Build the single message renderer with streaming markdown via Streamdown, and embedded tool call cards.
 **Size**: Medium
 **Priority**: High
@@ -1630,6 +1668,7 @@ export function StreamingText({ content }: StreamingTextProps) {
 **Note**: The StreamingText component starts with basic rendering and will be enhanced with Streamdown library integration. Streamdown provides O(n) incremental parsing with memoized blocks, ideal for streaming responses.
 
 **Acceptance Criteria**:
+
 - [ ] MessageItem renders user and assistant messages with correct styling
 - [ ] User messages have muted background, assistant messages are plain
 - [ ] Role icons displayed (User icon for user, Bot icon for assistant)
@@ -1640,6 +1679,7 @@ export function StreamingText({ content }: StreamingTextProps) {
 ---
 
 ### Task 4.4: Implement ChatInput component
+
 **Description**: Build the chat input textarea with submit handling, Enter key support, and slash command trigger detection.
 **Size**: Small
 **Priority**: High
@@ -1723,6 +1763,7 @@ export function ChatInput({ value, onChange, onSubmit, isLoading, onStop }: Chat
 ```
 
 **Key Details**:
+
 - Enter submits, Shift+Enter for newline
 - Auto-resizing textarea up to 200px max height
 - Stop button shown during streaming, Send button when idle
@@ -1730,6 +1771,7 @@ export function ChatInput({ value, onChange, onSubmit, isLoading, onStop }: Chat
 - Disabled during streaming
 
 **Acceptance Criteria**:
+
 - [ ] Enter key submits message (Shift+Enter for newline)
 - [ ] Auto-resizing textarea up to 200px
 - [ ] Send button disabled when input is empty
@@ -1740,6 +1782,7 @@ export function ChatInput({ value, onChange, onSubmit, isLoading, onStop }: Chat
 ---
 
 ### Task 4.5: Implement ChatPanel (main chat container)
+
 **Description**: Wire together MessageList, ChatInput, CommandPalette trigger, and useChatSession hook into the main chat panel.
 **Size**: Medium
 **Priority**: High
@@ -1815,12 +1858,14 @@ export function ChatPanel({ sessionId }: ChatPanelProps) {
 ```
 
 **Key Details**:
+
 - Slash command detection via regex `/(^|\s)\/(\w*)$/`
 - CommandPalette floats above input when triggered
 - Error banner shown below message list
 - Stop button wired to abort streaming
 
 **Acceptance Criteria**:
+
 - [ ] Chat panel renders full height with message list and input
 - [ ] Messages stream in real-time from SSE connection
 - [ ] Typing `/` triggers command palette
@@ -1834,6 +1879,7 @@ export function ChatPanel({ sessionId }: ChatPanelProps) {
 ## Phase 5: Tool Calls & Permissions
 
 ### Task 5.1: Implement ToolCallCard component
+
 **Description**: Build the inline tool call display with expand/collapse, status icons, and input/result rendering.
 **Size**: Medium
 **Priority**: High
@@ -1900,6 +1946,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
 ```
 
 **Key Details**:
+
 - Status icons: spinning loader (pending/running), green check (complete), red X (error)
 - Running status uses blue color for spinner
 - Expand/collapse with chevron rotation animation
@@ -1907,6 +1954,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
 - Result shown below input with border separator
 
 **Acceptance Criteria**:
+
 - [ ] Tool call card shows tool name and status icon
 - [ ] Click toggles expand/collapse
 - [ ] Expanded view shows pretty-printed input JSON
@@ -1917,6 +1965,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
 ---
 
 ### Task 5.2: Implement ToolApproval component and approval flow
+
 **Description**: Build the inline approve/deny buttons for tool calls requiring approval, and wire them to the approval API endpoints.
 **Size**: Medium
 **Priority**: High
@@ -2017,6 +2066,7 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Approval card shows tool name, input preview, and approve/deny buttons
 - [ ] Approve button calls POST /api/sessions/:id/approve
 - [ ] Deny button calls POST /api/sessions/:id/deny
@@ -2028,6 +2078,7 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
 ---
 
 ### Task 5.3: Implement permission mode selection and banner integration
+
 **Description**: Add permission mode toggle to session creation dialog and ensure PermissionBanner displays correctly.
 **Size**: Small
 **Priority**: High
@@ -2061,12 +2112,14 @@ const [permissionMode, setPermissionMode] = useState<'default' | 'dangerously-sk
 ```
 
 **Key Details**:
+
 - Permission mode is set at session creation and cannot be changed mid-session
 - Red warning text when skip-permissions is selected
 - PermissionBanner (from Task 3.3) shows persistent red bar at top when active
 - Banner text: "Permissions bypassed - all tool calls auto-approved"
 
 **Acceptance Criteria**:
+
 - [ ] Session creation includes permission mode toggle
 - [ ] Default mode is 'default' (permissions required)
 - [ ] Warning text shown when skip-permissions selected
@@ -2079,6 +2132,7 @@ const [permissionMode, setPermissionMode] = useState<'default' | 'dangerously-sk
 ## Phase 6: Slash Commands
 
 ### Task 6.1: Implement command registry service (`src/server/services/command-registry.ts`)
+
 **Description**: Build the server-side service that scans `.claude/commands/` recursively, parses YAML frontmatter, and caches results.
 **Size**: Medium
 **Priority**: Medium
@@ -2128,18 +2182,14 @@ class CommandRegistryService {
           fullCommand: `/${ns.name}:${commandName}`,
           description: frontmatter.description || '',
           argumentHint: frontmatter['argument-hint'],
-          allowedTools: frontmatter['allowed-tools']
-            ?.split(',')
-            .map((t: string) => t.trim()),
+          allowedTools: frontmatter['allowed-tools']?.split(',').map((t: string) => t.trim()),
           filePath: path.relative(process.cwd(), filePath),
         });
       }
     }
 
     // Sort by namespace, then command name
-    commands.sort((a, b) =>
-      a.fullCommand.localeCompare(b.fullCommand)
-    );
+    commands.sort((a, b) => a.fullCommand.localeCompare(b.fullCommand));
 
     this.cache = { commands, lastScanned: new Date().toISOString() };
     return this.cache;
@@ -2154,6 +2204,7 @@ export { CommandRegistryService };
 ```
 
 **Unit Tests**:
+
 - Scanning discovers all command files in namespace directories
 - YAML frontmatter parsed correctly (description, argument-hint, allowed-tools)
 - Non-.md files ignored
@@ -2164,6 +2215,7 @@ export { CommandRegistryService };
 - invalidateCache forces rescan on next call
 
 **Acceptance Criteria**:
+
 - [ ] Scans `.claude/commands/<namespace>/<command>.md` recursively
 - [ ] Parses YAML frontmatter for description, argument-hint, allowed-tools
 - [ ] Returns sorted CommandRegistry with lastScanned timestamp
@@ -2175,6 +2227,7 @@ export { CommandRegistryService };
 ---
 
 ### Task 6.2: Implement commands route (`src/server/routes/commands.ts`)
+
 **Description**: Build the GET /api/commands endpoint with refresh support.
 **Size**: Small
 **Priority**: Medium
@@ -2204,6 +2257,7 @@ export default router;
 ```
 
 **Acceptance Criteria**:
+
 - [ ] GET /api/commands returns CommandRegistry JSON
 - [ ] GET /api/commands?refresh=true forces cache refresh
 - [ ] Response includes commands array and lastScanned timestamp
@@ -2212,6 +2266,7 @@ export default router;
 ---
 
 ### Task 6.3: Implement useCommands hook
+
 **Description**: Build the TanStack Query-based hook for fetching and caching the command registry on the client.
 **Size**: Small
 **Priority**: Medium
@@ -2229,7 +2284,7 @@ export function useCommands() {
     queryKey: ['commands'],
     queryFn: () => api.getCommands(),
     staleTime: 5 * 60 * 1000, // 5 minutes - commands don't change often
-    gcTime: 30 * 60 * 1000,   // 30 minutes garbage collection
+    gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
   });
 }
 
@@ -2243,6 +2298,7 @@ export function useRefreshCommands() {
 ```
 
 **Acceptance Criteria**:
+
 - [ ] useCommands returns TanStack Query result with data, isLoading, error
 - [ ] Commands cached for 5 minutes (staleTime)
 - [ ] Garbage collected after 30 minutes
@@ -2251,6 +2307,7 @@ export function useRefreshCommands() {
 ---
 
 ### Task 6.4: Implement CommandPalette component
+
 **Description**: Build the cmdk-based floating command dropdown with namespace grouping, filtering, and keyboard navigation.
 **Size**: Medium
 **Priority**: Medium
@@ -2324,6 +2381,7 @@ export function CommandPalette({ query, onSelect, onClose }: CommandPaletteProps
 ```
 
 **Key Details**:
+
 - Uses cmdk library for built-in filtering and keyboard navigation
 - Commands grouped by namespace with headings
 - Value includes fullCommand + description for search matching
@@ -2332,6 +2390,7 @@ export function CommandPalette({ query, onSelect, onClose }: CommandPaletteProps
 - Positioned above the input (bottom-full)
 
 **Acceptance Criteria**:
+
 - [ ] Floating dropdown positioned above chat input
 - [ ] Commands grouped by namespace
 - [ ] Filtering works as user types after "/"
@@ -2344,6 +2403,7 @@ export function CommandPalette({ query, onSelect, onClose }: CommandPaletteProps
 ---
 
 ### Task 6.5: Integrate slash command detection into ChatInput
+
 **Description**: Wire the CommandPalette into the ChatPanel by enhancing the slash command detection logic and ensuring proper command insertion.
 **Size**: Small
 **Priority**: Medium
@@ -2381,6 +2441,7 @@ const handleKeyDown = useCallback(
 ```
 
 **Acceptance Criteria**:
+
 - [ ] Typing "/" at start of input or after space triggers command palette
 - [ ] Continued typing after "/" filters commands
 - [ ] Selecting a command inserts it into the input
@@ -2394,6 +2455,7 @@ const handleKeyDown = useCallback(
 ## Phase 7: Session Management & Polish
 
 ### Task 7.1: Implement SessionSidebar and SessionItem components
+
 **Description**: Build the session list sidebar with create button, session list with previews, and delete capability.
 **Size**: Medium
 **Priority**: Medium
@@ -2510,6 +2572,7 @@ export function SessionItem({ session, isActive, onClick, onDelete }: SessionIte
 ```
 
 **Acceptance Criteria**:
+
 - [ ] New Session button creates a session and sets it active
 - [ ] Session list shows all sessions sorted by updatedAt
 - [ ] Active session highlighted with accent color
@@ -2522,6 +2585,7 @@ export function SessionItem({ session, isActive, onClick, onDelete }: SessionIte
 ---
 
 ### Task 7.2: Implement useSessions hook and session lifecycle
+
 **Description**: Build the hook managing session CRUD operations, active session persistence in localStorage, and auto-title generation from first message.
 **Size**: Medium
 **Priority**: Medium
@@ -2559,7 +2623,7 @@ export function useSessions() {
       queryClient.invalidateQueries({ queryKey: ['sessions'] });
       if (activeSessionId === deletedId) {
         // Switch to most recent remaining session
-        const remaining = sessionsQuery.data?.filter(s => s.id !== deletedId);
+        const remaining = sessionsQuery.data?.filter((s) => s.id !== deletedId);
         setActiveSession(remaining?.[0]?.id ?? null);
       }
     },
@@ -2577,12 +2641,14 @@ export function useSessions() {
 ```
 
 **Key Details**:
+
 - Sessions refresh every 30 seconds
 - Active session persisted in localStorage via Zustand store
 - On delete, switches to most recent remaining session
 - Create mutation auto-switches to new session
 
 **Acceptance Criteria**:
+
 - [ ] Sessions list refreshes every 30 seconds
 - [ ] Active session ID persisted in localStorage
 - [ ] Creating a session auto-switches to it
@@ -2592,6 +2658,7 @@ export function useSessions() {
 ---
 
 ### Task 7.3: Implement session memory management
+
 **Description**: Add periodic session health checks that clean up stale sessions from the agent manager to prevent memory leaks.
 **Size**: Small
 **Priority**: Medium
@@ -2604,20 +2671,25 @@ Add a periodic health check interval to the server startup in `src/server/index.
 ```typescript
 // In the start() function, after app.listen():
 // Run session health check every 5 minutes
-setInterval(() => {
-  agentManager.checkSessionHealth();
-}, 5 * 60 * 1000);
+setInterval(
+  () => {
+    agentManager.checkSessionHealth();
+  },
+  5 * 60 * 1000
+);
 ```
 
 The `checkSessionHealth()` method already exists in AgentManager (Task 2.1). This task wires it into the server lifecycle.
 
 **Key Details**:
+
 - Health check runs every 5 minutes
 - Sessions inactive for 30+ minutes are cleaned up
 - Cleaned sessions can be resumed via SDK resume on next message
 - This prevents the known 400MB -> 4GB memory leak issue
 
 **Acceptance Criteria**:
+
 - [ ] Health check interval runs every 5 minutes
 - [ ] Stale sessions (30+ min inactive) removed from memory
 - [ ] Removed sessions can still be resumed via SDK resume
@@ -2626,6 +2698,7 @@ The `checkSessionHealth()` method already exists in AgentManager (Task 2.1). Thi
 ---
 
 ### Task 7.4: Write frontend component tests
+
 **Description**: Test MessageList virtualization, CommandPalette filtering, ToolCallCard rendering, ChatInput behavior, and PermissionBanner visibility.
 **Size**: Medium
 **Priority**: Medium
@@ -2640,34 +2713,40 @@ The `checkSessionHealth()` method already exists in AgentManager (Task 2.1). Thi
 5. `gateway/src/client/components/layout/__tests__/PermissionBanner.test.tsx`
 
 **MessageList Tests**:
+
 - Renders correct number of visible items (not all messages)
 - Auto-scrolls to bottom on new messages
 - Handles empty message list
 
 **ChatInput Tests**:
+
 - Enter key submits (not Shift+Enter)
 - Disabled during loading
 - Auto-resize on multiline input
 - Send button disabled when empty
 
 **ToolCallCard Tests**:
+
 - Shows correct status icon for each status
 - Expand/collapse toggles content visibility
 - Pretty-prints JSON input
 - Shows result section when result exists
 
 **CommandPalette Tests**:
+
 - Filters commands by query text
 - Groups commands by namespace
 - Selection triggers callback
 - Empty state shown when no matches
 
 **PermissionBanner Tests**:
+
 - Returns null for default permission mode
 - Shows red banner for dangerously-skip mode
 - Correct banner text
 
 **Acceptance Criteria**:
+
 - [ ] All test files created
 - [ ] `npm run test:run` passes all frontend tests
 - [ ] Component rendering verified with React Testing Library
@@ -2677,6 +2756,7 @@ The `checkSessionHealth()` method already exists in AgentManager (Task 2.1). Thi
 ---
 
 ### Task 7.5: Create gateway README and update system documentation
+
 **Description**: Write `gateway/README.md` with setup, development, and production instructions. Update `workspace/0-System/README.md` and `.claude/rules/components.md` to reference the gateway.
 **Size**: Small
 **Priority**: Low
@@ -2685,6 +2765,7 @@ The `checkSessionHealth()` method already exists in AgentManager (Task 2.1). Thi
 **Implementation** - Create `gateway/README.md`:
 
 Contents should include:
+
 - Overview: What the gateway is and its purpose
 - Prerequisites: Node.js 20+, npm
 - Quick Start: `cd gateway && npm install && npm run dev`
@@ -2695,10 +2776,12 @@ Contents should include:
 - Environment Variables: GATEWAY_PORT
 
 **Documentation Updates**:
+
 - Update `workspace/0-System/README.md`: Change gateway reference from "Node.js API server (future)" to "Node.js API server - WebUI & channel-agnostic API"
 - Update `.claude/rules/components.md`: Add gateway section with routes, services, and components
 
 **Acceptance Criteria**:
+
 - [ ] `gateway/README.md` exists with setup and usage instructions
 - [ ] All API endpoints documented
 - [ ] Development and production workflows described
@@ -2709,14 +2792,14 @@ Contents should include:
 
 ## Summary
 
-| Phase | Tasks | Description |
-|-------|-------|-------------|
-| Phase 1: Server Foundation | 1.1 - 1.6 | Project setup, shared types, session store, SSE adapter, health route, server entry |
-| Phase 2: SDK Integration | 2.1 - 2.3 | Agent manager, sessions route, server tests |
-| Phase 3: Frontend Foundation | 3.1 - 3.3 | Vite/React scaffold, API client, base layout |
-| Phase 4: Chat UI | 4.1 - 4.5 | Chat hook, message list, message item, chat input, chat panel |
-| Phase 5: Tool Calls | 5.1 - 5.3 | Tool call card, approval flow, permission mode |
-| Phase 6: Slash Commands | 6.1 - 6.5 | Command registry, commands route, useCommands, palette, integration |
-| Phase 7: Session Management | 7.1 - 7.5 | Session sidebar, useSessions, memory management, tests, docs |
+| Phase                        | Tasks     | Description                                                                         |
+| ---------------------------- | --------- | ----------------------------------------------------------------------------------- |
+| Phase 1: Server Foundation   | 1.1 - 1.6 | Project setup, shared types, session store, SSE adapter, health route, server entry |
+| Phase 2: SDK Integration     | 2.1 - 2.3 | Agent manager, sessions route, server tests                                         |
+| Phase 3: Frontend Foundation | 3.1 - 3.3 | Vite/React scaffold, API client, base layout                                        |
+| Phase 4: Chat UI             | 4.1 - 4.5 | Chat hook, message list, message item, chat input, chat panel                       |
+| Phase 5: Tool Calls          | 5.1 - 5.3 | Tool call card, approval flow, permission mode                                      |
+| Phase 6: Slash Commands      | 6.1 - 6.5 | Command registry, commands route, useCommands, palette, integration                 |
+| Phase 7: Session Management  | 7.1 - 7.5 | Session sidebar, useSessions, memory management, tests, docs                        |
 
 **Total Tasks**: 25

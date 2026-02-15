@@ -1,4 +1,4 @@
-export { Badge, badgeVariants } from './badge'
+export { Badge, badgeVariants } from './badge';
 export {
   Dialog,
   DialogPortal,
@@ -10,7 +10,7 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
-} from './dialog'
+} from './dialog';
 export {
   Drawer,
   DrawerPortal,
@@ -22,7 +22,7 @@ export {
   DrawerFooter,
   DrawerTitle,
   DrawerDescription,
-} from './drawer'
+} from './drawer';
 export {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -31,11 +31,11 @@ export {
   DropdownMenuGroup,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
-} from './dropdown-menu'
-export { HoverCard, HoverCardTrigger, HoverCardContent } from './hover-card'
-export { Kbd } from './kbd'
-export { Label } from './label'
-export { PathBreadcrumb } from './path-breadcrumb'
+} from './dropdown-menu';
+export { HoverCard, HoverCardTrigger, HoverCardContent } from './hover-card';
+export { Kbd } from './kbd';
+export { Label } from './label';
+export { PathBreadcrumb } from './path-breadcrumb';
 export {
   ResponsiveDialog,
   ResponsiveDialogTrigger,
@@ -45,7 +45,7 @@ export {
   ResponsiveDialogDescription,
   ResponsiveDialogFooter,
   ResponsiveDialogClose,
-} from './responsive-dialog'
+} from './responsive-dialog';
 export {
   ResponsiveDropdownMenu,
   ResponsiveDropdownMenuTrigger,
@@ -53,7 +53,7 @@ export {
   ResponsiveDropdownMenuLabel,
   ResponsiveDropdownMenuRadioGroup,
   ResponsiveDropdownMenuRadioItem,
-} from './responsive-dropdown-menu'
+} from './responsive-dropdown-menu';
 export {
   Select,
   SelectGroup,
@@ -61,7 +61,7 @@ export {
   SelectTrigger,
   SelectContent,
   SelectItem,
-} from './select'
-export { Separator } from './separator'
-export { Switch } from './switch'
-export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs'
+} from './select';
+export { Separator } from './separator';
+export { Switch } from './switch';
+export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';

@@ -55,19 +55,20 @@ Key deficiencies identified through Jony Ive-lens critique:
 
 ## Technical Dependencies
 
-| Dependency | Version | Status | Purpose |
-|-----------|---------|--------|---------|
-| `motion` | latest | **New install** | Animation library (motion.dev, successor to Framer Motion) |
-| `react` | ^19.0.0 | Installed | UI framework |
-| `tailwindcss` | ^4.0.0 | Installed | CSS framework |
-| `@tanstack/react-virtual` | ^3.11.0 | Installed | Virtual scrolling |
-| `zustand` | ^5.0.0 | Installed | UI state |
-| `streamdown` | latest | Installed | Markdown rendering |
-| `lucide-react` | latest | Installed | Icons |
+| Dependency                | Version | Status          | Purpose                                                    |
+| ------------------------- | ------- | --------------- | ---------------------------------------------------------- |
+| `motion`                  | latest  | **New install** | Animation library (motion.dev, successor to Framer Motion) |
+| `react`                   | ^19.0.0 | Installed       | UI framework                                               |
+| `tailwindcss`             | ^4.0.0  | Installed       | CSS framework                                              |
+| `@tanstack/react-virtual` | ^3.11.0 | Installed       | Virtual scrolling                                          |
+| `zustand`                 | ^5.0.0  | Installed       | UI state                                                   |
+| `streamdown`              | latest  | Installed       | Markdown rendering                                         |
+| `lucide-react`            | latest  | Installed       | Icons                                                      |
 
 ### motion.dev API Reference
 
 Import pattern:
+
 ```tsx
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 ```
@@ -105,38 +106,51 @@ Replace shadcn zinc HSL values with refined neutral palette. Add keyframe animat
 
 **Color token replacements (light mode):**
 
-| Token | Current (zinc) | New (refined neutral) |
-|-------|---------------|----------------------|
-| `--background` | `0 0% 100%` | `0 0% 98%` (#FAFAFA) |
-| `--foreground` | `240 10% 3.9%` | `0 0% 9%` (#171717) |
-| `--muted` | `240 4.8% 95.9%` | `0 0% 96%` (#F5F5F5) |
-| `--muted-foreground` | `240 3.8% 46.1%` | `0 0% 32%` (#525252) |
-| `--border` | `240 5.9% 90%` | `0 0% 83%` (#D4D4D4) |
-| `--ring` | `240 5.9% 10%` | `217 91% 60%` (#3B82F6) |
-| `--accent` | `240 4.8% 95.9%` | `0 0% 96%` (#F5F5F5) |
+| Token                | Current (zinc)   | New (refined neutral)   |
+| -------------------- | ---------------- | ----------------------- |
+| `--background`       | `0 0% 100%`      | `0 0% 98%` (#FAFAFA)    |
+| `--foreground`       | `240 10% 3.9%`   | `0 0% 9%` (#171717)     |
+| `--muted`            | `240 4.8% 95.9%` | `0 0% 96%` (#F5F5F5)    |
+| `--muted-foreground` | `240 3.8% 46.1%` | `0 0% 32%` (#525252)    |
+| `--border`           | `240 5.9% 90%`   | `0 0% 83%` (#D4D4D4)    |
+| `--ring`             | `240 5.9% 10%`   | `217 91% 60%` (#3B82F6) |
+| `--accent`           | `240 4.8% 95.9%` | `0 0% 96%` (#F5F5F5)    |
 
 **Color token replacements (dark mode):**
 
-| Token | Current (zinc) | New (refined neutral) |
-|-------|---------------|----------------------|
-| `--background` | `240 10% 3.9%` | `0 0% 4%` (#0A0A0A) |
-| `--foreground` | `0 0% 98%` | `0 0% 93%` (#EDEDED) |
-| `--muted` | `240 3.7% 15.9%` | `0 0% 9%` (#171717) |
-| `--muted-foreground` | `240 5% 64.9%` | `0 0% 64%` (#A3A3A3) |
-| `--border` | `240 3.7% 15.9%` | `0 0% 25%` (#404040) |
-| `--ring` | `240 4.9% 83.9%` | `213 94% 68%` (#60A5FA) |
+| Token                | Current (zinc)   | New (refined neutral)   |
+| -------------------- | ---------------- | ----------------------- |
+| `--background`       | `240 10% 3.9%`   | `0 0% 4%` (#0A0A0A)     |
+| `--foreground`       | `0 0% 98%`       | `0 0% 93%` (#EDEDED)    |
+| `--muted`            | `240 3.7% 15.9%` | `0 0% 9%` (#171717)     |
+| `--muted-foreground` | `240 5% 64.9%`   | `0 0% 64%` (#A3A3A3)    |
+| `--border`           | `240 3.7% 15.9%` | `0 0% 25%` (#404040)    |
+| `--ring`             | `240 4.9% 83.9%` | `213 94% 68%` (#60A5FA) |
 
 **New keyframes:**
 
 ```css
 @keyframes typing-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 ```
 
@@ -153,7 +167,7 @@ Replace shadcn zinc HSL values with refined neutral palette. Add keyframe animat
 <motion.div
   animate={{ width: sidebarOpen ? 256 : 0 }}
   transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-  className="overflow-hidden flex-shrink-0 border-r"
+  className="flex-shrink-0 overflow-hidden border-r"
 >
   <div className="w-64">
     <SessionSidebar />
@@ -163,12 +177,10 @@ Replace shadcn zinc HSL values with refined neutral palette. Add keyframe animat
 
 ```tsx
 // Empty state when no session selected
-<div className="flex-1 flex items-center justify-center">
+<div className="flex flex-1 items-center justify-center">
   <div className="text-center">
     <p className="text-muted-foreground text-base">New conversation</p>
-    <p className="text-muted-foreground/60 text-sm mt-2">
-      Select a session or start a new one
-    </p>
+    <p className="text-muted-foreground/60 mt-2 text-sm">Select a session or start a new one</p>
   </div>
 </div>
 ```
@@ -184,7 +196,7 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="w-2 h-2 rounded-full bg-muted-foreground/50"
+          className="bg-muted-foreground/50 h-2 w-2 rounded-full"
           style={{ animation: `typing-dot 1.4s ease-in-out ${i * 0.2}s infinite` }}
         />
       ))}
@@ -221,12 +233,12 @@ const handleScroll = () => {
       exit={{ opacity: 0, y: 10 }}
       transition={{ duration: 0.15 }}
       onClick={scrollToBottom}
-      className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-background border shadow-sm p-2"
+      className="bg-background absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border p-2 shadow-sm"
     >
       <ArrowDown className="h-4 w-4" />
     </motion.button>
   )}
-</AnimatePresence>
+</AnimatePresence>;
 ```
 
 **isNew flag:** Pass a flag to `MessageItem` indicating whether a message was added after initial history load. Only messages added via SSE streaming get `isNew={true}`; history messages get `isNew={false}`.
@@ -264,11 +276,9 @@ export function MessageItem({ message, isNew = false }: MessageItemProps) {
 **Hover-reveal timestamps:** Show timestamp on group hover, positioned next to the role label:
 
 ```tsx
-<div className="flex items-center gap-2 mb-1">
-  <span className="text-xs text-muted-foreground font-medium">
-    {isUser ? 'You' : 'Claude'}
-  </span>
-  <span className="text-xs text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors duration-150">
+<div className="mb-1 flex items-center gap-2">
+  <span className="text-muted-foreground text-xs font-medium">{isUser ? 'You' : 'Claude'}</span>
+  <span className="text-muted-foreground/0 group-hover:text-muted-foreground/60 text-xs transition-colors duration-150">
     {formatTime(message.timestamp)}
   </span>
 </div>
@@ -301,12 +311,10 @@ interface StreamingTextProps {
 export function StreamingText({ content, isStreaming = false }: StreamingTextProps) {
   return (
     <div className="relative">
-      <Streamdown shikiTheme={['github-light', 'github-dark']}>
-        {content}
-      </Streamdown>
+      <Streamdown shikiTheme={['github-light', 'github-dark']}>{content}</Streamdown>
       {isStreaming && (
         <span
-          className="inline-block w-0.5 h-[1.1em] bg-foreground/70 align-text-bottom ml-0.5"
+          className="bg-foreground/70 ml-0.5 inline-block h-[1.1em] w-0.5 align-text-bottom"
           style={{ animation: 'blink-cursor 1s step-end infinite' }}
           aria-hidden="true"
         />
@@ -359,9 +367,7 @@ className={cn(
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className="overflow-hidden"
     >
-      <div className="px-3 pb-3 pt-1">
-        {/* content */}
-      </div>
+      <div className="px-3 pt-1 pb-3">{/* content */}</div>
     </motion.div>
   )}
 </AnimatePresence>
@@ -384,11 +390,11 @@ className={cn(
 
 Replace saturated colors with muted variants:
 
-| Status | Current | New |
-|--------|---------|-----|
-| Pending | `bg-yellow-500` | `bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20` |
-| Approved | `bg-green-500` | `bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20` |
-| Denied | `bg-red-500` | `bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20` |
+| Status   | Current         | New                                                                              |
+| -------- | --------------- | -------------------------------------------------------------------------------- |
+| Pending  | `bg-yellow-500` | `bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20`         |
+| Approved | `bg-green-500`  | `bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20` |
+| Denied   | `bg-red-500`    | `bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20`                 |
 
 Add `transition-colors duration-200` for smooth state transitions.
 
@@ -438,7 +444,8 @@ CSS-only animations (typing indicator, streaming cursor) need explicit media que
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  .typing-dot, .streaming-cursor {
+  .typing-dot,
+  .streaming-cursor {
     animation: none !important;
   }
 }
@@ -490,7 +497,12 @@ vi.mock('motion/react', () => ({
 ```tsx
 // Purpose: Verify entrance animation only fires for new messages
 it('applies initial animation props when isNew is true', () => {
-  const msg = { id: '1', role: 'assistant' as const, content: 'Hi', timestamp: new Date().toISOString() };
+  const msg = {
+    id: '1',
+    role: 'assistant' as const,
+    content: 'Hi',
+    timestamp: new Date().toISOString(),
+  };
   const { container } = render(<MessageItem message={msg} isNew={true} />);
   // With mocked motion.div, verify the component renders without errors
   expect(screen.getByText('Claude')).toBeDefined();
@@ -507,10 +519,15 @@ it('renders timestamp element', () => {
 
 // Purpose: Verify Claude avatar uses terracotta color, not orange-500
 it('renders Claude avatar with terracotta color', () => {
-  const msg = { id: '1', role: 'assistant' as const, content: 'Hi', timestamp: new Date().toISOString() };
+  const msg = {
+    id: '1',
+    role: 'assistant' as const,
+    content: 'Hi',
+    timestamp: new Date().toISOString(),
+  };
   const { container } = render(<MessageItem message={msg} />);
-  const avatar = container.querySelector('[style*="C2724E"]') ||
-                 container.querySelector('.bg-\\[\\#C2724E\\]');
+  const avatar =
+    container.querySelector('[style*="C2724E"]') || container.querySelector('.bg-\\[\\#C2724E\\]');
   // Verify orange-500 is no longer used
   expect(container.querySelector('.bg-orange-500')).toBeNull();
 });
@@ -522,8 +539,10 @@ it('renders Claude avatar with terracotta color', () => {
 // Purpose: Verify streaming cursor appears when isStreaming is true
 it('shows cursor when streaming', () => {
   render(<StreamingText content="Hello" isStreaming={true} />);
-  expect(screen.getByRole('presentation', { hidden: true }) ||
-    document.querySelector('[aria-hidden="true"]')).toBeDefined();
+  expect(
+    screen.getByRole('presentation', { hidden: true }) ||
+      document.querySelector('[aria-hidden="true"]')
+  ).toBeDefined();
 });
 
 // Purpose: Verify cursor is hidden when not streaming

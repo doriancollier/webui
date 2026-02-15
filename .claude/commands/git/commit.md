@@ -13,14 +13,15 @@ Stage and commit changes after validating that there are no lint or type errors.
 
 Parse `$ARGUMENTS` for these optional flags:
 
-| Argument | Effect |
-|----------|--------|
+| Argument       | Effect                                                 |
+| -------------- | ------------------------------------------------------ |
 | `-m "message"` | Use provided commit message instead of auto-generating |
-| `--amend` | Amend the previous commit instead of creating new one |
-| `--no-verify` | Skip lint and typecheck validation |
-| `<files...>` | Stage only specified files (default: all changes) |
+| `--amend`      | Amend the previous commit instead of creating new one  |
+| `--no-verify`  | Skip lint and typecheck validation                     |
+| `<files...>`   | Stage only specified files (default: all changes)      |
 
 **Examples:**
+
 - `/git:commit` — Auto-generate message, stage all, validate
 - `/git:commit -m "fix: resolve auth race condition"` — Use provided message
 - `/git:commit --amend` — Amend previous commit
@@ -32,6 +33,7 @@ Parse `$ARGUMENTS` for these optional flags:
 ### Step 0: Parse Arguments
 
 Extract flags from `$ARGUMENTS`:
+
 - Check for `-m "..."` or `-m '...'` — store as `USER_MESSAGE`
 - Check for `--amend` flag — store as `AMEND=true`
 - Check for `--no-verify` flag — store as `SKIP_VERIFY=true`
@@ -73,11 +75,13 @@ git diff
 Stage changes for commit:
 
 **If specific files were provided:**
+
 ```bash
 git add <files...>
 ```
 
 **Otherwise, stage all changes:**
+
 ```bash
 git add -A
 ```
@@ -105,6 +109,7 @@ Otherwise, analyze the staged changes and generate an appropriate commit message
 ### Step 6: Create Commit
 
 **If `--amend` flag was provided:**
+
 ```bash
 git commit --amend -m "$(cat <<'EOF'
 <commit message here>
@@ -116,6 +121,7 @@ EOF
 ```
 
 **Otherwise, create a new commit:**
+
 ```bash
 git commit -m "$(cat <<'EOF'
 <commit message here>

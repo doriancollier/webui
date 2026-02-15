@@ -19,18 +19,20 @@ function LinkSafetyModal({ url, isOpen, onClose, onConfirm }: LinkSafetyModalPro
       className="fixed inset-0 z-50 flex items-center justify-center"
       data-streamdown="link-safety-modal"
       onClick={onClose}
-      onKeyDown={(e) => { if (e.key === 'Escape') onClose(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
       role="button"
       tabIndex={0}
     >
       <div
-        className="relative mx-4 flex w-full max-w-md flex-col gap-4 rounded-xl border bg-background p-6 shadow-lg"
+        className="bg-background relative mx-4 flex w-full max-w-md flex-col gap-4 rounded-xl border p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
         role="presentation"
       >
         <button
-          className="absolute top-4 right-4 rounded-md p-1 text-muted-foreground transition-all hover:bg-muted hover:text-foreground"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-4 right-4 rounded-md p-1 transition-all"
           onClick={onClose}
           title="Close"
           type="button"
@@ -38,7 +40,7 @@ function LinkSafetyModal({ url, isOpen, onClose, onConfirm }: LinkSafetyModalPro
           <X size={16} />
         </button>
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2 font-semibold text-lg">
+          <div className="flex items-center gap-2 text-lg font-semibold">
             <ExternalLink size={20} />
             <span>Open external link?</span>
           </div>
@@ -46,20 +48,21 @@ function LinkSafetyModal({ url, isOpen, onClose, onConfirm }: LinkSafetyModalPro
             You&apos;re about to visit an external website.
           </p>
         </div>
-        <div className="break-all rounded-md bg-muted p-3 font-mono text-sm">
-          {url}
-        </div>
+        <div className="bg-muted rounded-md p-3 font-mono text-sm break-all">{url}</div>
         <div className="flex gap-3">
           <button
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors hover:bg-muted"
-            onClick={() => { navigator.clipboard.writeText(url); onClose(); }}
+            className="hover:bg-muted flex flex-1 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-medium transition-colors"
+            onClick={() => {
+              navigator.clipboard.writeText(url);
+              onClose();
+            }}
             type="button"
           >
             <Copy size={14} />
             Copy link
           </button>
           <button
-            className="flex flex-1 items-center justify-center gap-2 rounded-lg bg-foreground px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-foreground/90"
+            className="bg-foreground text-background hover:bg-foreground/90 flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors"
             onClick={onConfirm}
             type="button"
           >
@@ -69,7 +72,7 @@ function LinkSafetyModal({ url, isOpen, onClose, onConfirm }: LinkSafetyModalPro
         </div>
       </div>
     </div>,
-    document.body,
+    document.body
   );
 }
 

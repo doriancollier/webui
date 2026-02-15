@@ -4,47 +4,47 @@
  * Enforces file access restrictions based on deny patterns from settings.json
  */
 
-import { readFileSync, existsSync } from 'fs'
-import path from 'path'
+import { readFileSync, existsSync } from 'fs';
+import path from 'path';
 
-const { resolve, relative, isAbsolute, basename } = path
+const { resolve, relative, isAbsolute, basename } = path;
 
 // Read JSON from stdin
 async function readStdin() {
   return new Promise((resolve) => {
-    let data = ''
-    process.stdin.setEncoding('utf8')
+    let data = '';
+    process.stdin.setEncoding('utf8');
     process.stdin.on('readable', () => {
-      let chunk
+      let chunk;
       while ((chunk = process.stdin.read()) !== null) {
-        data += chunk
+        data += chunk;
       }
-    })
+    });
     process.stdin.on('end', () => {
-      resolve(data)
-    })
-  })
+      resolve(data);
+    });
+  });
 }
 
 // Load deny patterns from settings.json
 function loadDenyPatterns() {
-  const settingsPath = resolve(process.cwd(), '.claude/settings.json')
+  const settingsPath = resolve(process.cwd(), '.claude/settings.json');
   if (!existsSync(settingsPath)) {
-    return []
+    return [];
   }
   try {
-    const settings = JSON.parse(readFileSync(settingsPath, 'utf8'))
-    return settings.permissions?.deny || []
+    const settings = JSON.parse(readFileSync(settingsPath, 'utf8'));
+    return settings.permissions?.deny || [];
   } catch {
-    return []
+    return [];
   }
 }
 
 // Extract file paths from bash command
 function extractPathsFromBashCommand(command) {
-  if (!command) return []
+  if (!command) return [];
 
-  const paths = []
+  const paths = [];
 
   // Common file-related commands and their argument patterns
   const patterns = [
@@ -58,13 +58,13 @@ function extractPathsFromBashCommand(command) {
     /[<>]\s*["']?([^\s|><;"'&]+)["']?/g,
     // File paths that look like paths
     /(?:^|\s)["']?((?:\.{1,2}\/|\/)[^\s|><;"'&]+)["']?/g,
-  ]
+  ];
 
   for (const pattern of patterns) {
-    let match
+    let match;
     while ((match = pattern.exec(command)) !== null) {
       if (match[1]) {
-        paths.push(match[1])
+        paths.push(match[1]);
       }
     }
   }
@@ -74,97 +74,97 @@ function extractPathsFromBashCommand(command) {
     /find\s+.*\|\s*xargs\s+.*(?:cat|head|tail|less)/i,
     /xargs\s+.*(?:cat|head|tail|less)/i,
     /(?:cat|head|tail)\s+.*\*.*\.(?:env|key|pem)/i,
-  ]
+  ];
 
   for (const pattern of sensitivePatterns) {
     if (pattern.test(command)) {
-      console.error('⚠️  Detected potentially sensitive pipeline pattern')
+      console.error('⚠️  Detected potentially sensitive pipeline pattern');
       // Don't extract paths but flag for review
     }
   }
 
-  return paths
+  return paths;
 }
 
 // Normalize path relative to cwd
 function normalizePath(filePath, cwd) {
-  if (!filePath) return null
+  if (!filePath) return null;
 
   // Handle absolute paths
   if (isAbsolute(filePath)) {
-    return relative(cwd, filePath) || filePath
+    return relative(cwd, filePath) || filePath;
   }
 
   // Handle relative paths - keep as-is but normalize
-  return filePath.replace(/^\.\//, '')
+  return filePath.replace(/^\.\//, '');
 }
 
 // Match a file path against a glob pattern (no external deps)
 function matchesPattern(filePath, pattern) {
   // Exact match (e.g. ".env")
-  if (filePath === pattern || basename(filePath) === pattern) return true
+  if (filePath === pattern || basename(filePath) === pattern) return true;
 
   // Use Node 22+ path.matchesGlob if available
   if (typeof path.matchesGlob === 'function') {
-    return path.matchesGlob(filePath, pattern)
+    return path.matchesGlob(filePath, pattern);
   }
 
   // Fallback: convert glob to regex
   const regex = new RegExp(
     '^' +
-    pattern
-      .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-      .replace(/\*\*/g, '{{GLOBSTAR}}')
-      .replace(/\*/g, '[^/]*')
-      .replace(/\{\{GLOBSTAR\}\}/g, '.*')
-      .replace(/\?/g, '[^/]') +
-    '$'
-  )
-  return regex.test(filePath)
+      pattern
+        .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+        .replace(/\*\*/g, '{{GLOBSTAR}}')
+        .replace(/\*/g, '[^/]*')
+        .replace(/\{\{GLOBSTAR\}\}/g, '.*')
+        .replace(/\?/g, '[^/]') +
+      '$'
+  );
+  return regex.test(filePath);
 }
 
 // Check if path matches any deny pattern
 function isDenied(filePath, denyPatterns) {
-  if (!filePath) return false
+  if (!filePath) return false;
 
-  const normalized = filePath.replace(/^\.\//, '')
+  const normalized = filePath.replace(/^\.\//, '');
 
   for (const pattern of denyPatterns) {
-    if (matchesPattern(normalized, pattern)) return true
+    if (matchesPattern(normalized, pattern)) return true;
   }
-  return false
+  return false;
 }
 
 async function main() {
   try {
-    const input = await readStdin()
+    const input = await readStdin();
     if (!input.trim()) {
-      process.exit(0)
+      process.exit(0);
     }
 
-    const payload = JSON.parse(input)
-    const toolName = payload.tool_name
-    const toolInput = payload.tool_input || {}
-    const cwd = process.cwd()
+    const payload = JSON.parse(input);
+    const toolName = payload.tool_name;
+    const toolInput = payload.tool_input || {};
+    const cwd = process.cwd();
 
     // Load deny patterns
-    const denyPatterns = loadDenyPatterns()
+    const denyPatterns = loadDenyPatterns();
 
     // Collect paths to check
-    const pathsToCheck = []
+    const pathsToCheck = [];
 
     // Extract file_path from tool_input (Read, Write, Edit, MultiEdit)
     if (toolInput.file_path) {
-      pathsToCheck.push(normalizePath(toolInput.file_path, cwd))
+      pathsToCheck.push(normalizePath(toolInput.file_path, cwd));
     }
 
     // For Bash commands, extract paths from the command string
     if (toolName === 'Bash' && toolInput.command) {
-      const extractedPaths = extractPathsFromBashCommand(toolInput.command)
+      const extractedPaths = extractPathsFromBashCommand(toolInput.command);
       for (const p of extractedPaths) {
-        const normalized = normalizePath(p, cwd)
+        const normalized = normalizePath(p, cwd);
         if (normalized) {
-          pathsToCheck.push(normalized)
+          pathsToCheck.push(normalized);
         }
       }
     }
@@ -172,19 +172,18 @@ async function main() {
     // Check each path against deny patterns
     for (const path of pathsToCheck) {
       if (path && isDenied(path, denyPatterns)) {
-        console.error(`🚫 Access denied: ${path}`)
-        console.error(`   Matches deny pattern in .claude/settings.json`)
-        process.exit(2)
+        console.error(`🚫 Access denied: ${path}`);
+        console.error(`   Matches deny pattern in .claude/settings.json`);
+        process.exit(2);
       }
     }
 
     // All paths allowed
-    process.exit(0)
-
+    process.exit(0);
   } catch (error) {
-    console.error(`❌ File guard error: ${error.message}`)
-    process.exit(0) // Don't block on errors, just warn
+    console.error(`❌ File guard error: ${error.message}`);
+    process.exit(0); // Don't block on errors, just warn
   }
 }
 
-main()
+main();

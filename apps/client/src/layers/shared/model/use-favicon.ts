@@ -68,7 +68,9 @@ export function useFavicon({ cwd, isStreaming }: UseFaviconOptions) {
       }
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [cwd, startPulsing]);
 
   // React to streaming state changes

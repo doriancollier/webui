@@ -1,12 +1,13 @@
 ---
 description: Inspect database schema and data directly via MCP tools
-argument-hint: "[table-or-query]"
+argument-hint: '[table-or-query]'
 allowed-tools: Read, Grep, Glob, TodoWrite, AskUserQuestion, mcp__mcp-dev-db__health, mcp__mcp-dev-db__get_schema_overview, mcp__mcp-dev-db__get_table_details, mcp__mcp-dev-db__execute_sql_select, mcp__mcp-dev-db__explain_query, mcp__mcp-dev-db__validate_sql
 ---
 
 # Database Data Debugging
 
 Inspect and verify database state directly using MCP database tools. Use this command to:
+
 - View schema structure and relationships
 - Verify data exists after mutations
 - Debug "data not showing" issues
@@ -16,12 +17,14 @@ Inspect and verify database state directly using MCP database tools. Use this co
 ## Prerequisites
 
 This command requires the MCP database server to be enabled:
+
 1. Add `MCP_DEV_ONLY_DB_ACCESS=true` to `.env.local`
 2. Restart the dev server
 
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If a table name is provided, inspect that specific table
 - If a SQL query is provided, execute it
 - If empty, show schema overview and prompt for action
@@ -35,6 +38,7 @@ mcp__mcp-dev-db__health: {}
 ```
 
 If health check fails, inform user:
+
 - Check that dev server is running (`pnpm dev`)
 - Verify `MCP_DEV_ONLY_DB_ACCESS=true` is in `.env.local`
 - Ensure request is from localhost
@@ -50,6 +54,7 @@ mcp__mcp-dev-db__get_schema_overview: {}
 ```
 
 Present the tables and ask:
+
 ```
 AskUserQuestion:
   question: "What would you like to inspect?"
@@ -74,6 +79,7 @@ mcp__mcp-dev-db__get_table_details: { table: "[table_name]" }
 ```
 
 This returns:
+
 - Column definitions (name, type, nullable, default)
 - Indexes (name, columns, unique, primary)
 - Constraints
@@ -112,6 +118,7 @@ AskUserQuestion:
 ### 3.2 Query Execution
 
 For SELECT queries:
+
 1. Validate SQL syntax first
 2. Add reasonable LIMIT if not present (default 100)
 3. Execute and display results
@@ -128,6 +135,7 @@ When user suspects data should exist but isn't appearing:
    - What are the identifying fields (ID, name, etc.)?
 
 2. **Query to verify existence**
+
    ```sql
    SELECT * FROM [table] WHERE [identifier] = '[value]' LIMIT 10
    ```
@@ -149,6 +157,7 @@ After a create/update/delete operation:
    - What was the expected change?
 
 2. **Query to verify**
+
    ```sql
    SELECT * FROM [table] WHERE [condition] ORDER BY updated_at DESC LIMIT 5
    ```
@@ -162,11 +171,13 @@ After a create/update/delete operation:
 To verify relationships are correct:
 
 1. **Check parent record exists**
+
    ```sql
    SELECT * FROM [parent_table] WHERE id = '[parent_id]'
    ```
 
 2. **Check child records link correctly**
+
    ```sql
    SELECT * FROM [child_table] WHERE [foreign_key] = '[parent_id]'
    ```
@@ -187,6 +198,7 @@ mcp__mcp-dev-db__explain_query: { sql: "[SELECT query]" }
 ```
 
 Interpret the EXPLAIN output:
+
 - **Seq Scan** → Consider adding an index
 - **High cost** → Query may be slow at scale
 - **Nested Loop** → Check for N+1 patterns
@@ -199,16 +211,18 @@ Interpret the EXPLAIN output:
 ```markdown
 ## Database Schema Overview
 
-| Table | Rows | Columns | Primary Key |
-|-------|------|---------|-------------|
-| users | 150 | 8 | id |
-| posts | 1,234 | 12 | id |
+| Table | Rows  | Columns | Primary Key |
+| ----- | ----- | ------- | ----------- |
+| users | 150   | 8       | id          |
+| posts | 1,234 | 12      | id          |
+
 ...
 
 ### Foreign Key Relationships
+
 - posts.author_id → users.id
 - comments.post_id → posts.id
-...
+  ...
 ```
 
 ### Table Details
@@ -219,16 +233,21 @@ Interpret the EXPLAIN output:
 **Row Count**: [count]
 
 ### Columns
+
 | Name | Type | Nullable | Default |
-|------|------|----------|---------|
+| ---- | ---- | -------- | ------- |
+
 ...
 
 ### Indexes
+
 | Name | Columns | Unique | Primary |
-|------|---------|--------|---------|
+| ---- | ------- | ------ | ------- |
+
 ...
 
 ### Sample Data
+
 [First 5 rows as table]
 ```
 

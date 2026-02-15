@@ -50,6 +50,7 @@ setShowStatusBarSound: (v) => {
 ```
 
 Add to `resetPreferences()`:
+
 - In the localStorage removal block: `localStorage.removeItem('gateway-enable-notification-sound');` and `localStorage.removeItem('gateway-show-status-bar-sound');`
 - In the `set()` call: `enableNotificationSound: true, showStatusBarSound: true,`
 
@@ -65,7 +66,10 @@ showStatusBarSound, setShowStatusBarSound,
 **Preferences tab** — add after the "Task celebrations" SettingRow:
 
 ```tsx
-<SettingRow label="Notification sound" description="Play a sound when AI finishes responding (3s+ responses)">
+<SettingRow
+  label="Notification sound"
+  description="Play a sound when AI finishes responding (3s+ responses)"
+>
   <Switch checked={enableNotificationSound} onCheckedChange={setEnableNotificationSound} />
 </SettingRow>
 ```
@@ -91,6 +95,7 @@ showStatusBarSound, setShowStatusBarSound,
 ### Sound file
 
 Create or place a notification sound file at `apps/client/public/notification.mp3`. This should be a short (~250ms) two-tone chime. Options:
+
 1. Write a generation script at `apps/client/scripts/generate-notification-sound.ts` that synthesizes a WAV using OfflineAudioContext (880Hz A5 + 1047Hz C6, fast attack, exponential decay)
 2. Or create a minimal placeholder audio file
 
@@ -119,6 +124,7 @@ export function playNotificationSound(): void {
 ```
 
 Key design decisions:
+
 - Singleton `Audio` instance — reused across plays, only one HTTP request ever
 - `currentTime = 0` — allows rapid re-triggering if needed
 - `.play().catch()` — handles autoplay policy rejection silently
@@ -195,17 +201,33 @@ const enableNotificationSound = useAppStore((s) => s.enableNotificationSound);
 Add `onStreamingDone` to the `useChatSession` options object:
 
 ```typescript
-const { messages, input, setInput, handleSubmit, status, error, sessionBusy, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens, isTextStreaming, isWaitingForUser, waitingType, activeInteraction } =
-  useChatSession(sessionId, {
-    transformContent,
-    onTaskEvent: handleTaskEventWithCelebrations,
-    onSessionIdChange: setSessionId,
-    onStreamingDone: useCallback(() => {
-      if (enableNotificationSound) {
-        playNotificationSound();
-      }
-    }, [enableNotificationSound]),
-  });
+const {
+  messages,
+  input,
+  setInput,
+  handleSubmit,
+  status,
+  error,
+  sessionBusy,
+  stop,
+  isLoadingHistory,
+  sessionStatus,
+  streamStartTime,
+  estimatedTokens,
+  isTextStreaming,
+  isWaitingForUser,
+  waitingType,
+  activeInteraction,
+} = useChatSession(sessionId, {
+  transformContent,
+  onTaskEvent: handleTaskEventWithCelebrations,
+  onSessionIdChange: setSessionId,
+  onStreamingDone: useCallback(() => {
+    if (enableNotificationSound) {
+      playNotificationSound();
+    }
+  }, [enableNotificationSound]),
+});
 ```
 
 ---
@@ -303,7 +325,10 @@ const mockAudioInstance = {
   currentTime: 0,
 };
 
-vi.stubGlobal('Audio', vi.fn(() => mockAudioInstance));
+vi.stubGlobal(
+  'Audio',
+  vi.fn(() => mockAudioInstance)
+);
 
 beforeEach(async () => {
   vi.clearAllMocks();
@@ -392,7 +417,9 @@ Add these tests to the existing `apps/client/src/components/settings/__tests__/S
 it('renders "Notification sound" toggle in Preferences tab', () => {
   render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: Wrapper });
   expect(screen.getByText('Notification sound')).toBeInTheDocument();
-  expect(screen.getByText('Play a sound when AI finishes responding (3s+ responses)')).toBeInTheDocument();
+  expect(
+    screen.getByText('Play a sound when AI finishes responding (3s+ responses)')
+  ).toBeInTheDocument();
 });
 
 it('renders "Show sound toggle" in Status Bar tab', () => {
@@ -418,14 +445,17 @@ it('fires onStreamingDone when done event received after 3+ seconds', async () =
     }),
   });
 
-  const { result } = renderHook(
-    () => useChatSession('test-session', { onStreamingDone }),
-    { wrapper: createWrapper(transport) },
-  );
+  const { result } = renderHook(() => useChatSession('test-session', { onStreamingDone }), {
+    wrapper: createWrapper(transport),
+  });
 
   // Set input and submit
-  act(() => { result.current.setInput('Hello'); });
-  act(() => { result.current.handleSubmit(); });
+  act(() => {
+    result.current.setInput('Hello');
+  });
+  act(() => {
+    result.current.handleSubmit();
+  });
 
   // Simulate 4 seconds passing by manipulating Date.now
   const originalNow = Date.now;
@@ -454,13 +484,16 @@ it('does NOT fire onStreamingDone for responses under 3 seconds', async () => {
     }),
   });
 
-  const { result } = renderHook(
-    () => useChatSession('test-session', { onStreamingDone }),
-    { wrapper: createWrapper(transport) },
-  );
+  const { result } = renderHook(() => useChatSession('test-session', { onStreamingDone }), {
+    wrapper: createWrapper(transport),
+  });
 
-  act(() => { result.current.setInput('Hello'); });
-  act(() => { result.current.handleSubmit(); });
+  act(() => {
+    result.current.setInput('Hello');
+  });
+  act(() => {
+    result.current.handleSubmit();
+  });
 
   // Simulate only 1 second passing
   const originalNow = Date.now;

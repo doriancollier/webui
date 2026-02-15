@@ -6,7 +6,7 @@
  */
 export function fuzzyMatch(
   query: string,
-  target: string,
+  target: string
 ): { match: boolean; score: number; indices: number[] } {
   if (!query) return { match: true, score: 0, indices: [] };
 

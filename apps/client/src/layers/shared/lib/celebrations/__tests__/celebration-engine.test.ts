@@ -62,7 +62,11 @@ describe('CelebrationEngine', () => {
   });
 
   it('debounces rapid completions', () => {
-    const config = createConfig({ debounceThreshold: 3, debounceWindowMs: 2000, miniProbability: 0 });
+    const config = createConfig({
+      debounceThreshold: 3,
+      debounceWindowMs: 2000,
+      miniProbability: 0,
+    });
     const engine = new CelebrationEngine(config);
     const tasks = makeTasks(['completed', 'pending', 'pending', 'pending']);
     engine.onTaskCompleted('1', tasks);
@@ -71,9 +75,7 @@ describe('CelebrationEngine', () => {
     expect(config.onCelebrate).not.toHaveBeenCalled();
     vi.advanceTimersByTime(2000);
     expect(config.onCelebrate).toHaveBeenCalledOnce();
-    expect(config.onCelebrate).toHaveBeenCalledWith(
-      expect.objectContaining({ level: 'mini' })
-    );
+    expect(config.onCelebrate).toHaveBeenCalledWith(expect.objectContaining({ level: 'mini' }));
   });
 
   it('queues celebrations when idle', () => {
@@ -102,9 +104,7 @@ describe('CelebrationEngine', () => {
     engine.onTaskCompleted('2', makeTasks(['completed', 'completed']));
     engine.setIdle(false);
     engine.onUserReturn();
-    expect(config.onCelebrate).toHaveBeenCalledWith(
-      expect.objectContaining({ level: 'major' })
-    );
+    expect(config.onCelebrate).toHaveBeenCalledWith(expect.objectContaining({ level: 'major' }));
   });
 
   it('cleans up on destroy', () => {

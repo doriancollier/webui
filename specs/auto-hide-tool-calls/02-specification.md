@@ -41,11 +41,11 @@ Users want a cleaner chat experience where tool calls are visible while they exe
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| `motion` | ^12.33.0 | `AnimatePresence` for exit animations, `motion.div` for animated wrappers |
-| `zustand` | (existing) | Store for `autoHideToolCalls` preference with localStorage persistence |
-| `@tanstack/react-query` | (existing) | Not directly affected — tool call state is in `useChatSession` hook |
+| Dependency              | Version    | Purpose                                                                   |
+| ----------------------- | ---------- | ------------------------------------------------------------------------- |
+| `motion`                | ^12.33.0   | `AnimatePresence` for exit animations, `motion.div` for animated wrappers |
+| `zustand`               | (existing) | Store for `autoHideToolCalls` preference with localStorage persistence    |
+| `@tanstack/react-query` | (existing) | Not directly affected — tool call state is in `useChatSession` hook       |
 
 No new dependencies required. All animation capabilities are already available via the existing `motion` package.
 
@@ -80,6 +80,7 @@ setAutoHideToolCalls: (v) => {
 ```
 
 Update `resetPreferences()` to include:
+
 - `localStorage.removeItem('gateway-auto-hide-tool-calls')` in the try block
 - `autoHideToolCalls: true` in the `set()` call (reset to default ON)
 
@@ -90,7 +91,10 @@ Update `resetPreferences()` to include:
 Add after the "Expand tool calls" row:
 
 ```tsx
-<SettingRow label="Auto-hide tool calls" description="Fade out completed tool calls after a few seconds">
+<SettingRow
+  label="Auto-hide tool calls"
+  description="Fade out completed tool calls after a few seconds"
+>
   <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
 </SettingRow>
 ```
@@ -104,10 +108,7 @@ Destructure `autoHideToolCalls` and `setAutoHideToolCalls` from `useAppStore()`.
 A small hook encapsulates the visibility + timer logic for each tool call part:
 
 ```typescript
-function useToolCallVisibility(
-  status: string,
-  autoHide: boolean,
-): boolean {
+function useToolCallVisibility(status: string, autoHide: boolean): boolean {
   // Track initial status on mount — if already 'complete', it's from history
   const initialStatusRef = useRef(status);
   const [visible, setVisible] = useState(
@@ -118,11 +119,7 @@ function useToolCallVisibility(
   useEffect(() => {
     // Only trigger timer when status transitions TO 'complete' during session
     // (not when it was already complete on mount)
-    if (
-      autoHide &&
-      status === 'complete' &&
-      initialStatusRef.current !== 'complete'
-    ) {
+    if (autoHide && status === 'complete' && initialStatusRef.current !== 'complete') {
       const timer = setTimeout(() => setVisible(false), 5_000);
       return () => clearTimeout(timer);
     }
@@ -136,6 +133,7 @@ function useToolCallVisibility(
 ```
 
 **Key behaviors:**
+
 - `initialStatusRef` captures status on mount. If it's `'complete'`, this tool call came from history.
 - History tool calls: `visible` starts as `false` → never rendered, no animation.
 - Live tool calls: `visible` starts as `true`, transitions to `false` after 5s post-completion.
@@ -178,7 +176,7 @@ import { AnimatePresence } from 'motion/react';
       )}
     </AnimatePresence>
   );
-})()
+})();
 ```
 
 **Important:** Hooks can't be called inside `map()` directly. The tool call rendering for non-interactive parts must be extracted to a small wrapper component:
@@ -236,15 +234,15 @@ return (
 
 ### 6.5 Animation Details
 
-| Property | Value | Rationale |
-|----------|-------|-----------|
-| Exit height | `0` | Collapses the card's space smoothly |
-| Exit opacity | `0` | Fades out simultaneously with collapse |
-| Duration | `0.3s` | Matches existing ToolCallCard expand/collapse |
-| Easing | `[0.4, 0, 0.2, 1]` | Matches existing ease curve in codebase |
-| `overflow` | `hidden` | Prevents content from bleeding during collapse |
-| `initial` | none (not set) | Tool calls appear instantly as today |
-| `layout` | not used | Would conflict with TanStack Virtual positioning |
+| Property     | Value              | Rationale                                        |
+| ------------ | ------------------ | ------------------------------------------------ |
+| Exit height  | `0`                | Collapses the card's space smoothly              |
+| Exit opacity | `0`                | Fades out simultaneously with collapse           |
+| Duration     | `0.3s`             | Matches existing ToolCallCard expand/collapse    |
+| Easing       | `[0.4, 0, 0.2, 1]` | Matches existing ease curve in codebase          |
+| `overflow`   | `hidden`           | Prevents content from bleeding during collapse   |
+| `initial`    | none (not set)     | Tool calls appear instantly as today             |
+| `layout`     | not used           | Would conflict with TanStack Virtual positioning |
 
 **Reduced motion:** The existing `<MotionConfig reducedMotion="user">` wrapper in `App.tsx` causes motion to skip animations when `prefers-reduced-motion` is active. Tool calls will simply disappear instantly (duration: 0).
 
@@ -272,22 +270,26 @@ SSE stream delivers tool_call_end event
 ## 7. User Experience
 
 ### Discovery
+
 - "Auto-hide tool calls" toggle in Settings dialog, under Preferences section
 - Positioned after "Expand tool calls" (related settings grouped together)
 - Default: ON
 
 ### During Streaming
+
 1. Tool call appears (pending → running) — visible with spinner icon
 2. Tool call completes (running → complete) — green checkmark appears
 3. After 5 seconds — card smoothly fades out and collapses (300ms animation)
 4. Space reclaimed — subsequent content shifts up smoothly
 
 ### Viewing History
+
 - When opening a session with auto-hide ON: completed tool calls are not shown
 - Only text content and any pending/running/error tool calls are visible
 - Interactive tools (approval prompts, questions) always visible regardless of setting
 
 ### Toggling the Setting
+
 - Turning OFF: All tool calls immediately become visible (no animation needed)
 - Turning ON: Already-visible tool calls remain until the page re-renders or session reloads; currently-fading tool calls complete their exit
 
@@ -377,13 +379,13 @@ This means exit animations are invisible in tests — elements are immediately p
 
 ## 9. Performance Considerations
 
-| Concern | Assessment | Mitigation |
-|---------|-----------|------------|
-| setTimeout per tool call | Negligible — each tool call creates one timer | Timers are cleaned up on unmount via useEffect return |
-| AnimatePresence overhead | Minimal — wraps individual tool calls, not the whole list | Only active when `visible` transitions; no-op when already hidden |
-| Re-renders from `setVisible` | One re-render per tool call when timer fires | Isolated to the `AutoHideToolCall` component, doesn't propagate to MessageList |
-| TanStack Virtual interaction | No conflict — animation happens inside message items | Virtual scroller measures items after animation completes; height change is smooth |
-| Memory from hidden tool calls | Tool call data remains in state, only rendering is suppressed | Same as today — message data is not garbage collected until session changes |
+| Concern                       | Assessment                                                    | Mitigation                                                                         |
+| ----------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| setTimeout per tool call      | Negligible — each tool call creates one timer                 | Timers are cleaned up on unmount via useEffect return                              |
+| AnimatePresence overhead      | Minimal — wraps individual tool calls, not the whole list     | Only active when `visible` transitions; no-op when already hidden                  |
+| Re-renders from `setVisible`  | One re-render per tool call when timer fires                  | Isolated to the `AutoHideToolCall` component, doesn't propagate to MessageList     |
+| TanStack Virtual interaction  | No conflict — animation happens inside message items          | Virtual scroller measures items after animation completes; height change is smooth |
+| Memory from hidden tool calls | Tool call data remains in state, only rendering is suppressed | Same as today — message data is not garbage collected until session changes        |
 
 ## 10. Security Considerations
 
@@ -428,10 +430,10 @@ None — all clarifications from ideation have been resolved:
 
 ## 15. Files Modified
 
-| File | Action | Description |
-|------|--------|-------------|
-| `apps/client/src/stores/app-store.ts` | Modify | Add `autoHideToolCalls` state, setter, localStorage, resetPreferences |
-| `apps/client/src/components/settings/SettingsDialog.tsx` | Modify | Add toggle row for auto-hide setting |
-| `apps/client/src/components/chat/MessageItem.tsx` | Modify | Add `useToolCallVisibility` hook, `AutoHideToolCall` wrapper, AnimatePresence import |
-| `apps/client/src/stores/__tests__/app-store.test.ts` | Modify | Test default=true, persistence, reset behavior |
-| `apps/client/src/components/chat/__tests__/MessageItem.test.tsx` | Modify | Test history hiding, live fade-out, error persistence, setting toggle |
+| File                                                             | Action | Description                                                                          |
+| ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------ |
+| `apps/client/src/stores/app-store.ts`                            | Modify | Add `autoHideToolCalls` state, setter, localStorage, resetPreferences                |
+| `apps/client/src/components/settings/SettingsDialog.tsx`         | Modify | Add toggle row for auto-hide setting                                                 |
+| `apps/client/src/components/chat/MessageItem.tsx`                | Modify | Add `useToolCallVisibility` hook, `AutoHideToolCall` wrapper, AnimatePresence import |
+| `apps/client/src/stores/__tests__/app-store.test.ts`             | Modify | Test default=true, persistence, reset behavior                                       |
+| `apps/client/src/components/chat/__tests__/MessageItem.test.tsx` | Modify | Test history hiding, live fade-out, error persistence, setting toggle                |

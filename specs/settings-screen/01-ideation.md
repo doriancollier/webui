@@ -16,6 +16,7 @@ slug: settings-screen
 **Task brief:** Add a settings screen accessible via a gear icon in the sidebar footer (left of attribution text). Opens a responsive dialog (Dialog on desktop, Drawer on mobile). Displays sanitized server config and client preferences with shadcn/ui controls (Switch, etc.).
 
 **Assumptions:**
+
 - Settings dialog uses the existing `ResponsiveDialog` component (already built)
 - Server config is read-only (display only, no mutation from client)
 - Client settings use auto-save to localStorage (toggle switches save on change, no explicit Save button)
@@ -23,6 +24,7 @@ slug: settings-screen
 - No authentication layer exists; server config endpoint is openly accessible (local-only use case)
 
 **Out of scope:**
+
 - User accounts / multi-user settings
 - Server-side setting mutation from the client
 - Full keyboard shortcut editor
@@ -50,6 +52,7 @@ slug: settings-screen
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/components/sessions/SessionSidebar.tsx` — Sidebar container + footer where gear icon trigger lives
 - `apps/client/src/components/ui/responsive-dialog.tsx` — Dialog/Drawer wrapper to use for settings
 - `apps/client/src/components/sessions/DirectoryPicker.tsx` — Reference pattern for responsive dialog usage
@@ -58,6 +61,7 @@ slug: settings-screen
 - `apps/server/src/routes/health.ts` — Pattern for new config route
 
 **Shared Dependencies:**
+
 - `apps/client/src/stores/app-store.ts` — Zustand store for client settings persistence
 - `apps/client/src/hooks/use-theme.ts` — Theme management (may integrate with settings)
 - `apps/client/src/contexts/TransportContext.tsx` — Transport injection context
@@ -65,13 +69,16 @@ slug: settings-screen
 - `apps/client/src/lib/direct-transport.ts` — Direct adapter (needs `getConfig()`)
 
 **Data Flow:**
+
 1. Server config: Client `getConfig()` → Transport → `GET /api/config` → Server reads env/runtime state → Returns sanitized config
 2. Client settings: User toggles → Zustand store → localStorage persistence → Component re-render
 
 **Feature Flags/Config:**
+
 - `import.meta.env.DEV` — Already used for dev tools toggle in sidebar
 
 **Potential Blast Radius:**
+
 - Direct: ~8-10 new/modified files
 - Transport interface change affects both adapters
 - Sidebar footer layout change (minor)
@@ -104,6 +111,7 @@ N/A — New feature, not a bug fix.
 | Claude CLI path | Resolved path | Full path |
 
 **NEVER display:**
+
 - `NGROK_AUTHTOKEN` — Show "Configured" / "Not configured" badge only
 - `TUNNEL_AUTH` credentials — Show "Enabled" / "Disabled" only
 - Any API keys or tokens
@@ -114,13 +122,16 @@ N/A — New feature, not a bug fix.
 ### Client Settings: What to Include
 
 **Appearance:**
+
 - Theme: Light / Dark / System (already exists as footer toggle, surfaces it here too)
 
 **Chat Behavior:**
+
 - Show timestamps on messages (Switch, default: off)
 - Expand tool calls by default (Switch, default: off — currently they're collapsed)
 
 **Developer:**
+
 - Show dev tools (Switch, mirrors existing footer toggle)
 - Verbose logging (Switch, default: off)
 
@@ -131,17 +142,18 @@ N/A — New feature, not a bug fix.
 **Dialog layout:** Single scrollable page with sections separated by headings + thin separators. Not tabbed — the settings list is small enough that tabs add unnecessary complexity.
 
 **Organization:** Two sections:
+
 1. **Preferences** — Client-side settings (toggleable)
 2. **Server** — Read-only server configuration display
 
 ### shadcn/ui Components Needed
 
-| Component | Purpose | Status |
-|-----------|---------|--------|
-| Switch | Toggle settings | **Need to install** |
-| Label | Setting labels | **Need to install** |
-| Separator | Section dividers | **Need to install** |
-| Badge | Status indicators (e.g., tunnel "Connected") | **Need to install** |
+| Component | Purpose                                      | Status              |
+| --------- | -------------------------------------------- | ------------------- |
+| Switch    | Toggle settings                              | **Need to install** |
+| Label     | Setting labels                               | **Need to install** |
+| Separator | Section dividers                             | **Need to install** |
+| Badge     | Status indicators (e.g., tunnel "Connected") | **Need to install** |
 
 ---
 

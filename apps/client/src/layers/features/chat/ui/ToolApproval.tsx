@@ -20,7 +20,7 @@ export interface ToolApprovalHandle {
 
 export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(function ToolApproval(
   { sessionId, toolCallId, toolName, input, isActive = false },
-  ref,
+  ref
 ) {
   const transport = useTransport();
   const [responding, setResponding] = useState(false);
@@ -52,38 +52,48 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
     }
   }
 
-  useImperativeHandle(ref, () => ({
-    approve() { handleApprove(); },
-    deny() { handleDeny(); },
-  }), [responding, decided]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      approve() {
+        handleApprove();
+      },
+      deny() {
+        handleDeny();
+      },
+    }),
+    [responding, decided]
+  );
 
   if (decided) {
     return (
-      <div className={`my-1 rounded border px-3 py-2 text-sm transition-colors duration-200 ${
-        decided === 'approved'
-          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-          : 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400'
-      }`}>
+      <div
+        className={`my-1 rounded border px-3 py-2 text-sm transition-colors duration-200 ${
+          decided === 'approved'
+            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            : 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400'
+        }`}
+      >
         <span className="font-mono">{toolName}</span>
-        <span className="ml-2 text-xs">
-          {decided === 'approved' ? 'Approved' : 'Denied'}
-        </span>
+        <span className="ml-2 text-xs">{decided === 'approved' ? 'Approved' : 'Denied'}</span>
       </div>
     );
   }
 
   return (
-    <div className={cn(
-      "my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-all duration-200",
-      isActive && "ring-2 ring-amber-500/30",
-    )}>
-      <div className="flex items-center gap-2 mb-2">
+    <div
+      className={cn(
+        'my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-all duration-200',
+        isActive && 'ring-2 ring-amber-500/30'
+      )}
+    >
+      <div className="mb-2 flex items-center gap-2">
         <Shield className="size-(--size-icon-md) text-amber-500" />
         <span className="font-semibold">Tool approval required</span>
       </div>
-      <div className="font-mono text-xs mb-2">{toolName}</div>
+      <div className="mb-2 font-mono text-xs">{toolName}</div>
       {input && (
-        <div className="mb-3 p-2 bg-muted rounded">
+        <div className="bg-muted mb-3 rounded p-2">
           <ToolArgumentsDisplay toolName={toolName} input={input} />
         </div>
       )}
@@ -91,7 +101,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
         <button
           onClick={handleApprove}
           disabled={responding}
-          className="flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 max-md:py-2 text-white text-xs hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 text-xs text-white transition-colors hover:bg-emerald-700 disabled:opacity-50 max-md:py-2"
         >
           <Check className="size-(--size-icon-xs)" /> Approve
           {isActive && <Kbd className="ml-1.5">Enter</Kbd>}
@@ -99,7 +109,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
         <button
           onClick={handleDeny}
           disabled={responding}
-          className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 max-md:py-2 text-white text-xs hover:bg-red-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 text-xs text-white transition-colors hover:bg-red-700 disabled:opacity-50 max-md:py-2"
         >
           <X className="size-(--size-icon-xs)" /> Deny
           {isActive && <Kbd className="ml-1.5">Esc</Kbd>}

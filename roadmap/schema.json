@@ -58,7 +58,17 @@
   "definitions": {
     "roadmapItem": {
       "type": "object",
-      "required": ["id", "title", "type", "moscow", "status", "health", "timeHorizon", "createdAt", "updatedAt"],
+      "required": [
+        "id",
+        "title",
+        "type",
+        "moscow",
+        "status",
+        "health",
+        "timeHorizon",
+        "createdAt",
+        "updatedAt"
+      ],
       "properties": {
         "id": {
           "type": "string",
@@ -176,7 +186,17 @@
           "properties": {
             "phase": {
               "type": "string",
-              "enum": ["not-started", "ideating", "specifying", "decomposing", "implementing", "testing", "committing", "releasing", "completed"],
+              "enum": [
+                "not-started",
+                "ideating",
+                "specifying",
+                "decomposing",
+                "implementing",
+                "testing",
+                "committing",
+                "releasing",
+                "completed"
+              ],
               "description": "Current phase in the autonomous workflow"
             },
             "specSlug": {

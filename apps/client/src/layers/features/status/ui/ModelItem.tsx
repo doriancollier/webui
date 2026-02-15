@@ -30,7 +30,7 @@ export function ModelItem({ model, onChangeModel }: ModelItemProps) {
   return (
     <ResponsiveDropdownMenu>
       <ResponsiveDropdownMenuTrigger asChild>
-        <button className="inline-flex items-center gap-1 hover:text-foreground transition-colors duration-150">
+        <button className="hover:text-foreground inline-flex items-center gap-1 transition-colors duration-150">
           <Bot className="size-(--size-icon-xs)" />
           <span>{getModelLabel(model)}</span>
         </button>

@@ -9,6 +9,7 @@ allowed-tools: Bash, Read, Write, Edit, Glob, AskUserQuestion, Task
 Create a new release by bumping the version, updating the changelog, creating a git tag, and optionally publishing a GitHub Release.
 
 This command operates as an **orchestrator** that:
+
 - Runs quick pre-flight checks in main context
 - Delegates context-heavy analysis to a subagent (keeps main context clean)
 - Handles user interaction and git operations in main context
@@ -16,7 +17,7 @@ This command operates as an **orchestrator** that:
 ## Arguments
 
 - `$ARGUMENTS` - Optional bump type or explicit version, plus optional flags:
-  - *(no argument)* - **Auto-detect** version bump from changelog and commits
+  - _(no argument)_ - **Auto-detect** version bump from changelog and commits
   - `patch` - Force patch version (0.5.0 → 0.5.1)
   - `minor` - Force minor version (0.5.0 → 0.6.0)
   - `major` - Force major version (0.5.0 → 1.0.0)
@@ -25,11 +26,11 @@ This command operates as an **orchestrator** that:
 
 ## Semantic Versioning
 
-| Bump Type | When to Use | Example |
-|-----------|-------------|---------|
+| Bump Type | When to Use                                  | Example       |
+| --------- | -------------------------------------------- | ------------- |
 | **MAJOR** | Breaking changes to user config or workflows | 0.5.0 → 1.0.0 |
-| **MINOR** | New features, backward compatible | 0.5.0 → 0.6.0 |
-| **PATCH** | Bug fixes, documentation updates | 0.5.0 → 0.5.1 |
+| **MINOR** | New features, backward compatible            | 0.5.0 → 0.6.0 |
+| **PATCH** | Bug fixes, documentation updates             | 0.5.0 → 0.5.1 |
 
 ## Architecture
 
@@ -64,6 +65,7 @@ This command operates as an **orchestrator** that:
 ## Phase 1: Parse Arguments
 
 Parse `$ARGUMENTS` to determine:
+
 - **Bump type**: `patch`, `minor`, `major`, explicit version, or **auto** (default)
 - **Dry run**: Whether `--dry-run` flag is present
 
@@ -79,6 +81,7 @@ git status --porcelain
 ```
 
 If output is not empty, **STOP** and report:
+
 ```
 ## Cannot Release: Uncommitted Changes
 
@@ -96,6 +99,7 @@ git branch --show-current
 ```
 
 If not `main`, **STOP** and report:
+
 ```
 ## Cannot Release: Not on Main Branch
 
@@ -120,6 +124,7 @@ python3 .claude/scripts/changelog_backfill.py --json
 ```
 
 Parse the JSON output:
+
 - `existing_entries` - Current entries in [Unreleased]
 - `missing_entries` - Commits not yet in changelog
 - `commits_analyzed` - Total commits since last tag
@@ -129,6 +134,7 @@ Parse the JSON output:
 This is the most important check. Even if [Unreleased] has some entries, commits may be missing.
 
 Report and ask:
+
 ```markdown
 ## Changelog Review
 
@@ -142,15 +148,18 @@ Report and ask:
 The following commits are not represented in the [Unreleased] section:
 
 #### Added
+
 - [entry] ([commit])
-  *From*: `[original message]`
+  _From_: `[original message]`
 
 #### Fixed
+
 - [entry] ([commit])
-  *From*: `[original message]`
+  _From_: `[original message]`
 ```
 
 Use AskUserQuestion:
+
 ```
 header: "Backfill"
 question: "Add missing entries to changelog before releasing?"
@@ -164,6 +173,7 @@ options:
 ```
 
 If user selects "Yes, add all":
+
 ```bash
 python3 .claude/scripts/changelog_backfill.py --apply
 ```
@@ -193,11 +203,11 @@ There's nothing to release.
 
 Skip analysis, calculate next version directly:
 
-| Current | Bump Type | Next |
-|---------|-----------|------|
-| 0.5.0 | patch | 0.5.1 |
-| 0.5.0 | minor | 0.6.0 |
-| 0.5.0 | major | 1.0.0 |
+| Current | Bump Type | Next  |
+| ------- | --------- | ----- |
+| 0.5.0   | patch     | 0.5.1 |
+| 0.5.0   | minor     | 0.6.0 |
+| 0.5.0   | major     | 1.0.0 |
 
 Proceed to Phase 4.
 
@@ -207,7 +217,7 @@ Proceed to Phase 4.
 
 This keeps the main context clean by offloading the changelog parsing and commit analysis.
 
-```
+````
 Task tool:
   subagent_type: context-isolator
   model: haiku
@@ -298,9 +308,10 @@ Task tool:
     RELEASE_HIGHLIGHTS:
     [2-3 most significant changes with emoji and benefit explanation]
     ```
-```
+````
 
 **Parse the agent's response** to extract:
+
 - `RECOMMENDED_BUMP`
 - `NEXT_VERSION`
 - Signals for display
@@ -328,11 +339,13 @@ Present the release plan to the user:
 ### Analysis Summary
 
 **Changelog signals:**
+
 - ✓ "### Added" section has 3 items
 - ✗ No breaking changes detected
 - ✓ "### Fixed" section has 2 items
 
 **Commit signals (12 commits):**
+
 - 4 feat: commits
 - 6 fix: commits
 - 2 docs: commits
@@ -356,6 +369,7 @@ Present the release plan to the user:
 If `--dry-run` flag is present, **STOP** here.
 
 Otherwise, use AskUserQuestion:
+
 ```
 header: "Confirm Release"
 question: "Create release v0.6.0?"
@@ -383,6 +397,7 @@ git tag -l "v0.6.0"
 ```
 
 If tag exists, **STOP**:
+
 ```
 ## Cannot Release: Tag Already Exists
 
@@ -405,6 +420,7 @@ Edit `CHANGELOG.md` using the Edit tool:
 3. Move all previous [Unreleased] content under the new version
 
 **Target structure:**
+
 ```markdown
 ## [Unreleased]
 
@@ -453,6 +469,7 @@ If push fails, report error and provide recovery commands.
 **Reference**: Use the `writing-changelogs` skill for guidance on writing user-friendly release notes.
 
 Ask using AskUserQuestion:
+
 ```
 header: "GitHub Release"
 question: "Create a GitHub Release?"
@@ -503,14 +520,14 @@ For the overall release:
 
 #### Emoji Reference
 
-| Emoji | Use For |
-|-------|---------|
-| ✨ | Major new feature |
-| 🎨 | UI/UX, themes |
-| 📂 | File handling |
-| 🔧 | Fixes, improvements |
-| ⚡ | Performance |
-| 🔒 | Security |
+| Emoji | Use For             |
+| ----- | ------------------- |
+| ✨    | Major new feature   |
+| 🎨    | UI/UX, themes       |
+| 📂    | File handling       |
+| 🔧    | Fixes, improvements |
+| ⚡    | Performance         |
+| 🔒    | Security            |
 
 #### Create the Release
 

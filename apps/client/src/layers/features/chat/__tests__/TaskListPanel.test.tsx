@@ -11,26 +11,45 @@ afterEach(() => {
 // Mock motion to render plain elements
 vi.mock('motion/react', () => ({
   motion: {
-    div: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLDivElement>) =>
-      React.createElement('div', { ...props, ref }, children)
+    div: React.forwardRef(
+      (
+        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
+        ref: React.Ref<HTMLDivElement>
+      ) => React.createElement('div', { ...props, ref }, children)
     ),
-    ul: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLUListElement>) =>
-      React.createElement('ul', { ...props, ref }, children)
+    ul: React.forwardRef(
+      (
+        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
+        ref: React.Ref<HTMLUListElement>
+      ) => React.createElement('ul', { ...props, ref }, children)
     ),
-    li: React.forwardRef(({ children, onAnimationComplete, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLLIElement>) => {
-      // Call onAnimationComplete immediately in tests to simulate animation end
-      React.useEffect(() => {
-        if (typeof onAnimationComplete === 'function') {
-          onAnimationComplete();
-        }
-      }, [onAnimationComplete]);
-      return React.createElement('li', { ...props, ref }, children);
-    }),
-    span: React.forwardRef(({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>, ref: React.Ref<HTMLSpanElement>) =>
-      React.createElement('span', { ...props, ref }, children)
+    li: React.forwardRef(
+      (
+        {
+          children,
+          onAnimationComplete,
+          ...props
+        }: React.PropsWithChildren<Record<string, unknown>>,
+        ref: React.Ref<HTMLLIElement>
+      ) => {
+        // Call onAnimationComplete immediately in tests to simulate animation end
+        React.useEffect(() => {
+          if (typeof onAnimationComplete === 'function') {
+            onAnimationComplete();
+          }
+        }, [onAnimationComplete]);
+        return React.createElement('li', { ...props, ref }, children);
+      }
+    ),
+    span: React.forwardRef(
+      (
+        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
+        ref: React.Ref<HTMLSpanElement>
+      ) => React.createElement('span', { ...props, ref }, children)
     ),
   },
-  AnimatePresence: ({ children }: React.PropsWithChildren) => React.createElement(React.Fragment, null, children),
+  AnimatePresence: ({ children }: React.PropsWithChildren) =>
+    React.createElement(React.Fragment, null, children),
 }));
 
 const baseTasks: TaskItem[] = [
@@ -49,7 +68,12 @@ describe('TaskListPanel', () => {
 
   it('shows correct task counts in header', () => {
     render(
-      <TaskListPanel tasks={baseTasks} activeForm={null} isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     expect(screen.getByText(/3 tasks/)).toBeDefined();
     expect(screen.getByText(/1 done/)).toBeDefined();
@@ -59,7 +83,12 @@ describe('TaskListPanel', () => {
 
   it('renders all task subjects', () => {
     render(
-      <TaskListPanel tasks={baseTasks} activeForm={null} isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     expect(screen.getByText('Completed task')).toBeDefined();
     expect(screen.getByText('In progress task')).toBeDefined();
@@ -68,7 +97,12 @@ describe('TaskListPanel', () => {
 
   it('applies line-through styling to completed tasks', () => {
     render(
-      <TaskListPanel tasks={baseTasks} activeForm={null} isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     const completedItem = screen.getByText('Completed task').closest('li');
     expect(completedItem?.className).toContain('line-through');
@@ -76,7 +110,12 @@ describe('TaskListPanel', () => {
 
   it('applies bold styling to in-progress tasks', () => {
     render(
-      <TaskListPanel tasks={baseTasks} activeForm={null} isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     const inProgressItem = screen.getByText('In progress task').closest('li');
     expect(inProgressItem?.className).toContain('font-medium');
@@ -84,7 +123,12 @@ describe('TaskListPanel', () => {
 
   it('shows activeForm spinner text when provided', () => {
     render(
-      <TaskListPanel tasks={baseTasks} activeForm="Working on it" isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm="Working on it"
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     // activeForm text appears as spinner label
     expect(screen.getByText('Working on it')).toBeDefined();
@@ -92,7 +136,12 @@ describe('TaskListPanel', () => {
 
   it('hides task list when collapsed', () => {
     render(
-      <TaskListPanel tasks={baseTasks} activeForm={null} isCollapsed={true} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm={null}
+        isCollapsed={true}
+        onToggleCollapse={() => {}}
+      />
     );
     // Header should still be visible
     expect(screen.getByText(/3 tasks/)).toBeDefined();
@@ -103,7 +152,12 @@ describe('TaskListPanel', () => {
   it('calls onToggleCollapse when header is clicked', () => {
     const onToggle = vi.fn();
     render(
-      <TaskListPanel tasks={baseTasks} activeForm={null} isCollapsed={false} onToggleCollapse={onToggle} />
+      <TaskListPanel
+        tasks={baseTasks}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={onToggle}
+      />
     );
     fireEvent.click(screen.getByRole('button'));
     expect(onToggle).toHaveBeenCalledOnce();
@@ -117,18 +171,26 @@ describe('TaskListPanel', () => {
     }));
 
     render(
-      <TaskListPanel tasks={manyTasks} activeForm={null} isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={manyTasks}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     expect(screen.getByText(/\+2 more/)).toBeDefined();
   });
 
   it('handles singular task count', () => {
-    const singleTask: TaskItem[] = [
-      { id: '1', subject: 'Only task', status: 'pending' },
-    ];
+    const singleTask: TaskItem[] = [{ id: '1', subject: 'Only task', status: 'pending' }];
 
     render(
-      <TaskListPanel tasks={singleTask} activeForm={null} isCollapsed={false} onToggleCollapse={() => {}} />
+      <TaskListPanel
+        tasks={singleTask}
+        activeForm={null}
+        isCollapsed={false}
+        onToggleCollapse={() => {}}
+      />
     );
     expect(screen.getByText(/1 task\b/)).toBeDefined();
   });
@@ -154,9 +216,7 @@ describe('TaskListPanel', () => {
 
   it('calls onCelebrationComplete after animation finishes', () => {
     const onComplete = vi.fn();
-    const completedTasks: TaskItem[] = [
-      { id: '1', subject: 'Done task', status: 'completed' },
-    ];
+    const completedTasks: TaskItem[] = [{ id: '1', subject: 'Done task', status: 'completed' }];
     render(
       <TaskListPanel
         tasks={completedTasks}

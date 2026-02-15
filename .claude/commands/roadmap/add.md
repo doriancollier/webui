@@ -45,6 +45,7 @@ python3 -c "import uuid; print(str(uuid.uuid4()))"
 ### Step 4: Add to Roadmap
 
 Read `roadmap/roadmap.json`, add the new item with:
+
 - Generated UUID as `id`
 - Current ISO timestamp for `createdAt` and `updatedAt`
 - Status: `not-started`

@@ -63,6 +63,7 @@ N/A — not a bug fix.
 Modern browsers block audio playback until the user has interacted with the page. In our case, this is naturally satisfied: the user must send a message (click or keypress) before the AI can respond. The `HTMLAudioElement.play()` method returns a Promise — we must handle rejection gracefully (silent failure, not an error).
 
 Key considerations:
+
 - Chrome, Firefox, Safari all require user gesture before audio can play
 - Our flow inherently satisfies this: user sends message → waits → response completes → sound plays
 - The user gesture "unlocks" audio for the page session
@@ -71,17 +72,20 @@ Key considerations:
 ### Sound Delivery Options
 
 **1. Static MP3/WAV file in `public/`**
+
 - Pros: Simple, cacheable, proper audio format, easy to swap
 - Cons: Extra HTTP request on first play (negligible — cached after)
 - Size: ~5-15KB for a 200-300ms notification sound
 - Recommendation: **Use this approach**
 
 **2. Base64-encoded data URI inline in code**
+
 - Pros: No network request, bundled with JS
 - Cons: Increases bundle size, harder to maintain, ~33% larger than binary
 - Size: ~7-20KB encoded
 
 **3. Web Audio API (procedural generation)**
+
 - Pros: Zero file size, fully customizable
 - Cons: Complex code for a simple ding, browser inconsistencies, harder to get a pleasant sound
 - Not recommended for this use case
@@ -89,6 +93,7 @@ Key considerations:
 ### Document Visibility & When to Play
 
 Options considered:
+
 - **Always play** (regardless of tab focus) — simplest, users expect it when enabled
 - **Only when tab is NOT focused** — Slack-like behavior, prevents annoying when actively watching
 - **Only when tab IS focused** — defeats purpose of notification
@@ -113,6 +118,7 @@ Options considered:
 ### Potential Solutions
 
 **1. HTMLAudioElement + static MP3 file (Recommended)**
+
 - Description: Create a small MP3 notification sound, place in `public/notification.mp3`. Use `new Audio()` to play it when streaming completes.
 - Pros: Simple, reliable, cacheable, easy to swap sound later, tiny file
 - Cons: One extra HTTP request on first play
@@ -120,6 +126,7 @@ Options considered:
 - Maintenance: Low
 
 **2. Web Audio API oscillator**
+
 - Description: Generate a sine wave "ding" programmatically
 - Pros: No file needed, zero network cost
 - Cons: Harder to make sound pleasant, more code, browser quirks
@@ -127,6 +134,7 @@ Options considered:
 - Maintenance: Medium
 
 **3. Inline base64 audio**
+
 - Description: Embed MP3 as base64 data URI in a TypeScript constant
 - Pros: No network request
 - Cons: Bundle bloat, harder to maintain

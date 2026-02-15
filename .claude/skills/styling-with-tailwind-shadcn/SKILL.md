@@ -40,6 +40,7 @@ mcp__context7__query-docs: {
 ```
 
 **When to fetch docs:**
+
 - Uncertain about Tailwind v4 CSS-first syntax
 - Adding new Shadcn/basecn components
 - Implementing theming or dark mode
@@ -68,6 +69,7 @@ npx shadcn@latest add @basecn/select
 ```
 
 The basecn registry is configured in `components.json`:
+
 ```json
 {
   "registries": {
@@ -80,10 +82,10 @@ The basecn registry is configured in `components.json`:
 
 ## Typography
 
-| Role | Font | Fallback |
-|------|------|----------|
-| **Primary** | Geist Sans | system-ui, -apple-system, sans-serif |
-| **Monospace** | Geist Mono | ui-monospace, monospace |
+| Role          | Font       | Fallback                             |
+| ------------- | ---------- | ------------------------------------ |
+| **Primary**   | Geist Sans | system-ui, -apple-system, sans-serif |
+| **Monospace** | Geist Mono | ui-monospace, monospace              |
 
 ```css
 /* Already configured in globals.css */
@@ -93,16 +95,16 @@ The basecn registry is configured in `components.json`:
 
 **Type Scale (Major Third 1.25):**
 
-| Class | Size | Usage |
-|-------|------|-------|
-| `text-xs` | 11px | Labels, badges, metadata |
-| `text-sm` | 13px | Secondary text, captions |
-| `text-base` | 15px | Body text, inputs |
-| `text-lg` | 17px | Emphasized body, card titles |
-| `text-xl` | 20px | Section headings |
-| `text-2xl` | 24px | Page section titles |
-| `text-3xl` | 30px | Page titles |
-| `text-4xl` | 36px | Hero headings |
+| Class       | Size | Usage                        |
+| ----------- | ---- | ---------------------------- |
+| `text-xs`   | 11px | Labels, badges, metadata     |
+| `text-sm`   | 13px | Secondary text, captions     |
+| `text-base` | 15px | Body text, inputs            |
+| `text-lg`   | 17px | Emphasized body, card titles |
+| `text-xl`   | 20px | Section headings             |
+| `text-2xl`  | 24px | Page section titles          |
+| `text-3xl`  | 30px | Page titles                  |
+| `text-4xl`  | 36px | Hero headings                |
 
 ## Color System (OKLCH)
 
@@ -134,29 +136,28 @@ The basecn registry is configured in `components.json`:
 Dark mode is automatic via `next-themes`. Apply dark variants:
 
 ```tsx
-<div className="bg-background text-foreground">
-  {/* Automatically adapts to theme */}
-</div>
+<div className="bg-background text-foreground">{/* Automatically adapts to theme */}</div>;
 
 // Toggle theme
-const { theme, setTheme } = useTheme()
-setTheme(theme === 'dark' ? 'light' : 'dark')
+const { theme, setTheme } = useTheme();
+setTheme(theme === 'dark' ? 'light' : 'dark');
 ```
 
 ## Border Radius
 
 Generous, soft corners for a modern feel:
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `rounded-sm` | 8px | Small elements, badges |
-| `rounded-md` | 10px | **Buttons, inputs** |
-| `rounded-lg` | 12px | Default radius |
-| `rounded-xl` | 16px | **Cards, modals** |
-| `rounded-2xl` | 20px | Large cards, panels |
-| `rounded-full` | 9999px | Pills, avatars |
+| Token          | Value  | Usage                  |
+| -------------- | ------ | ---------------------- |
+| `rounded-sm`   | 8px    | Small elements, badges |
+| `rounded-md`   | 10px   | **Buttons, inputs**    |
+| `rounded-lg`   | 12px   | Default radius         |
+| `rounded-xl`   | 16px   | **Cards, modals**      |
+| `rounded-2xl`  | 20px   | Large cards, panels    |
+| `rounded-full` | 9999px | Pills, avatars         |
 
 **Rules:**
+
 - Cards: Always `rounded-xl` (16px)
 - Buttons: `rounded-md` (10px)
 - Inputs: Match button radius (`rounded-md`)
@@ -179,12 +180,12 @@ Soft, diffused shadows create depth without noise:
 
 ### Buttons
 
-| Size | Height | Padding | Usage |
-|------|--------|---------|-------|
-| `sm` | 32px | 12px 16px | Compact actions |
-| `default` | 40px | 12px 20px | Standard actions |
-| `lg` | 48px | 14px 28px | Primary CTAs |
-| `icon` | 40px | - | Icon-only buttons |
+| Size      | Height | Padding   | Usage             |
+| --------- | ------ | --------- | ----------------- |
+| `sm`      | 32px   | 12px 16px | Compact actions   |
+| `default` | 40px   | 12px 20px | Standard actions  |
+| `lg`      | 48px   | 14px 28px | Primary CTAs      |
+| `icon`    | 40px   | -         | Icon-only buttons |
 
 ```tsx
 <Button size="default">Default (40px)</Button>
@@ -201,13 +202,11 @@ Soft, diffused shadows create depth without noise:
 - Gap between elements: `16px` (gap-4)
 
 ```tsx
-<Card className="p-6 rounded-xl shadow-soft">
+<Card className="shadow-soft rounded-xl p-6">
   <CardHeader className="pb-4">
     <CardTitle>Title</CardTitle>
   </CardHeader>
-  <CardContent className="space-y-4">
-    {/* Content */}
-  </CardContent>
+  <CardContent className="space-y-4">{/* Content */}</CardContent>
 </Card>
 ```
 
@@ -218,7 +217,7 @@ Soft, diffused shadows create depth without noise:
 - Border radius: `10px` (rounded-md)
 
 ```tsx
-<Input className="h-10 px-3.5 rounded-md" />
+<Input className="h-10 rounded-md px-3.5" />
 ```
 
 ## Custom Utilities

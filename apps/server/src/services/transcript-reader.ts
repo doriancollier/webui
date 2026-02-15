@@ -1,7 +1,17 @@
 import fs from 'fs/promises';
 import path from 'path';
 import os from 'os';
-import type { Session, PermissionMode, HistoryMessage, HistoryToolCall, QuestionItem, TaskItem, TaskStatus, MessagePart, ToolCallPart } from '@dorkos/shared/types';
+import type {
+  Session,
+  PermissionMode,
+  HistoryMessage,
+  HistoryToolCall,
+  QuestionItem,
+  TaskItem,
+  TaskStatus,
+  MessagePart,
+  ToolCallPart,
+} from '@dorkos/shared/types';
 
 export type { HistoryMessage, HistoryToolCall };
 
@@ -64,7 +74,7 @@ export class TranscriptReader {
 
     let files: string[];
     try {
-      files = (await fs.readdir(transcriptsDir)).filter(f => f.endsWith('.jsonl'));
+      files = (await fs.readdir(transcriptsDir)).filter((f) => f.endsWith('.jsonl'));
     } catch {
       return [];
     }
@@ -132,7 +142,7 @@ export class TranscriptReader {
         const buffer = Buffer.alloc(Math.min(TAIL_SIZE, stat.size));
         const { bytesRead } = await fileHandle.read(buffer, 0, buffer.length, readOffset);
         const chunk = buffer.toString('utf-8', 0, bytesRead);
-        const lines = chunk.split('\n').filter(l => l.trim());
+        const lines = chunk.split('\n').filter((l) => l.trim());
 
         let model: string | undefined;
         let permissionMode: PermissionMode | undefined;
@@ -188,7 +198,7 @@ export class TranscriptReader {
     sessionId: string,
     fileStat?: Awaited<ReturnType<typeof fs.stat>>
   ): Promise<Session> {
-    const stat = fileStat ?? await fs.stat(filePath);
+    const stat = fileStat ?? (await fs.stat(filePath));
 
     // Read only the head of the file (8KB) — metadata is always in the first few lines
     const fileHandle = await fs.open(filePath, 'r');
@@ -201,7 +211,7 @@ export class TranscriptReader {
       await fileHandle.close();
     }
 
-    const lines = chunk.split('\n').filter(l => l.trim());
+    const lines = chunk.split('\n').filter((l) => l.trim());
 
     let firstUserMessage = '';
     let permissionMode: PermissionMode = 'default';
@@ -259,7 +269,12 @@ export class TranscriptReader {
       // Extract first user message for title
       if (!firstUserMessage && parsed.type === 'user' && parsed.message) {
         const text = this.extractTextContent(parsed.message.content);
-        if (text.startsWith('<local-command') || text.startsWith('<command-name>') || text.startsWith('<command-message>') || text.startsWith('<task-notification>')) {
+        if (
+          text.startsWith('<local-command') ||
+          text.startsWith('<command-name>') ||
+          text.startsWith('<command-message>') ||
+          text.startsWith('<task-notification>')
+        ) {
           continue;
         }
         if (text.startsWith('This session is being continued')) {
@@ -294,10 +309,7 @@ export class TranscriptReader {
   /**
    * Read messages from an SDK session transcript.
    */
-  async readTranscript(
-    vaultRoot: string,
-    sessionId: string
-  ): Promise<HistoryMessage[]> {
+  async readTranscript(vaultRoot: string, sessionId: string): Promise<HistoryMessage[]> {
     const transcriptsDir = this.getTranscriptsDir(vaultRoot);
     const filePath = path.join(transcriptsDir, `${sessionId}.jsonl`);
 
@@ -309,7 +321,7 @@ export class TranscriptReader {
     }
 
     const messages: HistoryMessage[] = [];
-    const lines = content.split('\n').filter(l => l.trim());
+    const lines = content.split('\n').filter((l) => l.trim());
     // Track pending slash command metadata for correlating with expanded prompt
     let pendingCommand: { commandName: string; commandArgs: string } | null = null;
     // Track args from the most recent Skill tool_use (assistant message)
@@ -381,9 +393,7 @@ export class TranscriptReader {
           if (pendingCommand) {
             const { commandName, commandArgs } = pendingCommand;
             pendingCommand = null;
-            const displayContent = commandArgs
-              ? `${commandName} ${commandArgs}`
-              : commandName;
+            const displayContent = commandArgs ? `${commandName} ${commandArgs}` : commandName;
             messages.push({
               id: parsed.uuid || crypto.randomUUID(),
               role: 'user',
@@ -436,9 +446,7 @@ export class TranscriptReader {
         if (pendingCommand) {
           const { commandName, commandArgs } = pendingCommand;
           pendingCommand = null;
-          const displayContent = commandArgs
-            ? `${commandName} ${commandArgs}`
-            : commandName;
+          const displayContent = commandArgs ? `${commandName} ${commandArgs}` : commandName;
           messages.push({
             id: parsed.uuid || crypto.randomUUID(),
             role: 'user',
@@ -516,11 +524,13 @@ export class TranscriptReader {
               toolName: block.name,
               input: block.input ? JSON.stringify(block.input) : undefined,
               status: 'complete',
-              ...(tc.questions ? {
-                interactiveType: 'question' as const,
-                questions: tc.questions,
-                answers: tc.answers,
-              } : {}),
+              ...(tc.questions
+                ? {
+                    interactiveType: 'question' as const,
+                    questions: tc.questions,
+                    answers: tc.answers,
+                  }
+                : {}),
             };
             parts.push(toolCallPart);
             toolCallPartMap.set(block.id, toolCallPart);
@@ -532,7 +542,7 @@ export class TranscriptReader {
         // Derive flat content from text parts
         const text = parts
           .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-          .map(p => p.text)
+          .map((p) => p.text)
           .join('\n')
           .trim();
 
@@ -557,9 +567,7 @@ export class TranscriptReader {
     const transcriptsDir = this.getTranscriptsDir(vaultRoot);
     try {
       const files = await fs.readdir(transcriptsDir);
-      return files
-        .filter(f => f.endsWith('.jsonl'))
-        .map(f => f.replace('.jsonl', ''));
+      return files.filter((f) => f.endsWith('.jsonl')).map((f) => f.replace('.jsonl', ''));
     } catch {
       return [];
     }
@@ -590,7 +598,7 @@ export class TranscriptReader {
       return [];
     }
 
-    const lines = content.split('\n').filter(l => l.trim());
+    const lines = content.split('\n').filter((l) => l.trim());
     const tasks = new Map<string, TaskItem>();
     let nextId = 1;
 
@@ -628,8 +636,13 @@ export class TranscriptReader {
             if (input.subject) existing.subject = input.subject as string;
             if (input.activeForm) existing.activeForm = input.activeForm as string;
             if (input.description) existing.description = input.description as string;
-            if (input.addBlockedBy) existing.blockedBy = [...(existing.blockedBy ?? []), ...(input.addBlockedBy as string[])];
-            if (input.addBlocks) existing.blocks = [...(existing.blocks ?? []), ...(input.addBlocks as string[])];
+            if (input.addBlockedBy)
+              existing.blockedBy = [
+                ...(existing.blockedBy ?? []),
+                ...(input.addBlockedBy as string[]),
+              ];
+            if (input.addBlocks)
+              existing.blocks = [...(existing.blocks ?? []), ...(input.addBlocks as string[])];
             if (input.owner) existing.owner = input.owner as string;
           }
         }
@@ -646,7 +659,7 @@ export class TranscriptReader {
   async readFromOffset(
     vaultRoot: string,
     sessionId: string,
-    fromOffset: number,
+    fromOffset: number
   ): Promise<{ content: string; newOffset: number }> {
     const filePath = path.join(this.getTranscriptsDir(vaultRoot), `${sessionId}.jsonl`);
     const stat = await fs.stat(filePath);
@@ -674,8 +687,8 @@ export class TranscriptReader {
     if (typeof content === 'string') return content;
     if (!Array.isArray(content)) return '';
     return content
-      .filter(b => b.type === 'text' && b.text)
-      .map(b => b.text!)
+      .filter((b) => b.type === 'text' && b.text)
+      .map((b) => b.text!)
       .join('\n');
   }
 
@@ -683,8 +696,8 @@ export class TranscriptReader {
     if (typeof content === 'string') return content;
     if (!Array.isArray(content)) return '';
     return content
-      .filter(b => b.type === 'text' && b.text)
-      .map(b => b.text!)
+      .filter((b) => b.type === 'text' && b.text)
+      .map((b) => b.text!)
       .join('\n');
   }
 
@@ -706,10 +719,13 @@ export class TranscriptReader {
    * SDK stores answers as { "Question text": "Answer value" }.
    * Client expects { "0": "Answer value", "1": "..." }.
    */
-  private mapSdkAnswersToIndices(sdkAnswers: Record<string, string>, questions: QuestionItem[]): Record<string, string> {
+  private mapSdkAnswersToIndices(
+    sdkAnswers: Record<string, string>,
+    questions: QuestionItem[]
+  ): Record<string, string> {
     const answers: Record<string, string> = {};
     for (const [questionText, answerText] of Object.entries(sdkAnswers)) {
-      const qIdx = questions.findIndex(q => q.question === questionText);
+      const qIdx = questions.findIndex((q) => q.question === questionText);
       if (qIdx !== -1) {
         answers[String(qIdx)] = answerText;
       }
@@ -730,14 +746,17 @@ export class TranscriptReader {
    * Format: `..."Question text"="Answer text", "Q2"="A2". You can now...`
    * Falls back to empty record (truthy signal) if parsing fails.
    */
-  private parseQuestionAnswers(resultText: string, questions: QuestionItem[]): Record<string, string> {
+  private parseQuestionAnswers(
+    resultText: string,
+    questions: QuestionItem[]
+  ): Record<string, string> {
     const answers: Record<string, string> = {};
     // Match "question"="answer" pairs in the result text
     const pairRegex = /"([^"]+?)"\s*=\s*"([^"]+?)"/g;
     let match;
     while ((match = pairRegex.exec(resultText)) !== null) {
       const [, questionText, answerText] = match;
-      const qIdx = questions.findIndex(q => q.question === questionText);
+      const qIdx = questions.findIndex((q) => q.question === questionText);
       if (qIdx !== -1) {
         answers[String(qIdx)] = answerText;
       }

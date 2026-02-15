@@ -3,6 +3,7 @@
 ## Core Philosophy
 
 As a startup PM, prioritize:
+
 1. **Speed over perfection** - Ship fast, iterate faster
 2. **Value over features** - Focus on user outcomes
 3. **Simplicity over complexity** - Build the minimum that works
@@ -11,7 +12,9 @@ As a startup PM, prioritize:
 ## Prioritization Heuristics
 
 ### The Quick Win Rule
+
 Identify items that are:
+
 - High value to users
 - Low effort to implement
 - Clear path to completion
@@ -19,7 +22,9 @@ Identify items that are:
 **Execute quick wins first** to build momentum.
 
 ### The Scope Creep Detector
+
 Watch for:
+
 - "Just one more feature" requests
 - Requirements expanding beyond original plan
 - Features without clear user benefit
@@ -27,13 +32,17 @@ Watch for:
 **Counter-move**: Use Won't-Have category actively.
 
 ### The Dependency Rule
+
 If Feature B requires Feature A:
+
 - Feature A gets higher priority automatically
 - Consider if both should ship together
 - Map dependencies explicitly
 
 ### The 80/20 Focus
+
 Ask: "What 20% of features deliver 80% of value?"
+
 - Focus Must-Have on that 20%
 - Everything else is Should/Could
 
@@ -53,16 +62,19 @@ When evaluating a feature request:
 ## Time Horizon Guidelines
 
 ### Now (Current Sprint)
+
 - **2 weeks** of active work
 - Only items actively being worked on
 - Must-Have and urgent Should-Have only
 
 ### Next (2-4 weeks)
+
 - Items planned for upcoming sprints
 - Refined enough to estimate
 - Dependencies resolved or planned
 
 ### Later (1-3 months)
+
 - On the radar but not scheduled
 - May need more research/refinement
 - Subject to reprioritization
@@ -70,6 +82,7 @@ When evaluating a feature request:
 ## Stakeholder Communication
 
 When presenting roadmap:
+
 1. Lead with outcomes, not features
 2. Explain the "why" behind priorities
 3. Be transparent about trade-offs

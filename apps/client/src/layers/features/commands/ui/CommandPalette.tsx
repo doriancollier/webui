@@ -43,22 +43,18 @@ export function CommandPalette({ filteredCommands, selectedIndex, onSelect }: Co
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 4 }}
       transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-      className="absolute bottom-full left-0 right-0 mb-2 max-h-80 overflow-hidden rounded-lg border bg-popover shadow-lg"
+      className="bg-popover absolute right-0 bottom-full left-0 mb-2 max-h-80 overflow-hidden rounded-lg border shadow-lg"
       onMouseDown={(e) => e.preventDefault()}
     >
-      <div
-        id="command-palette-listbox"
-        role="listbox"
-        className="max-h-72 overflow-y-auto p-2"
-      >
+      <div id="command-palette-listbox" role="listbox" className="max-h-72 overflow-y-auto p-2">
         {filteredCommands.length === 0 ? (
-          <div className="px-2 py-4 text-center text-sm text-muted-foreground">
+          <div className="text-muted-foreground px-2 py-4 text-center text-sm">
             No commands found.
           </div>
         ) : (
           groups.map(({ namespace, items }) => (
             <div key={namespace}>
-              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+              <div className="text-muted-foreground px-2 py-1.5 text-xs font-medium">
                 {namespace}
               </div>
               {items.map(({ cmd, index }) => {
@@ -71,16 +67,14 @@ export function CommandPalette({ filteredCommands, selectedIndex, onSelect }: Co
                     aria-selected={isSelected}
                     data-selected={isSelected}
                     onClick={() => onSelect(cmd)}
-                    className="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-colors duration-100 data-[selected=true]:bg-ring/10 data-[selected=true]:text-foreground hover:bg-muted"
+                    className="data-[selected=true]:bg-ring/10 data-[selected=true]:text-foreground hover:bg-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition-colors duration-100"
                   >
-                    <span className="font-mono text-sm">
-                      {cmd.fullCommand}
-                    </span>
-                    <span className="text-xs text-muted-foreground truncate">
+                    <span className="font-mono text-sm">{cmd.fullCommand}</span>
+                    <span className="text-muted-foreground truncate text-xs">
                       {cmd.description}
                     </span>
                     {cmd.argumentHint && (
-                      <span className="text-xs text-muted-foreground/60 ml-auto">
+                      <span className="text-muted-foreground/60 ml-auto text-xs">
                         {cmd.argumentHint}
                       </span>
                     )}

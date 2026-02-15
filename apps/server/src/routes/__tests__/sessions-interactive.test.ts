@@ -49,7 +49,9 @@ describe('POST /api/sessions/:id/submit-answers', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(agentManager.submitAnswers).toHaveBeenCalledWith('test-session', 'tc-1', { '0': 'Option A' });
+    expect(agentManager.submitAnswers).toHaveBeenCalledWith('test-session', 'tc-1', {
+      '0': 'Option A',
+    });
   });
 
   it('returns 404 when no pending question exists', async () => {

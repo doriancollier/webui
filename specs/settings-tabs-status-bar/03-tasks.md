@@ -90,6 +90,7 @@ export { Tabs, TabsList, TabsTrigger, TabsContent };
 ```
 
 #### Acceptance Criteria
+
 - `@radix-ui/react-tabs` is listed in `apps/client/package.json` dependencies
 - `tabs.tsx` exports `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent`
 - Component follows the same `forwardRef` + `cn()` + `displayName` pattern as `switch.tsx`
@@ -176,6 +177,7 @@ setShowStatusBarContext: (v) => {
 **Step 3:** Update `resetPreferences()` to include the 5 new localStorage keys and reset values:
 
 Add to the `try` block's `localStorage.removeItem` calls:
+
 ```typescript
 localStorage.removeItem('gateway-show-status-bar-cwd');
 localStorage.removeItem('gateway-show-status-bar-permission');
@@ -185,6 +187,7 @@ localStorage.removeItem('gateway-show-status-bar-context');
 ```
 
 Add to the `set()` call:
+
 ```typescript
 showStatusBarCwd: true,
 showStatusBarPermission: true,
@@ -194,6 +197,7 @@ showStatusBarContext: true,
 ```
 
 #### Acceptance Criteria
+
 - All 5 boolean fields exist in `AppState` interface with corresponding setters
 - Initial values default to `true` (read from localStorage, fallback `true`)
 - Setters persist to localStorage and update Zustand state
@@ -238,40 +242,58 @@ const [activeTab, setActiveTab] = useState('preferences');
 
 ```typescript
 const {
-  showTimestamps, setShowTimestamps,
-  expandToolCalls, setExpandToolCalls,
-  autoHideToolCalls, setAutoHideToolCalls,
-  devtoolsOpen, toggleDevtools,
-  verboseLogging, setVerboseLogging,
-  fontSize, setFontSize,
+  showTimestamps,
+  setShowTimestamps,
+  expandToolCalls,
+  setExpandToolCalls,
+  autoHideToolCalls,
+  setAutoHideToolCalls,
+  devtoolsOpen,
+  toggleDevtools,
+  verboseLogging,
+  setVerboseLogging,
+  fontSize,
+  setFontSize,
   resetPreferences,
-  showStatusBarCwd, setShowStatusBarCwd,
-  showStatusBarPermission, setShowStatusBarPermission,
-  showStatusBarModel, setShowStatusBarModel,
-  showStatusBarCost, setShowStatusBarCost,
-  showStatusBarContext, setShowStatusBarContext,
+  showStatusBarCwd,
+  setShowStatusBarCwd,
+  showStatusBarPermission,
+  setShowStatusBarPermission,
+  showStatusBarModel,
+  setShowStatusBarModel,
+  showStatusBarCost,
+  setShowStatusBarCost,
+  showStatusBarContext,
+  setShowStatusBarContext,
 } = useAppStore();
 ```
 
 **Step 5:** Replace the entire content `<div>` (line 57-180 in current file) with the tabbed layout. The outer `<div className="overflow-y-auto flex-1 p-4 space-y-6">` becomes:
 
 ```tsx
-<Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
-  <TabsList className="grid w-full grid-cols-3 mx-4 mt-3" style={{ width: 'calc(100% - 2rem)' }}>
+<Tabs
+  value={activeTab}
+  onValueChange={setActiveTab}
+  className="flex flex-1 flex-col overflow-hidden"
+>
+  <TabsList className="mx-4 mt-3 grid w-full grid-cols-3" style={{ width: 'calc(100% - 2rem)' }}>
     <TabsTrigger value="preferences">Preferences</TabsTrigger>
     <TabsTrigger value="statusBar">Status Bar</TabsTrigger>
     <TabsTrigger value="server">Server</TabsTrigger>
   </TabsList>
 
-  <div className="overflow-y-auto flex-1 p-4 min-h-[280px]">
+  <div className="min-h-[280px] flex-1 overflow-y-auto p-4">
     <TabsContent value="preferences" className="mt-0 space-y-6">
       {/* Existing preferences content — all 7 SettingRow items + Reset header */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+          <h3 className="text-foreground text-sm font-semibold">Preferences</h3>
           <button
-            onClick={() => { resetPreferences(); setTheme('system'); }}
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+            onClick={() => {
+              resetPreferences();
+              setTheme('system');
+            }}
+            className="text-muted-foreground hover:text-foreground text-xs transition-colors duration-150"
           >
             Reset to defaults
           </button>
@@ -291,7 +313,10 @@ const {
         </SettingRow>
 
         <SettingRow label="Font size" description="Adjust the text size across the interface">
-          <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
+          <Select
+            value={fontSize}
+            onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}
+          >
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -307,11 +332,17 @@ const {
           <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
         </SettingRow>
 
-        <SettingRow label="Expand tool calls" description="Auto-expand tool call details in messages">
+        <SettingRow
+          label="Expand tool calls"
+          description="Auto-expand tool call details in messages"
+        >
           <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
         </SettingRow>
 
-        <SettingRow label="Auto-hide tool calls" description="Fade out completed tool calls after a few seconds">
+        <SettingRow
+          label="Auto-hide tool calls"
+          description="Fade out completed tool calls after a few seconds"
+        >
           <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
         </SettingRow>
 
@@ -345,7 +376,7 @@ const {
 
     <TabsContent value="server" className="mt-0 space-y-3">
       {/* Existing server config content — unchanged */}
-      <h3 className="text-sm font-semibold text-foreground">Server</h3>
+      <h3 className="text-foreground text-sm font-semibold">Server</h3>
       {/* ... all existing server content (isLoading skeleton, config rows, etc.) ... */}
     </TabsContent>
   </div>
@@ -355,6 +386,7 @@ const {
 **Step 6:** Remove the `<Separator />` that was between Preferences and Server sections (it is replaced by tabs).
 
 **Key points:**
+
 - The "Preferences" heading and "Reset to defaults" button stay inside the Preferences tab
 - The "Server" heading stays inside the Server tab
 - The `<Separator />` between sections is removed entirely
@@ -362,6 +394,7 @@ const {
 - Tab state persists across dialog open/close within the same page session (React state in parent)
 
 #### Acceptance Criteria
+
 - Dialog shows 3 horizontal tabs: Preferences, Status Bar, Server
 - Preferences tab is selected by default and shows all 7 existing preference controls
 - Status Bar tab shows 5 toggle switches (directory, permission mode, model, cost, context usage)
@@ -452,7 +485,7 @@ return (
     role="toolbar"
     aria-label="Session status"
     aria-live="polite"
-    className="flex flex-wrap items-center justify-center sm:justify-start gap-2 px-1 pt-2 text-xs text-muted-foreground whitespace-nowrap"
+    className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 px-1 pt-2 text-xs whitespace-nowrap sm:justify-start"
   >
     {items.map((item, i) => (
       <React.Fragment key={i}>
@@ -550,6 +583,7 @@ it('displays server configuration after loading', async () => {
 Similarly update `'shows badges for sensitive values instead of raw data'` and `'formats uptime as human-readable string'` to click the Server tab first.
 
 #### Acceptance Criteria
+
 - StatusLine reads 5 visibility toggles from useAppStore
 - Each status bar item is conditionally rendered based on its toggle
 - Separators only appear between visible items (no orphaned dots)
@@ -571,11 +605,11 @@ Task 1.2 (store toggles) ─┘                                   ──→ Task
 
 ## Summary
 
-| Task | Phase | Title | Blocked By | Files |
-|------|-------|-------|------------|-------|
-| 1.1 | 1 | Create tabs.tsx UI component + install dependency | — | `apps/client/package.json`, `apps/client/src/components/ui/tabs.tsx` |
-| 1.2 | 1 | Add 5 status bar visibility toggles to app-store.ts | — | `apps/client/src/stores/app-store.ts` |
-| 2.1 | 2 | Restructure SettingsDialog with tabs + Status Bar tab content | 1.1, 1.2 | `apps/client/src/components/settings/SettingsDialog.tsx` |
-| 2.2 | 2 | Update StatusLine with conditional rendering + update tests | 1.2, 2.1 | `apps/client/src/components/status/StatusLine.tsx`, `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` |
+| Task | Phase | Title                                                         | Blocked By | Files                                                                                                                       |
+| ---- | ----- | ------------------------------------------------------------- | ---------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 1.1  | 1     | Create tabs.tsx UI component + install dependency             | —          | `apps/client/package.json`, `apps/client/src/components/ui/tabs.tsx`                                                        |
+| 1.2  | 1     | Add 5 status bar visibility toggles to app-store.ts           | —          | `apps/client/src/stores/app-store.ts`                                                                                       |
+| 2.1  | 2     | Restructure SettingsDialog with tabs + Status Bar tab content | 1.1, 1.2   | `apps/client/src/components/settings/SettingsDialog.tsx`                                                                    |
+| 2.2  | 2     | Update StatusLine with conditional rendering + update tests   | 1.2, 2.1   | `apps/client/src/components/status/StatusLine.tsx`, `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` |
 
 **Total:** 4 tasks across 2 phases. All changes are client-side only (no server or shared package modifications).

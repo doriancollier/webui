@@ -5,8 +5,6 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: vi.fn(),
 }));
 
-import { query } from '@anthropic-ai/claude-agent-sdk';
-
 describe('AgentManager', () => {
   let agentManager: typeof import('../../services/agent-manager.js').agentManager;
 
@@ -71,7 +69,12 @@ describe('AgentManager', () => {
             result: '',
             stop_reason: 'end_turn',
             total_cost_usd: 0.001,
-            usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+            usage: {
+              input_tokens: 10,
+              output_tokens: 5,
+              cache_read_input_tokens: 0,
+              cache_creation_input_tokens: 0,
+            },
             modelUsage: {},
             permission_denials: [],
             uuid: 'uuid-2',
@@ -87,7 +90,7 @@ describe('AgentManager', () => {
       }
 
       expect(agentManager.hasSession('nonexistent')).toBe(true);
-      const doneEvent = events.find(e => e.type === 'done');
+      const doneEvent = events.find((e) => e.type === 'done');
       expect(doneEvent).toBeDefined();
     });
 
@@ -135,7 +138,12 @@ describe('AgentManager', () => {
             result: 'Hello world',
             stop_reason: 'end_turn',
             total_cost_usd: 0.001,
-            usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+            usage: {
+              input_tokens: 10,
+              output_tokens: 5,
+              cache_read_input_tokens: 0,
+              cache_creation_input_tokens: 0,
+            },
             modelUsage: {},
             permission_denials: [],
             uuid: 'uuid-3',
@@ -150,11 +158,11 @@ describe('AgentManager', () => {
         events.push(event);
       }
 
-      const textEvent = events.find(e => e.type === 'text_delta');
+      const textEvent = events.find((e) => e.type === 'text_delta');
       expect(textEvent).toBeDefined();
       expect((textEvent!.data as any).text).toBe('Hello world');
 
-      const doneEvent = events.find(e => e.type === 'done');
+      const doneEvent = events.find((e) => e.type === 'done');
       expect(doneEvent).toBeDefined();
       expect((doneEvent!.data as any).sessionId).toBe('s1');
     });
@@ -219,7 +227,12 @@ describe('AgentManager', () => {
             result: '',
             stop_reason: 'end_turn',
             total_cost_usd: 0.001,
-            usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 },
+            usage: {
+              input_tokens: 10,
+              output_tokens: 5,
+              cache_read_input_tokens: 0,
+              cache_creation_input_tokens: 0,
+            },
             modelUsage: {},
             permission_denials: [],
             uuid: 'uuid-5',
@@ -234,15 +247,15 @@ describe('AgentManager', () => {
         events.push(event);
       }
 
-      const startEvent = events.find(e => e.type === 'tool_call_start');
+      const startEvent = events.find((e) => e.type === 'tool_call_start');
       expect(startEvent).toBeDefined();
       expect((startEvent!.data as any).toolName).toBe('Read');
 
-      const deltaEvent = events.find(e => e.type === 'tool_call_delta');
+      const deltaEvent = events.find((e) => e.type === 'tool_call_delta');
       expect(deltaEvent).toBeDefined();
       expect((deltaEvent!.data as any).input).toBe('{"file":"test.ts"}');
 
-      const endEvent = events.find(e => e.type === 'tool_call_end');
+      const endEvent = events.find((e) => e.type === 'tool_call_end');
       expect(endEvent).toBeDefined();
       expect((endEvent!.data as any).status).toBe('complete');
     });
@@ -262,12 +275,12 @@ describe('AgentManager', () => {
         events.push(event);
       }
 
-      const errorEvent = events.find(e => e.type === 'error');
+      const errorEvent = events.find((e) => e.type === 'error');
       expect(errorEvent).toBeDefined();
       expect((errorEvent!.data as any).message).toBe('API key not found');
 
       // Should still emit done
-      const doneEvent = events.find(e => e.type === 'done');
+      const doneEvent = events.find((e) => e.type === 'done');
       expect(doneEvent).toBeDefined();
     });
   });

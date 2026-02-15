@@ -18,7 +18,8 @@
     }
   },
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "lint": "eslint ."
   },
   "dependencies": {
     "zod": "^4.3.6",

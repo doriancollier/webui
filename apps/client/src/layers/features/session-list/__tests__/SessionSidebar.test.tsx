@@ -9,7 +9,9 @@ import { TransportProvider } from '@/layers/shared/model';
 // Mock motion/react
 vi.mock('motion/react', () => ({
   motion: {
-    div: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => <div {...props}>{children}</div>,
+    div: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => (
+      <div {...props}>{children}</div>
+    ),
   },
   AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
@@ -47,14 +49,14 @@ vi.mock('@/layers/shared/model/use-is-mobile', () => ({
 vi.mock('@/layers/shared/lib/session-utils', () => ({
   groupSessionsByTime: (sessions: Session[]) => {
     if (sessions.length === 0) return [];
-    const today = sessions.filter(s => s.updatedAt >= '2026-02-07');
-    const older = sessions.filter(s => s.updatedAt < '2026-02-07');
+    const today = sessions.filter((s) => s.updatedAt >= '2026-02-07');
+    const older = sessions.filter((s) => s.updatedAt < '2026-02-07');
     const groups = [];
     if (today.length > 0) groups.push({ label: 'Today', sessions: today });
     if (older.length > 0) groups.push({ label: 'Older', sessions: older });
     return groups;
   },
-  formatRelativeTime: (iso: string) => iso >= '2026-02-07' ? '1h ago' : 'Jan 1, 3pm',
+  formatRelativeTime: (iso: string) => (iso >= '2026-02-07' ? '1h ago' : 'Jan 1, 3pm'),
 }));
 
 function createMockTransport(overrides: Partial<Transport> = {}): Transport {
@@ -74,7 +76,21 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getConfig: vi.fn().mockResolvedValue({ version: '1.0.0', port: 6942, uptime: 0, workingDirectory: '/test', nodeVersion: 'v20.0.0', claudeCliPath: null, tunnel: { enabled: false, connected: false, url: null, authEnabled: false, tokenConfigured: false } }),
+    getConfig: vi.fn().mockResolvedValue({
+      version: '1.0.0',
+      port: 6942,
+      uptime: 0,
+      workingDirectory: '/test',
+      nodeVersion: 'v20.0.0',
+      claudeCliPath: null,
+      tunnel: {
+        enabled: false,
+        connected: false,
+        url: null,
+        authEnabled: false,
+        tokenConfigured: false,
+      },
+    }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
     ...overrides,
   };
@@ -144,10 +160,12 @@ describe('SessionSidebar', () => {
 
   it('renders sessions grouped by time', async () => {
     mockTransport = createMockTransport({
-      listSessions: vi.fn().mockResolvedValue([
-        makeSession({ id: 's1', title: 'Today session', updatedAt: '2026-02-07T12:00:00Z' }),
-        makeSession({ id: 's2', title: 'Old session', updatedAt: '2025-06-01T10:00:00Z' }),
-      ]),
+      listSessions: vi
+        .fn()
+        .mockResolvedValue([
+          makeSession({ id: 's1', title: 'Today session', updatedAt: '2026-02-07T12:00:00Z' }),
+          makeSession({ id: 's2', title: 'Old session', updatedAt: '2025-06-01T10:00:00Z' }),
+        ]),
     });
 
     renderWithQuery(<SessionSidebar />);
@@ -171,7 +189,10 @@ describe('SessionSidebar', () => {
     fireEvent.click(screen.getByText('New chat'));
 
     await waitFor(() => {
-      expect(vi.mocked(mockTransport.createSession).mock.calls[0][0]).toEqual({ permissionMode: 'default', cwd: '/test/cwd' });
+      expect(vi.mocked(mockTransport.createSession).mock.calls[0][0]).toEqual({
+        permissionMode: 'default',
+        cwd: '/test/cwd',
+      });
     });
   });
 
@@ -188,9 +209,11 @@ describe('SessionSidebar', () => {
 
   it('hides "Today" header when it is the only group', async () => {
     mockTransport = createMockTransport({
-      listSessions: vi.fn().mockResolvedValue([
-        makeSession({ id: 's1', title: 'Only today', updatedAt: '2026-02-07T12:00:00Z' }),
-      ]),
+      listSessions: vi
+        .fn()
+        .mockResolvedValue([
+          makeSession({ id: 's1', title: 'Only today', updatedAt: '2026-02-07T12:00:00Z' }),
+        ]),
     });
 
     renderWithQuery(<SessionSidebar />);
@@ -204,10 +227,12 @@ describe('SessionSidebar', () => {
 
   it('auto-selects first session when no active session', async () => {
     mockTransport = createMockTransport({
-      listSessions: vi.fn().mockResolvedValue([
-        makeSession({ id: 's1', title: 'First session' }),
-        makeSession({ id: 's2', title: 'Second session' }),
-      ]),
+      listSessions: vi
+        .fn()
+        .mockResolvedValue([
+          makeSession({ id: 's1', title: 'First session' }),
+          makeSession({ id: 's2', title: 'Second session' }),
+        ]),
     });
 
     renderWithQuery(<SessionSidebar />);
@@ -216,5 +241,4 @@ describe('SessionSidebar', () => {
       expect(mockSetSessionId).toHaveBeenCalledWith('s1');
     });
   });
-
 });

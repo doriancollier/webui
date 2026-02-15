@@ -8,11 +8,11 @@ export interface CelebrationEvent {
 
 export interface CelebrationEngineConfig {
   enabled: boolean;
-  miniProbability: number;       // 0.3 = 30%
-  debounceWindowMs: number;      // 2000
-  debounceThreshold: number;     // 3
-  minTasksForMajor: number;      // 3
-  idleTimeoutMs: number;         // 30000
+  miniProbability: number; // 0.3 = 30%
+  debounceWindowMs: number; // 2000
+  debounceThreshold: number; // 3
+  minTasksForMajor: number; // 3
+  idleTimeoutMs: number; // 30000
   onCelebrate: (event: CelebrationEvent) => void;
 }
 
@@ -36,7 +36,7 @@ export class CelebrationEngine {
 
     // Clean up old completions outside debounce window
     this.recentCompletions = this.recentCompletions.filter(
-      (t) => now - t < this.config.debounceWindowMs,
+      (t) => now - t < this.config.debounceWindowMs
     );
 
     // Check if all tasks are completed (major celebration)

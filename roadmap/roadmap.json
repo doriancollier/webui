@@ -27,10 +27,7 @@
       "health": "on-track",
       "timeHorizon": "now",
       "effort": 8,
-      "labels": [
-        "auth",
-        "security"
-      ],
+      "labels": ["auth", "security"],
       "dependencies": [],
       "createdAt": "2025-12-01T10:00:00.000000+00:00",
       "updatedAt": "2026-01-15T14:30:00.000000+00:00",
@@ -49,13 +46,8 @@
       "health": "on-track",
       "timeHorizon": "now",
       "effort": 5,
-      "labels": [
-        "ui",
-        "layout"
-      ],
-      "dependencies": [
-        "550e8400-e29b-41d4-a716-446655440001"
-      ],
+      "labels": ["ui", "layout"],
+      "dependencies": ["550e8400-e29b-41d4-a716-446655440001"],
       "createdAt": "2025-12-05T10:00:00.000000+00:00",
       "updatedAt": "2026-02-01T22:17:59.929096+00:00",
       "workflowState": {
@@ -74,10 +66,7 @@
       "health": "on-track",
       "timeHorizon": "next",
       "effort": 3,
-      "labels": [
-        "database",
-        "performance"
-      ],
+      "labels": ["database", "performance"],
       "dependencies": [],
       "createdAt": "2025-12-10T10:00:00.000000+00:00",
       "updatedAt": "2025-12-10T10:00:00.000000+00:00"
@@ -92,11 +81,7 @@
       "health": "at-risk",
       "timeHorizon": "now",
       "effort": 2,
-      "labels": [
-        "mobile",
-        "ux",
-        "navigation"
-      ],
+      "labels": ["mobile", "ux", "navigation"],
       "dependencies": [],
       "createdAt": "2026-01-25T10:00:00.000000+00:00",
       "updatedAt": "2026-01-25T10:00:00.000000+00:00"
@@ -111,10 +96,7 @@
       "health": "on-track",
       "timeHorizon": "now",
       "effort": 5,
-      "labels": [
-        "ui",
-        "theming"
-      ],
+      "labels": ["ui", "theming"],
       "dependencies": [],
       "createdAt": "2025-12-15T10:00:00.000000+00:00",
       "updatedAt": "2026-01-10T16:45:00.000000+00:00"
@@ -129,31 +111,15 @@
       "health": "on-track",
       "timeHorizon": "later",
       "effort": 3,
-      "labels": [
-        "api",
-        "security",
-        "research"
-      ],
+      "labels": ["api", "security", "research"],
       "dependencies": [],
       "createdAt": "2026-01-20T10:00:00.000000+00:00",
       "updatedAt": "2026-01-20T10:00:00.000000+00:00",
       "ideationContext": {
-        "targetUsers": [
-          "API consumers",
-          "developers"
-        ],
-        "painPoints": [
-          "No rate limiting on public endpoints",
-          "Potential for abuse"
-        ],
-        "successCriteria": [
-          "Clear recommendation with tradeoffs",
-          "Implementation plan"
-        ],
-        "constraints": [
-          "Vercel serverless environment",
-          "Budget-conscious solution"
-        ]
+        "targetUsers": ["API consumers", "developers"],
+        "painPoints": ["No rate limiting on public endpoints", "Potential for abuse"],
+        "successCriteria": ["Clear recommendation with tradeoffs", "Implementation plan"],
+        "constraints": ["Vercel serverless environment", "Budget-conscious solution"]
       }
     },
     {
@@ -166,13 +132,8 @@
       "health": "blocked",
       "timeHorizon": "next",
       "effort": 5,
-      "labels": [
-        "email",
-        "auth"
-      ],
-      "dependencies": [
-        "550e8400-e29b-41d4-a716-446655440001"
-      ],
+      "labels": ["email", "auth"],
+      "dependencies": ["550e8400-e29b-41d4-a716-446655440001"],
       "createdAt": "2026-01-05T10:00:00.000000+00:00",
       "updatedAt": "2026-01-28T11:00:00.000000+00:00"
     },
@@ -186,10 +147,7 @@
       "health": "on-track",
       "timeHorizon": "later",
       "effort": 13,
-      "labels": [
-        "user-management",
-        "epic"
-      ],
+      "labels": ["user-management", "epic"],
       "dependencies": [
         "550e8400-e29b-41d4-a716-446655440001",
         "550e8400-e29b-41d4-a716-446655440002"

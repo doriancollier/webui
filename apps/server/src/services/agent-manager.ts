@@ -2,9 +2,20 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { execFileSync } from 'child_process';
 import { existsSync } from 'fs';
-import { query, type Options, type SDKMessage, type PermissionResult, type Query } from '@anthropic-ai/claude-agent-sdk';
+import {
+  query,
+  type Options,
+  type SDKMessage,
+  type PermissionResult,
+  type Query,
+} from '@anthropic-ai/claude-agent-sdk';
 import type { Response } from 'express';
-import type { StreamEvent, PermissionMode, TaskUpdateEvent, TaskStatus } from '@dorkos/shared/types';
+import type {
+  StreamEvent,
+  PermissionMode,
+  TaskUpdateEvent,
+  TaskStatus,
+} from '@dorkos/shared/types';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,13 +27,17 @@ export function resolveClaudeCliPath(): string | undefined {
   try {
     const sdkCli = require.resolve('@anthropic-ai/claude-agent-sdk/cli.js');
     if (existsSync(sdkCli)) return sdkCli;
-  } catch { /* not resolvable in bundled context */ }
+  } catch {
+    /* not resolvable in bundled context */
+  }
 
   // 2. Find the globally installed `claude` binary via PATH
   try {
     const bin = execFileSync('which', ['claude'], { encoding: 'utf-8' }).trim();
     if (bin && existsSync(bin)) return bin;
-  } catch { /* not found on PATH */ }
+  } catch {
+    /* not found on PATH */
+  }
 
   // 3. Let SDK use its default resolution (may fail in Electron)
   return undefined;
@@ -61,7 +76,7 @@ interface AgentSession {
 function handleAskUserQuestion(
   session: AgentSession,
   toolUseId: string,
-  input: Record<string, unknown>,
+  input: Record<string, unknown>
 ): Promise<PermissionResult> {
   session.eventQueue.push({
     type: 'question_prompt',
@@ -103,7 +118,7 @@ function handleToolApproval(
   session: AgentSession,
   toolUseId: string,
   toolName: string,
-  input: Record<string, unknown>,
+  input: Record<string, unknown>
 ): Promise<PermissionResult> {
   session.eventQueue.push({
     type: 'approval_required',
@@ -130,7 +145,7 @@ function handleToolApproval(
         resolve(
           approved
             ? { behavior: 'allow', updatedInput: input }
-            : { behavior: 'deny', message: 'User denied tool execution' },
+            : { behavior: 'deny', message: 'User denied tool execution' }
         );
       },
       reject: () => {
@@ -145,7 +160,10 @@ function handleToolApproval(
 
 const TASK_TOOL_NAMES = new Set(['TaskCreate', 'TaskUpdate', 'TaskList', 'TaskGet']);
 
-export function buildTaskEvent(toolName: string, input: Record<string, unknown>): TaskUpdateEvent | null {
+export function buildTaskEvent(
+  toolName: string,
+  input: Record<string, unknown>
+): TaskUpdateEvent | null {
   switch (toolName) {
     case 'TaskCreate':
       return {
@@ -196,11 +214,14 @@ export class AgentManager {
    * For new sessions, sdkSessionId is assigned after the first query() init message.
    * For resumed sessions, the sessionId IS the sdkSessionId.
    */
-  ensureSession(sessionId: string, opts: {
-    permissionMode: PermissionMode;
-    cwd?: string;
-    hasStarted?: boolean;
-  }): void {
+  ensureSession(
+    sessionId: string,
+    opts: {
+      permissionMode: PermissionMode;
+      cwd?: string;
+      hasStarted?: boolean;
+    }
+  ): void {
     if (!this.sessions.has(sessionId)) {
       this.sessions.set(sessionId, {
         sdkSessionId: sessionId,
@@ -246,7 +267,9 @@ export class AgentManager {
       sdkOptions.resume = session.sdkSessionId;
     }
 
-    console.log(`[sendMessage] session=${sessionId} permissionMode=${session.permissionMode} hasStarted=${session.hasStarted} resume=${session.hasStarted ? session.sdkSessionId : 'N/A'}`);
+    console.log(
+      `[sendMessage] session=${sessionId} permissionMode=${session.permissionMode} hasStarted=${session.hasStarted} resume=${session.hasStarted ? session.sdkSessionId : 'N/A'}`
+    );
 
     switch (session.permissionMode) {
       case 'bypassPermissions':
@@ -276,22 +299,28 @@ export class AgentManager {
         toolUseID: string;
         decisionReason?: string;
         suggestions?: unknown[];
-      },
+      }
     ): Promise<PermissionResult> => {
       // AskUserQuestion: pause, collect answers, inject into input
       if (toolName === 'AskUserQuestion') {
-        console.log(`[canUseTool] ${toolName} → routing to question handler (toolUseID=${context.toolUseID})`);
+        console.log(
+          `[canUseTool] ${toolName} → routing to question handler (toolUseID=${context.toolUseID})`
+        );
         return handleAskUserQuestion(session, context.toolUseID, input);
       }
 
       // Tool approval: pause when permissionMode is 'default'
       if (session.permissionMode === 'default') {
-        console.log(`[canUseTool] ${toolName} → requesting approval (permissionMode=default, toolUseID=${context.toolUseID})`);
+        console.log(
+          `[canUseTool] ${toolName} → requesting approval (permissionMode=default, toolUseID=${context.toolUseID})`
+        );
         return handleToolApproval(session, context.toolUseID, toolName, input);
       }
 
       // All other cases: allow immediately
-      console.log(`[canUseTool] ${toolName} → auto-allow (permissionMode=${session.permissionMode}, toolUseID=${context.toolUseID})`);
+      console.log(
+        `[canUseTool] ${toolName} → auto-allow (permissionMode=${session.permissionMode}, toolUseID=${context.toolUseID})`
+      );
       return { behavior: 'allow', updatedInput: input };
     };
 
@@ -305,12 +334,24 @@ export class AgentManager {
     let taskToolInput = '';
 
     const toolState = {
-      get inTool() { return inTool; },
-      get currentToolName() { return currentToolName; },
-      get currentToolId() { return currentToolId; },
-      get taskToolInput() { return taskToolInput; },
-      appendTaskInput: (chunk: string) => { taskToolInput += chunk; },
-      resetTaskInput: () => { taskToolInput = ''; },
+      get inTool() {
+        return inTool;
+      },
+      get currentToolName() {
+        return currentToolName;
+      },
+      get currentToolId() {
+        return currentToolId;
+      },
+      get taskToolInput() {
+        return taskToolInput;
+      },
+      appendTaskInput: (chunk: string) => {
+        taskToolInput += chunk;
+      },
+      resetTaskInput: () => {
+        taskToolInput = '';
+      },
       setToolState: (tool: boolean, name: string, id: string) => {
         inTool = tool;
         currentToolName = name;
@@ -321,7 +362,8 @@ export class AgentManager {
     try {
       const sdkIterator = agentQuery[Symbol.asyncIterator]();
       // Cache the SDK promise so we never call .next() twice concurrently
-      let pendingSdkPromise: Promise<{ sdk: true; result: IteratorResult<SDKMessage> }> | null = null;
+      let pendingSdkPromise: Promise<{ sdk: true; result: IteratorResult<SDKMessage> }> | null =
+        null;
 
       while (true) {
         // Drain any events pushed by canUseTool callbacks
@@ -332,13 +374,13 @@ export class AgentManager {
         }
 
         // Race between SDK yielding next message and queue getting a new event
-        const queuePromise = new Promise<'queue'>(resolve => {
+        const queuePromise = new Promise<'queue'>((resolve) => {
           session.eventQueueNotify = () => resolve('queue');
         });
 
         // Only call .next() if we don't already have a pending SDK promise
         if (!pendingSdkPromise) {
-          pendingSdkPromise = sdkIterator.next().then(result => ({ sdk: true as const, result }));
+          pendingSdkPromise = sdkIterator.next().then((result) => ({ sdk: true as const, result }));
         }
 
         const winner = await Promise.race([queuePromise, pendingSdkPromise]);
@@ -466,7 +508,9 @@ export class AgentManager {
               if (taskEvent) {
                 yield { type: 'task_update', data: taskEvent };
               }
-            } catch { /* malformed JSON, skip */ }
+            } catch {
+              /* malformed JSON, skip */
+            }
             toolState.resetTaskInput();
           }
         }
@@ -494,10 +538,10 @@ export class AgentManager {
       const result = message as Record<string, unknown>;
       const usage = result.usage as Record<string, unknown> | undefined;
       // modelUsage is Record<string, ModelUsage> — grab the first entry for contextWindow
-      const modelUsageMap = result.modelUsage as Record<string, Record<string, unknown>> | undefined;
-      const firstModelUsage = modelUsageMap
-        ? Object.values(modelUsageMap)[0]
-        : undefined;
+      const modelUsageMap = result.modelUsage as
+        | Record<string, Record<string, unknown>>
+        | undefined;
+      const firstModelUsage = modelUsageMap ? Object.values(modelUsageMap)[0] : undefined;
       yield {
         type: 'session_status',
         data: {
@@ -515,7 +559,10 @@ export class AgentManager {
     }
   }
 
-  updateSession(sessionId: string, opts: { permissionMode?: PermissionMode; model?: string }): boolean {
+  updateSession(
+    sessionId: string,
+    opts: { permissionMode?: PermissionMode; model?: string }
+  ): boolean {
     let session = this.findSession(sessionId);
     if (!session) {
       // Auto-create so settings are ready for the next sendMessage call
@@ -526,11 +573,15 @@ export class AgentManager {
       session = this.sessions.get(sessionId)!;
     }
     if (opts.permissionMode) {
-      console.log(`[updateSession] ${sessionId} permissionMode: ${session.permissionMode} → ${opts.permissionMode}`);
+      console.log(
+        `[updateSession] ${sessionId} permissionMode: ${session.permissionMode} → ${opts.permissionMode}`
+      );
       session.permissionMode = opts.permissionMode;
       // Propagate to active SDK query for mid-stream changes
       if (session.activeQuery) {
-        console.log(`[updateSession] ${sessionId} calling setPermissionMode(${opts.permissionMode}) on active query`);
+        console.log(
+          `[updateSession] ${sessionId} calling setPermissionMode(${opts.permissionMode}) on active query`
+        );
         session.activeQuery.setPermissionMode(opts.permissionMode).catch((err) => {
           console.error(`[updateSession] setPermissionMode failed:`, err);
         });
@@ -546,10 +597,14 @@ export class AgentManager {
     const session = this.findSession(sessionId);
     const pending = session?.pendingInteractions.get(toolCallId);
     if (!pending || pending.type !== 'approval') {
-      console.log(`[approveTool] ${sessionId} toolCallId=${toolCallId} approved=${approved} → NOT FOUND (session=${!!session}, pending=${!!pending}, type=${pending?.type})`);
+      console.log(
+        `[approveTool] ${sessionId} toolCallId=${toolCallId} approved=${approved} → NOT FOUND (session=${!!session}, pending=${!!pending}, type=${pending?.type})`
+      );
       return false;
     }
-    console.log(`[approveTool] ${sessionId} toolCallId=${toolCallId} approved=${approved} → resolving`);
+    console.log(
+      `[approveTool] ${sessionId} toolCallId=${toolCallId} approved=${approved} → resolving`
+    );
     pending.resolve(approved);
     return true;
   }

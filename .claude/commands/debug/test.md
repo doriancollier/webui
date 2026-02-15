@@ -1,6 +1,6 @@
 ---
 description: Debug and fix failing tests using test-driven analysis and self-debugging methodology
-argument-hint: "[test-file-path or test-name]"
+argument-hint: '[test-file-path or test-name]'
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
@@ -11,6 +11,7 @@ Systematically debug and resolve failing tests using evidence-based self-debuggi
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If argument is a test file path, run that specific test
 - If argument is a test name pattern, find and run matching tests
 - If empty, run all tests and analyze failures
@@ -20,11 +21,13 @@ Parse `$ARGUMENTS`:
 ### 1.1 Run Tests
 
 If specific test provided:
+
 ```bash
 pnpm test [test-file-or-pattern] 2>&1
 ```
 
 If no argument, run all tests:
+
 ```bash
 pnpm test 2>&1 | head -200
 ```
@@ -32,6 +35,7 @@ pnpm test 2>&1 | head -200
 ### 1.2 Parse Test Output
 
 Extract from the test output:
+
 - **Failing test names** and their locations
 - **Expected vs Actual** values
 - **Error messages** and stack traces
@@ -143,6 +147,7 @@ Common test setup issues:
 ### 3.3 Trace the Execution Path
 
 For the failing test:
+
 1. What inputs go into the function?
 2. What code path is executed?
 3. What intermediate values are produced?
@@ -150,13 +155,13 @@ For the failing test:
 
 ### 3.4 Check for Common Issues
 
-| Issue | Symptom | Check |
-|-------|---------|-------|
-| Async timing | Intermittent failures | `await`, `waitFor`, `act` usage |
-| Mock not called | Expected call not received | Mock setup and invocation |
-| Wrong assertion | Comparing wrong values | Assertion target and matcher |
-| State pollution | Test passes alone, fails in suite | Test isolation, cleanup |
-| Snapshot mismatch | UI changed | Intentional vs accidental change |
+| Issue             | Symptom                           | Check                            |
+| ----------------- | --------------------------------- | -------------------------------- |
+| Async timing      | Intermittent failures             | `await`, `waitFor`, `act` usage  |
+| Mock not called   | Expected call not received        | Mock setup and invocation        |
+| Wrong assertion   | Comparing wrong values            | Assertion target and matcher     |
+| State pollution   | Test passes alone, fails in suite | Test isolation, cleanup          |
+| Snapshot mismatch | UI changed                        | Intentional vs accidental change |
 
 ## Phase 4: Fix Strategy
 
@@ -201,6 +206,7 @@ TodoWrite:
 ### 5.1 Make Changes
 
 For each change:
+
 1. **Read the file first** - never edit without reading
 2. **Make targeted edits** - fix only what's needed
 3. **Keep tests focused** - don't over-test
@@ -235,6 +241,7 @@ AskUserQuestion:
 ### 6.1 Verify Test Coverage
 
 After fixing, check:
+
 - Does the test actually verify the intended behavior?
 - Are edge cases covered?
 - Is the test isolated (doesn't depend on other tests)?
@@ -242,6 +249,7 @@ After fixing, check:
 ### 6.2 Check for False Positives
 
 Ensure the test would fail if the implementation was wrong:
+
 - Is the assertion actually checking the right thing?
 - Could the test pass with incorrect implementation?
 
@@ -272,6 +280,7 @@ pnpm test --testPathPattern="[feature-pattern]" 2>&1
 ### 7.2 Lessons Learned
 
 If relevant, note:
+
 - Pattern that caused the issue
 - How to prevent similar issues
 - Testing best practices reminder
@@ -299,14 +308,14 @@ AskUserQuestion:
 
 ### Common Test Failures
 
-| Failure Type | Symptom | Quick Fix |
-|--------------|---------|-----------|
-| Async not awaited | Promise returned | Add `await` or use `waitFor` |
-| Mock not called | `expect(mock).toHaveBeenCalled()` fails | Check mock is correctly injected |
-| Snapshot mismatch | Snapshot comparison fails | Run `pnpm test -u` to update |
-| Timeout | Test times out | Increase timeout, check async logic |
-| Type error in test | TypeScript error | Fix type annotations in test |
-| Module not found | Import error | Check mock paths, module aliases |
+| Failure Type       | Symptom                                 | Quick Fix                           |
+| ------------------ | --------------------------------------- | ----------------------------------- |
+| Async not awaited  | Promise returned                        | Add `await` or use `waitFor`        |
+| Mock not called    | `expect(mock).toHaveBeenCalled()` fails | Check mock is correctly injected    |
+| Snapshot mismatch  | Snapshot comparison fails               | Run `pnpm test -u` to update        |
+| Timeout            | Test times out                          | Increase timeout, check async logic |
+| Type error in test | TypeScript error                        | Fix type annotations in test        |
+| Module not found   | Import error                            | Check mock paths, module aliases    |
 
 ### Testing Patterns in This Project
 
@@ -318,12 +327,12 @@ AskUserQuestion:
 ### Jest/Vitest Matchers
 
 ```typescript
-expect(value).toBe(exact)           // Strict equality
-expect(value).toEqual(deep)         // Deep equality
-expect(value).toMatchObject(partial) // Partial match
-expect(fn).toHaveBeenCalledWith(args) // Function called with
-expect(promise).resolves.toBe(value) // Async resolution
-expect(fn).toThrow(error)           // Error thrown
+expect(value).toBe(exact); // Strict equality
+expect(value).toEqual(deep); // Deep equality
+expect(value).toMatchObject(partial); // Partial match
+expect(fn).toHaveBeenCalledWith(args); // Function called with
+expect(promise).resolves.toBe(value); // Async resolution
+expect(fn).toThrow(error); // Error thrown
 ```
 
 ## Important Behaviors

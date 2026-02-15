@@ -36,21 +36,21 @@ NGROK_AUTHTOKEN=your_token dorkos --tunnel
 
 ## Options
 
-| Flag | Short | Description | Default |
-|------|-------|-------------|---------|
-| `--port <port>` | `-p` | Port to listen on | `6942` |
-| `--tunnel` | `-t` | Enable ngrok tunnel | `false` |
-| `--dir <path>` | `-d` | Working directory | Current directory |
-| `--help` | `-h` | Show help message | |
-| `--version` | `-v` | Show version number | |
+| Flag            | Short | Description         | Default           |
+| --------------- | ----- | ------------------- | ----------------- |
+| `--port <port>` | `-p`  | Port to listen on   | `6942`            |
+| `--tunnel`      | `-t`  | Enable ngrok tunnel | `false`           |
+| `--dir <path>`  | `-d`  | Working directory   | Current directory |
+| `--help`        | `-h`  | Show help message   |                   |
+| `--version`     | `-v`  | Show version number |                   |
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
+| Variable          | Description                                |
+| ----------------- | ------------------------------------------ |
 | `NGROK_AUTHTOKEN` | ngrok auth token (required for `--tunnel`) |
-| `TUNNEL_AUTH` | HTTP basic auth for tunnel (`user:pass`) |
-| `TUNNEL_DOMAIN` | Custom ngrok domain |
+| `TUNNEL_AUTH`     | HTTP basic auth for tunnel (`user:pass`)   |
+| `TUNNEL_DOMAIN`   | Custom ngrok domain                        |
 
 ## Features
 

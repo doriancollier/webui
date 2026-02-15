@@ -35,10 +35,12 @@ Why flat fields instead of a discriminated union: simpler Zod schema, simpler cl
 ### Server-side: Transcript Reader Changes
 
 The core challenge is that slash commands produce **two consecutive** user messages:
+
 1. Command metadata: `<command-message>ideate</command-message>\n<command-name>/ideate</command-name>\n<command-args>...</command-args>`
 2. Expanded prompt: The full skill instructions (starts with `# Preflight` or similar)
 
 **Algorithm:**
+
 1. When parsing user messages, if content matches `<command-message>` pattern:
    - Extract `commandName` and `commandArgs` from XML tags
    - Store in a `pendingCommand` variable
@@ -56,6 +58,7 @@ The core challenge is that slash commands produce **two consecutive** user messa
    - Skip entirely (don't emit)
 
 **Edge cases:**
+
 - Command metadata message with `<command-message>` that starts with `<command-name>` instead — the existing `startsWith('<command-name>')` check already catches this. Need to also detect messages starting with `<command-message>`.
 - The `pendingCommand` state is reset if a non-expansion message is encountered
 - Some commands have no following expansion (e.g., `/compact` produces `<local-command-stdout>` instead) — `pendingCommand` is consumed/cleared at next message regardless
@@ -82,9 +85,7 @@ Add rendering branches for special message types:
 In `packages/shared/src/schemas.ts`, update `HistoryMessageSchema`:
 
 ```typescript
-export const MessageTypeSchema = z
-  .enum(['command', 'compaction'])
-  .openapi('MessageType');
+export const MessageTypeSchema = z.enum(['command', 'compaction']).openapi('MessageType');
 
 export const HistoryMessageSchema = z
   .object({
@@ -155,10 +156,10 @@ The `ChatMessage` interface in `use-chat-session.ts` needs matching fields.
 
 ## File Change Summary
 
-| File | Change |
-|------|--------|
-| `packages/shared/src/schemas.ts` | Add `MessageTypeSchema`, 3 new optional fields to `HistoryMessageSchema` |
-| `apps/server/src/services/transcript-reader.ts` | Add command/compaction/task-notification detection in `readTranscript()` |
-| `apps/server/src/services/__tests__/transcript-reader.test.ts` | New test cases |
-| `apps/client/src/hooks/use-chat-session.ts` | Add fields to `ChatMessage`, map from history |
-| `apps/client/src/components/chat/MessageItem.tsx` | Rendering branches for command + compaction types |
+| File                                                           | Change                                                                   |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `packages/shared/src/schemas.ts`                               | Add `MessageTypeSchema`, 3 new optional fields to `HistoryMessageSchema` |
+| `apps/server/src/services/transcript-reader.ts`                | Add command/compaction/task-notification detection in `readTranscript()` |
+| `apps/server/src/services/__tests__/transcript-reader.test.ts` | New test cases                                                           |
+| `apps/client/src/hooks/use-chat-session.ts`                    | Add fields to `ChatMessage`, map from history                            |
+| `apps/client/src/components/chat/MessageItem.tsx`              | Rendering branches for command + compaction types                        |

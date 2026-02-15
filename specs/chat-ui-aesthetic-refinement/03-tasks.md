@@ -20,59 +20,72 @@ Update CSS custom properties in `src/client/index.css` to replace zinc HSL value
 
 Replace each value exactly:
 
-| Token | Current (zinc) | New (refined neutral) |
-|-------|---------------|----------------------|
-| `--background` | `0 0% 100%` | `0 0% 98%` |
-| `--foreground` | `240 10% 3.9%` | `0 0% 9%` |
-| `--card` | `0 0% 100%` | `0 0% 100%` (unchanged) |
-| `--card-foreground` | `240 10% 3.9%` | `0 0% 9%` |
-| `--popover` | `0 0% 100%` | `0 0% 100%` (unchanged) |
-| `--popover-foreground` | `240 10% 3.9%` | `0 0% 9%` |
-| `--primary` | `240 5.9% 10%` | `0 0% 9%` |
-| `--primary-foreground` | `0 0% 98%` | `0 0% 98%` (unchanged) |
-| `--secondary` | `240 4.8% 95.9%` | `0 0% 96%` |
-| `--secondary-foreground` | `240 5.9% 10%` | `0 0% 9%` |
-| `--muted` | `240 4.8% 95.9%` | `0 0% 96%` |
-| `--muted-foreground` | `240 3.8% 46.1%` | `0 0% 32%` |
-| `--accent` | `240 4.8% 95.9%` | `0 0% 96%` |
-| `--accent-foreground` | `240 5.9% 10%` | `0 0% 9%` |
-| `--border` | `240 5.9% 90%` | `0 0% 83%` |
-| `--input` | `240 5.9% 90%` | `0 0% 83%` |
-| `--ring` | `240 5.9% 10%` | `217 91% 60%` |
+| Token                    | Current (zinc)   | New (refined neutral)   |
+| ------------------------ | ---------------- | ----------------------- |
+| `--background`           | `0 0% 100%`      | `0 0% 98%`              |
+| `--foreground`           | `240 10% 3.9%`   | `0 0% 9%`               |
+| `--card`                 | `0 0% 100%`      | `0 0% 100%` (unchanged) |
+| `--card-foreground`      | `240 10% 3.9%`   | `0 0% 9%`               |
+| `--popover`              | `0 0% 100%`      | `0 0% 100%` (unchanged) |
+| `--popover-foreground`   | `240 10% 3.9%`   | `0 0% 9%`               |
+| `--primary`              | `240 5.9% 10%`   | `0 0% 9%`               |
+| `--primary-foreground`   | `0 0% 98%`       | `0 0% 98%` (unchanged)  |
+| `--secondary`            | `240 4.8% 95.9%` | `0 0% 96%`              |
+| `--secondary-foreground` | `240 5.9% 10%`   | `0 0% 9%`               |
+| `--muted`                | `240 4.8% 95.9%` | `0 0% 96%`              |
+| `--muted-foreground`     | `240 3.8% 46.1%` | `0 0% 32%`              |
+| `--accent`               | `240 4.8% 95.9%` | `0 0% 96%`              |
+| `--accent-foreground`    | `240 5.9% 10%`   | `0 0% 9%`               |
+| `--border`               | `240 5.9% 90%`   | `0 0% 83%`              |
+| `--input`                | `240 5.9% 90%`   | `0 0% 83%`              |
+| `--ring`                 | `240 5.9% 10%`   | `217 91% 60%`           |
 
 #### Dark Mode Token Replacements (`.dark`)
 
-| Token | Current (zinc) | New (refined neutral) |
-|-------|---------------|----------------------|
-| `--background` | `240 10% 3.9%` | `0 0% 4%` |
-| `--foreground` | `0 0% 98%` | `0 0% 93%` |
-| `--card` | `240 10% 3.9%` | `0 0% 4%` |
-| `--card-foreground` | `0 0% 98%` | `0 0% 93%` |
-| `--popover` | `240 10% 3.9%` | `0 0% 4%` |
-| `--popover-foreground` | `0 0% 98%` | `0 0% 93%` |
-| `--primary` | `0 0% 98%` | `0 0% 93%` |
-| `--primary-foreground` | `240 5.9% 10%` | `0 0% 9%` |
-| `--secondary` | `240 3.7% 15.9%` | `0 0% 9%` |
-| `--secondary-foreground` | `0 0% 98%` | `0 0% 93%` |
-| `--muted` | `240 3.7% 15.9%` | `0 0% 9%` |
-| `--muted-foreground` | `240 5% 64.9%` | `0 0% 64%` |
-| `--accent` | `240 3.7% 15.9%` | `0 0% 9%` |
-| `--accent-foreground` | `0 0% 98%` | `0 0% 93%` |
-| `--border` | `240 3.7% 15.9%` | `0 0% 25%` |
-| `--input` | `240 3.7% 15.9%` | `0 0% 25%` |
-| `--ring` | `240 4.9% 83.9%` | `213 94% 68%` |
+| Token                    | Current (zinc)   | New (refined neutral) |
+| ------------------------ | ---------------- | --------------------- |
+| `--background`           | `240 10% 3.9%`   | `0 0% 4%`             |
+| `--foreground`           | `0 0% 98%`       | `0 0% 93%`            |
+| `--card`                 | `240 10% 3.9%`   | `0 0% 4%`             |
+| `--card-foreground`      | `0 0% 98%`       | `0 0% 93%`            |
+| `--popover`              | `240 10% 3.9%`   | `0 0% 4%`             |
+| `--popover-foreground`   | `0 0% 98%`       | `0 0% 93%`            |
+| `--primary`              | `0 0% 98%`       | `0 0% 93%`            |
+| `--primary-foreground`   | `240 5.9% 10%`   | `0 0% 9%`             |
+| `--secondary`            | `240 3.7% 15.9%` | `0 0% 9%`             |
+| `--secondary-foreground` | `0 0% 98%`       | `0 0% 93%`            |
+| `--muted`                | `240 3.7% 15.9%` | `0 0% 9%`             |
+| `--muted-foreground`     | `240 5% 64.9%`   | `0 0% 64%`            |
+| `--accent`               | `240 3.7% 15.9%` | `0 0% 9%`             |
+| `--accent-foreground`    | `0 0% 98%`       | `0 0% 93%`            |
+| `--border`               | `240 3.7% 15.9%` | `0 0% 25%`            |
+| `--input`                | `240 3.7% 15.9%` | `0 0% 25%`            |
+| `--ring`                 | `240 4.9% 83.9%` | `213 94% 68%`         |
 
 #### New Keyframes (add after body styles)
 
 ```css
 @keyframes typing-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 ```
 
@@ -80,7 +93,9 @@ Replace each value exactly:
 
 ```css
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -91,8 +106,8 @@ Replace each value exactly:
 #### Complete Target File
 
 ```css
-@import "tailwindcss";
-@source "../node_modules/streamdown/dist/*.js";
+@import 'tailwindcss';
+@source '../node_modules/streamdown/dist/*.js';
 
 :root {
   --background: 0 0% 98%;
@@ -146,21 +161,42 @@ Replace each value exactly:
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
 }
 
 @keyframes typing-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -198,10 +234,10 @@ export function MessageItem({ message }: MessageItemProps) {
 
   return (
     <div className={`flex gap-3 px-4 py-3 ${isUser ? 'bg-muted/30' : ''}`}>
-      <div className="flex-shrink-0 mt-1">
+      <div className="mt-1 flex-shrink-0">
         {isUser ? (
-          <div className="rounded-full bg-primary p-1.5">
-            <User className="h-4 w-4 text-primary-foreground" />
+          <div className="bg-primary rounded-full p-1.5">
+            <User className="text-primary-foreground h-4 w-4" />
           </div>
         ) : (
           <div className="rounded-full bg-orange-500 p-1.5">
@@ -209,13 +245,9 @@ export function MessageItem({ message }: MessageItemProps) {
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs text-muted-foreground mb-1">
-          {isUser ? 'You' : 'Claude'}
-        </div>
-        <div className={isUser ? '' : 'max-w-prose'}>
-          {/* content */}
-        </div>
+      <div className="min-w-0 flex-1">
+        <div className="text-muted-foreground mb-1 text-xs">{isUser ? 'You' : 'Claude'}</div>
+        <div className={isUser ? '' : 'max-w-prose'}>{/* content */}</div>
       </div>
     </div>
   );
@@ -245,10 +277,10 @@ export function MessageItem({ message }: MessageItemProps) {
         'hover:bg-muted/20'
       )}
     >
-      <div className="flex-shrink-0 mt-1">
+      <div className="mt-1 flex-shrink-0">
         {isUser ? (
-          <div className="rounded-full bg-primary p-1.5">
-            <User className="h-4 w-4 text-primary-foreground" />
+          <div className="bg-primary rounded-full p-1.5">
+            <User className="text-primary-foreground h-4 w-4" />
           </div>
         ) : (
           <div className="rounded-full bg-[#C2724E] p-1.5">
@@ -256,13 +288,13 @@ export function MessageItem({ message }: MessageItemProps) {
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="text-xs text-muted-foreground font-medium mb-1">
+      <div className="min-w-0 flex-1">
+        <div className="text-muted-foreground mb-1 text-xs font-medium">
           {isUser ? 'You' : 'Claude'}
         </div>
         <div className={isUser ? '' : 'max-w-[65ch]'}>
           {isUser ? (
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            <div className="break-words whitespace-pre-wrap">{message.content}</div>
           ) : (
             <StreamingText content={message.content} />
           )}
@@ -307,6 +339,7 @@ No code changes needed in SessionSidebar -- spacing is already 8pt aligned.
 #### SessionItem Changes
 
 Current:
+
 ```tsx
 <div
   onClick={onClick}
@@ -317,6 +350,7 @@ Current:
 ```
 
 Updated -- add `transition-colors duration-150`:
+
 ```tsx
 <div
   onClick={onClick}
@@ -355,6 +389,7 @@ npm install motion
 #### Step 2: Update App.tsx
 
 Current:
+
 ```tsx
 import { useAppStore } from './stores/app-store';
 import { Header } from './components/layout/Header';
@@ -366,12 +401,12 @@ export function App() {
   const { activeSessionId, sidebarOpen } = useAppStore();
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
+    <div className="bg-background text-foreground flex h-screen flex-col">
       <PermissionBanner sessionId={activeSessionId} />
       <Header />
       <div className="flex flex-1 overflow-hidden">
         {sidebarOpen && (
-          <aside className="w-64 border-r flex-shrink-0 overflow-y-auto">
+          <aside className="w-64 flex-shrink-0 overflow-y-auto border-r">
             <SessionSidebar />
           </aside>
         )}
@@ -379,7 +414,7 @@ export function App() {
           {activeSessionId ? (
             <ChatPanel key={activeSessionId} sessionId={activeSessionId} />
           ) : (
-            <div className="flex items-center justify-center h-full text-muted-foreground">
+            <div className="text-muted-foreground flex h-full items-center justify-center">
               Select or create a session to begin
             </div>
           )}
@@ -391,6 +426,7 @@ export function App() {
 ```
 
 Updated:
+
 ```tsx
 import { useAppStore } from './stores/app-store';
 import { motion, MotionConfig } from 'motion/react';
@@ -404,16 +440,16 @@ export function App() {
 
   return (
     <MotionConfig reducedMotion="user">
-      <div className="flex flex-col h-screen bg-background text-foreground">
+      <div className="bg-background text-foreground flex h-screen flex-col">
         <PermissionBanner sessionId={activeSessionId} />
         <Header />
         <div className="flex flex-1 overflow-hidden">
           <motion.div
             animate={{ width: sidebarOpen ? 256 : 0 }}
             transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-            className="overflow-hidden flex-shrink-0 border-r"
+            className="flex-shrink-0 overflow-hidden border-r"
           >
-            <div className="w-64 h-full overflow-y-auto">
+            <div className="h-full w-64 overflow-y-auto">
               <SessionSidebar />
             </div>
           </motion.div>
@@ -421,10 +457,10 @@ export function App() {
             {activeSessionId ? (
               <ChatPanel key={activeSessionId} sessionId={activeSessionId} />
             ) : (
-              <div className="flex-1 flex items-center justify-center h-full">
+              <div className="flex h-full flex-1 items-center justify-center">
                 <div className="text-center">
                   <p className="text-muted-foreground text-base">New conversation</p>
-                  <p className="text-muted-foreground/60 text-sm mt-2">
+                  <p className="text-muted-foreground/60 mt-2 text-sm">
                     Select a session or start a new one
                   </p>
                 </div>
@@ -472,6 +508,7 @@ The MessageList needs to track whether history has finished loading. Messages ad
 Current MessageList passes only `message` to MessageItem. Updated version passes `isNew` and `isStreaming`.
 
 Add state tracking:
+
 ```tsx
 import { useRef, useEffect, useState, useCallback } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -510,7 +547,7 @@ export function MessageList({ messages, status }: MessageListProps) {
   }, [messages.length, virtualizer]);
 
   return (
-    <div ref={parentRef} className="flex-1 overflow-y-auto relative">
+    <div ref={parentRef} className="relative flex-1 overflow-y-auto">
       <div
         style={{
           height: virtualizer.getTotalSize(),
@@ -538,11 +575,7 @@ export function MessageList({ messages, status }: MessageListProps) {
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <MessageItem
-                message={msg}
-                isNew={isNew}
-                isStreaming={isStreaming}
-              />
+              <MessageItem message={msg} isNew={isNew} isStreaming={isStreaming} />
             </div>
           );
         })}
@@ -594,10 +627,10 @@ export function MessageItem({ message, isNew = false, isStreaming = false }: Mes
         'hover:bg-muted/20'
       )}
     >
-      <div className="flex-shrink-0 mt-1">
+      <div className="mt-1 flex-shrink-0">
         {isUser ? (
-          <div className="rounded-full bg-primary p-1.5">
-            <User className="h-4 w-4 text-primary-foreground" />
+          <div className="bg-primary rounded-full p-1.5">
+            <User className="text-primary-foreground h-4 w-4" />
           </div>
         ) : (
           <div className="rounded-full bg-[#C2724E] p-1.5">
@@ -605,18 +638,18 @@ export function MessageItem({ message, isNew = false, isStreaming = false }: Mes
           </div>
         )}
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs text-muted-foreground font-medium">
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center gap-2">
+          <span className="text-muted-foreground text-xs font-medium">
             {isUser ? 'You' : 'Claude'}
           </span>
-          <span className="text-xs text-muted-foreground/0 group-hover:text-muted-foreground/60 transition-colors duration-150">
+          <span className="text-muted-foreground/0 group-hover:text-muted-foreground/60 text-xs transition-colors duration-150">
             {formatTime(message.timestamp)}
           </span>
         </div>
         <div className={isUser ? '' : 'max-w-[65ch]'}>
           {isUser ? (
-            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+            <div className="break-words whitespace-pre-wrap">{message.content}</div>
           ) : (
             <StreamingText content={message.content} isStreaming={isStreaming} />
           )}
@@ -635,11 +668,13 @@ export function MessageItem({ message, isNew = false, isStreaming = false }: Mes
 In `ChatPanel.tsx`, pass `status` through to `MessageList`:
 
 Current:
+
 ```tsx
 <MessageList messages={messages} />
 ```
 
 Updated:
+
 ```tsx
 <MessageList messages={messages} status={status} />
 ```
@@ -669,7 +704,7 @@ Replace static conditional render with AnimatePresence height animation. Animate
 #### Current Code
 
 ```tsx
-<div className="my-1 rounded border bg-muted/50 text-sm">
+<div className="bg-muted/50 my-1 rounded border text-sm">
   <button
     onClick={() => setExpanded(!expanded)}
     className="flex w-full items-center gap-2 px-3 py-1.5"
@@ -677,16 +712,10 @@ Replace static conditional render with AnimatePresence height animation. Animate
     {statusIcon}
     <span className="font-mono">{toolCall.toolName}</span>
     <ChevronDown
-      className={`ml-auto h-3 w-3 transition-transform ${
-        expanded ? 'rotate-180' : ''
-      }`}
+      className={`ml-auto h-3 w-3 transition-transform ${expanded ? 'rotate-180' : ''}`}
     />
   </button>
-  {expanded && (
-    <div className="border-t px-3 py-2">
-      {/* content */}
-    </div>
-  )}
+  {expanded && <div className="border-t px-3 py-2">{/* content */}</div>}
 </div>
 ```
 
@@ -713,7 +742,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
   }[toolCall.status];
 
   return (
-    <div className="my-1 rounded border bg-muted/50 text-sm transition-all duration-150 hover:border-border hover:shadow-sm">
+    <div className="bg-muted/50 hover:border-border my-1 rounded border text-sm transition-all duration-150 hover:shadow-sm">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-3 py-1.5"
@@ -737,9 +766,9 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t px-3 pb-3 pt-1">
+            <div className="border-t px-3 pt-1 pb-3">
               {toolCall.input && (
-                <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                <pre className="overflow-x-auto text-xs whitespace-pre-wrap">
                   {(() => {
                     try {
                       return JSON.stringify(JSON.parse(toolCall.input), null, 2);
@@ -750,7 +779,7 @@ export function ToolCallCard({ toolCall }: ToolCallCardProps) {
                 </pre>
               )}
               {toolCall.result && (
-                <pre className="mt-2 text-xs overflow-x-auto border-t pt-2 whitespace-pre-wrap">
+                <pre className="mt-2 overflow-x-auto border-t pt-2 text-xs whitespace-pre-wrap">
                   {toolCall.result}
                 </pre>
               )}
@@ -794,18 +823,22 @@ Wrap CommandPalette rendering in AnimatePresence with fade + scale animation.
 The AnimatePresence wrapper goes in ChatPanel.tsx where CommandPalette is conditionally rendered:
 
 Current:
+
 ```tsx
-{showCommands && (
-  <CommandPalette
-    filteredCommands={filteredCommands}
-    selectedIndex={selectedIndex}
-    onSelect={handleCommandSelect}
-    onClose={() => setShowCommands(false)}
-  />
-)}
+{
+  showCommands && (
+    <CommandPalette
+      filteredCommands={filteredCommands}
+      selectedIndex={selectedIndex}
+      onSelect={handleCommandSelect}
+      onClose={() => setShowCommands(false)}
+    />
+  );
+}
 ```
 
 Updated:
+
 ```tsx
 import { AnimatePresence } from 'motion/react';
 // ...
@@ -818,7 +851,7 @@ import { AnimatePresence } from 'motion/react';
       onClose={() => setShowCommands(false)}
     />
   )}
-</AnimatePresence>
+</AnimatePresence>;
 ```
 
 #### CommandPalette.tsx Change
@@ -826,6 +859,7 @@ import { AnimatePresence } from 'motion/react';
 Wrap the root div in a motion.div with enter/exit animations:
 
 Current root:
+
 ```tsx
 <div
   className="absolute bottom-full left-0 right-0 mb-2 max-h-80 overflow-hidden rounded-lg border bg-popover shadow-lg"
@@ -834,6 +868,7 @@ Current root:
 ```
 
 Updated root:
+
 ```tsx
 import { motion } from 'motion/react';
 // ...
@@ -898,7 +933,7 @@ import { Send, Square } from 'lucide-react';
 
 // ... (interface and destructuring unchanged)
 
-export function ChatInput({ /* same props */ }: ChatInputProps) {
+export function ChatInput({} /* same props */ : ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isFocused, setIsFocused] = useState(false);
 
@@ -933,7 +968,7 @@ export function ChatInput({ /* same props */ }: ChatInputProps) {
           aria-expanded={isPaletteOpen ?? false}
           aria-activedescendant={isPaletteOpen ? activeDescendantId : undefined}
           placeholder="Message Claude..."
-          className="w-full resize-none bg-transparent px-3 py-2 text-sm focus:outline-none min-h-[40px] max-h-[200px]"
+          className="max-h-[200px] min-h-[40px] w-full resize-none bg-transparent px-3 py-2 text-sm focus:outline-none"
           rows={1}
           disabled={isLoading}
         />
@@ -944,7 +979,7 @@ export function ChatInput({ /* same props */ }: ChatInputProps) {
           whileTap={{ scale: 0.97 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           onClick={onStop}
-          className="rounded-lg bg-destructive p-2 text-destructive-foreground hover:bg-destructive/90"
+          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg p-2"
           aria-label="Stop generating"
         >
           <Square className="h-4 w-4" />
@@ -956,7 +991,7 @@ export function ChatInput({ /* same props */ }: ChatInputProps) {
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           onClick={onSubmit}
           disabled={!value.trim()}
-          className="rounded-lg bg-primary p-2 text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg p-2 disabled:opacity-50"
           aria-label="Send message"
         >
           <Send className="h-4 w-4" />
@@ -1006,13 +1041,7 @@ interface StreamingTextProps {
 }
 
 export function StreamingText({ content }: StreamingTextProps) {
-  return (
-    <Streamdown
-      shikiTheme={['github-light', 'github-dark']}
-    >
-      {content}
-    </Streamdown>
-  );
+  return <Streamdown shikiTheme={['github-light', 'github-dark']}>{content}</Streamdown>;
 }
 ```
 
@@ -1029,12 +1058,10 @@ interface StreamingTextProps {
 export function StreamingText({ content, isStreaming = false }: StreamingTextProps) {
   return (
     <div className="relative">
-      <Streamdown shikiTheme={['github-light', 'github-dark']}>
-        {content}
-      </Streamdown>
+      <Streamdown shikiTheme={['github-light', 'github-dark']}>{content}</Streamdown>
       {isStreaming && (
         <span
-          className="inline-block w-0.5 h-[1.1em] bg-foreground/70 align-text-bottom ml-0.5"
+          className="bg-foreground/70 ml-0.5 inline-block h-[1.1em] w-0.5 align-text-bottom"
           style={{ animation: 'blink-cursor 1s step-end infinite' }}
           aria-hidden="true"
         />
@@ -1137,7 +1164,7 @@ export function MessageList({ messages, status }: MessageListProps) {
   }, [virtualizer, messages.length]);
 
   return (
-    <div ref={parentRef} className="flex-1 overflow-y-auto relative">
+    <div ref={parentRef} className="relative flex-1 overflow-y-auto">
       <div
         style={{
           height: virtualizer.getTotalSize(),
@@ -1165,11 +1192,7 @@ export function MessageList({ messages, status }: MessageListProps) {
                 transform: `translateY(${virtualRow.start}px)`,
               }}
             >
-              <MessageItem
-                message={msg}
-                isNew={isNew}
-                isStreaming={isStreaming}
-              />
+              <MessageItem message={msg} isNew={isNew} isStreaming={isStreaming} />
             </div>
           );
         })}
@@ -1183,7 +1206,7 @@ export function MessageList({ messages, status }: MessageListProps) {
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.15 }}
             onClick={scrollToBottom}
-            className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-background border shadow-sm p-2 hover:shadow-md transition-shadow"
+            className="bg-background absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full border p-2 shadow-sm transition-shadow hover:shadow-md"
             aria-label="Scroll to bottom"
           >
             <ArrowDown className="h-4 w-4" />
@@ -1233,7 +1256,7 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="w-2 h-2 rounded-full bg-muted-foreground/50"
+          className="bg-muted-foreground/50 h-2 w-2 rounded-full"
           style={{ animation: `typing-dot 1.4s ease-in-out ${i * 0.2}s infinite` }}
         />
       ))}
@@ -1245,51 +1268,59 @@ function TypingIndicator() {
 #### ChatPanel Changes
 
 Current loading state:
+
 ```tsx
-{isLoadingHistory ? (
-  <div className="flex-1 flex items-center justify-center">
-    <div className="flex items-center gap-2 text-muted-foreground text-sm">
-      <div className="h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-      Loading conversation history...
+{
+  isLoadingHistory ? (
+    <div className="flex flex-1 items-center justify-center">
+      <div className="text-muted-foreground flex items-center gap-2 text-sm">
+        <div className="border-muted-foreground h-4 w-4 animate-spin rounded-full border-2 border-t-transparent" />
+        Loading conversation history...
+      </div>
     </div>
-  </div>
-) : (
-  <MessageList messages={messages} />
-)}
+  ) : (
+    <MessageList messages={messages} />
+  );
+}
 ```
 
 Updated:
+
 ```tsx
-{isLoadingHistory ? (
-  <div className="flex-1 flex items-center justify-center">
-    <TypingIndicator />
-  </div>
-) : messages.length === 0 ? (
-  <div className="flex-1 flex items-center justify-center">
-    <div className="text-center">
-      <p className="text-muted-foreground text-base">Start a conversation</p>
-      <p className="text-muted-foreground/60 text-sm mt-2">
-        Type a message or use / for commands
-      </p>
+{
+  isLoadingHistory ? (
+    <div className="flex flex-1 items-center justify-center">
+      <TypingIndicator />
     </div>
-  </div>
-) : (
-  <MessageList messages={messages} status={status} />
-)}
+  ) : messages.length === 0 ? (
+    <div className="flex flex-1 items-center justify-center">
+      <div className="text-center">
+        <p className="text-muted-foreground text-base">Start a conversation</p>
+        <p className="text-muted-foreground/60 mt-2 text-sm">
+          Type a message or use / for commands
+        </p>
+      </div>
+    </div>
+  ) : (
+    <MessageList messages={messages} status={status} />
+  );
+}
 ```
 
 #### Error Banner Refinement
 
 Current:
+
 ```tsx
-<div className="mx-4 mb-2 rounded-lg bg-destructive/10 text-destructive px-3 py-2 text-sm">
+<div className="bg-destructive/10 text-destructive mx-4 mb-2 rounded-lg px-3 py-2 text-sm">
   Error: {error}
 </div>
 ```
 
 Updated (use muted red with border):
+
 ```tsx
-<div className="mx-4 mb-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-3 py-2 text-sm">
+<div className="mx-4 mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
   Error: {error}
 </div>
 ```
@@ -1312,7 +1343,7 @@ function TypingIndicator() {
       {[0, 1, 2].map((i) => (
         <div
           key={i}
-          className="w-2 h-2 rounded-full bg-muted-foreground/50"
+          className="bg-muted-foreground/50 h-2 w-2 rounded-full"
           style={{ animation: `typing-dot 1.4s ease-in-out ${i * 0.2}s infinite` }}
         />
       ))}
@@ -1330,16 +1361,16 @@ export function ChatPanel({ sessionId }: ChatPanelProps) {
   // ... (all existing command palette state and handlers unchanged)
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full flex-col">
       {isLoadingHistory ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <TypingIndicator />
         </div>
       ) : messages.length === 0 ? (
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex flex-1 items-center justify-center">
           <div className="text-center">
             <p className="text-muted-foreground text-base">Start a conversation</p>
-            <p className="text-muted-foreground/60 text-sm mt-2">
+            <p className="text-muted-foreground/60 mt-2 text-sm">
               Type a message or use / for commands
             </p>
           </div>
@@ -1349,7 +1380,7 @@ export function ChatPanel({ sessionId }: ChatPanelProps) {
       )}
 
       {error && (
-        <div className="mx-4 mb-2 rounded-lg bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 px-3 py-2 text-sm">
+        <div className="mx-4 mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
           Error: {error}
         </div>
       )}
@@ -1409,14 +1440,14 @@ Replace saturated status colors with muted, accessible variants. Add transition-
 
 #### Status Color Mapping
 
-| Status | Current | New |
-|--------|---------|-----|
-| Pending | `border-yellow-500/50 bg-yellow-500/10` | `border-amber-500/20 bg-amber-500/10` |
-| Approved | `border-green-500/50 bg-green-500/10` | `border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400` |
-| Denied | `border-red-500/50 bg-red-500/10` | `border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400` |
-| Approve button | `bg-green-600 hover:bg-green-700` | `bg-emerald-600 hover:bg-emerald-700` |
-| Deny button | `bg-red-600 hover:bg-red-700` | `bg-red-600 hover:bg-red-700` (unchanged) |
-| Shield icon | `text-yellow-500` | `text-amber-500` |
+| Status         | Current                                 | New                                                                              |
+| -------------- | --------------------------------------- | -------------------------------------------------------------------------------- |
+| Pending        | `border-yellow-500/50 bg-yellow-500/10` | `border-amber-500/20 bg-amber-500/10`                                            |
+| Approved       | `border-green-500/50 bg-green-500/10`   | `border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400` |
+| Denied         | `border-red-500/50 bg-red-500/10`       | `border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400`                 |
+| Approve button | `bg-green-600 hover:bg-green-700`       | `bg-emerald-600 hover:bg-emerald-700`                                            |
+| Deny button    | `bg-red-600 hover:bg-red-700`           | `bg-red-600 hover:bg-red-700` (unchanged)                                        |
+| Shield icon    | `text-yellow-500`                       | `text-amber-500`                                                                 |
 
 #### Updated Component
 
@@ -1462,28 +1493,28 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
 
   if (decided) {
     return (
-      <div className={`my-1 rounded border px-3 py-2 text-sm transition-colors duration-200 ${
-        decided === 'approved'
-          ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-          : 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400'
-      }`}>
+      <div
+        className={`my-1 rounded border px-3 py-2 text-sm transition-colors duration-200 ${
+          decided === 'approved'
+            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            : 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400'
+        }`}
+      >
         <span className="font-mono">{toolName}</span>
-        <span className="ml-2 text-xs">
-          {decided === 'approved' ? 'Approved' : 'Denied'}
-        </span>
+        <span className="ml-2 text-xs">{decided === 'approved' ? 'Approved' : 'Denied'}</span>
       </div>
     );
   }
 
   return (
     <div className="my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-colors duration-200">
-      <div className="flex items-center gap-2 mb-2">
+      <div className="mb-2 flex items-center gap-2">
         <Shield className="h-4 w-4 text-amber-500" />
         <span className="font-semibold">Tool approval required</span>
       </div>
-      <div className="font-mono text-xs mb-2">{toolName}</div>
+      <div className="mb-2 font-mono text-xs">{toolName}</div>
       {input && (
-        <pre className="text-xs overflow-x-auto mb-3 p-2 bg-muted rounded whitespace-pre-wrap">
+        <pre className="bg-muted mb-3 overflow-x-auto rounded p-2 text-xs whitespace-pre-wrap">
           {(() => {
             try {
               return JSON.stringify(JSON.parse(input), null, 2);
@@ -1497,14 +1528,14 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
         <button
           onClick={handleApprove}
           disabled={responding}
-          className="flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 text-white text-xs hover:bg-emerald-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 text-xs text-white transition-colors hover:bg-emerald-700 disabled:opacity-50"
         >
           <Check className="h-3 w-3" /> Approve
         </button>
         <button
           onClick={handleDeny}
           disabled={responding}
-          className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 text-white text-xs hover:bg-red-700 disabled:opacity-50 transition-colors"
+          className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 text-xs text-white transition-colors hover:bg-red-700 disabled:opacity-50"
         >
           <X className="h-3 w-3" /> Deny
         </button>
@@ -1539,6 +1570,7 @@ export function ToolApproval({ sessionId, toolCallId, toolName, input }: ToolApp
 ### Task 4.2: Update and add tests for all changed components
 
 **Files:**
+
 - `src/client/components/chat/__tests__/MessageItem.test.tsx`
 - `src/client/components/chat/__tests__/StreamingText.test.tsx`
 - `src/client/components/chat/__tests__/ToolCallCard.test.tsx`
@@ -1579,7 +1611,9 @@ afterEach(() => {
 });
 
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 
 vi.mock('motion/react', () => ({
@@ -1595,13 +1629,23 @@ describe('MessageItem', () => {
   // ... keep ALL existing tests unchanged ...
 
   it('applies initial animation props when isNew is true', () => {
-    const msg = { id: '1', role: 'assistant' as const, content: 'Hi', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: 'Hi',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} isNew={true} />);
     expect(screen.getByText('Claude')).toBeDefined();
   });
 
   it('renders without animation when isNew is false', () => {
-    const msg = { id: '1', role: 'assistant' as const, content: 'Hi', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: 'Hi',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} isNew={false} />);
     expect(screen.getByText('Claude')).toBeDefined();
   });
@@ -1615,7 +1659,12 @@ describe('MessageItem', () => {
   });
 
   it('renders Claude avatar with terracotta color (not orange-500)', () => {
-    const msg = { id: '1', role: 'assistant' as const, content: 'Hi', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: 'Hi',
+      timestamp: new Date().toISOString(),
+    };
     const { container } = render(<MessageItem message={msg} />);
     // Verify orange-500 is no longer used
     expect(container.querySelector('.bg-orange-500')).toBeNull();
@@ -1624,7 +1673,12 @@ describe('MessageItem', () => {
   });
 
   it('passes isStreaming to StreamingText for assistant messages', () => {
-    const msg = { id: '1', role: 'assistant' as const, content: 'Hi', timestamp: new Date().toISOString() };
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: 'Hi',
+      timestamp: new Date().toISOString(),
+    };
     render(<MessageItem message={msg} isStreaming={true} />);
     expect(screen.getByTestId('streamdown')).toBeDefined();
   });
@@ -1646,7 +1700,9 @@ afterEach(() => {
 });
 
 vi.mock('streamdown', () => ({
-  Streamdown: ({ children }: { children: string }) => <div data-testid="streamdown">{children}</div>,
+  Streamdown: ({ children }: { children: string }) => (
+    <div data-testid="streamdown">{children}</div>
+  ),
 }));
 
 describe('StreamingText', () => {
@@ -1732,6 +1788,7 @@ vi.mock('motion/react', () => ({
 ```
 
 Update the placeholder test:
+
 ```tsx
 // Change from:
 expect(screen.getByPlaceholderText(/Type a message/)).toBeDefined();
@@ -1816,19 +1873,19 @@ P1.1 -> P2.1 -> P2.2 -> P3.3 -> P4.2 -> P4.3
 
 ## Task Summary
 
-| ID | Phase | Title | Dependencies |
-|----|-------|-------|-------------|
-| 1.1 | P1 | Update color palette and keyframe animations in index.css | None |
-| 1.2 | P1 | Update typography, spacing, and avatar in MessageItem | None |
-| 1.3 | P1 | Normalize spacing in SessionSidebar and SessionItem | None |
-| 2.1 | P2 | Install motion and add MotionConfig wrapper in App.tsx | 1.1 |
-| 2.2 | P2 | Add message entrance animation with isNew flag | 1.2, 2.1 |
-| 2.3 | P2 | Add tool card expand/collapse animation | 2.1 |
-| 2.4 | P2 | Add command palette enter/exit animation | 2.1 |
-| 3.1 | P3 | Add button micro-interactions and input refinements | 2.1 |
-| 3.2 | P3 | Add streaming cursor to StreamingText | 1.1, 2.2 |
-| 3.3 | P3 | Add scroll-to-bottom button in MessageList | 2.2 |
-| 3.4 | P3 | Add typing indicator and empty session state in ChatPanel | 1.1, 2.1 |
-| 4.1 | P4 | Soften tool approval status colors | None |
-| 4.2 | P4 | Update and add tests for all changed components | All others |
-| 4.3 | P4 | Update gateway CLAUDE.md documentation | All others |
+| ID  | Phase | Title                                                     | Dependencies |
+| --- | ----- | --------------------------------------------------------- | ------------ |
+| 1.1 | P1    | Update color palette and keyframe animations in index.css | None         |
+| 1.2 | P1    | Update typography, spacing, and avatar in MessageItem     | None         |
+| 1.3 | P1    | Normalize spacing in SessionSidebar and SessionItem       | None         |
+| 2.1 | P2    | Install motion and add MotionConfig wrapper in App.tsx    | 1.1          |
+| 2.2 | P2    | Add message entrance animation with isNew flag            | 1.2, 2.1     |
+| 2.3 | P2    | Add tool card expand/collapse animation                   | 2.1          |
+| 2.4 | P2    | Add command palette enter/exit animation                  | 2.1          |
+| 3.1 | P3    | Add button micro-interactions and input refinements       | 2.1          |
+| 3.2 | P3    | Add streaming cursor to StreamingText                     | 1.1, 2.2     |
+| 3.3 | P3    | Add scroll-to-bottom button in MessageList                | 2.2          |
+| 3.4 | P3    | Add typing indicator and empty session state in ChatPanel | 1.1, 2.1     |
+| 4.1 | P4    | Soften tool approval status colors                        | None         |
+| 4.2 | P4    | Update and add tests for all changed components           | All others   |
+| 4.3 | P4    | Update gateway CLAUDE.md documentation                    | All others   |

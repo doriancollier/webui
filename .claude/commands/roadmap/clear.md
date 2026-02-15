@@ -48,6 +48,7 @@ Are you sure you want to clear the roadmap?
 ```
 
 Options:
+
 - "Yes, clear all items" - Proceed with clearing
 - "No, cancel" - Abort the operation
 

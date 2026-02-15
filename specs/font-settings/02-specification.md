@@ -113,7 +113,8 @@ export const FONT_CONFIGS = [
     description: 'Inter + JetBrains Mono',
     sans: "'Inter', system-ui, sans-serif",
     mono: "'JetBrains Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono&display=swap',
   },
   {
     key: 'geist',
@@ -121,7 +122,8 @@ export const FONT_CONFIGS = [
     description: 'Geist + Geist Mono',
     sans: "'Geist', system-ui, sans-serif",
     mono: "'Geist Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono&display=swap',
   },
   {
     key: 'ibm-plex',
@@ -129,7 +131,8 @@ export const FONT_CONFIGS = [
     description: 'IBM Plex Sans + IBM Plex Mono',
     sans: "'IBM Plex Sans', system-ui, sans-serif",
     mono: "'IBM Plex Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono&display=swap',
   },
   {
     key: 'roboto',
@@ -137,7 +140,8 @@ export const FONT_CONFIGS = [
     description: 'Roboto + Roboto Mono',
     sans: "'Roboto', system-ui, sans-serif",
     mono: "'Roboto Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&family=Roboto+Mono&display=swap',
   },
   {
     key: 'source',
@@ -145,7 +149,8 @@ export const FONT_CONFIGS = [
     description: 'Source Sans 3 + Source Code Pro',
     sans: "'Source Sans 3', system-ui, sans-serif",
     mono: "'Source Code Pro', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600&family=Source+Code+Pro&display=swap',
   },
   {
     key: 'fira',
@@ -153,7 +158,8 @@ export const FONT_CONFIGS = [
     description: 'Fira Sans + Fira Code',
     sans: "'Fira Sans', system-ui, sans-serif",
     mono: "'Fira Code', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&family=Fira+Code&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;500;600&family=Fira+Code&display=swap',
   },
   {
     key: 'space',
@@ -161,24 +167,27 @@ export const FONT_CONFIGS = [
     description: 'Space Grotesk + Space Mono',
     sans: "'Space Grotesk', system-ui, sans-serif",
     mono: "'Space Mono', ui-monospace, monospace",
-    googleFontsUrl: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono&display=swap',
+    googleFontsUrl:
+      'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono&display=swap',
   },
 ] as const satisfies readonly FontConfig[];
 
 /** Union type of all valid font keys — derived from the config array */
-export type FontFamilyKey = typeof FONT_CONFIGS[number]['key'];
+export type FontFamilyKey = (typeof FONT_CONFIGS)[number]['key'];
 
 /** Default font key for new users / reset */
 export const DEFAULT_FONT: FontFamilyKey = 'inter';
 
 /** Look up a font config by key. Returns default font config if key is invalid. */
 export function getFontConfig(key: string): FontConfig {
-  return FONT_CONFIGS.find(f => f.key === key) ?? FONT_CONFIGS.find(f => f.key === DEFAULT_FONT)!;
+  return (
+    FONT_CONFIGS.find((f) => f.key === key) ?? FONT_CONFIGS.find((f) => f.key === DEFAULT_FONT)!
+  );
 }
 
 /** Check if a string is a valid FontFamilyKey */
 export function isValidFontKey(key: string): key is FontFamilyKey {
-  return FONT_CONFIGS.some(f => f.key === key);
+  return FONT_CONFIGS.some((f) => f.key === key);
 }
 ```
 
@@ -300,8 +309,8 @@ Update any existing monospace references (e.g., in `code`, `pre` blocks) to use 
 Add Google Fonts preconnect hints in `<head>` (before the theme script):
 
 ```html
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 ```
 
 These are static — they only establish the connection. The actual font stylesheet is loaded dynamically by the store.
@@ -310,7 +319,7 @@ Additionally, add an inline script (similar to the existing theme script) to app
 
 ```html
 <script>
-  (function() {
+  (function () {
     var f = localStorage.getItem('gateway-font-family');
     // Font application happens in the Zustand store init,
     // but preconnect hints ensure the CDN connection starts early.
@@ -349,7 +358,7 @@ The Appearance tab content:
           <SelectItem key={font.key} value={font.key}>
             <div className="flex flex-col">
               <span>{font.displayName}</span>
-              <span className="text-xs text-muted-foreground">{font.description}</span>
+              <span className="text-muted-foreground text-xs">{font.description}</span>
             </div>
           </SelectItem>
         ))}
@@ -404,21 +413,23 @@ Store initializes
 
 ### 9.8 File Organization
 
-| File | Action |
-|------|--------|
-| `apps/client/src/lib/font-config.ts` | **Create** — Font configuration data + types |
-| `apps/client/src/lib/font-loader.ts` | **Create** — DOM manipulation for font loading |
-| `apps/client/src/stores/app-store.ts` | **Modify** — Add fontFamily state + setter + reset |
+| File                                                     | Action                                                    |
+| -------------------------------------------------------- | --------------------------------------------------------- |
+| `apps/client/src/lib/font-config.ts`                     | **Create** — Font configuration data + types              |
+| `apps/client/src/lib/font-loader.ts`                     | **Create** — DOM manipulation for font loading            |
+| `apps/client/src/stores/app-store.ts`                    | **Modify** — Add fontFamily state + setter + reset        |
 | `apps/client/src/components/settings/SettingsDialog.tsx` | **Modify** — Add Appearance tab, relocate theme/font-size |
-| `apps/client/index.html` | **Modify** — Add preconnect hints |
-| `apps/client/src/index.css` | **Modify** — Add --font-mono CSS variable |
+| `apps/client/index.html`                                 | **Modify** — Add preconnect hints                         |
+| `apps/client/src/index.css`                              | **Modify** — Add --font-mono CSS variable                 |
 
 ## 10. User Experience
 
 ### Discovery
+
 Users access font settings via Settings (gear icon) → Appearance tab. The Appearance tab is the first tab, making it immediately visible.
 
 ### Selection Flow
+
 1. Open Settings → Appearance tab is shown
 2. See "Font family" row with a dropdown showing current selection
 3. Click dropdown → see 8 options, each with display name and subtitle (e.g., "Inter" / "Inter + JetBrains Mono")
@@ -426,6 +437,7 @@ Users access font settings via Settings (gear icon) → Appearance tab. The Appe
 5. Close settings → font persists
 
 ### Edge Cases
+
 - **Offline/CDN failure**: `display=swap` ensures system fonts show immediately. If Google Fonts CDN is unreachable, the app degrades gracefully to system fonts via the CSS fallback stack.
 - **Invalid stored value**: If localStorage contains an unrecognized font key, falls back to `DEFAULT_FONT` ('inter').
 - **First visit**: No localStorage value → loads Inter + JetBrains Mono by default. Brief FOUT (system → Inter) is acceptable.
@@ -436,12 +448,14 @@ Users access font settings via Settings (gear icon) → Appearance tab. The Appe
 ### Unit Tests
 
 **`apps/client/src/lib/__tests__/font-config.test.ts`**:
+
 - `getFontConfig` returns correct config for each valid key
 - `getFontConfig` returns system config for unknown key
 - All FONT_CONFIGS have unique keys
 - All non-system configs have a googleFontsUrl
 
 **`apps/client/src/lib/__tests__/font-loader.test.ts`**:
+
 - `loadGoogleFont` creates a link element with correct attributes
 - `loadGoogleFont` updates existing link instead of creating duplicate
 - `removeGoogleFont` removes the link element
@@ -449,6 +463,7 @@ Users access font settings via Settings (gear icon) → Appearance tab. The Appe
 - `removeFontCSS` removes inline styles
 
 **`apps/client/src/stores/__tests__/app-store.test.ts`** (extend existing):
+
 - `fontFamily` defaults to `DEFAULT_FONT` ('inter')
 - `setFontFamily` persists to localStorage
 - `setFontFamily('space')` stores 'space' in localStorage
@@ -457,6 +472,7 @@ Users access font settings via Settings (gear icon) → Appearance tab. The Appe
 - `resetPreferences` removes 'gateway-font-family' from localStorage
 
 **`apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx`** (extend existing):
+
 - Appearance tab renders font family selector
 - Font family dropdown shows all 8 options
 - Selecting a font calls `setFontFamily`

@@ -87,18 +87,18 @@ Users must click into each tab to figure out which project it belongs to and whe
 
 #### New files
 
-| File | Purpose |
-|------|---------|
-| `apps/client/src/lib/favicon-utils.ts` | Pure utility functions for hashing, color generation, canvas favicon creation |
-| `apps/client/src/hooks/use-favicon.ts` | React hook: favicon generation + pulsing animation lifecycle |
-| `apps/client/src/hooks/use-document-title.ts` | React hook: document.title management |
+| File                                          | Purpose                                                                       |
+| --------------------------------------------- | ----------------------------------------------------------------------------- |
+| `apps/client/src/lib/favicon-utils.ts`        | Pure utility functions for hashing, color generation, canvas favicon creation |
+| `apps/client/src/hooks/use-favicon.ts`        | React hook: favicon generation + pulsing animation lifecycle                  |
+| `apps/client/src/hooks/use-document-title.ts` | React hook: document.title management                                         |
 
 #### Modified files
 
-| File | Change |
-|------|--------|
+| File                      | Change                                                |
+| ------------------------- | ----------------------------------------------------- |
 | `apps/client/src/App.tsx` | Mount `useFavicon()` and `useDocumentTitle()` at root |
-| `apps/client/index.html` | Add `<link rel="icon">` fallback tag |
+| `apps/client/index.html`  | Add `<link rel="icon">` fallback tag                  |
 
 ### `favicon-utils.ts` — Pure Utility Functions
 
@@ -137,9 +137,36 @@ Maps cwd to a deterministic face emoji from a curated set of 30.
 
 ```typescript
 const EMOJI_SET = [
-  '😀', '😎', '🤖', '🦊', '🐱', '🐶', '🦁', '🐸', '🐵', '🦄',
-  '🐲', '🦉', '🐧', '🐼', '🦋', '🌸', '🔮', '🎯', '🚀', '⚡',
-  '🌊', '🍀', '🎨', '🎵', '💎', '🔥', '🌈', '⭐', '🧠', '👾',
+  '😀',
+  '😎',
+  '🤖',
+  '🦊',
+  '🐱',
+  '🐶',
+  '🦁',
+  '🐸',
+  '🐵',
+  '🦄',
+  '🐲',
+  '🦉',
+  '🐧',
+  '🐼',
+  '🦋',
+  '🌸',
+  '🔮',
+  '🎯',
+  '🚀',
+  '⚡',
+  '🌊',
+  '🍀',
+  '🎨',
+  '🎵',
+  '💎',
+  '🔥',
+  '🌈',
+  '⭐',
+  '🧠',
+  '👾',
 ];
 
 export function hashToEmoji(cwd: string): string {
@@ -176,10 +203,7 @@ export function generateCircleFavicon(hslColor: string): string {
 Creates a dimmed version of an existing favicon data URI for the pulsing animation.
 
 ```typescript
-export function generateDimmedFavicon(
-  solidDataUrl: string,
-  opacity = 0.4,
-): Promise<string> {
+export function generateDimmedFavicon(solidDataUrl: string, opacity = 0.4): Promise<string> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     canvas.width = 32;
@@ -303,10 +327,7 @@ export function useDocumentTitle({ cwd, activeForm }: UseDocumentTitleOptions) {
     let title = `${emoji} ${dirName}`;
 
     if (activeForm) {
-      const truncated =
-        activeForm.length > 40
-          ? activeForm.slice(0, 40) + '…'
-          : activeForm;
+      const truncated = activeForm.length > 40 ? activeForm.slice(0, 40) + '…' : activeForm;
       title += ` — ${truncated}`;
     }
 
@@ -317,6 +338,7 @@ export function useDocumentTitle({ cwd, activeForm }: UseDocumentTitleOptions) {
 ```
 
 **Title format examples:**
+
 - No cwd: `DorkOS`
 - With cwd: `🤖 webui — DorkOS`
 - With task: `🤖 webui — Running tests — DorkOS`
@@ -328,7 +350,9 @@ The hooks are mounted inside the existing `AppContent` or equivalent component t
 ```typescript
 // Inside App component body, after existing hooks:
 const [selectedCwd] = useDirectoryState();
-const { status } = useChatSession(activeSessionId, { /* existing options */ });
+const { status } = useChatSession(activeSessionId, {
+  /* existing options */
+});
 
 useFavicon({ cwd: selectedCwd, isStreaming: status === 'streaming' });
 useDocumentTitle({ cwd: selectedCwd, activeForm: taskState.activeForm });
@@ -349,7 +373,7 @@ Note: The exact integration depends on where `useChatSession` and `useTaskState`
 Add a static fallback favicon link:
 
 ```html
-<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="icon" type="image/png" href="/favicon.png" />
 ```
 
 A simple 32x32 PNG with a neutral DorkOS-branded icon will be placed at `apps/client/public/favicon.png`. This serves Safari users (who can't receive dynamic updates) and provides a default before React hydrates.
@@ -392,7 +416,7 @@ describe('fnv1aHash', () => {
   it('returns a uint32', () => {
     const hash = fnv1aHash('/any/path');
     expect(hash).toBeGreaterThanOrEqual(0);
-    expect(hash).toBeLessThanOrEqual(0xFFFFFFFF);
+    expect(hash).toBeLessThanOrEqual(0xffffffff);
   });
 });
 

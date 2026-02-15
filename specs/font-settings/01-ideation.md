@@ -18,7 +18,7 @@ slug: font-settings
 - **Assumptions:**
   - Each font "choice" is a pairing: one sans-serif for UI text + one monospace for code
   - Fonts load from Google Fonts CDN (with preconnect + display=swap)
-  - Only the *selected* font pairing is loaded (not all fonts at once)
+  - Only the _selected_ font pairing is loaded (not all fonts at once)
   - System fonts remain the default (no external load until user changes)
   - Font preference persists in localStorage, same pattern as other settings
   - Geist is now available on Google Fonts (confirmed 2026)
@@ -40,12 +40,14 @@ slug: font-settings
 ## 3) Codebase Map
 
 **Primary components/modules:**
+
 - `apps/client/src/stores/app-store.ts` — Zustand store; will add `fontFamily` state + setter
 - `apps/client/src/components/settings/SettingsDialog.tsx` — Settings UI; will add font selector
 - `apps/client/index.html` — Will add Google Fonts preconnect; dynamic font link injection
 - `apps/client/src/index.css` — CSS variables `--font-sans` and `--font-mono`; will need dynamic override
 
 **Shared dependencies:**
+
 - `apps/client/src/components/ui/select.tsx` — shadcn Select component (for font picker dropdown)
 - `apps/client/src/components/ui/label.tsx` — shadcn Label
 - Tailwind v4 `@theme` block in `index.css` — defines font CSS variables
@@ -56,6 +58,7 @@ User selects font in Settings → Zustand store updates → localStorage persist
 **Feature flags/config:** None
 
 **Potential blast radius:**
+
 - Direct: 4 files (store, settings, index.html, index.css)
 - New: 1 file (font loader utility or hook)
 - Tests: store test, settings test
@@ -71,20 +74,21 @@ N/A — This is a feature, not a bug fix.
 
 All confirmed available on Google Fonts:
 
-| # | Sans-Serif | Monospace | Character | Audience Fit |
-|---|-----------|-----------|-----------|-------------|
-| 1 | **System Default** | System Default | Native platform fonts | Universal — zero load cost |
-| 2 | **Geist** | Geist Mono | Modern, Vercel/startup aesthetic | Devs who follow trends |
-| 3 | **Inter** | JetBrains Mono | Professional SaaS, most popular | Power users + casual alike |
-| 4 | **IBM Plex Sans** | IBM Plex Mono | Enterprise, warm, polished | Professional/corporate |
-| 5 | **Roboto** | Roboto Mono | Familiar, Google/Android | Casual users, familiarity |
-| 6 | **Source Sans 3** | Source Code Pro | Adobe, open-source, technical | Developers, OSS community |
-| 7 | **Fira Sans** | Fira Code | Mozilla, code ligatures | Developers who love ligatures |
-| 8 | **Space Grotesk** | Space Mono | Creative, indie, distinctive | Designers, creative devs |
+| #   | Sans-Serif         | Monospace       | Character                        | Audience Fit                  |
+| --- | ------------------ | --------------- | -------------------------------- | ----------------------------- |
+| 1   | **System Default** | System Default  | Native platform fonts            | Universal — zero load cost    |
+| 2   | **Geist**          | Geist Mono      | Modern, Vercel/startup aesthetic | Devs who follow trends        |
+| 3   | **Inter**          | JetBrains Mono  | Professional SaaS, most popular  | Power users + casual alike    |
+| 4   | **IBM Plex Sans**  | IBM Plex Mono   | Enterprise, warm, polished       | Professional/corporate        |
+| 5   | **Roboto**         | Roboto Mono     | Familiar, Google/Android         | Casual users, familiarity     |
+| 6   | **Source Sans 3**  | Source Code Pro | Adobe, open-source, technical    | Developers, OSS community     |
+| 7   | **Fira Sans**      | Fira Code       | Mozilla, code ligatures          | Developers who love ligatures |
+| 8   | **Space Grotesk**  | Space Mono      | Creative, indie, distinctive     | Designers, creative devs      |
 
 ### Font Variants to Load
 
 Per pairing, load only:
+
 - **Regular (400)** — body text
 - **Medium (500)** — buttons, labels
 - **Semibold (600)** — headings
@@ -106,6 +110,7 @@ Prefer **variable fonts** when available (Inter, Geist, Fira Code) — single fi
 **Why not load all fonts upfront?** 8 pairings × 2 families × 3 weights = massive page weight. Only load the selected pairing.
 
 **Performance strategy:**
+
 - `<link rel="preconnect" href="https://fonts.googleapis.com">` (static in HTML)
 - `<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>` (static in HTML)
 - Dynamic `<link>` with `&display=swap` parameter
@@ -114,6 +119,7 @@ Prefer **variable fonts** when available (Inter, Geist, Fira Code) — single fi
 ### Potential Solutions
 
 **1. Dynamic `<link>` injection + CSS variable override (Recommended)**
+
 - Description: On font change, inject/update a Google Fonts `<link>` tag and set CSS vars
 - Pros: Simple, no build-time dependency, minimal code, lazy-loads only selected font
 - Cons: Brief FOUT on first load of a new font; depends on Google Fonts CDN availability
@@ -121,6 +127,7 @@ Prefer **variable fonts** when available (Inter, Geist, Fira Code) — single fi
 - Maintenance: Low
 
 **2. Fontsource npm packages (self-hosted)**
+
 - Description: Install `@fontsource/inter`, `@fontsource/geist`, etc. as npm dependencies
 - Pros: Self-hosted (faster per benchmarks), no CDN dependency, works offline
 - Cons: Adds 8+ npm packages, increases bundle size even for unused fonts (unless tree-shaken), more complex build
@@ -128,6 +135,7 @@ Prefer **variable fonts** when available (Inter, Geist, Fira Code) — single fi
 - Maintenance: Medium (version updates)
 
 **3. CSS `@import` with font-face (hybrid)**
+
 - Description: Ship font files in `public/` directory, use `@font-face` declarations
 - Pros: Full control, works offline, no CDN
 - Cons: Large asset footprint in repo, manual font file management, complex CSS

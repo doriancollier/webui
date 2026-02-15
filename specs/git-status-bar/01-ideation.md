@@ -99,18 +99,22 @@ N/A — this is a new feature, not a bug fix.
 ### Display Format Options
 
 **Option A: VS Code-style minimal** — `[GitBranch icon] main ↑2 ↓1`
+
 - Pros: Compact, industry-standard, low noise
 - Cons: No local change visibility
 
 **Option B: Counts-based** — `[icon] main · 3M 1A 2?`
+
 - Pros: Shows local change counts with type distinction
 - Cons: Cryptic abbreviations, cluttered
 
 **Option C: Badge/dot indicator** — `[icon] main [●]` (color-coded)
+
 - Pros: Minimal width, instant recognition
 - Cons: No detail, color-blind issues
 
 **Option D: Compact summary** — `[icon] main +5`
+
 - Pros: Single number, very simple
 - Cons: No type distinction, no sync status
 
@@ -130,6 +134,7 @@ The word "changes" provides clarity without cryptic abbreviations. For 1 change:
 **Recommendation: Raw `child_process.execFile`** (no new dependency)
 
 Use `git status --porcelain=v1 --branch` which gives:
+
 ```
 ## main...origin/main [ahead 2]
  M file1.txt

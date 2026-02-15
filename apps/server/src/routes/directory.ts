@@ -40,7 +40,7 @@ router.get('/', async (req, res) => {
   // Read directory entries (directories only)
   let dirents: import('fs').Dirent[];
   try {
-    dirents = await fs.readdir(resolved, { withFileTypes: true }) as import('fs').Dirent[];
+    dirents = (await fs.readdir(resolved, { withFileTypes: true })) as import('fs').Dirent[];
   } catch (err: unknown) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === 'EACCES') return res.status(403).json({ error: 'Permission denied' });
@@ -49,9 +49,9 @@ router.get('/', async (req, res) => {
   }
 
   const entries = dirents
-    .filter(d => d.isDirectory())
-    .filter(d => showHidden || !d.name.startsWith('.'))
-    .map(d => ({
+    .filter((d) => d.isDirectory())
+    .filter((d) => showHidden || !d.name.startsWith('.'))
+    .map((d) => ({
       name: d.name,
       path: path.join(resolved, d.name),
       isDirectory: true,

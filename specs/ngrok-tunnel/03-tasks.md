@@ -8,18 +8,18 @@ generated: 2025-02-12
 
 ## Task Overview
 
-| # | Task | Phase | Files | Depends On | Est. |
-|---|------|-------|-------|------------|------|
-| 1 | Add TunnelStatus schema and extend HealthResponse | Phase 1: Schemas | 3 | — | S |
-| 2 | Update Transport interface and client adapters | Phase 1: Types | 3 | Task 1 | S |
-| 3 | Create TunnelManager service | Phase 2: Core | 1 | — | M |
-| 4 | Create TunnelManager unit tests | Phase 2: Tests | 1 | Task 3 | M |
-| 5 | Integrate tunnel into health route | Phase 3: Server | 1 | Tasks 1, 3 | S |
-| 6 | Integrate tunnel into server entry point | Phase 3: Server | 1 | Task 3 | M |
-| 7 | Update OpenAPI registry | Phase 3: Server | 1 | Task 1 | S |
-| 8 | Expand health route tests + add indirect test mocks | Phase 4: Tests | 5 | Tasks 3, 5 | M |
-| 9 | Add dependency, scripts, env config, and Vite HMR | Phase 5: Config | 5 | — | S |
-| 10 | Install, build, typecheck, and run all tests | Phase 5: Verify | — | All | S |
+| #   | Task                                                | Phase            | Files | Depends On | Est. |
+| --- | --------------------------------------------------- | ---------------- | ----- | ---------- | ---- |
+| 1   | Add TunnelStatus schema and extend HealthResponse   | Phase 1: Schemas | 3     | —          | S    |
+| 2   | Update Transport interface and client adapters      | Phase 1: Types   | 3     | Task 1     | S    |
+| 3   | Create TunnelManager service                        | Phase 2: Core    | 1     | —          | M    |
+| 4   | Create TunnelManager unit tests                     | Phase 2: Tests   | 1     | Task 3     | M    |
+| 5   | Integrate tunnel into health route                  | Phase 3: Server  | 1     | Tasks 1, 3 | S    |
+| 6   | Integrate tunnel into server entry point            | Phase 3: Server  | 1     | Task 3     | M    |
+| 7   | Update OpenAPI registry                             | Phase 3: Server  | 1     | Task 1     | S    |
+| 8   | Expand health route tests + add indirect test mocks | Phase 4: Tests   | 5     | Tasks 3, 5 | M    |
+| 9   | Add dependency, scripts, env config, and Vite HMR   | Phase 5: Config  | 5     | —          | S    |
+| 10  | Install, build, typecheck, and run all tests        | Phase 5: Verify  | —     | All        | S    |
 
 **Sizing:** S = small (< 15 min), M = medium (15-30 min)
 
@@ -30,6 +30,7 @@ generated: 2025-02-12
 **Phase:** 1 — Schemas and Types
 **Depends on:** None
 **Files:**
+
 - `packages/shared/src/schemas.ts` (MODIFY)
 - `packages/shared/src/types.ts` (MODIFY)
 
@@ -79,6 +80,7 @@ Add `HealthResponse` and `TunnelStatus` to the re-export list (before the closin
 ```
 
 ### Acceptance criteria
+
 - `TunnelStatusSchema` is exported with `.openapi('TunnelStatus')` metadata
 - `HealthResponseSchema` has optional `tunnel` field of type `TunnelStatusSchema`
 - Both `HealthResponse` and `TunnelStatus` types are re-exported from `types.ts`
@@ -91,6 +93,7 @@ Add `HealthResponse` and `TunnelStatus` to the re-export list (before the closin
 **Phase:** 1 — Types
 **Depends on:** Task 1
 **Files:**
+
 - `packages/shared/src/transport.ts` (MODIFY)
 - `apps/client/src/lib/http-transport.ts` (MODIFY)
 - `apps/client/src/lib/direct-transport.ts` (MODIFY)
@@ -101,6 +104,7 @@ Add `HealthResponse` and `TunnelStatus` to the re-export list (before the closin
 
 1. Add `HealthResponse` to the import block from `'./types.js'`
 2. Replace line 42:
+
 ```typescript
 // Before:
 health(): Promise<{ status: string; version: string; uptime: number }>;
@@ -112,6 +116,7 @@ health(): Promise<HealthResponse>;
 
 1. Add `HealthResponse` to type imports from `@dorkos/shared/types`
 2. Replace the inline return type at line 154:
+
 ```typescript
 // Before:
 health(): Promise<{ status: string; version: string; uptime: number }> {
@@ -127,15 +132,18 @@ health(): Promise<HealthResponse> {
 
 1. Add `HealthResponse` to type imports from `@dorkos/shared/types`
 2. Replace the inline return type at line 212:
+
 ```typescript
 // Before:
 async health(): Promise<{ status: string; version: string; uptime: number }> {
 // After:
 async health(): Promise<HealthResponse> {
 ```
+
 The existing return value `{ status: 'ok', version: '0.1.0', uptime: 0 }` still satisfies the type since `tunnel` is optional.
 
 ### Acceptance criteria
+
 - `Transport.health()` returns `Promise<HealthResponse>` instead of inline type
 - Both `HttpTransport` and `DirectTransport` use `HealthResponse` type
 - No behavior change — return values are identical
@@ -147,6 +155,7 @@ The existing return value `{ status: 'ok', version: '0.1.0', uptime: 0 }` still 
 **Phase:** 2 — Core Service
 **Depends on:** None (can be done in parallel with Task 1)
 **Files:**
+
 - `apps/server/src/services/tunnel-manager.ts` (CREATE)
 
 ### What to do
@@ -172,10 +181,16 @@ export interface TunnelStatus {
 export class TunnelManager {
   private listener: { close(): Promise<void>; url(): string | null } | null = null;
   private _status: TunnelStatus = {
-    enabled: false, connected: false, url: null, port: null, startedAt: null,
+    enabled: false,
+    connected: false,
+    url: null,
+    port: null,
+    startedAt: null,
   };
 
-  get status(): TunnelStatus { return { ...this._status }; }
+  get status(): TunnelStatus {
+    return { ...this._status };
+  }
 
   async start(config: TunnelConfig): Promise<string> {
     if (this.listener) throw new Error('Tunnel is already running');
@@ -198,7 +213,10 @@ export class TunnelManager {
     const url = this.listener.url() ?? '';
 
     this._status = {
-      enabled: true, connected: true, url, port: config.port,
+      enabled: true,
+      connected: true,
+      url,
+      port: config.port,
       startedAt: new Date().toISOString(),
     };
     return url;
@@ -210,8 +228,11 @@ export class TunnelManager {
       this.listener = null;
     }
     this._status = {
-      enabled: this._status.enabled, connected: false, url: null,
-      port: this._status.port, startedAt: this._status.startedAt,
+      enabled: this._status.enabled,
+      connected: false,
+      url: null,
+      port: this._status.port,
+      startedAt: this._status.startedAt,
     };
   }
 }
@@ -220,12 +241,14 @@ export const tunnelManager = new TunnelManager();
 ```
 
 ### Design notes
+
 - Listener type is structural (`{ close(), url() }`) to avoid top-level import of `@ngrok/ngrok`
 - `authtoken_from_env: true` tells SDK to read `NGROK_AUTHTOKEN` from env; removed when explicit authtoken provided
 - `basic_auth` accepts array of `"user:pass"` strings per ngrok SDK Config interface
 - `stop()` preserves `enabled`, `port`, `startedAt` to indicate tunnel was active but shut down
 
 ### Acceptance criteria
+
 - `TunnelManager` class with `start()`, `stop()`, and `status` getter
 - Dynamic `import('@ngrok/ngrok')` — zero cost when disabled
 - Singleton pattern: `export const tunnelManager = new TunnelManager()`
@@ -239,6 +262,7 @@ export const tunnelManager = new TunnelManager();
 **Phase:** 2 — Tests
 **Depends on:** Task 3
 **Files:**
+
 - `apps/server/src/services/__tests__/tunnel-manager.test.ts` (CREATE)
 
 ### What to do
@@ -256,12 +280,14 @@ Create 9 unit tests covering all public API of `TunnelManager`:
 9. **Status returns an immutable copy** — Modifying returned object doesn't affect internal state
 
 ### Pattern
+
 - Mock `@ngrok/ngrok` at top level with `vi.mock()`
 - Create mock listener with `url: vi.fn(() => 'https://test.ngrok.io')` and `close: vi.fn()`
 - Mock `forward` to return mock listener
 - Use `vi.resetModules()` + dynamic re-import in `beforeEach` for fresh TunnelManager instances (since it's a singleton)
 
 ### Acceptance criteria
+
 - All 9 tests pass
 - `@ngrok/ngrok` is fully mocked (no real network calls)
 - Tests verify both options passed to `ngrok.forward()` and resulting status
@@ -273,6 +299,7 @@ Create 9 unit tests covering all public API of `TunnelManager`:
 **Phase:** 3 — Server Integration
 **Depends on:** Tasks 1, 3
 **Files:**
+
 - `apps/server/src/routes/health.ts` (MODIFY)
 
 ### What to do
@@ -309,11 +336,13 @@ export default router;
 ```
 
 ### Key behaviors
+
 - When `enabled` is false, `tunnel` field is omitted entirely (zero behavior change from current)
 - When `enabled` is true, includes `{ connected, url, port, startedAt }`
 - **Import impact:** `createApp()` now transitively imports `tunnel-manager.js` via health routes — all test files that call `createApp()` must mock it (handled in Task 8)
 
 ### Acceptance criteria
+
 - Health endpoint includes tunnel status when tunnel is enabled
 - Health endpoint response is unchanged when tunnel is disabled
 - No tunnel field present when `tunnelManager.status.enabled` is false
@@ -325,6 +354,7 @@ export default router;
 **Phase:** 3 — Server Integration
 **Depends on:** Task 3
 **Files:**
+
 - `apps/server/src/index.ts` (MODIFY)
 
 ### What to do
@@ -343,11 +373,13 @@ Replace the full content of `index.ts` with the code from spec section 3.7. Key 
    - Register on `SIGINT` and `SIGTERM`
 
 ### Key behaviors
+
 - Non-blocking: tunnel failure → console warning, server continues
 - Console box includes: URL, port, auth status, dev mode indicator (`TUNNEL_PORT !== GATEWAY_PORT`), free tier bandwidth warning
 - Graceful shutdown ensures tunnel closes before process exits
 
 ### Acceptance criteria
+
 - Server starts tunnel when `TUNNEL_ENABLED=true`
 - Tunnel failure does not prevent server startup
 - `Ctrl+C` triggers graceful tunnel shutdown
@@ -360,6 +392,7 @@ Replace the full content of `index.ts` with the code from spec section 3.7. Key 
 **Phase:** 3 — Server Integration
 **Depends on:** Task 1
 **Files:**
+
 - `apps/server/src/services/openapi-registry.ts` (MODIFY)
 
 ### What to do
@@ -376,6 +409,7 @@ import {
 No other changes needed — the `HealthResponseSchema` already references `TunnelStatusSchema` via the optional `tunnel` field after Task 1. The import is needed so the registry can resolve the schema reference during OpenAPI generation.
 
 ### Acceptance criteria
+
 - `TunnelStatusSchema` is imported in openapi-registry.ts
 - `/api/docs` and `/api/openapi.json` correctly show the optional tunnel field in health response
 
@@ -386,6 +420,7 @@ No other changes needed — the `HealthResponseSchema` already references `Tunne
 **Phase:** 4 — Test Updates
 **Depends on:** Tasks 3, 5
 **Files:**
+
 - `apps/server/src/routes/__tests__/health.test.ts` (MODIFY)
 - `apps/server/src/routes/__tests__/sessions.test.ts` (MODIFY)
 - `apps/server/src/routes/__tests__/sessions-interactive.test.ts` (MODIFY)
@@ -413,6 +448,7 @@ import { tunnelManager } from '../../services/tunnel-manager.js';
 ```
 
 Three tests:
+
 1. **Health returns ok without tunnel field when disabled** (existing test, slightly updated)
 2. **Health includes tunnel status when enabled and connected** — Set `tunnelManager.status` to `{ enabled: true, connected: true, url: 'https://test.ngrok.io', port: 6942, startedAt: '2025-01-01T00:00:00.000Z' }`, assert `res.body.tunnel` matches
 3. **Health shows disconnected tunnel after stop** — Set `tunnelManager.status` to `{ enabled: true, connected: false, url: null, port: 6942, startedAt: '2025-01-01T00:00:00.000Z' }`, assert `res.body.tunnel.connected` is false
@@ -432,6 +468,7 @@ vi.mock('../../services/tunnel-manager.js', () => ({
 These tests don't test tunnel behavior — the mock only prevents module resolution errors when `createApp()` loads `health.ts` which now imports `tunnel-manager.js`.
 
 ### Acceptance criteria
+
 - Health test file has 3 passing tests
 - All 4 indirect test files have tunnel-manager mock
 - `turbo test` passes with no failures
@@ -443,6 +480,7 @@ These tests don't test tunnel behavior — the mock only prevents module resolut
 **Phase:** 5 — Config and DX
 **Depends on:** None (can be done in parallel with earlier tasks)
 **Files:**
+
 - `apps/server/package.json` (MODIFY)
 - `turbo.json` (MODIFY)
 - `.env` (MODIFY)
@@ -453,11 +491,13 @@ These tests don't test tunnel behavior — the mock only prevents module resolut
 **In `apps/server/package.json`:**
 
 1. Add to `dependencies` (after `@dorkos/shared`):
+
 ```json
 "@ngrok/ngrok": "^1.4.1",
 ```
 
 2. Add to `scripts` (after `dev`):
+
 ```json
 "dev:tunnel": "TUNNEL_ENABLED=true TUNNEL_PORT=3000 tsx watch src/index.ts",
 ```
@@ -465,6 +505,7 @@ These tests don't test tunnel behavior — the mock only prevents module resolut
 **In `turbo.json`:**
 
 Replace the `build.env` array:
+
 ```json
 "env": ["NODE_ENV", "VITE_*", "GATEWAY_PORT", "NGROK_*", "TUNNEL_*"]
 ```
@@ -515,6 +556,7 @@ server: {
 This tells Vite's HMR WebSocket client to connect on port 443 (ngrok's HTTPS port). When no tunnel is active, Vite falls back gracefully.
 
 ### Acceptance criteria
+
 - `@ngrok/ngrok` listed in server dependencies
 - `dev:tunnel` script available
 - Turborepo tracks `NGROK_*` and `TUNNEL_*` env vars for cache invalidation
@@ -537,6 +579,7 @@ This tells Vite's HMR WebSocket client to connect on port 443 (ngrok's HTTPS por
 4. Run `turbo test` — all existing + new tests pass
 
 ### Verification checklist
+
 - [ ] `npm install` succeeds, `@ngrok/ngrok` in node_modules
 - [ ] `turbo build` succeeds (client Vite + server tsc + obsidian plugin)
 - [ ] `turbo typecheck` succeeds (all packages)
@@ -544,6 +587,7 @@ This tells Vite's HMR WebSocket client to connect on port 443 (ngrok's HTTPS por
 - [ ] No behavior change when `TUNNEL_ENABLED` is unset (zero cost)
 
 ### Acceptance criteria
+
 - All 3 build targets pass
 - All tests pass (existing + 9 new TunnelManager tests + 2 new health tests)
 - No type errors
@@ -569,13 +613,17 @@ Task 9 (Config/DX) ────────────────────�
 ## Parallelization Strategy
 
 **Batch 1** (parallel): Tasks 1, 3, 9
+
 - Schemas/types, core service, and config are all independent
 
 **Batch 2** (parallel, after Batch 1): Tasks 2, 4, 5, 6, 7
+
 - All depend on Batch 1 outputs but are independent of each other
 
 **Batch 3** (after Batch 2): Task 8
+
 - Test updates need health route changes in place
 
 **Batch 4** (after all): Task 10
+
 - Final verification

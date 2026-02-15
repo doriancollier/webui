@@ -23,6 +23,7 @@ slug: ngrok-tunnel
 Add opt-in ngrok tunnel support to the Express server using `@ngrok/ngrok` (official SDK). When enabled via `TUNNEL_ENABLED=true`, the server starts a public ngrok tunnel after Express binds its port. The tunnel URL is printed to the console and exposed via `GET /api/health`. Tunnel failure is non-blocking — the server continues without a tunnel.
 
 **Key design choices:**
+
 - Singleton service pattern (matches `AgentManager`, `TranscriptReader`)
 - Dynamic import of `@ngrok/ngrok` (zero cost when disabled)
 - Environment-variable-only configuration (no config files)
@@ -32,13 +33,13 @@ Add opt-in ngrok tunnel support to the Express server using `@ngrok/ngrok` (offi
 
 ## 2. Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `TUNNEL_ENABLED` | No | `undefined` | Set to `true` to enable tunnel on server boot |
-| `NGROK_AUTHTOKEN` | When tunnel enabled | — | ngrok auth token (SDK reads from env automatically) |
-| `TUNNEL_PORT` | No | `GATEWAY_PORT` (6942) | Port to tunnel (set to 3000 for Vite dev server) |
-| `TUNNEL_AUTH` | No | — | HTTP basic auth in `user:pass` format |
-| `TUNNEL_DOMAIN` | No | — | Reserved ngrok domain (e.g. `my-app.ngrok-free.app`) |
+| Variable          | Required            | Default               | Description                                          |
+| ----------------- | ------------------- | --------------------- | ---------------------------------------------------- |
+| `TUNNEL_ENABLED`  | No                  | `undefined`           | Set to `true` to enable tunnel on server boot        |
+| `NGROK_AUTHTOKEN` | When tunnel enabled | —                     | ngrok auth token (SDK reads from env automatically)  |
+| `TUNNEL_PORT`     | No                  | `GATEWAY_PORT` (6942) | Port to tunnel (set to 3000 for Vite dev server)     |
+| `TUNNEL_AUTH`     | No                  | —                     | HTTP basic auth in `user:pass` format                |
+| `TUNNEL_DOMAIN`   | No                  | —                     | Reserved ngrok domain (e.g. `my-app.ngrok-free.app`) |
 
 ---
 
@@ -69,10 +70,16 @@ export interface TunnelStatus {
 export class TunnelManager {
   private listener: { close(): Promise<void>; url(): string | null } | null = null;
   private _status: TunnelStatus = {
-    enabled: false, connected: false, url: null, port: null, startedAt: null,
+    enabled: false,
+    connected: false,
+    url: null,
+    port: null,
+    startedAt: null,
   };
 
-  get status(): TunnelStatus { return { ...this._status }; }
+  get status(): TunnelStatus {
+    return { ...this._status };
+  }
 
   async start(config: TunnelConfig): Promise<string> {
     if (this.listener) throw new Error('Tunnel is already running');
@@ -95,7 +102,10 @@ export class TunnelManager {
     const url = this.listener.url() ?? '';
 
     this._status = {
-      enabled: true, connected: true, url, port: config.port,
+      enabled: true,
+      connected: true,
+      url,
+      port: config.port,
       startedAt: new Date().toISOString(),
     };
     return url;
@@ -107,8 +117,11 @@ export class TunnelManager {
       this.listener = null;
     }
     this._status = {
-      enabled: this._status.enabled, connected: false, url: null,
-      port: this._status.port, startedAt: this._status.startedAt,
+      enabled: this._status.enabled,
+      connected: false,
+      url: null,
+      port: this._status.port,
+      startedAt: this._status.startedAt,
     };
   }
 }
@@ -117,6 +130,7 @@ export const tunnelManager = new TunnelManager();
 ```
 
 **Design notes:**
+
 - Listener type is structural (`{ close(), url() }`) to avoid top-level import of `@ngrok/ngrok`
 - `authtoken_from_env: true` tells SDK to read `NGROK_AUTHTOKEN` from env; removed when explicit authtoken provided
 - `basic_auth` accepts array of `"user:pass"` strings per ngrok SDK Config interface
@@ -129,6 +143,7 @@ export const tunnelManager = new TunnelManager();
 **Purpose:** Unit tests for TunnelManager. 9 tests covering all public API.
 
 **Tests:**
+
 1. Initial status is disabled and disconnected
 2. Calls `ngrok.forward()` with correct options (port, authtoken_from_env)
 3. Passes `basic_auth` array when configured
@@ -190,6 +205,7 @@ Add `HealthResponse` and `TunnelStatus` to the re-export list before the closing
 **Change 1:** Add `HealthResponse` to import block.
 
 **Change 2:** Replace line 42:
+
 ```typescript
 // Before:
 health(): Promise<{ status: string; version: string; uptime: number }>;
@@ -262,9 +278,12 @@ async function start() {
   });
 
   // Run session health check every 5 minutes
-  setInterval(() => {
-    agentManager.checkSessionHealth();
-  }, 5 * 60 * 1000);
+  setInterval(
+    () => {
+      agentManager.checkSessionHealth();
+    },
+    5 * 60 * 1000
+  );
 
   // Start ngrok tunnel if enabled
   if (process.env.TUNNEL_ENABLED === 'true') {
@@ -282,21 +301,30 @@ async function start() {
       const isDevPort = tunnelPort !== PORT;
 
       console.log('');
-      console.log('\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510');
+      console.log(
+        '\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510'
+      );
       console.log('\u2502  ngrok tunnel active                            \u2502');
       console.log('\u2502                                                 \u2502');
       console.log(`\u2502  URL:  ${url.padEnd(40)} \u2502`);
       console.log(`\u2502  Port: ${String(tunnelPort).padEnd(40)} \u2502`);
-      console.log(`\u2502  Auth: ${(hasAuth ? 'basic auth enabled' : 'none (open)').padEnd(40)} \u2502`);
+      console.log(
+        `\u2502  Auth: ${(hasAuth ? 'basic auth enabled' : 'none (open)').padEnd(40)} \u2502`
+      );
       if (isDevPort) {
         console.log(`\u2502  Mode: ${('dev (Vite on :' + tunnelPort + ')').padEnd(40)} \u2502`);
       }
       console.log('\u2502                                                 \u2502');
       console.log('\u2502  Free tier: 1GB/month bandwidth, session limits \u2502');
-      console.log('\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518');
+      console.log(
+        '\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518'
+      );
       console.log('');
     } catch (err) {
-      console.warn('[Tunnel] Failed to start ngrok tunnel:', err instanceof Error ? err.message : err);
+      console.warn(
+        '[Tunnel] Failed to start ngrok tunnel:',
+        err instanceof Error ? err.message : err
+      );
       console.warn('[Tunnel] Server continues without tunnel.');
     }
   }
@@ -305,7 +333,9 @@ async function start() {
 // Graceful shutdown
 function shutdown() {
   console.log('\nShutting down...');
-  tunnelManager.stop().finally(() => { process.exit(0); });
+  tunnelManager.stop().finally(() => {
+    process.exit(0);
+  });
 }
 
 process.on('SIGINT', shutdown);
@@ -315,6 +345,7 @@ start();
 ```
 
 **Key behaviors:**
+
 1. Non-blocking failure (try/catch)
 2. Graceful shutdown (SIGINT/SIGTERM → tunnelManager.stop())
 3. Pretty console box with URL, port, auth status, dev mode indicator, free tier warning
@@ -351,6 +382,7 @@ Add `HealthResponse` to the type imports. Replace inline `health()` return type 
 ### 3.12 MODIFY: `turbo.json`
 
 Add `"NGROK_*"` and `"TUNNEL_*"` to `build.env` array:
+
 ```json
 "env": ["NODE_ENV", "VITE_*", "GATEWAY_PORT", "NGROK_*", "TUNNEL_*"]
 ```
@@ -401,6 +433,7 @@ server: {
 Expand from 1 test to 3 tests. Add `tunnel-manager.js` mock with `vi.fn()` getter for dynamic status control.
 
 **Tests:**
+
 1. Health returns ok without tunnel field when disabled
 2. Health includes tunnel status when enabled and connected
 3. Health shows disconnected tunnel after stop
@@ -410,6 +443,7 @@ Expand from 1 test to 3 tests. Add `tunnel-manager.js` mock with `vi.fn()` gette
 ### 3.16 MODIFY: Indirect test files (4 files)
 
 Add `vi.mock('../../services/tunnel-manager.js')` with static disabled-status object to:
+
 1. `apps/server/src/routes/__tests__/sessions.test.ts`
 2. `apps/server/src/routes/__tests__/sessions-interactive.test.ts`
 3. `apps/server/src/routes/__tests__/commands.test.ts`
@@ -422,6 +456,7 @@ These tests don't test tunnel behavior — the mock only prevents module resolut
 ## 4. Data Flow
 
 ### Tunnel Startup
+
 ```
 Server boots → createApp() → app.listen(PORT)
   → TUNNEL_ENABLED=true?
@@ -433,6 +468,7 @@ Server boots → createApp() → app.listen(PORT)
 ```
 
 ### Health Endpoint
+
 ```
 GET /api/health
   → Build { status, version, uptime }
@@ -442,6 +478,7 @@ GET /api/health
 ```
 
 ### Shutdown
+
 ```
 SIGINT/SIGTERM → shutdown()
   → tunnelManager.stop() → listener.close()
@@ -453,6 +490,7 @@ SIGINT/SIGTERM → shutdown()
 ## 5. Build Sequence
 
 ### Phase 1: Schemas and Types
+
 - [ ] Add `TunnelStatusSchema` to `packages/shared/src/schemas.ts`
 - [ ] Extend `HealthResponseSchema` with optional `tunnel` field
 - [ ] Add exports to `packages/shared/src/types.ts`
@@ -461,19 +499,23 @@ SIGINT/SIGTERM → shutdown()
 - [ ] Update `health()` in `apps/client/src/lib/direct-transport.ts`
 
 ### Phase 2: Core Service
+
 - [ ] Create `apps/server/src/services/tunnel-manager.ts`
 - [ ] Create `apps/server/src/services/__tests__/tunnel-manager.test.ts`
 
 ### Phase 3: Server Integration
+
 - [ ] Modify `apps/server/src/routes/health.ts`
 - [ ] Modify `apps/server/src/index.ts`
 - [ ] Add `TunnelStatusSchema` import to `apps/server/src/services/openapi-registry.ts`
 
 ### Phase 4: Test Updates
+
 - [ ] Expand `apps/server/src/routes/__tests__/health.test.ts`
 - [ ] Add tunnel-manager mock to 4 indirect test files
 
 ### Phase 5: Config and DX
+
 - [ ] Add `@ngrok/ngrok` to `apps/server/package.json`
 - [ ] Add `dev:tunnel` script
 - [ ] Add env vars to `turbo.json`
@@ -486,19 +528,19 @@ SIGINT/SIGTERM → shutdown()
 
 ## 6. Acceptance Criteria
 
-| # | Criterion | Verification |
-|---|-----------|-------------|
-| 1 | `turbo dev` with `TUNNEL_ENABLED=true` + `NGROK_AUTHTOKEN` starts tunnel and prints URL | Manual: run dev, observe console box |
-| 2 | `GET /api/health` includes `tunnel` field when enabled | `curl localhost:6942/api/health` |
-| 3 | `GET /api/health` omits `tunnel` field when disabled | `curl localhost:6942/api/health` |
-| 4 | `TUNNEL_AUTH=user:pass` requires HTTP basic auth on tunnel | `curl <ngrok-url>` returns 401 |
-| 5 | `TUNNEL_PORT=3000` tunnels Vite dev server | Access ngrok URL, see React UI |
-| 6 | Tunnel failure does not prevent server startup | Set invalid authtoken, observe warning |
-| 7 | Ctrl+C gracefully shuts down tunnel | Press Ctrl+C, observe clean shutdown |
-| 8 | `turbo test` passes | All new + existing tests |
-| 9 | `turbo typecheck` passes | No type errors |
-| 10 | `turbo build` succeeds | Clean build |
-| 11 | No behavior change when `TUNNEL_ENABLED` unset | Zero cost, identical behavior |
+| #   | Criterion                                                                               | Verification                           |
+| --- | --------------------------------------------------------------------------------------- | -------------------------------------- |
+| 1   | `turbo dev` with `TUNNEL_ENABLED=true` + `NGROK_AUTHTOKEN` starts tunnel and prints URL | Manual: run dev, observe console box   |
+| 2   | `GET /api/health` includes `tunnel` field when enabled                                  | `curl localhost:6942/api/health`       |
+| 3   | `GET /api/health` omits `tunnel` field when disabled                                    | `curl localhost:6942/api/health`       |
+| 4   | `TUNNEL_AUTH=user:pass` requires HTTP basic auth on tunnel                              | `curl <ngrok-url>` returns 401         |
+| 5   | `TUNNEL_PORT=3000` tunnels Vite dev server                                              | Access ngrok URL, see React UI         |
+| 6   | Tunnel failure does not prevent server startup                                          | Set invalid authtoken, observe warning |
+| 7   | Ctrl+C gracefully shuts down tunnel                                                     | Press Ctrl+C, observe clean shutdown   |
+| 8   | `turbo test` passes                                                                     | All new + existing tests               |
+| 9   | `turbo typecheck` passes                                                                | No type errors                         |
+| 10  | `turbo build` succeeds                                                                  | Clean build                            |
+| 11  | No behavior change when `TUNNEL_ENABLED` unset                                          | Zero cost, identical behavior          |
 
 ---
 
@@ -524,13 +566,13 @@ SIGINT/SIGTERM → shutdown()
 
 ## 9. Error Handling Matrix
 
-| Scenario | Handling | User Impact |
-|----------|----------|-------------|
-| `NGROK_AUTHTOKEN` missing | SDK throws auth error | Console warning, server runs without tunnel |
-| Invalid authtoken | SDK throws auth error | Console warning, server runs without tunnel |
-| Network unreachable | SDK throws connection error | Console warning, server runs without tunnel |
-| Port already in use by ngrok | SDK throws bind error | Console warning, server runs without tunnel |
-| `start()` called twice | TunnelManager throws "already running" | Developer error; should not happen |
-| `stop()` when not running | No-op (idempotent) | None |
-| `stop()` after disconnect | `listener.close()` may throw | Caught in shutdown handler, exits regardless |
-| Free tier bandwidth exceeded | ngrok closes connection | Tunnel unavailable; health shows `connected: false` |
+| Scenario                     | Handling                               | User Impact                                         |
+| ---------------------------- | -------------------------------------- | --------------------------------------------------- |
+| `NGROK_AUTHTOKEN` missing    | SDK throws auth error                  | Console warning, server runs without tunnel         |
+| Invalid authtoken            | SDK throws auth error                  | Console warning, server runs without tunnel         |
+| Network unreachable          | SDK throws connection error            | Console warning, server runs without tunnel         |
+| Port already in use by ngrok | SDK throws bind error                  | Console warning, server runs without tunnel         |
+| `start()` called twice       | TunnelManager throws "already running" | Developer error; should not happen                  |
+| `stop()` when not running    | No-op (idempotent)                     | None                                                |
+| `stop()` after disconnect    | `listener.close()` may throw           | Caught in shutdown handler, exits regardless        |
+| Free tier bandwidth exceeded | ngrok closes connection                | Tunnel unavailable; health shows `connected: false` |

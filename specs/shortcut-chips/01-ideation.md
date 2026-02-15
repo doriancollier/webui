@@ -12,6 +12,7 @@
 **Task brief:** Add small clickable "shortcut chips" below the chat input that hint at available triggers (`/` for commands, `@` for files). Include a setting toggle in the Preferences tab to show/hide them, defaulting to ON.
 
 **Assumptions:**
+
 - Chips are visual hints AND click targets — clicking inserts the trigger character into the input
 - Two chips initially: `/ Commands` and `@ Files`
 - Chips respect the existing design system (neutral palette, 8pt grid, motion specs)
@@ -19,6 +20,7 @@
 - Setting persists in localStorage via the existing Zustand store pattern
 
 **Out of scope:**
+
 - Rotating/cycling placeholder text (separate enhancement)
 - Contextual placeholder ("Ask about server/index.ts...")
 - Additional chip types beyond `/` and `@`
@@ -41,22 +43,26 @@
 ## 3) Codebase Map
 
 **Primary components/modules:**
+
 - `apps/client/src/components/chat/ChatInput.tsx` — textarea + send button, will gain chips row
 - `apps/client/src/components/chat/ChatPanel.tsx` — orchestrator, wires input to palettes, will pass chip click handler
 - `apps/client/src/stores/app-store.ts` — Zustand preferences store, will gain `showShortcutChips` toggle
 - `apps/client/src/components/settings/SettingsDialog.tsx` — Preferences tab, will gain new SettingRow
 
 **Shared dependencies:**
+
 - `motion/react` — AnimatePresence + motion.div for chip enter/exit animations
 - `apps/client/src/components/ui/badge.tsx` — potential base styling (or create standalone)
 - `apps/client/src/components/ui/switch.tsx` — used in settings toggle
 - Lucide icons: `Terminal`, `FileText` (or similar) for chip icons
 
 **Data flow:**
+
 - User sees chips -> clicks chip -> ChatPanel handler inserts trigger char into input -> existing `@`/`/` detection opens palette
 - Settings toggle -> Zustand store -> `showShortcutChips` boolean -> ChatPanel conditionally renders chips
 
 **Potential blast radius:**
+
 - `ChatPanel.tsx` — layout change (add chips row between input and status)
 - `ChatInput.tsx` — possibly no changes if chips live outside ChatInput
 - `app-store.ts` — new boolean + setter + localStorage
@@ -70,26 +76,31 @@
 ### Patterns from world-class apps
 
 **Slack's compose area:**
+
 - Formatting toolbar below input with icon buttons
 - Lightning bolt icon for shortcuts on mobile
 - Dual strategy: inside for formatting, below for actions
 
 **ChatGPT:**
+
 - Suggestion chips appear after responses, not persistently below input
 - Rounded pills with subtle backgrounds
 - Chips are contextual (not always visible)
 
 **Material Design Action Chips:**
+
 - Height: 32px, padding: 12px horizontal
 - Border-radius: 16px (pill) or 6px (rounded)
 - Neutral-100/200 backgrounds, 200ms hover transitions
 - 8px gap between chips
 
 **Claude.ai:**
+
 - Uses Cmd+K command palette rather than persistent chips
 - Clean, minimal input area
 
 **Mobile best practices:**
+
 - 44x44px minimum tap targets (WCAG 2.1 AAA)
 - 6 or fewer chips: multi-line wrapping OK
 - More than 6: horizontal scroll
@@ -98,6 +109,7 @@
 ### Potential solutions
 
 **1. Chips below input container (outside the border)**
+
 - Small pills rendered between ChatInput and StatusLine
 - Pros: Zero impact on ChatInput component, simple layout, clear visual separation
 - Cons: Slightly disconnected from the input visually
@@ -105,6 +117,7 @@
 - Maintenance: Low
 
 **2. Chips inside input container (below textarea, inside the border)**
+
 - Restructure ChatInput's flex container to flex-col, add chips row at bottom
 - Pros: Feels integrated with the input, compact
 - Cons: Increases ChatInput complexity, harder to animate independently
@@ -112,6 +125,7 @@
 - Maintenance: Medium
 
 **3. Chips as floating overlay (like palette positioning)**
+
 - Absolutely positioned chips that appear on input focus
 - Pros: Only visible when needed, zero layout impact
 - Cons: Can feel jarring, occludes content, harder to discover
@@ -123,6 +137,7 @@
 **Approach 1: Chips below input container** — simplest, cleanest, and matches ChatGPT/Slack patterns. Renders in ChatPanel between ChatInput and StatusLine. Zero changes to ChatInput component. Easy to animate with existing motion patterns. Easy to conditionally hide via the setting.
 
 **Visual spec:**
+
 - `flex gap-2` row, `mt-1.5` below input
 - Each chip: `inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs`
 - Colors: `bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted`

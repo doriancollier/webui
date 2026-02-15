@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite build --watch",
     "build": "vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@dorkos/shared": "*",

@@ -2,7 +2,7 @@
 description: Process post-implementation feedback with interactive decisions
 category: workflow
 allowed-tools: Read, Grep, Glob, Write, Edit, Task, TaskOutput, AskUserQuestion, TaskCreate, TaskList, TaskGet, TaskUpdate
-argument-hint: "<path-to-spec-file>"
+argument-hint: '<path-to-spec-file>'
 ---
 
 # Process Post-Implementation Feedback
@@ -29,6 +29,7 @@ This command uses **parallel background agents** for discovery:
 ### Step 1.1: Extract Feature Slug
 
 Extract the slug from the spec path:
+
 - `specs/<slug>/02-specification.md` → slug is `<slug>`
 - `specs/feat-<name>.md` (legacy) → slug is `feat-<name>`
 - `specs/fix-<issue>-<desc>.md` (legacy) → slug is `fix-<issue>-<desc>`
@@ -45,6 +46,7 @@ SLUG=$(echo "$SPEC_PATH" | cut -d'/' -f2)
    - Exit early
 
 2. **Check for incomplete tasks**:
+
    ```
    tasks = TaskList()
    in_progress = tasks.filter(t =>
@@ -52,9 +54,11 @@ SLUG=$(echo "$SPEC_PATH" | cut -d'/' -f2)
      t.status === "in_progress"
    )
    ```
+
    - If any found → Display warning (not a blocker)
 
 Display:
+
 ```
 ═══════════════════════════════════════════════════
 Ready to process feedback for: [slug]
@@ -71,6 +75,7 @@ Ready to process feedback for: [slug]
 ### Step 2.1: Prompt for Feedback
 
 Display:
+
 ```
 ╔═══════════════════════════════════════════════════════════════╗
 ║           Provide Feedback from Testing/Usage                 ║
@@ -97,13 +102,13 @@ Wait for user input.
 
 Analyze feedback text to determine type:
 
-| Type | Keywords | Focus |
-|------|----------|-------|
-| Bug/Error | fail, error, crash, broken, bug | Error handling, edge cases |
-| Performance | slow, lag, timeout, delay | Bottlenecks, optimization |
-| UX/UI | confusing, unclear, hard to | User flows, UI components |
-| Security | security, auth, permission | Security controls, validation |
-| General | (other) | Overall implementation |
+| Type        | Keywords                        | Focus                         |
+| ----------- | ------------------------------- | ----------------------------- |
+| Bug/Error   | fail, error, crash, broken, bug | Error handling, edge cases    |
+| Performance | slow, lag, timeout, delay       | Bottlenecks, optimization     |
+| UX/UI       | confusing, unclear, hard to     | User flows, UI components     |
+| Security    | security, auth, permission      | Security controls, validation |
+| General     | (other)                         | Overall implementation        |
 
 Display: "📋 Categorized as: [type]"
 
@@ -114,6 +119,7 @@ Display: "📋 Categorized as: [type]"
 ### Step 3.1: Ask About Research
 
 Use AskUserQuestion:
+
 ```
 "Would you like research-expert to investigate best practices for this issue?"
 Options:
@@ -134,6 +140,7 @@ Task(
   run_in_background: true
 )
 ```
+
 Store as `exploration_task_id`.
 
 ### Step 3.3: Launch Research Agent (If Requested)
@@ -149,9 +156,11 @@ Task(
   run_in_background: true
 )
 ```
+
 Store as `research_task_id`.
 
 Display:
+
 ```
 🔄 Discovery started:
    → Code exploration: Investigating affected areas
@@ -163,16 +172,19 @@ Display:
 ### Step 3.4: Collect Results
 
 Wait for exploration:
+
 ```
 TaskOutput(task_id: exploration_task_id, block: true)
 ```
 
 Wait for research (if launched):
+
 ```
 TaskOutput(task_id: research_task_id, block: true)
 ```
 
 Display:
+
 ```
 ✅ Discovery complete
 ```
@@ -203,6 +215,7 @@ Type: [categorized type]
 ### Step 4.2: Gather Decisions
 
 **Question 1: Action**
+
 ```
 "How would you like to address this feedback?"
 Options:
@@ -212,6 +225,7 @@ Options:
 ```
 
 **Question 2: Scope** (If "Implement now")
+
 ```
 "What implementation scope?"
 Options:
@@ -221,6 +235,7 @@ Options:
 ```
 
 **Question 3: Approach** (If "Implement now" and multiple approaches found)
+
 ```
 "Which implementation approach?"
 Options:
@@ -229,6 +244,7 @@ Options:
 ```
 
 **Question 4: Priority** (If "Implement now" or "Defer")
+
 ```
 "Priority level?"
 Options:
@@ -239,6 +255,7 @@ Options:
 ```
 
 Display:
+
 ```
 ✓ Decisions captured
   Action: [selected]
@@ -264,15 +281,18 @@ Display:
 **Decision:** Implement with [scope] scope
 
 **Changes to Specification:**
+
 - Section X: [description]
 - Section Y: [description]
 
 **Implementation Impact:**
+
 - Priority: [priority]
 - Approach: [approach]
 - Affected components: [from exploration]
 
 **Next Steps:**
+
 1. Update affected spec sections
 2. Run `/spec:decompose specs/[slug]/02-specification.md`
 3. Run `/spec:execute specs/[slug]/02-specification.md`
@@ -283,6 +303,7 @@ Display:
 ### If "Defer"
 
 Create task:
+
 ```
 TaskCreate({
   subject: "[<slug>] [deferred] [priority]: [truncated feedback]",
@@ -302,6 +323,7 @@ Skip to feedback logging (no other action).
 ### Step 6.1: Determine Feedback Number
 
 Check `specs/<slug>/05-feedback.md`:
+
 - If exists, find highest `## Feedback #N` and use N+1
 - If not exists, start with #1
 
@@ -417,24 +439,31 @@ Identify:
 ### 4. Return Findings
 
 ```
+
 ## EXPLORATION FINDINGS
 
 ### Affected Components
+
 - [file path]: [how it relates to feedback]
 - [file path]: [how it relates to feedback]
 
 ### Blast Radius
+
 - **Direct changes:** [N] files
 - **Indirect impact:** [N] files
 - **Tests affected:** [N] files
 
 ### Immediate Concerns
+
 - [Any risks or critical issues]
 
 ### Recommended Changes
+
 - [Specific file]: [what needs to change]
 - [Specific file]: [what needs to change]
+
 ```
+
 ```
 
 ---
@@ -474,23 +503,30 @@ For each approach:
 ### 4. Return Findings
 
 ```
+
 ## RESEARCH FINDINGS
 
 ### Recommended Approach
+
 [Name and description]
 
 ### Alternative Approaches
+
 1. [Approach]: [pros/cons]
 2. [Approach]: [pros/cons]
 
 ### Considerations
+
 - Security: [points]
 - Performance: [points]
 
 ### Pitfalls to Avoid
+
 - [Common mistake 1]
 - [Common mistake 2]
+
 ```
+
 ```
 
 ---
@@ -517,31 +553,34 @@ For each approach:
 
 ## Performance Characteristics
 
-| Metric | Sequential | Parallel (This Command) |
-|--------|-----------|------------------------|
-| Exploration + Research | ~6-8 min | ~3-4 min (2x faster) |
-| Context usage | 100% in main | ~25% in main |
-| User wait time | Blocked during agents | Only during collection |
+| Metric                 | Sequential            | Parallel (This Command) |
+| ---------------------- | --------------------- | ----------------------- |
+| Exploration + Research | ~6-8 min              | ~3-4 min (2x faster)    |
+| Context usage          | 100% in main          | ~25% in main            |
+| User wait time         | Blocked during agents | Only during collection  |
 
 ---
 
 ## Integration with Other Commands
 
-| Command | Relationship |
-|---------|--------------|
-| `/spec:execute` | **Prerequisite** - Must complete before feedback |
+| Command           | Relationship                                                |
+| ----------------- | ----------------------------------------------------------- |
+| `/spec:execute`   | **Prerequisite** - Must complete before feedback            |
 | `/spec:decompose` | **Run after** (if "Implement now") - Updates task breakdown |
-| `/spec:execute` | **Run after decompose** - Implements changes |
+| `/spec:execute`   | **Run after decompose** - Implements changes                |
 
 ---
 
 ## Troubleshooting
 
 ### "No implementation found"
+
 Run `/spec:execute` first to complete initial implementation.
 
 ### "X tasks still in progress"
+
 Warning only - can proceed. Feedback changes may affect them.
 
 ### Research taking too long
+
 Research runs in background. Can skip research for simpler issues.

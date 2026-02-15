@@ -114,7 +114,7 @@ export class HttpTransport implements Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
-    cwd?: string,
+    cwd?: string
   ): Promise<void> {
     const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
       method: 'POST',
@@ -129,7 +129,7 @@ export class HttpTransport implements Transport {
     if (!response.ok) {
       // Check for 409 SESSION_LOCKED error
       if (response.status === 409) {
-        const errorData = await response.json().catch(() => null) as SessionLockedError | null;
+        const errorData = (await response.json().catch(() => null)) as SessionLockedError | null;
         if (errorData && errorData.code === 'SESSION_LOCKED') {
           const error = new Error('Session locked') as Error & SessionLockedError;
           error.code = 'SESSION_LOCKED';
@@ -180,7 +180,11 @@ export class HttpTransport implements Transport {
     });
   }
 
-  submitAnswers(sessionId: string, toolCallId: string, answers: Record<string, string>): Promise<{ ok: boolean }> {
+  submitAnswers(
+    sessionId: string,
+    toolCallId: string,
+    answers: Record<string, string>
+  ): Promise<{ ok: boolean }> {
     return fetchJSON<{ ok: boolean }>(this.baseUrl, `/sessions/${sessionId}/submit-answers`, {
       method: 'POST',
       body: JSON.stringify({ toolCallId, answers }),
@@ -192,7 +196,10 @@ export class HttpTransport implements Transport {
       const params = new URLSearchParams();
       if (cwd) params.set('cwd', cwd);
       const qs = params.toString();
-      return await fetchJSON<{ tasks: TaskItem[] }>(this.baseUrl, `/sessions/${sessionId}/tasks${qs ? `?${qs}` : ''}`);
+      return await fetchJSON<{ tasks: TaskItem[] }>(
+        this.baseUrl,
+        `/sessions/${sessionId}/tasks${qs ? `?${qs}` : ''}`
+      );
     } catch {
       return { tasks: [] };
     }
@@ -224,7 +231,7 @@ export class HttpTransport implements Transport {
     const qs = params.toString();
     return fetchJSON<GitStatusResponse | GitStatusError>(
       this.baseUrl,
-      `/git/status${qs ? `?${qs}` : ''}`,
+      `/git/status${qs ? `?${qs}` : ''}`
     );
   }
 

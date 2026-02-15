@@ -131,7 +131,13 @@ describe('ChatInput', () => {
       const onCommandSelect = vi.fn();
       const onSubmit = vi.fn();
       render(
-        <ChatInput {...defaultProps} value="/daily" isPaletteOpen={true} onCommandSelect={onCommandSelect} onSubmit={onSubmit} />
+        <ChatInput
+          {...defaultProps}
+          value="/daily"
+          isPaletteOpen={true}
+          onCommandSelect={onCommandSelect}
+          onSubmit={onSubmit}
+        />
       );
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
       expect(onCommandSelect).toHaveBeenCalledOnce();
@@ -140,7 +146,9 @@ describe('ChatInput', () => {
 
     it('calls onCommandSelect on Tab when palette open', () => {
       const onCommandSelect = vi.fn();
-      render(<ChatInput {...defaultProps} isPaletteOpen={true} onCommandSelect={onCommandSelect} />);
+      render(
+        <ChatInput {...defaultProps} isPaletteOpen={true} onCommandSelect={onCommandSelect} />
+      );
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Tab' });
       expect(onCommandSelect).toHaveBeenCalledOnce();
     });
@@ -154,7 +162,9 @@ describe('ChatInput', () => {
 
     it('does not call onCommandSelect on Shift+Enter when palette open', () => {
       const onCommandSelect = vi.fn();
-      render(<ChatInput {...defaultProps} isPaletteOpen={true} onCommandSelect={onCommandSelect} />);
+      render(
+        <ChatInput {...defaultProps} isPaletteOpen={true} onCommandSelect={onCommandSelect} />
+      );
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter', shiftKey: true });
       expect(onCommandSelect).not.toHaveBeenCalled();
     });
@@ -172,7 +182,13 @@ describe('ChatInput', () => {
       const onSubmit = vi.fn();
       const onCommandSelect = vi.fn();
       render(
-        <ChatInput {...defaultProps} value="hello" isPaletteOpen={false} onSubmit={onSubmit} onCommandSelect={onCommandSelect} />
+        <ChatInput
+          {...defaultProps}
+          value="hello"
+          isPaletteOpen={false}
+          onSubmit={onSubmit}
+          onCommandSelect={onCommandSelect}
+        />
       );
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' });
       expect(onSubmit).toHaveBeenCalledOnce();
@@ -202,18 +218,28 @@ describe('ChatInput', () => {
     });
 
     it('has aria-activedescendant when palette open with activeDescendantId', () => {
-      render(<ChatInput {...defaultProps} isPaletteOpen={true} activeDescendantId="command-item-2" />);
-      expect(screen.getByRole('combobox').getAttribute('aria-activedescendant')).toBe('command-item-2');
+      render(
+        <ChatInput {...defaultProps} isPaletteOpen={true} activeDescendantId="command-item-2" />
+      );
+      expect(screen.getByRole('combobox').getAttribute('aria-activedescendant')).toBe(
+        'command-item-2'
+      );
     });
 
     it('does not have aria-activedescendant when palette closed', () => {
-      render(<ChatInput {...defaultProps} isPaletteOpen={false} activeDescendantId="command-item-2" />);
+      render(
+        <ChatInput {...defaultProps} isPaletteOpen={false} activeDescendantId="command-item-2" />
+      );
       expect(screen.getByRole('combobox').getAttribute('aria-activedescendant')).toBeNull();
     });
 
     it('has aria-controls pointing to command palette listbox when palette is open', () => {
-      render(<ChatInput {...defaultProps} isPaletteOpen={true} activeDescendantId="command-item-0" />);
-      expect(screen.getByRole('combobox').getAttribute('aria-controls')).toBe('command-palette-listbox');
+      render(
+        <ChatInput {...defaultProps} isPaletteOpen={true} activeDescendantId="command-item-0" />
+      );
+      expect(screen.getByRole('combobox').getAttribute('aria-controls')).toBe(
+        'command-palette-listbox'
+      );
     });
 
     it('has no aria-controls when palette is closed', () => {
@@ -259,7 +285,15 @@ describe('ChatInput', () => {
     it('first Escape calls onEscape, not onClear', () => {
       const onClear = vi.fn();
       const onEscape = vi.fn();
-      render(<ChatInput {...defaultProps} value="hello" isPaletteOpen={false} onClear={onClear} onEscape={onEscape} />);
+      render(
+        <ChatInput
+          {...defaultProps}
+          value="hello"
+          isPaletteOpen={false}
+          onClear={onClear}
+          onEscape={onEscape}
+        />
+      );
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Escape' });
       expect(onEscape).toHaveBeenCalledOnce();
       expect(onClear).not.toHaveBeenCalled();
@@ -268,7 +302,15 @@ describe('ChatInput', () => {
     it('second Escape within 500ms calls onClear when text exists', () => {
       const onClear = vi.fn();
       const onEscape = vi.fn();
-      render(<ChatInput {...defaultProps} value="hello" isPaletteOpen={false} onClear={onClear} onEscape={onEscape} />);
+      render(
+        <ChatInput
+          {...defaultProps}
+          value="hello"
+          isPaletteOpen={false}
+          onClear={onClear}
+          onEscape={onEscape}
+        />
+      );
       const combobox = screen.getByRole('combobox');
       fireEvent.keyDown(combobox, { key: 'Escape' });
       fireEvent.keyDown(combobox, { key: 'Escape' });
@@ -279,7 +321,15 @@ describe('ChatInput', () => {
       vi.useFakeTimers();
       const onClear = vi.fn();
       const onEscape = vi.fn();
-      render(<ChatInput {...defaultProps} value="hello" isPaletteOpen={false} onClear={onClear} onEscape={onEscape} />);
+      render(
+        <ChatInput
+          {...defaultProps}
+          value="hello"
+          isPaletteOpen={false}
+          onClear={onClear}
+          onEscape={onEscape}
+        />
+      );
       const combobox = screen.getByRole('combobox');
       fireEvent.keyDown(combobox, { key: 'Escape' });
       vi.advanceTimersByTime(600);
@@ -292,7 +342,15 @@ describe('ChatInput', () => {
     it('calls onEscape when palette open (even with text)', () => {
       const onClear = vi.fn();
       const onEscape = vi.fn();
-      render(<ChatInput {...defaultProps} value="hello" isPaletteOpen={true} onClear={onClear} onEscape={onEscape} />);
+      render(
+        <ChatInput
+          {...defaultProps}
+          value="hello"
+          isPaletteOpen={true}
+          onClear={onClear}
+          onEscape={onEscape}
+        />
+      );
       fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Escape' });
       expect(onEscape).toHaveBeenCalledOnce();
       expect(onClear).not.toHaveBeenCalled();
@@ -301,7 +359,15 @@ describe('ChatInput', () => {
     it('calls onEscape when palette closed and text is empty', () => {
       const onClear = vi.fn();
       const onEscape = vi.fn();
-      render(<ChatInput {...defaultProps} value="" isPaletteOpen={false} onClear={onClear} onEscape={onEscape} />);
+      render(
+        <ChatInput
+          {...defaultProps}
+          value=""
+          isPaletteOpen={false}
+          onClear={onClear}
+          onEscape={onEscape}
+        />
+      );
       const combobox = screen.getByRole('combobox');
       fireEvent.keyDown(combobox, { key: 'Escape' });
       fireEvent.keyDown(combobox, { key: 'Escape' });

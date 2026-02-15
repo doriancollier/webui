@@ -12,7 +12,9 @@ describe('getToolLabel', () => {
 
   // Bash
   it('uses description for Bash when available', () => {
-    expect(getToolLabel('Bash', '{"command":"npm test","description":"Run unit tests"}')).toBe('Run "Run unit tests"');
+    expect(getToolLabel('Bash', '{"command":"npm test","description":"Run unit tests"}')).toBe(
+      'Run "Run unit tests"'
+    );
   });
 
   it('falls back to command for Bash when no description', () => {
@@ -28,15 +30,21 @@ describe('getToolLabel', () => {
 
   // Read / Write / Edit
   it('shows basename for Read', () => {
-    expect(getToolLabel('Read', '{"file_path":"/Users/me/project/src/utils.ts"}')).toBe('Read utils.ts');
+    expect(getToolLabel('Read', '{"file_path":"/Users/me/project/src/utils.ts"}')).toBe(
+      'Read utils.ts'
+    );
   });
 
   it('shows basename for Write', () => {
-    expect(getToolLabel('Write', '{"file_path":"/tmp/output.json","content":"..."}')).toBe('Write output.json');
+    expect(getToolLabel('Write', '{"file_path":"/tmp/output.json","content":"..."}')).toBe(
+      'Write output.json'
+    );
   });
 
   it('shows basename for Edit', () => {
-    expect(getToolLabel('Edit', '{"file_path":"/src/index.ts","old_string":"a","new_string":"b"}')).toBe('Edit index.ts');
+    expect(
+      getToolLabel('Edit', '{"file_path":"/src/index.ts","old_string":"a","new_string":"b"}')
+    ).toBe('Edit index.ts');
   });
 
   // Glob
@@ -46,7 +54,9 @@ describe('getToolLabel', () => {
 
   // Grep
   it('shows quoted pattern for Grep', () => {
-    expect(getToolLabel('Grep', '{"pattern":"function\\\\s+\\\\w+"}')).toBe('Search "function\\s+\\w+"');
+    expect(getToolLabel('Grep', '{"pattern":"function\\\\s+\\\\w+"}')).toBe(
+      'Search "function\\s+\\w+"'
+    );
   });
 
   it('truncates long Grep patterns', () => {
@@ -57,25 +67,38 @@ describe('getToolLabel', () => {
 
   // Task
   it('shows description for Task agent', () => {
-    expect(getToolLabel('Task', '{"description":"Find auth code","prompt":"...","subagent_type":"Explore"}')).toBe('Agent: Find auth code');
+    expect(
+      getToolLabel(
+        'Task',
+        '{"description":"Find auth code","prompt":"...","subagent_type":"Explore"}'
+      )
+    ).toBe('Agent: Find auth code');
   });
 
   it('falls back to prompt for Task when no description', () => {
-    expect(getToolLabel('Task', '{"prompt":"Search the codebase"}')).toBe('Agent: Search the codebase');
+    expect(getToolLabel('Task', '{"prompt":"Search the codebase"}')).toBe(
+      'Agent: Search the codebase'
+    );
   });
 
   // TaskCreate
   it('shows subject for TaskCreate', () => {
-    expect(getToolLabel('TaskCreate', '{"subject":"Fix login bug","description":"..."}')).toBe('Create task "Fix login bug"');
+    expect(getToolLabel('TaskCreate', '{"subject":"Fix login bug","description":"..."}')).toBe(
+      'Create task "Fix login bug"'
+    );
   });
 
   // TaskUpdate
   it('shows id and status for TaskUpdate', () => {
-    expect(getToolLabel('TaskUpdate', '{"taskId":"3","status":"completed"}')).toBe('Update task #3 → completed');
+    expect(getToolLabel('TaskUpdate', '{"taskId":"3","status":"completed"}')).toBe(
+      'Update task #3 → completed'
+    );
   });
 
   it('shows only id for TaskUpdate without status', () => {
-    expect(getToolLabel('TaskUpdate', '{"taskId":"5","subject":"New name"}')).toBe('Update task #5');
+    expect(getToolLabel('TaskUpdate', '{"taskId":"5","subject":"New name"}')).toBe(
+      'Update task #5'
+    );
   });
 
   // TaskList
@@ -90,12 +113,16 @@ describe('getToolLabel', () => {
 
   // WebSearch
   it('shows query for WebSearch', () => {
-    expect(getToolLabel('WebSearch', '{"query":"React hooks best practices"}')).toBe('Search "React hooks best practices"');
+    expect(getToolLabel('WebSearch', '{"query":"React hooks best practices"}')).toBe(
+      'Search "React hooks best practices"'
+    );
   });
 
   // WebFetch
   it('shows hostname for WebFetch', () => {
-    expect(getToolLabel('WebFetch', '{"url":"https://docs.example.com/api/v2","prompt":"..."}')).toBe('Fetch docs.example.com');
+    expect(
+      getToolLabel('WebFetch', '{"url":"https://docs.example.com/api/v2","prompt":"..."}')
+    ).toBe('Fetch docs.example.com');
   });
 
   it('handles invalid URL in WebFetch gracefully', () => {

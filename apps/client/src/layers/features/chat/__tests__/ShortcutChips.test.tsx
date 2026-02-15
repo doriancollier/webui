@@ -4,14 +4,24 @@ import { render, fireEvent, cleanup } from '@testing-library/react';
 
 // Mock motion/react to render plain elements
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target: unknown, prop: string) => {
-      return ({ children, initial: _i, animate: _a, exit: _e, transition: _t, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-        const Tag = prop as keyof React.JSX.IntrinsicElements;
-        return <Tag {...props}>{children}</Tag>;
-      };
-    },
-  }),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target: unknown, prop: string) => {
+        return ({
+          children,
+          initial: _i,
+          animate: _a,
+          exit: _e,
+          transition: _t,
+          ...props
+        }: Record<string, unknown> & { children?: React.ReactNode }) => {
+          const Tag = prop as keyof React.JSX.IntrinsicElements;
+          return <Tag {...props}>{children}</Tag>;
+        };
+      },
+    }
+  ),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
@@ -31,7 +41,9 @@ describe('ShortcutChips', () => {
   it('calls onChipClick with "/" when Commands chip is clicked', () => {
     const onChipClick = vi.fn();
     const { container } = render(<ShortcutChips onChipClick={onChipClick} />);
-    const commandsBtn = container.querySelector('button[aria-label="Insert slash command trigger"]')!;
+    const commandsBtn = container.querySelector(
+      'button[aria-label="Insert slash command trigger"]'
+    )!;
     fireEvent.click(commandsBtn);
     expect(onChipClick).toHaveBeenCalledWith('/');
   });

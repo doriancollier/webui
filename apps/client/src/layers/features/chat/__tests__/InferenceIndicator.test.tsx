@@ -11,14 +11,28 @@ afterEach(() => {
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <div className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</div>;
+      return (
+        <div className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </div>
+      );
     },
     span: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <span className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</span>;
+      return (
+        <span className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </span>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -68,9 +82,7 @@ describe('InferenceIndicator', () => {
     );
 
     // Transition from streaming to idle
-    rerender(
-      <InferenceIndicator status="idle" streamStartTime={null} estimatedTokens={3200} />
-    );
+    rerender(<InferenceIndicator status="idle" streamStartTime={null} estimatedTokens={3200} />);
 
     expect(screen.getByTestId('inference-indicator-complete')).toBeTruthy();
     expect(screen.getByText('2m 14s')).toBeTruthy();

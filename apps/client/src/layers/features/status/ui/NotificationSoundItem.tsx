@@ -10,7 +10,7 @@ export function NotificationSoundItem({ enabled, onToggle }: NotificationSoundIt
   return (
     <button
       onClick={onToggle}
-      className="inline-flex items-center gap-1 hover:text-foreground transition-colors duration-150"
+      className="hover:text-foreground inline-flex items-center gap-1 transition-colors duration-150"
       aria-label={enabled ? 'Mute notification sound' : 'Unmute notification sound'}
       title={enabled ? 'Sound on — click to mute' : 'Sound off — click to unmute'}
     >

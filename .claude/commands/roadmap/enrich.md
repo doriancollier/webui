@@ -35,6 +35,7 @@ If multiple matches found, use AskUserQuestion to let user select.
 ### Step 2: Load Current Item
 
 Read the item from `roadmap/roadmap.json` and display:
+
 - Title
 - Description
 - Current ideationContext (if any)
@@ -112,11 +113,11 @@ Would you like to modify any of these before saving?
 
 ```typescript
 interface IdeationContext {
-  targetUsers?: string[]
-  painPoints?: string[]
-  successCriteria?: string[]
-  constraints?: string[]
-  technicalNotes?: string
-  relatedFeatures?: string[]
+  targetUsers?: string[];
+  painPoints?: string[];
+  successCriteria?: string[];
+  constraints?: string[];
+  technicalNotes?: string;
+  relatedFeatures?: string[];
 }
 ```

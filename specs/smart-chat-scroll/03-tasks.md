@@ -1,12 +1,12 @@
 # Smart Chat Scroll -- Task Breakdown
 
-| Field | Value |
-|-------|-------|
-| **Spec** | `specs/smart-chat-scroll/02-specification.md` |
-| **Feature Slug** | `smart-chat-scroll` |
-| **Created** | 2026-02-12 |
-| **Total Tasks** | 7 |
-| **Total Phases** | 3 |
+| Field            | Value                                         |
+| ---------------- | --------------------------------------------- |
+| **Spec**         | `specs/smart-chat-scroll/02-specification.md` |
+| **Feature Slug** | `smart-chat-scroll`                           |
+| **Created**      | 2026-02-12                                    |
+| **Total Tasks**  | 7                                             |
+| **Total Phases** | 3                                             |
 
 ---
 
@@ -17,6 +17,7 @@
 **Status:** Not Started
 **Blocked by:** None
 **Files to modify:**
+
 - `apps/client/src/components/chat/MessageList.tsx`
 
 **Description:**
@@ -29,7 +30,15 @@ Refactor `MessageList` to remove the scroll-to-bottom button UI and expose scrol
 
 ```typescript
 // Add at top of file, after imports:
-import { useRef, useEffect, useState, useCallback, useMemo, useImperativeHandle, forwardRef } from 'react';
+import {
+  useRef,
+  useEffect,
+  useState,
+  useCallback,
+  useMemo,
+  useImperativeHandle,
+  forwardRef,
+} from 'react';
 
 // Remove these imports (no longer needed in MessageList):
 // import { motion, AnimatePresence } from 'motion/react';
@@ -55,11 +64,12 @@ interface MessageListProps {
 2. **Convert to forwardRef.** Change the component declaration:
 
 ```typescript
-export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
-  function MessageList({ messages, sessionId, status, onScrollStateChange }, ref) {
-    // ... component body
-  }
-);
+export const MessageList = forwardRef<MessageListHandle, MessageListProps>(function MessageList(
+  { messages, sessionId, status, onScrollStateChange },
+  ref
+) {
+  // ... component body
+});
 ```
 
 3. **Update scroll tracking.** Replace the current `handleScroll` callback and `showScrollButton` state. Remove `const [showScrollButton, setShowScrollButton] = useState(false);`. Replace with a ref-based approach:
@@ -70,8 +80,7 @@ const isAtBottomRef = useRef(true);
 const handleScroll = useCallback(() => {
   const container = parentRef.current;
   if (!container) return;
-  const distanceFromBottom =
-    container.scrollHeight - container.scrollTop - container.clientHeight;
+  const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
   // 200px threshold for "at bottom" (used by parent for scroll button visibility)
   const isAtBottom = distanceFromBottom < 200;
   isAtBottomRef.current = isAtBottom;
@@ -86,9 +95,13 @@ const scrollToBottom = useCallback(() => {
   virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
 }, [virtualizer, messages.length]);
 
-useImperativeHandle(ref, () => ({
-  scrollToBottom,
-}), [scrollToBottom]);
+useImperativeHandle(
+  ref,
+  () => ({
+    scrollToBottom,
+  }),
+  [scrollToBottom]
+);
 ```
 
 5. **Update auto-scroll useEffect.** Replace `!showScrollButton` guard with `isAtBottomRef.current`:
@@ -282,6 +295,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
 ```
 
 **Acceptance criteria:**
+
 - `MessageList` no longer renders a scroll-to-bottom button
 - `MessageList` accepts `onScrollStateChange` callback prop
 - `MessageList` exposes `scrollToBottom()` via `forwardRef` + `useImperativeHandle`
@@ -299,6 +313,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(
 **Status:** Not Started
 **Blocked by:** Task 1.1 (MessageList must expose scroll state and ref)
 **Files to modify:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx`
 
 **Description:**
@@ -414,12 +429,14 @@ return (
 ```
 
 Key changes from current layout:
+
 - Loading and empty states change from `flex-1` to `h-full` (wrapper provides flex sizing)
 - MessageList no longer has `flex-1` (wrapper provides flex sizing)
 - Scroll button is `absolute bottom-4 right-4` (right-aligned, not centered -- the centered position is reserved for the "New messages" pill in Task 2.2)
 - Button visibility is driven by `!isAtBottom` state from the scroll callback
 
 **Acceptance criteria:**
+
 - A new `relative flex-1 min-h-0` wrapper div exists in ChatPanel around the message area
 - Scroll-to-bottom button renders as a child of the wrapper, NOT inside the scroll container
 - Button stays visually fixed above the input area regardless of scroll position
@@ -437,6 +454,7 @@ Key changes from current layout:
 **Status:** Not Started
 **Blocked by:** Task 1.2 (ChatPanel must have scroll state tracking)
 **Files to modify:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx`
 
 **Description:**
@@ -481,6 +499,7 @@ const scrollToBottom = useCallback(() => {
 ```
 
 **Acceptance criteria:**
+
 - `hasNewMessages` becomes `true` when `messages.length` increases while `isAtBottom` is `false`
 - `hasNewMessages` resets to `false` when `isAtBottom` becomes `true` (manual scroll or button click)
 - `scrollToBottom` resets `hasNewMessages`
@@ -493,6 +512,7 @@ const scrollToBottom = useCallback(() => {
 **Status:** Not Started
 **Blocked by:** Task 2.1 (new messages detection must exist)
 **Files to modify:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx`
 
 **Description:**
@@ -544,6 +564,7 @@ Add the pill inside the wrapper div, alongside the scroll button:
 ```
 
 **Design specs:**
+
 - Pill shape: `rounded-full`
 - Colors: `bg-foreground text-background` (inverted, high contrast -- dark pill on light bg, light pill on dark bg)
 - Typography: `text-xs font-medium`
@@ -555,11 +576,13 @@ Add the pill inside the wrapper div, alongside the scroll button:
 - Accessibility: `role="status"` and `aria-live="polite"` for screen readers
 
 **Layout when both visible:**
+
 - Pill: centered, `bottom-16` (64px from bottom)
 - Scroll button: right-aligned, `bottom-4` (16px from bottom)
 - Both are clickable, both scroll to bottom, both fade out when user reaches bottom
 
 **Acceptance criteria:**
+
 - "New messages" pill appears centered when new messages arrive while scrolled up
 - Pill fades in over 200ms and fades out over 150ms
 - Clicking the pill scrolls to bottom and the pill disappears
@@ -598,6 +621,7 @@ Verify that when `isAtBottom` is false, the auto-scroll `useEffect` in MessageLi
 8. Verify: same behavior as clicking the pill
 
 **Acceptance criteria:**
+
 - Scroll position is preserved when user is scrolled up and new messages arrive
 - Auto-scroll resumes when user returns to bottom (manually or via button/pill)
 - No jank or flicker in scroll position during streaming
@@ -611,11 +635,13 @@ Verify that when `isAtBottom` is false, the auto-scroll `useEffect` in MessageLi
 **Status:** Not Started
 **Blocked by:** Task 2.2 (all implementation changes must be complete)
 **Files to modify:**
+
 - `apps/client/src/components/chat/__tests__/MessageList.test.tsx`
 
 **Description:**
 
 Update the existing `MessageList.test.tsx` to account for:
+
 1. Removed scroll-to-bottom button from MessageList
 2. New `onScrollStateChange` callback prop
 3. `forwardRef` wrapper on MessageList
@@ -693,6 +719,7 @@ it('does not render scroll-to-bottom button', () => {
 6. **All existing MessageList rendering tests remain unchanged** -- they test message rendering, not scroll button behavior.
 
 **Acceptance criteria:**
+
 - All existing tests pass after the refactor
 - No test references the scroll button inside MessageList
 - New test verifies `onScrollStateChange` callback prop is accepted
@@ -715,29 +742,34 @@ Perform end-to-end manual verification of all four scroll behaviors in different
 **Checklist:**
 
 **Behavior 1: Auto-scroll when at bottom**
+
 - [ ] Send a message, assistant starts streaming
 - [ ] Chat auto-scrolls as new content appears
 - [ ] Neither the pill nor the scroll button is visible
 
 **Behavior 2: Preserve scroll when scrolled up**
+
 - [ ] While assistant is streaming, scroll up 300px+
 - [ ] New content continues arriving but scroll position stays
 - [ ] Scroll button appears (bottom-right, stays fixed)
 - [ ] "New messages" pill appears (centered)
 
 **Behavior 3: New messages indicator**
+
 - [ ] Pill text reads "New messages"
 - [ ] Clicking pill scrolls to bottom
 - [ ] Pill fades out after reaching bottom
 - [ ] Pill and scroll button are both visible simultaneously
 
 **Behavior 4: Fixed scroll button**
+
 - [ ] Scroll button stays visually fixed above input area
 - [ ] Button does NOT scroll with content (the original bug)
 - [ ] Clicking button scrolls to bottom
 - [ ] Button fades out after reaching bottom
 
 **Environment-specific:**
+
 - [ ] Obsidian embedded mode: switch sidebar tabs, return to chat -- scroll position restores correctly (IntersectionObserver logic)
 - [ ] Mobile viewport (375px wide): both indicators render without overflow
 - [ ] Dark mode: pill uses inverted colors correctly (light pill on dark bg)
@@ -745,6 +777,7 @@ Perform end-to-end manual verification of all four scroll behaviors in different
 - [ ] Loading state: no indicators visible while history loads
 
 **Acceptance criteria:**
+
 - All checklist items pass
 - No visual regressions in existing chat behavior
 - Scroll-to-bottom button is demonstrably fixed (no longer scrolls with content)
@@ -764,6 +797,7 @@ Task 1.1 (Refactor MessageList)
 ```
 
 **Summary:**
+
 - Phase 1 (Tasks 1.1, 1.2): Sequential -- 1.2 depends on 1.1's new exports
 - Phase 2 (Tasks 2.1, 2.2, 2.3): Sequential -- each builds on the previous
 - Phase 3 (Tasks 3.1, 3.2): Sequential -- tests first, then manual QA

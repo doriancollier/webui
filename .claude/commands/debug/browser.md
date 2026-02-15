@@ -1,6 +1,6 @@
 ---
 description: Debug and fix browser issues by inspecting, diagnosing, and resolving visual or technical problems
-argument-hint: "[issue-description] [--url <url>]"
+argument-hint: '[issue-description] [--url <url>]'
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion, Skill, mcp__playwright__browser_snapshot, mcp__playwright__browser_navigate, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_resize, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_evaluate, mcp__context7__resolve-library-id, mcp__context7__query-docs
 ---
 
@@ -11,6 +11,7 @@ Debug and resolve issues observed in the browser. Handles visual problems (desig
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If `--url <url>` flag provided, extract the URL
 - Remaining text is the issue description
 - Both are optional; prompt if missing
@@ -20,6 +21,7 @@ Parse `$ARGUMENTS`:
 ### 1.1 Gather Missing Information
 
 **If URL not provided**, ask:
+
 ```
 AskUserQuestion:
   question: "What URL should I navigate to?"
@@ -34,6 +36,7 @@ AskUserQuestion:
 ```
 
 **If description not provided or vague**, ask about issue type:
+
 ```
 AskUserQuestion:
   question: "What type of issue are you seeing?"
@@ -53,6 +56,7 @@ AskUserQuestion:
 ### 1.2 Additional Context
 
 Ask follow-up questions:
+
 ```
 AskUserQuestion:
   question: "When did you first notice this issue?"
@@ -106,13 +110,13 @@ cat ".logs/$(ls -t .logs/ | head -1)" | tail -50
 
 Based on gathered data, classify the issue:
 
-| Classification | Indicators |
-|----------------|------------|
-| **Visual** | No console errors, visual discrepancy from design system |
-| **Interaction** | Console errors on action, event handler issues |
-| **Data** | API failures, wrong response shape, stale cache |
-| **Performance** | Slow loading, console timing warnings |
-| **Responsive** | Layout shifts at breakpoints |
+| Classification  | Indicators                                               |
+| --------------- | -------------------------------------------------------- |
+| **Visual**      | No console errors, visual discrepancy from design system |
+| **Interaction** | Console errors on action, event handler issues           |
+| **Data**        | API failures, wrong response shape, stale cache          |
+| **Performance** | Slow loading, console timing warnings                    |
+| **Responsive**  | Layout shifts at breakpoints                             |
 
 ## Phase 3: Deep Diagnosis
 
@@ -246,6 +250,7 @@ print("\n📊 Diagnostic Summary:")
 ```
 
 **Benefits**:
+
 - 4x faster than sequential checks
 - Each agent specializes in its domain
 - Comprehensive coverage without context overload
@@ -255,6 +260,7 @@ print("\n📊 Diagnostic Summary:")
 ### For Visual Issues
 
 **Invoke the `designing-frontend` skill:**
+
 ```
 Skill: { skill: "designing-frontend" }
 ```
@@ -262,36 +268,43 @@ Skill: { skill: "designing-frontend" }
 **Conduct systematic Design System Audit:**
 
 #### 1. Typography Audit
+
 - [ ] Is font Geist Sans/Mono? (no Inter, Roboto, Arial)
 - [ ] Does size match type scale? (11/13/15/17/20/24/30/36/48px)
 - [ ] Is weight appropriate? (400+ for body, 500-700 for headings)
 - [ ] Is letter-spacing correct for display text? (-0.02em to -0.025em)
 
 #### 2. Spacing Audit
+
 - [ ] Does spacing follow 8px base? (4/8/12/16/20/24/32/48/64px)
 - [ ] Is card padding 24px (p-6)?
 - [ ] Are gaps 16px default, 24px for card grids?
 
 #### 3. Color Audit
+
 - [ ] No pure black (#000) or white (#fff)?
 - [ ] Using semantic tokens (bg-primary, text-muted-foreground)?
 - [ ] WCAG AA contrast met (4.5:1 for text)?
 
 #### 4. Shape Audit
+
 - [ ] Cards using rounded-xl (16px)?
 - [ ] Buttons using rounded-md (10px)?
 - [ ] Inputs matching button radius?
 
 #### 5. Shadow Audit
+
 - [ ] Using project shadows (shadow-soft, shadow-elevated, shadow-floating)?
 - [ ] Shadows diffused, not harsh?
 
 #### 6. Animation Audit (if applicable)
+
 - [ ] Duration between 100-300ms?
 - [ ] Correct easing curve? (ease-out for enter, ease-in for exit)
 - [ ] prefers-reduced-motion respected?
 
 **Take targeted screenshot if needed:**
+
 ```
 mcp__playwright__browser_take_screenshot: {
   element: "[description of element]",
@@ -302,6 +315,7 @@ mcp__playwright__browser_take_screenshot: {
 ### For Interaction Issues
 
 1. **Attempt the interaction:**
+
 ```
 mcp__playwright__browser_click: {
   element: "[description]",
@@ -310,11 +324,13 @@ mcp__playwright__browser_click: {
 ```
 
 2. **Check console for new errors:**
+
 ```
 mcp__playwright__browser_console_messages: { level: "error" }
 ```
 
 3. **Evaluate the result:**
+
 ```
 mcp__playwright__browser_snapshot: {}
 ```
@@ -324,11 +340,13 @@ mcp__playwright__browser_snapshot: {}
 ### For Data Issues
 
 1. **Check network request details:**
+
 ```
 mcp__playwright__browser_network_requests: { includeStatic: false }
 ```
 
 2. **Check server logs for API errors:**
+
 ```bash
 grep -E "POST|GET|error|failed" ".logs/$(ls -t .logs/ | head -1)" | tail -20
 ```
@@ -342,6 +360,7 @@ grep -E "POST|GET|error|failed" ".logs/$(ls -t .logs/ | head -1)" | tail -20
 ### For Responsive Issues
 
 **Test at key breakpoints:**
+
 ```
 mcp__playwright__browser_resize: { width: 375, height: 667 }   # Mobile
 mcp__playwright__browser_snapshot: {}
@@ -354,6 +373,7 @@ mcp__playwright__browser_snapshot: {}
 ```
 
 **Check for:**
+
 - Responsive class usage (sm:, md:, lg:, xl:)
 - Touch targets (minimum 44px)
 - Content overflow issues
@@ -371,6 +391,7 @@ mcp__playwright__browser_snapshot: {}
 ### 4.2 Trace to Source Code
 
 **For complex searches**, use code-search agent:
+
 ```
 Task:
   description: "Find [component/function]"
@@ -379,6 +400,7 @@ Task:
 ```
 
 **For simpler cases**, use direct search:
+
 ```
 Glob: { pattern: "**/[component-name]*" }
 Grep: { pattern: "[search-term]", type: "tsx" }
@@ -387,6 +409,7 @@ Grep: { pattern: "[search-term]", type: "tsx" }
 ### 4.3 Validate Assumptions
 
 **BEFORE making changes:**
+
 - Read the relevant component code
 - Understand the data flow
 - Check for intentional design decisions
@@ -395,6 +418,7 @@ Grep: { pattern: "[search-term]", type: "tsx" }
 ### 4.4 Research If Needed
 
 **For library issues:**
+
 ```
 mcp__context7__resolve-library-id: { libraryName: "[library]" }
 mcp__context7__query-docs: {
@@ -404,6 +428,7 @@ mcp__context7__query-docs: {
 ```
 
 **For complex issues**, spawn research agent:
+
 ```
 Task:
   description: "Research [issue]"
@@ -416,6 +441,7 @@ Task:
 ### 5.1 Create Mini-Plan
 
 Document 3-5 steps maximum:
+
 ```
 TodoWrite:
   todos:
@@ -430,6 +456,7 @@ TodoWrite:
 ### 5.2 Make Changes
 
 For each change:
+
 1. **Read the file first** - never edit without reading
 2. **Make targeted edits** - minimal changes to fix the issue
 3. **Verify syntax** with typecheck
@@ -460,6 +487,7 @@ mcp__playwright__browser_snapshot: {}
 ### 6.3 Test Edge Cases
 
 Based on issue type:
+
 - **Visual:** Check dark mode, responsive sizes
 - **Interaction:** Test success and error states
 - **Data:** Test loading, empty, and error states
@@ -467,6 +495,7 @@ Based on issue type:
 ### 6.4 If Issue Persists
 
 Continue debugging:
+
 1. Review what was learned
 2. Identify what was missed
 3. Try alternative approach
@@ -490,6 +519,7 @@ Continue debugging:
 ### 7.2 Suggest Improvements (Optional)
 
 If noticed during debugging:
+
 - Related components with same issue
 - Opportunities to use design tokens
 - Missing component variants
@@ -498,6 +528,7 @@ If noticed during debugging:
 ### 7.3 Recommend Regression Prevention
 
 Suggest:
+
 - Component test for the fix
 - Visual regression test consideration
 - Design token usage to prevent future issues
@@ -521,27 +552,27 @@ AskUserQuestion:
 
 ### Common Design System Violations
 
-| Issue | Check | Fix |
-|-------|-------|-----|
-| Wrong font | `font-sans` class missing | Add `font-sans` or check font loading |
-| Harsh borders | Pure black/white colors | Use `border-border` or theme colors |
-| Cramped cards | Padding < 24px | Use `p-6` for card padding |
-| Square corners | Wrong radius | Cards: `rounded-xl`, Buttons: `rounded-md` |
-| Hard shadows | Non-diffused shadows | Use `shadow-soft` or `shadow-elevated` |
-| Giant text | Wrong scale level | Match to type scale (11/13/15/17/20/24/30/36px) |
-| Janky animation | Wrong duration/easing | 100-300ms, ease-out for enter |
+| Issue           | Check                     | Fix                                             |
+| --------------- | ------------------------- | ----------------------------------------------- |
+| Wrong font      | `font-sans` class missing | Add `font-sans` or check font loading           |
+| Harsh borders   | Pure black/white colors   | Use `border-border` or theme colors             |
+| Cramped cards   | Padding < 24px            | Use `p-6` for card padding                      |
+| Square corners  | Wrong radius              | Cards: `rounded-xl`, Buttons: `rounded-md`      |
+| Hard shadows    | Non-diffused shadows      | Use `shadow-soft` or `shadow-elevated`          |
+| Giant text      | Wrong scale level         | Match to type scale (11/13/15/17/20/24/30/36px) |
+| Janky animation | Wrong duration/easing     | 100-300ms, ease-out for enter                   |
 
 ### Agent Usage
 
 Use specialized agents when needed:
 
-| Scenario | Agent |
-|----------|-------|
-| Complex CSS/layout | `react-tanstack-expert` |
-| Type errors found | `typescript-expert` |
-| Database/API issues | `prisma-expert` |
-| Deep research needed | `research-expert` |
-| Multi-file search | `code-search` |
+| Scenario             | Agent                   |
+| -------------------- | ----------------------- |
+| Complex CSS/layout   | `react-tanstack-expert` |
+| Type errors found    | `typescript-expert`     |
+| Database/API issues  | `prisma-expert`         |
+| Deep research needed | `research-expert`       |
+| Multi-file search    | `code-search`           |
 
 ### Skills to Invoke
 

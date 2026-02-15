@@ -61,44 +61,44 @@ The `gateway/` directory was reserved in the DorkOS architecture specifically fo
 
 ### Backend
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `@anthropic-ai/claude-agent-sdk` | latest | Core SDK - embeds Claude Code agent loop |
-| `express` | ^4.21 | HTTP server framework |
-| `cors` | ^2.8 | CORS middleware |
-| `dotenv` | ^16.4 | Environment variable loading |
-| `gray-matter` | ^4.0 | Parse YAML frontmatter from command files |
-| `uuid` | ^10.0 | Generate session IDs |
-| `tsx` | ^4.19 | TypeScript execution for development |
+| Package                          | Version | Purpose                                   |
+| -------------------------------- | ------- | ----------------------------------------- |
+| `@anthropic-ai/claude-agent-sdk` | latest  | Core SDK - embeds Claude Code agent loop  |
+| `express`                        | ^4.21   | HTTP server framework                     |
+| `cors`                           | ^2.8    | CORS middleware                           |
+| `dotenv`                         | ^16.4   | Environment variable loading              |
+| `gray-matter`                    | ^4.0    | Parse YAML frontmatter from command files |
+| `uuid`                           | ^10.0   | Generate session IDs                      |
+| `tsx`                            | ^4.19   | TypeScript execution for development      |
 
 ### Frontend
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `react` | ^19.0 | UI framework |
-| `react-dom` | ^19.0 | React DOM rendering |
-| `@ai-sdk/react` | latest | `useChat` hook for streaming chat state |
-| `ai` | latest | Vercel AI SDK core |
-| `@tanstack/react-virtual` | ^3.11 | Message list virtualization |
-| `@tanstack/react-query` | ^5.62 | Server state management |
-| `zustand` | ^5.0 | Client state management |
-| `cmdk` | ^1.0 | Command palette for slash commands |
-| `streamdown` | latest | Streaming markdown renderer |
-| `tailwindcss` | ^4.0 | Utility-first CSS |
-| `@shadcn/ui` | latest | UI component library |
-| `lucide-react` | latest | Icons |
+| Package                   | Version | Purpose                                 |
+| ------------------------- | ------- | --------------------------------------- |
+| `react`                   | ^19.0   | UI framework                            |
+| `react-dom`               | ^19.0   | React DOM rendering                     |
+| `@ai-sdk/react`           | latest  | `useChat` hook for streaming chat state |
+| `ai`                      | latest  | Vercel AI SDK core                      |
+| `@tanstack/react-virtual` | ^3.11   | Message list virtualization             |
+| `@tanstack/react-query`   | ^5.62   | Server state management                 |
+| `zustand`                 | ^5.0    | Client state management                 |
+| `cmdk`                    | ^1.0    | Command palette for slash commands      |
+| `streamdown`              | latest  | Streaming markdown renderer             |
+| `tailwindcss`             | ^4.0    | Utility-first CSS                       |
+| `@shadcn/ui`              | latest  | UI component library                    |
+| `lucide-react`            | latest  | Icons                                   |
 
 ### Dev Dependencies
 
-| Package | Version | Purpose |
-|---------|---------|---------|
-| `vite` | ^6.0 | Build tool and dev server |
-| `@vitejs/plugin-react` | latest | React plugin for Vite |
-| `typescript` | ^5.7 | Type checking |
-| `@types/react` | ^19.0 | React type definitions |
-| `@types/express` | ^5.0 | Express type definitions |
-| `vitest` | ^2.1 | Testing framework |
-| `@testing-library/react` | ^16.0 | React component testing |
+| Package                  | Version | Purpose                   |
+| ------------------------ | ------- | ------------------------- |
+| `vite`                   | ^6.0    | Build tool and dev server |
+| `@vitejs/plugin-react`   | latest  | React plugin for Vite     |
+| `typescript`             | ^5.7    | Type checking             |
+| `@types/react`           | ^19.0   | React type definitions    |
+| `@types/express`         | ^5.0    | Express type definitions  |
+| `vitest`                 | ^2.1    | Testing framework         |
+| `@testing-library/react` | ^16.0   | React component testing   |
 
 ---
 
@@ -176,10 +176,10 @@ gateway/
 
 export interface Session {
   id: string;
-  sdkSessionId?: string;       // Claude Agent SDK session ID
+  sdkSessionId?: string; // Claude Agent SDK session ID
   title: string;
-  createdAt: string;           // ISO timestamp
-  updatedAt: string;           // ISO timestamp
+  createdAt: string; // ISO timestamp
+  updatedAt: string; // ISO timestamp
   lastMessagePreview?: string; // First 100 chars of last message
   permissionMode: 'default' | 'dangerously-skip';
 }
@@ -196,14 +196,14 @@ export interface SendMessageRequest {
 // === Message Types (SSE stream events) ===
 
 export type StreamEventType =
-  | 'text_delta'           // Incremental text chunk
-  | 'tool_call_start'      // Tool execution begins
-  | 'tool_call_delta'      // Tool input streaming
-  | 'tool_call_end'        // Tool execution finished
-  | 'tool_result'          // Tool returned a result
-  | 'approval_required'    // Tool needs user approval
-  | 'error'                // Error occurred
-  | 'done';                // Stream complete
+  | 'text_delta' // Incremental text chunk
+  | 'tool_call_start' // Tool execution begins
+  | 'tool_call_delta' // Tool input streaming
+  | 'tool_call_end' // Tool execution finished
+  | 'tool_result' // Tool returned a result
+  | 'approval_required' // Tool needs user approval
+  | 'error' // Error occurred
+  | 'done'; // Stream complete
 
 export interface StreamEvent {
   type: StreamEventType;
@@ -217,15 +217,15 @@ export interface TextDelta {
 export interface ToolCallEvent {
   toolCallId: string;
   toolName: string;
-  input?: string;           // JSON string of tool input
-  result?: string;          // Tool result (for tool_result type)
+  input?: string; // JSON string of tool input
+  result?: string; // Tool result (for tool_result type)
   status: 'pending' | 'running' | 'complete' | 'error';
 }
 
 export interface ApprovalEvent {
   toolCallId: string;
   toolName: string;
-  input: string;            // JSON string of proposed tool input
+  input: string; // JSON string of proposed tool input
 }
 
 export interface ErrorEvent {
@@ -243,7 +243,7 @@ export interface DoneEvent {
 export interface CommandEntry {
   namespace: string;
   command: string;
-  fullCommand: string;       // "/namespace:command"
+  fullCommand: string; // "/namespace:command"
   description: string;
   argumentHint?: string;
   allowedTools?: string[];
@@ -252,7 +252,7 @@ export interface CommandEntry {
 
 export interface CommandRegistry {
   commands: CommandEntry[];
-  lastScanned: string;       // ISO timestamp
+  lastScanned: string; // ISO timestamp
 }
 ```
 
@@ -279,9 +279,12 @@ class AgentManager {
   private sessions = new Map<string, AgentSession>();
   private readonly SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
-  async createSession(sessionId: string, opts: {
-    permissionMode: 'default' | 'dangerously-skip';
-  }): Promise<string> {
+  async createSession(
+    sessionId: string,
+    opts: {
+      permissionMode: 'default' | 'dangerously-skip';
+    }
+  ): Promise<string> {
     // Will be populated on first message
     this.sessions.set(sessionId, {
       sdkSessionId: '',
@@ -292,10 +295,7 @@ class AgentManager {
     return sessionId;
   }
 
-  async *sendMessage(
-    sessionId: string,
-    content: string
-  ): AsyncGenerator<StreamEvent> {
+  async *sendMessage(sessionId: string, content: string): AsyncGenerator<StreamEvent> {
     const session = this.sessions.get(sessionId);
     if (!session) throw new Error(`Session ${sessionId} not found`);
 
@@ -467,18 +467,14 @@ class CommandRegistryService {
           fullCommand: `/${ns.name}:${commandName}`,
           description: frontmatter.description || '',
           argumentHint: frontmatter['argument-hint'],
-          allowedTools: frontmatter['allowed-tools']
-            ?.split(',')
-            .map((t: string) => t.trim()),
+          allowedTools: frontmatter['allowed-tools']?.split(',').map((t: string) => t.trim()),
           filePath: path.relative(process.cwd(), filePath),
         });
       }
     }
 
     // Sort by namespace, then command name
-    commands.sort((a, b) =>
-      a.fullCommand.localeCompare(b.fullCommand)
-    );
+    commands.sort((a, b) => a.fullCommand.localeCompare(b.fullCommand));
 
     this.cache = { commands, lastScanned: new Date().toISOString() };
     return this.cache;
@@ -508,7 +504,7 @@ class SessionStore {
     try {
       const data = await fs.readFile(STORE_PATH, 'utf-8');
       const parsed: Session[] = JSON.parse(data);
-      this.sessions = new Map(parsed.map(s => [s.id, s]));
+      this.sessions = new Map(parsed.map((s) => [s.id, s]));
     } catch {
       this.sessions = new Map();
     }
@@ -521,8 +517,9 @@ class SessionStore {
   }
 
   list(): Session[] {
-    return Array.from(this.sessions.values())
-      .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    return Array.from(this.sessions.values()).sort((a, b) =>
+      b.updatedAt.localeCompare(a.updatedAt)
+    );
   }
 
   get(id: string): Session | undefined {
@@ -1014,17 +1011,17 @@ export default defineConfig({
 
 ## 7. API Reference
 
-| Method | Endpoint | Description | Response |
-|--------|----------|-------------|----------|
-| `POST` | `/api/sessions` | Create new session | `Session` JSON |
-| `GET` | `/api/sessions` | List all sessions | `Session[]` JSON |
-| `GET` | `/api/sessions/:id` | Get session details | `Session` JSON |
-| `DELETE` | `/api/sessions/:id` | Delete session | `{ ok: true }` |
-| `POST` | `/api/sessions/:id/messages` | Send message | SSE stream of `StreamEvent` |
-| `POST` | `/api/sessions/:id/approve` | Approve tool call | `{ ok: true }` |
-| `POST` | `/api/sessions/:id/deny` | Deny tool call | `{ ok: true }` |
-| `GET` | `/api/commands` | List slash commands | `CommandRegistry` JSON |
-| `GET` | `/api/health` | Health check | `{ status, version, uptime }` |
+| Method   | Endpoint                     | Description         | Response                      |
+| -------- | ---------------------------- | ------------------- | ----------------------------- |
+| `POST`   | `/api/sessions`              | Create new session  | `Session` JSON                |
+| `GET`    | `/api/sessions`              | List all sessions   | `Session[]` JSON              |
+| `GET`    | `/api/sessions/:id`          | Get session details | `Session` JSON                |
+| `DELETE` | `/api/sessions/:id`          | Delete session      | `{ ok: true }`                |
+| `POST`   | `/api/sessions/:id/messages` | Send message        | SSE stream of `StreamEvent`   |
+| `POST`   | `/api/sessions/:id/approve`  | Approve tool call   | `{ ok: true }`                |
+| `POST`   | `/api/sessions/:id/deny`     | Deny tool call      | `{ ok: true }`                |
+| `GET`    | `/api/commands`              | List slash commands | `CommandRegistry` JSON        |
+| `GET`    | `/api/health`                | Health check        | `{ status, version, uptime }` |
 
 ### SSE Stream Event Format
 
@@ -1125,14 +1122,14 @@ data: {"sessionId":"abc","sdkSessionId":"def"}
 
 ## 10. Performance Considerations
 
-| Concern | Mitigation |
-|---------|-----------|
-| Long message histories (1000+ messages) | TanStack Virtual renders only visible messages + 5 overscan |
-| Streaming markdown re-parsing | Streamdown uses O(n) incremental parsing with memoized blocks |
-| SDK memory leak (400MB -> 4GB) | Session timeout after 30 min inactive; SDK resume makes restart seamless |
-| Large command registry (80+ commands) | Cached on first load, invalidated only on explicit refresh |
-| SSE connection limits (6 per domain) | Single SSE connection per active session; REST for everything else |
-| Initial page load | Vite code-splitting + lazy loading for non-critical components |
+| Concern                                 | Mitigation                                                               |
+| --------------------------------------- | ------------------------------------------------------------------------ |
+| Long message histories (1000+ messages) | TanStack Virtual renders only visible messages + 5 overscan              |
+| Streaming markdown re-parsing           | Streamdown uses O(n) incremental parsing with memoized blocks            |
+| SDK memory leak (400MB -> 4GB)          | Session timeout after 30 min inactive; SDK resume makes restart seamless |
+| Large command registry (80+ commands)   | Cached on first load, invalidated only on explicit refresh               |
+| SSE connection limits (6 per domain)    | Single SSE connection per active session; REST for everything else       |
+| Initial page load                       | Vite code-splitting + lazy loading for non-critical components           |
 
 ---
 

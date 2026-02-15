@@ -12,7 +12,7 @@ const WITTY_MESSAGES = [
   'Permissions bypassed - no safety net',
   'Permissions bypassed - what could go wrong?',
   'Permissions bypassed - hold onto your files',
-  "Permissions bypassed - I hope you trust me",
+  'Permissions bypassed - I hope you trust me',
   'Permissions bypassed - send it',
 ] as const;
 

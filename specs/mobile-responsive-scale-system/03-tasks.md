@@ -1,12 +1,12 @@
 # Mobile Responsive Scale System -- Task Breakdown
 
-| Field | Value |
-|-------|-------|
-| **Spec** | `specs/mobile-responsive-scale-system/02-specification.md` |
-| **Feature Slug** | `mobile-responsive-scale-system` |
-| **Created** | 2026-02-11 |
-| **Total Tasks** | 9 |
-| **Total Phases** | 5 |
+| Field            | Value                                                      |
+| ---------------- | ---------------------------------------------------------- |
+| **Spec**         | `specs/mobile-responsive-scale-system/02-specification.md` |
+| **Feature Slug** | `mobile-responsive-scale-system`                           |
+| **Created**      | 2026-02-11                                                 |
+| **Total Tasks**  | 9                                                          |
+| **Total Phases** | 5                                                          |
 
 ---
 
@@ -17,6 +17,7 @@
 **Status:** Not Started
 **Blocked by:** None
 **Files to modify:**
+
 - `apps/client/src/index.css`
 
 **Description:**
@@ -110,7 +111,11 @@ Note: The `--text-2xs` and `--text-3xs` naming changes to `--font-size-2xs` and 
 ```css
 /* iOS input zoom prevention (fallback for low --mobile-scale values) */
 @media (max-width: 767px) {
-  textarea, input[type="text"], input[type="email"], input[type="search"], select {
+  textarea,
+  input[type='text'],
+  input[type='email'],
+  input[type='search'],
+  select {
     font-size: max(1rem, var(--font-size-sm, 0.875rem)) !important;
   }
 
@@ -120,7 +125,7 @@ Note: The `--text-2xs` and `--text-3xs` naming changes to `--font-size-2xs` and 
   }
 
   /* Table action overlay -- always visible on mobile */
-  .msg-assistant div:has(> div > [data-streamdown="table"]) > div:first-child:not(:has(table)) {
+  .msg-assistant div:has(> div > [data-streamdown='table']) > div:first-child:not(:has(table)) {
     opacity: 0.6;
     pointer-events: auto;
   }
@@ -142,6 +147,7 @@ Note: The `--text-2xs` and `--text-3xs` naming changes to `--font-size-2xs` and 
 ```
 
 **Acceptance criteria:**
+
 - `turbo build --filter=@dorkos/client` succeeds
 - Tailwind generates utility classes that include `calc()` expressions
 - Desktop appearance is unchanged (all multipliers resolve to 1)
@@ -156,6 +162,7 @@ Note: The `--text-2xs` and `--text-3xs` naming changes to `--font-size-2xs` and 
 **Status:** Not Started
 **Blocked by:** None
 **Files to modify:**
+
 - `apps/client/index.html`
 
 **Description:**
@@ -177,6 +184,7 @@ To:
 ```
 
 **Acceptance criteria:**
+
 - The viewport meta tag contains `viewport-fit=cover`
 - App builds successfully with `turbo build --filter=@dorkos/client`
 
@@ -189,6 +197,7 @@ To:
 **Status:** Not Started
 **Blocked by:** Task 1.1 (icon CSS tokens must exist in `@theme inline`)
 **Files to modify (19 files, ~55 replacements):**
+
 - `apps/client/src/App.tsx`
 - `apps/client/src/components/chat/ToolCallCard.tsx`
 - `apps/client/src/components/chat/TaskListPanel.tsx`
@@ -215,12 +224,12 @@ Migrate all ~55 icon instances from ad-hoc Tailwind size classes (`h-N w-N`) to 
 
 **Size mapping:**
 
-| Old Class | New Token Class | Desktop Size | Mobile Size (x1.25) |
-|-----------|----------------|-------------|---------------------|
-| `h-2.5 w-2.5` (10px) | `size-[--size-icon-xs]` | 12px | 15px |
-| `h-3 w-3` (12px) | `size-[--size-icon-xs]` | 12px | 15px |
-| `h-3.5 w-3.5` (14px) | `size-[--size-icon-sm]` | 16px | 20px |
-| `h-4 w-4` (16px) | `size-[--size-icon-md]` | 20px | 25px |
+| Old Class            | New Token Class         | Desktop Size | Mobile Size (x1.25) |
+| -------------------- | ----------------------- | ------------ | ------------------- |
+| `h-2.5 w-2.5` (10px) | `size-[--size-icon-xs]` | 12px         | 15px                |
+| `h-3 w-3` (12px)     | `size-[--size-icon-xs]` | 12px         | 15px                |
+| `h-3.5 w-3.5` (14px) | `size-[--size-icon-sm]` | 16px         | 20px                |
+| `h-4 w-4` (16px)     | `size-[--size-icon-md]` | 20px         | 25px                |
 
 **Pattern:** Replace paired `h-N w-N` classes with single `size-[--size-icon-*]`:
 
@@ -245,153 +254,154 @@ Migrate all ~55 icon instances from ad-hoc Tailwind size classes (`h-N w-N`) to 
 
 **`apps/client/src/App.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 85 | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 127 | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon        | Old Class | New Token               |
+| ---- | ----------- | --------- | ----------------------- |
+| 85   | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
+| 127  | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/chat/ToolCallCard.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 16 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 17 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 18 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 19 | `X` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 35 | `ChevronDown` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon          | Old Class | New Token               |
+| ---- | ------------- | --------- | ----------------------- |
+| 16   | `Loader2`     | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 17   | `Loader2`     | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 18   | `Check`       | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 19   | `X`           | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 35   | `ChevronDown` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/chat/TaskListPanel.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 13 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 14 | `Circle` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 15 | `CheckCircle2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 39 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 49 | `ChevronRight` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 49 | `ChevronDown` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 50 | `ListTodo` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon           | Old Class | New Token               |
+| ---- | -------------- | --------- | ----------------------- |
+| 13   | `Loader2`      | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 14   | `Circle`       | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 15   | `CheckCircle2` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 39   | `Loader2`      | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 49   | `ChevronRight` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 49   | `ChevronDown`  | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 50   | `ListTodo`     | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/chat/ToolApproval.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 59 | `Shield` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 80 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 87 | `X` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon     | Old Class | New Token               |
+| ---- | -------- | --------- | ----------------------- |
+| 59   | `Shield` | `h-4 w-4` | `size-[--size-icon-md]` |
+| 80   | `Check`  | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 87   | `X`      | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/chat/MessageItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 69 | `ChevronRight` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 71 | `span` (bullet) | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon            | Old Class | New Token               |
+| ---- | --------------- | --------- | ----------------------- |
+| 69   | `ChevronRight`  | `h-4 w-4` | `size-[--size-icon-md]` |
+| 71   | `span` (bullet) | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/chat/ChatInput.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 142 | `Square` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 157 | `CornerDownLeft` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| Line | Icon             | Old Class     | New Token               |
+| ---- | ---------------- | ------------- | ----------------------- |
+| 142  | `Square`         | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 157  | `CornerDownLeft` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
 
 **`apps/client/src/components/chat/MessageList.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 165 | `ArrowDown` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon        | Old Class | New Token               |
+| ---- | ----------- | --------- | ----------------------- |
+| 165  | `ArrowDown` | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/chat/QuestionPrompt.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 89 | `Check` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 139 | `MessageSquare` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 241 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon            | Old Class     | New Token               |
+| ---- | --------------- | ------------- | ----------------------- |
+| 89   | `Check`         | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 139  | `MessageSquare` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 241  | `Check`         | `h-3 w-3`     | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/sessions/SessionItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 50 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 52 | `Copy` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 98 | `ShieldOff` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 116 | `ChevronDown` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| Line | Icon          | Old Class     | New Token               |
+| ---- | ------------- | ------------- | ----------------------- |
+| 50   | `Check`       | `h-3 w-3`     | `size-[--size-icon-xs]` |
+| 52   | `Copy`        | `h-3 w-3`     | `size-[--size-icon-xs]` |
+| 98   | `ShieldOff`   | `h-3 w-3`     | `size-[--size-icon-xs]` |
+| 116  | `ChevronDown` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
 
 **`apps/client/src/components/sessions/SessionSidebar.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 84 | `FolderOpen` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 93 | `PanelLeftClose` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 101 | `Plus` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 157 | `Route` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 170 | `HeartPulse` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 183 | `ThemeIcon` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| Line | Icon             | Old Class     | New Token               |
+| ---- | ---------------- | ------------- | ----------------------- |
+| 84   | `FolderOpen`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 93   | `PanelLeftClose` | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 101  | `Plus`           | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 157  | `Route`          | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 170  | `HeartPulse`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 183  | `ThemeIcon`      | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
 
 **`apps/client/src/components/sessions/DirectoryPicker.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 117 | `Clock` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 126 | `Folder` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 146 | `Eye` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 148 | `EyeOff` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 163 | `Loader2` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 176 | `Folder` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 186 | `FolderOpen` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 201 | `Folder` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon         | Old Class     | New Token               |
+| ---- | ------------ | ------------- | ----------------------- |
+| 117  | `Clock`      | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 126  | `Folder`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 146  | `Eye`        | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 148  | `EyeOff`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 163  | `Loader2`    | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 176  | `Folder`     | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 186  | `FolderOpen` | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 201  | `Folder`     | `h-4 w-4`     | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/status/CwdItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 11 | `Folder` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon     | Old Class | New Token               |
+| ---- | -------- | --------- | ----------------------- |
+| 11   | `Folder` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/ModelItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 34 | `Bot` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon  | Old Class | New Token               |
+| ---- | ----- | --------- | ----------------------- |
+| 34   | `Bot` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/ContextItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 13 | `Layers` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon     | Old Class | New Token               |
+| ---- | -------- | --------- | ----------------------- |
+| 13   | `Layers` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/PermissionModeItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 56 | `Icon` (dynamic) | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 73 | `MIcon` (dynamic) | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon              | Old Class | New Token               |
+| ---- | ----------------- | --------- | ----------------------- |
+| 56   | `Icon` (dynamic)  | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 73   | `MIcon` (dynamic) | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/CostItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 10 | `DollarSign` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon         | Old Class | New Token               |
+| ---- | ------------ | --------- | ----------------------- |
+| 10   | `DollarSign` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/ui/dropdown-menu.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 60 | container span | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 62 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon           | Old Class     | New Token               |
+| ---- | -------------- | ------------- | ----------------------- |
+| 60   | container span | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 62   | `Check`        | `h-3 w-3`     | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/ui/path-breadcrumb.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 29 | chevron (dynamic) | `h-2.5 w-2.5` / `h-3 w-3` | `size-[--size-icon-xs]` for both |
+| Line | Icon              | Old Class                 | New Token                        |
+| ---- | ----------------- | ------------------------- | -------------------------------- |
+| 29   | chevron (dynamic) | `h-2.5 w-2.5` / `h-3 w-3` | `size-[--size-icon-xs]` for both |
 
 **`apps/client/src/components/ui/dialog.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 42 | `X` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon | Old Class | New Token               |
+| ---- | ---- | --------- | ----------------------- |
+| 42   | `X`  | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **Acceptance criteria:**
+
 - All ~55 icon instances use one of the three token classes: `size-[--size-icon-xs]`, `size-[--size-icon-sm]`, `size-[--size-icon-md]`
 - No remaining `h-2.5 w-2.5`, `h-3 w-3`, `h-3.5 w-3.5`, or `h-4 w-4` on Lucide icon elements in the listed files
 - `turbo build --filter=@dorkos/client` succeeds
@@ -407,6 +417,7 @@ Migrate all ~55 icon instances from ad-hoc Tailwind size classes (`h-N w-N`) to 
 **Status:** Not Started
 **Blocked by:** Task 2.1 (icon sizes affect touch target calculations)
 **Files to modify:**
+
 - `apps/client/src/components/chat/ChatInput.tsx`
 - `apps/client/src/components/sessions/SessionItem.tsx`
 - `apps/client/src/components/sessions/SessionSidebar.tsx`
@@ -427,10 +438,11 @@ Change `p-1.5` to `p-1.5 max-md:p-2.5` on both button elements:
 
 ```tsx
 // Line 139 (stop button):
-className="rounded-md bg-destructive p-1.5 max-md:p-2.5 text-destructive-foreground hover:bg-destructive/90"
+className =
+  'rounded-md bg-destructive p-1.5 max-md:p-2.5 text-destructive-foreground hover:bg-destructive/90';
 
 // Line 154 (send button):
-className="rounded-md bg-primary p-1.5 max-md:p-2.5 text-primary-foreground hover:bg-primary/90"
+className = 'rounded-md bg-primary p-1.5 max-md:p-2.5 text-primary-foreground hover:bg-primary/90';
 ```
 
 **SessionItem.tsx (line 44-55)** -- CopyButton uses `p-0.5` (2px padding). With icon-xs at 15px on mobile, total is 19px.
@@ -438,7 +450,7 @@ className="rounded-md bg-primary p-1.5 max-md:p-2.5 text-primary-foreground hove
 Change to `p-0.5 max-md:p-2`:
 
 ```tsx
-className="p-0.5 max-md:p-2 rounded hover:bg-secondary/80 ..."
+className = 'p-0.5 max-md:p-2 rounded hover:bg-secondary/80 ...';
 ```
 
 The expand toggle button (line 104) also uses `p-0.5`. Same fix:
@@ -455,7 +467,7 @@ className={cn(
 Change to `p-1 max-md:p-2` on all three footer buttons:
 
 ```tsx
-className="p-1 max-md:p-2 rounded-md text-muted-foreground/50 hover:text-muted-foreground ..."
+className = 'p-1 max-md:p-2 rounded-md text-muted-foreground/50 hover:text-muted-foreground ...';
 ```
 
 Apply to: Relay status button (line 153), Heartbeat status button (line 166), Theme toggle button (line 178).
@@ -469,6 +481,7 @@ Change to `p-1 max-md:p-2`.
 Change to `px-3 py-1 max-md:py-2` on both buttons.
 
 **Acceptance criteria:**
+
 - On mobile viewport (< 768px), all modified buttons have >= 44px touch area
 - On desktop viewport (>= 768px), padding is unchanged from current values
 - `turbo build --filter=@dorkos/client` succeeds
@@ -480,6 +493,7 @@ Change to `px-3 py-1 max-md:py-2` on both buttons.
 **Status:** Not Started
 **Blocked by:** Task 2.1 (icon sizes must be standardized first)
 **Files to modify:**
+
 - `apps/client/src/components/chat/MessageItem.tsx`
 - `apps/client/src/components/sessions/SessionItem.tsx`
 
@@ -496,7 +510,7 @@ Current: Timestamps are invisible by default (`text-muted-foreground/0`) and rev
 Mobile approach: Always show timestamps at reduced opacity on mobile. Add `max-md:text-muted-foreground/40`:
 
 ```tsx
-<span className="absolute right-4 top-1 text-xs text-muted-foreground/0 group-hover:text-muted-foreground/60 max-md:text-muted-foreground/40 transition-colors duration-150">
+<span className="text-muted-foreground/0 group-hover:text-muted-foreground/60 max-md:text-muted-foreground/40 absolute top-1 right-4 text-xs transition-colors duration-150">
   {formatTime(message.timestamp)}
 </span>
 ```
@@ -537,7 +551,7 @@ This requires importing `useIsMobile` in `SessionItem.tsx` (from `@/hooks/use-is
 
 ```css
 @media (max-width: 767px) {
-  .msg-assistant div:has(> div > [data-streamdown="table"]) > div:first-child:not(:has(table)) {
+  .msg-assistant div:has(> div > [data-streamdown='table']) > div:first-child:not(:has(table)) {
     opacity: 0.6;
     pointer-events: auto;
   }
@@ -547,6 +561,7 @@ This requires importing `useIsMobile` in `SessionItem.tsx` (from `@/hooks/use-is
 No additional work needed for this pattern.
 
 **Acceptance criteria:**
+
 - On mobile: timestamps always visible at 40% opacity
 - On mobile: session expand chevron is hidden; tapping session row toggles expansion
 - On mobile: table action icons visible at 60% opacity
@@ -559,6 +574,7 @@ No additional work needed for this pattern.
 **Status:** Not Started
 **Blocked by:** None
 **Files to create:**
+
 - `apps/client/src/hooks/use-long-press.ts`
 
 **Description:**
@@ -600,6 +616,7 @@ export function useLongPress({ onLongPress, ms = 500 }: UseLongPressOptions) {
 ```
 
 **Acceptance criteria:**
+
 - File exists at `apps/client/src/hooks/use-long-press.ts`
 - Hook exports `useLongPress` function
 - Hook is NOT imported or used by any component (infrastructure only)
@@ -614,6 +631,7 @@ export function useLongPress({ onLongPress, ms = 500 }: UseLongPressOptions) {
 **Status:** Not Started
 **Blocked by:** Task 1.1 (safe area CSS rules must exist in index.css)
 **Files to modify:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx`
 - `apps/client/src/components/sessions/SessionSidebar.tsx`
 - `apps/client/src/components/chat/MessageList.tsx`
@@ -633,6 +651,7 @@ Add CSS class hooks to components so the safe area inset rules (defined in Task 
 ```
 
 This enables the safe area rule:
+
 ```css
 .chat-input-container {
   padding-bottom: env(safe-area-inset-bottom);
@@ -642,12 +661,11 @@ This enables the safe area rule:
 **SessionSidebar.tsx** -- Add `sidebar-container` class to the sidebar root div (line 72):
 
 ```tsx
-<div className="sidebar-container ...existing-classes...">
-  {/* sidebar content */}
-</div>
+<div className="sidebar-container ...existing-classes...">{/* sidebar content */}</div>
 ```
 
 This enables the safe area rules:
+
 ```css
 .sidebar-container {
   padding-left: env(safe-area-inset-left);
@@ -676,6 +694,7 @@ Also add the following to `index.css` (if not already present from Task 1.1):
 This prevents accidental horizontal swipes in the chat scroll area.
 
 **Acceptance criteria:**
+
 - `chat-input-container` class present on ChatInput wrapper in ChatPanel.tsx
 - `sidebar-container` class present on sidebar root div in SessionSidebar.tsx
 - `chat-scroll-area` class present on scroll container in MessageList.tsx
@@ -693,6 +712,7 @@ This prevents accidental horizontal swipes in the chat scroll area.
 **Status:** Not Started
 **Blocked by:** Task 3.1 and Task 3.2 (all component changes must be complete)
 **Files to check/update:**
+
 - `apps/client/src/components/chat/__tests__/ToolCallCard.test.tsx`
 - `apps/client/src/components/chat/__tests__/MessageItem.test.tsx`
 - `apps/client/src/components/chat/__tests__/TaskListPanel.test.tsx`
@@ -728,6 +748,7 @@ npx vitest run --update apps/client/
 ```
 
 **Acceptance criteria:**
+
 - `turbo test` passes with zero failures
 - No test assertions reference old icon class names (`h-3 w-3`, etc.)
 - No test assertions reference old padding values that were changed
@@ -739,6 +760,7 @@ npx vitest run --update apps/client/
 **Status:** Not Started
 **Blocked by:** Task 3.1 and Task 4.1 (all implementation must be complete)
 **Files to modify:**
+
 - `guides/design-system.md`
 
 **Description:**
@@ -756,19 +778,19 @@ Add the following section to `guides/design-system.md`:
 3. Document the internal multiplier variables: `--_st`, `--_si`, `--_sb`
 4. Provide a table of scaled values at 1.25x:
 
-| Element | Desktop | Mobile (x1.25) |
-|---------|---------|----------------|
-| Body text (`text-sm`) | 14px | 17.5px |
-| Small text (`text-xs`) | 12px | 15px |
-| Tiny text (`text-2xs`) | 11px | 13.75px |
-| Micro text (`text-3xs`) | 10px | 12.5px |
-| Large text (`text-base`) | 16px | 20px |
-| Icon xs | 12px | 15px |
-| Icon sm | 16px | 20px |
-| Icon md | 20px | 25px |
-| Button sm | 32px | 40px |
-| Button md | 36px | 45px |
-| Button lg | 40px | 50px |
+| Element                  | Desktop | Mobile (x1.25) |
+| ------------------------ | ------- | -------------- |
+| Body text (`text-sm`)    | 14px    | 17.5px         |
+| Small text (`text-xs`)   | 12px    | 15px           |
+| Tiny text (`text-2xs`)   | 11px    | 13.75px        |
+| Micro text (`text-3xs`)  | 10px    | 12.5px         |
+| Large text (`text-base`) | 16px    | 20px           |
+| Icon xs                  | 12px    | 15px           |
+| Icon sm                  | 16px    | 20px           |
+| Icon md                  | 20px    | 25px           |
+| Button sm                | 32px    | 40px           |
+| Button md                | 36px    | 45px           |
+| Button lg                | 40px    | 50px           |
 
 5. Document the icon size convention:
 
@@ -790,11 +812,11 @@ Icon Size Convention:
 
 7. Document hover-only pattern mobile alternatives:
 
-| Pattern | Desktop | Mobile |
-|---------|---------|--------|
-| Message timestamps | Hidden, shown on hover | Always visible at 40% opacity |
+| Pattern                | Desktop                | Mobile                            |
+| ---------------------- | ---------------------- | --------------------------------- |
+| Message timestamps     | Hidden, shown on hover | Always visible at 40% opacity     |
 | Session expand chevron | Hidden, shown on hover | Hidden; tap session row to expand |
-| Table action icons | Hidden, shown on hover | Always visible at 60% opacity |
+| Table action icons     | Hidden, shown on hover | Always visible at 60% opacity     |
 
 8. Document the safe area inset classes: `chat-input-container`, `sidebar-container`, `chat-scroll-area`
 
@@ -804,6 +826,7 @@ Icon Size Convention:
    - Set per-category overrides for independent control
 
 **Acceptance criteria:**
+
 - `guides/design-system.md` contains a "Mobile Responsive Scale" section
 - Section documents all CSS custom properties, icon sizes, scaled values, and mobile patterns
 - Icon size convention is documented with usage examples
@@ -822,6 +845,7 @@ Task 1.2 (Viewport meta)              │                                └─�
 ```
 
 **Summary:**
+
 - Phase 1 (Tasks 1.1, 1.2): No dependencies, can start immediately
 - Phase 2 (Task 2.1): Blocked by Task 1.1
 - Phase 3 (Tasks 3.1, 3.2): Blocked by Task 2.1; Task 3.3 has no dependencies

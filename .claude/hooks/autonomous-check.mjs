@@ -56,12 +56,11 @@ function getActiveWorkItem(roadmap) {
     'implementing',
     'testing',
     'committing',
-    'releasing'
+    'releasing',
   ];
 
-  return roadmap.items.find(item =>
-    item.workflowState?.phase &&
-    activePhases.includes(item.workflowState.phase)
+  return roadmap.items.find(
+    (item) => item.workflowState?.phase && activePhases.includes(item.workflowState.phase)
   );
 }
 
@@ -69,9 +68,7 @@ function getActiveWorkItem(roadmap) {
  * Format the blocking message box
  */
 function formatBlockingMessage(item) {
-  const title = item.title.length > 48
-    ? item.title.substring(0, 45) + '...'
-    : item.title;
+  const title = item.title.length > 48 ? item.title.substring(0, 45) + '...' : item.title;
   const phase = item.workflowState.phase;
 
   console.error('');

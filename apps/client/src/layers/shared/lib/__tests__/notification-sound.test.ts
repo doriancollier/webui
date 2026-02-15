@@ -8,7 +8,10 @@ const mockAudioInstance = {
   currentTime: 0,
 };
 
-vi.stubGlobal('Audio', vi.fn(() => mockAudioInstance));
+vi.stubGlobal(
+  'Audio',
+  vi.fn(() => mockAudioInstance)
+);
 
 beforeEach(async () => {
   vi.clearAllMocks();

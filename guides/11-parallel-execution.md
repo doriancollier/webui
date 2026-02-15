@@ -6,25 +6,25 @@ This guide covers when and how to use parallel agent execution patterns in Claud
 
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
-| Parallel batch execution | `.claude/commands/spec/execute.md` |
-| Parallel research pattern | `.claude/commands/ideate.md` |
-| Task tool reference | Built-in Claude Code tool |
-| Orchestration skill | `.claude/skills/orchestrating-parallel-work/` |
+| Concept                   | Location                                      |
+| ------------------------- | --------------------------------------------- |
+| Parallel batch execution  | `.claude/commands/spec/execute.md`            |
+| Parallel research pattern | `.claude/commands/ideate.md`                  |
+| Task tool reference       | Built-in Claude Code tool                     |
+| Orchestration skill       | `.claude/skills/orchestrating-parallel-work/` |
 
 ## When to Use What
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| Multiple independent analysis tasks | Parallel background agents | No interdependencies, significant speedup |
-| Tasks with dependencies | Sequential or batched | Dependency results needed for subsequent tasks |
-| Quick operations (<30 seconds) | Sequential | Overhead of agent spawn not worth it |
-| Research + codebase exploration | Parallel | Different domains, no shared state |
-| Heavy computation in main context | Background agent | Preserves main context for user interaction |
-| Multiple diagnostic checks | Parallel | Independent checks, combine results at end |
-| File edits that depend on each other | Sequential | Must see result of previous edit |
-| Large spec decomposition | Background agent | Heavy work isolated, summary returned |
+| Scenario                             | Approach                   | Why                                            |
+| ------------------------------------ | -------------------------- | ---------------------------------------------- |
+| Multiple independent analysis tasks  | Parallel background agents | No interdependencies, significant speedup      |
+| Tasks with dependencies              | Sequential or batched      | Dependency results needed for subsequent tasks |
+| Quick operations (<30 seconds)       | Sequential                 | Overhead of agent spawn not worth it           |
+| Research + codebase exploration      | Parallel                   | Different domains, no shared state             |
+| Heavy computation in main context    | Background agent           | Preserves main context for user interaction    |
+| Multiple diagnostic checks           | Parallel                   | Independent checks, combine results at end     |
+| File edits that depend on each other | Sequential                 | Must see result of previous edit               |
+| Large spec decomposition             | Background agent           | Heavy work isolated, summary returned          |
 
 ## Decision Framework
 
@@ -221,27 +221,27 @@ for (id of ids) {
 
 ```typescript
 // ❌ WRONG - Can't wait for completion later
-Task({ description: "Important work", run_in_background: true })
+Task({ description: 'Important work', run_in_background: true });
 // ID is lost!
 
 // ✅ CORRECT - Store the ID
-const task = Task({ description: "Important work", run_in_background: true })
-const taskId = task.id
+const task = Task({ description: 'Important work', run_in_background: true });
+const taskId = task.id;
 // ... later ...
-TaskOutput({ task_id: taskId, block: true })
+TaskOutput({ task_id: taskId, block: true });
 ```
 
 ### Never Do: Parallel Agents Editing Same File
 
 ```typescript
 // ❌ WRONG - Agents will conflict
-Task({ prompt: "Update config.ts to add feature A", run_in_background: true })
-Task({ prompt: "Update config.ts to add feature B", run_in_background: true })
+Task({ prompt: 'Update config.ts to add feature A', run_in_background: true });
+Task({ prompt: 'Update config.ts to add feature B', run_in_background: true });
 // Race condition! One change may be lost
 
 // ✅ CORRECT - Sequential for shared resources
-await Task({ prompt: "Update config.ts to add feature A" })
-await Task({ prompt: "Update config.ts to add feature B" })
+await Task({ prompt: 'Update config.ts to add feature A' });
+await Task({ prompt: 'Update config.ts to add feature B' });
 ```
 
 ### Never Do: Ignoring Context Limits
@@ -283,13 +283,13 @@ for (id of ids) {
 
 ## Performance Characteristics
 
-| Metric | Sequential | Parallel Background | Improvement |
-|--------|-----------|---------------------|-------------|
-| 10 independent tasks | ~30 min | ~5 min | 6x faster |
-| Research + Exploration | ~10 min | ~5 min | 2x faster |
-| Main context usage | 100% | ~15-20% | 80-85% savings |
-| Failure impact | Blocks all | Only blocks dependents | Isolated failures |
-| Progress visibility | After each task | Real-time per batch | Better UX |
+| Metric                 | Sequential      | Parallel Background    | Improvement       |
+| ---------------------- | --------------- | ---------------------- | ----------------- |
+| 10 independent tasks   | ~30 min         | ~5 min                 | 6x faster         |
+| Research + Exploration | ~10 min         | ~5 min                 | 2x faster         |
+| Main context usage     | 100%            | ~15-20%                | 80-85% savings    |
+| Failure impact         | Blocks all      | Only blocks dependents | Isolated failures |
+| Progress visibility    | After each task | Real-time per batch    | Better UX         |
 
 ## Troubleshooting
 
@@ -308,6 +308,7 @@ for (id of ids) {
 **Cause**: Task ID was not stored or agent crashed during startup
 
 **Fix**:
+
 1. Store task ID immediately after `Task()` call
 2. Check agent started successfully before proceeding
 3. Use `block: false` first to check status
@@ -319,6 +320,7 @@ for (id of ids) {
 **Cause**: Multiple agents editing same file in parallel
 
 **Fix**:
+
 1. Ensure agents work on different files
 2. Or use sequential execution for shared resources
 3. Or split file into independent modules first
@@ -330,6 +332,7 @@ for (id of ids) {
 **Cause**: Task was too large for isolated agent context
 
 **Fix**:
+
 1. Break large tasks into smaller subtasks
 2. Use multiple agents for different aspects
 3. Reduce prompt size, pass only essential context
@@ -341,19 +344,20 @@ for (id of ids) {
 **Cause**: Agent finished but didn't return structured output
 
 **Fix**:
+
 1. Ensure agent prompt requests specific output format
 2. Add "Return your findings in this format: ..." to prompt
 3. Check if agent encountered an error
 
 ## Commands Using Parallel Execution
 
-| Command | Pattern Used | Agents Spawned |
-|---------|--------------|----------------|
-| `/ideate` | Parallel research | Explore + research-expert |
-| `/spec:execute` | Dependency-aware batching | Multiple per batch |
-| `/spec:decompose` | Analysis then implementation | general-purpose |
-| `/debug:api` | Parallel diagnostics | Component, action, DAL, DB |
-| `/debug:browser` | Parallel diagnostics | Visual, console, network |
+| Command           | Pattern Used                 | Agents Spawned             |
+| ----------------- | ---------------------------- | -------------------------- |
+| `/ideate`         | Parallel research            | Explore + research-expert  |
+| `/spec:execute`   | Dependency-aware batching    | Multiple per batch         |
+| `/spec:decompose` | Analysis then implementation | general-purpose            |
+| `/debug:api`      | Parallel diagnostics         | Component, action, DAL, DB |
+| `/debug:browser`  | Parallel diagnostics         | Visual, console, network   |
 
 ## Best Practices Summary
 

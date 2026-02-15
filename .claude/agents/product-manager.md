@@ -42,6 +42,7 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
 ### 3. Apply MoSCoW Framework
 
 For new items, ask:
+
 - **Must-Have?** Will the project fail without this?
 - **Should-Have?** Important but not time-critical?
 - **Could-Have?** Nice to have if time permits?
@@ -78,11 +79,11 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
 
 ### Time Horizon Assignment
 
-| Horizon | Items | Criteria |
-|---------|-------|----------|
-| **Now** | Active work | Must-Have, in-progress, urgent |
-| **Next** | Planned | Should-Have, dependencies resolved |
-| **Later** | Future | Could-Have, needs refinement |
+| Horizon   | Items       | Criteria                           |
+| --------- | ----------- | ---------------------------------- |
+| **Now**   | Active work | Must-Have, in-progress, urgent     |
+| **Next**  | Planned     | Should-Have, dependencies resolved |
+| **Later** | Future      | Could-Have, needs refinement       |
 
 ## Communication Style
 

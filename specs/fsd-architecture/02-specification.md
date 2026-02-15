@@ -246,279 +246,325 @@ Complete mapping of every file from current location to FSD location.
 
 #### Shared Layer — UI Segment
 
-| Current Path | FSD Path |
-|---|---|
-| `components/ui/badge.tsx` | `layers/shared/ui/badge.tsx` |
-| `components/ui/dialog.tsx` | `layers/shared/ui/dialog.tsx` |
-| `components/ui/drawer.tsx` | `layers/shared/ui/drawer.tsx` |
-| `components/ui/dropdown-menu.tsx` | `layers/shared/ui/dropdown-menu.tsx` |
-| `components/ui/hover-card.tsx` | `layers/shared/ui/hover-card.tsx` |
-| `components/ui/kbd.tsx` | `layers/shared/ui/kbd.tsx` |
-| `components/ui/label.tsx` | `layers/shared/ui/label.tsx` |
-| `components/ui/path-breadcrumb.tsx` | `layers/shared/ui/path-breadcrumb.tsx` |
-| `components/ui/responsive-dialog.tsx` | `layers/shared/ui/responsive-dialog.tsx` |
+| Current Path                                 | FSD Path                                        |
+| -------------------------------------------- | ----------------------------------------------- |
+| `components/ui/badge.tsx`                    | `layers/shared/ui/badge.tsx`                    |
+| `components/ui/dialog.tsx`                   | `layers/shared/ui/dialog.tsx`                   |
+| `components/ui/drawer.tsx`                   | `layers/shared/ui/drawer.tsx`                   |
+| `components/ui/dropdown-menu.tsx`            | `layers/shared/ui/dropdown-menu.tsx`            |
+| `components/ui/hover-card.tsx`               | `layers/shared/ui/hover-card.tsx`               |
+| `components/ui/kbd.tsx`                      | `layers/shared/ui/kbd.tsx`                      |
+| `components/ui/label.tsx`                    | `layers/shared/ui/label.tsx`                    |
+| `components/ui/path-breadcrumb.tsx`          | `layers/shared/ui/path-breadcrumb.tsx`          |
+| `components/ui/responsive-dialog.tsx`        | `layers/shared/ui/responsive-dialog.tsx`        |
 | `components/ui/responsive-dropdown-menu.tsx` | `layers/shared/ui/responsive-dropdown-menu.tsx` |
-| `components/ui/select.tsx` | `layers/shared/ui/select.tsx` |
-| `components/ui/separator.tsx` | `layers/shared/ui/separator.tsx` |
-| `components/ui/switch.tsx` | `layers/shared/ui/switch.tsx` |
-| `components/ui/tabs.tsx` | `layers/shared/ui/tabs.tsx` |
-| `components/ui/__tests__/kbd.test.tsx` | `layers/shared/ui/__tests__/kbd.test.tsx` |
+| `components/ui/select.tsx`                   | `layers/shared/ui/select.tsx`                   |
+| `components/ui/separator.tsx`                | `layers/shared/ui/separator.tsx`                |
+| `components/ui/switch.tsx`                   | `layers/shared/ui/switch.tsx`                   |
+| `components/ui/tabs.tsx`                     | `layers/shared/ui/tabs.tsx`                     |
+| `components/ui/__tests__/kbd.test.tsx`       | `layers/shared/ui/__tests__/kbd.test.tsx`       |
 
 #### Shared Layer — Lib Segment
 
-| Current Path | FSD Path |
-|---|---|
-| `lib/utils.ts` | `layers/shared/lib/utils.ts` |
-| `lib/platform.ts` | `layers/shared/lib/platform.ts` |
-| `lib/fuzzy-match.ts` | `layers/shared/lib/fuzzy-match.ts` |
-| `lib/http-transport.ts` | `layers/shared/lib/http-transport.ts` |
-| `lib/direct-transport.ts` | `layers/shared/lib/direct-transport.ts` |
-| `contexts/TransportContext.tsx` | `layers/shared/lib/TransportContext.tsx` |
-| `stores/app-store.ts` | `layers/shared/lib/app-store.ts` |
-| `lib/font-config.ts` | `layers/shared/lib/font-config.ts` |
-| `lib/font-loader.ts` | `layers/shared/lib/font-loader.ts` |
-| `lib/favicon-utils.ts` | `layers/shared/lib/favicon-utils.ts` |
-| `lib/notification-sound.ts` | `layers/shared/lib/notification-sound.ts` |
-| `lib/session-utils.ts` | `layers/shared/lib/session-utils.ts` |
-| `lib/tool-labels.ts` | `layers/shared/lib/tool-labels.ts` |
-| `lib/tool-arguments-formatter.tsx` | `layers/shared/lib/tool-arguments-formatter.tsx` |
-| `lib/celebrations/celebration-engine.ts` | `layers/shared/lib/celebrations/celebration-engine.ts` |
-| `lib/celebrations/effects.ts` | `layers/shared/lib/celebrations/effects.ts` |
+| Current Path                                            | FSD Path                                                              |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| `lib/utils.ts`                                          | `layers/shared/lib/utils.ts`                                          |
+| `lib/platform.ts`                                       | `layers/shared/lib/platform.ts`                                       |
+| `lib/fuzzy-match.ts`                                    | `layers/shared/lib/fuzzy-match.ts`                                    |
+| `lib/http-transport.ts`                                 | `layers/shared/lib/http-transport.ts`                                 |
+| `lib/direct-transport.ts`                               | `layers/shared/lib/direct-transport.ts`                               |
+| `contexts/TransportContext.tsx`                         | `layers/shared/lib/TransportContext.tsx`                              |
+| `stores/app-store.ts`                                   | `layers/shared/lib/app-store.ts`                                      |
+| `lib/font-config.ts`                                    | `layers/shared/lib/font-config.ts`                                    |
+| `lib/font-loader.ts`                                    | `layers/shared/lib/font-loader.ts`                                    |
+| `lib/favicon-utils.ts`                                  | `layers/shared/lib/favicon-utils.ts`                                  |
+| `lib/notification-sound.ts`                             | `layers/shared/lib/notification-sound.ts`                             |
+| `lib/session-utils.ts`                                  | `layers/shared/lib/session-utils.ts`                                  |
+| `lib/tool-labels.ts`                                    | `layers/shared/lib/tool-labels.ts`                                    |
+| `lib/tool-arguments-formatter.tsx`                      | `layers/shared/lib/tool-arguments-formatter.tsx`                      |
+| `lib/celebrations/celebration-engine.ts`                | `layers/shared/lib/celebrations/celebration-engine.ts`                |
+| `lib/celebrations/effects.ts`                           | `layers/shared/lib/celebrations/effects.ts`                           |
 | `lib/celebrations/__tests__/celebration-engine.test.ts` | `layers/shared/lib/celebrations/__tests__/celebration-engine.test.ts` |
-| `lib/celebrations/__tests__/effects.test.ts` | `layers/shared/lib/celebrations/__tests__/effects.test.ts` |
-| `lib/__tests__/favicon-utils.test.ts` | `layers/shared/lib/__tests__/favicon-utils.test.ts` |
-| `lib/__tests__/font-config.test.ts` | `layers/shared/lib/__tests__/font-config.test.ts` |
-| `lib/__tests__/font-loader.test.ts` | `layers/shared/lib/__tests__/font-loader.test.ts` |
-| `lib/__tests__/fuzzy-match.test.ts` | `layers/shared/lib/__tests__/fuzzy-match.test.ts` |
-| `lib/__tests__/notification-sound.test.ts` | `layers/shared/lib/__tests__/notification-sound.test.ts` |
-| `lib/__tests__/platform.test.ts` | `layers/shared/lib/__tests__/platform.test.ts` |
-| `lib/__tests__/session-utils.test.ts` | `layers/shared/lib/__tests__/session-utils.test.ts` |
-| `lib/__tests__/tool-arguments-formatter.test.tsx` | `layers/shared/lib/__tests__/tool-arguments-formatter.test.tsx` |
-| `lib/__tests__/tool-labels.test.ts` | `layers/shared/lib/__tests__/tool-labels.test.ts` |
-| `stores/__tests__/app-store.test.ts` | `layers/shared/lib/__tests__/app-store.test.ts` |
+| `lib/celebrations/__tests__/effects.test.ts`            | `layers/shared/lib/celebrations/__tests__/effects.test.ts`            |
+| `lib/__tests__/favicon-utils.test.ts`                   | `layers/shared/lib/__tests__/favicon-utils.test.ts`                   |
+| `lib/__tests__/font-config.test.ts`                     | `layers/shared/lib/__tests__/font-config.test.ts`                     |
+| `lib/__tests__/font-loader.test.ts`                     | `layers/shared/lib/__tests__/font-loader.test.ts`                     |
+| `lib/__tests__/fuzzy-match.test.ts`                     | `layers/shared/lib/__tests__/fuzzy-match.test.ts`                     |
+| `lib/__tests__/notification-sound.test.ts`              | `layers/shared/lib/__tests__/notification-sound.test.ts`              |
+| `lib/__tests__/platform.test.ts`                        | `layers/shared/lib/__tests__/platform.test.ts`                        |
+| `lib/__tests__/session-utils.test.ts`                   | `layers/shared/lib/__tests__/session-utils.test.ts`                   |
+| `lib/__tests__/tool-arguments-formatter.test.tsx`       | `layers/shared/lib/__tests__/tool-arguments-formatter.test.tsx`       |
+| `lib/__tests__/tool-labels.test.ts`                     | `layers/shared/lib/__tests__/tool-labels.test.ts`                     |
+| `stores/__tests__/app-store.test.ts`                    | `layers/shared/lib/__tests__/app-store.test.ts`                       |
 
 #### Entities Layer
 
-| Current Path | FSD Path |
-|---|---|
-| `hooks/use-sessions.ts` | `layers/entities/session/model/use-sessions.ts` |
-| `hooks/use-session-id.ts` | `layers/entities/session/model/use-session-id.ts` |
-| `hooks/use-session-status.ts` | `layers/entities/session/model/use-session-status.ts` |
-| `hooks/use-default-cwd.ts` | `layers/entities/session/model/use-default-cwd.ts` |
-| `hooks/use-directory-state.ts` | `layers/entities/session/model/use-directory-state.ts` |
-| `hooks/__tests__/use-sessions.test.tsx` | `layers/entities/session/model/__tests__/use-sessions.test.tsx` |
+| Current Path                                   | FSD Path                                                               |
+| ---------------------------------------------- | ---------------------------------------------------------------------- |
+| `hooks/use-sessions.ts`                        | `layers/entities/session/model/use-sessions.ts`                        |
+| `hooks/use-session-id.ts`                      | `layers/entities/session/model/use-session-id.ts`                      |
+| `hooks/use-session-status.ts`                  | `layers/entities/session/model/use-session-status.ts`                  |
+| `hooks/use-default-cwd.ts`                     | `layers/entities/session/model/use-default-cwd.ts`                     |
+| `hooks/use-directory-state.ts`                 | `layers/entities/session/model/use-directory-state.ts`                 |
+| `hooks/__tests__/use-sessions.test.tsx`        | `layers/entities/session/model/__tests__/use-sessions.test.tsx`        |
 | `hooks/__tests__/use-directory-state.test.tsx` | `layers/entities/session/model/__tests__/use-directory-state.test.tsx` |
-| `hooks/use-commands.ts` | `layers/entities/command/model/use-commands.ts` |
+| `hooks/use-commands.ts`                        | `layers/entities/command/model/use-commands.ts`                        |
 
 #### Features Layer — Chat
 
-| Current Path | FSD Path |
-|---|---|
-| `components/chat/ChatPanel.tsx` | `layers/features/chat/ui/ChatPanel.tsx` |
-| `components/chat/MessageList.tsx` | `layers/features/chat/ui/MessageList.tsx` |
-| `components/chat/MessageItem.tsx` | `layers/features/chat/ui/MessageItem.tsx` |
-| `components/chat/ChatInput.tsx` | `layers/features/chat/ui/ChatInput.tsx` |
-| `components/chat/ToolCallCard.tsx` | `layers/features/chat/ui/ToolCallCard.tsx` |
-| `components/chat/ToolApproval.tsx` | `layers/features/chat/ui/ToolApproval.tsx` |
-| `components/chat/QuestionPrompt.tsx` | `layers/features/chat/ui/QuestionPrompt.tsx` |
-| `components/chat/StreamingText.tsx` | `layers/features/chat/ui/StreamingText.tsx` |
-| `components/chat/CelebrationOverlay.tsx` | `layers/features/chat/ui/CelebrationOverlay.tsx` |
-| `components/chat/InferenceIndicator.tsx` | `layers/features/chat/ui/InferenceIndicator.tsx` |
-| `components/chat/DragHandle.tsx` | `layers/features/chat/ui/DragHandle.tsx` |
-| `components/chat/ShortcutChips.tsx` | `layers/features/chat/ui/ShortcutChips.tsx` |
-| `components/chat/TaskListPanel.tsx` | `layers/features/chat/ui/TaskListPanel.tsx` |
-| `components/chat/__tests__/*` | `layers/features/chat/ui/__tests__/*` |
-| `components/chat/inference-verbs.ts` | `layers/features/chat/model/inference-verbs.ts` |
-| `components/chat/inference-themes.ts` | `layers/features/chat/model/inference-themes.ts` |
-| `hooks/use-chat-session.ts` | `layers/features/chat/model/use-chat-session.ts` |
-| `hooks/use-task-state.ts` | `layers/features/chat/model/use-task-state.ts` |
-| `hooks/use-celebrations.ts` | `layers/features/chat/model/use-celebrations.ts` |
-| `hooks/use-rotating-verb.ts` | `layers/features/chat/model/use-rotating-verb.ts` |
+| Current Path                                | FSD Path                                                         |
+| ------------------------------------------- | ---------------------------------------------------------------- |
+| `components/chat/ChatPanel.tsx`             | `layers/features/chat/ui/ChatPanel.tsx`                          |
+| `components/chat/MessageList.tsx`           | `layers/features/chat/ui/MessageList.tsx`                        |
+| `components/chat/MessageItem.tsx`           | `layers/features/chat/ui/MessageItem.tsx`                        |
+| `components/chat/ChatInput.tsx`             | `layers/features/chat/ui/ChatInput.tsx`                          |
+| `components/chat/ToolCallCard.tsx`          | `layers/features/chat/ui/ToolCallCard.tsx`                       |
+| `components/chat/ToolApproval.tsx`          | `layers/features/chat/ui/ToolApproval.tsx`                       |
+| `components/chat/QuestionPrompt.tsx`        | `layers/features/chat/ui/QuestionPrompt.tsx`                     |
+| `components/chat/StreamingText.tsx`         | `layers/features/chat/ui/StreamingText.tsx`                      |
+| `components/chat/CelebrationOverlay.tsx`    | `layers/features/chat/ui/CelebrationOverlay.tsx`                 |
+| `components/chat/InferenceIndicator.tsx`    | `layers/features/chat/ui/InferenceIndicator.tsx`                 |
+| `components/chat/DragHandle.tsx`            | `layers/features/chat/ui/DragHandle.tsx`                         |
+| `components/chat/ShortcutChips.tsx`         | `layers/features/chat/ui/ShortcutChips.tsx`                      |
+| `components/chat/TaskListPanel.tsx`         | `layers/features/chat/ui/TaskListPanel.tsx`                      |
+| `components/chat/__tests__/*`               | `layers/features/chat/ui/__tests__/*`                            |
+| `components/chat/inference-verbs.ts`        | `layers/features/chat/model/inference-verbs.ts`                  |
+| `components/chat/inference-themes.ts`       | `layers/features/chat/model/inference-themes.ts`                 |
+| `hooks/use-chat-session.ts`                 | `layers/features/chat/model/use-chat-session.ts`                 |
+| `hooks/use-task-state.ts`                   | `layers/features/chat/model/use-task-state.ts`                   |
+| `hooks/use-celebrations.ts`                 | `layers/features/chat/model/use-celebrations.ts`                 |
+| `hooks/use-rotating-verb.ts`                | `layers/features/chat/model/use-rotating-verb.ts`                |
 | `hooks/__tests__/use-chat-session.test.tsx` | `layers/features/chat/model/__tests__/use-chat-session.test.tsx` |
 | `hooks/__tests__/use-rotating-verb.test.ts` | `layers/features/chat/model/__tests__/use-rotating-verb.test.ts` |
 
 #### Features Layer — Other Features
 
-| Current Path | FSD Path |
-|---|---|
-| `components/commands/CommandPalette.tsx` | `layers/features/commands/ui/CommandPalette.tsx` |
-| `components/commands/__tests__/CommandPalette.test.tsx` | `layers/features/commands/ui/__tests__/CommandPalette.test.tsx` |
-| `components/sessions/SessionSidebar.tsx` | `layers/features/session-list/ui/SessionSidebar.tsx` |
-| `components/sessions/SessionItem.tsx` | `layers/features/session-list/ui/SessionItem.tsx` |
-| `components/sessions/DirectoryPicker.tsx` | `layers/features/session-list/ui/DirectoryPicker.tsx` |
-| `components/sessions/__tests__/SessionSidebar.test.tsx` | `layers/features/session-list/ui/__tests__/SessionSidebar.test.tsx` |
-| `components/sessions/__tests__/SessionItem.test.tsx` | `layers/features/session-list/ui/__tests__/SessionItem.test.tsx` |
-| `components/settings/SettingsDialog.tsx` | `layers/features/settings/ui/SettingsDialog.tsx` |
-| `components/settings/__tests__/SettingsDialog.test.tsx` | `layers/features/settings/ui/__tests__/SettingsDialog.test.tsx` |
-| `components/files/FilePalette.tsx` | `layers/features/files/ui/FilePalette.tsx` |
-| `hooks/use-files.ts` | `layers/features/files/model/use-files.ts` |
-| `components/status/StatusLine.tsx` | `layers/features/status/ui/StatusLine.tsx` |
-| `components/status/ContextItem.tsx` | `layers/features/status/ui/ContextItem.tsx` |
-| `components/status/CostItem.tsx` | `layers/features/status/ui/CostItem.tsx` |
-| `components/status/CwdItem.tsx` | `layers/features/status/ui/CwdItem.tsx` |
-| `components/status/GitStatusItem.tsx` | `layers/features/status/ui/GitStatusItem.tsx` |
-| `components/status/ModelItem.tsx` | `layers/features/status/ui/ModelItem.tsx` |
-| `components/status/NotificationSoundItem.tsx` | `layers/features/status/ui/NotificationSoundItem.tsx` |
-| `components/status/PermissionModeItem.tsx` | `layers/features/status/ui/PermissionModeItem.tsx` |
-| `components/status/__tests__/GitStatusItem.test.tsx` | `layers/features/status/ui/__tests__/GitStatusItem.test.tsx` |
+| Current Path                                                 | FSD Path                                                             |
+| ------------------------------------------------------------ | -------------------------------------------------------------------- |
+| `components/commands/CommandPalette.tsx`                     | `layers/features/commands/ui/CommandPalette.tsx`                     |
+| `components/commands/__tests__/CommandPalette.test.tsx`      | `layers/features/commands/ui/__tests__/CommandPalette.test.tsx`      |
+| `components/sessions/SessionSidebar.tsx`                     | `layers/features/session-list/ui/SessionSidebar.tsx`                 |
+| `components/sessions/SessionItem.tsx`                        | `layers/features/session-list/ui/SessionItem.tsx`                    |
+| `components/sessions/DirectoryPicker.tsx`                    | `layers/features/session-list/ui/DirectoryPicker.tsx`                |
+| `components/sessions/__tests__/SessionSidebar.test.tsx`      | `layers/features/session-list/ui/__tests__/SessionSidebar.test.tsx`  |
+| `components/sessions/__tests__/SessionItem.test.tsx`         | `layers/features/session-list/ui/__tests__/SessionItem.test.tsx`     |
+| `components/settings/SettingsDialog.tsx`                     | `layers/features/settings/ui/SettingsDialog.tsx`                     |
+| `components/settings/__tests__/SettingsDialog.test.tsx`      | `layers/features/settings/ui/__tests__/SettingsDialog.test.tsx`      |
+| `components/files/FilePalette.tsx`                           | `layers/features/files/ui/FilePalette.tsx`                           |
+| `hooks/use-files.ts`                                         | `layers/features/files/model/use-files.ts`                           |
+| `components/status/StatusLine.tsx`                           | `layers/features/status/ui/StatusLine.tsx`                           |
+| `components/status/ContextItem.tsx`                          | `layers/features/status/ui/ContextItem.tsx`                          |
+| `components/status/CostItem.tsx`                             | `layers/features/status/ui/CostItem.tsx`                             |
+| `components/status/CwdItem.tsx`                              | `layers/features/status/ui/CwdItem.tsx`                              |
+| `components/status/GitStatusItem.tsx`                        | `layers/features/status/ui/GitStatusItem.tsx`                        |
+| `components/status/ModelItem.tsx`                            | `layers/features/status/ui/ModelItem.tsx`                            |
+| `components/status/NotificationSoundItem.tsx`                | `layers/features/status/ui/NotificationSoundItem.tsx`                |
+| `components/status/PermissionModeItem.tsx`                   | `layers/features/status/ui/PermissionModeItem.tsx`                   |
+| `components/status/__tests__/GitStatusItem.test.tsx`         | `layers/features/status/ui/__tests__/GitStatusItem.test.tsx`         |
 | `components/status/__tests__/NotificationSoundItem.test.tsx` | `layers/features/status/ui/__tests__/NotificationSoundItem.test.tsx` |
-| `hooks/use-git-status.ts` | `layers/features/status/model/use-git-status.ts` |
-| `hooks/__tests__/use-git-status.test.tsx` | `layers/features/status/model/__tests__/use-git-status.test.tsx` |
+| `hooks/use-git-status.ts`                                    | `layers/features/status/model/use-git-status.ts`                     |
+| `hooks/__tests__/use-git-status.test.tsx`                    | `layers/features/status/model/__tests__/use-git-status.test.tsx`     |
 
 #### Widgets Layer
 
-| Current Path | FSD Path |
-|---|---|
-| `components/layout/PermissionBanner.tsx` | `layers/widgets/app-layout/ui/PermissionBanner.tsx` |
+| Current Path                                            | FSD Path                                                           |
+| ------------------------------------------------------- | ------------------------------------------------------------------ |
+| `components/layout/PermissionBanner.tsx`                | `layers/widgets/app-layout/ui/PermissionBanner.tsx`                |
 | `components/layout/__tests__/PermissionBanner.test.tsx` | `layers/widgets/app-layout/ui/__tests__/PermissionBanner.test.tsx` |
 
 #### Hooks that stay in Shared (UI-only, no domain)
 
-| Current Path | FSD Path |
-|---|---|
-| `hooks/use-theme.ts` | `layers/shared/lib/use-theme.ts` |
-| `hooks/use-is-mobile.ts` | `layers/shared/lib/use-is-mobile.ts` |
-| `hooks/use-favicon.ts` | `layers/shared/lib/use-favicon.ts` |
-| `hooks/use-document-title.ts` | `layers/shared/lib/use-document-title.ts` |
-| `hooks/use-elapsed-time.ts` | `layers/shared/lib/use-elapsed-time.ts` |
-| `hooks/use-idle-detector.ts` | `layers/shared/lib/use-idle-detector.ts` |
-| `hooks/use-interactive-shortcuts.ts` | `layers/shared/lib/use-interactive-shortcuts.ts` |
-| `hooks/use-long-press.ts` | `layers/shared/lib/use-long-press.ts` |
-| `hooks/__tests__/use-document-title.test.ts` | `layers/shared/lib/__tests__/use-document-title.test.ts` |
-| `hooks/__tests__/use-elapsed-time.test.ts` | `layers/shared/lib/__tests__/use-elapsed-time.test.ts` |
-| `hooks/__tests__/use-favicon.test.ts` | `layers/shared/lib/__tests__/use-favicon.test.ts` |
-| `hooks/__tests__/use-idle-detector.test.ts` | `layers/shared/lib/__tests__/use-idle-detector.test.ts` |
+| Current Path                                        | FSD Path                                                        |
+| --------------------------------------------------- | --------------------------------------------------------------- |
+| `hooks/use-theme.ts`                                | `layers/shared/lib/use-theme.ts`                                |
+| `hooks/use-is-mobile.ts`                            | `layers/shared/lib/use-is-mobile.ts`                            |
+| `hooks/use-favicon.ts`                              | `layers/shared/lib/use-favicon.ts`                              |
+| `hooks/use-document-title.ts`                       | `layers/shared/lib/use-document-title.ts`                       |
+| `hooks/use-elapsed-time.ts`                         | `layers/shared/lib/use-elapsed-time.ts`                         |
+| `hooks/use-idle-detector.ts`                        | `layers/shared/lib/use-idle-detector.ts`                        |
+| `hooks/use-interactive-shortcuts.ts`                | `layers/shared/lib/use-interactive-shortcuts.ts`                |
+| `hooks/use-long-press.ts`                           | `layers/shared/lib/use-long-press.ts`                           |
+| `hooks/__tests__/use-document-title.test.ts`        | `layers/shared/lib/__tests__/use-document-title.test.ts`        |
+| `hooks/__tests__/use-elapsed-time.test.ts`          | `layers/shared/lib/__tests__/use-elapsed-time.test.ts`          |
+| `hooks/__tests__/use-favicon.test.ts`               | `layers/shared/lib/__tests__/use-favicon.test.ts`               |
+| `hooks/__tests__/use-idle-detector.test.ts`         | `layers/shared/lib/__tests__/use-idle-detector.test.ts`         |
 | `hooks/__tests__/use-interactive-shortcuts.test.ts` | `layers/shared/lib/__tests__/use-interactive-shortcuts.test.ts` |
 
 #### Root Files (Stay in Place)
 
-| File | Action |
-|---|---|
-| `App.tsx` | Stays at `src/App.tsx` — update imports to `@/layers/` |
-| `main.tsx` | Stays at `src/main.tsx` — update imports to `@/layers/` |
-| `index.css` | Stays at `src/index.css` — no changes |
-| `vite-env.d.ts` | Stays at `src/vite-env.d.ts` — no changes |
+| File            | Action                                                  |
+| --------------- | ------------------------------------------------------- |
+| `App.tsx`       | Stays at `src/App.tsx` — update imports to `@/layers/`  |
+| `main.tsx`      | Stays at `src/main.tsx` — update imports to `@/layers/` |
+| `index.css`     | Stays at `src/index.css` — no changes                   |
+| `vite-env.d.ts` | Stays at `src/vite-env.d.ts` — no changes               |
 
 ### 6.3 Barrel Exports (index.ts)
 
 Every FSD module gets an `index.ts` that defines its public API. Consumers must import from the barrel, never from internal paths.
 
 #### `layers/shared/ui/index.ts`
+
 ```typescript
-export { Badge, badgeVariants } from './badge'
-export { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from './dialog'
-export { Drawer, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer'
-export { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from './dropdown-menu'
-export { HoverCard, HoverCardContent, HoverCardTrigger } from './hover-card'
-export { Kbd } from './kbd'
-export { Label } from './label'
-export { PathBreadcrumb } from './path-breadcrumb'
-export { ResponsiveDialog } from './responsive-dialog'
-export { ResponsiveDropdownMenu } from './responsive-dropdown-menu'
-export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select'
-export { Separator } from './separator'
-export { Switch } from './switch'
-export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs'
+export { Badge, badgeVariants } from './badge';
+export {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './dialog';
+export {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from './drawer';
+export {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from './dropdown-menu';
+export { HoverCard, HoverCardContent, HoverCardTrigger } from './hover-card';
+export { Kbd } from './kbd';
+export { Label } from './label';
+export { PathBreadcrumb } from './path-breadcrumb';
+export { ResponsiveDialog } from './responsive-dialog';
+export { ResponsiveDropdownMenu } from './responsive-dropdown-menu';
+export { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './select';
+export { Separator } from './separator';
+export { Switch } from './switch';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 ```
 
 #### `layers/shared/lib/index.ts`
+
 ```typescript
-export { cn } from './utils'
-export { getPlatform, setPlatformAdapter, type PlatformAdapter } from './platform'
-export { fuzzyMatch } from './fuzzy-match'
-export { HttpTransport } from './http-transport'
-export { DirectTransport } from './direct-transport'
-export { TransportProvider, useTransport } from './TransportContext'
-export { useAppStore, type ContextFile, type RecentCwd } from './app-store'
-export { getToolLabel, isToolDangerous } from './tool-labels'
-export { ToolArgumentsDisplay } from './tool-arguments-formatter'
-export { updateFavicon } from './favicon-utils'
-export { playNotificationSound } from './notification-sound'
-export { groupSessionsByTime, shortenHomePath, formatRelativeTime } from './session-utils'
-export { type FontFamilyKey, type FontConfig, DEFAULT_FONT, getFontConfig, isValidFontKey, FONT_FAMILIES } from './font-config'
-export { loadGoogleFont, removeGoogleFont, applyFontCSS, removeFontCSS } from './font-loader'
-export { CelebrationEngine } from './celebrations/celebration-engine'
-export { useTheme, type Theme } from './use-theme'
-export { useIsMobile } from './use-is-mobile'
-export { useFavicon } from './use-favicon'
-export { useDocumentTitle } from './use-document-title'
-export { useElapsedTime } from './use-elapsed-time'
-export { useIdleDetector } from './use-idle-detector'
-export { useInteractiveShortcuts } from './use-interactive-shortcuts'
-export { useLongPress } from './use-long-press'
+export { cn } from './utils';
+export { getPlatform, setPlatformAdapter, type PlatformAdapter } from './platform';
+export { fuzzyMatch } from './fuzzy-match';
+export { HttpTransport } from './http-transport';
+export { DirectTransport } from './direct-transport';
+export { TransportProvider, useTransport } from './TransportContext';
+export { useAppStore, type ContextFile, type RecentCwd } from './app-store';
+export { getToolLabel, isToolDangerous } from './tool-labels';
+export { ToolArgumentsDisplay } from './tool-arguments-formatter';
+export { updateFavicon } from './favicon-utils';
+export { playNotificationSound } from './notification-sound';
+export { groupSessionsByTime, shortenHomePath, formatRelativeTime } from './session-utils';
+export {
+  type FontFamilyKey,
+  type FontConfig,
+  DEFAULT_FONT,
+  getFontConfig,
+  isValidFontKey,
+  FONT_FAMILIES,
+} from './font-config';
+export { loadGoogleFont, removeGoogleFont, applyFontCSS, removeFontCSS } from './font-loader';
+export { CelebrationEngine } from './celebrations/celebration-engine';
+export { useTheme, type Theme } from './use-theme';
+export { useIsMobile } from './use-is-mobile';
+export { useFavicon } from './use-favicon';
+export { useDocumentTitle } from './use-document-title';
+export { useElapsedTime } from './use-elapsed-time';
+export { useIdleDetector } from './use-idle-detector';
+export { useInteractiveShortcuts } from './use-interactive-shortcuts';
+export { useLongPress } from './use-long-press';
 ```
 
 #### `layers/entities/session/index.ts`
+
 ```typescript
-export { useSessions } from './model/use-sessions'
-export { useSessionId } from './model/use-session-id'
-export { useSessionStatus, type SessionStatusData } from './model/use-session-status'
-export { useDefaultCwd } from './model/use-default-cwd'
-export { useDirectoryState } from './model/use-directory-state'
+export { useSessions } from './model/use-sessions';
+export { useSessionId } from './model/use-session-id';
+export { useSessionStatus, type SessionStatusData } from './model/use-session-status';
+export { useDefaultCwd } from './model/use-default-cwd';
+export { useDirectoryState } from './model/use-directory-state';
 ```
 
 #### `layers/entities/command/index.ts`
+
 ```typescript
-export { useCommands } from './model/use-commands'
+export { useCommands } from './model/use-commands';
 ```
 
 #### `layers/features/chat/index.ts`
+
 ```typescript
-export { ChatPanel } from './ui/ChatPanel'
-export { useChatSession, type ChatMessage, type ToolCallState, type MessageGrouping, type GroupPosition } from './model/use-chat-session'
-export { useTaskState, type TaskState } from './model/use-task-state'
+export { ChatPanel } from './ui/ChatPanel';
+export {
+  useChatSession,
+  type ChatMessage,
+  type ToolCallState,
+  type MessageGrouping,
+  type GroupPosition,
+} from './model/use-chat-session';
+export { useTaskState, type TaskState } from './model/use-task-state';
 ```
 
 #### `layers/features/commands/index.ts`
+
 ```typescript
-export { CommandPalette } from './ui/CommandPalette'
+export { CommandPalette } from './ui/CommandPalette';
 ```
 
 #### `layers/features/session-list/index.ts`
+
 ```typescript
-export { SessionSidebar } from './ui/SessionSidebar'
+export { SessionSidebar } from './ui/SessionSidebar';
 ```
 
 #### `layers/features/settings/index.ts`
+
 ```typescript
-export { SettingsDialog } from './ui/SettingsDialog'
+export { SettingsDialog } from './ui/SettingsDialog';
 ```
 
 #### `layers/features/files/index.ts`
+
 ```typescript
-export { FilePalette } from './ui/FilePalette'
-export { useFiles } from './model/use-files'
+export { FilePalette } from './ui/FilePalette';
+export { useFiles } from './model/use-files';
 ```
 
 #### `layers/features/status/index.ts`
+
 ```typescript
-export { StatusLine } from './ui/StatusLine'
-export { useGitStatus } from './model/use-git-status'
+export { StatusLine } from './ui/StatusLine';
+export { useGitStatus } from './model/use-git-status';
 ```
 
 #### `layers/widgets/app-layout/index.ts`
+
 ```typescript
-export { PermissionBanner } from './ui/PermissionBanner'
+export { PermissionBanner } from './ui/PermissionBanner';
 ```
 
 ### 6.4 Import Update Rules
 
 All internal imports must be updated. The patterns:
 
-| Old Import | New Import |
-|---|---|
-| `@/components/ui/*` | `@/layers/shared/ui` (barrel) |
-| `@/lib/utils` | `@/layers/shared/lib` (barrel) |
-| `@/lib/*` | `@/layers/shared/lib` (barrel) |
-| `@/contexts/TransportContext` | `@/layers/shared/lib` (barrel) |
-| `@/stores/app-store` | `@/layers/shared/lib` (barrel) |
-| `@/hooks/use-sessions` | `@/layers/entities/session` (barrel) |
-| `@/hooks/use-session-id` | `@/layers/entities/session` (barrel) |
-| `@/hooks/use-commands` | `@/layers/entities/command` (barrel) |
-| `@/hooks/use-chat-session` | `@/layers/features/chat` (barrel) |
-| `@/hooks/use-theme` | `@/layers/shared/lib` (barrel) |
-| `@/hooks/use-is-mobile` | `@/layers/shared/lib` (barrel) |
-| `@/components/chat/ChatPanel` | `@/layers/features/chat` (barrel) |
+| Old Import                             | New Import                                |
+| -------------------------------------- | ----------------------------------------- |
+| `@/components/ui/*`                    | `@/layers/shared/ui` (barrel)             |
+| `@/lib/utils`                          | `@/layers/shared/lib` (barrel)            |
+| `@/lib/*`                              | `@/layers/shared/lib` (barrel)            |
+| `@/contexts/TransportContext`          | `@/layers/shared/lib` (barrel)            |
+| `@/stores/app-store`                   | `@/layers/shared/lib` (barrel)            |
+| `@/hooks/use-sessions`                 | `@/layers/entities/session` (barrel)      |
+| `@/hooks/use-session-id`               | `@/layers/entities/session` (barrel)      |
+| `@/hooks/use-commands`                 | `@/layers/entities/command` (barrel)      |
+| `@/hooks/use-chat-session`             | `@/layers/features/chat` (barrel)         |
+| `@/hooks/use-theme`                    | `@/layers/shared/lib` (barrel)            |
+| `@/hooks/use-is-mobile`                | `@/layers/shared/lib` (barrel)            |
+| `@/components/chat/ChatPanel`          | `@/layers/features/chat` (barrel)         |
 | `@/components/sessions/SessionSidebar` | `@/layers/features/session-list` (barrel) |
 
 **Exception — Internal sibling imports**: Within the same FSD module, files import each other via relative paths (e.g., `./MessageItem` within `features/chat/ui/`). These do NOT go through barrels.
@@ -533,13 +579,13 @@ Strict unidirectional imports:
 widgets → features → entities → shared
 ```
 
-| Layer | Can Import From |
-|-------|----------------|
-| `shared` | External packages only (`@dorkos/shared`, `react`, etc.) |
-| `entities` | `shared` + external packages |
-| `features` | `entities` + `shared` + external packages |
-| `widgets` | `features` + `entities` + `shared` + external packages |
-| `App.tsx` (app layer) | All layers |
+| Layer                 | Can Import From                                          |
+| --------------------- | -------------------------------------------------------- |
+| `shared`              | External packages only (`@dorkos/shared`, `react`, etc.) |
+| `entities`            | `shared` + external packages                             |
+| `features`            | `entities` + `shared` + external packages                |
+| `widgets`             | `features` + `entities` + `shared` + external packages   |
+| `App.tsx` (app layer) | All layers                                               |
 
 Cross-layer imports between peers (e.g., `features/chat` → `features/status`) are **not allowed**.
 
@@ -572,6 +618,7 @@ After each phase:
 ### Smoke Test
 
 After full migration, run `turbo dev` and verify:
+
 - App loads in browser
 - Session list renders
 - Chat messaging works
@@ -599,11 +646,11 @@ No security impact. No new dependencies, no API changes, no data flow changes.
 
 After migration completes:
 
-| Document | Changes |
-|---|---|
-| `CLAUDE.md` | Update client directory structure section, add FSD layer reference |
-| `guides/architecture.md` | Add FSD layer mapping, update module layout |
-| `guides/01-project-structure.md` | Already created for FSD — verify accuracy post-migration |
+| Document                         | Changes                                                            |
+| -------------------------------- | ------------------------------------------------------------------ |
+| `CLAUDE.md`                      | Update client directory structure section, add FSD layer reference |
+| `guides/architecture.md`         | Add FSD layer mapping, update module layout                        |
+| `guides/01-project-structure.md` | Already created for FSD — verify accuracy post-migration           |
 
 ---
 
@@ -665,13 +712,13 @@ Move layout components and delete empty old directories.
 
 None — all decisions resolved during ideation:
 
-| Question | Decision |
-|---|---|
-| Server structure | Keep flat; size-aware rules in harness |
-| Layer scope | All 4 layers from day one |
-| Barrel exports | Yes, all modules |
-| Path alias | Keep `@/*` → `./src/*` |
-| Harness | Configured for future FSD structure (already done) |
+| Question         | Decision                                           |
+| ---------------- | -------------------------------------------------- |
+| Server structure | Keep flat; size-aware rules in harness             |
+| Layer scope      | All 4 layers from day one                          |
+| Barrel exports   | Yes, all modules                                   |
+| Path alias       | Keep `@/*` → `./src/*`                             |
+| Harness          | Configured for future FSD structure (already done) |
 
 ---
 
@@ -685,6 +732,7 @@ git checkout -- apps/client/src/
 ```
 
 If mid-migration and partially completed:
+
 - Each phase is independently validated
 - Partial migration is a valid intermediate state (some files moved, some not)
 - The `@/*` alias resolves both old and new paths since both are under `src/`

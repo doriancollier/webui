@@ -77,7 +77,13 @@ describe('TranscriptReader', () => {
       ]);
       expect(messages[0].parts).toEqual([
         { type: 'text', text: 'Let me read that file.' },
-        { type: 'tool_call', toolCallId: 'tc-1', toolName: 'Read', input: '{"file":"test.ts"}', status: 'complete' },
+        {
+          type: 'tool_call',
+          toolCallId: 'tc-1',
+          toolName: 'Read',
+          input: '{"file":"test.ts"}',
+          status: 'complete',
+        },
       ]);
     });
 
@@ -99,9 +105,7 @@ describe('TranscriptReader', () => {
           uuid: 'u1',
           message: {
             role: 'user',
-            content: [
-              { type: 'tool_result', tool_use_id: 'tc-1', content: 'file contents here' },
-            ],
+            content: [{ type: 'tool_result', tool_use_id: 'tc-1', content: 'file contents here' }],
           },
         }),
       ].join('\n');
@@ -113,7 +117,7 @@ describe('TranscriptReader', () => {
       expect(messages).toHaveLength(1); // tool_result user message is skipped
       expect(messages[0].toolCalls![0].result).toBe('file contents here');
       // The parts-level tool call should also have the result
-      const toolPart = messages[0].parts!.find(p => p.type === 'tool_call');
+      const toolPart = messages[0].parts!.find((p) => p.type === 'tool_call');
       expect(toolPart).toBeDefined();
       expect((toolPart as any).result).toBe('file contents here');
     });
@@ -141,7 +145,11 @@ describe('TranscriptReader', () => {
       expect(messages).toHaveLength(1);
       expect(messages[0].parts).toHaveLength(3);
       expect(messages[0].parts![0]).toEqual({ type: 'text', text: 'Before the tool.' });
-      expect(messages[0].parts![1]).toMatchObject({ type: 'tool_call', toolCallId: 'tc-1', toolName: 'Read' });
+      expect(messages[0].parts![1]).toMatchObject({
+        type: 'tool_call',
+        toolCallId: 'tc-1',
+        toolName: 'Read',
+      });
       expect(messages[0].parts![2]).toEqual({ type: 'text', text: 'After the tool.' });
       // Content should join all text parts
       expect(messages[0].content).toBe('Before the tool.\nAfter the tool.');
@@ -216,9 +224,7 @@ describe('TranscriptReader', () => {
     });
 
     it('returns empty array when file does not exist', async () => {
-      (fs.readFile as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('ENOENT')
-      );
+      (fs.readFile as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ENOENT'));
 
       const messages = await transcriptReader.readTranscript('/vault', 'nonexistent');
 
@@ -274,7 +280,8 @@ describe('TranscriptReader', () => {
           uuid: 'cmd-meta',
           message: {
             role: 'user',
-            content: '<command-message>ideate</command-message>\n<command-name>/ideate</command-name>\n<command-args>Add settings screen</command-args>',
+            content:
+              '<command-message>ideate</command-message>\n<command-name>/ideate</command-name>\n<command-args>Add settings screen</command-args>',
           },
         }),
         JSON.stringify({
@@ -311,7 +318,12 @@ describe('TranscriptReader', () => {
             role: 'assistant',
             content: [
               { type: 'text', text: "I'll decompose the spec." },
-              { type: 'tool_use', id: 'toolu_abc', name: 'Skill', input: { skill: 'spec:decompose', args: 'specs/my-feature/02-specification.md' } },
+              {
+                type: 'tool_use',
+                id: 'toolu_abc',
+                name: 'Skill',
+                input: { skill: 'spec:decompose', args: 'specs/my-feature/02-specification.md' },
+              },
             ],
           },
         }),
@@ -322,7 +334,11 @@ describe('TranscriptReader', () => {
           message: {
             role: 'user',
             content: [
-              { type: 'tool_result', tool_use_id: 'toolu_abc', content: 'Launching skill: spec:decompose' },
+              {
+                type: 'tool_result',
+                tool_use_id: 'toolu_abc',
+                content: 'Launching skill: spec:decompose',
+              },
             ],
           },
           toolUseResult: { success: true, commandName: 'spec:decompose' },
@@ -333,7 +349,8 @@ describe('TranscriptReader', () => {
           uuid: 'skill-expansion',
           message: {
             role: 'user',
-            content: '# Decompose Specification into Tasks\n\nDecompose the specification at: specs/my-feature/02-specification.md...',
+            content:
+              '# Decompose Specification into Tasks\n\nDecompose the specification at: specs/my-feature/02-specification.md...',
           },
         }),
       ].join('\n');
@@ -342,7 +359,7 @@ describe('TranscriptReader', () => {
       const messages = await transcriptReader.readTranscript('/vault', 'session-skill');
 
       // Should have the assistant message + the command message (expansion collapsed)
-      const cmdMsg = messages.find(m => m.messageType === 'command');
+      const cmdMsg = messages.find((m) => m.messageType === 'command');
       expect(cmdMsg).toBeDefined();
       expect(cmdMsg).toMatchObject({
         id: 'skill-expansion',
@@ -401,7 +418,8 @@ describe('TranscriptReader', () => {
           uuid: 'comp-1',
           message: {
             role: 'user',
-            content: 'This session is being continued from a previous conversation. Summary here...',
+            content:
+              'This session is being continued from a previous conversation. Summary here...',
           },
         }),
       ].join('\n');
@@ -430,7 +448,8 @@ describe('TranscriptReader', () => {
           uuid: 'task-1',
           message: {
             role: 'user',
-            content: '<task-notification><task-id>a1</task-id><status>completed</status></task-notification>',
+            content:
+              '<task-notification><task-id>a1</task-id><status>completed</status></task-notification>',
           },
         }),
         JSON.stringify({
@@ -458,7 +477,10 @@ describe('TranscriptReader', () => {
         JSON.stringify({
           type: 'user',
           uuid: 'local-cmd',
-          message: { role: 'user', content: '<local-command-stdout>Compaction complete</local-command-stdout>' },
+          message: {
+            role: 'user',
+            content: '<local-command-stdout>Compaction complete</local-command-stdout>',
+          },
         }),
         JSON.stringify({
           type: 'user',
@@ -557,13 +579,13 @@ describe('TranscriptReader', () => {
       const sessions = await transcriptReader.listSessions('/vault');
 
       expect(sessions).toHaveLength(2);
-      const s1 = sessions.find(s => s.id === 'abc-123');
+      const s1 = sessions.find((s) => s.id === 'abc-123');
       expect(s1).toBeDefined();
       expect(s1!.title).toBe('What is the meaning of life?');
       expect(s1!.permissionMode).toBe('default');
       expect(s1!.lastMessagePreview).toBeUndefined();
 
-      const s2 = sessions.find(s => s.id === 'def-456');
+      const s2 = sessions.find((s) => s.id === 'def-456');
       expect(s2).toBeDefined();
       expect(s2!.title).toBe('Session def-456');
       expect(s2!.permissionMode).toBe('bypassPermissions');
@@ -598,9 +620,7 @@ describe('TranscriptReader', () => {
     });
 
     it('returns empty array when directory does not exist', async () => {
-      (fs.readdir as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('ENOENT')
-      );
+      (fs.readdir as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ENOENT'));
 
       const sessions = await transcriptReader.listSessions('/vault');
 
@@ -635,10 +655,7 @@ describe('TranscriptReader', () => {
     });
 
     it('skips unreadable files', async () => {
-      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValue([
-        'good.jsonl',
-        'bad.jsonl',
-      ]);
+      (fs.readdir as ReturnType<typeof vi.fn>).mockResolvedValue(['good.jsonl', 'bad.jsonl']);
 
       const statResult = {
         birthtime: new Date('2024-01-01'),
@@ -726,9 +743,7 @@ describe('TranscriptReader', () => {
     });
 
     it('returns null when file does not exist', async () => {
-      (fs.stat as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('ENOENT')
-      );
+      (fs.stat as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ENOENT'));
 
       const session = await transcriptReader.getSession('/vault', 'nonexistent');
 
@@ -750,9 +765,7 @@ describe('TranscriptReader', () => {
     });
 
     it('returns empty array when directory does not exist', async () => {
-      (fs.readdir as ReturnType<typeof vi.fn>).mockRejectedValue(
-        new Error('ENOENT')
-      );
+      (fs.readdir as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('ENOENT'));
 
       const ids = await transcriptReader.listTranscripts('/vault');
 
@@ -887,7 +900,7 @@ describe('TranscriptReader', () => {
         expect.any(Buffer),
         0,
         newContent.length,
-        fromOffset,
+        fromOffset
       );
     });
 
@@ -900,9 +913,9 @@ describe('TranscriptReader', () => {
       };
       (fs.open as ReturnType<typeof vi.fn>).mockResolvedValue(mockFileHandle);
 
-      await expect(
-        transcriptReader.readFromOffset('/vault', 'session-123', 100)
-      ).rejects.toThrow('read error');
+      await expect(transcriptReader.readFromOffset('/vault', 'session-123', 100)).rejects.toThrow(
+        'read error'
+      );
 
       expect(mockFileHandle.close).toHaveBeenCalled();
     });

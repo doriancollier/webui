@@ -30,12 +30,12 @@ The chat UI has four focus states. At any given time, exactly one is active.
 
 ### State Details
 
-| State | ChatInput | Global Shortcuts | Trigger |
-|-------|-----------|-----------------|---------|
-| **IDLE/TYPING** | Enabled, focused | None | Default state; also entered when streaming ends with no pending tools |
-| **STREAMING** | Disabled (`isLoading`) | None | User sends a message; `status === 'streaming'` |
-| **WAITING_FOR_APPROVAL** | Disabled | `Enter` = approve, `Esc` = deny | SSE `approval_required` event received |
-| **WAITING_FOR_ANSWER** | Disabled | `1`-`9`, arrows, `Space`, `Enter`, `[`, `]` | SSE `question_prompt` event received |
+| State                    | ChatInput              | Global Shortcuts                            | Trigger                                                               |
+| ------------------------ | ---------------------- | ------------------------------------------- | --------------------------------------------------------------------- |
+| **IDLE/TYPING**          | Enabled, focused       | None                                        | Default state; also entered when streaming ends with no pending tools |
+| **STREAMING**            | Disabled (`isLoading`) | None                                        | User sends a message; `status === 'streaming'`                        |
+| **WAITING_FOR_APPROVAL** | Disabled               | `Enter` = approve, `Esc` = deny             | SSE `approval_required` event received                                |
+| **WAITING_FOR_ANSWER**   | Disabled               | `1`-`9`, arrows, `Space`, `Enter`, `[`, `]` | SSE `question_prompt` event received                                  |
 
 ### Why Global Shortcuts Work
 
@@ -77,22 +77,22 @@ interface UseInteractiveShortcutsOptions {
 
 ### Approval Mode (`WAITING_FOR_APPROVAL`)
 
-| Key | Action |
-|-----|--------|
-| `Enter` | Approve the tool call |
-| `Escape` | Deny the tool call |
+| Key      | Action                |
+| -------- | --------------------- |
+| `Enter`  | Approve the tool call |
+| `Escape` | Deny the tool call    |
 
 ### Question Mode (`WAITING_FOR_ANSWER`)
 
-| Key | Action |
-|-----|--------|
-| `1` - `9` | Toggle option at that index (1-based) |
-| `Arrow Up` | Move focus to previous option (wraps) |
-| `Arrow Down` | Move focus to next option (wraps) |
-| `Space` | Toggle the currently focused option |
-| `Enter` | Submit answers |
-| `Arrow Left` / `[` | Navigate to previous question tab |
-| `Arrow Right` / `]` | Navigate to next question tab |
+| Key                 | Action                                |
+| ------------------- | ------------------------------------- |
+| `1` - `9`           | Toggle option at that index (1-based) |
+| `Arrow Up`          | Move focus to previous option (wraps) |
+| `Arrow Down`        | Move focus to next option (wraps)     |
+| `Space`             | Toggle the currently focused option   |
+| `Enter`             | Submit answers                        |
+| `Arrow Left` / `[`  | Navigate to previous question tab     |
+| `Arrow Right` / `]` | Navigate to next question tab         |
 
 **Inside "Other" textarea:** Only `Enter` (submit) is active. All other shortcuts are suppressed so the user can type freely.
 
@@ -102,11 +102,11 @@ When multiple interactive tools are pending simultaneously (e.g., the SDK calls 
 
 ### Visual Differences
 
-| Property | Active (first pending) | Inactive (subsequent pending) |
-|----------|----------------------|-------------------------------|
-| Border ring | `ring-2 ring-amber-500/30` | No ring |
-| `Kbd` shortcut hints | Visible (e.g., `Enter`, `Esc`, `1`-`9`) | Hidden |
-| Keyboard shortcuts | Functional | No effect (must click) |
+| Property             | Active (first pending)                  | Inactive (subsequent pending) |
+| -------------------- | --------------------------------------- | ----------------------------- |
+| Border ring          | `ring-2 ring-amber-500/30`              | No ring                       |
+| `Kbd` shortcut hints | Visible (e.g., `Enter`, `Esc`, `1`-`9`) | Hidden                        |
+| Keyboard shortcuts   | Functional                              | No effect (must click)        |
 
 ### Auto-Promotion
 
@@ -187,6 +187,7 @@ export interface ToolApprovalHandle {
 ```
 
 When `isActive` is `true`, the component renders:
+
 - Amber `ring-2 ring-amber-500/30` border
 - `<Kbd>Enter</Kbd>` next to the Approve button
 - `<Kbd>Esc</Kbd>` next to the Deny button
@@ -207,6 +208,7 @@ export interface QuestionPromptHandle {
 ```
 
 When `isActive` is `true`, the component renders:
+
 - Amber `ring-2 ring-amber-500/30` border
 - `<Kbd>` hints on each option label (e.g., `1`, `2`, `3`)
 - Arrow key navigation hint (`<Kbd>&larr;</Kbd><Kbd>&rarr;</Kbd> navigate questions`) when multiple question tabs exist
@@ -247,6 +249,7 @@ function Kbd({ className, children, ...props }: React.ComponentProps<'kbd'>) {
 ```
 
 Key details:
+
 - **Hidden on mobile:** `hidden md:inline-flex` ensures hints only show on screens >= 768px. Mobile users tap buttons directly.
 - **Non-interactive:** `pointer-events-none select-none` prevents the hint from interfering with click targets.
 - **Styled to match shadcn/ui:** Uses `bg-muted`, `text-muted-foreground`, `border`, `font-mono` for a consistent appearance with the design system.

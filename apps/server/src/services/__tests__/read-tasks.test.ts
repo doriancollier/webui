@@ -39,7 +39,11 @@ describe('TranscriptReader.readTasks', () => {
               type: 'tool_use',
               name: 'TaskCreate',
               id: 'tc1',
-              input: { subject: 'First task', description: 'Do something', activeForm: 'Doing something' },
+              input: {
+                subject: 'First task',
+                description: 'Do something',
+                activeForm: 'Doing something',
+              },
             },
           ],
         },
@@ -91,7 +95,12 @@ describe('TranscriptReader.readTasks', () => {
         type: 'assistant',
         message: {
           content: [
-            { type: 'tool_use', name: 'TaskUpdate', id: 'tc2', input: { taskId: '1', status: 'in_progress', activeForm: 'Working on A' } },
+            {
+              type: 'tool_use',
+              name: 'TaskUpdate',
+              id: 'tc2',
+              input: { taskId: '1', status: 'in_progress', activeForm: 'Working on A' },
+            },
           ],
         },
       }),
@@ -99,7 +108,12 @@ describe('TranscriptReader.readTasks', () => {
         type: 'assistant',
         message: {
           content: [
-            { type: 'tool_use', name: 'TaskUpdate', id: 'tc3', input: { taskId: '1', status: 'completed' } },
+            {
+              type: 'tool_use',
+              name: 'TaskUpdate',
+              id: 'tc3',
+              input: { taskId: '1', status: 'completed' },
+            },
           ],
         },
       }),
@@ -123,17 +137,13 @@ describe('TranscriptReader.readTasks', () => {
       JSON.stringify({
         type: 'assistant',
         message: {
-          content: [
-            { type: 'tool_use', name: 'Read', id: 'tc1', input: { file_path: '/foo' } },
-          ],
+          content: [{ type: 'tool_use', name: 'Read', id: 'tc1', input: { file_path: '/foo' } }],
         },
       }),
       JSON.stringify({
         type: 'assistant',
         message: {
-          content: [
-            { type: 'text', text: 'Some response' },
-          ],
+          content: [{ type: 'text', text: 'Some response' }],
         },
       }),
     ];
@@ -150,7 +160,12 @@ describe('TranscriptReader.readTasks', () => {
         type: 'assistant',
         message: {
           content: [
-            { type: 'tool_use', name: 'TaskUpdate', id: 'tc1', input: { taskId: '99', status: 'completed' } },
+            {
+              type: 'tool_use',
+              name: 'TaskUpdate',
+              id: 'tc1',
+              input: { taskId: '99', status: 'completed' },
+            },
           ],
         },
       }),

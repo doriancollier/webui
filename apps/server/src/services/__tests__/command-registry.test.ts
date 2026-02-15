@@ -31,9 +31,7 @@ describe('CommandRegistryService', () => {
 
   it('scans directory structure and parses frontmatter', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([
-        makeDirent('daily', true),
-      ] as any)
+      .mockResolvedValueOnce([makeDirent('daily', true)] as any)
       .mockResolvedValueOnce(['plan.md', 'note.md'] as any);
 
     vi.mocked(fs.readFile)
@@ -102,10 +100,7 @@ describe('CommandRegistryService', () => {
 
   it('sorts commands alphabetically', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([
-        makeDirent('system', true),
-        makeDirent('daily', true),
-      ] as any)
+      .mockResolvedValueOnce([makeDirent('system', true), makeDirent('daily', true)] as any)
       .mockResolvedValueOnce(['review.md'] as any)
       .mockResolvedValueOnce(['plan.md'] as any);
 

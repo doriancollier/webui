@@ -18,28 +18,17 @@ import type {
 
 export interface DirectTransportServices {
   agentManager: {
-    ensureSession(
-      id: string,
-      opts: { permissionMode: PermissionMode; cwd?: string },
-    ): void;
+    ensureSession(id: string, opts: { permissionMode: PermissionMode; cwd?: string }): void;
     sendMessage(
       id: string,
       content: string,
-      opts?: { permissionMode?: PermissionMode; cwd?: string },
+      opts?: { permissionMode?: PermissionMode; cwd?: string }
     ): AsyncGenerator<StreamEvent>;
-    approveTool(
-      sessionId: string,
-      toolCallId: string,
-      approved: boolean,
-    ): boolean;
-    submitAnswers(
-      sessionId: string,
-      toolCallId: string,
-      answers: Record<string, string>,
-    ): boolean;
+    approveTool(sessionId: string, toolCallId: string, approved: boolean): boolean;
+    submitAnswers(sessionId: string, toolCallId: string, answers: Record<string, string>): boolean;
     updateSession(
       sessionId: string,
-      opts: { permissionMode?: PermissionMode; model?: string },
+      opts: { permissionMode?: PermissionMode; model?: string }
     ): boolean;
   };
   transcriptReader: {
@@ -79,15 +68,13 @@ export class DirectTransport implements Transport {
   }
 
   async listSessions(cwd?: string): Promise<Session[]> {
-    return this.services.transcriptReader.listSessions(
-      cwd || this.services.vaultRoot,
-    );
+    return this.services.transcriptReader.listSessions(cwd || this.services.vaultRoot);
   }
 
   async getSession(id: string, cwd?: string): Promise<Session> {
     const session = await this.services.transcriptReader.getSession(
       cwd || this.services.vaultRoot,
-      id,
+      id
     );
     if (!session) {
       throw new Error(`Session not found: ${id}`);
@@ -101,13 +88,10 @@ export class DirectTransport implements Transport {
     return this.getSession(id, cwd);
   }
 
-  async getMessages(
-    sessionId: string,
-    cwd?: string,
-  ): Promise<{ messages: HistoryMessage[] }> {
+  async getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }> {
     const messages = await this.services.transcriptReader.readTranscript(
       cwd || this.services.vaultRoot,
-      sessionId,
+      sessionId
     );
     return { messages };
   }
@@ -117,12 +101,12 @@ export class DirectTransport implements Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
-    cwd?: string,
+    cwd?: string
   ): Promise<void> {
     const generator = this.services.agentManager.sendMessage(
       sessionId,
       content,
-      ...(cwd ? [{ cwd }] : []),
+      ...(cwd ? [{ cwd }] : [])
     );
     for await (const event of generator) {
       if (signal?.aborted) break;
@@ -130,47 +114,29 @@ export class DirectTransport implements Transport {
     }
   }
 
-  async approveTool(
-    sessionId: string,
-    toolCallId: string,
-  ): Promise<{ ok: boolean }> {
-    const result = this.services.agentManager.approveTool(
-      sessionId,
-      toolCallId,
-      true,
-    );
+  async approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }> {
+    const result = this.services.agentManager.approveTool(sessionId, toolCallId, true);
     return { ok: result };
   }
 
-  async denyTool(
-    sessionId: string,
-    toolCallId: string,
-  ): Promise<{ ok: boolean }> {
-    const result = this.services.agentManager.approveTool(
-      sessionId,
-      toolCallId,
-      false,
-    );
+  async denyTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }> {
+    const result = this.services.agentManager.approveTool(sessionId, toolCallId, false);
     return { ok: result };
   }
 
   async submitAnswers(
     sessionId: string,
     toolCallId: string,
-    answers: Record<string, string>,
+    answers: Record<string, string>
   ): Promise<{ ok: boolean }> {
-    const ok = this.services.agentManager.submitAnswers(
-      sessionId,
-      toolCallId,
-      answers,
-    );
+    const ok = this.services.agentManager.submitAnswers(sessionId, toolCallId, answers);
     return { ok };
   }
 
   async getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }> {
     const tasks = await this.services.transcriptReader.readTasks(
       cwd || this.services.vaultRoot,
-      sessionId,
+      sessionId
     );
     return { tasks };
   }
@@ -193,9 +159,9 @@ export class DirectTransport implements Transport {
 
     const dirents = await fs.default.readdir(resolved, { withFileTypes: true });
     const entries = dirents
-      .filter(d => d.isDirectory())
-      .filter(d => showHidden || !d.name.startsWith('.'))
-      .map(d => ({
+      .filter((d) => d.isDirectory())
+      .filter((d) => showHidden || !d.name.startsWith('.'))
+      .map((d) => ({
         name: d.name,
         path: pathMod.default.join(resolved, d.name),
         isDirectory: true,

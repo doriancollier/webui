@@ -40,7 +40,11 @@ function ResponsiveDialog({ children, ...props }: ResponsiveDialogProps) {
   );
 }
 
-function ResponsiveDialogTrigger({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof DialogTrigger>) {
+function ResponsiveDialogTrigger({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DialogTrigger>) {
   const { isDesktop } = React.useContext(ResponsiveDialogContext);
   const Comp = isDesktop ? DialogTrigger : DrawerTrigger;
   return (
@@ -50,19 +54,21 @@ function ResponsiveDialogTrigger({ className, children, ...props }: React.Compon
   );
 }
 
-function ResponsiveDialogContent({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof DialogContent>) {
+function ResponsiveDialogContent({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DialogContent>) {
   const { isDesktop } = React.useContext(ResponsiveDialogContext);
   if (isDesktop) {
     return (
-      <DialogContent className={cn('h-[75vh] flex flex-col', className)} {...props}>
+      <DialogContent className={cn('flex h-[75vh] flex-col', className)} {...props}>
         {children}
       </DialogContent>
     );
   }
   return (
-    <DrawerContent className={cn('h-[90vh] flex flex-col', className)}>
-      {children}
-    </DrawerContent>
+    <DrawerContent className={cn('flex h-[90vh] flex-col', className)}>{children}</DrawerContent>
   );
 }
 
@@ -72,13 +78,19 @@ function ResponsiveDialogHeader({ className, ...props }: React.HTMLAttributes<HT
   return <Comp className={className} {...props} />;
 }
 
-function ResponsiveDialogTitle({ className, ...props }: React.ComponentPropsWithoutRef<typeof DialogTitle>) {
+function ResponsiveDialogTitle({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DialogTitle>) {
   const { isDesktop } = React.useContext(ResponsiveDialogContext);
   const Comp = isDesktop ? DialogTitle : DrawerTitle;
   return <Comp className={className} {...props} />;
 }
 
-function ResponsiveDialogDescription({ className, ...props }: React.ComponentPropsWithoutRef<typeof DialogDescription>) {
+function ResponsiveDialogDescription({
+  className,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DialogDescription>) {
   const { isDesktop } = React.useContext(ResponsiveDialogContext);
   const Comp = isDesktop ? DialogDescription : DrawerDescription;
   return <Comp className={className} {...props} />;
@@ -90,7 +102,11 @@ function ResponsiveDialogFooter({ className, ...props }: React.HTMLAttributes<HT
   return <Comp className={className} {...props} />;
 }
 
-function ResponsiveDialogClose({ className, children, ...props }: React.ComponentPropsWithoutRef<typeof DialogClose>) {
+function ResponsiveDialogClose({
+  className,
+  children,
+  ...props
+}: React.ComponentPropsWithoutRef<typeof DialogClose>) {
   const { isDesktop } = React.useContext(ResponsiveDialogContext);
   const Comp = isDesktop ? DialogClose : DrawerClose;
   return (

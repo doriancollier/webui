@@ -1,6 +1,6 @@
 ---
 description: Orchestrate the full development lifecycle for a roadmap item
-argument-hint: "<item-id>"
+argument-hint: '<item-id>'
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, Task, TaskCreate, TaskUpdate, TaskList, TaskGet, Skill, AskUserQuestion
 category: roadmap
 ---
@@ -21,15 +21,15 @@ not-started → ideating → specifying → decomposing → implementing → tes
 
 ### Phase Details
 
-| Phase | Command | Human Approval | Auto-Retry |
-|-------|---------|----------------|------------|
-| ideating | `/ideate --roadmap-id <id>` | After completion | No |
-| specifying | `/ideate-to-spec <path>` | After completion | No |
-| decomposing | `/spec:decompose <path>` | No (automatic) | Yes |
-| implementing | `/spec:execute <path>` | No (internal loops) | Yes |
-| testing | `pnpm test` | On persistent failure | Yes (3x) |
-| committing | `/git:commit` + `/git:push` | No | Yes |
-| releasing | `/system:release` | Required | No |
+| Phase        | Command                     | Human Approval        | Auto-Retry |
+| ------------ | --------------------------- | --------------------- | ---------- |
+| ideating     | `/ideate --roadmap-id <id>` | After completion      | No         |
+| specifying   | `/ideate-to-spec <path>`    | After completion      | No         |
+| decomposing  | `/spec:decompose <path>`    | No (automatic)        | Yes        |
+| implementing | `/spec:execute <path>`      | No (internal loops)   | Yes        |
+| testing      | `pnpm test`                 | On persistent failure | Yes (3x)   |
+| committing   | `/git:commit` + `/git:push` | No                    | Yes        |
+| releasing    | `/system:release`           | Required              | No         |
 
 ## Implementation
 
@@ -40,6 +40,7 @@ cat roadmap/roadmap.json
 ```
 
 Find the item with ID matching `$ARGUMENTS`. If not found, exit with error:
+
 ```
 Error: Item not found: {id}
 Please verify the UUID is correct using /roadmap:show or /roadmap:next
@@ -48,10 +49,12 @@ Please verify the UUID is correct using /roadmap:show or /roadmap:next
 ### Step 2: Determine Current Phase
 
 Check `item.workflowState.phase`:
+
 - If not set or `not-started`, begin with `ideating`
 - Otherwise, resume from current phase
 
 Display current state:
+
 ```markdown
 ## Resuming Work
 
@@ -66,6 +69,7 @@ Display current state:
 For each phase, follow this pattern:
 
 1. **Update workflowState.phase** in roadmap.json:
+
    ```bash
    python3 roadmap/scripts/update_workflow_state.py <id> phase=<phase>
    ```
@@ -93,6 +97,7 @@ For each phase, follow this pattern:
 **After `ideating` phase:**
 
 Use AskUserQuestion:
+
 ```
 header: "Ideation Review"
 question: "The ideation document has been created. How would you like to proceed?"
@@ -108,6 +113,7 @@ options:
 **After `specifying` phase:**
 
 Use AskUserQuestion:
+
 ```
 header: "Specification Review"
 question: "The specification has been created. How would you like to proceed?"
@@ -123,6 +129,7 @@ options:
 **Before `releasing` phase:**
 
 Use AskUserQuestion:
+
 ```
 header: "Release Decision"
 question: "Implementation complete and tests passing. Create a release?"
@@ -140,12 +147,14 @@ options:
 When all phases complete:
 
 1. Update status to `completed`:
+
    ```bash
    python3 roadmap/scripts/update_status.py <id> completed
    python3 roadmap/scripts/update_workflow_state.py <id> phase=completed
    ```
 
 2. Output final summary:
+
    ```markdown
    ## Work Complete
 
@@ -188,6 +197,7 @@ pnpm test
 ### Test Feedback Loop Details
 
 1. **Run test suite:**
+
    ```bash
    pnpm test 2>&1 | tee .temp/test-output.txt
    TEST_EXIT_CODE=${PIPESTATUS[0]}
@@ -220,6 +230,7 @@ When a bug is discovered during testing that is too complex to fix inline:
    - If workaround possible: Continue, note workaround
 
 3. **Output for discovered bugs:**
+
    ```markdown
    ## Bug Discovered
 
@@ -231,18 +242,19 @@ When a bug is discovered during testing that is too complex to fix inline:
 
 ## Error Handling
 
-| Error | Action |
-|-------|--------|
-| Item not found | Exit with "Item not found: {id}" |
-| Phase command fails | Increment attempts, retry with context |
+| Error                 | Action                                               |
+| --------------------- | ---------------------------------------------------- |
+| Item not found        | Exit with "Item not found: {id}"                     |
+| Phase command fails   | Increment attempts, retry with context               |
 | Max attempts exceeded | Document blockers, output `<promise>ABORT</promise>` |
-| Git push fails | Pause for human, provide recovery commands |
-| User types "abort" | Output `<promise>ABORT</promise>`, stop work |
-| Invalid phase | Reset to last valid phase, report error |
+| Git push fails        | Pause for human, provide recovery commands           |
+| User types "abort"    | Output `<promise>ABORT</promise>`, stop work         |
+| Invalid phase         | Reset to last valid phase, report error              |
 
 ## Resumability
 
 If interrupted, the workflow can be resumed:
+
 1. Run `/roadmap:work <id>` again
 2. The command checks `workflowState.phase` and resumes from there
 3. All progress is persisted in roadmap.json
@@ -250,19 +262,19 @@ If interrupted, the workflow can be resumed:
 
 ## Cost Controls
 
-| Setting | Value |
-|---------|-------|
-| Max retry attempts per phase | 3 |
-| Max total iterations | 100 |
+| Setting                      | Value |
+| ---------------------------- | ----- |
+| Max retry attempts per phase | 3     |
+| Max total iterations         | 100   |
 
 ## Phase Command Reference
 
-| Phase | Command | Notes |
-|-------|---------|-------|
-| ideating | `/ideate --roadmap-id $ID` | Creates `specs/{slug}/01-ideation.md` |
-| specifying | `/ideate-to-spec specs/{slug}/01-ideation.md` | Creates `specs/{slug}/02-specification.md` |
-| decomposing | `/spec:decompose specs/{slug}/02-specification.md` | Creates tasks |
-| implementing | `/spec:execute specs/{slug}/02-specification.md` | Implements tasks |
-| testing | `pnpm test` | Runs test suite |
-| committing | `/git:commit` then `/git:push` | Commits and pushes |
-| releasing | `/system:release` | Creates release (optional) |
+| Phase        | Command                                            | Notes                                      |
+| ------------ | -------------------------------------------------- | ------------------------------------------ |
+| ideating     | `/ideate --roadmap-id $ID`                         | Creates `specs/{slug}/01-ideation.md`      |
+| specifying   | `/ideate-to-spec specs/{slug}/01-ideation.md`      | Creates `specs/{slug}/02-specification.md` |
+| decomposing  | `/spec:decompose specs/{slug}/02-specification.md` | Creates tasks                              |
+| implementing | `/spec:execute specs/{slug}/02-specification.md`   | Implements tasks                           |
+| testing      | `pnpm test`                                        | Runs test suite                            |
+| committing   | `/git:commit` then `/git:push`                     | Commits and pushes                         |
+| releasing    | `/system:release`                                  | Creates release (optional)                 |

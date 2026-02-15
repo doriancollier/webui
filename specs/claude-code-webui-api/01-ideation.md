@@ -36,6 +36,7 @@ slug: claude-code-webui-api
 ## 2) Pre-reading Log
 
 ### Codebase Files
+
 - `workspace/0-System/README.md`: DorkOS v0.11.0 architecture overview; confirms `gateway/` is designated as "Node.js API server (future)"
 - `workspace/0-System/architecture.md`: References `gateway/` as "REST API + WebSocket" location
 - `.claude/commands/` (30+ namespaces): Command files are markdown with YAML frontmatter (`description`, `allowed-tools`, `argument-hint`, `category`)
@@ -49,6 +50,7 @@ slug: claude-code-webui-api
 - `package.json`: Currently empty (`{}`) at project root
 
 ### External Research
+
 - **Claude Agent SDK** (renamed from Claude Code SDK late 2025): Package is `@anthropic-ai/claude-agent-sdk`. Provides `query()` function with streaming, session resume/fork, tool definitions, and `bypassPermissions` option. Sessions stored in `$HOME/.claude` as line-delimited JSON.
 - **SDK Memory Warning**: Memory grows from 400-700MB idle to 1-4GB during active use. Known memory leak after ~30 min. Workaround: kill and resume session to restore performance.
 - **SDK V2 API (Preview)**: Simplified `createAgent()` / `agent.send()` / `agent.receive()` pattern for multi-turn. Not stable yet - use V1 `query()`.
@@ -71,24 +73,26 @@ slug: claude-code-webui-api
 
 ### Primary Components/Modules
 
-| Path | Role |
-|------|------|
-| `gateway/src/server/` | Designated API server location (empty scaffold) |
-| `gateway/src/channels/` | Channel adapters location (empty scaffold) |
-| `.claude/commands/**/*.md` | 80+ slash commands with frontmatter metadata |
-| `.claude/skills/*/SKILL.md` | 54+ model-invoked knowledge modules |
-| `.claude/agents/*.md` | 19+ autonomous task executor definitions |
-| `.claude/hooks/*.py` | 18 lifecycle automation scripts |
-| `.claude/settings.json` | Hook configuration and tool permissions |
-| `.user/*.yaml` | User configuration (6 files) |
+| Path                        | Role                                            |
+| --------------------------- | ----------------------------------------------- |
+| `gateway/src/server/`       | Designated API server location (empty scaffold) |
+| `gateway/src/channels/`     | Channel adapters location (empty scaffold)      |
+| `.claude/commands/**/*.md`  | 80+ slash commands with frontmatter metadata    |
+| `.claude/skills/*/SKILL.md` | 54+ model-invoked knowledge modules             |
+| `.claude/agents/*.md`       | 19+ autonomous task executor definitions        |
+| `.claude/hooks/*.py`        | 18 lifecycle automation scripts                 |
+| `.claude/settings.json`     | Hook configuration and tool permissions         |
+| `.user/*.yaml`              | User configuration (6 files)                    |
 
 ### Shared Dependencies
+
 - `.claude/scripts/inject_placeholders.py` - Configuration injection system
 - `.claude/scripts/configure_hooks.py` - Hook setup from integrations config
 - `CLAUDE.md` / `CLAUDE.template.md` - AI instruction files (generated)
 - `.claude/rules/*.md` - Coaching, components, questioning rules
 
 ### Data Flow (Current CLI)
+
 ```
 User Input → Claude Code CLI → Anthropic API → Tool Execution → Hook Lifecycle → Response
                     ↓                                    ↑
@@ -98,6 +102,7 @@ User Input → Claude Code CLI → Anthropic API → Tool Execution → Hook Lif
 ```
 
 ### Data Flow (Proposed WebUI)
+
 ```
 Browser → WebUI React App → API Server (Express) → Claude Code SDK → Anthropic API
    ↑              ↓                    ↓                    ↓              ↓
@@ -106,11 +111,13 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 ```
 
 ### Feature Flags/Config
+
 - `.user/integrations.yaml` controls which integrations are enabled
 - `--dangerously-skip-permissions` is a CLI flag that bypasses permission checks
 - Hook exit code 2 = block operation
 
 ### Potential Blast Radius
+
 - **New code only** - This is a greenfield project in `gateway/`
 - No existing code to modify (empty scaffolds)
 - Root `package.json` will need dependencies added
@@ -120,7 +127,7 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 
 ## 4) Root Cause Analysis
 
-*Not applicable - this is a new feature, not a bug fix.*
+_Not applicable - this is a new feature, not a bug fix._
 
 ---
 
@@ -129,12 +136,14 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 ### 5.1 Claude Code SDK Integration
 
 **Approach A: Claude Agent SDK (Direct Embedding)**
+
 - Use `@anthropic-ai/claude-agent-sdk` (renamed from `@anthropic-ai/claude-code` in late 2025) to embed the agent loop directly in the server process
 - Pros: Native integration, full control, streaming support, no subprocess overhead
 - Cons: SDK maturity/stability unknown; tight coupling to SDK API changes
 - Complexity: Medium
 
 **Approach B: Claude Code CLI Subprocess Wrapper**
+
 - Spawn `claude` CLI as a child process, communicate via stdin/stdout
 - Similar to `coder/agentapi` approach
 - Pros: Uses battle-tested CLI, no SDK dependency, supports all CLI features including `--dangerously-skip-permissions`
@@ -142,6 +151,7 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 - Complexity: Medium-High
 
 **Approach C: Hybrid (SDK + CLI Fallback)**
+
 - Use SDK for primary operations, fall back to CLI subprocess for features not yet in SDK
 - Pros: Best of both worlds, graceful degradation
 - Cons: Two integration paths to maintain
@@ -154,16 +164,19 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 ### 5.2 Server Framework
 
 **Option 1: Express.js**
+
 - Pros: Most ecosystem support, massive middleware library, well-understood, TypeScript support
 - Cons: Older architecture, callback-based (though async/await works), not the fastest
 - Complexity: Low
 
 **Option 2: Fastify**
+
 - Pros: 2-3x faster than Express, schema-based validation, TypeScript-first, plugin architecture
 - Cons: Smaller ecosystem, less familiar to most developers
 - Complexity: Low-Medium
 
 **Option 3: Hono**
+
 - Pros: Ultra-fast, edge-ready, tiny bundle, TypeScript-first, Express-compatible middleware
 - Cons: Newer, smaller community, less battle-tested for long-running server processes
 - Complexity: Low
@@ -173,16 +186,19 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 ### 5.3 Real-time Communication
 
 **Option 1: Server-Sent Events (SSE)**
+
 - Pros: Simple, HTTP-based, auto-reconnect, works through proxies, one-way streaming (perfect for AI responses)
 - Cons: Unidirectional (server→client only), limited to ~6 concurrent connections per domain in HTTP/1.1
 - Best for: Streaming AI responses, tool call updates
 
 **Option 2: WebSocket**
+
 - Pros: Full-duplex, low latency, binary support, no connection limit
 - Cons: More complex, doesn't auto-reconnect, proxy issues, requires separate protocol handling
 - Best for: Interactive tool approval flows, real-time collaboration
 
 **Option 3: Hybrid (REST + SSE)**
+
 - REST for commands (send message, list sessions, get commands)
 - SSE for streaming responses (chat completions, tool call progress)
 - Pros: Simple client implementation, browser-native, easy debugging
@@ -193,6 +209,7 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 ### 5.4 Frontend Chat UI
 
 **Option 1: Vercel AI SDK (`ai` + `@ai-sdk/react`)**
+
 - `useChat` hook handles message state, streaming, error handling
 - Built-in SSE support, automatic message management
 - Works with any backend that follows the AI SDK stream protocol
@@ -200,17 +217,20 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 - Cons: Opinionated about data format, may need customization for tool calls
 
 **Option 2: Custom Chat Implementation**
+
 - Build chat state management from scratch with TanStack Query + Store
 - Pros: Full control, no external dependencies for chat logic
 - Cons: Significant boilerplate, need to handle streaming, reconnection, message management
 
 **Option 3: shadcn Chat Components**
+
 - shadcn/ui has a chat component pattern (not official, community)
 - Combine with Vercel AI SDK hooks for state management
 - Pros: Consistent design system, copy-paste customizable
 - Cons: Not a maintained library, just patterns/examples
 
 **Option 4: Vercel AI Elements**
+
 - New open-source library of 20+ React components built on shadcn/ui specifically for AI interfaces
 - Includes `<MessageThread>`, `<InputBox>`, `<ToolDisplay>`, `<ReasoningPanel>`, `<StreamingText>`
 - Designed to work with Vercel AI SDK hooks
@@ -247,6 +267,7 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 ### 5.6 Slash Command Auto-complete
 
 **Implementation Strategy:**
+
 1. Server-side: API endpoint that scans `.claude/commands/` and returns structured command metadata
 2. Client-side: Trigger on `/` keystroke in chat input using `cmdk` library (same component that powers shadcn/ui's Command component)
 3. UI: Inline floating dropdown (similar to Discord's slash menu) with grouped commands by namespace
@@ -255,20 +276,22 @@ Browser → WebUI React App → API Server (Express) → Claude Code SDK → Ant
 6. Keyboard: Arrow keys to navigate, Enter to select, Escape to dismiss (all built into cmdk)
 
 **Command Registry API Response:**
+
 ```typescript
 interface CommandEntry {
-  namespace: string;       // e.g., "daily"
-  command: string;         // e.g., "plan"
-  fullCommand: string;     // e.g., "/daily:plan"
-  description: string;     // From frontmatter
-  argumentHint?: string;   // e.g., "[date]"
-  category?: string;       // e.g., "planning"
+  namespace: string; // e.g., "daily"
+  command: string; // e.g., "plan"
+  fullCommand: string; // e.g., "/daily:plan"
+  description: string; // From frontmatter
+  argumentHint?: string; // e.g., "[date]"
+  category?: string; // e.g., "planning"
 }
 ```
 
 ### 5.7 Session Continuity
 
 **Strategy:**
+
 - The Claude Agent SDK has **built-in session persistence** in `$HOME/.claude` (line-delimited JSON)
 - Sessions can be resumed via `query({ options: { resume: sessionId, fork: false } })`
 - The `fork: true` option creates a branch from an existing session (useful for "what-if" scenarios)
@@ -279,14 +302,15 @@ interface CommandEntry {
 
 ### 5.8 TanStack Library Usage
 
-| Library | Use Case | Verdict |
-|---------|----------|---------|
-| **TanStack Query** | API data fetching, session caching, command list caching | **Use** - Essential for server state |
-| **TanStack Virtual** | Virtualizing long message lists | **Use** - Critical for performance |
-| **TanStack Store** | Client-side state (UI state, preferences, theme) | **Skip** - Primarily internal to TanStack libs, not widely adopted. Use **Zustand** instead (lightweight, simple API, large community) |
-| **TanStack DB** | Client-side reactive database | **Skip for now** - Still in beta, overkill for this use case. Revisit if we need complex client-side data relationships |
+| Library              | Use Case                                                 | Verdict                                                                                                                                |
+| -------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **TanStack Query**   | API data fetching, session caching, command list caching | **Use** - Essential for server state                                                                                                   |
+| **TanStack Virtual** | Virtualizing long message lists                          | **Use** - Critical for performance                                                                                                     |
+| **TanStack Store**   | Client-side state (UI state, preferences, theme)         | **Skip** - Primarily internal to TanStack libs, not widely adopted. Use **Zustand** instead (lightweight, simple API, large community) |
+| **TanStack DB**      | Client-side reactive database                            | **Skip for now** - Still in beta, overkill for this use case. Revisit if we need complex client-side data relationships                |
 
 ### Security Considerations
+
 - Server runs on localhost only (no external exposure by default)
 - `--dangerously-skip-permissions` should require explicit opt-in per session
 - Tool calls should be logged and visible in the UI
@@ -294,6 +318,7 @@ interface CommandEntry {
 - No auth initially, but API should be designed to add auth later (Bearer token header)
 
 ### Performance Considerations
+
 - Claude API latency is the primary bottleneck (~1-3s for first token)
 - SSE streaming keeps perceived latency low
 - TanStack Virtual prevents DOM bloat from long conversations

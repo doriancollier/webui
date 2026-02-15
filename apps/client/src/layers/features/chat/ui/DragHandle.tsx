@@ -16,9 +16,9 @@ export function DragHandle({ collapsed, onToggle }: DragHandleProps) {
           onToggle();
         }
       }}
-      className="flex items-center justify-center h-6 w-full cursor-pointer"
+      className="flex h-6 w-full cursor-pointer items-center justify-center"
     >
-      <div className="w-9 h-1 rounded-full bg-muted-foreground/30 hover:bg-muted-foreground/50 active:bg-muted-foreground/50 transition-colors" />
+      <div className="bg-muted-foreground/30 hover:bg-muted-foreground/50 active:bg-muted-foreground/50 h-1 w-9 rounded-full transition-colors" />
     </div>
   );
 }

@@ -5,8 +5,7 @@ interface ContextItemProps {
 }
 
 export function ContextItem({ percent }: ContextItemProps) {
-  const colorClass =
-    percent >= 95 ? 'text-red-500' : percent >= 80 ? 'text-amber-500' : '';
+  const colorClass = percent >= 95 ? 'text-red-500' : percent >= 80 ? 'text-amber-500' : '';
 
   return (
     <span className={`inline-flex items-center gap-1 ${colorClass}`}>

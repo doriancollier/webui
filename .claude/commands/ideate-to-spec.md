@@ -1,7 +1,7 @@
 ---
 description: Transform ideation document into validated specification
 allowed-tools: Read, Grep, Glob, Write, SlashCommand(/spec:create:*), SlashCommand(/spec:validate:*)
-argument-hint: "<path-to-ideation-doc>"
+argument-hint: '<path-to-ideation-doc>'
 category: workflow
 ---
 
@@ -54,6 +54,7 @@ Review the clarifications from Section 6 of the ideation document. For each clar
    ```
 
 **Example interaction format:**
+
 ```
 Decision 1: Image proxy URL construction
 From research: We can either construct proxy URLs in the plugin OR in banner-data.json
@@ -110,6 +111,7 @@ Construct a rich, detailed prompt for `/spec:create` that includes:
    - Non-regression requirements
 
 **Example constructed prompt:**
+
 ```
 Add proxy config integration to Figma plugin. The plugin should read a config.proxyBaseUrl
 field from banner-data.json and automatically construct proxy URLs for image_url mappings
@@ -135,6 +137,7 @@ Acceptance criteria:
 ### Step 5: Execute Spec Creation
 
 1. **Inform the user:**
+
    ```
    Creating specification with the following scope:
    - {Primary task description}
@@ -146,6 +149,7 @@ Acceptance criteria:
    ```
 
 2. **Execute `/spec:create`** with the constructed prompt from Step 4, appending:
+
    ```
 
    IMPORTANT: Save this specification to: specs/{slug}/02-specification.md
@@ -166,20 +170,24 @@ When transforming ideation to specification:
    - **Fallback for legacy format:** Also check for `**roadmapId:**` or `**Roadmap ID:**` in markdown body
 
 2. If `roadmapId` found, include the same in `02-specification.md` **YAML frontmatter at the very top**:
+
    ```markdown
    ---
-   roadmapId: {ROADMAP_ITEM_ID}
-   slug: {SLUG}
+   roadmapId: { ROADMAP_ITEM_ID }
+   slug: { SLUG }
    ---
 
    # Specification: {Feature Title}
+
    ...
    ```
 
 3. After creating the spec, **always run `link_spec.py`** to update linkedArtifacts:
+
    ```bash
    python3 roadmap/scripts/link_spec.py $ROADMAP_ID $SLUG
    ```
+
    This script will populate `specSlug`, `ideationPath`, `specPath`, etc. in the roadmap item.
 
 4. This ensures the roadmap link is preserved through:
@@ -204,6 +212,7 @@ If no unanswered questions exist, skip directly to Step 7.
 #### 6a.1: Detect and Parse Questions
 
 1. **Use Grep to check for open questions:**
+
    ```bash
    grep -E "^[0-9]+\. \*\*" specs/{slug}/02-specification.md
    ```
@@ -222,13 +231,14 @@ If no unanswered questions exist, skip directly to Step 7.
    - If NOT found → Add to unanswered list
 
 **Question Format Example:**
+
 ```markdown
 1. **ClaudeKit Version Compatibility**
    - Option A: Pin exact version (e.g., "1.2.3")
    - Option B: Use caret range (e.g., "^1.0.0")
    - Recommendation: Option B
 
-3. ~~**ESM vs CommonJS**~~ (RESOLVED)
+2. ~~**ESM vs CommonJS**~~ (RESOLVED)
    **Answer:** Use ESM (import/export) for modern Node.js 18+ compatibility
 ```
 
@@ -244,12 +254,13 @@ For each unanswered question, build structured data:
    - Mark recommended option (search for "- Recommendation:")
 
 3. **Build options array:**
+
    ```javascript
    options = [
-     { label: "Option A: Description", description: "" },
-     { label: "Option B: Description - Recommended", description: "" },
-     { label: "Other (custom answer)", description: "Provide your own answer" }
-   ]
+     { label: 'Option A: Description', description: '' },
+     { label: 'Option B: Description - Recommended', description: '' },
+     { label: 'Other (custom answer)', description: 'Provide your own answer' },
+   ];
    ```
 
 4. **Store question object:**
@@ -264,6 +275,7 @@ For each unanswered question, build structured data:
    ```
 
 **Edge Cases:**
+
 - No options in spec → Provide generic fallback: [Yes, No, Other]
 - Empty question list → Skip to Step 7
 
@@ -274,6 +286,7 @@ For each unanswered question:
 #### 6b.1: Display Progress and Context
 
 Show progress indicator before each question:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Question {current} of {total}
@@ -283,6 +296,7 @@ Question {current} of {total}
 ```
 
 Display context (truncate if > 200 chars):
+
 ```
 Context: {question.context or truncated version}
 ```
@@ -307,8 +321,9 @@ AskUserQuestion({
 ```
 
 **Multi-select example:**
+
 ```javascript
-multiSelect: true  // User can select multiple options
+multiSelect: true; // User can select multiple options
 ```
 
 #### 6b.3: Record Answers
@@ -316,6 +331,7 @@ multiSelect: true  // User can select multiple options
 Store each answer in `recordedAnswers` array:
 
 **Single-select format:**
+
 ```javascript
 {
   questionNumber: "1",
@@ -326,6 +342,7 @@ Store each answer in `recordedAnswers` array:
 ```
 
 **Multi-select format:**
+
 ```javascript
 {
   questionNumber: "5",
@@ -345,16 +362,17 @@ For each answer, construct replacement text:
 
 ```markdown
 {questionNumber}. ~~**{questionText}**~~ (RESOLVED)
-   **Answer:** {user's answer}
-   **Rationale:** {description}
+**Answer:** {user's answer}
+**Rationale:** {description}
 
-   Original context preserved:
+Original context preserved:
 {original question context}
 ```
 
 **Example transformation:**
 
 **Before:**
+
 ```markdown
 3. **Package Manager Support**
    - Option A: npm only
@@ -363,6 +381,7 @@ For each answer, construct replacement text:
 ```
 
 **After:**
+
 ```markdown
 3. ~~**Package Manager Support**~~ (RESOLVED)
    **Answer:** npm + yarn + pnpm
@@ -379,6 +398,7 @@ For each answer, construct replacement text:
 For each answer (one at a time):
 
 1. **Read spec fresh:**
+
    ```javascript
    const specContent = await Read(`specs/${slug}/02-specification.md`);
    ```
@@ -386,12 +406,13 @@ For each answer (one at a time):
 2. **Extract original question block** (exact match required)
 
 3. **Use Edit tool:**
+
    ```javascript
    Edit({
      file_path: `specs/${slug}/02-specification.md`,
-     old_string: "{exact original block}",
-     new_string: "{strikethrough format from 6c.1}"
-   })
+     old_string: '{exact original block}',
+     new_string: '{strikethrough format from 6c.1}',
+   });
    ```
 
 4. **Display progress:**
@@ -408,6 +429,7 @@ For each answer (one at a time):
 2. **Second failure:** Ask user to continue or stop
 
 **User prompt on failure:**
+
 ```
 ⚠️ Unable to Update Spec Automatically
 
@@ -421,12 +443,14 @@ How would you like to proceed?
 #### 6c.4: Save-As-You-Go Benefits
 
 **Why save after each answer:**
+
 - Recovery if interrupted
 - Resume capability (re-run detects "(RESOLVED)" marker)
 - Progress visibility
 - Error isolation
 
 **Recovery example:**
+
 ```
 Run 1: Answers questions 1, 2, 3 → Saved → Interrupted
 Run 2: Detects 1-3 resolved → Presents only 4, 5, 6 → Complete
@@ -439,11 +463,13 @@ After updating answers, determine whether to loop or proceed to Step 7.
 #### 6d.1: Execute Re-validation
 
 Run validation on updated spec:
+
 ```javascript
 const validationOutput = await SlashCommand(`/spec:validate specs/${slug}/02-specification.md`);
 ```
 
 Display output to user:
+
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Re-validating specification...
@@ -487,6 +513,7 @@ Extract key decision data:
   ```
 
 **High iteration warning (≥10 iterations):**
+
 ```
 ⚠️ Many Iterations Detected
 
@@ -513,12 +540,15 @@ while (true) {
 
 // ❌ WRONG: Cached questions
 const allQuestions = parseQuestions(spec);
-while (true) { /* use cached */ }
+while (true) {
+  /* use cached */
+}
 ```
 
 **Why:** Detects external edits, prevents duplicate prompts
 
 **Example:**
+
 ```
 Iteration 1: Questions [1,2,3,4,5]
 User manually edits spec to answer question 3
@@ -529,12 +559,14 @@ Iteration 2: Fresh read detects [2,4,5] (3 has "Answer:")
 #### 6d.5: Loop Exit Conditions
 
 Loop exits when:
+
 - All questions answered + no structural issues → Step 7
 - User chooses to stop (structural issues) → Exit with resume instructions
 - User chooses to stop (high iterations) → Exit with progress summary
 - User chooses to proceed with issues → Step 7
 
 **Loop flow diagram:**
+
 ```
 Validate → Parse → Questions remain?
            ├─ YES + no issues → Loop to 6a
@@ -561,10 +593,12 @@ Construct the summary header with current specification status:
 ```
 
 **Status Determination:**
+
 - **READY FOR DECOMPOSITION ✅** - Completeness score 10/10, all questions answered
 - **NEEDS WORK ⚠️** - Completeness score < 10/10 or structural issues remain
 
 **Question Count:**
+
 - Calculate total questions resolved across all iterations (from Step 6b recorded answers)
 - Only display this line if count > 0 (backward compatible with specs that had no questions)
 
@@ -579,6 +613,7 @@ Construct the summary header with current specification status:
 ```
 
 Extract from the specification file:
+
 - Read the "## Overview" section for feature description
 - Read the "## Technical Design" section for approach
 - Read the "## Implementation Phases" section for scope
@@ -592,6 +627,7 @@ Extract from the specification file:
 ```
 
 Include all decisions recorded during Step 2 (ideation clarifications) in this format:
+
 ```
 1. {Decision question} → {User's answer}
 2. {Decision question} → {User's answer}
@@ -608,6 +644,7 @@ Include all decisions recorded during Step 2 (ideation clarifications) in this f
 ```
 
 **Display Format:**
+
 ```
 1. {Question text} → {User's answer}
 2. {Question text} → {User's answer}
@@ -615,6 +652,7 @@ Include all decisions recorded during Step 2 (ideation clarifications) in this f
 ```
 
 **Data Source:**
+
 - Use the `recordedAnswers` array from Step 6b
 - Extract `questionNumber`, `questionText`, and answer (from `selectedOption` or `selectedOptions`)
 - Format answers:
@@ -623,6 +661,7 @@ Include all decisions recorded during Step 2 (ideation clarifications) in this f
   - **Custom answers:** Display the user's free-form text
 
 **Example Output:**
+
 ```markdown
 ### Resolved Questions (Step 6b: Spec Open Questions)
 
@@ -634,20 +673,21 @@ Include all decisions recorded during Step 2 (ideation clarifications) in this f
 ```
 
 **Conditional Logic:**
+
 ```javascript
 // Only show section if questions were resolved
 if (typeof totalQuestionsResolved !== 'undefined' && totalQuestionsResolved > 0) {
-  console.log("### Resolved Questions (Step 6b: Spec Open Questions)\n");
+  console.log('### Resolved Questions (Step 6b: Spec Open Questions)\n');
 
   for (const answer of recordedAnswers) {
     const answerText = answer.isMultiSelect
-      ? answer.selectedOptions.join(", ")
+      ? answer.selectedOptions.join(', ')
       : answer.selectedOption;
 
     console.log(`${answer.questionNumber}. ${answer.questionText} → ${answerText}`);
   }
 
-  console.log();  // Blank line after section
+  console.log(); // Blank line after section
 }
 ```
 
@@ -660,6 +700,7 @@ if (typeof totalQuestionsResolved !== 'undefined' && totalQuestionsResolved > 0)
 ```
 
 Include:
+
 - Overall validation status (✅ PASSED or ⚠️ NEEDS WORK)
 - List of complete sections
 - List of incomplete sections (if any)
@@ -674,11 +715,13 @@ Include:
 ### Remaining Decisions (if any)
 
 {List any decisions that still need to be made before implementation}
+
 - [ ] {Decision 1}
 - [ ] {Decision 2}
 ```
 
 If no remaining decisions:
+
 ```markdown
 ### Remaining Decisions
 
@@ -701,6 +744,7 @@ If no remaining decisions:
 **Customize based on validation status:**
 
 **If READY FOR DECOMPOSITION:**
+
 ```markdown
 ### Recommended Next Steps
 
@@ -711,6 +755,7 @@ If no remaining decisions:
 ```
 
 **If NEEDS WORK:**
+
 ```markdown
 ### Recommended Next Steps
 
@@ -730,6 +775,7 @@ If no remaining decisions:
 ```
 
 Include:
+
 - Items from Step 3 (specification plan) marked as "Deferred"
 - Follow-up specs identified during the process
 - Out-of-scope items that may be addressed later
@@ -755,17 +801,18 @@ Include:
 
 1. {Decision question} → {User's answer}
 2. {Decision question} → {User's answer}
-{... all Step 2 decisions}
+   {... all Step 2 decisions}
 
 ### Resolved Questions (Step 6b: Spec Open Questions) {only if totalQuestionsResolved > 0}
 
 1. {Question text} → {User's answer}
 2. {Question text} → {User's answer}
-{... all Step 6b resolved questions}
+   {... all Step 6b resolved questions}
 
 ### Validation Results
 
 {Summary of /spec:validate output}
+
 - ✅ {Completed sections}
 - ⚠️ {Incomplete sections}
 - ❌ {Missing sections}
@@ -794,6 +841,7 @@ Include:
 ```
 
 This will:
+
 1. Read your ideation document
 2. Walk you through clarification decisions
 3. Create a detailed specification using `/spec:create`
@@ -818,12 +866,14 @@ This will:
 **Added Steps 6a-6d:** Enhanced `/ideate-to-spec` with automatic open questions resolution workflow.
 
 **New Features:**
+
 - **Step 6a:** Extract and parse open questions from generated specifications
 - **Step 6b:** Present questions interactively with progress indicators and multi-select support
 - **Step 6c:** Update spec file with answers in strikethrough format (audit trail preservation)
 - **Step 6d:** Re-validate and loop until all questions resolved
 
 **Benefits:**
+
 - Ensures all specifications are implementation-ready before decomposition
 - Prevents incomplete specs from blocking development
 - Maintains audit trail of all question resolution decisions
@@ -831,6 +881,7 @@ This will:
 - Re-entrant (skips already-answered questions on re-run)
 
 **Integration:**
+
 - Seamlessly integrated between Step 6 (validation) and Step 7 (summary)
 - Automatically loops back for multi-iteration question resolution
 - Handles edge cases (malformed questions, external edits, validation failures)

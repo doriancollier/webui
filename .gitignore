@@ -10,3 +10,4 @@ coverage/
 .playwright-mcp
 .DS_Store
 .scratch/
+.eslintcache

@@ -6,7 +6,14 @@ import path from 'path';
 const execFileAsync = promisify(execFile);
 
 const EXCLUDED_DIRS = new Set([
-  'node_modules', '.git', 'dist', 'build', '.next', 'coverage', '__pycache__', '.cache',
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  '.next',
+  'coverage',
+  '__pycache__',
+  '.cache',
 ]);
 const MAX_FILES = 10_000;
 const CACHE_TTL = 5 * 60 * 1000;
@@ -17,7 +24,11 @@ class FileListService {
   async listFiles(cwd: string): Promise<{ files: string[]; truncated: boolean; total: number }> {
     const cached = this.cache.get(cwd);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-      return { files: cached.files, truncated: cached.files.length >= MAX_FILES, total: cached.files.length };
+      return {
+        files: cached.files,
+        truncated: cached.files.length >= MAX_FILES,
+        total: cached.files.length,
+      };
     }
 
     let files: string[];
@@ -35,10 +46,14 @@ class FileListService {
   }
 
   private async listViaGit(cwd: string): Promise<string[]> {
-    const { stdout } = await execFileAsync('git', ['ls-files', '--cached', '--others', '--exclude-standard'], {
-      cwd,
-      maxBuffer: 10 * 1024 * 1024,
-    });
+    const { stdout } = await execFileAsync(
+      'git',
+      ['ls-files', '--cached', '--others', '--exclude-standard'],
+      {
+        cwd,
+        maxBuffer: 10 * 1024 * 1024,
+      }
+    );
     return stdout.split('\n').filter(Boolean);
   }
 
@@ -51,7 +66,7 @@ class FileListService {
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
         if (EXCLUDED_DIRS.has(entry.name)) continue;
-        results.push(...await this.listViaReaddir(cwd, rel, depth + 1));
+        results.push(...(await this.listViaReaddir(cwd, rel, depth + 1)));
       } else {
         results.push(rel);
       }

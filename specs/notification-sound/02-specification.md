@@ -50,6 +50,7 @@ When using the chat UI, users often tab away while waiting for longer AI respons
 Generate a notification sound using an offline Node.js script that synthesizes a two-tone chime via Web Audio API (OfflineAudioContext) and exports it as WAV. The script lives in `apps/client/scripts/generate-notification-sound.ts` and outputs to `apps/client/public/notification.mp3`.
 
 **Sound characteristics:**
+
 - Duration: ~250ms
 - Two sine tones: 880Hz (A5) + 1047Hz (C6), slight stagger
 - Fast attack, exponential decay
@@ -71,6 +72,7 @@ setShowStatusBarSound: (v: boolean) => void;
 ```
 
 **Implementation:**
+
 - `enableNotificationSound`: default `true`, localStorage key `gateway-enable-notification-sound`, uses `!== 'false'` pattern (default on)
 - `showStatusBarSound`: default `true`, localStorage key `gateway-show-status-bar-sound`, uses `!== 'false'` pattern (default on)
 - Both included in `resetPreferences()` — reset to `true`, clear localStorage keys
@@ -98,6 +100,7 @@ export function playNotificationSound(): void {
 ```
 
 **Key design decisions:**
+
 - Singleton `Audio` instance — reused across plays, only one HTTP request ever
 - `currentTime = 0` — allows rapid re-triggering if needed
 - `.play().catch()` — handles autoplay policy rejection silently
@@ -122,11 +125,13 @@ case 'done': {
 ```
 
 **Why a callback (`onStreamingDone`) instead of direct playback:**
+
 - `use-chat-session` is a pure data hook — it shouldn't know about sounds or settings
 - The callback lets `ChatPanel` (the orchestrator) decide whether to play based on the Zustand setting
 - Same pattern used for `onTaskEvent` and `onSessionIdChange`
 
 Add to `UseChatSessionOptions`:
+
 ```typescript
 onStreamingDone?: () => void;
 ```
@@ -174,6 +179,7 @@ export function NotificationSoundItem({ enabled, onToggle }: NotificationSoundIt
 ```
 
 **Behavior:**
+
 - Shows `Volume2` icon when enabled, `VolumeOff` when disabled
 - Single click toggles `enableNotificationSound` in the store
 - No dropdown menu — just a simple toggle button
@@ -210,7 +216,10 @@ if (showStatusBarSound) {
 **Preferences tab** — add after "Task celebrations" toggle:
 
 ```tsx
-<SettingRow label="Notification sound" description="Play a sound when AI finishes responding (3s+ responses)">
+<SettingRow
+  label="Notification sound"
+  description="Play a sound when AI finishes responding (3s+ responses)"
+>
   <Switch checked={enableNotificationSound} onCheckedChange={setEnableNotificationSound} />
 </SettingRow>
 ```
@@ -237,18 +246,21 @@ if (showStatusBarSound) {
 ### Unit Tests
 
 **`lib/__tests__/notification-sound.test.ts`:**
+
 - `playNotificationSound()` creates an Audio element and calls `.play()`
 - `.play()` rejection is caught silently (no thrown errors)
 - Reuses the same Audio instance across multiple calls
 - Sets `currentTime = 0` before playing
 
 **`components/status/__tests__/NotificationSoundItem.test.tsx`:**
+
 - Renders `Volume2` icon when enabled
 - Renders `VolumeOff` icon when disabled
 - Calls `onToggle` when clicked
 - Has correct `aria-label` for each state
 
 **`components/settings/__tests__/SettingsDialog.test.tsx` (additions):**
+
 - "Notification sound" toggle appears in Preferences tab
 - "Show sound toggle" appears in Status Bar tab
 - Both toggles reflect store state
@@ -256,6 +268,7 @@ if (showStatusBarSound) {
 ### Integration Tests
 
 **`hooks/__tests__/use-chat-session.test.tsx` (additions):**
+
 - `onStreamingDone` callback fires when `'done'` event received and streaming lasted 3+ seconds
 - `onStreamingDone` does NOT fire for responses < 3 seconds
 - `onStreamingDone` does NOT fire if `streamStartTimeRef` is null

@@ -15,19 +15,19 @@ Copy this template when creating a new guide:
 
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
-| [Main config/entry] | `src/path/to/file.ts` |
-| [Types/schemas] | `src/path/to/types.ts` |
+| Concept             | Location                    |
+| ------------------- | --------------------------- |
+| [Main config/entry] | `src/path/to/file.ts`       |
+| [Types/schemas]     | `src/path/to/types.ts`      |
 | [Related component] | `src/path/to/component.tsx` |
 
 ## When to Use What
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
+| Scenario            | Approach               | Why      |
+| ------------------- | ---------------------- | -------- |
 | [Common scenario 1] | [Recommended approach] | [Reason] |
 | [Common scenario 2] | [Recommended approach] | [Reason] |
-| [Edge case] | [Alternative approach] | [Reason] |
+| [Edge case]         | [Alternative approach] | [Reason] |
 
 ## Core Patterns
 
@@ -41,8 +41,8 @@ import { something } from '@/path'
 
 // Complete, runnable example
 export function patternExample() {
-  // This approach ensures X because Y
-  return result
+// This approach ensures X because Y
+return result
 }
 \`\`\`
 
@@ -59,21 +59,21 @@ export function patternExample() {
 \`\`\`typescript
 // ❌ NEVER do this
 function badExample() {
-  dangerousThing()  // Causes [specific problem]
+dangerousThing() // Causes [specific problem]
 }
 
 // ✅ Do this instead
 function goodExample() {
-  safeThing()  // Ensures [specific benefit]
+safeThing() // Ensures [specific benefit]
 }
 \`\`\`
 
 \`\`\`typescript
 // ❌ Another common mistake
-const wrong = badApproach  // [Why it's wrong]
+const wrong = badApproach // [Why it's wrong]
 
 // ✅ Correct approach
-const right = goodApproach  // [Why it's right]
+const right = goodApproach // [Why it's right]
 \`\`\`
 
 ## [Procedural Section - e.g., "Adding a New X"]
@@ -120,6 +120,7 @@ const right = goodApproach  // [Why it's right]
 **Purpose:** Enable quick relevance assessment.
 
 **Good example:**
+
 ```markdown
 ## Overview
 
@@ -127,6 +128,7 @@ This project uses BetterAuth with Email OTP (passwordless) authentication. Users
 ```
 
 **Bad example:**
+
 ```markdown
 ## Overview
 
@@ -142,16 +144,17 @@ Authentication is an important part of any web application. There are many ways 
 **Purpose:** Map concepts to locations before explaining how things work.
 
 **Good example:**
+
 ```markdown
 ## Key Files
 
-| Concept | Location |
-|---------|----------|
-| Server config | `src/lib/auth.ts` |
-| Client utilities | `src/lib/auth-client.ts` |
-| DAL functions | `src/layers/shared/api/auth.ts` |
-| UI components | `src/layers/features/auth/` |
-| Protected routes | `src/app/(authenticated)/` |
+| Concept          | Location                        |
+| ---------------- | ------------------------------- |
+| Server config    | `src/lib/auth.ts`               |
+| Client utilities | `src/lib/auth-client.ts`        |
+| DAL functions    | `src/layers/shared/api/auth.ts` |
+| UI components    | `src/layers/features/auth/`     |
+| Protected routes | `src/app/(authenticated)/`      |
 ```
 
 **Why tables:** AI agents can scan vertically. Prose requires full reading.
@@ -163,28 +166,31 @@ Authentication is an important part of any web application. There are many ways 
 **Purpose:** Eliminate clarifying questions by covering common scenarios.
 
 **Good example:**
+
 ```markdown
 ## When to Use What
 
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| Page needs auth check | `requireAuthOrRedirect()` | Redirects to sign-in, guarantees user exists |
-| DAL function needs user | `requireAuth()` | Throws error, caller handles |
-| Optional personalization | `getCurrentUser()` | Returns null if not authenticated |
-| Client component needs session | `useSession()` hook | Reactive, updates on auth changes |
+| Scenario                       | Approach                  | Why                                          |
+| ------------------------------ | ------------------------- | -------------------------------------------- |
+| Page needs auth check          | `requireAuthOrRedirect()` | Redirects to sign-in, guarantees user exists |
+| DAL function needs user        | `requireAuth()`           | Throws error, caller handles                 |
+| Optional personalization       | `getCurrentUser()`        | Returns null if not authenticated            |
+| Client component needs session | `useSession()` hook       | Reactive, updates on auth changes            |
 ```
 
 **Good example (state management):**
+
 ```markdown
-| State Type | Tool | Example |
-|------------|------|---------|
-| Server state | TanStack Query | User data from API |
-| Complex client state | Zustand | Shopping cart, multi-step form |
-| Simple UI state | React useState | Modal open/close |
-| URL state | Next.js router | Filters, pagination |
+| State Type           | Tool           | Example                        |
+| -------------------- | -------------- | ------------------------------ |
+| Server state         | TanStack Query | User data from API             |
+| Complex client state | Zustand        | Shopping cart, multi-step form |
+| Simple UI state      | React useState | Modal open/close               |
+| URL state            | Next.js router | Filters, pagination            |
 ```
 
 **Bad example:**
+
 ```markdown
 ## When to Use What
 
@@ -200,36 +206,40 @@ You should use `requireAuth()` when you need to ensure the user is authenticated
 **Purpose:** Provide copy-paste ready code that follows project conventions.
 
 **Requirements:**
+
 1. Complete imports (when non-obvious)
 2. Runnable without modification
 3. Comments explain WHY, not WHAT
 4. Show the output/result type
 
 **Good example:**
+
 ```typescript
 // entities/user/api/queries.ts
-import { prisma } from '@/lib/prisma'
-import { requireAuth } from '@/layers/shared/api/auth'
-import type { User } from '../model/types'
+import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/layers/shared/api/auth';
+import type { User } from '../model/types';
 
 export async function getUserProfile(): Promise<User | null> {
-  const currentUser = await requireAuth()
+  const currentUser = await requireAuth();
 
   // Only fetch fields needed for profile display
   // Avoids exposing internal fields like passwordHash
   return prisma.user.findUnique({
     where: { id: currentUser.id },
-    select: { id: true, email: true, name: true, image: true }
-  })
+    select: { id: true, email: true, name: true, image: true },
+  });
 }
 ```
 
 **Bad example:**
+
 ```typescript
-const user = await prisma.user.findUnique({ where: { id } })
+const user = await prisma.user.findUnique({ where: { id } });
 ```
 
 **Why the first is better:**
+
 - Shows file location in comment
 - Includes imports
 - Shows return type
@@ -245,6 +255,7 @@ const user = await prisma.user.findUnique({ where: { id } })
 **Format:** Always show wrong → right with explanations.
 
 **Good example:**
+
 ```typescript
 // ❌ NEVER import prisma directly in server components
 import { prisma } from '@/lib/prisma'
@@ -264,6 +275,7 @@ export default async function Page() {
 ```
 
 **Good example (styling):**
+
 ```typescript
 // ❌ Don't use arbitrary values when tokens exist
 <div className="bg-[#1a1a1a] rounded-[16px]">
@@ -273,6 +285,7 @@ export default async function Page() {
 ```
 
 **Why both parts matter:**
+
 - ❌ shows what agents might generate (looks reasonable!)
 - ✅ shows the correct pattern
 - Comments explain the difference
@@ -284,10 +297,12 @@ export default async function Page() {
 **Purpose:** Guide step-by-step tasks with verification.
 
 **Good example:**
-```markdown
+
+````markdown
 ## Adding a New Protected Page
 
 1. **Create the page** under `src/app/(authenticated)/`:
+
    ```typescript
    // src/app/(authenticated)/my-feature/page.tsx
    import { requireAuthOrRedirect } from '@/layers/shared/api/auth'
@@ -297,11 +312,13 @@ export default async function Page() {
      return <h1>Welcome, {user.name}</h1>
    }
    ```
+````
 
 2. **Verify**: The `(authenticated)/layout.tsx` automatically protects this route. No additional configuration needed.
 
 3. **Test**: Visit `/my-feature` while signed out — you should be redirected to `/sign-in`.
-```
+
+````
 
 **Why verification matters:** Agents need to confirm success before proceeding. "No additional configuration needed" is valuable information.
 
@@ -337,7 +354,8 @@ export default async function Page() {
 onSuccess: () => {
   queryClient.invalidateQueries({ queryKey: ['users'] })
 }
-```
+````
+
 ```
 
 **Why exact messages:** AI agents can grep for the error and find the solution directly.
@@ -399,3 +417,4 @@ Prioritize fixing:
 2. Missing Anti-Patterns (prevents common mistakes)
 3. Incomplete code examples (agents copy these)
 4. Missing Key Files table (agents need locations)
+```

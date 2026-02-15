@@ -14,12 +14,14 @@ slug: smart-chat-scroll
 ## 1) Intent & Assumptions
 
 **Task brief:** Improve the chat message list scroll behavior to be natural and polished:
+
 1. Auto-scroll to bottom as new messages arrive when user is already at the bottom
 2. Preserve scroll position when user is NOT at bottom and new messages arrive
 3. Show a "new messages available" indicator (fade in/out) when scrolled up and new messages arrive
 4. Fix the scroll-to-bottom floating button — it currently scrolls with content instead of staying fixed above the input area
 
 **Assumptions:**
+
 - Virtual scrolling via `@tanstack/react-virtual` stays as the rendering strategy
 - Changes are scoped to `MessageList.tsx` and `ChatPanel.tsx` — no server changes
 - The "new messages" indicator and scroll-to-bottom button are two distinct UI elements
@@ -27,6 +29,7 @@ slug: smart-chat-scroll
 - No new dependencies needed — use native `IntersectionObserver` and existing libraries
 
 **Out of scope:**
+
 - Changing the message data model or streaming architecture
 - Infinite scroll / loading older messages on scroll-up
 - Unread message count badges in the sidebar
@@ -48,15 +51,18 @@ slug: smart-chat-scroll
 ## 3) Codebase Map
 
 **Primary Components/Modules:**
+
 - `apps/client/src/components/chat/MessageList.tsx` — Virtual scroll container, scroll detection, scroll-to-bottom button
 - `apps/client/src/components/chat/ChatPanel.tsx` — Parent flex layout, orchestrates MessageList + ChatInput
 
 **Shared Dependencies:**
+
 - `@tanstack/react-virtual` — `useVirtualizer` for virtual scrolling
 - `motion/react` — `AnimatePresence`, `motion.button` for scroll button animation
 - `lucide-react` — `ArrowDown` icon
 
 **Data Flow (scroll state):**
+
 ```
 Messages arrive (streaming/history)
   → setMessages() in useChatSession
@@ -67,6 +73,7 @@ Messages arrive (streaming/history)
 ```
 
 **CSS/Layout Structure:**
+
 ```
 ChatPanel (flex flex-col h-full)
 ├── MessageList (chat-scroll-area, flex-1, overflow-y-auto, relative)  ← SCROLL CONTAINER
@@ -79,6 +86,7 @@ ChatPanel (flex flex-col h-full)
 ```
 
 **Potential Blast Radius:**
+
 - **Direct changes:** `MessageList.tsx`, `ChatPanel.tsx`, possibly `index.css`
 - **No changes needed:** `MessageItem.tsx`, `use-chat-session.ts`, `ChatInput.tsx`
 - **Test files:** `apps/client/src/components/chat/__tests__/` (if MessageList tests exist)
@@ -106,6 +114,7 @@ ChatPanel (flex flex-col h-full)
 ### Potential Solutions
 
 **1. Move overlays to ChatPanel with absolute positioning (Recommended)**
+
 - Create a `relative` wrapper in ChatPanel around the MessageList area
 - Position scroll button and new-messages indicator as `absolute` children of the wrapper
 - Button uses `bottom-0` (sits at bottom of the wrapper, which is above TaskListPanel/ChatInput)
@@ -113,10 +122,12 @@ ChatPanel (flex flex-col h-full)
 - Cons: Requires MessageList to expose scroll state to parent via callback/ref
 
 **2. Use `position: sticky` on the button inside the scroll container**
+
 - Pros: Simpler, keeps button inside MessageList
 - Cons: `sticky` does NOT work when parent has `overflow: auto/scroll` (our exact case). This approach won't work.
 
 **3. Use `position: fixed` on the button**
+
 - Pros: Always visible regardless of scroll
 - Cons: Positioned relative to viewport, not the chat area. Breaks in Obsidian embedded mode. Hard to position above ChatInput dynamically.
 
@@ -130,11 +141,11 @@ ChatPanel (flex flex-col h-full)
 
 ### Animation Specs (from design system)
 
-| Element | Duration | Easing |
-|---------|----------|--------|
-| Scroll button appear/disappear | 150ms | ease-out |
-| New messages indicator fade in | 200ms | ease-out |
-| New messages indicator fade out | 150ms | ease-in |
+| Element                         | Duration | Easing   |
+| ------------------------------- | -------- | -------- |
+| Scroll button appear/disappear  | 150ms    | ease-out |
+| New messages indicator fade in  | 200ms    | ease-out |
+| New messages indicator fade out | 150ms    | ease-in  |
 
 ---
 

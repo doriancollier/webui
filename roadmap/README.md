@@ -9,6 +9,7 @@ A standalone visual roadmap management system using MoSCoW prioritization.
 ### View the Roadmap
 
 **Via Claude Code:**
+
 ```bash
 /roadmap:open     # Start server and open in browser
 /roadmap:status   # Check if server is running
@@ -16,6 +17,7 @@ A standalone visual roadmap management system using MoSCoW prioritization.
 ```
 
 **Manually:**
+
 ```bash
 cd roadmap
 python3 -m http.server 8765
@@ -38,25 +40,25 @@ python3 -m http.server 8765
 
 ## Files
 
-| File | Purpose |
-|------|---------|
+| File           | Purpose                             |
+| -------------- | ----------------------------------- |
 | `roadmap.json` | Main roadmap data (source of truth) |
-| `schema.json` | JSON Schema for validation |
-| `roadmap.html` | Visualization page |
-| `styles.css` | Calm Tech design system |
-| `scripts.js` | View rendering and interactions |
-| `scripts/` | Python utility scripts |
-| `specs/` | Symlink to project specs |
+| `schema.json`  | JSON Schema for validation          |
+| `roadmap.html` | Visualization page                  |
+| `styles.css`   | Calm Tech design system             |
+| `scripts.js`   | View rendering and interactions     |
+| `scripts/`     | Python utility scripts              |
+| `specs/`       | Symlink to project specs            |
 
 ## Visualization Features
 
 ### Three Views
 
-| View | Organization | Best For |
-|------|-------------|----------|
-| **Timeline** | Now / Next / Later columns | Sprint planning |
-| **Status** | Not Started / In Progress / Completed / On Hold | Progress tracking |
-| **Priority** | Must / Should / Could / Won't lists | Scope management |
+| View         | Organization                                    | Best For          |
+| ------------ | ----------------------------------------------- | ----------------- |
+| **Timeline** | Now / Next / Later columns                      | Sprint planning   |
+| **Status**   | Not Started / In Progress / Completed / On Hold | Progress tracking |
+| **Priority** | Must / Should / Could / Won't lists             | Scope management  |
 
 ### Interactive Elements
 
@@ -75,31 +77,31 @@ python3 -m http.server 8765
 
 ## MoSCoW Prioritization
 
-| Priority | Meaning | Guideline |
-|----------|---------|-----------|
-| **Must Have** | Critical for success | Keep <60% of effort |
-| **Should Have** | Important but not critical | Can delay if needed |
-| **Could Have** | Nice to have | If time permits |
-| **Won't Have** | Out of scope | Prevents scope creep |
+| Priority        | Meaning                    | Guideline            |
+| --------------- | -------------------------- | -------------------- |
+| **Must Have**   | Critical for success       | Keep <60% of effort  |
+| **Should Have** | Important but not critical | Can delay if needed  |
+| **Could Have**  | Nice to have               | If time permits      |
+| **Won't Have**  | Out of scope               | Prevents scope creep |
 
 ## Effort Estimation
 
 Story points on the Fibonacci scale:
 
-| Points | Scope | Time Estimate |
-|--------|-------|---------------|
-| 1-2 | Quick tasks | Hours |
-| 3-5 | Standard tasks | 1-2 days |
-| 8 | Larger tasks | 3-5 days |
-| 13 | Epic-sized | Should be broken down |
+| Points | Scope          | Time Estimate         |
+| ------ | -------------- | --------------------- |
+| 1-2    | Quick tasks    | Hours                 |
+| 3-5    | Standard tasks | 1-2 days              |
+| 8      | Larger tasks   | 3-5 days              |
+| 13     | Epic-sized     | Should be broken down |
 
 ## Time Horizons
 
-| Horizon | Timeframe | Focus |
-|---------|-----------|-------|
-| **Now** | Current sprint (2 weeks) | Active work |
-| **Next** | 2-4 weeks | Planned work |
-| **Later** | 1-3 months | Future work |
+| Horizon   | Timeframe                | Focus        |
+| --------- | ------------------------ | ------------ |
+| **Now**   | Current sprint (2 weeks) | Active work  |
+| **Next**  | 2-4 weeks                | Planned work |
+| **Later** | 1-3 months               | Future work  |
 
 ## Roadmap Item Schema
 
@@ -174,19 +176,19 @@ Rich context for generating better ideation prompts:
 
 ### Related Commands
 
-| Command | Purpose |
-|---------|---------|
-| `/roadmap:show` | Display summary |
-| `/roadmap:open` | Start server and open visualization |
-| `/roadmap:close` | Stop the server |
-| `/roadmap:status` | Check if server is running |
-| `/roadmap:add <title>` | Add a new item |
-| `/roadmap:enrich <item>` | Add ideationContext |
-| `/roadmap:prioritize` | Get priority suggestions |
-| `/roadmap:analyze` | Full health analysis |
-| `/roadmap:validate` | Validate JSON structure |
-| `/ideate --roadmap-id <uuid>` | Start ideation linked to item |
-| `/ideate --roadmap-item "title"` | Start ideation by title |
+| Command                          | Purpose                             |
+| -------------------------------- | ----------------------------------- |
+| `/roadmap:show`                  | Display summary                     |
+| `/roadmap:open`                  | Start server and open visualization |
+| `/roadmap:close`                 | Stop the server                     |
+| `/roadmap:status`                | Check if server is running          |
+| `/roadmap:add <title>`           | Add a new item                      |
+| `/roadmap:enrich <item>`         | Add ideationContext                 |
+| `/roadmap:prioritize`            | Get priority suggestions            |
+| `/roadmap:analyze`               | Full health analysis                |
+| `/roadmap:validate`              | Validate JSON structure             |
+| `/ideate --roadmap-id <uuid>`    | Start ideation linked to item       |
+| `/ideate --roadmap-item "title"` | Start ideation by title             |
 
 ### Related Skills
 
@@ -227,6 +229,7 @@ python3 roadmap/scripts/link_all_specs.py
 ```
 
 This script finds all spec directories and links them to roadmap items by matching:
+
 1. `roadmapId` in spec frontmatter
 2. Existing `linkedArtifacts.specSlug`
 3. Title similarity (fuzzy matching)

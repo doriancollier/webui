@@ -20,13 +20,15 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
   }[toolCall.status];
 
   return (
-    <div className="mt-px first:mt-1 rounded border bg-muted/50 text-sm transition-all duration-150 hover:border-border hover:shadow-sm">
+    <div className="bg-muted/50 hover:border-border mt-px rounded border text-sm transition-all duration-150 first:mt-1 hover:shadow-sm">
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-3 py-1"
       >
         {statusIcon}
-        <span className="font-mono text-3xs">{getToolLabel(toolCall.toolName, toolCall.input)}</span>
+        <span className="text-3xs font-mono">
+          {getToolLabel(toolCall.toolName, toolCall.input)}
+        </span>
         <motion.div
           animate={{ rotate: expanded ? 180 : 0 }}
           transition={{ type: 'spring', stiffness: 400, damping: 30 }}
@@ -44,12 +46,12 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
             transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="border-t px-3 pb-3 pt-1">
+            <div className="border-t px-3 pt-1 pb-3">
               {toolCall.input && (
                 <ToolArgumentsDisplay toolName={toolCall.toolName} input={toolCall.input} />
               )}
               {toolCall.result && (
-                <pre className="mt-2 text-xs overflow-x-auto border-t pt-2 whitespace-pre-wrap">
+                <pre className="mt-2 overflow-x-auto border-t pt-2 text-xs whitespace-pre-wrap">
                   {toolCall.result}
                 </pre>
               )}

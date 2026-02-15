@@ -1,11 +1,11 @@
 # Mobile Responsive Scale System
 
-| Field | Value |
-|-------|-------|
-| **Status** | Draft |
-| **Authors** | Dorian Collier |
-| **Date** | 2026-02-11 |
-| **App** | `apps/client` (@dorkos/client) |
+| Field          | Value                                                      |
+| -------------- | ---------------------------------------------------------- |
+| **Status**     | Draft                                                      |
+| **Authors**    | Dorian Collier                                             |
+| **Date**       | 2026-02-11                                                 |
+| **App**        | `apps/client` (@dorkos/client)                             |
 | **Depends on** | Tailwind CSS v4, React 19, Vite 6, shadcn/ui, Lucide icons |
 
 ---
@@ -62,13 +62,13 @@ The scale multiplier approach solves these problems at the design token level, s
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Role |
-|------------|---------|------|
-| Tailwind CSS | v4 | `@theme inline` directive for runtime CSS variable resolution |
-| Vite | 6.x | Dev server, CSS processing |
-| React | 19.x | Component rendering |
-| Lucide React | latest | Icon library (all ~55 icon instances) |
-| motion | latest | Existing animation library (must remain unaffected) |
+| Dependency   | Version | Role                                                          |
+| ------------ | ------- | ------------------------------------------------------------- |
+| Tailwind CSS | v4      | `@theme inline` directive for runtime CSS variable resolution |
+| Vite         | 6.x     | Dev server, CSS processing                                    |
+| React        | 19.x    | Component rendering                                           |
+| Lucide React | latest  | Icon library (all ~55 icon instances)                         |
+| motion       | latest  | Existing animation library (must remain unaffected)           |
 
 **Critical Tailwind v4 Requirement:** The `@theme inline` directive is mandatory. Standard `@theme` outputs `var(--font-size-sm)` in utility classes, which resolves at definition time in `:root` where the scale multiplier variables may not be contextually correct. `@theme inline` instead inlines the full `calc()` expression into each utility class, ensuring CSS variables resolve at runtime in the DOM context where the media query has taken effect.
 
@@ -81,6 +81,7 @@ The scale multiplier approach solves these problems at the design token level, s
 The system introduces three layers of CSS custom properties:
 
 **Layer 1 -- Configuration properties** (user-facing, tunable):
+
 ```css
 :root {
   --mobile-scale: 1.25;
@@ -92,11 +93,12 @@ The system introduces three layers of CSS custom properties:
 ```
 
 **Layer 2 -- Active multiplier properties** (internal, resolved by media query):
+
 ```css
 :root {
-  --_st: 1;  /* active text scale multiplier */
-  --_si: 1;  /* active icon scale multiplier */
-  --_sb: 1;  /* active button/interactive scale multiplier */
+  --_st: 1; /* active text scale multiplier */
+  --_si: 1; /* active icon scale multiplier */
+  --_sb: 1; /* active button/interactive scale multiplier */
 }
 
 @media (max-width: 767px) {
@@ -109,26 +111,27 @@ The system introduces three layers of CSS custom properties:
 ```
 
 **Layer 3 -- Tailwind design tokens** (consumed by utility classes via `@theme inline`):
+
 ```css
 @theme inline {
   /* Font sizes -- scaled by --_st */
-  --font-size-3xs: calc(0.625rem * var(--_st));    /* 10px desktop */
-  --font-size-2xs: calc(0.6875rem * var(--_st));   /* 11px desktop */
-  --font-size-xs: calc(0.75rem * var(--_st));      /* 12px desktop */
-  --font-size-sm: calc(0.875rem * var(--_st));     /* 14px desktop */
-  --font-size-base: calc(1rem * var(--_st));       /* 16px desktop */
-  --font-size-lg: calc(1.125rem * var(--_st));     /* 18px desktop */
-  --font-size-xl: calc(1.25rem * var(--_st));      /* 20px desktop */
+  --font-size-3xs: calc(0.625rem * var(--_st)); /* 10px desktop */
+  --font-size-2xs: calc(0.6875rem * var(--_st)); /* 11px desktop */
+  --font-size-xs: calc(0.75rem * var(--_st)); /* 12px desktop */
+  --font-size-sm: calc(0.875rem * var(--_st)); /* 14px desktop */
+  --font-size-base: calc(1rem * var(--_st)); /* 16px desktop */
+  --font-size-lg: calc(1.125rem * var(--_st)); /* 18px desktop */
+  --font-size-xl: calc(1.25rem * var(--_st)); /* 20px desktop */
 
   /* Icon sizes -- scaled by --_si (3 standard sizes) */
-  --size-icon-xs: calc(0.75rem * var(--_si));      /* 12px desktop */
-  --size-icon-sm: calc(1rem * var(--_si));         /* 16px desktop */
-  --size-icon-md: calc(1.25rem * var(--_si));      /* 20px desktop */
+  --size-icon-xs: calc(0.75rem * var(--_si)); /* 12px desktop */
+  --size-icon-sm: calc(1rem * var(--_si)); /* 16px desktop */
+  --size-icon-md: calc(1.25rem * var(--_si)); /* 20px desktop */
 
   /* Interactive element heights -- scaled by --_sb */
-  --size-btn-sm: calc(2rem * var(--_sb));          /* 32px desktop */
-  --size-btn-md: calc(2.25rem * var(--_sb));       /* 36px desktop */
-  --size-btn-lg: calc(2.5rem * var(--_sb));        /* 40px desktop */
+  --size-btn-sm: calc(2rem * var(--_sb)); /* 32px desktop */
+  --size-btn-md: calc(2.25rem * var(--_sb)); /* 36px desktop */
+  --size-btn-lg: calc(2.5rem * var(--_sb)); /* 40px desktop */
 }
 ```
 
@@ -139,6 +142,7 @@ The underscore-prefixed internal variables (`--_st`, `--_si`, `--_sb`) follow th
 The current `index.css` (line 4-30) already uses `@theme inline` for custom text sizes and color tokens. The existing custom text sizes must be replaced with the scaled versions:
 
 **Current** (`apps/client/src/index.css`, lines 5-8):
+
 ```css
 @theme inline {
   --text-2xs: 0.6875rem;
@@ -150,6 +154,7 @@ The current `index.css` (line 4-30) already uses `@theme inline` for custom text
 ```
 
 **New** (replace the text size entries, keep color tokens unchanged):
+
 ```css
 @theme inline {
   /* Scaled font sizes */
@@ -185,12 +190,12 @@ All ~55 icon instances are migrated from ad-hoc Tailwind size classes to three s
 
 #### Icon Size Mapping Table
 
-| Old Class | Old Size | New Token | Desktop Size | Mobile Size (x1.25) | Notes |
-|-----------|----------|-----------|-------------|---------------------|-------|
-| `h-2.5 w-2.5` | 10px | `--size-icon-xs` | 12px | 15px | Minor bump on desktop (10 -> 12) |
-| `h-3 w-3` | 12px | `--size-icon-xs` | 12px | 15px | No desktop change |
-| `h-3.5 w-3.5` | 14px | `--size-icon-sm` | 16px | 20px | Minor bump on desktop (14 -> 16) |
-| `h-4 w-4` | 16px | `--size-icon-md` | 20px | 25px | Bump on desktop (16 -> 20) |
+| Old Class     | Old Size | New Token        | Desktop Size | Mobile Size (x1.25) | Notes                            |
+| ------------- | -------- | ---------------- | ------------ | ------------------- | -------------------------------- |
+| `h-2.5 w-2.5` | 10px     | `--size-icon-xs` | 12px         | 15px                | Minor bump on desktop (10 -> 12) |
+| `h-3 w-3`     | 12px     | `--size-icon-xs` | 12px         | 15px                | No desktop change                |
+| `h-3.5 w-3.5` | 14px     | `--size-icon-sm` | 16px         | 20px                | Minor bump on desktop (14 -> 16) |
+| `h-4 w-4`     | 16px     | `--size-icon-md` | 20px         | 25px                | Bump on desktop (16 -> 20)       |
 
 #### Tailwind Usage Pattern
 
@@ -226,177 +231,183 @@ The following table lists every icon instance that must be migrated, organized b
 
 **`apps/client/src/App.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 85 | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 127 | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon        | Old Class | New Token               |
+| ---- | ----------- | --------- | ----------------------- |
+| 85   | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
+| 127  | `PanelLeft` | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/chat/ToolCallCard.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 16 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 17 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 18 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 19 | `X` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 35 | `ChevronDown` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon          | Old Class | New Token               |
+| ---- | ------------- | --------- | ----------------------- |
+| 16   | `Loader2`     | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 17   | `Loader2`     | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 18   | `Check`       | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 19   | `X`           | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 35   | `ChevronDown` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/chat/TaskListPanel.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 13 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 14 | `Circle` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 15 | `CheckCircle2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 39 | `Loader2` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 49 | `ChevronRight` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 49 | `ChevronDown` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 50 | `ListTodo` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon           | Old Class | New Token               |
+| ---- | -------------- | --------- | ----------------------- |
+| 13   | `Loader2`      | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 14   | `Circle`       | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 15   | `CheckCircle2` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 39   | `Loader2`      | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 49   | `ChevronRight` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 49   | `ChevronDown`  | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 50   | `ListTodo`     | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/chat/ToolApproval.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 59 | `Shield` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 80 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 87 | `X` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon     | Old Class | New Token               |
+| ---- | -------- | --------- | ----------------------- |
+| 59   | `Shield` | `h-4 w-4` | `size-[--size-icon-md]` |
+| 80   | `Check`  | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 87   | `X`      | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/chat/MessageItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 69 | `ChevronRight` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 71 | `span` (bullet) | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon            | Old Class | New Token               |
+| ---- | --------------- | --------- | ----------------------- |
+| 69   | `ChevronRight`  | `h-4 w-4` | `size-[--size-icon-md]` |
+| 71   | `span` (bullet) | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/chat/ChatInput.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 142 | `Square` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 157 | `CornerDownLeft` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| Line | Icon             | Old Class     | New Token               |
+| ---- | ---------------- | ------------- | ----------------------- |
+| 142  | `Square`         | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 157  | `CornerDownLeft` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
 
 **`apps/client/src/components/chat/MessageList.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 165 | `ArrowDown` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon        | Old Class | New Token               |
+| ---- | ----------- | --------- | ----------------------- |
+| 165  | `ArrowDown` | `h-4 w-4` | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/chat/QuestionPrompt.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 89 | `Check` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 139 | `MessageSquare` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 241 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon            | Old Class     | New Token               |
+| ---- | --------------- | ------------- | ----------------------- |
+| 89   | `Check`         | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 139  | `MessageSquare` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 241  | `Check`         | `h-3 w-3`     | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/sessions/SessionItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 50 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 52 | `Copy` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 98 | `ShieldOff` | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 116 | `ChevronDown` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| Line | Icon          | Old Class     | New Token               |
+| ---- | ------------- | ------------- | ----------------------- |
+| 50   | `Check`       | `h-3 w-3`     | `size-[--size-icon-xs]` |
+| 52   | `Copy`        | `h-3 w-3`     | `size-[--size-icon-xs]` |
+| 98   | `ShieldOff`   | `h-3 w-3`     | `size-[--size-icon-xs]` |
+| 116  | `ChevronDown` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
 
 **`apps/client/src/components/sessions/SessionSidebar.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 84 | `FolderOpen` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 93 | `PanelLeftClose` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 101 | `Plus` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 157 | `Route` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 170 | `HeartPulse` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 183 | `ThemeIcon` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| Line | Icon             | Old Class     | New Token               |
+| ---- | ---------------- | ------------- | ----------------------- |
+| 84   | `FolderOpen`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 93   | `PanelLeftClose` | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 101  | `Plus`           | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 157  | `Route`          | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 170  | `HeartPulse`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 183  | `ThemeIcon`      | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
 
 **`apps/client/src/components/sessions/DirectoryPicker.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 117 | `Clock` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 126 | `Folder` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 146 | `Eye` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 148 | `EyeOff` | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 163 | `Loader2` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 176 | `Folder` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 186 | `FolderOpen` | `h-4 w-4` | `size-[--size-icon-md]` |
-| 201 | `Folder` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon         | Old Class     | New Token               |
+| ---- | ------------ | ------------- | ----------------------- |
+| 117  | `Clock`      | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 126  | `Folder`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 146  | `Eye`        | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 148  | `EyeOff`     | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 163  | `Loader2`    | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 176  | `Folder`     | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 186  | `FolderOpen` | `h-4 w-4`     | `size-[--size-icon-md]` |
+| 201  | `Folder`     | `h-4 w-4`     | `size-[--size-icon-md]` |
 
 **`apps/client/src/components/status/CwdItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 11 | `Folder` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon     | Old Class | New Token               |
+| ---- | -------- | --------- | ----------------------- |
+| 11   | `Folder` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/ModelItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 34 | `Bot` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon  | Old Class | New Token               |
+| ---- | ----- | --------- | ----------------------- |
+| 34   | `Bot` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/ContextItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 13 | `Layers` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon     | Old Class | New Token               |
+| ---- | -------- | --------- | ----------------------- |
+| 13   | `Layers` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/PermissionModeItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 56 | `Icon` (dynamic) | `h-3 w-3` | `size-[--size-icon-xs]` |
-| 73 | `MIcon` (dynamic) | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon              | Old Class | New Token               |
+| ---- | ----------------- | --------- | ----------------------- |
+| 56   | `Icon` (dynamic)  | `h-3 w-3` | `size-[--size-icon-xs]` |
+| 73   | `MIcon` (dynamic) | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/status/CostItem.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 10 | `DollarSign` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon         | Old Class | New Token               |
+| ---- | ------------ | --------- | ----------------------- |
+| 10   | `DollarSign` | `h-3 w-3` | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/ui/dropdown-menu.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 60 | container span | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
-| 62 | `Check` | `h-3 w-3` | `size-[--size-icon-xs]` |
+| Line | Icon           | Old Class     | New Token               |
+| ---- | -------------- | ------------- | ----------------------- |
+| 60   | container span | `h-3.5 w-3.5` | `size-[--size-icon-sm]` |
+| 62   | `Check`        | `h-3 w-3`     | `size-[--size-icon-xs]` |
 
 **`apps/client/src/components/ui/path-breadcrumb.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 29 | chevron (dynamic) | `h-2.5 w-2.5` / `h-3 w-3` | `size-[--size-icon-xs]` for both |
+| Line | Icon              | Old Class                 | New Token                        |
+| ---- | ----------------- | ------------------------- | -------------------------------- |
+| 29   | chevron (dynamic) | `h-2.5 w-2.5` / `h-3 w-3` | `size-[--size-icon-xs]` for both |
 
 **`apps/client/src/components/ui/dialog.tsx`**
 
-| Line | Icon | Old Class | New Token |
-|------|------|-----------|-----------|
-| 42 | `X` | `h-4 w-4` | `size-[--size-icon-md]` |
+| Line | Icon | Old Class | New Token               |
+| ---- | ---- | --------- | ----------------------- |
+| 42   | `X`  | `h-4 w-4` | `size-[--size-icon-md]` |
 
 ### 6.4 Touch Target Fixes
 
 On mobile (< 768px), interactive elements must meet the 44px minimum touch target. This is achieved with mobile-only padding increases using Tailwind's responsive prefix `max-sm:` or a custom `@media` block.
 
 #### ChatInput.tsx (lines 139, 154)
+
 Stop and send buttons currently use `p-1.5` (padding: 6px). With icon-sm at 20px on mobile, the total is 32px -- still below 44px.
 
 **Fix:** Change `p-1.5` to `p-1.5 max-sm:p-2.5` on both button elements:
+
 ```tsx
 // Line 139 (stop button):
-className="rounded-md bg-destructive p-1.5 max-sm:p-2.5 text-destructive-foreground hover:bg-destructive/90"
+className =
+  'rounded-md bg-destructive p-1.5 max-sm:p-2.5 text-destructive-foreground hover:bg-destructive/90';
 
 // Line 154 (send button):
-className="rounded-md bg-primary p-1.5 max-sm:p-2.5 text-primary-foreground hover:bg-primary/90"
+className = 'rounded-md bg-primary p-1.5 max-sm:p-2.5 text-primary-foreground hover:bg-primary/90';
 ```
 
 #### SessionItem.tsx (line 44-55)
+
 The `CopyButton` uses `p-0.5` (2px padding). With icon-xs at 15px on mobile, total is 19px.
 
 **Fix:** Change to `p-0.5 max-sm:p-2`:
+
 ```tsx
-className="p-0.5 max-sm:p-2 rounded hover:bg-secondary/80 ..."
+className = 'p-0.5 max-sm:p-2 rounded hover:bg-secondary/80 ...';
 ```
 
 The expand toggle button (line 104) also uses `p-0.5`. Same fix:
+
 ```tsx
 className={cn(
   'p-0.5 max-sm:p-2 rounded transition-all duration-150',
@@ -405,21 +416,25 @@ className={cn(
 ```
 
 #### SessionSidebar.tsx (lines 153-184)
+
 Footer icon buttons use `p-1` (4px). With icon-sm at 20px on mobile, total is 28px.
 
 **Fix:** Change to `p-1 max-sm:p-2`:
+
 ```tsx
-className="p-1 max-sm:p-2 rounded-md text-muted-foreground/50 hover:text-muted-foreground ..."
+className = 'p-1 max-sm:p-2 rounded-md text-muted-foreground/50 hover:text-muted-foreground ...';
 ```
 
 Apply to: Relay status button (line 153), Heartbeat status button (line 166), Theme toggle button (line 178).
 
 #### DirectoryPicker.tsx (lines 139-150)
+
 Hidden folder toggle uses `p-1` (4px). With icon-sm at 20px on mobile, total is 28px.
 
 **Fix:** Change to `p-1 max-sm:p-2`.
 
 #### ToolApproval.tsx (lines 75-88)
+
 Approve/Deny buttons use `px-3 py-1` (4px vertical). With text-xs on mobile and icon, the vertical height is approximately 28px.
 
 **Fix:** Change to `px-3 py-1 max-sm:py-2` on both buttons.
@@ -435,7 +450,7 @@ Three hover-only patterns exist in the codebase that need mobile alternatives.
 **Mobile approach:** On mobile, always show timestamps at reduced opacity. No long-press needed -- timestamps are non-interactive metadata.
 
 ```tsx
-<span className="absolute right-4 top-1 text-xs text-muted-foreground/0 group-hover:text-muted-foreground/60 max-sm:text-muted-foreground/40 transition-colors duration-150">
+<span className="text-muted-foreground/0 group-hover:text-muted-foreground/60 max-sm:text-muted-foreground/40 absolute top-1 right-4 text-xs transition-colors duration-150">
   {formatTime(message.timestamp)}
 </span>
 ```
@@ -480,7 +495,7 @@ This requires importing `useIsMobile` in `SessionItem.tsx` (or passing `isMobile
 
 ```css
 @media (max-width: 767px) {
-  .msg-assistant div:has(> div > [data-streamdown="table"]) > div:first-child:not(:has(table)) {
+  .msg-assistant div:has(> div > [data-streamdown='table']) > div:first-child:not(:has(table)) {
     opacity: 0.6;
     pointer-events: auto;
   }
@@ -492,6 +507,7 @@ This requires importing `useIsMobile` in `SessionItem.tsx` (or passing `isMobile
 iOS Safari auto-zooms the viewport when a user focuses an input with `font-size < 16px`. The scale system naturally fixes this because `text-sm` on mobile resolves to `calc(0.875rem * 1.25) = 17.5px`, which is above the 16px threshold.
 
 **Verification points:**
+
 - `ChatInput.tsx` line 123: textarea uses `text-sm` class -- will be 17.5px on mobile. No change needed.
 - `QuestionPrompt.tsx` line 218: "Other" textarea uses `text-sm` class -- same resolution. No change needed.
 
@@ -499,7 +515,11 @@ If the user sets `--mobile-scale` below 1.143 (which would make `text-sm` < 16px
 
 ```css
 @media (max-width: 767px) {
-  textarea, input[type="text"], input[type="email"], input[type="search"], select {
+  textarea,
+  input[type='text'],
+  input[type='email'],
+  input[type='search'],
+  select {
     font-size: max(1rem, var(--font-size-sm)) !important;
   }
 }
@@ -512,11 +532,13 @@ If the user sets `--mobile-scale` below 1.143 (which would make `text-sm` < 16px
 **File:** `apps/client/index.html`, line 5
 
 **Current:**
+
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 ```
 
 **New:**
+
 ```html
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 ```
@@ -548,6 +570,7 @@ Add to `index.css`:
 ```
 
 Note: The `chat-input-container` and `sidebar-container` class names need to be added to the respective components:
+
 - `ChatPanel.tsx`: Add `chat-input-container` to the div wrapping `<ChatInput>`
 - `SessionSidebar.tsx`: The sidebar root div (line 72) gets `sidebar-container`
 
@@ -644,7 +667,11 @@ Additional mobile rules appended:
 ```css
 /* iOS input zoom prevention (fallback for low --mobile-scale values) */
 @media (max-width: 767px) {
-  textarea, input[type="text"], input[type="email"], input[type="search"], select {
+  textarea,
+  input[type='text'],
+  input[type='email'],
+  input[type='search'],
+  select {
     font-size: max(1rem, var(--font-size-sm, 0.875rem)) !important;
   }
 
@@ -654,7 +681,7 @@ Additional mobile rules appended:
   }
 
   /* Table action overlay -- always visible on mobile */
-  .msg-assistant div:has(> div > [data-streamdown="table"]) > div:first-child:not(:has(table)) {
+  .msg-assistant div:has(> div > [data-streamdown='table']) > div:first-child:not(:has(table)) {
     opacity: 0.6;
     pointer-events: auto;
   }
@@ -718,19 +745,19 @@ This hook is created but not wired into any components in Phase 1-3. It exists a
 
 ### 7.1 Mobile (< 768px)
 
-| Element | Desktop | Mobile (x1.25) |
-|---------|---------|----------------|
-| Body text (`text-sm`) | 14px | 17.5px |
-| Small text (`text-xs`) | 12px | 15px |
-| Tiny text (`text-2xs`) | 11px | 13.75px |
-| Micro text (`text-3xs`) | 10px | 12.5px |
-| Large text (`text-base`) | 16px | 20px |
-| Icon small (`icon-xs`) | 12px | 15px |
-| Icon medium (`icon-sm`) | 16px | 20px |
-| Icon large (`icon-md`) | 20px | 25px |
-| Button height sm | 32px | 40px |
-| Button height md | 36px | 45px |
-| Button height lg | 40px | 50px |
+| Element                  | Desktop | Mobile (x1.25) |
+| ------------------------ | ------- | -------------- |
+| Body text (`text-sm`)    | 14px    | 17.5px         |
+| Small text (`text-xs`)   | 12px    | 15px           |
+| Tiny text (`text-2xs`)   | 11px    | 13.75px        |
+| Micro text (`text-3xs`)  | 10px    | 12.5px         |
+| Large text (`text-base`) | 16px    | 20px           |
+| Icon small (`icon-xs`)   | 12px    | 15px           |
+| Icon medium (`icon-sm`)  | 16px    | 20px           |
+| Icon large (`icon-md`)   | 20px    | 25px           |
+| Button height sm         | 32px    | 40px           |
+| Button height md         | 36px    | 45px           |
+| Button height lg         | 40px    | 50px           |
 
 ### 7.2 Desktop (>= 768px)
 
@@ -744,11 +771,11 @@ The 16px-to-20px bump affects approximately 15 icon instances across `App.tsx`, 
 
 ### 7.3 Hover-Only Patterns
 
-| Pattern | Desktop | Mobile |
-|---------|---------|--------|
-| Message timestamps | Hidden, shown on hover | Always visible at 40% opacity |
+| Pattern                | Desktop                | Mobile                            |
+| ---------------------- | ---------------------- | --------------------------------- |
+| Message timestamps     | Hidden, shown on hover | Always visible at 40% opacity     |
 | Session expand chevron | Hidden, shown on hover | Hidden; tap session row to expand |
-| Table action icons | Hidden, shown on hover | Always visible at 60% opacity |
+| Table action icons     | Hidden, shown on hover | Always visible at 60% opacity     |
 
 ---
 
@@ -777,15 +804,15 @@ If these tests assert on specific CSS classes, update them. If they test behavio
 
 Manual visual verification across devices:
 
-| Device / Viewport | What to Check |
-|-------------------|---------------|
-| Desktop 1440px | No visual changes from current design |
-| Desktop 1024px | No visual changes |
-| Tablet 768px | Breakpoint boundary -- should match desktop (multipliers = 1) |
-| Mobile 767px | Scale system activates -- all text, icons, buttons 25% larger |
-| Mobile 375px (iPhone SE) | Smallest supported viewport -- verify no overflow |
-| Mobile 430px (iPhone Pro Max) | Verify safe area insets with notch |
-| Android 360px | Verify basic functionality |
+| Device / Viewport             | What to Check                                                 |
+| ----------------------------- | ------------------------------------------------------------- |
+| Desktop 1440px                | No visual changes from current design                         |
+| Desktop 1024px                | No visual changes                                             |
+| Tablet 768px                  | Breakpoint boundary -- should match desktop (multipliers = 1) |
+| Mobile 767px                  | Scale system activates -- all text, icons, buttons 25% larger |
+| Mobile 375px (iPhone SE)      | Smallest supported viewport -- verify no overflow             |
+| Mobile 430px (iPhone Pro Max) | Verify safe area insets with notch                            |
+| Android 360px                 | Verify basic functionality                                    |
 
 ### 8.4 Specific Mobile Checks
 
@@ -833,6 +860,7 @@ The entire scale system is pure CSS. No JavaScript runs to detect viewport size 
 ### 9.4 Layout Thrashing
 
 The `@theme inline` approach avoids layout thrashing because:
+
 - Tokens resolve at CSS parse time, not at JavaScript runtime
 - No `ResizeObserver` or `matchMedia` listeners are added
 - The existing `useIsMobile` hook (768px breakpoint) remains the only JS-side viewport listener
@@ -842,6 +870,7 @@ The `@theme inline` approach avoids layout thrashing because:
 ## 10. Security Considerations
 
 This feature is purely client-side CSS and does not:
+
 - Process user input in new ways
 - Add new API endpoints
 - Modify authentication or authorization flows
@@ -865,6 +894,7 @@ Add a "Mobile Responsive Scale" section to `guides/design-system.md`:
 ### 11.2 Inline Code Comments
 
 Add a comment block at the top of the scale system section in `index.css` explaining:
+
 - What the system does
 - How to adjust the scale factor
 - How to add per-category overrides
@@ -890,10 +920,12 @@ Icon Size Convention:
 **Estimated effort:** 1-2 hours
 
 **Files modified:**
+
 - `apps/client/src/index.css` -- Add scale system variables, mobile media query, update `@theme inline` tokens, add safe area CSS, overscroll-behavior, iOS input zoom fix, table action mobile override
 - `apps/client/index.html` -- Add `viewport-fit=cover` to viewport meta tag
 
 **Verification:**
+
 - `turbo build --filter=@dorkos/client` succeeds
 - Tailwind generates utility classes that include `calc()` expressions
 - Desktop appearance is unchanged (inspect computed styles, all multipliers = 1)
@@ -904,6 +936,7 @@ Icon Size Convention:
 **Estimated effort:** 2-3 hours
 
 **Files modified (15 files, ~55 replacements):**
+
 - `apps/client/src/App.tsx` (2 icons)
 - `apps/client/src/components/chat/ToolCallCard.tsx` (5 icons)
 - `apps/client/src/components/chat/TaskListPanel.tsx` (7 icons)
@@ -925,6 +958,7 @@ Icon Size Convention:
 - `apps/client/src/components/ui/dialog.tsx` (1 icon)
 
 **Verification:**
+
 - `turbo test` passes (update test assertions if needed)
 - Visual inspection: all icons render at expected sizes
 - No broken layouts from size changes
@@ -934,6 +968,7 @@ Icon Size Convention:
 **Estimated effort:** 2-3 hours
 
 **Files modified:**
+
 - `apps/client/src/components/chat/ChatInput.tsx` -- Mobile padding on stop/send buttons
 - `apps/client/src/components/sessions/SessionItem.tsx` -- Mobile padding on copy/expand buttons, hide chevron on mobile, tap-to-expand on mobile
 - `apps/client/src/components/sessions/SessionSidebar.tsx` -- Mobile padding on footer buttons
@@ -943,6 +978,7 @@ Icon Size Convention:
 - `apps/client/src/hooks/use-long-press.ts` -- New file (optional, for future use)
 
 **Verification:**
+
 - On mobile viewport, all buttons have >= 44px touch area
 - Message timestamps visible on mobile without interaction
 - Session items expandable via tap on mobile
@@ -953,11 +989,13 @@ Icon Size Convention:
 **Estimated effort:** 1-2 hours
 
 **Files modified:**
+
 - `apps/client/src/components/chat/ChatPanel.tsx` -- Add `chat-input-container` class to input wrapper
 - `apps/client/src/components/sessions/SessionSidebar.tsx` -- Add `sidebar-container` class to root div
 - `apps/client/src/components/chat/MessageList.tsx` -- Add `chat-scroll-area` class to scroll container
 
 **Verification:**
+
 - On iPhone simulator with notch: content not obscured, bottom elements have proper inset
 - Chat scroll does not trigger pull-to-refresh
 - Drawer bottom sheet respects safe area
@@ -967,6 +1005,7 @@ Icon Size Convention:
 **Estimated effort:** 2-3 hours
 
 **Activities:**
+
 - Run full test suite: `turbo test`
 - Visual testing across breakpoints (see Section 8.3)
 - iOS Safari testing on real device or simulator

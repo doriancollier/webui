@@ -44,7 +44,7 @@ describe('TunnelManager', () => {
     await manager.start({ port: 6942, basicAuth: 'user:pass' });
 
     expect(ngrok.forward).toHaveBeenCalledWith(
-      expect.objectContaining({ basic_auth: ['user:pass'] }),
+      expect.objectContaining({ basic_auth: ['user:pass'] })
     );
   });
 
@@ -52,9 +52,7 @@ describe('TunnelManager', () => {
     const ngrok = await import('@ngrok/ngrok');
     await manager.start({ port: 6942, domain: 'my.ngrok.app' });
 
-    expect(ngrok.forward).toHaveBeenCalledWith(
-      expect.objectContaining({ domain: 'my.ngrok.app' }),
-    );
+    expect(ngrok.forward).toHaveBeenCalledWith(expect.objectContaining({ domain: 'my.ngrok.app' }));
   });
 
   it('uses explicit authtoken over authtoken_from_env', async () => {

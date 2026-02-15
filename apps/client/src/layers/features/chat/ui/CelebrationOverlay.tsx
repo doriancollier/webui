@@ -49,7 +49,7 @@ export function CelebrationOverlay({ celebration, onComplete }: CelebrationOverl
       {isMajor && (
         <motion.div
           aria-hidden="true"
-          className="fixed inset-0 pointer-events-none z-50"
+          className="pointer-events-none fixed inset-0 z-50"
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.1 }}

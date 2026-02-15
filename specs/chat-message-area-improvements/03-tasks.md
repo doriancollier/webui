@@ -19,67 +19,79 @@ Currently, `handleSubmit` eagerly creates an empty assistant message (lines 177-
 **Implementation steps**:
 
 1. Add two new refs after line 84 (`currentPartsRef`):
+
    ```typescript
    const assistantIdRef = useRef<string>('');
    const assistantCreatedRef = useRef(false);
    ```
 
 2. In `handleSubmit`, **remove** the eager assistant message creation block (lines 177-185):
+
    ```typescript
    // REMOVE THIS BLOCK:
    const assistantId = crypto.randomUUID();
-   setMessages(prev => [...prev, {
-     id: assistantId,
-     role: 'assistant',
-     content: '',
-     toolCalls: [],
-     parts: [],
-     timestamp: new Date().toISOString(),
-   }]);
+   setMessages((prev) => [
+     ...prev,
+     {
+       id: assistantId,
+       role: 'assistant',
+       content: '',
+       toolCalls: [],
+       parts: [],
+       timestamp: new Date().toISOString(),
+     },
+   ]);
    ```
 
 3. Replace it with ref-based ID tracking:
+
    ```typescript
    assistantIdRef.current = crypto.randomUUID();
    assistantCreatedRef.current = false;
    ```
 
 4. Update the `transport.sendMessage` callback to use the ref:
+
    ```typescript
    await transport.sendMessage(
      sessionId,
      finalContent,
      (event) => handleStreamEvent(event.type, event.data, assistantIdRef.current),
      abortController.signal,
-     selectedCwd ?? undefined,
+     selectedCwd ?? undefined
    );
    ```
 
 5. Add an `ensureAssistantMessage` function inside the hook:
+
    ```typescript
    function ensureAssistantMessage(assistantId: string) {
      if (!assistantCreatedRef.current) {
        assistantCreatedRef.current = true;
-       setMessages(prev => [...prev, {
-         id: assistantId,
-         role: 'assistant',
-         content: '',
-         toolCalls: [],
-         parts: [],
-         timestamp: new Date().toISOString(),
-       }]);
+       setMessages((prev) => [
+         ...prev,
+         {
+           id: assistantId,
+           role: 'assistant',
+           content: '',
+           toolCalls: [],
+           parts: [],
+           timestamp: new Date().toISOString(),
+         },
+       ]);
      }
    }
    ```
 
 6. Call `ensureAssistantMessage(assistantId)` at the start of `updateAssistantMessage`:
+
    ```typescript
    function updateAssistantMessage(assistantId: string) {
      ensureAssistantMessage(assistantId);
-     const parts = currentPartsRef.current.map(p => ({ ...p }));
+     const parts = currentPartsRef.current.map((p) => ({ ...p }));
      const derived = deriveFromParts(parts);
-     setMessages(prev =>
-       prev.map(m =>
+     setMessages((prev) =>
+       prev.map((m) =>
          m.id === assistantId
            ? {
                ...m,
@@ -96,6 +108,7 @@ Currently, `handleSubmit` eagerly creates an empty assistant message (lines 177-
 7. Edge case: if `done` arrives without any content events, no assistant message is created. This is correct behavior.
 
 **Acceptance criteria**:
+
 - After `handleSubmit`, messages array contains only the user message (no empty assistant message)
 - Assistant message is created on first `text_delta`, `tool_call_start`, `approval_required`, or `question_prompt` event
 - Subsequent events update the message, not duplicate it
@@ -116,12 +129,15 @@ Add tests to verify the deferred assistant message creation behavior. Also updat
 **New tests to add**:
 
 1. **"does not create assistant message immediately on submit"**:
+
    ```typescript
    it('does not create assistant message immediately on submit', async () => {
      // sendMessage that hangs (never resolves) so we can inspect state mid-stream
      const sendMessage = vi.fn(() => new Promise<void>(() => {}));
      const transport = createMockTransport({ sendMessage });
-     const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+     const { result } = renderHook(() => useChatSession('s1'), {
+       wrapper: createWrapper(transport),
+     });
 
      await waitFor(() => expect(result.current.status).toBe('idle'));
 
@@ -130,7 +146,9 @@ Add tests to verify the deferred assistant message creation behavior. Also updat
      });
 
      // Start submit but don't await (it hangs)
-     act(() => { result.current.handleSubmit(); });
+     act(() => {
+       result.current.handleSubmit();
+     });
 
      // Only the user message should exist — no empty assistant message
      await waitFor(() => {
@@ -141,6 +159,7 @@ Add tests to verify the deferred assistant message creation behavior. Also updat
    ```
 
 2. **"creates assistant message on first text_delta"**:
+
    ```typescript
    it('creates assistant message on first text_delta', async () => {
      const sendMessage = createSendMessageMock([
@@ -148,41 +167,58 @@ Add tests to verify the deferred assistant message creation behavior. Also updat
        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
      ]);
      const transport = createMockTransport({ sendMessage });
-     const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+     const { result } = renderHook(() => useChatSession('s1'), {
+       wrapper: createWrapper(transport),
+     });
 
      await waitFor(() => expect(result.current.status).toBe('idle'));
 
-     await act(async () => { result.current.setInput('Hi'); });
-     await act(async () => { await result.current.handleSubmit(); });
+     await act(async () => {
+       result.current.setInput('Hi');
+     });
+     await act(async () => {
+       await result.current.handleSubmit();
+     });
 
-     const assistantMsg = result.current.messages.find(m => m.role === 'assistant');
+     const assistantMsg = result.current.messages.find((m) => m.role === 'assistant');
      expect(assistantMsg).toBeDefined();
      expect(assistantMsg?.content).toBe('Hello');
    });
    ```
 
 3. **"creates assistant message on first tool_call_start"**:
+
    ```typescript
    it('creates assistant message on first tool_call_start', async () => {
      const sendMessage = createSendMessageMock([
-       { type: 'tool_call_start', data: { toolCallId: 'tc1', toolName: 'Read', status: 'running' } } as StreamEvent,
+       {
+         type: 'tool_call_start',
+         data: { toolCallId: 'tc1', toolName: 'Read', status: 'running' },
+       } as StreamEvent,
        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
      ]);
      const transport = createMockTransport({ sendMessage });
-     const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+     const { result } = renderHook(() => useChatSession('s1'), {
+       wrapper: createWrapper(transport),
+     });
 
      await waitFor(() => expect(result.current.status).toBe('idle'));
 
-     await act(async () => { result.current.setInput('Read file'); });
-     await act(async () => { await result.current.handleSubmit(); });
+     await act(async () => {
+       result.current.setInput('Read file');
+     });
+     await act(async () => {
+       await result.current.handleSubmit();
+     });
 
-     const assistantMsg = result.current.messages.find(m => m.role === 'assistant');
+     const assistantMsg = result.current.messages.find((m) => m.role === 'assistant');
      expect(assistantMsg).toBeDefined();
      expect(assistantMsg?.toolCalls).toHaveLength(1);
    });
    ```
 
 4. **"does not create duplicate assistant messages on subsequent events"**:
+
    ```typescript
    it('does not create duplicate assistant messages on subsequent events', async () => {
      const sendMessage = createSendMessageMock([
@@ -191,32 +227,45 @@ Add tests to verify the deferred assistant message creation behavior. Also updat
        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
      ]);
      const transport = createMockTransport({ sendMessage });
-     const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+     const { result } = renderHook(() => useChatSession('s1'), {
+       wrapper: createWrapper(transport),
+     });
 
      await waitFor(() => expect(result.current.status).toBe('idle'));
 
-     await act(async () => { result.current.setInput('Hi'); });
-     await act(async () => { await result.current.handleSubmit(); });
+     await act(async () => {
+       result.current.setInput('Hi');
+     });
+     await act(async () => {
+       await result.current.handleSubmit();
+     });
 
-     const assistantMessages = result.current.messages.filter(m => m.role === 'assistant');
+     const assistantMessages = result.current.messages.filter((m) => m.role === 'assistant');
      expect(assistantMessages).toHaveLength(1);
      expect(assistantMessages[0].content).toBe('Hello World');
    });
    ```
 
 5. **"handles done without content gracefully"**:
+
    ```typescript
    it('handles done without content gracefully', async () => {
      const sendMessage = createSendMessageMock([
        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
      ]);
      const transport = createMockTransport({ sendMessage });
-     const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
+     const { result } = renderHook(() => useChatSession('s1'), {
+       wrapper: createWrapper(transport),
+     });
 
      await waitFor(() => expect(result.current.status).toBe('idle'));
 
-     await act(async () => { result.current.setInput('test'); });
-     await act(async () => { await result.current.handleSubmit(); });
+     await act(async () => {
+       result.current.setInput('test');
+     });
+     await act(async () => {
+       await result.current.handleSubmit();
+     });
 
      // Only user message exists — no assistant message created
      expect(result.current.messages).toHaveLength(1);
@@ -234,6 +283,7 @@ Add tests to verify the deferred assistant message creation behavior. Also updat
 - **"appends new messages after history"**: Currently expects 4 messages (2 history + 1 user + 1 assistant). This test sends `text_delta` so the assistant message will still be created. Verify this test still passes as-is.
 
 **Acceptance criteria**:
+
 - All 5 new tests pass
 - All existing tests pass (with any necessary updates for deferred creation)
 - No test assumes an empty assistant message exists before content events
@@ -254,12 +304,14 @@ The current `scrollTrigger` mechanism (lines 127-138) only fires on message coun
 **Implementation steps**:
 
 1. Add new refs after `isAtBottomRef` (line 52):
+
    ```typescript
    const contentRef = useRef<HTMLDivElement>(null);
    const rafIdRef = useRef<number>(0);
    ```
 
 2. **Remove** the `scrollTrigger` variable and its `useEffect` (lines 127-138):
+
    ```typescript
    // REMOVE:
    const lastMsg = messages[messages.length - 1];
@@ -272,6 +324,7 @@ The current `scrollTrigger` mechanism (lines 127-138) only fires on message coun
    ```
 
 3. **Add** the ResizeObserver `useEffect`:
+
    ```typescript
    useEffect(() => {
      const contentEl = contentRef.current;
@@ -298,6 +351,7 @@ The current `scrollTrigger` mechanism (lines 127-138) only fires on message coun
    ```
 
 4. **Add** a message-count-based scroll trigger as a fallback (ResizeObserver may not fire synchronously when a new virtual row appears):
+
    ```typescript
    useEffect(() => {
      if (messages.length > 0 && isAtBottomRef.current && !isTouchActiveRef.current) {
@@ -312,6 +366,7 @@ The current `scrollTrigger` mechanism (lines 127-138) only fires on message coun
    ```
 
 5. **Update** the `scrollToBottom` imperative method to use native scroll:
+
    ```typescript
    const scrollToBottom = useCallback(() => {
      const scrollEl = parentRef.current;
@@ -323,10 +378,13 @@ The current `scrollTrigger` mechanism (lines 127-138) only fires on message coun
 
 6. **Update** the IntersectionObserver re-show logic (lines 105-125) to use native scroll instead of `virtualizer.scrollToIndex`:
    Change:
+
    ```typescript
    virtualizer.scrollToIndex(messages.length - 1, { align: 'end' });
    ```
+
    To:
+
    ```typescript
    const scrollEl = parentRef.current;
    if (scrollEl) {
@@ -349,6 +407,7 @@ The current `scrollTrigger` mechanism (lines 127-138) only fires on message coun
 **Why native `scrollTop` instead of `virtualizer.scrollToOffset`**: The scroll container's `scrollHeight` includes everything rendered inside it, both the virtualizer items and the InferenceIndicator positioned below them. This naturally accounts for the indicator's height without needing to measure it separately.
 
 **Acceptance criteria**:
+
 - ResizeObserver is attached to the inner content div
 - Auto-scroll fires on any content height change (text growth, tool card expansion, status changes)
 - InferenceIndicator stays visible during streaming when user is at bottom
@@ -372,6 +431,7 @@ Add tests for the new ResizeObserver scroll mechanism and update the mock setup.
 **Mock setup changes**:
 
 1. Add a global `ResizeObserver` mock alongside the existing `IntersectionObserver` mock:
+
    ```typescript
    let resizeObserverCallback: (() => void) | null = null;
    globalThis.ResizeObserver = vi.fn().mockImplementation((callback: () => void) => {
@@ -406,6 +466,7 @@ Add tests for the new ResizeObserver scroll mechanism and update the mock setup.
 **New tests to add**:
 
 1. **"attaches ResizeObserver to content container"**:
+
    ```typescript
    it('attaches ResizeObserver to content container', () => {
      const messages: ChatMessage[] = [
@@ -430,6 +491,7 @@ Add tests for the new ResizeObserver scroll mechanism and update the mock setup.
    ```
 
 **Acceptance criteria**:
+
 - ResizeObserver mock is set up globally
 - Test verifies ResizeObserver is instantiated when MessageList renders with messages
 - Test verifies scrollToBottom imperative method works without error
@@ -454,6 +516,7 @@ Run the complete test suite and build to ensure no regressions.
 3. Run `npx turbo typecheck` and verify no type errors
 
 **Acceptance criteria**:
+
 - All tests pass (including new tests from Tasks 1.2 and 2.2)
 - Build completes successfully
 - No TypeScript errors

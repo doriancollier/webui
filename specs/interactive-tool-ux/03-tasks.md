@@ -22,8 +22,8 @@ function Kbd({ className, children, ...props }: React.ComponentProps<'kbd'>) {
   return (
     <kbd
       className={cn(
-        'pointer-events-none hidden md:inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground',
-        className,
+        'bg-muted text-muted-foreground pointer-events-none hidden h-5 items-center gap-1 rounded border px-1.5 font-mono text-[10px] font-medium select-none md:inline-flex',
+        className
       )}
       {...props}
     >
@@ -36,6 +36,7 @@ export { Kbd };
 ```
 
 #### Acceptance Criteria
+
 - [ ] Renders children text inside a `<kbd>` element
 - [ ] Has `hidden md:inline-flex` classes by default (hidden on mobile, inline-flex on md+)
 - [ ] Accepts and merges custom `className` via `cn()`
@@ -77,17 +78,21 @@ function truncate(value: string, max: number): string {
 
 /** Check if a string looks like a file path or command */
 function isPathOrCommand(value: string): boolean {
-  return /^[\/~.]/.test(value) || /\.(ts|tsx|js|jsx|json|md|py|rs|go|sh|yml|yaml|toml)$/.test(value);
+  return (
+    /^[\/~.]/.test(value) || /\.(ts|tsx|js|jsx|json|md|py|rs|go|sh|yml|yaml|toml)$/.test(value)
+  );
 }
 
 function renderValue(value: unknown, maxLen: number): React.ReactNode {
   if (value === null) return <span className="text-muted-foreground italic">null</span>;
-  if (typeof value === 'boolean') return <span className="text-amber-600 dark:text-amber-400">{String(value)}</span>;
-  if (typeof value === 'number') return <span className="text-blue-600 dark:text-blue-400">{value}</span>;
+  if (typeof value === 'boolean')
+    return <span className="text-amber-600 dark:text-amber-400">{String(value)}</span>;
+  if (typeof value === 'number')
+    return <span className="text-blue-600 dark:text-blue-400">{value}</span>;
   if (typeof value === 'string') {
     const truncated = truncate(value, maxLen);
     if (isPathOrCommand(value)) {
-      return <code className="text-xs bg-muted px-1 py-0.5 rounded break-all">{truncated}</code>;
+      return <code className="bg-muted rounded px-1 py-0.5 text-xs break-all">{truncated}</code>;
     }
     return <span className="break-words">{truncated}</span>;
   }
@@ -97,14 +102,12 @@ function renderValue(value: unknown, maxLen: number): React.ReactNode {
     return (
       <div className="space-y-0.5">
         {items.map((item, i) => (
-          <div key={i} className="pl-2 border-l border-border/40">
+          <div key={i} className="border-border/40 border-l pl-2">
             {renderValue(item, 80)}
           </div>
         ))}
         {remaining > 0 && (
-          <span className="text-muted-foreground text-xs italic">
-            \u2026 and {remaining} more
-          </span>
+          <span className="text-muted-foreground text-xs italic">\u2026 and {remaining} more</span>
         )}
       </div>
     );
@@ -115,7 +118,7 @@ function renderValue(value: unknown, maxLen: number): React.ReactNode {
     return (
       <div className="space-y-0.5">
         {entries.map(([k, v]) => (
-          <div key={k} className="pl-2 border-l border-border/40">
+          <div key={k} className="border-border/40 border-l pl-2">
             <span className="text-muted-foreground text-xs">{humanizeKey(k)}: </span>
             {typeof v === 'object' && v !== null ? (
               <span className="text-muted-foreground italic">{'{...'}</span>
@@ -138,11 +141,11 @@ export function ToolArgumentsDisplay({ toolName, input }: ToolArgumentsDisplayPr
     parsed = JSON.parse(input);
   } catch {
     // Fall back to raw <pre> on invalid JSON
-    return <pre className="text-xs overflow-x-auto whitespace-pre-wrap">{input}</pre>;
+    return <pre className="overflow-x-auto text-xs whitespace-pre-wrap">{input}</pre>;
   }
 
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    return <pre className="text-xs overflow-x-auto whitespace-pre-wrap">{input}</pre>;
+    return <pre className="overflow-x-auto text-xs whitespace-pre-wrap">{input}</pre>;
   }
 
   const entries = Object.entries(parsed);
@@ -152,12 +155,10 @@ export function ToolArgumentsDisplay({ toolName, input }: ToolArgumentsDisplayPr
     <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
       {entries.map(([key, value]) => (
         <div key={key} className="contents">
-          <dt className="text-muted-foreground font-medium py-0.5 whitespace-nowrap">
+          <dt className="text-muted-foreground py-0.5 font-medium whitespace-nowrap">
             {humanizeKey(key)}
           </dt>
-          <dd className="py-0.5 min-w-0">
-            {renderValue(value, 120)}
-          </dd>
+          <dd className="min-w-0 py-0.5">{renderValue(value, 120)}</dd>
         </div>
       ))}
     </dl>
@@ -166,6 +167,7 @@ export function ToolArgumentsDisplay({ toolName, input }: ToolArgumentsDisplayPr
 ```
 
 #### Acceptance Criteria
+
 - [ ] Parses JSON input and renders key-value pairs using a `<dl>` grid layout
 - [ ] Humanizes key names: `file_path` -> `File path`, `camelCase` -> `Camel case`
 - [ ] Truncates strings at 120 chars (top-level) and 80 chars (nested)
@@ -181,6 +183,7 @@ export function ToolArgumentsDisplay({ toolName, input }: ToolArgumentsDisplayPr
 ### Task 3: [P1] Replace raw JSON in ToolCallCard and ToolApproval with ToolArgumentsDisplay
 
 **Files**:
+
 - `apps/client/src/components/chat/ToolCallCard.tsx`
 - `apps/client/src/components/chat/ToolApproval.tsx`
 
@@ -192,16 +195,24 @@ Replace lines 48-57 (the `<pre>` block for `toolCall.input`) with:
 import { ToolArgumentsDisplay } from '../../lib/tool-arguments-formatter';
 
 // In the expanded content section, replace:
-{toolCall.input && (
-  <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
-    {(() => { try { return JSON.stringify(JSON.parse(toolCall.input), null, 2); } catch { return toolCall.input; } })()}
-  </pre>
-)}
+{
+  toolCall.input && (
+    <pre className="overflow-x-auto text-xs whitespace-pre-wrap">
+      {(() => {
+        try {
+          return JSON.stringify(JSON.parse(toolCall.input), null, 2);
+        } catch {
+          return toolCall.input;
+        }
+      })()}
+    </pre>
+  );
+}
 
 // With:
-{toolCall.input && (
-  <ToolArgumentsDisplay toolName={toolCall.toolName} input={toolCall.input} />
-)}
+{
+  toolCall.input && <ToolArgumentsDisplay toolName={toolCall.toolName} input={toolCall.input} />;
+}
 ```
 
 #### Changes to ToolApproval.tsx
@@ -212,21 +223,32 @@ Replace lines 63-72 (the `<pre>` block for `input`) with:
 import { ToolArgumentsDisplay } from '../../lib/tool-arguments-formatter';
 
 // Replace:
-{input && (
-  <pre className="text-xs overflow-x-auto mb-3 p-2 bg-muted rounded whitespace-pre-wrap">
-    {(() => { try { return JSON.stringify(JSON.parse(input), null, 2); } catch { return input; } })()}
-  </pre>
-)}
+{
+  input && (
+    <pre className="bg-muted mb-3 overflow-x-auto rounded p-2 text-xs whitespace-pre-wrap">
+      {(() => {
+        try {
+          return JSON.stringify(JSON.parse(input), null, 2);
+        } catch {
+          return input;
+        }
+      })()}
+    </pre>
+  );
+}
 
 // With:
-{input && (
-  <div className="mb-3 p-2 bg-muted rounded">
-    <ToolArgumentsDisplay toolName={toolName} input={input} />
-  </div>
-)}
+{
+  input && (
+    <div className="bg-muted mb-3 rounded p-2">
+      <ToolArgumentsDisplay toolName={toolName} input={input} />
+    </div>
+  );
+}
 ```
 
 #### Acceptance Criteria
+
 - [ ] ToolCallCard expanded view shows formatted key-value pairs instead of raw JSON
 - [ ] ToolApproval shows formatted key-value pairs instead of raw JSON
 - [ ] Invalid JSON still renders as plain text (fallback behavior preserved)
@@ -238,6 +260,7 @@ import { ToolArgumentsDisplay } from '../../lib/tool-arguments-formatter';
 ### Task 4: [P1] Add waiting-for-user state to useChatSession and InferenceIndicator
 
 **Files**:
+
 - `apps/client/src/hooks/use-chat-session.ts`
 - `apps/client/src/components/chat/InferenceIndicator.tsx`
 - `apps/client/src/components/chat/MessageList.tsx`
@@ -251,8 +274,8 @@ Add computed state after the `isTextStreaming` state:
 // Derive pending interactive tools from current messages
 const pendingInteractions = useMemo(() => {
   return messages
-    .flatMap(m => m.toolCalls || [])
-    .filter(tc => tc.interactiveType && tc.status === 'pending');
+    .flatMap((m) => m.toolCalls || [])
+    .filter((tc) => tc.interactiveType && tc.status === 'pending');
 }, [messages]);
 
 const activeInteraction = pendingInteractions[0] || null;
@@ -261,6 +284,7 @@ const waitingType = activeInteraction?.interactiveType || null;
 ```
 
 Update the return statement to include:
+
 ```tsx
 return {
   ...existingReturn,
@@ -273,6 +297,7 @@ return {
 #### Changes to InferenceIndicator.tsx
 
 Add new props:
+
 ```tsx
 interface InferenceIndicatorProps {
   status: 'idle' | 'streaming' | 'error';
@@ -280,8 +305,8 @@ interface InferenceIndicatorProps {
   estimatedTokens: number;
   theme?: IndicatorTheme;
   permissionMode?: PermissionMode;
-  isWaitingForUser?: boolean;        // NEW
-  waitingType?: 'approval' | 'question';  // NEW
+  isWaitingForUser?: boolean; // NEW
+  waitingType?: 'approval' | 'question'; // NEW
 }
 ```
 
@@ -293,21 +318,20 @@ import { Shield, MessageSquare } from 'lucide-react';
 // After the "Complete state" block and before the "Streaming state" block:
 if (status === 'streaming' && isWaitingForUser) {
   const WaitIcon = waitingType === 'approval' ? Shield : MessageSquare;
-  const waitMessage = waitingType === 'approval'
-    ? 'Waiting for your approval'
-    : 'Waiting for your answer';
+  const waitMessage =
+    waitingType === 'approval' ? 'Waiting for your approval' : 'Waiting for your answer';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex items-baseline gap-1.5 px-4 py-2 text-2xs"
+      className="text-2xs flex items-baseline gap-1.5 px-4 py-2"
       data-testid="inference-indicator-waiting"
     >
       <WaitIcon className="size-3 text-amber-500" />
       <span className="text-amber-600 dark:text-amber-400">{waitMessage}</span>
-      <span className="text-muted-foreground/70 tabular-nums ml-1.5">{elapsed}</span>
+      <span className="text-muted-foreground/70 ml-1.5 tabular-nums">{elapsed}</span>
     </motion.div>
   );
 }
@@ -316,6 +340,7 @@ if (status === 'streaming' && isWaitingForUser) {
 #### Changes to MessageList.tsx
 
 Add new props:
+
 ```tsx
 interface MessageListProps {
   // ...existing props
@@ -325,6 +350,7 @@ interface MessageListProps {
 ```
 
 Pass these to `InferenceIndicator`:
+
 ```tsx
 <InferenceIndicator
   status={status ?? 'idle'}
@@ -339,6 +365,7 @@ Pass these to `InferenceIndicator`:
 #### Changes to ChatPanel.tsx
 
 Extract new state from useChatSession and pass to MessageList:
+
 ```tsx
 const { ..., isWaitingForUser, waitingType, activeInteraction } = useChatSession(sessionId, { ... });
 
@@ -350,6 +377,7 @@ const { ..., isWaitingForUser, waitingType, activeInteraction } = useChatSession
 ```
 
 #### Acceptance Criteria
+
 - [ ] When an interactive tool is pending, InferenceIndicator shows "Waiting for your approval" (for approval) or "Waiting for your answer" (for question)
 - [ ] Waiting state uses amber color scheme and Shield/MessageSquare icon
 - [ ] Elapsed time is still shown during waiting state
@@ -363,6 +391,7 @@ const { ..., isWaitingForUser, waitingType, activeInteraction } = useChatSession
 ### Task 5: [P1] Phase 1 tests
 
 **Files**:
+
 - `apps/client/src/components/ui/__tests__/kbd.test.tsx` (new)
 - `apps/client/src/lib/__tests__/tool-arguments-formatter.test.tsx` (new)
 - `apps/client/src/components/chat/__tests__/InferenceIndicator.test.tsx` (new or updated)
@@ -531,6 +560,7 @@ describe('InferenceIndicator - waiting state', () => {
 ```
 
 #### Acceptance Criteria
+
 - [ ] All Kbd tests pass
 - [ ] All ToolArgumentsDisplay tests pass including edge cases
 - [ ] All InferenceIndicator waiting state tests pass
@@ -682,6 +712,7 @@ export function useInteractiveShortcuts({
 ```
 
 #### Acceptance Criteria
+
 - [ ] Returns early (no listener) when `activeInteraction` is null
 - [ ] Approval mode: Enter fires `onApprove`, Escape fires `onDeny`
 - [ ] Question mode: digit keys 1-9 fire `onToggleOption(digit - 1)`, arrows fire `onNavigateOption`, Space toggles, Enter submits
@@ -701,17 +732,19 @@ export function useInteractiveShortcuts({
 #### Changes
 
 1. Add `isActive` prop to `ToolApprovalProps`:
+
 ```tsx
 interface ToolApprovalProps {
   sessionId: string;
   toolCallId: string;
   toolName: string;
   input: string;
-  isActive?: boolean;  // NEW
+  isActive?: boolean; // NEW
 }
 ```
 
 2. Update the pending state container styling based on `isActive`:
+
 ```tsx
 // Active: prominent amber border with ring
 const activeClasses = isActive
@@ -725,6 +758,7 @@ const activeClasses = isActive
 ```
 
 3. Add Kbd hints next to buttons (only when `isActive`):
+
 ```tsx
 <button onClick={handleApprove} disabled={responding} className="...">
   <Check className="size-(--size-icon-xs)" /> Approve
@@ -737,6 +771,7 @@ const activeClasses = isActive
 ```
 
 #### Acceptance Criteria
+
 - [ ] `isActive=true` shows ring-2 amber ring/glow border styling
 - [ ] `isActive=false` shows muted border with reduced opacity
 - [ ] Kbd hints ("Enter", "Esc") are visible next to buttons when `isActive=true`
@@ -753,22 +788,25 @@ const activeClasses = isActive
 #### Changes
 
 1. Add `isActive` prop and `focusedIndex` state:
+
 ```tsx
 interface QuestionPromptProps {
   sessionId: string;
   toolCallId: string;
   questions: QuestionItem[];
   answers?: Record<string, string>;
-  isActive?: boolean;  // NEW
+  isActive?: boolean; // NEW
 }
 ```
 
 2. Add `focusedIndex` local state for keyboard navigation highlighting:
+
 ```tsx
 const [focusedIndex, setFocusedIndex] = useState(0);
 ```
 
 3. Add Kbd number hints next to each option (when `isActive`):
+
 ```tsx
 {q.options.map((opt, oIdx) => (
   <label key={oIdx} className={cn('...', oIdx === focusedIndex && isActive && 'ring-1 ring-amber-500/30')}>
@@ -783,6 +821,7 @@ const [focusedIndex, setFocusedIndex] = useState(0);
 ```
 
 4. Add Kbd hints for tab navigation when multiple questions:
+
 ```tsx
 <TabsTrigger ...>
   {isActive && idx > 0 && <Kbd>&larr;</Kbd>}
@@ -793,6 +832,7 @@ const [focusedIndex, setFocusedIndex] = useState(0);
 ```
 
 5. Add `useImperativeHandle` with ref:
+
 ```tsx
 import { forwardRef, useImperativeHandle } from 'react';
 
@@ -806,7 +846,10 @@ export interface QuestionPromptHandle {
 }
 
 export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptProps>(
-  function QuestionPrompt({ sessionId, toolCallId, questions, answers: preAnswers, isActive }, ref) {
+  function QuestionPrompt(
+    { sessionId, toolCallId, questions, answers: preAnswers, isActive },
+    ref
+  ) {
     // ... existing state ...
     const [focusedIndex, setFocusedIndex] = useState(0);
 
@@ -829,7 +872,7 @@ export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptPro
         setFocusedIndex(index);
       },
       navigateOption: (direction: 'up' | 'down') => {
-        setFocusedIndex(prev => {
+        setFocusedIndex((prev) => {
           if (direction === 'up') return prev > 0 ? prev - 1 : currentOptionCount - 1;
           return prev < currentOptionCount - 1 ? prev + 1 : 0;
         });
@@ -856,6 +899,7 @@ export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptPro
 ```
 
 6. Update container styling for active/inactive:
+
 ```tsx
 <div className={cn(
   'my-1 rounded border bg-amber-500/10 p-3 text-sm transition-colors duration-200',
@@ -864,13 +908,21 @@ export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptPro
 ```
 
 7. Add Kbd hint to Submit button:
+
 ```tsx
 <button onClick={handleSubmit} disabled={!isComplete() || submitting} className="...">
-  {submitting ? <>Submitting...</> : <><Check className="size-(--size-icon-xs)" /> Submit {isActive && <Kbd>Enter</Kbd>}</>}
+  {submitting ? (
+    <>Submitting...</>
+  ) : (
+    <>
+      <Check className="size-(--size-icon-xs)" /> Submit {isActive && <Kbd>Enter</Kbd>}
+    </>
+  )}
 </button>
 ```
 
 #### Acceptance Criteria
+
 - [ ] `isActive=true` shows ring-2 amber ring/glow
 - [ ] `isActive=false` shows muted styling
 - [ ] Kbd number hints (1-9) render next to options when isActive
@@ -899,25 +951,27 @@ export interface ToolApprovalHandle {
   deny: () => void;
 }
 
-export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(
-  function ToolApproval({ sessionId, toolCallId, toolName, input, isActive }, ref) {
-    // ... existing state ...
+export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(function ToolApproval(
+  { sessionId, toolCallId, toolName, input, isActive },
+  ref
+) {
+  // ... existing state ...
 
-    useImperativeHandle(ref, () => ({
-      approve: () => {
-        if (!responding && !decided) handleApprove();
-      },
-      deny: () => {
-        if (!responding && !decided) handleDeny();
-      },
-    }));
+  useImperativeHandle(ref, () => ({
+    approve: () => {
+      if (!responding && !decided) handleApprove();
+    },
+    deny: () => {
+      if (!responding && !decided) handleDeny();
+    },
+  }));
 
-    // ... rest of component unchanged ...
-  }
-);
+  // ... rest of component unchanged ...
+});
 ```
 
 #### Acceptance Criteria
+
 - [ ] ToolApproval is wrapped with forwardRef
 - [ ] ToolApprovalHandle interface is exported
 - [ ] approve() calls handleApprove when not already responding/decided
@@ -930,6 +984,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(
 ### Task 10: [P2] Wire activeToolCallId and useInteractiveShortcuts in ChatPanel
 
 **Files**:
+
 - `apps/client/src/components/chat/ChatPanel.tsx`
 - `apps/client/src/components/chat/MessageList.tsx`
 - `apps/client/src/components/chat/MessageItem.tsx`
@@ -945,9 +1000,9 @@ interface MessageItemProps {
   sessionId: string;
   isNew?: boolean;
   isStreaming?: boolean;
-  activeToolCallId?: string | null;  // NEW
-  toolApprovalRef?: React.RefObject<ToolApprovalHandle | null>;  // NEW
-  questionPromptRef?: React.RefObject<QuestionPromptHandle | null>;  // NEW
+  activeToolCallId?: string | null; // NEW
+  toolApprovalRef?: React.RefObject<ToolApprovalHandle | null>; // NEW
+  questionPromptRef?: React.RefObject<QuestionPromptHandle | null>; // NEW
 }
 
 // In the rendering of tool_call parts:
@@ -1003,7 +1058,7 @@ interface MessageListProps {
   activeToolCallId={activeToolCallId}
   toolApprovalRef={toolApprovalRef}
   questionPromptRef={questionPromptRef}
-/>
+/>;
 ```
 
 #### Changes to ChatPanel.tsx
@@ -1051,10 +1106,11 @@ useInteractiveShortcuts({
   activeToolCallId={activeToolCallId}
   toolApprovalRef={toolApprovalRef}
   questionPromptRef={questionPromptRef}
-/>
+/>;
 ```
 
 #### Acceptance Criteria
+
 - [ ] `activeToolCallId` flows from ChatPanel -> MessageList -> MessageItem
 - [ ] Only the active ToolApproval/QuestionPrompt receives the ref
 - [ ] `isActive` prop is correctly computed as `part.toolCallId === activeToolCallId`
@@ -1068,6 +1124,7 @@ useInteractiveShortcuts({
 ### Task 11: [P2] Phase 2 tests
 
 **Files**:
+
 - `apps/client/src/hooks/__tests__/use-interactive-shortcuts.test.ts` (new)
 - `apps/client/src/components/chat/__tests__/ToolApproval.test.tsx` (new)
 - `apps/client/src/components/chat/__tests__/QuestionPrompt.test.tsx` (updated)
@@ -1090,62 +1147,74 @@ describe('useInteractiveShortcuts', () => {
 
   it('does not attach listener when activeInteraction is null', () => {
     const onApprove = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: null,
-      onApprove,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: null,
+        onApprove,
+      })
+    );
     fireEvent.keyDown(document, { key: 'Enter' });
     expect(onApprove).not.toHaveBeenCalled();
   });
 
   it('fires onApprove on Enter for approval type', () => {
     const onApprove = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'approval', toolCallId: 'tc1' },
-      onApprove,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'approval', toolCallId: 'tc1' },
+        onApprove,
+      })
+    );
     fireEvent.keyDown(document, { key: 'Enter' });
     expect(onApprove).toHaveBeenCalledOnce();
   });
 
   it('fires onDeny on Escape for approval type', () => {
     const onDeny = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'approval', toolCallId: 'tc1' },
-      onDeny,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'approval', toolCallId: 'tc1' },
+        onDeny,
+      })
+    );
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(onDeny).toHaveBeenCalledOnce();
   });
 
   it('fires onToggleOption with digit key for question type', () => {
     const onToggleOption = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'question', toolCallId: 'tc1' },
-      onToggleOption,
-      optionCount: 5,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'question', toolCallId: 'tc1' },
+        onToggleOption,
+        optionCount: 5,
+      })
+    );
     fireEvent.keyDown(document, { key: '3' });
     expect(onToggleOption).toHaveBeenCalledWith(2); // 0-indexed
   });
 
   it('ignores digit key beyond optionCount', () => {
     const onToggleOption = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'question', toolCallId: 'tc1' },
-      onToggleOption,
-      optionCount: 2,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'question', toolCallId: 'tc1' },
+        onToggleOption,
+        optionCount: 2,
+      })
+    );
     fireEvent.keyDown(document, { key: '5' });
     expect(onToggleOption).not.toHaveBeenCalled();
   });
 
   it('fires onNavigateOption on arrow keys for question type', () => {
     const onNavigateOption = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'question', toolCallId: 'tc1' },
-      onNavigateOption,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'question', toolCallId: 'tc1' },
+        onNavigateOption,
+      })
+    );
     fireEvent.keyDown(document, { key: 'ArrowDown' });
     expect(onNavigateOption).toHaveBeenCalledWith('down');
     fireEvent.keyDown(document, { key: 'ArrowUp' });
@@ -1154,10 +1223,12 @@ describe('useInteractiveShortcuts', () => {
 
   it('fires onNavigateQuestion on left/right arrows', () => {
     const onNavigateQuestion = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'question', toolCallId: 'tc1' },
-      onNavigateQuestion,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'question', toolCallId: 'tc1' },
+        onNavigateQuestion,
+      })
+    );
     fireEvent.keyDown(document, { key: 'ArrowLeft' });
     expect(onNavigateQuestion).toHaveBeenCalledWith('prev');
     fireEvent.keyDown(document, { key: 'ArrowRight' });
@@ -1166,10 +1237,12 @@ describe('useInteractiveShortcuts', () => {
 
   it('fires onNavigateQuestion on [ and ] keys', () => {
     const onNavigateQuestion = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'question', toolCallId: 'tc1' },
-      onNavigateQuestion,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'question', toolCallId: 'tc1' },
+        onNavigateQuestion,
+      })
+    );
     fireEvent.keyDown(document, { key: '[' });
     expect(onNavigateQuestion).toHaveBeenCalledWith('prev');
     fireEvent.keyDown(document, { key: ']' });
@@ -1178,20 +1251,24 @@ describe('useInteractiveShortcuts', () => {
 
   it('fires onSubmit on Enter for question type', () => {
     const onSubmit = vi.fn();
-    renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'question', toolCallId: 'tc1' },
-      onSubmit,
-    }));
+    renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'question', toolCallId: 'tc1' },
+        onSubmit,
+      })
+    );
     fireEvent.keyDown(document, { key: 'Enter' });
     expect(onSubmit).toHaveBeenCalledOnce();
   });
 
   it('cleans up listener on unmount', () => {
     const onApprove = vi.fn();
-    const { unmount } = renderHook(() => useInteractiveShortcuts({
-      activeInteraction: { type: 'approval', toolCallId: 'tc1' },
-      onApprove,
-    }));
+    const { unmount } = renderHook(() =>
+      useInteractiveShortcuts({
+        activeInteraction: { type: 'approval', toolCallId: 'tc1' },
+        onApprove,
+      })
+    );
     unmount();
     fireEvent.keyDown(document, { key: 'Enter' });
     expect(onApprove).not.toHaveBeenCalled();
@@ -1220,13 +1297,20 @@ vi.mock('../../../contexts/TransportContext', () => ({
 }));
 
 // Mock motion/react
-vi.mock('motion/react', () => new Proxy({}, {
-  get: (_, prop) => {
-    if (prop === 'motion') return new Proxy({}, { get: (_, tag) => tag });
-    if (prop === 'AnimatePresence') return ({ children }: any) => children;
-    return undefined;
-  },
-}));
+vi.mock(
+  'motion/react',
+  () =>
+    new Proxy(
+      {},
+      {
+        get: (_, prop) => {
+          if (prop === 'motion') return new Proxy({}, { get: (_, tag) => tag });
+          if (prop === 'AnimatePresence') return ({ children }: any) => children;
+          return undefined;
+        },
+      }
+    )
+);
 
 describe('ToolApproval', () => {
   const defaultProps = {
@@ -1264,6 +1348,7 @@ describe('ToolApproval', () => {
 ```
 
 #### Acceptance Criteria
+
 - [ ] All useInteractiveShortcuts tests pass
 - [ ] All ToolApproval tests pass
 - [ ] Tests verify keyboard listener lifecycle (attach/detach)
@@ -1279,6 +1364,7 @@ describe('ToolApproval', () => {
 **File**: `guides/keyboard-shortcuts.md` (new)
 
 Create a developer guide covering:
+
 1. Focus state machine (4 states: IDLE/TYPING, STREAMING, WAITING_FOR_APPROVAL, WAITING_FOR_ANSWER)
 2. `useInteractiveShortcuts` hook API and usage
 3. How to add shortcuts for new interactive tool types
@@ -1289,11 +1375,13 @@ Create a developer guide covering:
 **File**: `guides/interactive-tools.md` (updated)
 
 Add a new section on keyboard shortcuts:
+
 - How keyboard shortcuts integrate with the interactive tool data flow
 - The `isActive` prop pattern for multi-tool scenarios
 - The imperative handle pattern for QuestionPrompt/ToolApproval
 
 #### Acceptance Criteria
+
 - [ ] `guides/keyboard-shortcuts.md` exists with all 6 sections
 - [ ] `guides/interactive-tools.md` has new keyboard shortcuts section
 - [ ] Code examples are correct and match actual implementation
@@ -1315,6 +1403,7 @@ Verify and fix:
 4. **Auto-scroll**: When a new interactive tool becomes active, it should be visible (existing auto-scroll to bottom covers most cases)
 
 #### Acceptance Criteria
+
 - [ ] Active/inactive transitions are smooth (no flicker)
 - [ ] Multi-tool approval flow works correctly
 - [ ] All edge cases handled gracefully

@@ -16,7 +16,7 @@ export function useGitStatus(cwd: string | null) {
 }
 
 export function isGitStatusOk(
-  data: GitStatusResponse | GitStatusError | undefined,
+  data: GitStatusResponse | GitStatusError | undefined
 ): data is GitStatusResponse {
   return !!data && !('error' in data);
 }

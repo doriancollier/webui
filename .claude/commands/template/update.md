@@ -1,6 +1,6 @@
 ---
 description: Update project from upstream template with selective file updates and conflict resolution
-argument-hint: "[all|harness|guides|selective] [--dry-run] [--verbose] [--force] [--version <tag>]"
+argument-hint: '[all|harness|guides|selective] [--dry-run] [--verbose] [--force] [--version <tag>]'
 allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, Task
 ---
 
@@ -14,24 +14,25 @@ Parse `$ARGUMENTS` for these options:
 
 ### Scope (mutually exclusive, default: interactive selection)
 
-| Scope | Description |
-|-------|-------------|
-| *(none)* | Interactive scope selection |
-| `all` | Update everything (harness + guides + roadmap) |
-| `harness` | Update `.claude/` directory only |
-| `guides` | Update `guides/` only |
-| `selective` | Choose individual files to update |
+| Scope       | Description                                    |
+| ----------- | ---------------------------------------------- |
+| _(none)_    | Interactive scope selection                    |
+| `all`       | Update everything (harness + guides + roadmap) |
+| `harness`   | Update `.claude/` directory only               |
+| `guides`    | Update `guides/` only                          |
+| `selective` | Choose individual files to update              |
 
 ### Flags
 
-| Flag | Effect |
-|------|--------|
-| `--dry-run` | Show what would change without applying (no files written, no git operations, no manifest updates) |
-| `--verbose` | Show detailed diffs for each file, before/after for JSON, merge reasoning |
-| `--force` | Skip confirmation prompts |
-| `--version <tag>` | Update to specific version (default: latest) |
+| Flag              | Effect                                                                                             |
+| ----------------- | -------------------------------------------------------------------------------------------------- |
+| `--dry-run`       | Show what would change without applying (no files written, no git operations, no manifest updates) |
+| `--verbose`       | Show detailed diffs for each file, before/after for JSON, merge reasoning                          |
+| `--force`         | Skip confirmation prompts                                                                          |
+| `--version <tag>` | Update to specific version (default: latest)                                                       |
 
 **Flag combinations:**
+
 - `--dry-run` alone: Shows summary of planned changes
 - `--verbose` alone: Shows diffs while making changes
 - `--dry-run --verbose`: Shows detailed diffs without making any changes (safest preview)
@@ -91,6 +92,7 @@ Parse `$ARGUMENTS` for these options:
 When `--dry-run` is present, **NO changes are made to the filesystem or git**. All analysis and planning steps execute normally, but actions are simulated.
 
 **What dry-run DOES:**
+
 - Fetches and analyzes template files (read-only)
 - Detects version differences
 - Categorizes files by update strategy
@@ -98,6 +100,7 @@ When `--dry-run` is present, **NO changes are made to the filesystem or git**. A
 - Displays comprehensive summary of planned changes
 
 **What dry-run DOES NOT:**
+
 - Create backup branches
 - Write any files to disk
 - Update `.template.json` manifest
@@ -105,6 +108,7 @@ When `--dry-run` is present, **NO changes are made to the filesystem or git**. A
 - Modify working directory in any way
 
 **Output language in dry-run:**
+
 - Use "Would update..." instead of "Updating..."
 - Use "Would create..." instead of "Creating..."
 - Use "Would remove..." instead of "Removing..."
@@ -117,6 +121,7 @@ When `--verbose` is present, show detailed information about each operation.
 **Verbose output includes:**
 
 1. **File diffs** (unified diff format):
+
    ```diff
    --- a/.claude/commands/template/check.md
    +++ b/.claude/commands/template/check.md
@@ -129,6 +134,7 @@ When `--verbose` is present, show detailed information about each operation.
    ```
 
 2. **JSON file changes** (before/after):
+
    ```
    [VERBOSE] JSON changes: package.json
    ─────────────────────────────────────
@@ -142,6 +148,7 @@ When `--verbose` is present, show detailed information about each operation.
    ```
 
 3. **Merge decision reasoning**:
+
    ```
    [VERBOSE] Merge analysis: CLAUDE.md
    ─────────────────────────────────────
@@ -252,6 +259,7 @@ To apply without prompts:
 ### Step 1.1: Parse Arguments
 
 Extract from `$ARGUMENTS`:
+
 - **Scope**: `all`, `harness`, `guides`, `selective`, or none (interactive)
 - **Flags**: `--dry-run`, `--verbose`, `--force`, `--version <tag>`
 
@@ -264,6 +272,7 @@ cat .template.json 2>/dev/null
 ```
 
 If exists, parse to extract:
+
 - `template.repository` (e.g., "doriancollier/dorkian-next-stack")
 - `template.version` (e.g., "v0.2.0-alpha.8")
 - `template.commit` (SHA of current version)
@@ -276,6 +285,7 @@ cat VERSION 2>/dev/null
 ```
 
 If VERSION exists but no `.template.json`:
+
 - Version is the content of VERSION file (prepend "v" if not present)
 - Repository defaults to "doriancollier/dorkian-next-stack"
 - First-time mode: will create manifest after update
@@ -288,10 +298,12 @@ If neither file exists:
 ## Cannot Update: No Version Information
 
 Could not determine current template version:
+
 - No `.template.json` manifest found
 - No `VERSION` file found
 
 **To initialize template tracking:**
+
 1. Create a `VERSION` file with your current version (e.g., `0.2.0-alpha.8`)
 2. Run `/template:update` again
 
@@ -323,6 +335,7 @@ It's recommended to commit or stash changes first.
 ```
 
 Use AskUserQuestion (unless `--force`):
+
 - "Proceed anyway" - Continue with update
 - "Stop and let me commit first" - Exit
 
@@ -349,9 +362,11 @@ Verify `origin` remote exists for backup push.
 ### Step 3.1: Determine Target Version
 
 If `--version <tag>` provided:
+
 - Use specified tag as target
 
 Otherwise:
+
 - Fetch latest version from GitHub
 
 ```bash
@@ -407,6 +422,7 @@ Proceeding to scope selection...
 If scope not provided in arguments, prompt user:
 
 Use AskUserQuestion:
+
 ```
 header: "Update Scope"
 question: "What would you like to update?"
@@ -441,13 +457,13 @@ Filter to updateable files and present grouped by component:
 - [ ] .claude/commands/template/check.md
 - [ ] .claude/scripts/template-fetch.ts
 - [x] .claude/hooks/pre-tool-use/...
-...
+      ...
 
 ### Guides (guides/)
 
 - [ ] guides/01-project-structure.md
 - [ ] guides/02-environment-variables.md
-...
+      ...
 
 ### Roadmap (roadmap/)
 
@@ -464,6 +480,7 @@ Use AskUserQuestion to confirm selection.
 **IMPORTANT: Skip this phase entirely if `--dry-run` is present.**
 
 If `--dry-run`:
+
 ```markdown
 [DRY RUN] Would create backup branch: template-backup/[timestamp]
 [DRY RUN] Skipping git operations...
@@ -484,18 +501,21 @@ git checkout -
 
 Report (normal mode):
 
-```markdown
+````markdown
 ## Backup Created
 
 Branch `template-backup/20260202-143052` created.
 
 If anything goes wrong, you can restore with:
+
 ```bash
 git checkout template-backup/20260202-143052
 ```
+````
 
 Proceeding with update...
-```
+
+````
 
 ---
 
@@ -505,7 +525,7 @@ Proceeding with update...
 
 ```bash
 npx tsx .claude/scripts/template-fetch.ts tree [repository] [target-version]
-```
+````
 
 ### Step 6.2: List Local Files
 
@@ -520,6 +540,7 @@ find roadmap -type f 2>/dev/null
 Files that exist locally but NOT in template repository = user additions.
 
 Algorithm:
+
 ```
 1. Get template files at target version
 2. Get local files in component directories
@@ -530,16 +551,16 @@ Algorithm:
 
 ### Step 6.4: Categorize by Strategy
 
-| Category | Files | Strategy |
-|----------|-------|----------|
-| **Harness Core** | `.claude/hooks/`, `.claude/scripts/` | Replace |
+| Category               | Files                                                     | Strategy                          |
+| ---------------------- | --------------------------------------------------------- | --------------------------------- |
+| **Harness Core**       | `.claude/hooks/`, `.claude/scripts/`                      | Replace                           |
 | **Harness Extensible** | `.claude/commands/`, `.claude/skills/`, `.claude/agents/` | Replace (preserve user additions) |
-| **Guides** | `guides/*.md` | Replace |
-| **Roadmap System** | `roadmap/*.ts`, `roadmap/scripts/` | Replace |
-| **Roadmap Data** | `roadmap/roadmap.json` | Skip (user data) |
-| **Gray Zone** | `CLAUDE.md`, `package.json` | Merge (Phase 8) |
-| **User Space** | `src/**`, `public/**`, `prisma/schema.prisma` | Never touch |
-| **User Additions** | Files not in template | Never touch |
+| **Guides**             | `guides/*.md`                                             | Replace                           |
+| **Roadmap System**     | `roadmap/*.ts`, `roadmap/scripts/`                        | Replace                           |
+| **Roadmap Data**       | `roadmap/roadmap.json`                                    | Skip (user data)                  |
+| **Gray Zone**          | `CLAUDE.md`, `package.json`                               | Merge (Phase 8)                   |
+| **User Space**         | `src/**`, `public/**`, `prisma/schema.prisma`             | Never touch                       |
+| **User Additions**     | Files not in template                                     | Never touch                       |
 
 ### Step 6.5: Present Categorization
 
@@ -549,23 +570,27 @@ Algorithm:
 ## File Categorization
 
 ### Will Replace (12 files)
+
 - .claude/commands/template/check.md
 - .claude/scripts/template-fetch.ts
 - guides/01-project-structure.md
-...
+  ...
 
 ### Will Merge (2 files)
+
 - CLAUDE.md (template sections only)
 - package.json (template dependencies)
 
 ### Will Skip - User Additions (3 files)
+
 - .claude/skills/my-custom-skill/
 - .claude/commands/my-command.md
 - guides/99-my-notes.md
 
 ### Will Skip - User Space
-- src/** (always excluded)
-- public/** (always excluded)
+
+- src/\*\* (always excluded)
+- public/\*\* (always excluded)
 ```
 
 ---
@@ -584,6 +609,7 @@ npx tsx .claude/scripts/template-fetch.ts file [repository] [path] [target-versi
 **Normal mode** (no `--dry-run`):
 
 For each file:
+
 1. Fetch template version content
 2. Read local file content (for comparison/diff)
 3. If `--verbose`: Display unified diff before writing
@@ -591,6 +617,7 @@ For each file:
 5. Track in update report
 
 **Verbose output format** (when `--verbose` and NOT `--dry-run`):
+
 ```
 Updating [1/12]: .claude/commands/template/check.md
 [VERBOSE] Diff:
@@ -608,6 +635,7 @@ Updating [1/12]: .claude/commands/template/check.md
 **Dry-run mode** (`--dry-run` present):
 
 For each file:
+
 1. Fetch template version content (read-only)
 2. Read local file content
 3. Compare contents
@@ -619,11 +647,13 @@ For each file:
 6. **DO NOT write any files**
 
 **Dry-run output format**:
+
 ```
 [DRY RUN] Would update [1/12]: .claude/commands/template/check.md
 ```
 
 **Dry-run + verbose output format**:
+
 ```
 [DRY RUN] Would update [1/12]: .claude/commands/template/check.md
 [VERBOSE] Diff (proposed changes):
@@ -642,18 +672,21 @@ For each file:
 When `--verbose` is present (in either mode), generate human-readable diffs:
 
 **For text files** (unified diff format):
+
 ```bash
 # Conceptually (Claude generates this output, not a real command):
 diff -u local_content template_content
 ```
 
 Display with:
+
 - File path header
 - Line numbers and context
 - `-` prefix for removed lines (red if terminal supports)
 - `+` prefix for added lines (green if terminal supports)
 
 **For JSON files** (structured comparison):
+
 ```
 [VERBOSE] JSON changes: package.json
 ────────────────────────────────────────────────────
@@ -671,6 +704,7 @@ devDependencies:
 ### Step 7.3: Track Statistics
 
 Maintain counters:
+
 - `filesUpdated` - Successfully replaced (or "would replace" in dry-run)
 - `filesSkipped` - User additions, excluded
 - `filesUnchanged` - Template matches local (no update needed)
@@ -688,12 +722,16 @@ Template sections in CLAUDE.md are wrapped with markers:
 
 ```markdown
 <!-- template-section-start: technology-stack -->
+
 ## Technology Stack
+
 ...
+
 <!-- template-section-end: technology-stack -->
 ```
 
 Update behavior:
+
 1. Parse local CLAUDE.md for markers
 2. Fetch template CLAUDE.md
 3. For each template section:
@@ -702,6 +740,7 @@ Update behavior:
 4. Content OUTSIDE markers: never touch (user-owned)
 
 **Verbose output for CLAUDE.md** (when `--verbose`):
+
 ```
 [VERBOSE] Merge analysis: CLAUDE.md
 ────────────────────────────────────────────────────
@@ -733,6 +772,7 @@ User content preserved:
 ```
 
 **Dry-run + verbose for CLAUDE.md**:
+
 ```
 [DRY RUN] Would merge: CLAUDE.md
 [VERBOSE] Merge preview:
@@ -748,6 +788,7 @@ Would preserve all user content outside markers.
 ### package.json Dependency Merge
 
 For package.json (if in scope):
+
 1. Fetch template package.json
 2. Merge template dependencies with local:
    - Template deps override if version differs
@@ -755,6 +796,7 @@ For package.json (if in scope):
 3. Preserve user scripts, name, etc.
 
 **Verbose output for package.json** (when `--verbose`):
+
 ```
 [VERBOSE] Merge analysis: package.json
 ────────────────────────────────────────────────────
@@ -781,6 +823,7 @@ User-added fields preserved:
 ```
 
 **Dry-run + verbose for package.json**:
+
 ```
 [DRY RUN] Would merge: package.json
 [VERBOSE] Proposed changes:
@@ -844,10 +887,10 @@ WHAT YOU CHANGED (compared to base template)
 --- base (template v[baseRef])
 +++ yours (local)
 @@ -line,count +line,count @@
- context line
+context line
 -removed by you
 +added by you
- context line
+context line
 
 ───────────────────────────────────────────────────────────────────
 WHAT TEMPLATE CHANGED (from v[baseRef] to v[targetRef])
@@ -858,10 +901,10 @@ WHAT TEMPLATE CHANGED (from v[baseRef] to v[targetRef])
 --- base (template v[baseRef])
 +++ template (v[targetRef])
 @@ -line,count +line,count @@
- context line
+context line
 -old template line
 +new template line
- context line
+context line
 
 ───────────────────────────────────────────────────────────────────
 ANALYSIS & RECOMMENDATION
@@ -876,40 +919,40 @@ Analyze the conflict to determine the best recommendation:
 
 **Change Classification:**
 
-| Factor | Classification | Recommendation |
-|--------|----------------|----------------|
-| User changes < 10 lines, non-overlapping sections | Minor customization | Merge: Apply user changes to new template |
-| User changes > 10 lines or structural | Significant modification | Keep yours: Highlight template additions |
-| Changes in different file sections | Non-overlapping | Merge automatically (safe) |
-| Changes overlap on same lines | True conflict | Show both, ask user |
-| Template removed section user modified | Deprecation conflict | Keep yours: Add deprecation note |
-| User added new content, template updated elsewhere | Additive | Merge: User additions + template updates |
-| Template refactored file structure | Structural change | Manual review recommended |
+| Factor                                             | Classification           | Recommendation                            |
+| -------------------------------------------------- | ------------------------ | ----------------------------------------- |
+| User changes < 10 lines, non-overlapping sections  | Minor customization      | Merge: Apply user changes to new template |
+| User changes > 10 lines or structural              | Significant modification | Keep yours: Highlight template additions  |
+| Changes in different file sections                 | Non-overlapping          | Merge automatically (safe)                |
+| Changes overlap on same lines                      | True conflict            | Show both, ask user                       |
+| Template removed section user modified             | Deprecation conflict     | Keep yours: Add deprecation note          |
+| User added new content, template updated elsewhere | Additive                 | Merge: User additions + template updates  |
+| Template refactored file structure                 | Structural change        | Manual review recommended                 |
 
 **Recommendation Logic Implementation:**
 
 ```typescript
 // Pseudo-code for recommendation logic
 function getRecommendation(base: string, ours: string, theirs: string): Recommendation {
-  const userChanges = diffLines(base, ours)
-  const templateChanges = diffLines(base, theirs)
+  const userChanges = diffLines(base, ours);
+  const templateChanges = diffLines(base, theirs);
 
   // Count meaningful changes (excluding whitespace)
-  const userLineChanges = userChanges.filter(c => c.type !== 'unchanged')
-  const templateLineChanges = templateChanges.filter(c => c.type !== 'unchanged')
+  const userLineChanges = userChanges.filter((c) => c.type !== 'unchanged');
+  const templateLineChanges = templateChanges.filter((c) => c.type !== 'unchanged');
 
   // Check for overlap
-  const userChangedLines = new Set(userLineChanges.map(c => c.lineNumber))
-  const templateChangedLines = new Set(templateLineChanges.map(c => c.lineNumber))
-  const overlappingLines = intersection(userChangedLines, templateChangedLines)
+  const userChangedLines = new Set(userLineChanges.map((c) => c.lineNumber));
+  const templateChangedLines = new Set(templateLineChanges.map((c) => c.lineNumber));
+  const overlappingLines = intersection(userChangedLines, templateChangedLines);
 
   if (overlappingLines.size === 0) {
     // Non-overlapping changes - safe to auto-merge
     return {
       action: 'merge',
       reason: 'Changes are in different sections of the file',
-      confidence: 'high'
-    }
+      confidence: 'high',
+    };
   }
 
   if (userLineChanges.length < 10 && overlappingLines.size < 5) {
@@ -917,8 +960,8 @@ function getRecommendation(base: string, ours: string, theirs: string): Recommen
     return {
       action: 'merge',
       reason: 'User changes are minor and can be applied to new template',
-      confidence: 'medium'
-    }
+      confidence: 'medium',
+    };
   }
 
   if (userLineChanges.length > 10) {
@@ -926,16 +969,16 @@ function getRecommendation(base: string, ours: string, theirs: string): Recommen
     return {
       action: 'keep-yours',
       reason: 'Significant user modifications - review template changes manually',
-      confidence: 'medium'
-    }
+      confidence: 'medium',
+    };
   }
 
   // True conflict - cannot auto-resolve
   return {
     action: 'ask-user',
     reason: 'Both sides made overlapping changes',
-    confidence: 'low'
-  }
+    confidence: 'low',
+  };
 }
 ```
 
@@ -962,6 +1005,7 @@ options:
 **For each option, show a preview:**
 
 **Option 1 - Merge Preview:**
+
 ```markdown
 [PREVIEW] Merged result:
 ────────────────────────────────────────────────────
@@ -969,30 +1013,36 @@ options:
 ────────────────────────────────────────────────────
 
 Changes applied:
+
 - Your modifications in lines X-Y: Preserved
 - Template updates in lines A-B: Applied
 - Auto-resolved: [count] non-overlapping changes
 ```
 
 **Option 2 - Keep Yours Preview:**
+
 ```markdown
 [PREVIEW] Your version (no changes)
 ────────────────────────────────────────────────────
 Note: The following template improvements will NOT be applied:
+
 - [List template changes that would be skipped]
-────────────────────────────────────────────────────
+  ────────────────────────────────────────────────────
 ```
 
 **Option 3 - Use Template Preview:**
+
 ```markdown
 [PREVIEW] Template version
 ────────────────────────────────────────────────────
-⚠️  WARNING: Your changes will be lost:
+⚠️ WARNING: Your changes will be lost:
+
 - [List user changes that would be overwritten]
-────────────────────────────────────────────────────
+  ────────────────────────────────────────────────────
 ```
 
 **Option 4 - Manual Edit:**
+
 ```markdown
 Opening file for manual editing...
 
@@ -1010,6 +1060,7 @@ Edit the file to combine changes, then confirm when done.
 ```
 
 **Option 5 - Skip:**
+
 ```markdown
 Skipping [file path] for now.
 This file will remain unchanged and be noted in the summary.
@@ -1021,6 +1072,7 @@ You can manually update it later.
 Based on user choice, apply the resolution:
 
 **For "Merge":**
+
 1. Generate merged content using intelligent diff algorithm
 2. For non-overlapping changes: Apply both automatically
 3. For overlapping changes: Use template version with user additions preserved where possible
@@ -1028,20 +1080,24 @@ Based on user choice, apply the resolution:
 5. Track: `{ file, resolution: 'merged', reason: 'User selected merge' }`
 
 **For "Keep yours":**
+
 1. Do not modify the file
 2. Track: `{ file, resolution: 'kept-user', reason: 'User chose to keep their version' }`
 
 **For "Use template":**
+
 1. Write template content to file (unless `--dry-run`)
 2. Track: `{ file, resolution: 'used-template', reason: 'User chose template version' }`
 
 **For "Edit manually":**
+
 1. Display both versions for reference
 2. Use AskUserQuestion to confirm when editing is complete
 3. Read the file again to verify changes
 4. Track: `{ file, resolution: 'manual', reason: 'User manually edited' }`
 
 **For "Skip":**
+
 1. Do not modify the file
 2. Track: `{ file, resolution: 'skipped', reason: 'User deferred decision' }`
 
@@ -1051,15 +1107,15 @@ Maintain a list of conflict resolutions throughout the update:
 
 ```typescript
 interface ConflictResolution {
-  file: string
-  resolution: 'merged' | 'kept-user' | 'used-template' | 'manual' | 'skipped'
-  reason: string
-  templateChanges?: string[]   // What template changed (for record)
-  userChanges?: string[]       // What user changed (for record)
+  file: string;
+  resolution: 'merged' | 'kept-user' | 'used-template' | 'manual' | 'skipped';
+  reason: string;
+  templateChanges?: string[]; // What template changed (for record)
+  userChanges?: string[]; // What user changed (for record)
 }
 
 // Track all resolutions
-const resolutions: ConflictResolution[] = []
+const resolutions: ConflictResolution[] = [];
 ```
 
 #### Special Case: CLAUDE.md Conflicts
@@ -1072,6 +1128,7 @@ For CLAUDE.md files with marker sections, use a hybrid approach:
    - User added content within a template section
 
 3. **Per-section resolution:**
+
    ```markdown
    CLAUDE.md Conflict - Section: [section-name]
 
@@ -1084,6 +1141,7 @@ For CLAUDE.md files with marker sections, use a hybrid approach:
    [Show template changes to section]
 
    Choose resolution for this section:
+
    1. Use template section (recommended if template has important updates)
    2. Keep your section
    3. Merge (template base + your additions)
@@ -1104,11 +1162,12 @@ package.json Dependency Conflict
 The following dependencies have conflicting versions:
 
 | Package | Your Version | Template Version | Base Version |
-|---------|--------------|------------------|--------------|
+| ------- | ------------ | ---------------- | ------------ |
 | next    | 16.0.5       | 16.1.0           | 16.0.0       |
 | prisma  | 6.5.0        | 7.0.0            | 6.0.0        |
 
 For each conflict, choose:
+
 1. Use template version (recommended for security updates)
 2. Keep your version
 3. Specify a different version
@@ -1117,6 +1176,7 @@ For each conflict, choose:
 ```
 
 Use AskUserQuestion for each conflicting dependency, or offer batch options:
+
 - "Use all template versions"
 - "Keep all your versions"
 - "Resolve each individually"
@@ -1132,27 +1192,23 @@ When `--dry-run` is present:
 
 ```markdown
 ───────────────────────────────────────────────────────────────────
-  CONFLICTS REQUIRING RESOLUTION (3 files)
+CONFLICTS REQUIRING RESOLUTION (3 files)
 ───────────────────────────────────────────────────────────────────
 
 [1/3] .claude/commands/my-command.md
-      Both you and the template modified this file.
-      Recommended: Merge (changes are in different sections)
+Both you and the template modified this file.
+Recommended: Merge (changes are in different sections)
 
 [2/3] CLAUDE.md
-      2 template sections have conflicting changes:
-      - technology-stack: You added custom entries
-      - common-commands: Both modified
-      Recommended: Per-section resolution needed
+2 template sections have conflicting changes: - technology-stack: You added custom entries - common-commands: Both modified
+Recommended: Per-section resolution needed
 
 [3/3] package.json
-      2 dependency version conflicts:
-      - next: 16.0.5 (yours) vs 16.1.0 (template)
-      - prisma: 6.5.0 (yours) vs 7.0.0 (template)
-      Recommended: Use template versions (security updates)
+2 dependency version conflicts: - next: 16.0.5 (yours) vs 16.1.0 (template) - prisma: 6.5.0 (yours) vs 7.0.0 (template)
+Recommended: Use template versions (security updates)
 
 To resolve these conflicts, run without --dry-run:
-  /template:update [scope]
+/template:update [scope]
 ```
 
 #### Conflict Resolution Summary
@@ -1161,15 +1217,15 @@ After all conflicts are resolved, display a summary:
 
 ```markdown
 ───────────────────────────────────────────────────────────────────
-  CONFLICT RESOLUTION SUMMARY
+CONFLICT RESOLUTION SUMMARY
 ───────────────────────────────────────────────────────────────────
 
-| File | Resolution | Action Taken |
-|------|------------|--------------|
-| .claude/commands/my-command.md | Merged | Combined your changes with template |
-| CLAUDE.md | Mixed | 2 sections updated, 1 kept yours |
-| package.json | Used template | Updated to latest versions |
-| .claude/skills/custom/SKILL.md | Skipped | Deferred for later |
+| File                           | Resolution    | Action Taken                        |
+| ------------------------------ | ------------- | ----------------------------------- |
+| .claude/commands/my-command.md | Merged        | Combined your changes with template |
+| CLAUDE.md                      | Mixed         | 2 sections updated, 1 kept yours    |
+| package.json                   | Used template | Updated to latest versions          |
+| .claude/skills/custom/SKILL.md | Skipped       | Deferred for later                  |
 
 Conflicts resolved: 3
 Conflicts skipped: 1 (will need manual attention)
@@ -1178,21 +1234,24 @@ Conflicts skipped: 1 (will need manual attention)
 #### Error Handling for Conflicts
 
 **If merge fails:**
+
 ```markdown
-⚠️  Merge Error
+⚠️ Merge Error
 
 The automatic merge for [file] failed:
 [error details]
 
 Falling back to manual options:
+
 1. Keep your version (safest)
 2. Use template version
 3. Try manual edit
 ```
 
 **If file cannot be read:**
+
 ```markdown
-⚠️  File Read Error
+⚠️ File Read Error
 
 Cannot read [file]: [error message]
 
@@ -1211,6 +1270,7 @@ Track as skipped and continue with remaining files. Don't abort the entire updat
 ### Step 9.1: Update Manifest
 
 **If `--dry-run`**: Skip this step entirely. Show:
+
 ```
 [DRY RUN] Would update .template.json with new version info
 [DRY RUN] Skipping manifest update...
@@ -1243,16 +1303,8 @@ Track as skipped and continue with remaining files. Don't abort the entire updat
       "exclude": ["roadmap.json"]
     }
   },
-  "skipPatterns": [
-    "src/**",
-    "public/**",
-    "prisma/schema.prisma",
-    ".env*"
-  ],
-  "userAdditions": [
-    ".claude/skills/my-custom-skill/",
-    ".claude/commands/my-command.md"
-  ],
+  "skipPatterns": ["src/**", "public/**", "prisma/schema.prisma", ".env*"],
+  "userAdditions": [".claude/skills/my-custom-skill/", ".claude/commands/my-command.md"],
   "updateHistory": [
     {
       "from": "v0.2.0-alpha.5",
@@ -1273,6 +1325,7 @@ Track as skipped and continue with remaining files. Don't abort the entire updat
 **Otherwise**, offer to commit:
 
 Use AskUserQuestion:
+
 ```
 header: "Commit Changes"
 question: "Commit the template update?"
@@ -1284,6 +1337,7 @@ options:
 ```
 
 If yes:
+
 ```bash
 git add -A
 git commit -m "$(cat <<'EOF'
@@ -1302,7 +1356,7 @@ EOF
 
 ### Step 9.3: Report Results
 
-```markdown
+````markdown
 ## Template Update Complete
 
 **Previous version:** v0.2.0-alpha.5
@@ -1311,27 +1365,30 @@ EOF
 
 ### Summary
 
-| Category | Count |
-|----------|-------|
-| Files updated | 12 |
-| Files unchanged | 5 |
-| User additions preserved | 3 |
-| Conflicts resolved | 0 |
+| Category                 | Count |
+| ------------------------ | ----- |
+| Files updated            | 12    |
+| Files unchanged          | 5     |
+| User additions preserved | 3     |
+| Conflicts resolved       | 0     |
 
 ### Updated Components
 
 **Harness (.claude/)**
+
 - commands/template/check.md
 - scripts/template-fetch.ts
 - hooks/pre-tool-use/...
 
 **Guides (guides/)**
+
 - 01-project-structure.md
 - 02-environment-variables.md
 
 ### User Additions Preserved
 
 These files were detected as user-created and not modified:
+
 - .claude/skills/my-custom-skill/
 - .claude/commands/my-command.md
 
@@ -1342,10 +1399,13 @@ These files were detected as user-created and not modified:
 3. Check for breaking changes in the changelog
 
 If something went wrong, restore from backup:
+
 ```bash
 git checkout template-backup/20260202-143052
 ```
-```
+````
+
+````
 
 ---
 
@@ -1424,7 +1484,7 @@ To apply these changes:
 
 To apply without prompts:
   /template:update [scope] --force
-```
+````
 
 ### Dry-Run + Verbose Output
 
@@ -1432,14 +1492,14 @@ When both `--dry-run` and `--verbose` are present, include detailed diffs inline
 
 ```markdown
 ═══════════════════════════════════════════════════════════════════
-  DRY RUN COMPLETE - No changes were made (verbose)
+DRY RUN COMPLETE - No changes were made (verbose)
 ═══════════════════════════════════════════════════════════════════
 
 **Would update from:** v0.2.0-alpha.5
 **Would update to:** v0.2.0-alpha.9
 
 ───────────────────────────────────────────────────────────────────
-  FILES THAT WOULD BE UPDATED (12)
+FILES THAT WOULD BE UPDATED (12)
 ───────────────────────────────────────────────────────────────────
 
 [1/12] .claude/commands/template/check.md
@@ -1448,13 +1508,13 @@ When both `--dry-run` and `--verbose` are present, include detailed diffs inline
 --- local (current)
 +++ template (proposed)
 @@ -10,6 +10,10 @@
- ## Check for Updates
+
+## Check for Updates
 
 +### New Feature
-+
-+This section was added in the template.
-+
- Run `/template:check` to see available updates.
+
+- +This section was added in the template.
+- Run `/template:check` to see available updates.
 
 ────────────────────────────────────────────────────
 
@@ -1464,24 +1524,25 @@ When both `--dry-run` and `--verbose` are present, include detailed diffs inline
 --- local (current)
 +++ template (proposed)
 @@ -45,8 +45,12 @@
- async function fetchTags(repo: string) {
--  const response = await fetch(`${API}/repos/${repo}/tags`)
-+  const response = await fetch(`${API}/repos/${repo}/tags`, {
-+    headers: getHeaders(),
-+  })
-   return response.json()
- }
-+
-+function getHeaders() {
-+  // ... new helper function
-+}
+async function fetchTags(repo: string) {
+
+- const response = await fetch(`${API}/repos/${repo}/tags`)
+
+* const response = await fetch(`${API}/repos/${repo}/tags`, {
+* headers: getHeaders(),
+* })
+  return response.json()
+  }
+* +function getHeaders() {
+* // ... new helper function
+  +}
 
 ────────────────────────────────────────────────────
 
 ... (remaining files with diffs)
 
 ───────────────────────────────────────────────────────────────────
-  FILES THAT WOULD BE MERGED (2)
+FILES THAT WOULD BE MERGED (2)
 ───────────────────────────────────────────────────────────────────
 
 [1/2] CLAUDE.md
@@ -1490,12 +1551,14 @@ When both `--dry-run` and `--verbose` are present, include detailed diffs inline
 Strategy: Marker-based section replacement
 
 Sections to update:
-  - technology-stack (+5 lines)
-  - directory-structure (+12 lines)
+
+- technology-stack (+5 lines)
+- directory-structure (+12 lines)
 
 User content preserved:
-  - Lines 1-50: Project introduction
-  - Lines 400-500: Custom notes section
+
+- Lines 1-50: Project introduction
+- Lines 400-500: Custom notes section
 
 ────────────────────────────────────────────────────
 
@@ -1503,11 +1566,12 @@ User content preserved:
 
 [VERBOSE] JSON changes:
 dependencies:
-  next:           "16.0.0" → "16.1.0"
+next: "16.0.0" → "16.1.0"
 
 devDependencies:
-  typescript:     "5.8.0" → "5.9.0"
-  + @types/node:  "22.0.0" (added)
+typescript: "5.8.0" → "5.9.0"
+
+- @types/node: "22.0.0" (added)
 
 ────────────────────────────────────────────────────
 
@@ -1541,6 +1605,7 @@ You've exceeded the GitHub API rate limit for unauthenticated requests.
 **Rate limit resets at:** [time]
 
 Options:
+
 1. Wait until the rate limit resets
 2. Try again later
 
@@ -1559,7 +1624,7 @@ Please check your internet connection and try again.
 
 ### File Write Error
 
-```markdown
+````markdown
 ## File Write Error
 
 Could not write to: [path]
@@ -1568,10 +1633,13 @@ Error: [message]
 Your backup branch is safe at: template-backup/[timestamp]
 
 To restore:
+
 ```bash
 git checkout template-backup/[timestamp]
 ```
-```
+````
+
+````
 
 ### Invalid Manifest
 
@@ -1586,7 +1654,7 @@ To fix:
 2. Run `/template:update` to regenerate
 
 Or manually fix the JSON syntax errors.
-```
+````
 
 ---
 

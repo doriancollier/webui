@@ -47,12 +47,15 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
   }, [urlDir]); // Only re-run when URL changes (browser back/forward)
 
   if (platform.isEmbedded) {
-    return [storeDir, (dir) => {
-      if (dir) {
-        setStoreDir(dir);
-        setSessionId(null); // Clear session on dir change
-      }
-    }];
+    return [
+      storeDir,
+      (dir) => {
+        if (dir) {
+          setStoreDir(dir);
+          setSessionId(null); // Clear session on dir change
+        }
+      },
+    ];
   }
 
   // Standalone: URL is source of truth, sync to Zustand
@@ -61,10 +64,10 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
     (dir) => {
       if (dir) {
         setUrlDir(dir);
-        setStoreDir(dir);  // Sync to Zustand for localStorage + consumers
+        setStoreDir(dir); // Sync to Zustand for localStorage + consumers
         setSessionId(null); // Clear session on dir change
       } else {
-        setUrlDir(null);    // Remove from URL
+        setUrlDir(null); // Remove from URL
       }
     },
   ];
@@ -94,6 +97,7 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
 ## Task 2: [P2] Update DirectoryPicker and SessionSidebar to use `useDirectoryState`
 
 **Files:**
+
 - `apps/client/src/components/sessions/DirectoryPicker.tsx` (MODIFY)
 - `apps/client/src/components/sessions/SessionSidebar.tsx` (MODIFY)
 
@@ -109,11 +113,13 @@ Replace direct `useAppStore` directory access with the new `useDirectoryState` h
 In `apps/client/src/components/sessions/DirectoryPicker.tsx`:
 
 1. Add import for the new hook:
+
 ```typescript
 import { useDirectoryState } from '../../hooks/use-directory-state';
 ```
 
 2. Replace line 45:
+
 ```diff
 - const { selectedCwd, setSelectedCwd, recentCwds } = useAppStore();
 + const [selectedCwd, setSelectedCwd] = useDirectoryState();
@@ -121,6 +127,7 @@ import { useDirectoryState } from '../../hooks/use-directory-state';
 ```
 
 Both `handleSelect` (line 59) and `handleRecentSelect` (line 78) call `setSelectedCwd()`, which now:
+
 1. Updates `?dir=` in URL (standalone)
 2. Syncs to Zustand (localStorage tracking)
 3. Clears `?session=` from URL
@@ -132,23 +139,27 @@ No other changes needed in DirectoryPicker -- the rest of the component works un
 In `apps/client/src/components/sessions/SessionSidebar.tsx`:
 
 1. Add import for the new hook:
+
 ```typescript
 import { useDirectoryState } from '../../hooks/use-directory-state';
 ```
 
 2. Add `useEffect` to imports (line 1):
+
 ```diff
 - import { useState, useMemo, useCallback } from 'react';
 + import { useState, useMemo, useCallback, useEffect } from 'react';
 ```
 
 3. Replace line 25:
+
 ```diff
 - const selectedCwd = useAppStore((s) => s.selectedCwd);
 + const [selectedCwd] = useDirectoryState();
 ```
 
 4. Add auto-select most recent session `useEffect` after the `sessions` query (after line 39):
+
 ```typescript
 // Auto-select most recent session when directory changes and no session is active
 useEffect(() => {
@@ -173,6 +184,7 @@ This handles the flow: directory changes -> session cleared -> sessions reload -
 ## Task 3: [P3] Write tests for `useDirectoryState` and update existing tests
 
 **Files:**
+
 - `apps/client/src/hooks/__tests__/use-directory-state.test.tsx` (NEW)
 - `apps/client/src/components/sessions/__tests__/SessionSidebar.test.tsx` (MODIFY)
 
@@ -225,6 +237,7 @@ import React from 'react';
 ```
 
 **Mocking strategy** (follow patterns from existing tests like `use-sessions.test.tsx`):
+
 - Mock `../lib/platform` to toggle `getPlatform()` return value
 - Use `nuqs/adapters/testing` `NuqsTestingAdapter` for URL state testing
 - Mock `../stores/app-store` for Zustand assertions
@@ -267,6 +280,7 @@ it('auto-selects first session when no active session', async () => {
 ### Verification
 
 After all test changes, run:
+
 ```bash
 npx vitest run apps/client/src/hooks/__tests__/use-directory-state.test.tsx
 npx vitest run apps/client/src/components/sessions/__tests__/SessionSidebar.test.tsx
@@ -300,6 +314,7 @@ Add documentation about the `?dir=` URL parameter to `CLAUDE.md` so future devel
 In the **Client** section of `CLAUDE.md` (around the State/Chat bullet points area), add a note about URL parameters:
 
 Add after the "State" bullet (around line 77):
+
 ```
 - **URL Parameters**: `?session=` (session ID via nuqs) and `?dir=` (working directory via nuqs) persist client state in the URL for standalone mode. In Obsidian embedded mode, both use Zustand instead. The `?dir=` parameter is omitted when using the server default directory to keep URLs clean.
 ```
@@ -323,9 +338,9 @@ Task 1 (Core Hook)
 
 ## Summary
 
-| Task | Phase | Title | Status | Blocked By |
-|------|-------|-------|--------|------------|
-| 1 | P1 | Create `useDirectoryState` hook | Not started | — |
-| 2 | P2 | Update DirectoryPicker and SessionSidebar | Not started | Task 1 |
-| 3 | P3 | Write tests for `useDirectoryState` + update existing tests | Not started | Task 2 |
-| 4 | P4 | Update CLAUDE.md with `?dir=` documentation | Not started | Task 2 |
+| Task | Phase | Title                                                       | Status      | Blocked By |
+| ---- | ----- | ----------------------------------------------------------- | ----------- | ---------- |
+| 1    | P1    | Create `useDirectoryState` hook                             | Not started | —          |
+| 2    | P2    | Update DirectoryPicker and SessionSidebar                   | Not started | Task 1     |
+| 3    | P3    | Write tests for `useDirectoryState` + update existing tests | Not started | Task 2     |
+| 4    | P4    | Update CLAUDE.md with `?dir=` documentation                 | Not started | Task 2     |

@@ -15,7 +15,8 @@
     "start": "NODE_ENV=production node dist/index.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",

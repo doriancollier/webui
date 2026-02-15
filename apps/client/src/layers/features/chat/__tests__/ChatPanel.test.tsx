@@ -4,14 +4,28 @@ import { render, screen, fireEvent, cleanup, act } from '@testing-library/react'
 
 // Mock motion/react with Proxy pattern
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target: unknown, prop: string) => {
-      return ({ children, initial: _i, animate: _a, exit: _e, transition: _t, drag: _d, dragConstraints: _dc, dragElastic: _de, onDragEnd: _ode, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-        const Tag = prop as keyof React.JSX.IntrinsicElements;
-        return <Tag {...props}>{children}</Tag>;
-      };
-    },
-  }),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target: unknown, prop: string) => {
+        return ({
+          children,
+          initial: _i,
+          animate: _a,
+          exit: _e,
+          transition: _t,
+          drag: _d,
+          dragConstraints: _dc,
+          dragElastic: _de,
+          onDragEnd: _ode,
+          ...props
+        }: Record<string, unknown> & { children?: React.ReactNode }) => {
+          const Tag = prop as keyof React.JSX.IntrinsicElements;
+          return <Tag {...props}>{children}</Tag>;
+        };
+      },
+    }
+  ),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
@@ -74,7 +88,12 @@ vi.mock('@/layers/entities/session/model/use-directory-state', () => ({
 const mockShowShortcutChips = vi.fn(() => true);
 vi.mock('@/layers/shared/model/app-store', () => ({
   useAppStore: (selector: (s: Record<string, unknown>) => unknown) => {
-    const state = { showShortcutChips: mockShowShortcutChips(), setIsStreaming: vi.fn(), setIsWaitingForUser: vi.fn(), setActiveForm: vi.fn() };
+    const state = {
+      showShortcutChips: mockShowShortcutChips(),
+      setIsStreaming: vi.fn(),
+      setIsWaitingForUser: vi.fn(),
+      setActiveForm: vi.fn(),
+    };
     return selector(state);
   },
 }));

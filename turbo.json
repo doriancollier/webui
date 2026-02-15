@@ -25,6 +25,10 @@
       "dependsOn": ["^build"],
       "cache": true
     },
+    "lint": {
+      "dependsOn": ["^build"],
+      "cache": true
+    },
     "pack": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],

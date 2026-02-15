@@ -19,10 +19,12 @@ Learn new capabilities through trial and error experimentation, then codify succ
 Detect which mode based on the user's instructions:
 
 **Proactive mode** (experimentation first):
+
 - Keywords: "learn how to", "figure out how to", "try to", "experiment with", "discover how"
 - Flow: Research → Experiment → Iterate → Codify
 
 **Retrospective mode** (codify what worked):
+
 - Keywords: "we just", "we successfully", "codify this", "what we did", "save this behavior", "remember how we"
 - Flow: Analyze → Codify
 
@@ -48,6 +50,7 @@ Execute these phases sequentially. This is an **interactive, collaborative** pro
 ### Phase 2: Research
 
 - [ ] **2.1** Search for related existing behaviors in the system:
+
   ```
   # Check existing skills
   Search .claude/skills/ for related patterns
@@ -76,16 +79,20 @@ Execute these phases sequentially. This is an **interactive, collaborative** pro
   - Understand the APIs, tools, or systems involved
 
 - [ ] **2.4** Report research findings:
+
   ```markdown
   ## Research Findings
 
   ### Existing Related Behaviors
+
   - [List any related skills/commands/hooks found]
 
   ### Domain Knowledge
+
   - [Key information learned about the topic]
 
   ### Potential Approach
+
   - [Initial idea for how to accomplish this]
   ```
 
@@ -132,14 +139,14 @@ Skip this phase for retrospective mode.
 
 - [ ] **4.1** Determine what type of component to create:
 
-  | If the behavior... | Create a... |
-  |-------------------|-------------|
-  | Should be available automatically when context matches | **Skill** (default) |
-  | User should explicitly trigger it | **Command** |
-  | Must happen at specific lifecycle events | **Hook** |
-  | Needs context isolation for complex tasks | **Agent** |
-  | Is a file structure pattern | **Template** |
-  | Is core system knowledge | **CLAUDE.md update** |
+  | If the behavior...                                     | Create a...          |
+  | ------------------------------------------------------ | -------------------- |
+  | Should be available automatically when context matches | **Skill** (default)  |
+  | User should explicitly trigger it                      | **Command**          |
+  | Must happen at specific lifecycle events               | **Hook**             |
+  | Needs context isolation for complex tasks              | **Agent**            |
+  | Is a file structure pattern                            | **Template**         |
+  | Is core system knowledge                               | **CLAUDE.md update** |
 
   **Default to Skill** unless there's a clear reason for another type.
   Only ask the user if it's genuinely unclear which type is best.
@@ -177,6 +184,7 @@ Skip this phase for retrospective mode.
   - Success criteria for testing
 
 - [ ] **5.2** Invoke `/system:update` with the instructions:
+
   ```
   /system:update [detailed instructions based on learnings]
   ```
@@ -194,20 +202,25 @@ Skip this phase for retrospective mode.
   - Check edge cases if applicable
 
 - [ ] **6.2** Report completion:
+
   ```markdown
   ## Learning Complete
 
   ### What We Learned
+
   - [Summary of key insights]
 
   ### What Was Codified
+
   - [Component type]: [name]
   - Location: [file path]
 
   ### How to Use
+
   - [Instructions for using the new behavior]
 
   ### Testing
+
   - Tested: [what was tested]
   - Result: [passed/failed]
   ```

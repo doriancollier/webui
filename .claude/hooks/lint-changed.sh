@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Runs ESLint on changed files
+# Uses repo root cd for CWD safety (subagents may change CWD)
 
 INPUT=$(cat)
 FILE_PATH=$(echo "$INPUT" | node -e "const d=JSON.parse(require('fs').readFileSync(0,'utf8')); console.log(d.tool_input?.file_path || '')")
@@ -8,6 +9,9 @@ FILE_PATH=$(echo "$INPUT" | node -e "const d=JSON.parse(require('fs').readFileSy
 if [[ ! "$FILE_PATH" =~ \.(ts|tsx|js|jsx)$ ]]; then
   exit 0
 fi
+
+# CWD safety: always run from repo root
+cd "$(git rev-parse --show-toplevel)" || exit 0
 
 echo "🔍 Running ESLint on $FILE_PATH..." >&2
 

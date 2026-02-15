@@ -70,19 +70,12 @@ export function useCelebrations(): CelebrationsAPI {
     return () => engine.destroy();
   }, [showTaskCelebrations]);
 
-  const handleTaskEvent = useCallback(
-    (event: TaskUpdateEvent, allTasks: TaskItem[]) => {
-      // Only celebrate live update transitions to 'completed'
-      if (
-        event.action === 'update' &&
-        event.task.status === 'completed' &&
-        event.task.id
-      ) {
-        engineRef.current?.onTaskCompleted(event.task.id, allTasks);
-      }
-    },
-    [],
-  );
+  const handleTaskEvent = useCallback((event: TaskUpdateEvent, allTasks: TaskItem[]) => {
+    // Only celebrate live update transitions to 'completed'
+    if (event.action === 'update' && event.task.status === 'completed' && event.task.id) {
+      engineRef.current?.onTaskCompleted(event.task.id, allTasks);
+    }
+  }, []);
 
   const clearCelebration = useCallback(() => {
     setActiveCelebration(null);

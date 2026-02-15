@@ -1,5 +1,5 @@
-@import "tailwindcss";
-@source "../../../node_modules/streamdown/dist/*.js";
+@import 'tailwindcss';
+@source '../../../node_modules/streamdown/dist/*.js';
 
 @theme inline {
   --text-2xs: 0.6875rem;
@@ -36,13 +36,26 @@
 }
 
 @keyframes typing-dot {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
-  40% { opacity: 1; transform: scale(1); }
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 @keyframes blink-cursor {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
 }
 
 /* Assistant message typography */
@@ -94,11 +107,11 @@
 }
 
 /* Table action icons: overlay in top-right of table header, show on hover */
-.msg-assistant div:has(> div > [data-streamdown="table"]) {
+.msg-assistant div:has(> div > [data-streamdown='table']) {
   position: relative;
 }
 
-.msg-assistant div:has(> div > [data-streamdown="table"]) > div:first-child:not(:has(table)) {
+.msg-assistant div:has(> div > [data-streamdown='table']) > div:first-child:not(:has(table)) {
   position: absolute;
   top: 0;
   right: 8px;
@@ -113,13 +126,15 @@
   pointer-events: none;
 }
 
-.msg-assistant div:has(> div > [data-streamdown="table"]):hover > div:first-child:not(:has(table)) {
+.msg-assistant div:has(> div > [data-streamdown='table']):hover > div:first-child:not(:has(table)) {
   opacity: 1;
   pointer-events: auto;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

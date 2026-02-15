@@ -1,7 +1,34 @@
 const EMOJI_SET = [
-  '\u{1F600}', '\u{1F60E}', '\u{1F916}', '\u{1F98A}', '\u{1F431}', '\u{1F436}', '\u{1F981}', '\u{1F438}', '\u{1F435}', '\u{1F984}',
-  '\u{1F432}', '\u{1F989}', '\u{1F427}', '\u{1F43C}', '\u{1F98B}', '\u{1F338}', '\u{1F52E}', '\u{1F3AF}', '\u{1F680}', '\u{26A1}',
-  '\u{1F30A}', '\u{1F340}', '\u{1F3A8}', '\u{1F3B5}', '\u{1F48E}', '\u{1F525}', '\u{1F308}', '\u{2B50}', '\u{1F9E0}', '\u{1F47E}',
+  '\u{1F600}',
+  '\u{1F60E}',
+  '\u{1F916}',
+  '\u{1F98A}',
+  '\u{1F431}',
+  '\u{1F436}',
+  '\u{1F981}',
+  '\u{1F438}',
+  '\u{1F435}',
+  '\u{1F984}',
+  '\u{1F432}',
+  '\u{1F989}',
+  '\u{1F427}',
+  '\u{1F43C}',
+  '\u{1F98B}',
+  '\u{1F338}',
+  '\u{1F52E}',
+  '\u{1F3AF}',
+  '\u{1F680}',
+  '\u{26A1}',
+  '\u{1F30A}',
+  '\u{1F340}',
+  '\u{1F3A8}',
+  '\u{1F3B5}',
+  '\u{1F48E}',
+  '\u{1F525}',
+  '\u{1F308}',
+  '\u{2B50}',
+  '\u{1F9E0}',
+  '\u{1F47E}',
 ];
 
 export function fnv1aHash(str: string): number {
@@ -37,10 +64,7 @@ export function generateCircleFavicon(hslColor: string): string {
   return canvas.toDataURL('image/png');
 }
 
-export function generateDimmedFavicon(
-  solidDataUrl: string,
-  opacity = 0.4,
-): Promise<string> {
+export function generateDimmedFavicon(solidDataUrl: string, opacity = 0.4): Promise<string> {
   return new Promise((resolve, reject) => {
     const canvas = document.createElement('canvas');
     canvas.width = 32;
@@ -68,7 +92,7 @@ export function generateDimmedFavicon(
 export function generatePulseFrames(
   solidDataUrl: string,
   frameCount = 20,
-  minOpacity = 0.3,
+  minOpacity = 0.3
 ): Promise<string[]> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -83,7 +107,10 @@ export function generatePulseFrames(
         canvas.width = 32;
         canvas.height = 32;
         const ctx = canvas.getContext('2d');
-        if (!ctx) { reject(new Error('Canvas context unavailable')); return; }
+        if (!ctx) {
+          reject(new Error('Canvas context unavailable'));
+          return;
+        }
 
         ctx.globalAlpha = opacity;
         ctx.drawImage(img, 0, 0);

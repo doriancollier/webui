@@ -30,6 +30,7 @@ slug: chat-ui-aesthetic-refinement
 ## 2) Pre-reading Log
 
 ### Chat Components
+
 - `src/client/components/chat/ChatPanel.tsx`: Orchestrates message list, error banner, input. Loading spinner is a bare `<div className="animate-spin" />`. Error banner is inline red text. No entrance animations.
 - `src/client/components/chat/MessageList.tsx`: Virtual scrolling via `@tanstack/react-virtual`. Auto-scrolls on new messages via `scrollToIndex`. No scroll-to-bottom button when user scrolls up. No message entrance animation.
 - `src/client/components/chat/MessageItem.tsx`: Flat layout with avatar + label + content. User messages get `bg-muted/30`. Claude avatar is hardcoded `orange-500`. No hover states. No timestamp display.
@@ -40,15 +41,18 @@ slug: chat-ui-aesthetic-refinement
 - `src/client/components/commands/CommandPalette.tsx`: Positioned `bottom-full`. Has `shadow-lg`. No entrance/exit animation. Functional via cmdk.
 
 ### Session Components
+
 - `src/client/components/sessions/SessionSidebar.tsx`: Fixed `w-64`. Inline create form. No slide animation for sidebar toggle.
 - `src/client/components/sessions/SessionItem.tsx`: Title + preview. Active state via `bg-accent`. No hover transition timing.
 
 ### Layout & State
+
 - `src/client/App.tsx`: Three-row layout (banner + header + main). Header has sidebar toggle + title text "DorkOS".
 - `src/client/stores/app-store.ts`: Zustand store. `sidebarOpen` state exists but sidebar has no open/close animation.
 - `src/client/hooks/use-chat-session.ts`: SSE streaming with ref-based updates. Performance-optimized.
 
 ### Styling
+
 - `src/client/index.css`: Tailwind v4 with `@source` for Streamdown. Standard shadcn CSS variables (zinc palette). HSL color system. No custom animations defined.
 - `components.json`: shadcn new-york style, zinc base color, CSS variables enabled.
 - `package.json`: No animation library currently installed.
@@ -58,6 +62,7 @@ slug: chat-ui-aesthetic-refinement
 ## 3) Codebase Map
 
 **Primary Components:**
+
 - `src/client/App.tsx` — Root layout (header + sidebar + chat)
 - `src/client/components/chat/ChatPanel.tsx` — Chat orchestrator
 - `src/client/components/chat/MessageList.tsx` — Virtual message list
@@ -71,6 +76,7 @@ slug: chat-ui-aesthetic-refinement
 - `src/client/components/sessions/SessionItem.tsx` — Session list item
 
 **Shared Dependencies:**
+
 - `src/client/index.css` — Tailwind + CSS variables (theme)
 - `src/client/stores/app-store.ts` — Zustand (UI state)
 - `src/client/hooks/use-chat-session.ts` — Chat logic + SSE streaming
@@ -81,8 +87,9 @@ slug: chat-ui-aesthetic-refinement
 User input -> ChatInput -> useChatSession.handleSubmit -> POST /api/sessions/:id/messages -> SSE stream -> text_delta/tool_call events -> setMessages -> MessageList (virtualized) -> MessageItem -> StreamingText (Streamdown)
 
 **Potential Blast Radius:**
+
 - Direct: 11 component files + index.css + package.json
-- Indirect: Test files (8 test files in chat/__tests__)
+- Indirect: Test files (8 test files in chat/**tests**)
 - Config: components.json (if base color changes), vite.config.ts (if font loading added)
 
 ---
@@ -103,31 +110,31 @@ The bones are good. The flat message layout is correct for AI chat. The virtual 
 
 The zinc palette is safe. It's the CSS equivalent of beige. The `bg-muted/30` on user messages is so subtle it's almost invisible, creating no visual rhythm between turns. The orange-500 Claude avatar is the only color accent, and it reads as an afterthought rather than a design decision. The backgrounds are HSL values that technically differentiate light and dark mode but lack the warmth of intentional color choices.
 
-*What Ive would say:* "The colors don't *feel* like anything. They're mathematically derived, not emotionally considered."
+_What Ive would say:_ "The colors don't _feel_ like anything. They're mathematically derived, not emotionally considered."
 
 **2. Typography: System fonts, system feel**
 
 The default Tailwind type scale works, but it doesn't sing. Message text at `text-sm` (14px) feels slightly small for sustained reading. There's no typographic hierarchy within messages — headers, body text, and code all blend together without clear weight differentiation. The monospace stack is fine but generic.
 
-*What Ive would say:* "The text is readable but not inviting. It doesn't draw you in."
+_What Ive would say:_ "The text is readable but not inviting. It doesn't draw you in."
 
 **3. Spacing: Inconsistent rhythm**
 
 Padding varies: `px-4 py-3` on messages, `px-3 py-2` on inputs, `px-2 py-1.5` on session items, `px-3 py-1.5` on tool cards. This creates a subtle visual dissonance — nothing is egregiously wrong, but nothing is harmonious either. The gap between messages is whatever the virtualizer gives them, not a deliberate design decision.
 
-*What Ive would say:* "Spacing is a language. Right now, it's mumbling."
+_What Ive would say:_ "Spacing is a language. Right now, it's mumbling."
 
 **4. Motion: Essentially static**
 
-A chat interface is fundamentally about *change* — messages arriving, responses streaming, tools executing. Yet almost nothing moves. Messages pop into existence. Tool cards snap open. The sidebar appears or disappears without transition. The loading state is a spinning div. The streaming experience is text appearing character by character with no visual acknowledgment that something alive is happening.
+A chat interface is fundamentally about _change_ — messages arriving, responses streaming, tools executing. Yet almost nothing moves. Messages pop into existence. Tool cards snap open. The sidebar appears or disappears without transition. The loading state is a spinning div. The streaming experience is text appearing character by character with no visual acknowledgment that something alive is happening.
 
-*What Ive would say:* "Where's the life? Where's the breath?"
+_What Ive would say:_ "Where's the life? Where's the breath?"
 
 **5. Micro-interactions: None**
 
 No hover feedback on messages. No press state on buttons beyond opacity change. No visual response when a message sends. No streaming cursor. The command palette appears and disappears without ceremony. Tool approval cards are functionally clear but emotionally jarring (yellow! green! red!).
 
-*What Ive would say:* "Every interaction is a chance to communicate care. Right now, we're communicating nothing."
+_What Ive would say:_ "Every interaction is a chance to communicate care. Right now, we're communicating nothing."
 
 **6. Details: The invisible things that matter**
 
@@ -146,6 +153,7 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 ### Potential Solutions
 
 **1. Comprehensive Visual Refinement (Recommended)**
+
 - Description: Systematic overhaul of color, typography, spacing, and motion across all components. Install motion.dev. Implement design tokens. Update every component to match the design system.
 - Pros:
   - Transforms the entire experience
@@ -160,6 +168,7 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 - Maintenance: Low (design system provides clear patterns)
 
 **2. Color + Typography Only**
+
 - Description: Update the color palette and typography scale without adding animations. Adjust spacing to 8pt grid.
 - Pros:
   - Smaller scope
@@ -173,6 +182,7 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 - Maintenance: Low
 
 **3. Animation-First Approach**
+
 - Description: Focus solely on motion: message entrances, tool card transitions, button feedback, streaming cursor. Keep current colors and typography.
 - Pros:
   - Adds the most "feel" per change
@@ -187,7 +197,7 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 
 ### Recommendation
 
-**Approach 1: Comprehensive Visual Refinement.** The interface needs all layers working together — color, type, space, and motion are not independent concerns. A warm background with good spacing *and* subtle motion is exponentially better than any one of those alone. The design guide (already created at `guides/design-system.md`) provides the blueprint.
+**Approach 1: Comprehensive Visual Refinement.** The interface needs all layers working together — color, type, space, and motion are not independent concerns. A warm background with good spacing _and_ subtle motion is exponentially better than any one of those alone. The design guide (already created at `guides/design-system.md`) provides the blueprint.
 
 ---
 
@@ -196,6 +206,7 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 ### Phase 1: Foundations (Color, Typography, Spacing)
 
 **P1.1 — Color palette update** (`index.css`)
+
 - Replace zinc HSL values with warmer neutral palette
 - Off-white backgrounds (#FAFAFA light / #0A0A0A dark)
 - Softer text colors (#171717 / #EDEDED)
@@ -203,12 +214,14 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 - Replace orange-500 Claude avatar with warm neutral
 
 **P1.2 — Typography refinement** (`index.css`, all components)
+
 - Increase base message text to 15px with 1.6 line height
 - Establish clear weight hierarchy (400/500/600)
 - Ensure 65ch max-width on messages
 - Improve monospace font stack
 
 **P1.3 — Spacing normalization** (all components)
+
 - Standardize all padding/margin to 8pt grid multiples
 - Establish consistent message rhythm
 - Improve tool card and input area spacing
@@ -216,51 +229,63 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 ### Phase 2: Motion (motion.dev integration)
 
 **P2.1 — Install motion.dev** (`package.json`)
+
 - `npm install motion`
 
 **P2.2 — Message entrance animation** (`MessageItem.tsx`)
+
 - New messages fade in + slide up 8px, 200ms
 - History messages load instantly (no animation on mount)
 
 **P2.3 — Tool card expand/collapse** (`ToolCallCard.tsx`)
+
 - Smooth height transition using `AnimatePresence` + `motion.div`
 - Chevron rotation with spring physics
 
 **P2.4 — Command palette animation** (`CommandPalette.tsx`)
+
 - Fade in + scale from 0.98, 150ms
 - Exit animation on close
 
 **P2.5 — Sidebar animation** (`App.tsx`, `SessionSidebar.tsx`)
+
 - Width transition on toggle, 200ms
 - Content opacity transition
 
 ### Phase 3: Micro-interactions & Polish
 
 **P3.1 — Button interactions** (`ChatInput.tsx`)
+
 - Send button: hover scale 1.05, active scale 0.97
 - Stop button: subtle pulse while streaming
 
 **P3.2 — Streaming cursor** (`StreamingText.tsx`)
+
 - Blinking cursor indicator while streaming
 
 **P3.3 — Scroll-to-bottom button** (`MessageList.tsx`)
+
 - Intersection Observer to detect scroll position
 - Animated floating button when scrolled up
 
 **P3.4 — Loading states** (`ChatPanel.tsx`)
+
 - Replace spinner with three-dot typing indicator
 - Pulsing dots animation
 
 **P3.5 — Hover states** (`MessageItem.tsx`, `SessionItem.tsx`, `ToolCallCard.tsx`)
+
 - Subtle background shift on message hover (2% opacity)
 - Session item transition timing
 - Tool card border/shadow on hover
 
 **P3.6 — Empty states** (`ChatPanel.tsx`)
+
 - Friendly empty state when no session selected
 - Greeting when session has no messages
 
 **P3.7 — Input refinement** (`ChatInput.tsx`)
+
 - Better placeholder text: "Message Claude..."
 - Smoother focus ring transition
 - Subtle border color change on focus
@@ -268,19 +293,23 @@ No hover feedback on messages. No press state on buttons beyond opacity change. 
 ### Phase 4: Visual Details
 
 **P4.1 — Tool approval refinement** (`ToolApproval.tsx`)
+
 - Softer color palette (muted yellow/green/red)
 - Smooth state transitions between pending/approved/denied
 
 **P4.2 — Code block polish** (Streamdown/CSS)
+
 - Inline code: light background tint, subtle border-radius
 - Block code: language label, copy button on hover
 - Better padding and border treatment
 
 **P4.3 — Header refinement** (`App.tsx`)
+
 - Simplify header or remove title text
 - Better sidebar toggle button styling
 
 **P4.4 — `prefers-reduced-motion` support** (all animated components)
+
 - Respect system accessibility settings
 - Disable entrance animations
 - Reduce transitions to instant
@@ -310,6 +339,7 @@ A comprehensive design guide has been created at:
 **`guides/design-system.md`**
 
 It documents:
+
 - Design philosophy and anti-patterns
 - Complete color palette (light + dark mode tokens)
 - Typography scale and font stacks

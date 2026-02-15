@@ -9,7 +9,7 @@ export function copyManifest(): Plugin {
       const root = path.resolve(__dirname, '..');
       fs.copyFileSync(
         path.resolve(root, 'manifest.json'),
-        path.resolve(root, 'dist/manifest.json'),
+        path.resolve(root, 'dist/manifest.json')
       );
     },
   };

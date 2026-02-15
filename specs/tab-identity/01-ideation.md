@@ -45,21 +45,25 @@
 ## 3) Codebase Map
 
 **Primary components/modules:**
+
 - `apps/client/index.html` — Static template, needs fallback `<link rel="icon">` tag
 - `apps/client/src/App.tsx` — Root React component, ideal mount point for global hooks (favicon + title)
 - `apps/client/src/stores/app-store.ts` — Zustand store with `selectedCwd`
 
 **New files to create:**
+
 - `apps/client/src/lib/favicon-utils.ts` — Hash function, color generation, canvas favicon generation
 - `apps/client/src/hooks/use-favicon.ts` — React hook: generates favicon on cwd change, animates during streaming
 - `apps/client/src/hooks/use-document-title.ts` — React hook: sets document.title with emoji + dir name + optional task summary
 
 **Shared dependencies:**
+
 - `useDirectoryState()` / `useAppStore()` for `selectedCwd`
 - `useChatSession()` for streaming status
 - `useTaskState()` for active task description (optional, for title summary)
 
 **Data flow:**
+
 ```
 selectedCwd (Zustand/URL) → fnv1aHash(cwd) → HSL color + emoji index
   → Canvas API generates 32x32 PNG favicon → data URI → <link rel="icon">
@@ -70,6 +74,7 @@ selectedCwd (Zustand/URL) → fnv1aHash(cwd) → HSL color + emoji index
 **Feature flags/config:** None needed
 
 **Potential blast radius:**
+
 - Direct: 3 new files (lib, 2 hooks) + minor edits to App.tsx and index.html
 - Indirect: None — purely additive side effects, no component re-renders
 - Tests: 1 new test file for favicon-utils (pure functions), 1 for each hook
@@ -87,6 +92,7 @@ N/A — This is a new feature, not a bug fix.
 ### Potential Solutions
 
 **1. Canvas API + FNV-1a Hash (Recommended)**
+
 - Description: Generate 32x32 PNG favicon via Canvas, using FNV-1a hash of cwd to derive HSL color. Two-frame swap animation (solid/dimmed) during streaming.
 - Pros:
   - Zero dependencies — Canvas API is built into all browsers
@@ -101,6 +107,7 @@ N/A — This is a new feature, not a bug fix.
 - Maintenance: Low
 
 **2. SVG Data URI Favicon**
+
 - Description: Generate SVG string with fill color derived from hash, encode as data URI.
 - Pros:
   - No Canvas API needed, string-only generation
@@ -113,6 +120,7 @@ N/A — This is a new feature, not a bug fix.
 - Maintenance: Low
 
 **3. Pre-generated Sprite Sheet**
+
 - Description: Create 20-30 colored favicon PNGs at build time, select by hash index.
 - Pros:
   - Zero runtime cost
@@ -140,11 +148,11 @@ N/A — This is a new feature, not a bug fix.
 
 ### Browser Compatibility
 
-| Feature | Chrome | Firefox | Edge | Safari |
-|---------|--------|---------|------|--------|
-| Dynamic favicon | Yes | Yes | Yes | No (static only) |
-| Favicon animation | Yes | Yes | Yes | No |
-| Emoji in title | Yes | Yes | Yes | Yes |
+| Feature           | Chrome | Firefox | Edge | Safari           |
+| ----------------- | ------ | ------- | ---- | ---------------- |
+| Dynamic favicon   | Yes    | Yes     | Yes  | No (static only) |
+| Favicon animation | Yes    | Yes     | Yes  | No               |
+| Emoji in title    | Yes    | Yes     | Yes  | Yes              |
 
 ---
 

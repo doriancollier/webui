@@ -30,24 +30,41 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance');
   const {
-    showTimestamps, setShowTimestamps,
-    expandToolCalls, setExpandToolCalls,
-    autoHideToolCalls, setAutoHideToolCalls,
-    devtoolsOpen, toggleDevtools,
-    verboseLogging, setVerboseLogging,
-    fontSize, setFontSize,
-    fontFamily, setFontFamily,
+    showTimestamps,
+    setShowTimestamps,
+    expandToolCalls,
+    setExpandToolCalls,
+    autoHideToolCalls,
+    setAutoHideToolCalls,
+    devtoolsOpen,
+    toggleDevtools,
+    verboseLogging,
+    setVerboseLogging,
+    fontSize,
+    setFontSize,
+    fontFamily,
+    setFontFamily,
     resetPreferences,
-    showStatusBarCwd, setShowStatusBarCwd,
-    showStatusBarPermission, setShowStatusBarPermission,
-    showStatusBarModel, setShowStatusBarModel,
-    showStatusBarCost, setShowStatusBarCost,
-    showStatusBarContext, setShowStatusBarContext,
-    showStatusBarGit, setShowStatusBarGit,
-    showShortcutChips, setShowShortcutChips,
-    showTaskCelebrations, setShowTaskCelebrations,
-    enableNotificationSound, setEnableNotificationSound,
-    showStatusBarSound, setShowStatusBarSound,
+    showStatusBarCwd,
+    setShowStatusBarCwd,
+    showStatusBarPermission,
+    setShowStatusBarPermission,
+    showStatusBarModel,
+    setShowStatusBarModel,
+    showStatusBarCost,
+    setShowStatusBarCost,
+    showStatusBarContext,
+    setShowStatusBarContext,
+    showStatusBarGit,
+    setShowStatusBarGit,
+    showShortcutChips,
+    setShowShortcutChips,
+    showTaskCelebrations,
+    setShowTaskCelebrations,
+    enableNotificationSound,
+    setEnableNotificationSound,
+    showStatusBarSound,
+    setShowStatusBarSound,
   } = useAppStore();
 
   const transport = useTransport();
@@ -60,27 +77,37 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="max-w-lg p-0 gap-0">
-        <ResponsiveDialogHeader className="px-4 py-3 border-b space-y-0">
+      <ResponsiveDialogContent className="max-w-lg gap-0 p-0">
+        <ResponsiveDialogHeader className="space-y-0 border-b px-4 py-3">
           <ResponsiveDialogTitle className="text-sm font-medium">Settings</ResponsiveDialogTitle>
         </ResponsiveDialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1 overflow-hidden">
-          <TabsList className="grid w-full grid-cols-4 mx-4 mt-3" style={{ width: 'calc(100% - 2rem)' }}>
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex flex-1 flex-col overflow-hidden"
+        >
+          <TabsList
+            className="mx-4 mt-3 grid w-full grid-cols-4"
+            style={{ width: 'calc(100% - 2rem)' }}
+          >
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
             <TabsTrigger value="statusBar">Status Bar</TabsTrigger>
             <TabsTrigger value="server">Server</TabsTrigger>
           </TabsList>
 
-          <div className="overflow-y-auto flex-1 p-4 min-h-[280px]">
+          <div className="min-h-[280px] flex-1 overflow-y-auto p-4">
             <TabsContent value="appearance" className="mt-0 space-y-6">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold text-foreground">Appearance</h3>
+                  <h3 className="text-foreground text-sm font-semibold">Appearance</h3>
                   <button
-                    onClick={() => { resetPreferences(); setTheme('system'); }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors duration-150"
+                    onClick={() => {
+                      resetPreferences();
+                      setTheme('system');
+                    }}
+                    className="text-muted-foreground hover:text-foreground text-xs transition-colors duration-150"
                   >
                     Reset to defaults
                   </button>
@@ -100,7 +127,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 </SettingRow>
 
                 <SettingRow label="Font family" description="Choose the typeface for the interface">
-                  <Select value={fontFamily} onValueChange={(v) => setFontFamily(v as FontFamilyKey)}>
+                  <Select
+                    value={fontFamily}
+                    onValueChange={(v) => setFontFamily(v as FontFamilyKey)}
+                  >
                     <SelectTrigger className="w-40">
                       <SelectValue />
                     </SelectTrigger>
@@ -109,7 +139,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                         <SelectItem key={font.key} value={font.key}>
                           <div className="flex flex-col">
                             <span>{font.displayName}</span>
-                            <span className="text-xs text-muted-foreground">{font.description}</span>
+                            <span className="text-muted-foreground text-xs">
+                              {font.description}
+                            </span>
                           </div>
                         </SelectItem>
                       ))}
@@ -117,8 +149,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   </Select>
                 </SettingRow>
 
-                <SettingRow label="Font size" description="Adjust the text size across the interface">
-                  <Select value={fontSize} onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}>
+                <SettingRow
+                  label="Font size"
+                  description="Adjust the text size across the interface"
+                >
+                  <Select
+                    value={fontSize}
+                    onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}
+                  >
                     <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
@@ -134,30 +172,54 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
             <TabsContent value="preferences" className="mt-0 space-y-6">
               <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground">Preferences</h3>
+                <h3 className="text-foreground text-sm font-semibold">Preferences</h3>
 
-                <SettingRow label="Show timestamps" description="Display message timestamps in chat">
+                <SettingRow
+                  label="Show timestamps"
+                  description="Display message timestamps in chat"
+                >
                   <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
                 </SettingRow>
 
-                <SettingRow label="Expand tool calls" description="Auto-expand tool call details in messages">
+                <SettingRow
+                  label="Expand tool calls"
+                  description="Auto-expand tool call details in messages"
+                >
                   <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
                 </SettingRow>
 
-                <SettingRow label="Auto-hide tool calls" description="Fade out completed tool calls after a few seconds">
+                <SettingRow
+                  label="Auto-hide tool calls"
+                  description="Fade out completed tool calls after a few seconds"
+                >
                   <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
                 </SettingRow>
 
-                <SettingRow label="Show shortcut chips" description="Display shortcut hints below the message input">
+                <SettingRow
+                  label="Show shortcut chips"
+                  description="Display shortcut hints below the message input"
+                >
                   <Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />
                 </SettingRow>
 
-                <SettingRow label="Task celebrations" description="Show animations when tasks complete">
-                  <Switch checked={showTaskCelebrations} onCheckedChange={setShowTaskCelebrations} />
+                <SettingRow
+                  label="Task celebrations"
+                  description="Show animations when tasks complete"
+                >
+                  <Switch
+                    checked={showTaskCelebrations}
+                    onCheckedChange={setShowTaskCelebrations}
+                  />
                 </SettingRow>
 
-                <SettingRow label="Notification sound" description="Play a sound when AI finishes responding (3s+ responses)">
-                  <Switch checked={enableNotificationSound} onCheckedChange={setEnableNotificationSound} />
+                <SettingRow
+                  label="Notification sound"
+                  description="Play a sound when AI finishes responding (3s+ responses)"
+                >
+                  <Switch
+                    checked={enableNotificationSound}
+                    onCheckedChange={setEnableNotificationSound}
+                  />
                 </SettingRow>
 
                 <SettingRow label="Show dev tools" description="Enable developer tools panel">
@@ -174,11 +236,20 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <SettingRow label="Show directory" description="Display current working directory">
                 <Switch checked={showStatusBarCwd} onCheckedChange={setShowStatusBarCwd} />
               </SettingRow>
-              <SettingRow label="Show git status" description="Display branch name and change count">
+              <SettingRow
+                label="Show git status"
+                description="Display branch name and change count"
+              >
                 <Switch checked={showStatusBarGit} onCheckedChange={setShowStatusBarGit} />
               </SettingRow>
-              <SettingRow label="Show permission mode" description="Display current permission setting">
-                <Switch checked={showStatusBarPermission} onCheckedChange={setShowStatusBarPermission} />
+              <SettingRow
+                label="Show permission mode"
+                description="Display current permission setting"
+              >
+                <Switch
+                  checked={showStatusBarPermission}
+                  onCheckedChange={setShowStatusBarPermission}
+                />
               </SettingRow>
               <SettingRow label="Show model" description="Display selected AI model">
                 <Switch checked={showStatusBarModel} onCheckedChange={setShowStatusBarModel} />
@@ -186,7 +257,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <SettingRow label="Show cost" description="Display session cost in USD">
                 <Switch checked={showStatusBarCost} onCheckedChange={setShowStatusBarCost} />
               </SettingRow>
-              <SettingRow label="Show context usage" description="Display context window utilization">
+              <SettingRow
+                label="Show context usage"
+                description="Display context window utilization"
+              >
                 <Switch checked={showStatusBarContext} onCheckedChange={setShowStatusBarContext} />
               </SettingRow>
               <SettingRow label="Show sound toggle" description="Display notification sound toggle">
@@ -196,14 +270,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
             <TabsContent value="server" className="mt-0 space-y-3">
               {/* Server Section */}
-              <h3 className="text-sm font-semibold text-foreground">Server</h3>
+              <h3 className="text-foreground text-sm font-semibold">Server</h3>
 
               {isLoading ? (
                 <div className="space-y-2">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <div key={i} className="flex items-center justify-between py-1">
-                      <div className="h-4 w-24 rounded bg-muted animate-pulse" />
-                      <div className="h-4 w-16 rounded bg-muted animate-pulse" />
+                      <div className="bg-muted h-4 w-24 animate-pulse rounded" />
+                      <div className="bg-muted h-4 w-16 animate-pulse rounded" />
                     </div>
                   ))}
                 </div>
@@ -212,7 +286,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <ConfigRow label="Version" value={config.version} />
                   <ConfigRow label="Port" value={String(config.port)} />
                   <ConfigRow label="Uptime" value={formatUptime(config.uptime)} />
-                  <ConfigRow label="Working Directory" value={config.workingDirectory} mono truncate />
+                  <ConfigRow
+                    label="Working Directory"
+                    value={config.workingDirectory}
+                    mono
+                    truncate
+                  />
                   <ConfigRow label="Node.js" value={config.nodeVersion} />
                   <ConfigRow
                     label="Claude CLI"
@@ -275,7 +354,7 @@ function SettingRow({
     <div className="flex items-center justify-between gap-4">
       <div className="min-w-0">
         <Label className="text-sm font-medium">{label}</Label>
-        <p className="text-xs text-muted-foreground">{description}</p>
+        <p className="text-muted-foreground text-xs">{description}</p>
       </div>
       {children}
     </div>
@@ -311,18 +390,18 @@ function ConfigRow({
     <button
       type="button"
       onClick={() => copy(value)}
-      className="flex w-full items-center justify-between py-1 gap-4 rounded -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-100"
+      className="hover:bg-muted/50 active:bg-muted/70 -mx-1 flex w-full items-center justify-between gap-4 rounded px-1 py-1 transition-colors duration-100"
     >
-      <span className="text-sm text-muted-foreground shrink-0">{label}</span>
+      <span className="text-muted-foreground shrink-0 text-sm">{label}</span>
       {copied ? (
-        <span className="text-xs text-muted-foreground">Copied</span>
+        <span className="text-muted-foreground text-xs">Copied</span>
       ) : (
         <span
           className={cn(
-            'text-sm text-right',
+            'text-right text-sm',
             mono && 'font-mono',
-            truncate && 'min-w-0 max-w-48 truncate',
-            muted && 'text-muted-foreground',
+            truncate && 'max-w-48 min-w-0 truncate',
+            muted && 'text-muted-foreground'
           )}
           dir={truncate ? 'rtl' : undefined}
           title={value}
@@ -348,11 +427,11 @@ function ConfigBadgeRow({
     <button
       type="button"
       onClick={() => copy(value)}
-      className="flex w-full items-center justify-between py-1 rounded -mx-1 px-1 hover:bg-muted/50 active:bg-muted/70 transition-colors duration-100"
+      className="hover:bg-muted/50 active:bg-muted/70 -mx-1 flex w-full items-center justify-between rounded px-1 py-1 transition-colors duration-100"
     >
-      <span className="text-sm text-muted-foreground">{label}</span>
+      <span className="text-muted-foreground text-sm">{label}</span>
       {copied ? (
-        <span className="text-xs text-muted-foreground">Copied</span>
+        <span className="text-muted-foreground text-xs">Copied</span>
       ) : (
         <Badge variant={variant}>{value}</Badge>
       )}

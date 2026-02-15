@@ -29,17 +29,18 @@ Never make changes to code you don't understand. Reading and comprehending the c
 
 ### Questions to Answer First
 
-| Question | Why It Matters |
-|----------|----------------|
-| What should happen? | Defines the expected behavior |
-| What actually happens? | Identifies the discrepancy |
-| When did it start? | Narrows the scope of changes |
-| What changed recently? | Identifies potential causes |
-| Is it reproducible? | Determines debugging approach |
+| Question               | Why It Matters                |
+| ---------------------- | ----------------------------- |
+| What should happen?    | Defines the expected behavior |
+| What actually happens? | Identifies the discrepancy    |
+| When did it start?     | Narrows the scope of changes  |
+| What changed recently? | Identifies potential causes   |
+| Is it reproducible?    | Determines debugging approach |
 
 ### Rubber Duck Method
 
 The act of explaining code line-by-line forces you to:
+
 - Think through logic sequentially
 - Surface implicit assumptions
 - Notice gaps in understanding
@@ -51,17 +52,18 @@ The act of explaining code line-by-line forces you to:
 
 ### Common Bug Categories
 
-| Category | Symptoms | Check |
-|----------|----------|-------|
-| **Data** | Wrong values, undefined | Log actual values |
-| **Logic** | Wrong branch, off-by-one | Trace conditionals |
-| **Timing** | Race conditions, stale data | Check async flow |
-| **State** | Inconsistent behavior | Inspect state at each step |
-| **Integration** | API mismatches | Verify contracts |
+| Category        | Symptoms                    | Check                      |
+| --------------- | --------------------------- | -------------------------- |
+| **Data**        | Wrong values, undefined     | Log actual values          |
+| **Logic**       | Wrong branch, off-by-one    | Trace conditionals         |
+| **Timing**      | Race conditions, stale data | Check async flow           |
+| **State**       | Inconsistent behavior       | Inspect state at each step |
+| **Integration** | API mismatches              | Verify contracts           |
 
 ### Ranking Hypotheses
 
 Test hypotheses in order of:
+
 1. **Likelihood** — Most common causes first
 2. **Ease of testing** — Quick tests before complex ones
 3. **Impact** — High-impact issues take priority
@@ -104,6 +106,7 @@ When facing complex bugs:
 **Never try to fix a bug you can't reproduce.**
 
 Steps to reproduce:
+
 1. Document exact steps
 2. Note environment (browser, OS, data state)
 3. Identify minimum case
@@ -120,6 +123,7 @@ Component → TanStack Query → API Route → DAL → Prisma → Database
 Debug from the outside in or inside out:
 
 **Outside-in** (start at symptom):
+
 - User sees wrong data
 - Check component receives correct data
 - Check query returns correct data
@@ -128,6 +132,7 @@ Debug from the outside in or inside out:
 - Check database has correct data
 
 **Inside-out** (start at source):
+
 - Verify database has correct data (use MCP database tools)
 - Verify DAL query is correct
 - Verify API transforms correctly
@@ -136,14 +141,14 @@ Debug from the outside in or inside out:
 
 ### Layer-Specific Checks
 
-| Layer | What to Check | Tools |
-|-------|---------------|-------|
-| Component | Props received, render conditions, state | Browser DevTools |
-| TanStack Query | Cache key, staleTime, enabled, queryFn | React Query Devtools |
-| API Route | Auth, request parsing, response format | Network tab, logs |
-| DAL | Auth check, Prisma query, error handling | Server logs |
-| Prisma | Query syntax, includes, where clauses | Logs, explain |
-| Database | Data exists, correct values, relationships | **MCP database tools** |
+| Layer          | What to Check                              | Tools                  |
+| -------------- | ------------------------------------------ | ---------------------- |
+| Component      | Props received, render conditions, state   | Browser DevTools       |
+| TanStack Query | Cache key, staleTime, enabled, queryFn     | React Query Devtools   |
+| API Route      | Auth, request parsing, response format     | Network tab, logs      |
+| DAL            | Auth check, Prisma query, error handling   | Server logs            |
+| Prisma         | Query syntax, includes, where clauses      | Logs, explain          |
+| Database       | Data exists, correct values, relationships | **MCP database tools** |
 
 ### Database Verification (Ground Truth)
 
@@ -155,6 +160,7 @@ mcp__mcp-dev-db__execute_sql_select: { sql: "SELECT * FROM [table] WHERE [condit
 ```
 
 This establishes **ground truth**:
+
 - If data exists in DB but not in UI → Issue is in application layers
 - If data missing from DB → Issue is in write operation
 - If data is wrong in DB → Issue is in mutation logic
@@ -165,55 +171,55 @@ This establishes **ground truth**:
 
 ### JavaScript/TypeScript
 
-| Pattern | Example | Fix |
-|---------|---------|-----|
-| Implicit coercion | `"5" + 3 = "53"` | Explicit conversion |
-| Async not awaited | Missing `await` | Add await, check Promise |
-| Closure capture | Loop variable captured | Use let, not var |
-| Null/undefined access | `obj.prop` when obj is null | Optional chaining `?.` |
-| Reference vs value | Object mutation | Spread or clone |
+| Pattern               | Example                     | Fix                      |
+| --------------------- | --------------------------- | ------------------------ |
+| Implicit coercion     | `"5" + 3 = "53"`            | Explicit conversion      |
+| Async not awaited     | Missing `await`             | Add await, check Promise |
+| Closure capture       | Loop variable captured      | Use let, not var         |
+| Null/undefined access | `obj.prop` when obj is null | Optional chaining `?.`   |
+| Reference vs value    | Object mutation             | Spread or clone          |
 
 ### React
 
-| Pattern | Symptom | Fix |
-|---------|---------|-----|
-| Stale closure | Old state in callback | Use callback form or ref |
-| Missing dependency | Effect doesn't re-run | Add to dependency array |
-| Infinite loop | Component re-renders forever | Check useEffect deps |
-| Key issues | List items behave wrong | Use unique, stable keys |
-| Server/client mismatch | Hydration errors | Check where state initializes |
+| Pattern                | Symptom                      | Fix                           |
+| ---------------------- | ---------------------------- | ----------------------------- |
+| Stale closure          | Old state in callback        | Use callback form or ref      |
+| Missing dependency     | Effect doesn't re-run        | Add to dependency array       |
+| Infinite loop          | Component re-renders forever | Check useEffect deps          |
+| Key issues             | List items behave wrong      | Use unique, stable keys       |
+| Server/client mismatch | Hydration errors             | Check where state initializes |
 
 ### Data Fetching
 
-| Pattern | Symptom | Fix |
-|---------|---------|-----|
-| Stale cache | Old data after mutation | Invalidate queries |
-| Race condition | Wrong data displayed | Cancel previous requests |
-| N+1 queries | Slow loading | Use include/eager loading |
-| Missing error handling | Silent failures | Add try/catch, onError |
+| Pattern                | Symptom                 | Fix                       |
+| ---------------------- | ----------------------- | ------------------------- |
+| Stale cache            | Old data after mutation | Invalidate queries        |
+| Race condition         | Wrong data displayed    | Cancel previous requests  |
+| N+1 queries            | Slow loading            | Use include/eager loading |
+| Missing error handling | Silent failures         | Add try/catch, onError    |
 
 ## Debugging Tools
 
 ### Console Methods
 
 ```javascript
-console.log()           // Basic output
-console.table()         // Tabular data
-console.group()         // Grouped output
-console.time()          // Performance timing
-console.trace()         // Stack trace
-console.assert()        // Conditional logging
+console.log(); // Basic output
+console.table(); // Tabular data
+console.group(); // Grouped output
+console.time(); // Performance timing
+console.trace(); // Stack trace
+console.assert(); // Conditional logging
 ```
 
 ### Strategic Logging
 
 ```javascript
 // Tag logs for filtering
-console.log('[AUTH]', user)
-console.log('[DATA]', response)
+console.log('[AUTH]', user);
+console.log('[DATA]', response);
 
 // Log with context
-console.log('[API] Request:', { endpoint, params, timestamp: Date.now() })
+console.log('[API] Request:', { endpoint, params, timestamp: Date.now() });
 
 // Remove before commit (or use debug library)
 ```
@@ -230,14 +236,14 @@ if (someCondition) debugger;
 
 ### Browser DevTools
 
-| Tab | Use For |
-|-----|---------|
-| Console | Errors, logs, REPL |
-| Network | API calls, timing, payloads |
-| Elements | DOM inspection, styles |
-| Sources | Breakpoints, stepping |
-| Application | Storage, cookies, cache |
-| Performance | Profiling, bottlenecks |
+| Tab         | Use For                     |
+| ----------- | --------------------------- |
+| Console     | Errors, logs, REPL          |
+| Network     | API calls, timing, payloads |
+| Elements    | DOM inspection, styles      |
+| Sources     | Breakpoints, stepping       |
+| Application | Storage, cookies, cache     |
+| Performance | Profiling, bottlenecks      |
 
 ## Debugging Mindset
 
@@ -262,20 +268,21 @@ if (someCondition) debugger;
 ### Ask for Help
 
 When to escalate:
+
 - After 30+ minutes with no progress
 - When you need domain knowledge
 - When a fresh perspective would help
 
 ## Anti-Patterns
 
-| Don't | Instead |
-|-------|---------|
-| Change random things | Form hypothesis, test systematically |
-| Assume you know the cause | Verify with evidence |
-| Debug without reproducing | Create minimal reproduction first |
-| Skip reading error messages | Read the complete error carefully |
-| Add code without understanding | Understand existing code first |
-| Debug in production | Reproduce locally first |
+| Don't                          | Instead                              |
+| ------------------------------ | ------------------------------------ |
+| Change random things           | Form hypothesis, test systematically |
+| Assume you know the cause      | Verify with evidence                 |
+| Debug without reproducing      | Create minimal reproduction first    |
+| Skip reading error messages    | Read the complete error carefully    |
+| Add code without understanding | Understand existing code first       |
+| Debug in production            | Reproduce locally first              |
 
 ## Quick Reference
 

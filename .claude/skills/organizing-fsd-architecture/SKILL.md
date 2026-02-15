@@ -25,13 +25,13 @@ FSD uses strict top-to-bottom dependency flow within `apps/client/src/layers/`:
 app → widgets → features → entities → shared
 ```
 
-| Layer | Purpose | Can Import From |
-|-------|---------|-----------------|
-| `app/` | App initialization (`App.tsx`, `main.tsx`, providers) | All lower layers |
-| `widgets/` | Large UI compositions (app layout, sidebars) | features, entities, shared |
-| `features/` | Complete user-facing functionality (chat, commands) | entities, shared |
-| `entities/` | Business domain objects (Session, Command) | shared only |
-| `shared/` | Reusable utilities, UI primitives, Transport | Nothing (base layer) |
+| Layer       | Purpose                                               | Can Import From            |
+| ----------- | ----------------------------------------------------- | -------------------------- |
+| `app/`      | App initialization (`App.tsx`, `main.tsx`, providers) | All lower layers           |
+| `widgets/`  | Large UI compositions (app layout, sidebars)          | features, entities, shared |
+| `features/` | Complete user-facing functionality (chat, commands)   | entities, shared           |
+| `entities/` | Business domain objects (Session, Command)            | shared only                |
+| `shared/`   | Reusable utilities, UI primitives, Transport          | Nothing (base layer)       |
 
 ### Dependency Rules (Critical)
 
@@ -86,19 +86,19 @@ Is it app initialization, providers, or entry point?
 
 ### Client (`apps/client/src/layers/`)
 
-| Module | Layer | Contents |
-|--------|-------|----------|
-| `shared/ui/` | shared | Shadcn components (button, card, dialog, etc.) |
-| `shared/model/` | shared | TransportContext, app-store, 8 hooks (useTheme, useIsMobile, etc.) |
-| `shared/lib/` | shared | cn(), Transports, font-config, favicon-utils, celebrations |
-| `entities/session/` | entities | Session types, useSessions hook, session transport calls |
-| `entities/command/` | entities | Command types, useCommands hook |
-| `features/chat/` | features | ChatPanel, MessageList, MessageItem, ToolCallCard, StreamingText, useChatSession |
-| `features/commands/` | features | CommandPalette |
-| `features/settings/` | features | SettingsDialog |
-| `features/files/` | features | FilePalette, useFiles |
-| `features/session-list/` | features | SessionSidebar, SessionItem, DirectoryPicker |
-| `widgets/app-layout/` | widgets | PermissionBanner |
+| Module                   | Layer    | Contents                                                                         |
+| ------------------------ | -------- | -------------------------------------------------------------------------------- |
+| `shared/ui/`             | shared   | Shadcn components (button, card, dialog, etc.)                                   |
+| `shared/model/`          | shared   | TransportContext, app-store, 8 hooks (useTheme, useIsMobile, etc.)               |
+| `shared/lib/`            | shared   | cn(), Transports, font-config, favicon-utils, celebrations                       |
+| `entities/session/`      | entities | Session types, useSessions hook, session transport calls                         |
+| `entities/command/`      | entities | Command types, useCommands hook                                                  |
+| `features/chat/`         | features | ChatPanel, MessageList, MessageItem, ToolCallCard, StreamingText, useChatSession |
+| `features/commands/`     | features | CommandPalette                                                                   |
+| `features/settings/`     | features | SettingsDialog                                                                   |
+| `features/files/`        | features | FilePalette, useFiles                                                            |
+| `features/session-list/` | features | SessionSidebar, SessionItem, DirectoryPicker                                     |
+| `widgets/app-layout/`    | widgets  | PermissionBanner                                                                 |
 
 ### Server (`apps/server/src/`)
 
@@ -110,9 +110,9 @@ Every module MUST export its public API through `index.ts`:
 
 ```typescript
 // features/chat/index.ts
-export { ChatPanel } from './ui/ChatPanel'
-export { useChatSession } from './model/use-chat-session'
-export type { ChatMessage } from './model/types'
+export { ChatPanel } from './ui/ChatPanel';
+export { useChatSession } from './model/use-chat-session';
+export type { ChatMessage } from './model/types';
 
 // DON'T export internal implementations
 // export { parseStreamEvent } from './lib/stream-parser'  // Keep internal
@@ -122,10 +122,10 @@ Import from index, never from internal paths:
 
 ```typescript
 // CORRECT: Import from module's public API
-import { ChatPanel, useChatSession } from '@/layers/features/chat'
+import { ChatPanel, useChatSession } from '@/layers/features/chat';
 
 // WRONG: Import from internal path
-import { ChatPanel } from '@/layers/features/chat/ui/ChatPanel'
+import { ChatPanel } from '@/layers/features/chat/ui/ChatPanel';
 ```
 
 ## Cross-Feature Communication
@@ -137,7 +137,7 @@ When features need to share data or logic:
 ```typescript
 // Option 1: UI composition (ALLOWED)
 // features/chat/ui/ChatPanel.tsx renders features/commands CommandPalette
-import { CommandPalette } from '@/layers/features/commands'
+import { CommandPalette } from '@/layers/features/commands';
 
 // Option 2: Lift shared logic to entities layer
 // entities/session/model/use-current-session.ts (shared across features)
@@ -163,6 +163,7 @@ The server currently uses flat `routes/` + `services/`. This is appropriate at t
 - Two services have circular or unclear dependencies
 
 **Suggested transition:**
+
 ```
 services/           →  domains/
 ├── agent-manager   →  ├── agent/
@@ -181,6 +182,7 @@ services/           →  domains/
 ```
 
 **When suggesting, say:**
+
 > "The server now has [N] services. The FSD architecture guide recommends domain grouping at 15+ services. Would you like to restructure into domain directories?"
 
 ## Detecting Layer Violations

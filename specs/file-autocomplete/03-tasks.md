@@ -69,7 +69,7 @@ import type {
   StreamEvent,
   TaskItem,
   ServerConfig,
-  FileListResponse,  // NEW
+  FileListResponse, // NEW
 } from './types.js';
 ```
 
@@ -79,7 +79,7 @@ Add the new method to the `Transport` interface. Place it after `getCommands` an
 export interface Transport {
   // ... existing methods ...
   getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
-  listFiles(cwd: string): Promise<FileListResponse>;  // NEW
+  listFiles(cwd: string): Promise<FileListResponse>; // NEW
   health(): Promise<HealthResponse>;
   getConfig(): Promise<ServerConfig>;
 }
@@ -155,17 +155,21 @@ export class FileListService {
     const { stdout } = await execFileAsync(
       'git',
       ['ls-files', '--cached', '--others', '--exclude-standard'],
-      { cwd, maxBuffer: 10 * 1024 * 1024 },
+      { cwd, maxBuffer: 10 * 1024 * 1024 }
     );
-    return stdout
-      .split('\n')
-      .filter((line) => line.length > 0);
+    return stdout.split('\n').filter((line) => line.length > 0);
   }
 
   private async listViaReaddir(cwd: string): Promise<string[]> {
     const EXCLUDED = new Set([
-      'node_modules', '.git', 'dist', 'build', '.next',
-      'coverage', '__pycache__', '.cache',
+      'node_modules',
+      '.git',
+      'dist',
+      'build',
+      '.next',
+      'coverage',
+      '__pycache__',
+      '.cache',
     ]);
     const MAX_DEPTH = 8;
     const files: string[] = [];
@@ -263,12 +267,12 @@ import fileRoutes from './routes/files.js';
 Then in the route mounting section:
 
 ```typescript
-  app.use('/api/sessions', sessionRoutes);
-  app.use('/api/commands', commandRoutes);
-  app.use('/api/health', healthRoutes);
-  app.use('/api/directory', directoryRoutes);
-  app.use('/api/config', configRoutes);
-  app.use('/api/files', fileRoutes);  // NEW
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/commands', commandRoutes);
+app.use('/api/health', healthRoutes);
+app.use('/api/directory', directoryRoutes);
+app.use('/api/config', configRoutes);
+app.use('/api/files', fileRoutes); // NEW
 ```
 
 ### Unit Tests
@@ -301,13 +305,11 @@ describe('FileListService', () => {
   });
 
   it('returns file list from git', async () => {
-    vi.mocked(execFile).mockImplementation(
-      (_cmd: any, _args: any, _opts: any, cb?: any) => {
-        const callback = cb || _opts;
-        callback(null, { stdout: 'src/index.ts\nsrc/app.ts\n', stderr: '' });
-        return {} as any;
-      },
-    );
+    vi.mocked(execFile).mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
+      const callback = cb || _opts;
+      callback(null, { stdout: 'src/index.ts\nsrc/app.ts\n', stderr: '' });
+      return {} as any;
+    });
 
     const result = await service.listFiles('/test/cwd');
     expect(result.files).toEqual(['src/index.ts', 'src/app.ts']);
@@ -316,13 +318,11 @@ describe('FileListService', () => {
   });
 
   it('falls back to readdir when git fails', async () => {
-    vi.mocked(execFile).mockImplementation(
-      (_cmd: any, _args: any, _opts: any, cb?: any) => {
-        const callback = cb || _opts;
-        callback(new Error('not a git repo'), { stdout: '', stderr: '' });
-        return {} as any;
-      },
-    );
+    vi.mocked(execFile).mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
+      const callback = cb || _opts;
+      callback(new Error('not a git repo'), { stdout: '', stderr: '' });
+      return {} as any;
+    });
 
     vi.mocked(readdir).mockResolvedValue([
       { name: 'index.ts', isDirectory: () => false, isFile: () => true } as any,
@@ -333,13 +333,11 @@ describe('FileListService', () => {
   });
 
   it('returns cached results on second call', async () => {
-    vi.mocked(execFile).mockImplementation(
-      (_cmd: any, _args: any, _opts: any, cb?: any) => {
-        const callback = cb || _opts;
-        callback(null, { stdout: 'file.ts\n', stderr: '' });
-        return {} as any;
-      },
-    );
+    vi.mocked(execFile).mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
+      const callback = cb || _opts;
+      callback(null, { stdout: 'file.ts\n', stderr: '' });
+      return {} as any;
+    });
 
     await service.listFiles('/test/cwd');
     await service.listFiles('/test/cwd');
@@ -350,13 +348,11 @@ describe('FileListService', () => {
 
   it('sets truncated=true when exceeding MAX_FILES', async () => {
     const manyFiles = Array.from({ length: 10_001 }, (_, i) => `file${i}.ts`).join('\n') + '\n';
-    vi.mocked(execFile).mockImplementation(
-      (_cmd: any, _args: any, _opts: any, cb?: any) => {
-        const callback = cb || _opts;
-        callback(null, { stdout: manyFiles, stderr: '' });
-        return {} as any;
-      },
-    );
+    vi.mocked(execFile).mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
+      const callback = cb || _opts;
+      callback(null, { stdout: manyFiles, stderr: '' });
+      return {} as any;
+    });
 
     const result = await service.listFiles('/test/cwd');
     expect(result.truncated).toBe(true);
@@ -364,13 +360,11 @@ describe('FileListService', () => {
   });
 
   it('excludes node_modules in readdir strategy', async () => {
-    vi.mocked(execFile).mockImplementation(
-      (_cmd: any, _args: any, _opts: any, cb?: any) => {
-        const callback = cb || _opts;
-        callback(new Error('not a git repo'), { stdout: '', stderr: '' });
-        return {} as any;
-      },
-    );
+    vi.mocked(execFile).mockImplementation((_cmd: any, _args: any, _opts: any, cb?: any) => {
+      const callback = cb || _opts;
+      callback(new Error('not a git repo'), { stdout: '', stderr: '' });
+      return {} as any;
+    });
 
     vi.mocked(readdir).mockResolvedValue([
       { name: 'node_modules', isDirectory: () => true, isFile: () => false } as any,
@@ -381,7 +375,7 @@ describe('FileListService', () => {
     const result = await service.listFiles('/test/cwd');
     // node_modules should be excluded, only index.ts should be present
     // (src is a directory so it would be walked, but readdir for src is not mocked so it returns nothing)
-    expect(result.files.some(f => f.includes('node_modules'))).toBe(false);
+    expect(result.files.some((f) => f.includes('node_modules'))).toBe(false);
   });
 });
 ```
@@ -419,7 +413,7 @@ import type {
   StreamEvent,
   TaskItem,
   ServerConfig,
-  FileListResponse,  // NEW
+  FileListResponse, // NEW
 } from '@dorkos/shared/types';
 ```
 
@@ -449,7 +443,7 @@ import type {
   CommandRegistry,
   TaskItem,
   ServerConfig,
-  FileListResponse,  // NEW
+  FileListResponse, // NEW
 } from '@dorkos/shared/types';
 ```
 
@@ -461,7 +455,8 @@ export interface DirectTransportServices {
   commandRegistry: {
     getCommands(forceRefresh?: boolean): Promise<CommandRegistry>;
   };
-  fileLister?: {  // NEW - optional because Obsidian plugin may not provide it yet
+  fileLister?: {
+    // NEW - optional because Obsidian plugin may not provide it yet
     listFiles(cwd: string): Promise<{ files: string[]; truncated: boolean; total: number }>;
   };
   vaultRoot: string;
@@ -509,7 +504,7 @@ Replace the entire file with the enhanced version that adds `indices` to the ret
  */
 export function fuzzyMatch(
   query: string,
-  target: string,
+  target: string
 ): { match: boolean; score: number; indices: number[] } {
   if (!query) return { match: true, score: 0, indices: [] };
 
@@ -676,8 +671,8 @@ export function useFiles(cwd?: string | null) {
     queryKey: ['files', { cwd: cwd ?? null }],
     queryFn: () => transport.listFiles(cwd!),
     enabled: !!cwd,
-    staleTime: 5 * 60 * 1000,    // 5 minutes (matches server cache TTL)
-    gcTime: 30 * 60 * 1000,      // 30 minutes garbage collection
+    staleTime: 5 * 60 * 1000, // 5 minutes (matches server cache TTL)
+    gcTime: 30 * 60 * 1000, // 30 minutes garbage collection
   });
 }
 ```
@@ -856,42 +851,46 @@ export function FilePalette({
 Add `onCursorChange` prop and wire it up:
 
 **Props interface** -- add:
+
 ```typescript
 interface ChatInputProps {
   // ... existing props ...
-  onCursorChange?: (pos: number) => void;  // NEW
+  onCursorChange?: (pos: number) => void; // NEW
 }
 ```
 
 **Destructure** -- add `onCursorChange` to the destructured props.
 
 **handleChange** -- after calling `onChange(e.target.value)`, call `onCursorChange`:
+
 ```typescript
-  const handleChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-      onChange(e.target.value);
-      onCursorChange?.(e.target.selectionStart);  // NEW
-      // Auto-resize textarea
-      const textarea = textareaRef.current;
-      if (textarea) {
-        textarea.style.height = 'auto';
-        textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
-      }
-    },
-    [onChange, onCursorChange]  // ADD onCursorChange to deps
-  );
+const handleChange = useCallback(
+  (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(e.target.value);
+    onCursorChange?.(e.target.selectionStart); // NEW
+    // Auto-resize textarea
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 200)}px`;
+    }
+  },
+  [onChange, onCursorChange] // ADD onCursorChange to deps
+);
 ```
 
 **Add `handleSelect`** -- new callback to catch cursor repositioning (click, shift+arrow):
+
 ```typescript
-  const handleSelect = useCallback(() => {
-    if (textareaRef.current) {
-      onCursorChange?.(textareaRef.current.selectionStart);
-    }
-  }, [onCursorChange]);
+const handleSelect = useCallback(() => {
+  if (textareaRef.current) {
+    onCursorChange?.(textareaRef.current.selectionStart);
+  }
+}, [onCursorChange]);
 ```
 
 **Wire `onSelect` on the textarea element**:
+
 ```typescript
       <textarea
         ref={textareaRef}
@@ -913,6 +912,7 @@ interface ChatInputProps {
 This is the largest change. Add file autocomplete state, detection, filtering, selection, and rendering alongside the existing command palette.
 
 **New imports** -- add at the top:
+
 ```typescript
 import { useFiles } from '../../hooks/use-files';
 import { FilePalette } from '../files/FilePalette';
@@ -920,209 +920,219 @@ import type { FileEntry } from '../files/FilePalette';
 ```
 
 **New state variables** -- add after the existing command state variables:
+
 ```typescript
-  // File autocomplete state
-  const [showFiles, setShowFiles] = useState(false);
-  const [fileQuery, setFileQuery] = useState('');
-  const [fileSelectedIndex, setFileSelectedIndex] = useState(0);
-  const [fileTriggerPos, setFileTriggerPos] = useState(-1);
-  const [cursorPos, setCursorPos] = useState(0);
+// File autocomplete state
+const [showFiles, setShowFiles] = useState(false);
+const [fileQuery, setFileQuery] = useState('');
+const [fileSelectedIndex, setFileSelectedIndex] = useState(0);
+const [fileTriggerPos, setFileTriggerPos] = useState(-1);
+const [cursorPos, setCursorPos] = useState(0);
 ```
 
 **useFiles hook** -- add after `useCommands`:
+
 ```typescript
-  const { data: fileList } = useFiles(cwd);
+const { data: fileList } = useFiles(cwd);
 ```
 
 **`allFileEntries` memo** -- add after `filteredCommands` memo:
+
 ```typescript
-  const allFileEntries = useMemo(() => {
-    if (!fileList?.files) return [];
-    const entries: FileEntry[] = [];
-    const seenDirs = new Set<string>();
+const allFileEntries = useMemo(() => {
+  if (!fileList?.files) return [];
+  const entries: FileEntry[] = [];
+  const seenDirs = new Set<string>();
 
-    for (const filePath of fileList.files) {
-      const lastSlash = filePath.lastIndexOf('/');
-      const directory = lastSlash >= 0 ? filePath.slice(0, lastSlash + 1) : '';
-      const filename = lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
-      entries.push({ path: filePath, filename, directory, isDirectory: false });
+  for (const filePath of fileList.files) {
+    const lastSlash = filePath.lastIndexOf('/');
+    const directory = lastSlash >= 0 ? filePath.slice(0, lastSlash + 1) : '';
+    const filename = lastSlash >= 0 ? filePath.slice(lastSlash + 1) : filePath;
+    entries.push({ path: filePath, filename, directory, isDirectory: false });
 
-      // Extract unique parent directories
-      const parts = filePath.split('/');
-      for (let i = 1; i < parts.length; i++) {
-        const dir = parts.slice(0, i).join('/') + '/';
-        if (!seenDirs.has(dir)) {
-          seenDirs.add(dir);
-          entries.push({
-            path: dir,
-            filename: parts[i - 1] + '/',
-            directory: i > 1 ? parts.slice(0, i - 1).join('/') + '/' : '',
-            isDirectory: true,
-          });
-        }
+    // Extract unique parent directories
+    const parts = filePath.split('/');
+    for (let i = 1; i < parts.length; i++) {
+      const dir = parts.slice(0, i).join('/') + '/';
+      if (!seenDirs.has(dir)) {
+        seenDirs.add(dir);
+        entries.push({
+          path: dir,
+          filename: parts[i - 1] + '/',
+          directory: i > 1 ? parts.slice(0, i - 1).join('/') + '/' : '',
+          isDirectory: true,
+        });
       }
     }
+  }
 
-    return entries;
-  }, [fileList]);
+  return entries;
+}, [fileList]);
 ```
 
 **`filteredFiles` memo** -- add after `allFileEntries`:
+
 ```typescript
-  const filteredFiles = useMemo(() => {
-    if (!showFiles) return [];
-    if (!fileQuery) return allFileEntries.slice(0, 50).map((e) => ({ ...e, indices: [] as number[] }));
-    return allFileEntries
-      .map((entry) => {
-        const result = fuzzyMatch(fileQuery, entry.path);
-        return { ...entry, ...result };
-      })
-      .filter((r) => r.match)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 50);
-  }, [allFileEntries, fileQuery, showFiles]);
+const filteredFiles = useMemo(() => {
+  if (!showFiles) return [];
+  if (!fileQuery)
+    return allFileEntries.slice(0, 50).map((e) => ({ ...e, indices: [] as number[] }));
+  return allFileEntries
+    .map((entry) => {
+      const result = fuzzyMatch(fileQuery, entry.path);
+      return { ...entry, ...result };
+    })
+    .filter((r) => r.match)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 50);
+}, [allFileEntries, fileQuery, showFiles]);
 ```
 
 **Reset fileSelectedIndex** when filter changes:
-```typescript
-  useEffect(() => {
-    setFileSelectedIndex(0);
-  }, [fileQuery, showFiles]);
 
-  // Clamp fileSelectedIndex
-  useEffect(() => {
-    if (filteredFiles.length > 0 && fileSelectedIndex >= filteredFiles.length) {
-      setFileSelectedIndex(filteredFiles.length - 1);
-    }
-  }, [filteredFiles.length, fileSelectedIndex]);
+```typescript
+useEffect(() => {
+  setFileSelectedIndex(0);
+}, [fileQuery, showFiles]);
+
+// Clamp fileSelectedIndex
+useEffect(() => {
+  if (filteredFiles.length > 0 && fileSelectedIndex >= filteredFiles.length) {
+    setFileSelectedIndex(filteredFiles.length - 1);
+  }
+}, [filteredFiles.length, fileSelectedIndex]);
 ```
 
 **Replace `handleInputChange`** -- use cursor-position-based trigger detection for BOTH `@` and `/`:
+
 ```typescript
-  function detectTrigger(value: string, cursor: number) {
-    const textToCursor = value.slice(0, cursor);
+function detectTrigger(value: string, cursor: number) {
+  const textToCursor = value.slice(0, cursor);
 
-    // Check for @ trigger (file autocomplete)
-    const fileMatch = textToCursor.match(/(^|\s)@([\w.\/:-]*)$/);
-    if (fileMatch) {
-      setShowFiles(true);
-      setFileQuery(fileMatch[2]);
-      setFileTriggerPos((fileMatch.index ?? 0) + fileMatch[1].length);
-      setShowCommands(false);
-      return;
-    }
-
-    // Check for / trigger (command autocomplete)
-    const cmdMatch = textToCursor.match(/(^|\s)\/([\w:-]*)$/);
-    if (cmdMatch) {
-      setShowCommands(true);
-      setCommandQuery(cmdMatch[2]);
-      setSlashTriggerPos((cmdMatch.index ?? 0) + cmdMatch[1].length);
-      setShowFiles(false);
-      return;
-    }
-
-    // No trigger active
-    setShowFiles(false);
+  // Check for @ trigger (file autocomplete)
+  const fileMatch = textToCursor.match(/(^|\s)@([\w.\/:-]*)$/);
+  if (fileMatch) {
+    setShowFiles(true);
+    setFileQuery(fileMatch[2]);
+    setFileTriggerPos((fileMatch.index ?? 0) + fileMatch[1].length);
     setShowCommands(false);
+    return;
   }
 
-  function handleInputChange(value: string) {
-    setInput(value);
-    // Use current cursorPos for detection; if the textarea hasn't reported
-    // a cursor position yet, assume end-of-input
-    detectTrigger(value, cursorPos || value.length);
+  // Check for / trigger (command autocomplete)
+  const cmdMatch = textToCursor.match(/(^|\s)\/([\w:-]*)$/);
+  if (cmdMatch) {
+    setShowCommands(true);
+    setCommandQuery(cmdMatch[2]);
+    setSlashTriggerPos((cmdMatch.index ?? 0) + cmdMatch[1].length);
+    setShowFiles(false);
+    return;
   }
+
+  // No trigger active
+  setShowFiles(false);
+  setShowCommands(false);
+}
+
+function handleInputChange(value: string) {
+  setInput(value);
+  // Use current cursorPos for detection; if the textarea hasn't reported
+  // a cursor position yet, assume end-of-input
+  detectTrigger(value, cursorPos || value.length);
+}
 ```
 
 **Add cursor change handler** that also re-runs detection:
+
 ```typescript
-  const handleCursorChange = useCallback(
-    (pos: number) => {
-      setCursorPos(pos);
-      detectTrigger(input, pos);
-    },
-    [input],
-  );
+const handleCursorChange = useCallback(
+  (pos: number) => {
+    setCursorPos(pos);
+    detectTrigger(input, pos);
+  },
+  [input]
+);
 ```
 
 NOTE: `detectTrigger` references state setters and will need to either be inline or wrapped appropriately. Since `handleInputChange` and `handleCursorChange` both call it, keeping it as a plain function inside the component body (not wrapped in `useCallback`) is the simplest approach, matching the existing `handleInputChange` pattern.
 
 **Add `handleFileSelect`**:
-```typescript
-  function handleFileSelect(entry: FileEntry) {
-    const before = input.slice(0, fileTriggerPos);
-    const after = input.slice(cursorPos);
 
-    if (entry.isDirectory) {
-      // Directory: insert @dir/ and keep palette open for drill-down
-      const newValue = before + '@' + entry.path + after;
-      const newCursor = before.length + 1 + entry.path.length;
-      setInput(newValue);
-      setCursorPos(newCursor);
-      setFileQuery(entry.path);
-      // Palette stays open -- detectTrigger will re-fire with new text
-    } else {
-      // File: insert @path and close palette
-      const newValue = before + '@' + entry.path + ' ' + after;
-      setInput(newValue);
-      setShowFiles(false);
-    }
+```typescript
+function handleFileSelect(entry: FileEntry) {
+  const before = input.slice(0, fileTriggerPos);
+  const after = input.slice(cursorPos);
+
+  if (entry.isDirectory) {
+    // Directory: insert @dir/ and keep palette open for drill-down
+    const newValue = before + '@' + entry.path + after;
+    const newCursor = before.length + 1 + entry.path.length;
+    setInput(newValue);
+    setCursorPos(newCursor);
+    setFileQuery(entry.path);
+    // Palette stays open -- detectTrigger will re-fire with new text
+  } else {
+    // File: insert @path and close palette
+    const newValue = before + '@' + entry.path + ' ' + after;
+    setInput(newValue);
+    setShowFiles(false);
   }
+}
 ```
 
 **Update keyboard handlers** to dispatch to correct palette:
+
 ```typescript
-  const isPaletteOpen = showCommands || showFiles;
+const isPaletteOpen = showCommands || showFiles;
 
-  const handleArrowDown = useCallback(() => {
-    if (showCommands) {
-      setSelectedIndex((prev) =>
-        filteredCommands.length === 0 ? 0 : (prev + 1) % filteredCommands.length
-      );
-    } else if (showFiles) {
-      setFileSelectedIndex((prev) =>
-        filteredFiles.length === 0 ? 0 : (prev + 1) % filteredFiles.length
-      );
-    }
-  }, [showCommands, showFiles, filteredCommands.length, filteredFiles.length]);
+const handleArrowDown = useCallback(() => {
+  if (showCommands) {
+    setSelectedIndex((prev) =>
+      filteredCommands.length === 0 ? 0 : (prev + 1) % filteredCommands.length
+    );
+  } else if (showFiles) {
+    setFileSelectedIndex((prev) =>
+      filteredFiles.length === 0 ? 0 : (prev + 1) % filteredFiles.length
+    );
+  }
+}, [showCommands, showFiles, filteredCommands.length, filteredFiles.length]);
 
-  const handleArrowUp = useCallback(() => {
-    if (showCommands) {
-      setSelectedIndex((prev) =>
-        filteredCommands.length === 0
-          ? 0
-          : (prev - 1 + filteredCommands.length) % filteredCommands.length
-      );
-    } else if (showFiles) {
-      setFileSelectedIndex((prev) =>
-        filteredFiles.length === 0
-          ? 0
-          : (prev - 1 + filteredFiles.length) % filteredFiles.length
-      );
-    }
-  }, [showCommands, showFiles, filteredCommands.length, filteredFiles.length]);
+const handleArrowUp = useCallback(() => {
+  if (showCommands) {
+    setSelectedIndex((prev) =>
+      filteredCommands.length === 0
+        ? 0
+        : (prev - 1 + filteredCommands.length) % filteredCommands.length
+    );
+  } else if (showFiles) {
+    setFileSelectedIndex((prev) =>
+      filteredFiles.length === 0 ? 0 : (prev - 1 + filteredFiles.length) % filteredFiles.length
+    );
+  }
+}, [showCommands, showFiles, filteredCommands.length, filteredFiles.length]);
 
-  const handleKeyboardSelect = useCallback(() => {
-    if (showCommands) {
-      if (filteredCommands.length > 0 && selectedIndex < filteredCommands.length) {
-        handleCommandSelect(filteredCommands[selectedIndex]);
-      } else {
-        setShowCommands(false);
-      }
-    } else if (showFiles) {
-      if (filteredFiles.length > 0 && fileSelectedIndex < filteredFiles.length) {
-        handleFileSelect(filteredFiles[fileSelectedIndex]);
-      } else {
-        setShowFiles(false);
-      }
+const handleKeyboardSelect = useCallback(() => {
+  if (showCommands) {
+    if (filteredCommands.length > 0 && selectedIndex < filteredCommands.length) {
+      handleCommandSelect(filteredCommands[selectedIndex]);
+    } else {
+      setShowCommands(false);
     }
-  }, [showCommands, showFiles, filteredCommands, selectedIndex, filteredFiles, fileSelectedIndex]);
+  } else if (showFiles) {
+    if (filteredFiles.length > 0 && fileSelectedIndex < filteredFiles.length) {
+      handleFileSelect(filteredFiles[fileSelectedIndex]);
+    } else {
+      setShowFiles(false);
+    }
+  }
+}, [showCommands, showFiles, filteredCommands, selectedIndex, filteredFiles, fileSelectedIndex]);
 ```
 
 **Update `activeDescendantId`**:
+
 ```typescript
-  const activeDescendantId = showCommands && filteredCommands.length > 0
+const activeDescendantId =
+  showCommands && filteredCommands.length > 0
     ? `command-item-${selectedIndex}`
     : showFiles && filteredFiles.length > 0
       ? `file-item-${fileSelectedIndex}`
@@ -1130,46 +1140,50 @@ NOTE: `detectTrigger` references state setters and will need to either be inline
 ```
 
 **Update JSX** -- add FilePalette alongside CommandPalette, update ChatInput props:
+
 ```tsx
-      <div className="chat-input-container relative border-t p-4">
-        <AnimatePresence>
-          {showCommands && (
-            <CommandPalette
-              filteredCommands={filteredCommands}
-              selectedIndex={selectedIndex}
-              onSelect={handleCommandSelect}
-            />
-          )}
-          {showFiles && (
-            <FilePalette
-              filteredFiles={filteredFiles}
-              selectedIndex={fileSelectedIndex}
-              onSelect={handleFileSelect}
-            />
-          )}
-        </AnimatePresence>
+<div className="chat-input-container relative border-t p-4">
+  <AnimatePresence>
+    {showCommands && (
+      <CommandPalette
+        filteredCommands={filteredCommands}
+        selectedIndex={selectedIndex}
+        onSelect={handleCommandSelect}
+      />
+    )}
+    {showFiles && (
+      <FilePalette
+        filteredFiles={filteredFiles}
+        selectedIndex={fileSelectedIndex}
+        onSelect={handleFileSelect}
+      />
+    )}
+  </AnimatePresence>
 
-        <ChatInput
-          value={input}
-          onChange={handleInputChange}
-          onCursorChange={handleCursorChange}
-          onSubmit={handleSubmit}
-          isLoading={status === 'streaming'}
-          onStop={stop}
-          onEscape={() => { setShowCommands(false); setShowFiles(false); }}
-          isPaletteOpen={isPaletteOpen}
-          onArrowUp={handleArrowUp}
-          onArrowDown={handleArrowDown}
-          onCommandSelect={handleKeyboardSelect}
-          activeDescendantId={activeDescendantId}
-        />
+  <ChatInput
+    value={input}
+    onChange={handleInputChange}
+    onCursorChange={handleCursorChange}
+    onSubmit={handleSubmit}
+    isLoading={status === 'streaming'}
+    onStop={stop}
+    onEscape={() => {
+      setShowCommands(false);
+      setShowFiles(false);
+    }}
+    isPaletteOpen={isPaletteOpen}
+    onArrowUp={handleArrowUp}
+    onArrowDown={handleArrowDown}
+    onCommandSelect={handleKeyboardSelect}
+    activeDescendantId={activeDescendantId}
+  />
 
-        <StatusLine
-          sessionId={sessionId}
-          sessionStatus={sessionStatus}
-          isStreaming={status === 'streaming'}
-        />
-      </div>
+  <StatusLine
+    sessionId={sessionId}
+    sessionStatus={sessionStatus}
+    isStreaming={status === 'streaming'}
+  />
+</div>
 ```
 
 ### Verification
@@ -1187,15 +1201,15 @@ NOTE: `detectTrigger` references state setters and will need to either be inline
 
 ## Summary
 
-| Phase | Task | Files | Status |
-|-------|------|-------|--------|
-| P1 | Shared schemas + transport | 2 modified | pending |
-| P2 | Server service + route | 2 new, 1 modified, 1 new test | pending |
-| P3 | Client transports | 2 modified | pending |
-| P4 | fuzzyMatch enhancement | 1 modified, 1 modified test | pending |
-| P5 | useFiles hook | 1 new | pending |
-| P6 | FilePalette component | 1 new | pending |
-| P7 | ChatInput + ChatPanel integration | 2 modified | pending |
+| Phase | Task                              | Files                         | Status  |
+| ----- | --------------------------------- | ----------------------------- | ------- |
+| P1    | Shared schemas + transport        | 2 modified                    | pending |
+| P2    | Server service + route            | 2 new, 1 modified, 1 new test | pending |
+| P3    | Client transports                 | 2 modified                    | pending |
+| P4    | fuzzyMatch enhancement            | 1 modified, 1 modified test   | pending |
+| P5    | useFiles hook                     | 1 new                         | pending |
+| P6    | FilePalette component             | 1 new                         | pending |
+| P7    | ChatInput + ChatPanel integration | 2 modified                    | pending |
 
 **Critical path:** P1 -> P2 -> P3 -> P5 -> P7
 **Parallel track:** P1 -> P4 -> P6 -> P7

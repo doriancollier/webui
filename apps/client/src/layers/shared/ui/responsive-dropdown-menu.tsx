@@ -10,13 +10,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from './dropdown-menu';
-import {
-  Drawer,
-  DrawerContent,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from './drawer';
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger } from './drawer';
 import { cn } from '../lib/utils';
 
 const ResponsiveDropdownMenuContext = React.createContext<{
@@ -49,7 +43,7 @@ function ResponsiveDropdownMenu({
       setInternalOpen(v);
       onOpenChange?.(v);
     },
-    [onOpenChange],
+    [onOpenChange]
   );
 
   const close = React.useCallback(() => {
@@ -130,7 +124,7 @@ function ResponsiveDropdownMenuLabel({
   }
   return (
     <DrawerHeader className="pb-2">
-      <DrawerTitle className={cn('text-sm font-semibold text-muted-foreground', className)}>
+      <DrawerTitle className={cn('text-muted-foreground text-sm font-semibold', className)}>
         {children}
       </DrawerTitle>
     </DrawerHeader>
@@ -206,7 +200,7 @@ function ResponsiveDropdownMenuRadioItem({
             <div className="text-left">
               <div>{children}</div>
               {description && (
-                <div className="text-[10px] text-muted-foreground">{description}</div>
+                <div className="text-muted-foreground text-[10px]">{description}</div>
               )}
             </div>
           </div>
@@ -240,10 +234,10 @@ function MobileRadioItem({
       role="radio"
       aria-checked={isSelected}
       className={cn(
-        'flex w-full items-center gap-3 border-b border-border px-4 py-3 text-left transition-colors',
-        'min-h-[44px] active:bg-accent/50',
+        'border-border flex w-full items-center gap-3 border-b px-4 py-3 text-left transition-colors',
+        'active:bg-accent/50 min-h-[44px]',
         'last:border-b-0',
-        className,
+        className
       )}
       onClick={() => {
         onValueChange?.(value);
@@ -254,10 +248,10 @@ function MobileRadioItem({
       <div className="min-w-0 flex-1">
         <div className="text-[17px] leading-snug">{children}</div>
         {description && (
-          <div className="text-[13px] leading-snug text-muted-foreground">{description}</div>
+          <div className="text-muted-foreground text-[13px] leading-snug">{description}</div>
         )}
       </div>
-      {isSelected && <Check className="size-5 shrink-0 text-primary" />}
+      {isSelected && <Check className="text-primary size-5 shrink-0" />}
     </button>
   );
 }

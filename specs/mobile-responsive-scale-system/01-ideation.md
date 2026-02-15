@@ -40,66 +40,66 @@
 
 ### Primary Components Requiring Changes
 
-| File | Role | Issues |
-|------|------|--------|
-| `apps/client/src/index.css` | Theme definitions, global CSS | Add scale system, safe areas, overscroll |
-| `apps/client/index.html` | Viewport meta | Add `viewport-fit=cover` |
-| `apps/client/src/App.tsx` | Root layout, sidebar | Fixed positioning + keyboard, sidebar width on small phones |
-| `apps/client/src/components/chat/ChatInput.tsx` | Message input | `text-sm` textarea (iOS zoom), small send/stop buttons |
-| `apps/client/src/components/chat/MessageItem.tsx` | Message display | Hover-only timestamp, `text-[10px]` bullet |
-| `apps/client/src/components/chat/ToolCallCard.tsx` | Tool cards | `h-3 w-3` icons, `text-3xs` labels |
-| `apps/client/src/components/chat/TaskListPanel.tsx` | Task list | `h-3 w-3` status icons |
-| `apps/client/src/components/chat/ToolApproval.tsx` | Tool approval | `h-3 w-3` icons, small buttons |
-| `apps/client/src/components/chat/QuestionPrompt.tsx` | Interactive questions | `text-sm` input (iOS zoom), small options |
-| `apps/client/src/components/chat/MessageList.tsx` | Message scroll | Scroll-to-bottom button may be covered by keyboard |
-| `apps/client/src/components/sessions/SessionSidebar.tsx` | Session list | `h-3.5 w-3.5` icons, `p-1` footer buttons (tiny touch targets) |
-| `apps/client/src/components/sessions/SessionItem.tsx` | Session entry | `p-0.5` copy/expand buttons, hover-only expand chevron, `text-[11px]` |
-| `apps/client/src/components/sessions/DirectoryPicker.tsx` | Directory picker | `h-3.5 w-3.5` icons, `p-1` toggle buttons, `text-[11px]` |
-| `apps/client/src/components/status/*.tsx` | Status line items | `h-3 w-3` icons, `text-xs` labels, `text-[10px]` descriptions |
-| `apps/client/src/components/commands/CommandPalette.tsx` | Command palette | `text-xs`/`text-sm` labels |
-| `apps/client/src/components/ui/dialog.tsx` | Modal dialog | Fixed positioning needs safe-area |
-| `apps/client/src/components/ui/drawer.tsx` | Mobile drawer | Fixed positioning needs safe-area |
+| File                                                      | Role                          | Issues                                                                |
+| --------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------- |
+| `apps/client/src/index.css`                               | Theme definitions, global CSS | Add scale system, safe areas, overscroll                              |
+| `apps/client/index.html`                                  | Viewport meta                 | Add `viewport-fit=cover`                                              |
+| `apps/client/src/App.tsx`                                 | Root layout, sidebar          | Fixed positioning + keyboard, sidebar width on small phones           |
+| `apps/client/src/components/chat/ChatInput.tsx`           | Message input                 | `text-sm` textarea (iOS zoom), small send/stop buttons                |
+| `apps/client/src/components/chat/MessageItem.tsx`         | Message display               | Hover-only timestamp, `text-[10px]` bullet                            |
+| `apps/client/src/components/chat/ToolCallCard.tsx`        | Tool cards                    | `h-3 w-3` icons, `text-3xs` labels                                    |
+| `apps/client/src/components/chat/TaskListPanel.tsx`       | Task list                     | `h-3 w-3` status icons                                                |
+| `apps/client/src/components/chat/ToolApproval.tsx`        | Tool approval                 | `h-3 w-3` icons, small buttons                                        |
+| `apps/client/src/components/chat/QuestionPrompt.tsx`      | Interactive questions         | `text-sm` input (iOS zoom), small options                             |
+| `apps/client/src/components/chat/MessageList.tsx`         | Message scroll                | Scroll-to-bottom button may be covered by keyboard                    |
+| `apps/client/src/components/sessions/SessionSidebar.tsx`  | Session list                  | `h-3.5 w-3.5` icons, `p-1` footer buttons (tiny touch targets)        |
+| `apps/client/src/components/sessions/SessionItem.tsx`     | Session entry                 | `p-0.5` copy/expand buttons, hover-only expand chevron, `text-[11px]` |
+| `apps/client/src/components/sessions/DirectoryPicker.tsx` | Directory picker              | `h-3.5 w-3.5` icons, `p-1` toggle buttons, `text-[11px]`              |
+| `apps/client/src/components/status/*.tsx`                 | Status line items             | `h-3 w-3` icons, `text-xs` labels, `text-[10px]` descriptions         |
+| `apps/client/src/components/commands/CommandPalette.tsx`  | Command palette               | `text-xs`/`text-sm` labels                                            |
+| `apps/client/src/components/ui/dialog.tsx`                | Modal dialog                  | Fixed positioning needs safe-area                                     |
+| `apps/client/src/components/ui/drawer.tsx`                | Mobile drawer                 | Fixed positioning needs safe-area                                     |
 
 ### Icon Size Inventory
 
-| Size | Tailwind Class | Pixel Value | Instance Count | Where Used |
-|------|---------------|-------------|----------------|------------|
-| 10px | `h-2.5 w-2.5` | 0.625rem | 1 | PathBreadcrumb (sm variant) |
-| 12px | `h-3 w-3` | 0.75rem | ~25 | ToolCallCard, TaskListPanel, Status items, ToolApproval, SessionItem, DropdownMenu |
-| 14px | `h-3.5 w-3.5` | 0.875rem | ~15 | ChatInput, SessionSidebar, DirectoryPicker, QuestionPrompt, DropdownMenu |
-| 16px | `h-4 w-4` | 1rem | ~15 | App sidebar toggle, Dialog close, MessageItem, ToolApproval, MessageList, DirectoryPicker |
+| Size | Tailwind Class | Pixel Value | Instance Count | Where Used                                                                                |
+| ---- | -------------- | ----------- | -------------- | ----------------------------------------------------------------------------------------- |
+| 10px | `h-2.5 w-2.5`  | 0.625rem    | 1              | PathBreadcrumb (sm variant)                                                               |
+| 12px | `h-3 w-3`      | 0.75rem     | ~25            | ToolCallCard, TaskListPanel, Status items, ToolApproval, SessionItem, DropdownMenu        |
+| 14px | `h-3.5 w-3.5`  | 0.875rem    | ~15            | ChatInput, SessionSidebar, DirectoryPicker, QuestionPrompt, DropdownMenu                  |
+| 16px | `h-4 w-4`      | 1rem        | ~15            | App sidebar toggle, Dialog close, MessageItem, ToolApproval, MessageList, DirectoryPicker |
 
 ### Font Size Inventory
 
-| Size | Tailwind Class | Pixel Value | Instance Count | Critical Issues |
-|------|---------------|-------------|----------------|-----------------|
-| 10px | `text-[10px]` / `text-3xs` | 0.625rem | 3 | Below minimum readable size |
-| 11px | `text-[11px]` / `text-2xs` | 0.6875rem | 3 | Below minimum readable size |
-| 12px | `text-xs` | 0.75rem | 33+ | Common for metadata, timestamps |
-| 14px | `text-sm` | 0.875rem | 15+ | **Triggers iOS input zoom** when used on `<textarea>`/`<input>` |
-| 16px | `text-base` | 1rem | ~5 | Body text |
+| Size | Tailwind Class             | Pixel Value | Instance Count | Critical Issues                                                 |
+| ---- | -------------------------- | ----------- | -------------- | --------------------------------------------------------------- |
+| 10px | `text-[10px]` / `text-3xs` | 0.625rem    | 3              | Below minimum readable size                                     |
+| 11px | `text-[11px]` / `text-2xs` | 0.6875rem   | 3              | Below minimum readable size                                     |
+| 12px | `text-xs`                  | 0.75rem     | 33+            | Common for metadata, timestamps                                 |
+| 14px | `text-sm`                  | 0.875rem    | 15+            | **Triggers iOS input zoom** when used on `<textarea>`/`<input>` |
+| 16px | `text-base`                | 1rem        | ~5             | Body text                                                       |
 
 ### Touch Target Inventory (Below 44px)
 
-| Element | Padding | Icon Size | Total Size | File:Line |
-|---------|---------|-----------|------------|-----------|
-| Copy button | `p-0.5` (2px) | 12px | ~16px | SessionItem:46 |
-| Expand chevron | `p-0.5` (2px) | 12px | ~16px | SessionItem:105 |
-| Status buttons (Route, Heart, Theme) | `p-1` (4px) | 14px | ~22px | SessionSidebar:154,167,179 |
-| Hidden files toggle | `p-1` (4px) | 14px | ~22px | DirectoryPicker:141 |
-| View toggle buttons | `p-1.5` (6px) | 14px | ~26px | DirectoryPicker:88 |
-| Send/Stop buttons | `p-1.5` (6px) | 14px | ~26px | ChatInput:139,154 |
-| Sidebar toggle | `p-1.5` (6px) | 16px | ~28px | App:82,124 |
-| Close sidebar | `p-2` (8px) | 16px | ~32px | SessionSidebar:90 |
-| Scroll-to-bottom | `p-2` (8px) | 16px | ~32px | MessageList:162 |
+| Element                              | Padding       | Icon Size | Total Size | File:Line                  |
+| ------------------------------------ | ------------- | --------- | ---------- | -------------------------- |
+| Copy button                          | `p-0.5` (2px) | 12px      | ~16px      | SessionItem:46             |
+| Expand chevron                       | `p-0.5` (2px) | 12px      | ~16px      | SessionItem:105            |
+| Status buttons (Route, Heart, Theme) | `p-1` (4px)   | 14px      | ~22px      | SessionSidebar:154,167,179 |
+| Hidden files toggle                  | `p-1` (4px)   | 14px      | ~22px      | DirectoryPicker:141        |
+| View toggle buttons                  | `p-1.5` (6px) | 14px      | ~26px      | DirectoryPicker:88         |
+| Send/Stop buttons                    | `p-1.5` (6px) | 14px      | ~26px      | ChatInput:139,154          |
+| Sidebar toggle                       | `p-1.5` (6px) | 16px      | ~28px      | App:82,124                 |
+| Close sidebar                        | `p-2` (8px)   | 16px      | ~32px      | SessionSidebar:90          |
+| Scroll-to-bottom                     | `p-2` (8px)   | 16px      | ~32px      | MessageList:162            |
 
 ### Hover-Only Patterns (Invisible on Touch)
 
-| Element | Pattern | File:Line |
-|---------|---------|-----------|
-| Message timestamp | `text-muted-foreground/0` → `group-hover:text-muted-foreground/60` | MessageItem:62 |
-| Session expand chevron | `opacity-0 group-hover:opacity-100` | SessionItem:108 |
-| Table action icons | CSS `opacity: 0` → `:hover opacity: 1` | index.css:173-175 |
+| Element                | Pattern                                                            | File:Line         |
+| ---------------------- | ------------------------------------------------------------------ | ----------------- |
+| Message timestamp      | `text-muted-foreground/0` → `group-hover:text-muted-foreground/60` | MessageItem:62    |
+| Session expand chevron | `opacity-0 group-hover:opacity-100`                                | SessionItem:108   |
+| Table action icons     | CSS `opacity: 0` → `:hover opacity: 1`                             | index.css:173-175 |
 
 ### Missing Mobile CSS
 
@@ -132,7 +132,8 @@ Both `@theme` and `@theme inline` can be mixed in the same CSS file. Use `@theme
 ### Potential Solutions
 
 **1. CSS Scale Multiplier System (Recommended)**
-- Description: Define `--mobile-scale` master dial + optional per-category overrides. Desktop = baseline, mobile sizes = desktop * multiplier. Use `@theme inline` to wire into Tailwind utilities.
+
+- Description: Define `--mobile-scale` master dial + optional per-category overrides. Desktop = baseline, mobile sizes = desktop \* multiplier. Use `@theme inline` to wire into Tailwind utilities.
 - Pros:
   - Single dial scales everything proportionally
   - Per-category fine-tuning (text, icons, interactive)
@@ -149,6 +150,7 @@ Both `@theme` and `@theme inline` can be mixed in the same CSS file. Use `@theme
 - Maintenance: Low
 
 **2. Per-Component Responsive Classes (`md:text-lg`)**
+
 - Description: Add responsive Tailwind prefixes to every element that needs mobile scaling.
 - Pros: Explicit, visible in markup, no abstractions
 - Cons: Touches every component file, very verbose, no centralized control, high maintenance, inconsistency risk
@@ -156,6 +158,7 @@ Both `@theme` and `@theme inline` can be mixed in the same CSS file. Use `@theme
 - Maintenance: High
 
 **3. rem-based Root Font Scaling**
+
 - Description: Change `html { font-size }` at mobile breakpoint to scale all rem values.
 - Pros: Extremely simple (one line), scales all rem values
 - Cons: No per-category control, doesn't affect `px` values, too blunt, affects browser accessibility settings
@@ -164,32 +167,33 @@ Both `@theme` and `@theme inline` can be mixed in the same CSS file. Use `@theme
 
 ### Browser Support Verification
 
-| Feature | Support | Notes |
-|---------|---------|-------|
-| `var()` fallback chains | 99%+ (since 2017) | Universal |
-| `calc()` in CSS | 99%+ | Negligible performance cost |
-| CSS `round()` | 95%+ (Baseline 2024) | Available if pixel snapping needed |
-| `@theme inline` | Tailwind v4+ | Framework-specific |
-| `env(safe-area-inset-*)` | 96%+ | Required for notched devices |
-| `dvh`/`svh` viewport units | 96%+ (Baseline 2023) | iOS Safari fix |
-| `overscroll-behavior` | 96%+ | Prevents accidental pull-to-refresh |
-| `touch-action: manipulation` | 99%+ | Prevents double-tap zoom |
+| Feature                      | Support              | Notes                               |
+| ---------------------------- | -------------------- | ----------------------------------- |
+| `var()` fallback chains      | 99%+ (since 2017)    | Universal                           |
+| `calc()` in CSS              | 99%+                 | Negligible performance cost         |
+| CSS `round()`                | 95%+ (Baseline 2024) | Available if pixel snapping needed  |
+| `@theme inline`              | Tailwind v4+         | Framework-specific                  |
+| `env(safe-area-inset-*)`     | 96%+                 | Required for notched devices        |
+| `dvh`/`svh` viewport units   | 96%+ (Baseline 2023) | iOS Safari fix                      |
+| `overscroll-behavior`        | 96%+                 | Prevents accidental pull-to-refresh |
+| `touch-action: manipulation` | 99%+                 | Prevents double-tap zoom            |
 
 ### Apple HIG & Material Design Alignment
 
-| Metric | Apple HIG | Material Design | Our Target |
-|--------|-----------|-----------------|------------|
-| Min touch target | 44x44 pt | 48x48 dp | 44px (meets both when scaled) |
-| Body text | 17pt (23px) | 16px | 16px desktop, 20px mobile (×1.25) |
-| Min text size | 11pt (15px) | 11px | 12px desktop minimum |
-| Input font | 16px+ | 16sp | `max(1rem, text-sm)` — always 16px+ |
-| Icon standard | SF Symbols (point-based) | 18/24/36/48dp | 16/20/24px desktop (×1.25 mobile) |
-| Spacing grid | 8pt multiples | 8dp multiples | 8px grid (existing) |
-| Target spacing | — | 8dp between targets | 8px gap minimum |
+| Metric           | Apple HIG                | Material Design     | Our Target                          |
+| ---------------- | ------------------------ | ------------------- | ----------------------------------- |
+| Min touch target | 44x44 pt                 | 48x48 dp            | 44px (meets both when scaled)       |
+| Body text        | 17pt (23px)              | 16px                | 16px desktop, 20px mobile (×1.25)   |
+| Min text size    | 11pt (15px)              | 11px                | 12px desktop minimum                |
+| Input font       | 16px+                    | 16sp                | `max(1rem, text-sm)` — always 16px+ |
+| Icon standard    | SF Symbols (point-based) | 18/24/36/48dp       | 16/20/24px desktop (×1.25 mobile)   |
+| Spacing grid     | 8pt multiples            | 8dp multiples       | 8px grid (existing)                 |
+| Target spacing   | —                        | 8dp between targets | 8px gap minimum                     |
 
 ### Recommendation
 
 **Recommended approach:** CSS Scale Multiplier System (#1) with these implementation details:
+
 - Use `@theme inline` for all computed tokens
 - Start with `--mobile-scale: 1.25` as the master dial
 - Don't use per-category overrides initially — test with uniform scale first

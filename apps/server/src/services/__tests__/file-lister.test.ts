@@ -31,12 +31,17 @@ describe('FileListService', () => {
 
   function mockGitSuccess(files: string[]) {
     execFileMock.mockImplementation(
-      (_cmd: string, _args: string[], _opts: unknown, cb?: (err: Error | null, result: { stdout: string }) => void) => {
+      (
+        _cmd: string,
+        _args: string[],
+        _opts: unknown,
+        cb?: (err: Error | null, result: { stdout: string }) => void
+      ) => {
         if (cb) {
           cb(null, { stdout: files.join('\n') + '\n' });
         }
         return undefined;
-      },
+      }
     );
   }
 
@@ -47,7 +52,7 @@ describe('FileListService', () => {
           cb(new Error('not a git repo'));
         }
         return undefined;
-      },
+      }
     );
   }
 
@@ -84,9 +89,7 @@ describe('FileListService', () => {
       makeDirent('lib', true),
     ] as any);
 
-    vi.mocked(fs.readdir).mockResolvedValueOnce([
-      makeDirent('utils.ts', false),
-    ] as any);
+    vi.mocked(fs.readdir).mockResolvedValueOnce([makeDirent('utils.ts', false)] as any);
 
     const result = await fileLister.listFiles('/project');
 
@@ -130,9 +133,7 @@ describe('FileListService', () => {
       makeDirent('index.ts', false),
     ] as any);
 
-    vi.mocked(fs.readdir).mockResolvedValueOnce([
-      makeDirent('app.ts', false),
-    ] as any);
+    vi.mocked(fs.readdir).mockResolvedValueOnce([makeDirent('app.ts', false)] as any);
 
     const result = await fileLister.listFiles('/project2');
 

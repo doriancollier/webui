@@ -23,8 +23,8 @@ export const DEFAULT_INFERENCE_VERBS = [
   "Keepin' It Real",
   "Droppin' Science",
   "Gettin' Jiggy",
-  "Can You Dig It?",
-  "Word to Your Mother",
+  'Can You Dig It?',
+  'Word to Your Mother',
   "Kickin' It",
   "Straight Chillin'",
   "Bustin' Moves",
@@ -46,13 +46,13 @@ export const DEFAULT_INFERENCE_VERBS = [
   "Vibin' Out",
   "Gettin' Fly",
   "Rollin' Deep",
-  "Represent!",
+  'Represent!',
   "Bringin' the Noise",
-  "Outta Sight",
-  "Far Out",
-  "Right On",
-  "Solid Gold",
-  "Stone Cold",
+  'Outta Sight',
+  'Far Out',
+  'Right On',
+  'Solid Gold',
+  'Stone Cold',
   "Stayin' Fresh",
   "Droppin' Beats",
   "Keepin' It Funky",
@@ -63,17 +63,18 @@ export const DEFAULT_INFERENCE_VERBS = [
   "Jivin'",
   "Groovin'",
   "Slammin'",
-  "Dy-no-mite!",
-  "Say Word",
-  "Peep This",
-  "Check It",
-  "No Diggity",
-  "All That and a Bag of Chips",
+  'Dy-no-mite!',
+  'Say Word',
+  'Peep This',
+  'Check It',
+  'No Diggity',
+  'All That and a Bag of Chips',
   "Takin' Care of Business",
 ] as const;
 ```
 
 **Acceptance Criteria**:
+
 - File exports `DEFAULT_INFERENCE_VERBS` as a `readonly` tuple of exactly 50 strings
 - All phrases are unique
 - No tests needed (static data)
@@ -91,11 +92,11 @@ import { DEFAULT_INFERENCE_VERBS } from './inference-verbs';
 
 export interface IndicatorTheme {
   name: string;
-  icon: string;                    // e.g. "*", "✦", "❄"
-  iconAnimation: string | null;    // CSS @keyframes name, or null for static
+  icon: string; // e.g. "*", "✦", "❄"
+  iconAnimation: string | null; // CSS @keyframes name, or null for static
   verbs: readonly string[];
-  verbInterval: number;            // ms between rotations (default: 3500)
-  completionVerb?: string;         // optional verb for complete state
+  verbInterval: number; // ms between rotations (default: 3500)
+  completionVerb?: string; // optional verb for complete state
 }
 
 export const DEFAULT_THEME: IndicatorTheme = {
@@ -119,6 +120,7 @@ export const DEFAULT_THEME: IndicatorTheme = {
 ```
 
 **Acceptance Criteria**:
+
 - `IndicatorTheme` interface exported with all fields
 - `DEFAULT_THEME` uses `'*'` icon, `'shimmer-pulse'` animation, `DEFAULT_INFERENCE_VERBS`, `3500` interval
 - Commented-out winter theme example present
@@ -131,6 +133,7 @@ export const DEFAULT_THEME: IndicatorTheme = {
 ### Task 3: [P1] Create useElapsedTime hook with tests
 
 **Files**:
+
 - `apps/client/src/hooks/use-elapsed-time.ts`
 - `apps/client/src/hooks/__tests__/use-elapsed-time.test.ts`
 
@@ -229,7 +232,7 @@ describe('useElapsedTime', () => {
   it('formats hours and minutes (1h 23m)', () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const { result } = renderHook(() => useElapsedTime(now - (83 * 60 * 1000)));
+    const { result } = renderHook(() => useElapsedTime(now - 83 * 60 * 1000));
     expect(result.current.formatted).toBe('1h 23m');
   });
 
@@ -276,6 +279,7 @@ describe('useElapsedTime', () => {
 ```
 
 **Acceptance Criteria**:
+
 - Hook returns `{ formatted, ms }` with correct format for 0s, 65s, 83min cases
 - Returns `{ formatted: '0m 00s', ms: 0 }` when `startTime` is null
 - 1s interval, cleans up on unmount/null startTime
@@ -286,6 +290,7 @@ describe('useElapsedTime', () => {
 ### Task 4: [P1] Create useRotatingVerb hook with tests
 
 **Files**:
+
 - `apps/client/src/hooks/use-rotating-verb.ts`
 - `apps/client/src/hooks/__tests__/use-rotating-verb.test.ts`
 
@@ -299,10 +304,7 @@ interface RotatingVerbResult {
   key: string;
 }
 
-export function useRotatingVerb(
-  verbs: readonly string[],
-  intervalMs: number,
-): RotatingVerbResult {
+export function useRotatingVerb(verbs: readonly string[], intervalMs: number): RotatingVerbResult {
   const keyCounterRef = useRef(0);
   const lastVerbRef = useRef<string | null>(null);
 
@@ -432,6 +434,7 @@ describe('useRotatingVerb', () => {
 ```
 
 **Acceptance Criteria**:
+
 - Hook returns `{ verb, key }` with a random verb from the list
 - Rotates every `intervalMs` milliseconds
 - No consecutive repeats (for lists with 2+ items)
@@ -446,6 +449,7 @@ describe('useRotatingVerb', () => {
 ### Task 5: [P2] Add streaming timing and token estimation to useChatSession
 
 **Files**:
+
 - `apps/client/src/hooks/use-chat-session.ts` (modify)
 - `apps/client/src/hooks/__tests__/use-chat-session.test.tsx` (extend)
 
@@ -525,7 +529,19 @@ setEstimatedTokens(0);
 6. Add to return object:
 
 ```typescript
-return { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens };
+return {
+  messages,
+  input,
+  setInput,
+  handleSubmit,
+  status,
+  error,
+  stop,
+  isLoadingHistory,
+  sessionStatus,
+  streamStartTime,
+  estimatedTokens,
+};
 ```
 
 **New tests to add to `use-chat-session.test.tsx`**:
@@ -560,18 +576,20 @@ it('sets streamStartTime on first text_delta', async () => {
 
 it('accumulates estimatedTokens from text_delta lengths', async () => {
   let onEventCapture: ((event: StreamEvent) => void) | null = null;
-  const sendMessage = vi.fn(async (
-    _sessionId: string,
-    _content: string,
-    onEvent: (event: StreamEvent) => void,
-    _signal?: AbortSignal,
-  ) => {
-    onEventCapture = onEvent;
-    // Fire two text deltas (8 chars each = 2 tokens each = 4 total)
-    onEvent({ type: 'text_delta', data: { text: '12345678' } } as StreamEvent);
-    onEvent({ type: 'text_delta', data: { text: 'abcdefgh' } } as StreamEvent);
-    onEvent({ type: 'done', data: { sessionId: 's1' } } as StreamEvent);
-  });
+  const sendMessage = vi.fn(
+    async (
+      _sessionId: string,
+      _content: string,
+      onEvent: (event: StreamEvent) => void,
+      _signal?: AbortSignal
+    ) => {
+      onEventCapture = onEvent;
+      // Fire two text deltas (8 chars each = 2 tokens each = 4 total)
+      onEvent({ type: 'text_delta', data: { text: '12345678' } } as StreamEvent);
+      onEvent({ type: 'text_delta', data: { text: 'abcdefgh' } } as StreamEvent);
+      onEvent({ type: 'done', data: { sessionId: 's1' } } as StreamEvent);
+    }
+  );
   const transport = createMockTransport({ sendMessage });
   const { result } = renderHook(() => useChatSession('s1'), { wrapper: createWrapper(transport) });
 
@@ -611,6 +629,7 @@ it('resets streamStartTime and estimatedTokens on done', async () => {
 ```
 
 **Acceptance Criteria**:
+
 - `streamStartTime` is set to `Date.now()` on the first `text_delta` of a stream
 - `estimatedTokens` accumulates `text.length / 4` for each `text_delta`
 - Both reset to `null`/`0` on `done` event
@@ -630,18 +649,27 @@ Add the `shimmer-pulse` keyframe after the existing `blink-cursor` keyframe (aro
 
 ```css
 @keyframes shimmer-pulse {
-  0%, 100% { opacity: 0.6; transform: scale(1); }
-  50% { opacity: 1; transform: scale(1.15); }
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
 }
 ```
 
 This keyframe:
+
 - 2s duration (set on the element, not in keyframe)
 - Uses `ease-in-out` timing (set on the element)
 - GPU-accelerated (only animates `opacity` and `transform`)
 - Automatically respects existing `prefers-reduced-motion` CSS rule if one exists
 
 **Acceptance Criteria**:
+
 - `shimmer-pulse` keyframe defined in `index.css`
 - Placed after `blink-cursor` keyframe
 - Only uses `opacity` and `transform` properties (GPU-friendly)
@@ -652,6 +680,7 @@ This keyframe:
 ### Task 7: [P3] Create InferenceIndicator component with tests
 
 **Files**:
+
 - `apps/client/src/components/chat/InferenceIndicator.tsx`
 - `apps/client/src/components/chat/__tests__/InferenceIndicator.test.tsx`
 
@@ -683,9 +712,7 @@ export function InferenceIndicator({
   estimatedTokens,
   theme = DEFAULT_THEME,
 }: InferenceIndicatorProps) {
-  const { formatted: elapsed } = useElapsedTime(
-    status === 'streaming' ? streamStartTime : null
-  );
+  const { formatted: elapsed } = useElapsedTime(status === 'streaming' ? streamStartTime : null);
   const { verb, key } = useRotatingVerb(theme.verbs, theme.verbInterval);
 
   // Null render: idle with no accumulated tokens
@@ -700,7 +727,7 @@ export function InferenceIndicator({
         initial={{ opacity: 1 }}
         animate={{ opacity: 0.6 }}
         transition={{ duration: 0.15 }}
-        className="flex items-center gap-2 px-4 py-2 text-3xs text-muted-foreground/50"
+        className="text-3xs text-muted-foreground/50 flex items-center gap-2 px-4 py-2"
         data-testid="inference-indicator-complete"
       >
         <span>{elapsed}</span>
@@ -716,7 +743,7 @@ export function InferenceIndicator({
       initial={{ opacity: 0, y: 4 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-3 px-4 py-2 text-2xs"
+      className="text-2xs flex items-center gap-3 px-4 py-2"
       data-testid="inference-indicator-streaming"
     >
       {/* Shimmer icon */}
@@ -733,7 +760,7 @@ export function InferenceIndicator({
       </span>
 
       {/* Rotating verb with crossfade */}
-      <span className="relative inline-flex min-w-[140px] text-muted-foreground">
+      <span className="text-muted-foreground relative inline-flex min-w-[140px]">
         <AnimatePresence mode="wait">
           <motion.span
             key={key}
@@ -774,14 +801,28 @@ afterEach(() => {
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <div className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</div>;
+      return (
+        <div className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </div>
+      );
     },
     span: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial; void animate; void exit; void transition;
+      void initial;
+      void animate;
+      void exit;
+      void transition;
       const { className, style, ...rest } = props as Record<string, unknown>;
-      return <span className={className as string} style={style as React.CSSProperties} {...rest}>{children as React.ReactNode}</span>;
+      return (
+        <span className={className as string} style={style as React.CSSProperties} {...rest}>
+          {children as React.ReactNode}
+        </span>
+      );
     },
   },
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
@@ -826,9 +867,7 @@ describe('InferenceIndicator', () => {
   });
 
   it('renders complete state with summary', () => {
-    render(
-      <InferenceIndicator status="idle" streamStartTime={null} estimatedTokens={3200} />
-    );
+    render(<InferenceIndicator status="idle" streamStartTime={null} estimatedTokens={3200} />);
 
     expect(screen.getByTestId('inference-indicator-complete')).toBeInTheDocument();
     expect(screen.getByText('2m 14s')).toBeInTheDocument();
@@ -854,6 +893,7 @@ describe('InferenceIndicator', () => {
 ```
 
 **Acceptance Criteria**:
+
 - Component renders three states: streaming, complete, null (idle+no tokens)
 - Streaming state shows icon, verb, elapsed time, token count
 - Complete state shows compact summary with `elapsed . tokens`
@@ -869,6 +909,7 @@ describe('InferenceIndicator', () => {
 ### Task 8: [P4] Wire InferenceIndicator through ChatPanel and MessageList
 
 **Files**:
+
 - `apps/client/src/components/chat/ChatPanel.tsx` (modify)
 - `apps/client/src/components/chat/MessageList.tsx` (modify)
 
@@ -877,12 +918,23 @@ describe('InferenceIndicator', () => {
 1. Update the destructuring from `useChatSession` to include the new values:
 
 ```typescript
-const { messages, input, setInput, handleSubmit, status, error, stop, isLoadingHistory, sessionStatus, streamStartTime, estimatedTokens } =
-  useChatSession(sessionId, {
-    transformContent,
-    onTaskEvent: taskState.handleTaskEvent,
-    onSessionIdChange: setSessionId,
-  });
+const {
+  messages,
+  input,
+  setInput,
+  handleSubmit,
+  status,
+  error,
+  stop,
+  isLoadingHistory,
+  sessionStatus,
+  streamStartTime,
+  estimatedTokens,
+} = useChatSession(sessionId, {
+  transformContent,
+  onTaskEvent: taskState.handleTaskEvent,
+  onSessionIdChange: setSessionId,
+});
 ```
 
 2. Pass the new props to `<MessageList>`:
@@ -929,19 +981,22 @@ function MessageList({ messages, sessionId, status, onScrollStateChange, streamS
 4. After the virtualizer items div (inside the scroll container's relative div, after the `{virtualizer.getVirtualItems().map(...)}`), add the indicator:
 
 ```tsx
-{/* Inference status indicator — positioned below last virtual item */}
+{
+  /* Inference status indicator — positioned below last virtual item */
+}
 <div style={{ position: 'absolute', top: virtualizer.getTotalSize(), left: 0, width: '100%' }}>
   <InferenceIndicator
     status={status ?? 'idle'}
     streamStartTime={streamStartTime ?? null}
     estimatedTokens={estimatedTokens ?? 0}
   />
-</div>
+</div>;
 ```
 
 This positions the indicator absolutely below all virtual items, inside the same relative container, so it scrolls naturally with the content. The existing auto-scroll behavior (scrolling to the last message) will keep it visible.
 
 **Acceptance Criteria**:
+
 - `ChatPanel` destructures and passes `streamStartTime` and `estimatedTokens` to `MessageList`
 - `MessageList` renders `InferenceIndicator` below the virtual items
 - Indicator is visible during streaming and collapses on completion
@@ -980,6 +1035,7 @@ This positions the indicator absolutely below all virtual items, inside the same
 6. Ensure `text-2xs` and `text-3xs` utility classes exist or add them if missing
 
 **Acceptance Criteria**:
+
 - `turbo build` passes cleanly
 - `turbo test` all green
 - `turbo typecheck` no errors

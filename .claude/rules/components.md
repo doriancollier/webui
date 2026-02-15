@@ -10,12 +10,12 @@ These rules apply to all React components in `apps/client/src/` and FSD UI segme
 
 Components live in different FSD layers with different rules:
 
-| Location | Layer | Can Import From |
-|----------|-------|-----------------|
-| `layers/shared/ui/` | shared | Nothing in layers/ (Shadcn primitives) |
-| `layers/entities/*/ui/` | entities | `shared/` only |
-| `layers/features/*/ui/` | features | `entities/`, `shared/` |
-| `layers/widgets/*/ui/` | widgets | `features/`, `entities/`, `shared/` |
+| Location                | Layer    | Can Import From                        |
+| ----------------------- | -------- | -------------------------------------- |
+| `layers/shared/ui/`     | shared   | Nothing in layers/ (Shadcn primitives) |
+| `layers/entities/*/ui/` | entities | `shared/` only                         |
+| `layers/features/*/ui/` | features | `entities/`, `shared/`                 |
+| `layers/widgets/*/ui/`  | widgets  | `features/`, `entities/`, `shared/`    |
 
 See `.claude/rules/fsd-layers.md` for full import rules.
 
@@ -125,8 +125,11 @@ Key differences from Radix:
 **Dialog children type**: When wrapping Dialog, use `Omit` to override children type:
 
 ```tsx
-function MyDialog({ children, ...props }: Omit<DialogProps, "children"> & {
-  children?: React.ReactNode
+function MyDialog({
+  children,
+  ...props
+}: Omit<DialogProps, 'children'> & {
+  children?: React.ReactNode;
 }) {
   // children can now be passed to non-Dialog components
 }
@@ -137,8 +140,8 @@ function MyDialog({ children, ...props }: Omit<DialogProps, "children"> & {
 ```tsx
 // Add type explicitly when needed
 type Props = ButtonProps & {
-  type?: "button" | "submit" | "reset"
-}
+  type?: 'button' | 'submit' | 'reset';
+};
 ```
 
 ### Positioner Pattern (Critical)
@@ -150,17 +153,15 @@ Base UI requires `Popup`, `Arrow`, and `ScrollArrow` to be inside a `Positioner`
 // This breaks if users don't manually wrap Content in Positioner
 <Select>
   <SelectTrigger />
-  <SelectContent />  {/* Error: PositionerContext missing */}
-</Select>
+  <SelectContent /> {/* Error: PositionerContext missing */}
+</Select>;
 
 // CORRECT (self-contained Content)
 function SelectContent({ children, ...props }) {
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner sideOffset={5} className="z-50">
-        <SelectPrimitive.Popup {...props}>
-          {children}
-        </SelectPrimitive.Popup>
+        <SelectPrimitive.Popup {...props}>{children}</SelectPrimitive.Popup>
       </SelectPrimitive.Positioner>
     </SelectPrimitive.Portal>
   );
@@ -168,6 +169,7 @@ function SelectContent({ children, ...props }) {
 ```
 
 **When installing new basecn components**, check if `*Content` wraps `Portal > Positioner > Popup`. If not, update it to be self-contained. Components affected:
+
 - Select, Popover, Tooltip, HoverCard, DropdownMenu, ContextMenu, Dialog, Sheet, AlertDialog
 
 ### GroupLabel Pattern (Critical)
@@ -178,9 +180,9 @@ Base UI requires `GroupLabel` to be inside a `Group`. The `*Label` components mu
 // WRONG (basecn default - exposes GroupLabel without Group)
 // This breaks if users don't manually wrap Label in Group
 <DropdownMenuContent>
-  <DropdownMenuLabel>My Account</DropdownMenuLabel>  {/* Error: MenuGroupRootContext missing */}
+  <DropdownMenuLabel>My Account</DropdownMenuLabel> {/* Error: MenuGroupRootContext missing */}
   <DropdownMenuItem>Profile</DropdownMenuItem>
-</DropdownMenuContent>
+</DropdownMenuContent>;
 
 // CORRECT (self-contained Label with Group wrapper)
 function DropdownMenuLabel({ className, inset, ...props }) {
@@ -193,16 +195,17 @@ function DropdownMenuLabel({ className, inset, ...props }) {
 ```
 
 **When installing new basecn components**, check if `*Label` or `*GroupLabel` wraps in a `Group`. Components affected:
+
 - DropdownMenuLabel, ContextMenuGroupLabel
 
 ### Component Mapping
 
-| Radix | Base UI |
-|-------|---------|
-| HoverCard | PreviewCard |
-| `side` prop on Content | `sideOffset` on Positioner |
-| `asChild` | `render` prop |
-| Multiple @radix-ui/* packages | Single @base-ui/react |
+| Radix                          | Base UI                    |
+| ------------------------------ | -------------------------- |
+| HoverCard                      | PreviewCard                |
+| `side` prop on Content         | `sideOffset` on Positioner |
+| `asChild`                      | `render` prop              |
+| Multiple @radix-ui/\* packages | Single @base-ui/react      |
 
 ### Deterministic Values
 
@@ -210,14 +213,14 @@ Never use `Math.random()` in components — use `useId` for deterministic values
 
 ```tsx
 // WRONG
-const width = Math.random() * 40 + 50
+const width = Math.random() * 40 + 50;
 
 // CORRECT - use useId for deterministic "random" values
-const id = React.useId()
+const id = React.useId();
 const width = React.useMemo(() => {
-  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0)
-  return (hash % 40) + 50
-}, [id])
+  const hash = id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return (hash % 40) + 50;
+}, [id]);
 ```
 
 ## Required Patterns
@@ -251,10 +254,10 @@ Use focus-visible, not focus:
 
 ```typescript
 // Correct - only shows on keyboard navigation
-"focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+'focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2';
 
 // Wrong - shows on every click
-"focus:ring-2 focus:ring-ring"
+'focus:ring-2 focus:ring-ring';
 ```
 
 ## Accessibility Requirements
@@ -297,31 +300,31 @@ Use focus-visible, not focus:
 
 Follow the Calm Tech design language (see `guides/design-system.md`):
 
-| Element | Specification |
-|---------|---------------|
-| Card radius | 16px (`rounded-xl`) |
+| Element             | Specification       |
+| ------------------- | ------------------- |
+| Card radius         | 16px (`rounded-xl`) |
 | Button/Input radius | 10px (`rounded-md`) |
-| Button height | 40px default |
-| Card padding | 24px (`p-6`) |
-| Animation duration | 100-300ms |
+| Button height       | 40px default        |
+| Card padding        | 24px (`p-6`)        |
+| Animation duration  | 100-300ms           |
 
 ### Custom Utilities
 
 ```typescript
 // Shadows
-"shadow-soft"      // Subtle depth
-"shadow-elevated"  // Cards
-"shadow-floating"  // Dropdowns
-"shadow-modal"     // Modals
+'shadow-soft'; // Subtle depth
+'shadow-elevated'; // Cards
+'shadow-floating'; // Dropdowns
+'shadow-modal'; // Modals
 
 // Containers
-"container-narrow"   // 42rem max
-"container-default"  // 56rem max
-"container-wide"     // 72rem max
+'container-narrow'; // 42rem max
+'container-default'; // 56rem max
+'container-wide'; // 72rem max
 
 // Interactive
-"card-interactive"  // Hover lift effect
-"focus-ring"        // Consistent focus state
+'card-interactive'; // Hover lift effect
+'focus-ring'; // Consistent focus state
 ```
 
 ## Anti-Patterns (Never Do)
@@ -352,8 +355,8 @@ function Input({ ref, ...props }: Props & { ref?: React.Ref<HTMLInputElement> })
 
 ## File Naming
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Component file | PascalCase | `UserCard.tsx` |
-| Utility file | kebab-case | `use-sidebar.ts` |
-| Index exports | `index.ts` | Re-export public API |
+| Type           | Convention | Example              |
+| -------------- | ---------- | -------------------- |
+| Component file | PascalCase | `UserCard.tsx`       |
+| Utility file   | kebab-case | `use-sidebar.ts`     |
+| Index exports  | `index.ts` | Re-export public API |

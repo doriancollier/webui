@@ -75,26 +75,41 @@ localStorage.removeItem('gateway-show-shortcut-chips');
 
 ```typescript
 const {
-  showTimestamps, setShowTimestamps,
-  expandToolCalls, setExpandToolCalls,
-  autoHideToolCalls, setAutoHideToolCalls,
-  showShortcutChips, setShowShortcutChips,  // ADD THIS LINE
-  devtoolsOpen, toggleDevtools,
-  verboseLogging, setVerboseLogging,
-  fontSize, setFontSize,
+  showTimestamps,
+  setShowTimestamps,
+  expandToolCalls,
+  setExpandToolCalls,
+  autoHideToolCalls,
+  setAutoHideToolCalls,
+  showShortcutChips,
+  setShowShortcutChips, // ADD THIS LINE
+  devtoolsOpen,
+  toggleDevtools,
+  verboseLogging,
+  setVerboseLogging,
+  fontSize,
+  setFontSize,
   resetPreferences,
-  showStatusBarCwd, setShowStatusBarCwd,
-  showStatusBarPermission, setShowStatusBarPermission,
-  showStatusBarModel, setShowStatusBarModel,
-  showStatusBarCost, setShowStatusBarCost,
-  showStatusBarContext, setShowStatusBarContext,
+  showStatusBarCwd,
+  setShowStatusBarCwd,
+  showStatusBarPermission,
+  setShowStatusBarPermission,
+  showStatusBarModel,
+  setShowStatusBarModel,
+  showStatusBarCost,
+  setShowStatusBarCost,
+  showStatusBarContext,
+  setShowStatusBarContext,
 } = useAppStore();
 ```
 
 2. Add a new `<SettingRow>` after the "Auto-hide tool calls" row (after line 120), before "Show dev tools":
 
 ```tsx
-<SettingRow label="Show shortcut chips" description="Display shortcut hints below the message input">
+<SettingRow
+  label="Show shortcut chips"
+  description="Display shortcut hints below the message input"
+>
   <Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />
 </SettingRow>
 ```
@@ -147,7 +162,7 @@ export function ShortcutChips({ onChipClick }: ShortcutChipsProps) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.2 }}
-      className="flex items-center gap-2 mt-1.5"
+      className="mt-1.5 flex items-center gap-2"
     >
       {chips.map((chip) => (
         <button
@@ -155,7 +170,7 @@ export function ShortcutChips({ onChipClick }: ShortcutChipsProps) {
           type="button"
           aria-label={chip.ariaLabel}
           onClick={() => onChipClick(chip.trigger)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted transition-colors duration-150"
+          className="bg-secondary text-muted-foreground hover:text-foreground hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-colors duration-150"
         >
           <chip.icon className="size-3" />
           <kbd className="font-mono text-[10px] opacity-60">{chip.trigger}</kbd>
@@ -212,24 +227,26 @@ const showShortcutChips = useAppStore((s) => s.showShortcutChips);
 3. Add `handleChipClick` callback inside the component (after existing handler functions like `handleFileSelect`):
 
 ```typescript
-const handleChipClick = useCallback((trigger: string) => {
-  const newValue = input + trigger;
-  setInput(newValue);
-  detectTrigger(newValue, newValue.length);
-}, [input, setInput]);
+const handleChipClick = useCallback(
+  (trigger: string) => {
+    const newValue = input + trigger;
+    setInput(newValue);
+    detectTrigger(newValue, newValue.length);
+  },
+  [input, setInput]
+);
 ```
 
 4. Render `<ShortcutChips>` between `<ChatInput>` and `<StatusLine>` inside the `chat-input-container` div, wrapped in `<AnimatePresence>`. The existing `AnimatePresence` import from `motion/react` on line 2 already covers this. Insert after the `<ChatInput ... />` closing tag and before `<StatusLine ...>`:
 
 ```tsx
 <AnimatePresence>
-  {showShortcutChips && (
-    <ShortcutChips onChipClick={handleChipClick} />
-  )}
+  {showShortcutChips && <ShortcutChips onChipClick={handleChipClick} />}
 </AnimatePresence>
 ```
 
 The final JSX order inside `.chat-input-container` should be:
+
 1. `<AnimatePresence>` for CommandPalette/FilePalette
 2. `<ChatInput>`
 3. `<AnimatePresence>` for ShortcutChips (NEW)
@@ -271,14 +288,20 @@ import '@testing-library/jest-dom';
 
 // Mock motion/react to render plain elements
 vi.mock('motion/react', () => ({
-  motion: new Proxy({}, {
-    get: (_target: unknown, prop: string) => {
-      return ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-        const Tag = prop as keyof React.JSX.IntrinsicElements;
-        return <Tag {...props}>{children}</Tag>;
-      };
-    },
-  }),
+  motion: new Proxy(
+    {},
+    {
+      get: (_target: unknown, prop: string) => {
+        return ({
+          children,
+          ...props
+        }: Record<string, unknown> & { children?: React.ReactNode }) => {
+          const Tag = prop as keyof React.JSX.IntrinsicElements;
+          return <Tag {...props}>{children}</Tag>;
+        };
+      },
+    }
+  ),
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 

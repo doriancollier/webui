@@ -36,18 +36,19 @@ Users currently have no centralized place to view or modify app preferences. The
 
 ## 5. Technical Dependencies
 
-| Dependency | Version | Purpose |
-|-----------|---------|---------|
-| React | ^19.0.0 | UI framework |
-| Zustand | ^5.0.0 | Client state management |
-| @tanstack/react-query | ^5.62.0 | Server config fetching |
+| Dependency             | Version | Purpose                              |
+| ---------------------- | ------- | ------------------------------------ |
+| React                  | ^19.0.0 | UI framework                         |
+| Zustand                | ^5.0.0  | Client state management              |
+| @tanstack/react-query  | ^5.62.0 | Server config fetching               |
 | @radix-ui/react-dialog | ^1.1.15 | Dialog primitive (already installed) |
-| vaul | ^1.1.2 | Drawer primitive (already installed) |
-| lucide-react | latest | Settings icon |
-| zod | ^4.3.6 | Schema definition |
-| express | ^4.21.0 | API route |
+| vaul                   | ^1.1.2  | Drawer primitive (already installed) |
+| lucide-react           | latest  | Settings icon                        |
+| zod                    | ^4.3.6  | Schema definition                    |
+| express                | ^4.21.0 | API route                            |
 
 **New shadcn/ui components to install:**
+
 - Switch (toggle controls)
 - Label (form labels)
 - Separator (section dividers)
@@ -64,7 +65,7 @@ Add a `Settings` (lucide-react) icon button as the **first icon** in the footer'
 ```tsx
 <button
   onClick={() => setSettingsOpen(true)}
-  className="p-1 max-md:p-2 rounded-md text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-150"
+  className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
   aria-label="Settings"
 >
   <Settings className="size-(--size-icon-sm)" />
@@ -84,6 +85,7 @@ Props: `{ open: boolean; onOpenChange: (open: boolean) => void }`
 Uses `ResponsiveDialog` from `@/components/ui/responsive-dialog`. Pattern matches `DirectoryPicker.tsx`.
 
 **Layout structure:**
+
 ```
 ResponsiveDialog
   ResponsiveDialogContent (max-w-lg, p-0 gap-0)
@@ -109,21 +111,23 @@ ResponsiveDialog
 ```
 
 **SettingRow component pattern:**
+
 ```tsx
 <div className="flex items-center justify-between">
   <div>
     <Label className="text-sm font-medium">{label}</Label>
-    <p className="text-xs text-muted-foreground">{description}</p>
+    <p className="text-muted-foreground text-xs">{description}</p>
   </div>
   {/* Switch or Select */}
 </div>
 ```
 
 **ConfigRow component pattern:**
+
 ```tsx
 <div className="flex items-center justify-between py-1">
-  <span className="text-sm text-muted-foreground">{label}</span>
-  <span className="text-sm font-mono">{value}</span>
+  <span className="text-muted-foreground text-sm">{label}</span>
+  <span className="font-mono text-sm">{value}</span>
 </div>
 ```
 
@@ -148,10 +152,12 @@ setFontSize: (v: 'small' | 'medium' | 'large') => void;
 **Persistence:** Each setting reads initial value from `localStorage` (key prefix: `gateway-`) and writes on change. Follows the same pattern as `recentCwds`.
 
 **Existing state reuse:**
+
 - `devtoolsOpen` / `toggleDevtools` — already in store, reused directly
 - Theme — uses existing `useTheme()` hook, NOT stored in app-store
 
 **Font size implementation:** The `fontSize` setting applies a CSS custom property `--user-font-scale` on `document.documentElement`:
+
 - `small` → `0.9`
 - `medium` → `1` (default)
 - `large` → `1.15`
@@ -294,19 +300,19 @@ const { data: config, isLoading } = useQuery({
 
 **Display mapping:**
 
-| Field | Label | Format |
-|-------|-------|--------|
-| `config.version` | Version | Plain text |
-| `config.port` | Port | Plain text |
-| `config.uptime` | Uptime | Formatted: "2h 15m 30s" |
-| `config.workingDirectory` | Working Directory | Monospace, truncated with tooltip |
-| `config.nodeVersion` | Node.js | Plain text |
-| `config.claudeCliPath` | Claude CLI | Monospace, or "Not found" in muted |
-| `config.tunnel.enabled` | Tunnel | Badge: "Enabled"/"Disabled" |
-| `config.tunnel.connected` | Tunnel Status | Badge: green "Connected" / gray "Disconnected" |
-| `config.tunnel.url` | Tunnel URL | Monospace link, or "—" |
-| `config.tunnel.authEnabled` | Tunnel Auth | "Enabled"/"Disabled" |
-| `config.tunnel.tokenConfigured` | ngrok Token | Badge: green "Configured" / gray "Not configured" |
+| Field                           | Label             | Format                                            |
+| ------------------------------- | ----------------- | ------------------------------------------------- |
+| `config.version`                | Version           | Plain text                                        |
+| `config.port`                   | Port              | Plain text                                        |
+| `config.uptime`                 | Uptime            | Formatted: "2h 15m 30s"                           |
+| `config.workingDirectory`       | Working Directory | Monospace, truncated with tooltip                 |
+| `config.nodeVersion`            | Node.js           | Plain text                                        |
+| `config.claudeCliPath`          | Claude CLI        | Monospace, or "Not found" in muted                |
+| `config.tunnel.enabled`         | Tunnel            | Badge: "Enabled"/"Disabled"                       |
+| `config.tunnel.connected`       | Tunnel Status     | Badge: green "Connected" / gray "Disconnected"    |
+| `config.tunnel.url`             | Tunnel URL        | Monospace link, or "—"                            |
+| `config.tunnel.authEnabled`     | Tunnel Auth       | "Enabled"/"Disabled"                              |
+| `config.tunnel.tokenConfigured` | ngrok Token       | Badge: green "Configured" / gray "Not configured" |
 
 **Loading state:** Skeleton-like placeholder (pulsing muted text) while fetching.
 
@@ -393,24 +399,24 @@ If the CLI doesn't work with the project's Vite/Tailwind 4 setup, manually creat
 
 ## 13. Files Modified/Created
 
-| File | Action | Phase |
-|------|--------|-------|
-| `apps/client/src/components/ui/switch.tsx` | Create (shadcn install) | 1 |
-| `apps/client/src/components/ui/label.tsx` | Create (shadcn install) | 1 |
-| `apps/client/src/components/ui/separator.tsx` | Create (shadcn install) | 1 |
-| `apps/client/src/components/ui/badge.tsx` | Create (shadcn install) | 1 |
-| `packages/shared/src/schemas.ts` | Modify — add ServerConfigSchema | 1 |
-| `packages/shared/src/types.ts` | Modify — re-export ServerConfig | 1 |
-| `packages/shared/src/transport.ts` | Modify — add getConfig() | 1 |
-| `apps/server/src/routes/config.ts` | Create — GET /api/config | 1 |
-| `apps/server/src/app.ts` | Modify — register config route | 1 |
-| `apps/client/src/lib/http-transport.ts` | Modify — implement getConfig() | 1 |
-| `apps/client/src/lib/direct-transport.ts` | Modify — implement getConfig() | 1 |
-| `apps/client/src/stores/app-store.ts` | Modify — add settings state | 2 |
-| `apps/client/src/components/settings/SettingsDialog.tsx` | Create — main dialog | 2 |
-| `apps/client/src/components/sessions/SessionSidebar.tsx` | Modify — add gear icon | 2 |
-| `apps/client/src/index.css` | Modify — font scale CSS property | 2 |
-| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | Create — tests | 3 |
+| File                                                                    | Action                           | Phase |
+| ----------------------------------------------------------------------- | -------------------------------- | ----- |
+| `apps/client/src/components/ui/switch.tsx`                              | Create (shadcn install)          | 1     |
+| `apps/client/src/components/ui/label.tsx`                               | Create (shadcn install)          | 1     |
+| `apps/client/src/components/ui/separator.tsx`                           | Create (shadcn install)          | 1     |
+| `apps/client/src/components/ui/badge.tsx`                               | Create (shadcn install)          | 1     |
+| `packages/shared/src/schemas.ts`                                        | Modify — add ServerConfigSchema  | 1     |
+| `packages/shared/src/types.ts`                                          | Modify — re-export ServerConfig  | 1     |
+| `packages/shared/src/transport.ts`                                      | Modify — add getConfig()         | 1     |
+| `apps/server/src/routes/config.ts`                                      | Create — GET /api/config         | 1     |
+| `apps/server/src/app.ts`                                                | Modify — register config route   | 1     |
+| `apps/client/src/lib/http-transport.ts`                                 | Modify — implement getConfig()   | 1     |
+| `apps/client/src/lib/direct-transport.ts`                               | Modify — implement getConfig()   | 1     |
+| `apps/client/src/stores/app-store.ts`                                   | Modify — add settings state      | 2     |
+| `apps/client/src/components/settings/SettingsDialog.tsx`                | Create — main dialog             | 2     |
+| `apps/client/src/components/sessions/SessionSidebar.tsx`                | Modify — add gear icon           | 2     |
+| `apps/client/src/index.css`                                             | Modify — font scale CSS property | 2     |
+| `apps/client/src/components/settings/__tests__/SettingsDialog.test.tsx` | Create — tests                   | 3     |
 
 ## 14. Acceptance Criteria
 

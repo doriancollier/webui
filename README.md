@@ -16,6 +16,7 @@ npm run dev
 ```
 
 This starts:
+
 - **Express server** on `http://localhost:6942` (API + SSE)
 - **Vite dev server** on `http://localhost:5173` (React UI with HMR)
 
@@ -38,18 +39,18 @@ npm start            # Start production server
 
 ## API Reference
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/api/health` | Server health check |
-| POST | `/api/sessions` | Create new session |
-| GET | `/api/sessions` | List all sessions |
-| GET | `/api/sessions/:id` | Get session details |
-| DELETE | `/api/sessions/:id` | Delete session |
-| POST | `/api/sessions/:id/messages` | Send message (SSE stream response) |
-| POST | `/api/sessions/:id/approve` | Approve pending tool call |
-| POST | `/api/sessions/:id/deny` | Deny pending tool call |
-| GET | `/api/commands` | List slash commands |
-| GET | `/api/commands?refresh=true` | Refresh and list commands |
+| Method | Endpoint                     | Description                        |
+| ------ | ---------------------------- | ---------------------------------- |
+| GET    | `/api/health`                | Server health check                |
+| POST   | `/api/sessions`              | Create new session                 |
+| GET    | `/api/sessions`              | List all sessions                  |
+| GET    | `/api/sessions/:id`          | Get session details                |
+| DELETE | `/api/sessions/:id`          | Delete session                     |
+| POST   | `/api/sessions/:id/messages` | Send message (SSE stream response) |
+| POST   | `/api/sessions/:id/approve`  | Approve pending tool call          |
+| POST   | `/api/sessions/:id/deny`     | Deny pending tool call             |
+| GET    | `/api/commands`              | List slash commands                |
+| GET    | `/api/commands?refresh=true` | Refresh and list commands          |
 
 ## Architecture
 
@@ -76,10 +77,10 @@ gateway/
 
 ## Environment Variables
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `GATEWAY_PORT` | `6942` | Port for the Express server |
-| `NODE_ENV` | `development` | Environment mode |
+| Variable       | Default       | Description                 |
+| -------------- | ------------- | --------------------------- |
+| `GATEWAY_PORT` | `6942`        | Port for the Express server |
+| `NODE_ENV`     | `development` | Environment mode            |
 
 ## Key Technologies
 

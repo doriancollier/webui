@@ -34,7 +34,7 @@ describe('useElapsedTime', () => {
   it('formats hours and minutes (1h 23m)', () => {
     const now = Date.now();
     vi.setSystemTime(now);
-    const { result } = renderHook(() => useElapsedTime(now - (83 * 60 * 1000)));
+    const { result } = renderHook(() => useElapsedTime(now - 83 * 60 * 1000));
     expect(result.current.formatted).toBe('1h 23m');
   });
 

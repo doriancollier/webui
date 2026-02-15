@@ -51,7 +51,7 @@ describe('checkClaude', () => {
 
     checkClaude();
 
-    const output = mockConsoleError.mock.calls.map(c => c[0]).join('\n');
+    const output = mockConsoleError.mock.calls.map((c) => c[0]).join('\n');
     expect(output).toContain('Claude Code CLI not found');
     expect(output).toContain('npm install -g @anthropic-ai/claude-code');
   });

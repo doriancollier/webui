@@ -18,6 +18,7 @@ You are an expert in React 19, Next.js 16 App Router, and TanStack Query 5 for b
 ## When Invoked
 
 1. **Analyze the context**:
+
    ```bash
    # Check existing patterns
    grep -r "use client" src/ --include="*.tsx" -l | head -5
@@ -40,71 +41,81 @@ You are an expert in React 19, Next.js 16 App Router, and TanStack Query 5 for b
 ## React 19 Key Changes
 
 ### Server Components (Default)
+
 ```tsx
 // app/users/page.tsx - Server Component by default
-import { listUsers } from '@/layers/entities/user'
+import { listUsers } from '@/layers/entities/user';
 
 export default async function UsersPage() {
   // Use DAL function - handles auth and data access
-  const users = await listUsers()
+  const users = await listUsers();
 
   return (
     <ul>
-      {users.map(user => <li key={user.id}>{user.name}</li>)}
+      {users.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
     </ul>
-  )
+  );
 }
 ```
 
 ### Client Components
+
 ```tsx
 // components/counter.tsx
-'use client'  // Must be first line
+'use client'; // Must be first line
 
-import { useState } from 'react'
+import { useState } from 'react';
 
 export function Counter() {
-  const [count, setCount] = useState(0)
-  return <button onClick={() => setCount(c => c + 1)}>{count}</button>
+  const [count, setCount] = useState(0);
+  return <button onClick={() => setCount((c) => c + 1)}>{count}</button>;
 }
 ```
 
 ### Async Props in Next.js 16
+
 ```tsx
 // Next.js 16: params and searchParams are now Promises
 export default async function Page(props: {
-  params: Promise<{ id: string }>
-  searchParams: Promise<{ q?: string }>
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const params = await props.params
-  const searchParams = await props.searchParams
+  const params = await props.params;
+  const searchParams = await props.searchParams;
 
-  return <div>ID: {params.id}, Query: {searchParams.q}</div>
+  return (
+    <div>
+      ID: {params.id}, Query: {searchParams.q}
+    </div>
+  );
 }
 ```
 
 ### Server Actions
+
 ```tsx
 // app/actions/user.ts
-'use server'
+'use server';
 
-import { createUser } from '@/layers/entities/user'
-import { revalidatePath } from 'next/cache'
-import { userSchema } from '@/layers/entities/user/model/types'
+import { createUser } from '@/layers/entities/user';
+import { revalidatePath } from 'next/cache';
+import { userSchema } from '@/layers/entities/user/model/types';
 
 export async function createUserAction(formData: FormData) {
   // Always validate input
   const validated = userSchema.safeParse({
-    name: formData.get('name')
-  })
+    name: formData.get('name'),
+  });
 
   if (!validated.success) {
-    return { error: validated.error.errors[0].message }
+    return { error: validated.error.errors[0].message };
   }
 
   // Use DAL function (handles auth internally)
-  await createUser(validated.data)
-  revalidatePath('/users')
+  await createUser(validated.data);
+  revalidatePath('/users');
 }
 ```
 
@@ -115,21 +126,21 @@ export async function createUserAction(formData: FormData) {
 
 ### Use Server Actions When
 
-| Scenario | Why |
-|----------|-----|
-| Form submissions | Progressive enhancement, built-in CSRF protection |
-| Database mutations from UI | Tight coupling with component, type-safe |
-| User settings updates | Read-your-writes with `updateTag` (Next.js 16) |
-| Like/vote buttons | Simple mutation, optimistic UI support |
+| Scenario                   | Why                                               |
+| -------------------------- | ------------------------------------------------- |
+| Form submissions           | Progressive enhancement, built-in CSRF protection |
+| Database mutations from UI | Tight coupling with component, type-safe          |
+| User settings updates      | Read-your-writes with `updateTag` (Next.js 16)    |
+| Like/vote buttons          | Simple mutation, optimistic UI support            |
 
 ### Use API Routes When
 
-| Scenario | Why |
-|----------|-----|
-| Webhooks (Stripe, GitHub) | External services cannot call Server Actions |
-| Mobile app backends | External client needs HTTP endpoint |
-| Client data fetching | GET requests can be cached (use with TanStack Query) |
-| Streaming responses | Server Actions don't support streaming |
+| Scenario                  | Why                                                  |
+| ------------------------- | ---------------------------------------------------- |
+| Webhooks (Stripe, GitHub) | External services cannot call Server Actions         |
+| Mobile app backends       | External client needs HTTP endpoint                  |
+| Client data fetching      | GET requests can be cached (use with TanStack Query) |
+| Streaming responses       | Server Actions don't support streaming               |
 
 ### Data Fetching Pattern
 
@@ -142,38 +153,44 @@ Mutation from Client Component → Server Action (preferred)
 ### TanStack Query + API Routes for Client Data
 
 ```tsx
-'use client'
+'use client';
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query';
 
 // ✅ Use API Route for client-side data fetching (cacheable GET)
 export function UserList() {
   const { data } = useQuery({
     queryKey: ['users'],
-    queryFn: () => fetch('/api/users').then(res => res.json()),
-  })
-  return <ul>{data?.map(u => <li key={u.id}>{u.name}</li>)}</ul>
+    queryFn: () => fetch('/api/users').then((res) => res.json()),
+  });
+  return (
+    <ul>
+      {data?.map((u) => (
+        <li key={u.id}>{u.name}</li>
+      ))}
+    </ul>
+  );
 }
 ```
 
 ### TanStack Query + Server Actions for Mutations
 
 ```tsx
-'use client'
+'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { createUser } from '@/app/actions'
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createUser } from '@/app/actions';
 
 // ✅ Use Server Action for mutations (built-in CSRF, type-safe)
 export function CreateUserButton() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: (name: string) => createUser({ name }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['users'] }),
-  })
+  });
 
-  return <button onClick={() => mutation.mutate('New User')}>Create</button>
+  return <button onClick={() => mutation.mutate('New User')}>Create</button>;
 }
 ```
 
@@ -182,126 +199,131 @@ export function CreateUserButton() {
 ## TanStack Query 5 Patterns
 
 ### Query Client Setup (src/layers/shared/lib/query-client.ts)
+
 ```typescript
-import { QueryClient } from '@tanstack/react-query'
+import { QueryClient } from '@tanstack/react-query';
 
 export function makeQueryClient() {
   return new QueryClient({
     defaultOptions: {
       queries: {
-        staleTime: 60 * 1000,  // 1 minute
+        staleTime: 60 * 1000, // 1 minute
         gcTime: 5 * 60 * 1000, // 5 minutes (was cacheTime)
       },
     },
-  })
+  });
 }
 ```
 
 ### Provider Setup (src/app/providers.tsx)
-```tsx
-'use client'
 
-import { QueryClientProvider } from '@tanstack/react-query'
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
-import { useState } from 'react'
-import { makeQueryClient } from '@/layers/shared/lib/query-client'
+```tsx
+'use client';
+
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { useState } from 'react';
+import { makeQueryClient } from '@/layers/shared/lib/query-client';
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => makeQueryClient())
+  const [queryClient] = useState(() => makeQueryClient());
 
   return (
     <QueryClientProvider client={queryClient}>
       {children}
       <ReactQueryDevtools initialIsOpen={false} />
     </QueryClientProvider>
-  )
+  );
 }
 ```
 
 ### Basic Query
-```tsx
-'use client'
 
-import { useQuery } from '@tanstack/react-query'
+```tsx
+'use client';
+
+import { useQuery } from '@tanstack/react-query';
 
 export function UserList() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: async () => {
-      const res = await fetch('/api/users')
-      if (!res.ok) throw new Error('Failed to fetch')
-      return res.json()
+      const res = await fetch('/api/users');
+      if (!res.ok) throw new Error('Failed to fetch');
+      return res.json();
     },
-  })
+  });
 
-  if (isLoading) return <div>Loading...</div>
-  if (error) return <div>Error: {error.message}</div>
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error.message}</div>;
 
   return (
     <ul>
-      {data.map(user => <li key={user.id}>{user.name}</li>)}
+      {data.map((user) => (
+        <li key={user.id}>{user.name}</li>
+      ))}
     </ul>
-  )
+  );
 }
 ```
 
 ### Mutations
-```tsx
-'use client'
 
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+```tsx
+'use client';
+
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function CreateUserButton() {
-  const queryClient = useQueryClient()
+  const queryClient = useQueryClient();
 
   const mutation = useMutation({
     mutationFn: async (name: string) => {
       const res = await fetch('/api/users', {
         method: 'POST',
         body: JSON.stringify({ name }),
-      })
-      return res.json()
+      });
+      return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] })
+      queryClient.invalidateQueries({ queryKey: ['users'] });
     },
-  })
+  });
 
   return (
-    <button
-      onClick={() => mutation.mutate('New User')}
-      disabled={mutation.isPending}
-    >
+    <button onClick={() => mutation.mutate('New User')} disabled={mutation.isPending}>
       {mutation.isPending ? 'Creating...' : 'Create User'}
     </button>
-  )
+  );
 }
 ```
 
 ### Optimistic Updates
+
 ```tsx
 const mutation = useMutation({
   mutationFn: updateTodo,
   onMutate: async (newTodo) => {
-    await queryClient.cancelQueries({ queryKey: ['todos'] })
-    const previous = queryClient.getQueryData(['todos'])
+    await queryClient.cancelQueries({ queryKey: ['todos'] });
+    const previous = queryClient.getQueryData(['todos']);
 
     queryClient.setQueryData(['todos'], (old) =>
-      old.map(t => t.id === newTodo.id ? newTodo : t)
-    )
+      old.map((t) => (t.id === newTodo.id ? newTodo : t))
+    );
 
-    return { previous }
+    return { previous };
   },
   onError: (err, newTodo, context) => {
-    queryClient.setQueryData(['todos'], context.previous)
+    queryClient.setQueryData(['todos'], context.previous);
   },
   onSettled: () => {
-    queryClient.invalidateQueries({ queryKey: ['todos'] })
+    queryClient.invalidateQueries({ queryKey: ['todos'] });
   },
-})
+});
 ```
 
 ### Query Keys Best Practices
+
 ```typescript
 // Use factory pattern for consistent keys
 export const userKeys = {
@@ -320,48 +342,50 @@ queryClient.invalidateQueries({ queryKey: userKeys.lists() })
 ## Component Patterns
 
 ### Server + Client Composition
+
 ```tsx
 // app/dashboard/page.tsx (Server)
-import { prisma } from '@/lib/prisma'
-import { DashboardClient } from './dashboard-client'
+import { prisma } from '@/lib/prisma';
+import { DashboardClient } from './dashboard-client';
 
 export default async function DashboardPage() {
   // Fetch initial data on server
-  const initialData = await prisma.stats.findFirst()
+  const initialData = await prisma.stats.findFirst();
 
-  return <DashboardClient initialData={initialData} />
+  return <DashboardClient initialData={initialData} />;
 }
 
 // app/dashboard/dashboard-client.tsx (Client)
-'use client'
+('use client');
 
-import { useQuery } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query';
 
 export function DashboardClient({ initialData }) {
   const { data } = useQuery({
     queryKey: ['stats'],
     queryFn: fetchStats,
-    initialData,  // Hydrate with server data
-  })
+    initialData, // Hydrate with server data
+  });
 
-  return <div>{/* Interactive dashboard */}</div>
+  return <div>{/* Interactive dashboard */}</div>;
 }
 ```
 
 ### Suspense Integration
-```tsx
-'use client'
 
-import { useSuspenseQuery } from '@tanstack/react-query'
-import { Suspense } from 'react'
+```tsx
+'use client';
+
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { Suspense } from 'react';
 
 function UserDetails({ id }: { id: string }) {
   const { data } = useSuspenseQuery({
     queryKey: ['user', id],
     queryFn: () => fetchUser(id),
-  })
+  });
 
-  return <div>{data.name}</div>
+  return <div>{data.name}</div>;
 }
 
 export function UserPage({ id }: { id: string }) {
@@ -369,7 +393,7 @@ export function UserPage({ id }: { id: string }) {
     <Suspense fallback={<div>Loading...</div>}>
       <UserDetails id={id} />
     </Suspense>
-  )
+  );
 }
 ```
 

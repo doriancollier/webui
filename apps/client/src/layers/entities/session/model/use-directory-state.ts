@@ -25,12 +25,15 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
   }, [urlDir]); // Only re-run when URL changes (browser back/forward)
 
   if (platform.isEmbedded) {
-    return [storeDir, (dir) => {
-      if (dir) {
-        setStoreDir(dir);
-        setSessionId(null); // Clear session on dir change
-      }
-    }];
+    return [
+      storeDir,
+      (dir) => {
+        if (dir) {
+          setStoreDir(dir);
+          setSessionId(null); // Clear session on dir change
+        }
+      },
+    ];
   }
 
   // Standalone: URL is source of truth, sync to Zustand
@@ -39,10 +42,10 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
     (dir) => {
       if (dir) {
         setUrlDir(dir);
-        setStoreDir(dir);  // Sync to Zustand for localStorage + consumers
+        setStoreDir(dir); // Sync to Zustand for localStorage + consumers
         setSessionId(null); // Clear session on dir change
       } else {
-        setUrlDir(null);    // Remove from URL
+        setUrlDir(null); // Remove from URL
       }
     },
   ];

@@ -48,25 +48,27 @@ slug: gateway-interactive-tool-ui
 
 **Primary Components/Modules:**
 
-| File | Role |
-|------|------|
-| `src/server/services/agent-manager.ts` | SDK integration, session management, event mapping |
-| `src/shared/transport.ts` | Transport interface (contract between client and backend) |
-| `src/shared/types.ts` | StreamEvent types, shared interfaces |
-| `src/client/hooks/use-chat-session.ts` | Stream event consumption, message state |
-| `src/client/components/chat/ToolApproval.tsx` | Existing interactive tool pattern (approve/deny) |
-| `src/client/components/chat/MessageItem.tsx` | Message rendering, tool call rendering |
-| `src/client/lib/http-transport.ts` | HTTP Transport adapter |
-| `src/client/lib/direct-transport.ts` | Direct (in-process) Transport adapter |
-| `src/server/routes/sessions.ts` | Express API endpoints |
+| File                                          | Role                                                      |
+| --------------------------------------------- | --------------------------------------------------------- |
+| `src/server/services/agent-manager.ts`        | SDK integration, session management, event mapping        |
+| `src/shared/transport.ts`                     | Transport interface (contract between client and backend) |
+| `src/shared/types.ts`                         | StreamEvent types, shared interfaces                      |
+| `src/client/hooks/use-chat-session.ts`        | Stream event consumption, message state                   |
+| `src/client/components/chat/ToolApproval.tsx` | Existing interactive tool pattern (approve/deny)          |
+| `src/client/components/chat/MessageItem.tsx`  | Message rendering, tool call rendering                    |
+| `src/client/lib/http-transport.ts`            | HTTP Transport adapter                                    |
+| `src/client/lib/direct-transport.ts`          | Direct (in-process) Transport adapter                     |
+| `src/server/routes/sessions.ts`               | Express API endpoints                                     |
 
 **Shared Dependencies:**
+
 - `TransportContext` (`src/client/contexts/TransportContext.tsx`) - React context for Transport injection
 - `useTransport()` hook - Used by ToolApproval, hooks, and will be used by QuestionPrompt
 - `lucide-react` icons, `motion/react` animations, Tailwind CSS
 - shadcn/ui components (for form elements)
 
 **Data Flow (Current - Tool Approval):**
+
 ```
 SDK query() → stream events → mapSdkMessage() → yield StreamEvent
   → SSE or callback → handleStreamEvent() → update React state
@@ -76,6 +78,7 @@ SDK query() → stream events → mapSdkMessage() → yield StreamEvent
 ```
 
 **Data Flow (Proposed - AskUserQuestion):**
+
 ```
 SDK query() → canUseTool('AskUserQuestion', input) → pause SDK
   → emit question_prompt StreamEvent → SSE or callback
@@ -88,6 +91,7 @@ SDK query() → canUseTool('AskUserQuestion', input) → pause SDK
 ```
 
 **Potential Blast Radius:**
+
 - **New files (4):** QuestionPrompt component, (possibly) interactive tool types file
 - **Modified files (8):** agent-manager.ts, transport.ts, types.ts, use-chat-session.ts, MessageItem.tsx, http-transport.ts, direct-transport.ts, sessions.ts routes
 - **New guide (1):** `guides/interactive-tools.md`
@@ -102,6 +106,7 @@ N/A - this is a new feature, not a bug fix.
 ### Potential Solutions
 
 **1. Deferred Promise + Inline Rendering (Recommended)**
+
 - **Description:** Use `canUseTool` callback with deferred promises to pause the SDK. Emit a new `question_prompt` StreamEvent. Render QuestionPrompt inline in the message stream. Client submits answers via Transport method that resolves the promise.
 - **Pros:**
   - Clean async/await in SDK integration (natural pause/resume)
@@ -116,6 +121,7 @@ N/A - this is a new feature, not a bug fix.
 - **Maintenance:** Low (follows existing patterns)
 
 **2. Registry Pattern (Over-engineered for now)**
+
 - **Description:** Create a `ToolHandlerRegistry` with `InteractiveToolHandler` interface. Each tool registers a handler that knows how to render UI and process responses.
 - **Pros:**
   - Maximum extensibility (add tools without touching core)
@@ -128,6 +134,7 @@ N/A - this is a new feature, not a bug fix.
 - **Maintenance:** Medium (registry adds moving parts)
 
 **3. Separate Message Type (Alternative)**
+
 - **Description:** Instead of using `canUseTool`, detect `AskUserQuestion` tool use in the stream events and render a special message type. Don't pause the SDK.
 - **Pros:**
   - Simpler server-side (no `canUseTool` callback)
@@ -140,6 +147,7 @@ N/A - this is a new feature, not a bug fix.
 - **Maintenance:** Low but broken semantics
 
 **4. WebSocket Upgrade**
+
 - **Description:** Replace SSE with WebSocket for full bidirectional communication.
 - **Pros:**
   - True bidirectional, no separate POST endpoint

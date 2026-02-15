@@ -2,7 +2,7 @@
 description: Migrate existing specs to feature-directory structure
 category: validation
 allowed-tools: Read, Write, Bash(mv:*), Bash(mkdir:*), Bash(ls:*), Bash(find:*), Bash(basename:*), Bash(dirname:*), Glob, Grep, TaskList, TaskUpdate
-argument-hint: "[optional: path to specific spec file to migrate]"
+argument-hint: '[optional: path to specific spec file to migrate]'
 ---
 
 # Migrate Specs to New Directory Structure
@@ -12,6 +12,7 @@ This command migrates existing specification documents from the old flat structu
 ## Old Structure vs New Structure
 
 **Old:**
+
 ```
 docs/ideation/<slug>.md
 specs/<slug>.md
@@ -20,6 +21,7 @@ IMPLEMENTATION_SUMMARY.md
 ```
 
 **New:**
+
 ```
 specs/<slug>/
 ├── 01-ideation.md
@@ -33,11 +35,13 @@ specs/<slug>/
 ### Step 1: Discover Existing Specs
 
 Find all spec files in the specs/ directory:
+
 ```bash
 ls -1 specs/*.md 2>/dev/null || echo "No specs found"
 ```
 
 For each spec file found, extract the slug from the filename:
+
 - `specs/feat-user-auth.md` → slug is `feat-user-auth`
 - `specs/fix-123-bug.md` → slug is `fix-123-bug`
 
@@ -95,6 +99,7 @@ For specs that have been decomposed:
 ### Step 4: Report Migration Results
 
 Create a migration summary showing:
+
 - Total specs migrated
 - Files moved for each spec
 - Any specs that couldn't be fully migrated
@@ -104,11 +109,13 @@ Create a migration summary showing:
 ## Safety Checks
 
 Before migrating:
+
 - ✅ Verify specs/ directory exists
 - ✅ Check for uncommitted git changes (warn user)
 - ✅ Confirm user wants to proceed with migration
 
 After migrating:
+
 - ✅ Verify all expected files exist in new locations
 - ✅ Check for any broken references in spec files
 - ✅ Suggest running git status to review changes
@@ -120,6 +127,7 @@ After migrating:
 ```
 
 This will:
+
 1. Scan for all existing specs
 2. Migrate each to the new structure
 3. Update task subjects with feature prefixes
@@ -136,12 +144,14 @@ This will:
 ## Successful Migrations
 
 ### feat-user-auth
+
 - ✅ Spec: specs/feat-user-auth.md → specs/feat-user-auth/02-specification.md
 - ✅ Tasks: specs/feat-user-auth-tasks.md → specs/feat-user-auth/03-tasks.md
 - ✅ Ideation: docs/ideation/feat-user-auth.md → specs/feat-user-auth/01-ideation.md
 - ✅ Tasks: 5 tasks prefixed with [feat-user-auth]
 
 ### fix-bug-scroll
+
 - ✅ Spec: specs/fix-bug-scroll.md → specs/fix-bug-scroll/02-specification.md
 - ⚠️ Tasks: Not found
 - ⚠️ Ideation: Not found
@@ -163,12 +173,14 @@ This will:
 ## Rollback
 
 If migration needs to be rolled back:
+
 ```bash
 git restore specs/
 git restore docs/ideation/
 ```
 
 Or manually move files back:
+
 ```bash
 # For each feature directory
 mv specs/<slug>/02-specification.md specs/<slug>.md

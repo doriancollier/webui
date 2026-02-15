@@ -1,6 +1,6 @@
 ---
 description: Diagnose performance issues including slow renders, bundle size, N+1 queries, and memory leaks
-argument-hint: "[area-or-symptom] [--url <url>]"
+argument-hint: '[area-or-symptom] [--url <url>]'
 allowed-tools: Read, Write, Edit, Grep, Glob, Bash, Task, TodoWrite, AskUserQuestion, mcp__playwright__browser_snapshot, mcp__playwright__browser_navigate, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_evaluate
 ---
 
@@ -11,6 +11,7 @@ Diagnose and resolve performance issues including slow renders, large bundle siz
 ## Arguments
 
 Parse `$ARGUMENTS`:
+
 - If `--url <url>` flag provided, navigate to that URL for profiling
 - Remaining text describes the performance symptom
 - If empty, prompt for details
@@ -90,6 +91,7 @@ mcp__playwright__browser_network_requests: { includeStatic: true }
 ### 2.2 Check for Console Warnings
 
 Look for performance-related warnings:
+
 - React rendering warnings
 - Memory warnings
 - Long task warnings
@@ -98,6 +100,7 @@ Look for performance-related warnings:
 ### 2.3 Network Timing Analysis
 
 Analyze network requests for:
+
 - **Large payloads**: Responses > 100KB
 - **Slow requests**: Requests > 1s
 - **Waterfall issues**: Requests blocking each other
@@ -120,6 +123,7 @@ mcp__playwright__browser_evaluate: {
 **Investigation Steps**:
 
 1. Check for unnecessary re-renders:
+
 ```typescript
 // Common causes
 - Missing useMemo/useCallback
@@ -129,6 +133,7 @@ mcp__playwright__browser_evaluate: {
 ```
 
 2. Search for common anti-patterns:
+
 ```bash
 # Find inline object creation in JSX
 rg "style=\{\{" src/ --type tsx | head -20
@@ -141,6 +146,7 @@ rg "useEffect\([^,]+\)" src/ --type tsx | head -20
 ```
 
 3. Check for large component trees:
+
 ```bash
 # Find large components (many lines)
 wc -l src/**/*.tsx | sort -rn | head -20
@@ -153,6 +159,7 @@ wc -l src/**/*.tsx | sort -rn | head -20
 **Investigation Steps**:
 
 1. Analyze bundle:
+
 ```bash
 # Build with analysis (if configured)
 pnpm build
@@ -162,12 +169,14 @@ ls -la .next/static/chunks/*.js | sort -k5 -rn | head -10
 ```
 
 2. Check for large dependencies:
+
 ```bash
 # List installed packages by size
 du -sh node_modules/* | sort -rh | head -20
 ```
 
 3. Look for import issues:
+
 ```bash
 # Find barrel imports that might pull in entire libraries
 rg "from 'lodash'" src/ --type ts
@@ -185,28 +194,31 @@ rg "from 'date-fns'" src/ --type ts
 **Investigation Steps**:
 
 1. Check for N+1 queries in server logs:
+
 ```bash
 grep -i "prisma" ".logs/$(ls -t .logs/ | head -1)" | grep -i "select" | head -30
 ```
 
 2. Look for missing includes in Prisma queries:
+
 ```bash
 # Find Prisma queries without includes
 rg "prisma\.\w+\.find" src/layers/entities/ --type ts -A 3
 ```
 
 3. Common N+1 pattern:
+
 ```typescript
 // BAD: N+1 query
-const users = await prisma.user.findMany()
+const users = await prisma.user.findMany();
 for (const user of users) {
-  const posts = await prisma.post.findMany({ where: { userId: user.id } })
+  const posts = await prisma.post.findMany({ where: { userId: user.id } });
 }
 
 // GOOD: Single query with include
 const users = await prisma.user.findMany({
-  include: { posts: true }
-})
+  include: { posts: true },
+});
 ```
 
 ### 3.4 Memory Leaks
@@ -216,6 +228,7 @@ const users = await prisma.user.findMany({
 **Investigation Steps**:
 
 1. Check for common memory leak patterns:
+
 ```bash
 # Event listeners not cleaned up
 rg "addEventListener" src/ --type tsx -A 5
@@ -229,6 +242,7 @@ rg "subscribe" src/ --type ts -A 5
 ```
 
 2. Look for cleanup functions:
+
 ```bash
 # useEffect should return cleanup
 rg "useEffect\(" src/ --type tsx -A 20 | grep -A 15 "return \(\) =>"
@@ -239,12 +253,14 @@ rg "useEffect\(" src/ --type tsx -A 20 | grep -A 15 "return \(\) =>"
 **Symptoms**: Fast in production, slow in development
 
 **Common Causes**:
+
 - React Strict Mode double-rendering
 - Source maps compilation
 - Hot reload overhead
 - Development-only logging
 
 Check if issue is dev-specific:
+
 ```bash
 # Build and run production locally
 pnpm build && pnpm start
@@ -291,30 +307,33 @@ AskUserQuestion:
 ### 5.1 React Rendering Fixes
 
 **Add memoization:**
+
 ```typescript
 // Memoize expensive calculations
-const expensiveValue = useMemo(() => computeExpensive(data), [data])
+const expensiveValue = useMemo(() => computeExpensive(data), [data]);
 
 // Memoize callbacks
-const handleClick = useCallback(() => doSomething(), [])
+const handleClick = useCallback(() => doSomething(), []);
 
 // Memoize components
-const MemoizedChild = React.memo(ChildComponent)
+const MemoizedChild = React.memo(ChildComponent);
 ```
 
 **Fix context performance:**
+
 ```typescript
 // Split context into smaller pieces
-const UserContext = createContext()
-const ThemeContext = createContext() // Separate from user
+const UserContext = createContext();
+const ThemeContext = createContext(); // Separate from user
 
 // Memoize context value
-const value = useMemo(() => ({ user, setUser }), [user])
+const value = useMemo(() => ({ user, setUser }), [user]);
 ```
 
 ### 5.2 Bundle Size Fixes
 
 **Use dynamic imports:**
+
 ```typescript
 // Before
 import HeavyComponent from './HeavyComponent'
@@ -326,29 +345,32 @@ const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
 ```
 
 **Tree-shake imports:**
+
 ```typescript
 // Before (pulls entire library)
-import _ from 'lodash'
+import _ from 'lodash';
 
 // After (only imports used function)
-import map from 'lodash-es/map'
+import map from 'lodash-es/map';
 ```
 
 ### 5.3 Database Query Fixes
 
 **Add includes:**
+
 ```typescript
 // Before: N+1
-const accounts = await prisma.account.findMany()
+const accounts = await prisma.account.findMany();
 // Then separately fetching transactions for each
 
 // After: Single query
 const accounts = await prisma.account.findMany({
-  include: { transactions: true }
-})
+  include: { transactions: true },
+});
 ```
 
 **Add indexes in schema:**
+
 ```prisma
 model Transaction {
   id        String   @id
@@ -363,23 +385,27 @@ model Transaction {
 ### 5.4 Memory Leak Fixes
 
 **Always cleanup effects:**
+
 ```typescript
 useEffect(() => {
-  const handler = () => { /* ... */ }
-  window.addEventListener('resize', handler)
+  const handler = () => {
+    /* ... */
+  };
+  window.addEventListener('resize', handler);
 
   return () => {
-    window.removeEventListener('resize', handler) // Cleanup!
-  }
-}, [])
+    window.removeEventListener('resize', handler); // Cleanup!
+  };
+}, []);
 ```
 
 **Clear intervals:**
+
 ```typescript
 useEffect(() => {
-  const interval = setInterval(tick, 1000)
-  return () => clearInterval(interval) // Cleanup!
-}, [])
+  const interval = setInterval(tick, 1000);
+  return () => clearInterval(interval); // Cleanup!
+}, []);
 ```
 
 ## Phase 6: Fix Implementation
@@ -403,6 +429,7 @@ TodoWrite:
 ### 6.2 Measure Before/After
 
 Before fixing, record baseline:
+
 - Page load time
 - Time to interactive
 - Bundle size
@@ -442,6 +469,7 @@ AskUserQuestion:
 ### 7.2 Additional Recommendations
 
 Based on investigation, suggest:
+
 - Monitoring to add
 - Future optimizations
 - Best practices to follow
@@ -470,6 +498,7 @@ AskUserQuestion:
 ### Performance Checklist
 
 **React:**
+
 - [ ] useMemo for expensive calculations
 - [ ] useCallback for callbacks passed to children
 - [ ] React.memo for pure components
@@ -477,18 +506,21 @@ AskUserQuestion:
 - [ ] Split large components
 
 **Bundle:**
+
 - [ ] Dynamic imports for heavy components
 - [ ] Tree-shake imports (lodash-es, not lodash)
 - [ ] Remove unused dependencies
 - [ ] Analyze with bundle analyzer
 
 **Database:**
+
 - [ ] Use includes to avoid N+1
 - [ ] Add indexes for frequent queries
 - [ ] Pagination for large datasets
 - [ ] Select only needed fields
 
 **Memory:**
+
 - [ ] Cleanup effects return functions
 - [ ] Clear intervals/timeouts
 - [ ] Unsubscribe from subscriptions
@@ -496,15 +528,15 @@ AskUserQuestion:
 
 ### Common Performance Anti-patterns
 
-| Anti-pattern | Impact | Fix |
-|--------------|--------|-----|
-| Inline objects `style={{}}` | Re-render | Define outside component |
-| Inline functions `onClick={() => {}}` | Re-render | useCallback |
-| Missing memo | Unnecessary re-renders | React.memo |
-| Large images | Slow load | Optimize, lazy load |
-| N+1 queries | Database overload | Use includes |
-| No pagination | Memory, network | Add pagination |
-| Barrel imports | Large bundle | Direct imports |
+| Anti-pattern                          | Impact                 | Fix                      |
+| ------------------------------------- | ---------------------- | ------------------------ |
+| Inline objects `style={{}}`           | Re-render              | Define outside component |
+| Inline functions `onClick={() => {}}` | Re-render              | useCallback              |
+| Missing memo                          | Unnecessary re-renders | React.memo               |
+| Large images                          | Slow load              | Optimize, lazy load      |
+| N+1 queries                           | Database overload      | Use includes             |
+| No pagination                         | Memory, network        | Add pagination           |
+| Barrel imports                        | Large bundle           | Direct imports           |
 
 ## Important Behaviors
 
