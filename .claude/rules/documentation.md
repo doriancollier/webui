@@ -29,14 +29,14 @@ Use `@param name - Description` (no `{type}` — let TypeScript handle types):
 
 ```typescript
 /**
- * Resolve the Claude Code CLI path for the SDK to spawn.
+ * Send a message and stream the response via SSE.
  *
- * Tries SDK bundled path first, then PATH lookup, then falls back to undefined
- * for SDK default resolution.
- *
- * @param preferLocal - Prefer locally installed CLI over global
+ * @param sessionId - Target session UUID
+ * @param content - User message text
+ * @param onEvent - Callback invoked for each streamed event
+ * @param signal - Optional AbortSignal to cancel the request
  */
-export function resolveClaudeCliPath(preferLocal?: boolean): string | undefined {
+export function sendMessage(sessionId: string, content: string, ...): Promise<void> {
 ```
 
 ## Barrel `index.ts` Module Docs
