@@ -292,6 +292,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       await transport.sendMessage(
         sessionId,
         finalContent,
+
         (event) => handleStreamEvent(event.type, event.data, assistantIdRef.current),
         abortController.signal,
         selectedCwd ?? undefined
@@ -320,6 +321,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       isTextStreamingRef.current = false;
       setIsTextStreaming(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: stable refs for transport/options/cwd
   }, [input, status, sessionId]);
 
   function handleStreamEvent(type: string, data: unknown, assistantId: string) {

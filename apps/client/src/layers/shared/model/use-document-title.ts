@@ -34,9 +34,11 @@ export function useDocumentTitle({
   const cwdRef = useRef(cwd);
   const activeFormRef = useRef(activeForm);
   const isWaitingForUserRef = useRef(isWaitingForUser);
-  cwdRef.current = cwd;
-  activeFormRef.current = activeForm;
-  isWaitingForUserRef.current = isWaitingForUser;
+  useEffect(() => {
+    cwdRef.current = cwd;
+    activeFormRef.current = activeForm;
+    isWaitingForUserRef.current = isWaitingForUser;
+  }, [cwd, activeForm, isWaitingForUser]);
 
   // Track tab visibility and clear 🏁 on return
   useEffect(() => {

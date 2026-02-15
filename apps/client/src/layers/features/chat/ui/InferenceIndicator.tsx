@@ -82,9 +82,11 @@ export function InferenceIndicator({
         className="text-3xs text-muted-foreground/50 flex items-baseline gap-1.5 px-4 py-2"
         data-testid="inference-indicator-complete"
       >
+        {/* eslint-disable react-hooks/refs -- Intentional: snapshot refs for post-stream display */}
         <span>{lastElapsedRef.current}</span>
         <span aria-hidden="true">&middot;</span>
         <span>{formatTokens(lastTokensRef.current)}</span>
+        {/* eslint-enable react-hooks/refs */}
       </motion.div>
     );
   }

@@ -60,5 +60,6 @@ export function useIdleDetector(options: IdleDetectorOptions = {}): IdleDetector
     };
   }, [timeoutMs, markIdle, resetTimer]);
 
+  // eslint-disable-next-line react-hooks/refs -- Intentional: ref-based to avoid re-render storms
   return { isIdle: isIdleRef.current };
 }

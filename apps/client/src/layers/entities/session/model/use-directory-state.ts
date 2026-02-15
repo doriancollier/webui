@@ -22,7 +22,8 @@ export function useDirectoryState(): [string | null, (dir: string | null) => voi
     if (!platform.isEmbedded && urlDir && urlDir !== storeDir) {
       setStoreDir(urlDir);
     }
-  }, [urlDir]); // Only re-run when URL changes (browser back/forward)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: one-way sync URL → store on URL change only
+  }, [urlDir]);
 
   if (platform.isEmbedded) {
     return [

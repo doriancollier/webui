@@ -30,6 +30,7 @@ export function useElapsedTime(startTime: number | null): ElapsedTimeResult {
       return;
     }
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Idiomatic: init timer state on startTime change
     setNow(Date.now());
     intervalRef.current = setInterval(() => setNow(Date.now()), 1000);
 

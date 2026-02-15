@@ -1,4 +1,4 @@
-import { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, useCallback, forwardRef } from 'react';
 import { Check, X, Shield } from 'lucide-react';
 import { useTransport } from '@/layers/shared/model';
 import { ToolArgumentsDisplay, cn } from '@/layers/shared/lib';
@@ -26,7 +26,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
   const [responding, setResponding] = useState(false);
   const [decided, setDecided] = useState<'approved' | 'denied' | null>(null);
 
-  async function handleApprove() {
+  const handleApprove = useCallback(async () => {
     if (responding || decided) return;
     setResponding(true);
     try {
@@ -37,9 +37,9 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
     } finally {
       setResponding(false);
     }
-  }
+  }, [responding, decided, transport, sessionId, toolCallId]);
 
-  async function handleDeny() {
+  const handleDeny = useCallback(async () => {
     if (responding || decided) return;
     setResponding(true);
     try {
@@ -50,7 +50,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
     } finally {
       setResponding(false);
     }
-  }
+  }, [responding, decided, transport, sessionId, toolCallId]);
 
   useImperativeHandle(
     ref,
@@ -62,7 +62,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
         handleDeny();
       },
     }),
-    [responding, decided]
+    [handleApprove, handleDeny]
   );
 
   if (decided) {

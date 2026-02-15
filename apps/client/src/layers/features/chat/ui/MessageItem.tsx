@@ -15,6 +15,7 @@ export type InteractiveToolHandle = ToolApprovalHandle | QuestionPromptHandle;
 
 function useToolCallVisibility(status: string, autoHide: boolean): boolean {
   const initialStatusRef = useRef(status);
+  // eslint-disable-next-line react-hooks/refs -- Intentional: useState initializer runs once on mount
   const [visible, setVisible] = useState(!(autoHide && initialStatusRef.current === 'complete'));
 
   useEffect(() => {

@@ -12,6 +12,7 @@ export function useIsMobile() {
     const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
     const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mql.addEventListener('change', onChange);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Idiomatic: sync state with matchMedia on mount
     setIsMobile(mql.matches);
     return () => mql.removeEventListener('change', onChange);
   }, []);

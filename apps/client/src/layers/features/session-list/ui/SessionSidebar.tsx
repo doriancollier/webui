@@ -27,6 +27,8 @@ import {
 import { SettingsDialog } from '@/layers/features/settings';
 import type { Session } from '@dorkos/shared/types';
 
+const themeOrder: Theme[] = ['light', 'dark', 'system'];
+
 export function SessionSidebar() {
   const transport = useTransport();
   const queryClient = useQueryClient();
@@ -38,8 +40,6 @@ export function SessionSidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedCwd] = useDirectoryState();
   const { theme, setTheme } = useTheme();
-
-  const themeOrder: Theme[] = ['light', 'dark', 'system'];
   const ThemeIcon = { light: Sun, dark: Moon, system: Monitor }[theme];
   const cycleTheme = useCallback(() => {
     const idx = themeOrder.indexOf(theme);

@@ -50,6 +50,7 @@ export function DirectoryPicker({ open, onOpenChange }: DirectoryPickerProps) {
     staleTime: 30_000,
   });
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- Semantic clarity
   const handleSelect = useCallback(() => {
     if (data?.path) {
       setSelectedCwd(data.path);

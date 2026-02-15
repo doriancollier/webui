@@ -54,6 +54,7 @@ export function useTaskState(sessionId: string): TaskState {
 
   // Reset taskMap when query data changes (initial load or sync invalidation)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Idiomatic: reset state when query data changes
     setTaskMap(new Map());
     nextIdRef.current = 1;
 

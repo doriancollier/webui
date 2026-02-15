@@ -249,7 +249,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const showShortcutChips = useAppStore((s) => s.showShortcutChips);
   const [cwd] = useDirectoryState();
   const { data: registry } = useCommands(cwd);
-  const allCommands = registry?.commands ?? [];
+
+  const allCommands = useMemo(() => registry?.commands ?? [], [registry]);
   const { data: fileList } = useFiles(cwd);
 
   const filteredCommands = useMemo(() => {
@@ -428,6 +429,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         setShowCommands(false);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: handleFileSelect/handleCommandSelect are component-scoped
   }, [showFiles, showCommands, filteredFiles, fileSelectedIndex, filteredCommands, selectedIndex]);
 
   const handleChipClick = useCallback(

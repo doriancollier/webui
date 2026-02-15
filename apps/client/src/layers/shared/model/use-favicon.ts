@@ -20,7 +20,9 @@ export function useFavicon({ cwd, isStreaming }: UseFaviconOptions) {
   const intervalRef = useRef<number | null>(null);
   const frameIndexRef = useRef(0);
   const isStreamingRef = useRef(isStreaming);
-  isStreamingRef.current = isStreaming;
+  useEffect(() => {
+    isStreamingRef.current = isStreaming;
+  }, [isStreaming]);
 
   const startPulsing = useCallback(() => {
     if (intervalRef.current) {

@@ -38,7 +38,7 @@ vi.mock('motion/react', () => ({
             onAnimationComplete();
           }
         }, [onAnimationComplete]);
-        return React.createElement('li', { ...props, ref }, children);
+        return React.createElement('li', { ...props, ref }, children); // eslint-disable-line react-hooks/refs -- Test mock
       }
     ),
     span: React.forwardRef(

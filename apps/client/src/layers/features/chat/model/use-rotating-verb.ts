@@ -22,6 +22,7 @@ export function useRotatingVerb(verbs: readonly string[], intervalMs: number): R
     return next;
   }, [verbs]);
 
+  // eslint-disable-next-line react-hooks/refs -- Intentional: useState initializer runs once
   const [verb, setVerb] = useState<string>(() => {
     const initial = pickRandom();
     return initial;
@@ -38,6 +39,7 @@ export function useRotatingVerb(verbs: readonly string[], intervalMs: number): R
 
   return {
     verb,
+    // eslint-disable-next-line react-hooks/refs -- Intentional: counter ref for key generation
     key: `verb-${keyCounterRef.current}`,
   };
 }

@@ -1,4 +1,4 @@
-import { useState, useImperativeHandle, forwardRef } from 'react';
+import { useState, useImperativeHandle, useCallback, forwardRef } from 'react';
 import { Check, MessageSquare } from 'lucide-react';
 import { useTransport } from '@/layers/shared/model';
 import { cn } from '@/layers/shared/lib';
@@ -106,7 +106,7 @@ export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptPro
       return null;
     }
 
-    async function handleSubmit() {
+    const handleSubmit = useCallback(async () => {
       if (!isComplete() || submitting) return;
       setSubmitting(true);
       setError(null);
@@ -134,7 +134,8 @@ export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptPro
       } finally {
         setSubmitting(false);
       }
-    }
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: isComplete is a local function
+    }, [selections, otherText, submitting, transport, sessionId, toolCallId, questions]);
 
     useImperativeHandle(
       ref,
@@ -190,7 +191,17 @@ export const QuestionPrompt = forwardRef<QuestionPromptHandle, QuestionPromptPro
           return activeTab;
         },
       }),
-      [activeQuestion, activeQIdx, activeTab, selections, submitted, submitting, currentOptionCount]
+      [
+        activeQuestion,
+        activeQIdx,
+        activeTab,
+        selections,
+        submitted,
+        submitting,
+        currentOptionCount,
+        handleSubmit,
+        questions.length,
+      ]
     );
 
     // Collapsed submitted state
