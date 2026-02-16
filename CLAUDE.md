@@ -32,20 +32,20 @@ dorkos/
 ## Commands
 
 ```bash
-turbo dev              # Start both Express server (port 4242) and Vite dev server (port 3000)
-turbo dev --filter=@dorkos/server   # Express server only
-turbo dev --filter=@dorkos/client   # Vite dev server only (React UI with HMR)
-turbo test             # Vitest across client + server
-turbo test -- --run    # Vitest single run
-turbo build            # Build all 3 apps (client Vite + server tsc + obsidian plugin)
-turbo typecheck        # Type-check all packages
+npm run dev            # Start both Express server and Vite dev server (loads .env)
+dotenv -- turbo dev --filter=@dorkos/server   # Express server only (loads .env)
+dotenv -- turbo dev --filter=@dorkos/client   # Vite dev server only (loads .env)
+npm test               # Vitest across client + server (loads .env)
+npm test -- --run      # Vitest single run
+npm run build          # Build all 3 apps (client Vite + server tsc + obsidian plugin)
+npm run typecheck      # Type-check all packages
 turbo build --filter=@dorkos/obsidian-plugin  # Build Obsidian plugin only
 npm run build -w packages/cli  # Build CLI package (esbuild bundles server+client+CLI)
 npm publish -w packages/cli   # Publish dorkos to npm (prepublishOnly auto-builds)
-npm start              # Production server (serves built React app)
+npm start              # Production server (serves built React app, loads .env)
 npm run dev:tunnel -w apps/server   # Dev server + ngrok tunnel (tunnels Vite on :3000)
-turbo lint             # ESLint across all packages
-turbo lint -- --fix    # Auto-fix ESLint issues
+npm run lint           # ESLint across all packages
+npm run lint -- --fix  # Auto-fix ESLint issues
 npm run format         # Prettier format all files
 npm run format:check   # Check formatting without writing
 ```
