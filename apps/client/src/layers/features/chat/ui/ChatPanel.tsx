@@ -9,7 +9,7 @@ import { useCommandPalette } from '../model/use-command-palette';
 import { useFileAutocomplete } from '../model/use-file-autocomplete';
 import { useSessionId, useSessionStatus, useDirectoryState } from '@/layers/entities/session';
 import { useIsMobile, useInteractiveShortcuts, useAppStore } from '@/layers/shared/model';
-import { playNotificationSound } from '@/layers/shared/lib';
+import { playNotificationSound, STORAGE_KEYS } from '@/layers/shared/lib';
 import { MessageList } from './MessageList';
 import type { MessageListHandle, ScrollState } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -181,7 +181,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [showHint, setShowHint] = useState(() => {
     if (!isMobile) return false;
-    const count = parseInt(localStorage.getItem('dorkos-gesture-hint-count') || '0', 10);
+    const count = parseInt(localStorage.getItem(STORAGE_KEYS.GESTURE_HINT_COUNT) || '0', 10);
     return count < 3;
   });
 
@@ -189,16 +189,16 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     if (!showHint) return;
     const timer = setTimeout(() => {
       setShowHint(false);
-      const count = parseInt(localStorage.getItem('dorkos-gesture-hint-count') || '0', 10);
-      localStorage.setItem('dorkos-gesture-hint-count', String(count + 1));
+      const count = parseInt(localStorage.getItem(STORAGE_KEYS.GESTURE_HINT_COUNT) || '0', 10);
+      localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, String(count + 1));
     }, 4000);
     return () => clearTimeout(timer);
   }, [showHint]);
 
   const dismissHint = useCallback(() => {
     setShowHint(false);
-    const count = parseInt(localStorage.getItem('dorkos-gesture-hint-count') || '0', 10);
-    localStorage.setItem('dorkos-gesture-hint-count', String(count + 1));
+    const count = parseInt(localStorage.getItem(STORAGE_KEYS.GESTURE_HINT_COUNT) || '0', 10);
+    localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, String(count + 1));
   }, []);
 
   const SWIPE_THRESHOLD = 80;

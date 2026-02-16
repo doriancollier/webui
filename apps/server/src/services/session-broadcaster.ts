@@ -2,6 +2,7 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { join } from 'path';
 import type { Response } from 'express';
 import type { TranscriptReader } from './transcript-reader.js';
+import { WATCHER } from '../config/constants.js';
 
 /**
  * SessionBroadcaster manages file watching and SSE broadcasting for cross-client session sync.
@@ -124,8 +125,8 @@ export class SessionBroadcaster {
       persistent: true,
       ignoreInitial: true, // Don't fire for initial file scan
       awaitWriteFinish: {
-        stabilityThreshold: 50,
-        pollInterval: 25,
+        stabilityThreshold: WATCHER.STABILITY_THRESHOLD_MS,
+        pollInterval: WATCHER.POLL_INTERVAL_MS,
       },
     });
 
@@ -144,7 +145,7 @@ export class SessionBroadcaster {
             err
           );
         });
-      }, 100);
+      }, WATCHER.DEBOUNCE_MS);
 
       this.debounceTimers.set(sessionId, timer);
     });

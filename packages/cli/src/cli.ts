@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { checkClaude } from './check-claude.js';
+import { DEFAULT_PORT } from '@dorkos/shared/constants';
 
 // Injected at build time by esbuild define
 declare const __CLI_VERSION__: string;
@@ -12,7 +13,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
   options: {
-    port: { type: 'string', short: 'p', default: '4242' },
+    port: { type: 'string', short: 'p', default: String(DEFAULT_PORT) },
     tunnel: { type: 'boolean', short: 't', default: false },
     dir: { type: 'string', short: 'd', default: process.cwd() },
     help: { type: 'boolean', short: 'h' },
@@ -28,7 +29,7 @@ Usage: dorkos [options]
 Web-based interface and REST/SSE API for Claude Code
 
 Options:
-  -p, --port <port>  Port to listen on (default: 4242)
+  -p, --port <port>  Port to listen on (default: ${DEFAULT_PORT})
   -t, --tunnel       Enable ngrok tunnel
   -d, --dir <path>   Working directory (default: current directory)
   -h, --help         Show this help message

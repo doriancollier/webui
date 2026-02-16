@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
+import { GIT } from '../config/constants.js';
 
 /**
  * Git repository status via `git status --porcelain=v1`.
@@ -21,7 +22,7 @@ export async function getGitStatus(cwd: string): Promise<GitStatusResponse | Git
   try {
     const { stdout } = await execFileAsync('git', ['status', '--porcelain=v1', '--branch'], {
       cwd,
-      timeout: 5000,
+      timeout: GIT.STATUS_TIMEOUT_MS,
     });
     return parsePorcelainOutput(stdout);
   } catch {

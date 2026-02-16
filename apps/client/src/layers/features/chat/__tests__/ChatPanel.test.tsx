@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
+import { STORAGE_KEYS } from '@/layers/shared/lib/constants';
 
 // Mock motion/react with Proxy pattern
 vi.mock('motion/react', () => ({
@@ -202,14 +203,14 @@ describe('ChatPanel collapse', () => {
 describe('ChatPanel first-use hint', () => {
   it('shows hint when localStorage count < 3 on mobile', () => {
     mockUseIsMobile.mockReturnValue(true);
-    localStorage.setItem('dorkos-gesture-hint-count', '1');
+    localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, '1');
     render(<ChatPanel sessionId="test" />);
     expect(screen.getByText('Swipe to collapse')).toBeTruthy();
   });
 
   it('does not show hint when count >= 3', () => {
     mockUseIsMobile.mockReturnValue(true);
-    localStorage.setItem('dorkos-gesture-hint-count', '3');
+    localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, '3');
     render(<ChatPanel sessionId="test" />);
     expect(screen.queryByText('Swipe to collapse')).toBeNull();
   });
@@ -217,19 +218,19 @@ describe('ChatPanel first-use hint', () => {
   it('increments count on dismiss', () => {
     vi.useFakeTimers();
     mockUseIsMobile.mockReturnValue(true);
-    localStorage.setItem('dorkos-gesture-hint-count', '0');
+    localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, '0');
     render(<ChatPanel sessionId="test" />);
     expect(screen.getByText('Swipe to collapse')).toBeTruthy();
     act(() => {
       vi.advanceTimersByTime(4000);
     });
-    expect(localStorage.getItem('dorkos-gesture-hint-count')).toBe('1');
+    expect(localStorage.getItem(STORAGE_KEYS.GESTURE_HINT_COUNT)).toBe('1');
     vi.useRealTimers();
   });
 
   it('does not show hint on desktop regardless of count', () => {
     mockUseIsMobile.mockReturnValue(false);
-    localStorage.setItem('dorkos-gesture-hint-count', '0');
+    localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, '0');
     render(<ChatPanel sessionId="test" />);
     expect(screen.queryByText('Swipe to collapse')).toBeNull();
   });

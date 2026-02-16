@@ -6,13 +6,15 @@ import { agentManager } from './services/agent-manager.js';
 import { tunnelManager } from './services/tunnel-manager.js';
 import { SessionBroadcaster } from './services/session-broadcaster.js';
 import { transcriptReader } from './services/transcript-reader.js';
+import { DEFAULT_PORT } from '@dorkos/shared/constants';
+import { INTERVALS } from './config/constants.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 if (!process.env.CLIENT_DIST_PATH) {
   dotenv.config({ path: path.join(__dirname, '../../../.env') });
 }
 
-const PORT = parseInt(process.env.DORKOS_PORT || '4242', 10);
+const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
 
 // Global reference for graceful shutdown
 let sessionBroadcaster: SessionBroadcaster | null = null;
@@ -29,12 +31,12 @@ async function start() {
     console.log(`DorkOS server running on http://localhost:${PORT}`);
   });
 
-  // Run session health check every 5 minutes
+  // Run session health check periodically
   setInterval(
     () => {
       agentManager.checkSessionHealth();
     },
-    5 * 60 * 1000
+    INTERVALS.HEALTH_CHECK_MS
   );
 
   // Start ngrok tunnel if enabled

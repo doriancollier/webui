@@ -2,6 +2,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import { FILE_LIMITS } from '../config/constants.js';
 
 /**
  * File listing service for the client file browser.
@@ -59,14 +60,14 @@ class FileListService {
       ['ls-files', '--cached', '--others', '--exclude-standard'],
       {
         cwd,
-        maxBuffer: 10 * 1024 * 1024,
+        maxBuffer: FILE_LIMITS.GIT_MAX_BUFFER,
       }
     );
     return stdout.split('\n').filter(Boolean);
   }
 
   private async listViaReaddir(cwd: string, prefix = '', depth = 0): Promise<string[]> {
-    if (depth > 8) return [];
+    if (depth > FILE_LIMITS.MAX_READDIR_DEPTH) return [];
     const results: string[] = [];
     const entries = await fs.readdir(path.join(cwd, prefix), { withFileTypes: true });
     for (const entry of entries) {

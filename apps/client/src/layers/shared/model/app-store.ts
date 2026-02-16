@@ -9,6 +9,9 @@ import {
   removeGoogleFont,
   applyFontCSS,
   removeFontCSS,
+  STORAGE_KEYS,
+  FONT_SCALE_MAP,
+  MAX_RECENT_CWDS,
 } from '@/layers/shared/lib';
 
 /** Read a boolean from localStorage with try/catch safety. */
@@ -153,16 +156,16 @@ export const useAppStore = create<AppState>()(
       setSelectedCwd: (cwd) =>
         set((s) => {
           const entry: RecentCwd = { path: cwd, accessedAt: new Date().toISOString() };
-          const recents = [entry, ...s.recentCwds.filter((r) => r.path !== cwd)].slice(0, 10);
+          const recents = [entry, ...s.recentCwds.filter((r) => r.path !== cwd)].slice(0, MAX_RECENT_CWDS);
           try {
-            localStorage.setItem('dorkos-recent-cwds', JSON.stringify(recents));
+            localStorage.setItem(STORAGE_KEYS.RECENT_CWDS, JSON.stringify(recents));
           } catch {}
           return { selectedCwd: cwd, recentCwds: recents };
         }),
 
       recentCwds: (() => {
         try {
-          const raw: unknown[] = JSON.parse(localStorage.getItem('dorkos-recent-cwds') || '[]');
+          const raw: unknown[] = JSON.parse(localStorage.getItem(STORAGE_KEYS.RECENT_CWDS) || '[]');
           return raw.map((item) =>
             typeof item === 'string'
               ? { path: item, accessedAt: new Date().toISOString() }
@@ -250,10 +253,9 @@ export const useAppStore = create<AppState>()(
 
       fontSize: (() => {
         try {
-          const stored = localStorage.getItem('dorkos-font-size');
+          const stored = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
           if (stored === 'small' || stored === 'medium' || stored === 'large') {
-            const scaleMap = { small: '0.9', medium: '1', large: '1.15' };
-            document.documentElement.style.setProperty('--user-font-scale', scaleMap[stored]);
+            document.documentElement.style.setProperty('--user-font-scale', FONT_SCALE_MAP[stored]);
             return stored;
           }
         } catch {}
@@ -261,16 +263,15 @@ export const useAppStore = create<AppState>()(
       })() as 'small' | 'medium' | 'large',
       setFontSize: (v) => {
         try {
-          localStorage.setItem('dorkos-font-size', v);
+          localStorage.setItem(STORAGE_KEYS.FONT_SIZE, v);
         } catch {}
-        const scaleMap = { small: '0.9', medium: '1', large: '1.15' };
-        document.documentElement.style.setProperty('--user-font-scale', scaleMap[v]);
+        document.documentElement.style.setProperty('--user-font-scale', FONT_SCALE_MAP[v]);
         set({ fontSize: v });
       },
 
       fontFamily: (() => {
         try {
-          const stored = localStorage.getItem('dorkos-font-family');
+          const stored = localStorage.getItem(STORAGE_KEYS.FONT_FAMILY);
           const key = isValidFontKey(stored ?? '') ? stored! : DEFAULT_FONT;
           const config = getFontConfig(key);
           if (config.googleFontsUrl) {
@@ -286,7 +287,7 @@ export const useAppStore = create<AppState>()(
       })() as FontFamilyKey,
       setFontFamily: (key) => {
         try {
-          localStorage.setItem('dorkos-font-family', key);
+          localStorage.setItem(STORAGE_KEYS.FONT_FAMILY, key);
         } catch {}
         const config = getFontConfig(key);
         if (config.googleFontsUrl) {
@@ -307,8 +308,8 @@ export const useAppStore = create<AppState>()(
           for (const lsKey of Object.values(BOOL_KEYS)) {
             localStorage.removeItem(lsKey);
           }
-          localStorage.removeItem('dorkos-font-size');
-          localStorage.removeItem('dorkos-font-family');
+          localStorage.removeItem(STORAGE_KEYS.FONT_SIZE);
+          localStorage.removeItem(STORAGE_KEYS.FONT_FAMILY);
         } catch {}
         document.documentElement.style.setProperty('--user-font-scale', '1');
         const defaultConfig = getFontConfig(DEFAULT_FONT);

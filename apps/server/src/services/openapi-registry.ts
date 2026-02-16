@@ -7,6 +7,7 @@
  * @module services/openapi-registry
  */
 import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-openapi';
+import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import {
   SessionSchema,
   CreateSessionRequestSchema,
@@ -383,6 +384,6 @@ export function generateOpenAPISpec() {
       version: '0.1.0',
       description: 'REST/SSE API for Claude Code sessions, built with the Claude Agent SDK.',
     },
-    servers: [{ url: `http://localhost:${process.env.DORKOS_PORT || 4242}` }],
+    servers: [{ url: `http://localhost:${process.env.DORKOS_PORT || DEFAULT_PORT}` }],
   });
 }
