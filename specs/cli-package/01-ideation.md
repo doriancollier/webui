@@ -1,3 +1,10 @@
+---
+slug: cli-package
+number: 14
+created: 2026-02-12
+status: implemented
+---
+
 # Ideation: `packages/cli` — Publishable npm CLI Package
 
 ## 1. Intent & Assumptions

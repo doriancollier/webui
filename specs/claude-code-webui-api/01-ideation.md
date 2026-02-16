@@ -1,5 +1,8 @@
 ---
 slug: claude-code-webui-api
+number: 1
+created: 2026-02-06
+status: implemented
 ---
 
 # Claude Code WebUI & Reusable API

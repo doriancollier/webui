@@ -1,5 +1,8 @@
 ---
 slug: mobile-input-collapse-gesture
+number: 22
+created: 2026-02-13
+status: implemented
 ---
 
 # Mobile Input Area Collapse Gesture

@@ -1,3 +1,10 @@
+---
+slug: task-celebrations
+number: 26
+created: 2026-02-13
+status: implemented
+---
+
 # Task Completion Celebrations
 
 **Slug:** task-celebrations

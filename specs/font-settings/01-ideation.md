@@ -1,5 +1,8 @@
 ---
 slug: font-settings
+number: 23
+created: 2026-02-13
+status: implemented
 ---
 
 # Font Selection Settings

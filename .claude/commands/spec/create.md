@@ -72,6 +72,7 @@ After validating the problem from first principles, complete these technical che
 - Check available specialized experts in `.claude/agents/` directory
 - Match research requirements to expert domains for optimal analysis
 - Use general-purpose approach only when no specialized expert fits
+- **Search `decisions/` for related ADRs** that may constrain or inform the design
 - Identify potential conflicts or duplicates
 - Verify feature request is technically feasible
 - Document any missing prerequisites
@@ -190,7 +191,8 @@ Then create a spec document that includes:
     - Phase 2: Enhanced features (if applicable)
     - Phase 3: Polish and optimization (if applicable)
 16. **Open Questions**: Any unresolved questions or decisions
-17. **References**:
+17. **Related ADRs**: List any Architecture Decision Records from `decisions/` that are relevant to this feature
+18. **References**:
     - Links to related issues, PRs, or documentation
     - External library documentation links
     - Relevant design patterns or architectural decisions

@@ -1,3 +1,10 @@
+---
+slug: question-prompt-tabs
+number: 15
+created: 2026-02-13
+status: implemented
+---
+
 # Question Prompt Tabs & Answer Summary
 
 **Slug:** question-prompt-tabs

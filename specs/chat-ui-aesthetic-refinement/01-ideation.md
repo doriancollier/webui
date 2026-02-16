@@ -1,5 +1,8 @@
 ---
 slug: chat-ui-aesthetic-refinement
+number: 3
+created: 2026-02-07
+status: implemented
 ---
 
 # Chat UI Aesthetic Refinement

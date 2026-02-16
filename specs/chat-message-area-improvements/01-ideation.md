@@ -1,3 +1,10 @@
+---
+slug: chat-message-area-improvements
+number: 16
+created: 2026-02-13
+status: implemented
+---
+
 # Chat Message Area Improvements
 
 **Slug:** chat-message-area-improvements

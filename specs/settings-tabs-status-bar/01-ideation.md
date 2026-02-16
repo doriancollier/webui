@@ -1,3 +1,10 @@
+---
+slug: settings-tabs-status-bar
+number: 20
+created: 2026-02-13
+status: implemented
+---
+
 # Settings Tabs & Status Bar Configuration
 
 **Slug:** settings-tabs-status-bar

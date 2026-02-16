@@ -1,5 +1,8 @@
 ---
 slug: inference-status-indicator
+number: 8
+created: 2026-02-12
+status: implemented
 ---
 
 # Inference Status Indicator

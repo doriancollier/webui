@@ -25,6 +25,7 @@ Add new processes, update existing ones, or improve the Claude Code workflow bas
 | **Skills**           | `/.claude/skills/[skill-name]/SKILL.md`   | Reusable expertise Claude applies automatically (model-invoked)            |
 | **Rules**            | `/.claude/rules/[topic].md`               | Path-specific guidelines that apply to certain file types (path-triggered) |
 | **Hooks**            | `/.claude/settings.json`                  | Automated validation/actions (via ClaudeKit, event-triggered)              |
+| **ADRs**             | `/decisions/NNNN-slug.md`                 | Architecture decisions with context, rationale, consequences               |
 | **Developer Guides** | `/guides/[name].md`                       | Detailed patterns and conventions (see `writing-developer-guides` skill)   |
 | **Memory**           | `/CLAUDE.md`                              | Core instructions, high-level documentation                                |
 | **Harness README**   | `/.claude/README.md`                      | Harness structure, component inventory, maintenance guides                 |
@@ -640,6 +641,7 @@ Understanding HOW each component is invoked is critical for choosing the right f
 | System/meta            | `system/`                        |
 | Code analysis          | `dev/`                           |
 | Configuration          | `config/`                        |
+| Architecture decisions | `adr/`                           |
 | AGENTS.md management   | `agents-md/`                     |
 | Other                  | Create new namespace or use root |
 

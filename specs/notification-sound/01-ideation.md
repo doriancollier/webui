@@ -1,3 +1,10 @@
+---
+slug: notification-sound
+number: 27
+created: 2026-02-13
+status: implemented
+---
+
 # Notification Sound on AI Response Completion
 
 **Slug:** notification-sound

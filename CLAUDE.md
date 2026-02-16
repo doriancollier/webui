@@ -23,8 +23,10 @@ dorkos/
 │   ├── shared/           # @dorkos/shared - Zod schemas, types (JIT .ts exports)
 │   ├── typescript-config/ # @dorkos/typescript-config - Shared tsconfig presets
 │   └── test-utils/       # @dorkos/test-utils - Mock factories, test helpers
+├── decisions/            # Architecture Decision Records (ADRs)
 ├── docs/                 # External user-facing docs (MDX for Fumadocs, consumed by marketing site)
 ├── research/             # Research artifacts (persisted by research-expert agent)
+├── specs/                # Feature specs with manifest.json for chronological ordering
 ├── turbo.json
 ├── vitest.workspace.ts
 └── package.json          # Root workspace config + turbo only
@@ -230,3 +232,15 @@ Tests live alongside source in `__tests__/` directories within each app and pack
 - **TSDoc**: `eslint-plugin-jsdoc` enforces TSDoc on exported functions/classes (warn-first). See `.claude/rules/documentation.md` for conventions.
 - **Prettier + Tailwind**: `prettier-plugin-tailwindcss` sorts Tailwind classes automatically.
 - **Claude Code rules**: `.claude/rules/file-size.md`, `.claude/rules/documentation.md`, `.claude/rules/code-quality.md` provide additional guidelines for file size limits, documentation standards, and code quality practices.
+
+## Architecture Decision Records
+
+Key architectural decisions are documented in `decisions/` as lightweight ADRs (Michael Nygard format). Each ADR has YAML frontmatter (`number`, `title`, `status`, `created`, `spec`) and sections for Context, Decision, and Consequences.
+
+- **Index**: `decisions/manifest.json` tracks all ADRs with `nextNumber` for sequential assignment
+- **Commands**: `/adr:create` (new ADR), `/adr:list` (display table), `/adr:from-spec` (extract from spec)
+- **Statuses**: `proposed` | `accepted` | `deprecated` | `superseded`
+
+## Specifications
+
+Feature specifications live in `specs/` with a central index at `specs/manifest.json`. Each spec has a directory (`specs/{slug}/`) containing `01-ideation.md`, `02-specification.md`, and optionally `03-tasks.md`. The manifest tracks chronological ordering via `nextNumber` and spec metadata (`number`, `slug`, `title`, `created`, `status`).

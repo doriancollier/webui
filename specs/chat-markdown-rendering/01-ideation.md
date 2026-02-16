@@ -1,5 +1,8 @@
 ---
 slug: chat-markdown-rendering
+number: 2
+created: 2026-02-07
+status: implemented
 ---
 
 # Chat Markdown Rendering

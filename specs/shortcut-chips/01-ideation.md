@@ -1,3 +1,10 @@
+---
+slug: shortcut-chips
+number: 21
+created: 2026-02-13
+status: implemented
+---
+
 # Shortcut Chips
 
 **Slug:** shortcut-chips

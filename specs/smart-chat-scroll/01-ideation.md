@@ -1,5 +1,8 @@
 ---
 slug: smart-chat-scroll
+number: 10
+created: 2026-02-12
+status: implemented
 ---
 
 # Smart Chat Scroll Behavior

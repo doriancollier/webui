@@ -1,3 +1,10 @@
+---
+slug: tab-identity
+number: 28
+created: 2026-02-13
+status: implemented
+---
+
 # Tab Identity: Differentiate Multiple DorkOS Browser Tabs
 
 **Slug:** tab-identity

@@ -1,5 +1,8 @@
 ---
 slug: improve-slash-commands
+number: 19
+created: 2026-02-13
+status: specified
 ---
 
 # Improve Slash Command System

@@ -29,6 +29,10 @@ Search these sources to find the relevant process:
 - Read the `CLAUDE.md` file in the project root for project instructions and conventions
 - Contains technology stack, architecture patterns, and code conventions
 
+**Architecture Decision Records**:
+
+- Check `decisions/` for past architectural decisions and their rationale
+
 **Developer guides**:
 
 - Check `guides/` for detailed implementation patterns and best practices
@@ -223,6 +227,10 @@ Reference these when answering:
 | "git status"             | Direct prompt: "Show git status"    | `git status && git diff`                                            |
 | "learn how to X"         | `/system:learn [topic]`             | Research, experiment, document manually                             |
 | "codify what worked"     | `/system:learn we successfully [X]` | Create skill/command manually                                       |
+| "create an ADR"          | `/adr:create [title]`               | Create `decisions/NNNN-slug.md` manually                            |
+| "list ADRs"              | `/adr:list`                         | Read `decisions/manifest.json`                                      |
+| "extract ADRs from spec" | `/adr:from-spec [slug]`             | Review spec and draft ADRs manually                                 |
+| "why did we choose X?"   | Check `decisions/` + `/adr:list`    | Read relevant ADR files                                             |
 
 ## Claude Code Architecture Notes
 

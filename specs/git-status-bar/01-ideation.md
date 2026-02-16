@@ -1,5 +1,8 @@
 ---
 slug: git-status-bar
+number: 18
+created: 2026-02-13
+status: implemented
 ---
 
 # Git Status in Status Bar

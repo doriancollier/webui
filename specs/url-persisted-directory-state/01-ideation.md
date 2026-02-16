@@ -1,3 +1,10 @@
+---
+slug: url-persisted-directory-state
+number: 6
+created: 2026-02-11
+status: implemented
+---
+
 # URL-Persisted Directory State
 
 **Slug:** url-persisted-directory-state

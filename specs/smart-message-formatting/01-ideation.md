@@ -1,3 +1,10 @@
+---
+slug: smart-message-formatting
+number: 11
+created: 2026-02-12
+status: implemented
+---
+
 # Smart Message Formatting
 
 **Slug:** smart-message-formatting

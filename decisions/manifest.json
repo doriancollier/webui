@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "nextNumber": 6,
+  "decisions": [
+    {
+      "number": 1,
+      "slug": "use-hexagonal-architecture",
+      "title": "Use Hexagonal Architecture with Transport Interface",
+      "status": "accepted",
+      "created": "2026-02-06",
+      "specSlug": "claude-code-webui-api"
+    },
+    {
+      "number": 2,
+      "slug": "adopt-feature-sliced-design",
+      "title": "Adopt Feature-Sliced Design for Client Architecture",
+      "status": "accepted",
+      "created": "2026-02-15",
+      "specSlug": "fsd-architecture"
+    },
+    {
+      "number": 3,
+      "slug": "sdk-jsonl-as-single-source-of-truth",
+      "title": "Use SDK JSONL Transcripts as Single Source of Truth",
+      "status": "accepted",
+      "created": "2026-02-06",
+      "specSlug": "claude-code-webui-api"
+    },
+    {
+      "number": 4,
+      "slug": "monorepo-with-turborepo",
+      "title": "Adopt Turborepo Monorepo with npm Workspaces",
+      "status": "accepted",
+      "created": "2026-02-11",
+      "specSlug": "monorepo-turborepo-migration"
+    },
+    {
+      "number": 5,
+      "slug": "zustand-ui-state-tanstack-query-server-state",
+      "title": "Use Zustand for UI State and TanStack Query for Server State",
+      "status": "accepted",
+      "created": "2026-02-11",
+      "specSlug": "url-persisted-directory-state"
+    }
+  ]
+}

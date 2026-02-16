@@ -1,5 +1,8 @@
 ---
 slug: settings-screen
+number: 9
+created: 2026-02-12
+status: implemented
 ---
 
 # Settings Screen

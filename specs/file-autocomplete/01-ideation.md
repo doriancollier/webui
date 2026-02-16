@@ -1,3 +1,10 @@
+---
+slug: file-autocomplete
+number: 17
+created: 2026-02-13
+status: implemented
+---
+
 # File Autocomplete in Chat Input
 
 **Slug:** file-autocomplete

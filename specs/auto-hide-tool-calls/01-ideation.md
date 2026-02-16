@@ -1,5 +1,8 @@
 ---
 slug: auto-hide-tool-calls
+number: 13
+created: 2026-02-12
+status: implemented
 ---
 
 # Auto-Hide Completed Tool Calls

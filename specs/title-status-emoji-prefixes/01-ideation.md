@@ -1,5 +1,8 @@
 ---
 slug: title-status-emoji-prefixes
+number: 29
+created: 2026-02-13
+status: implemented
 ---
 
 # Title Status Emoji Prefixes

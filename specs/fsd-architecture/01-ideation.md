@@ -1,3 +1,10 @@
+---
+slug: fsd-architecture
+number: 30
+created: 2026-02-15
+status: implemented
+---
+
 # Feature-Sliced Design Architecture for DorkOS
 
 **Slug:** fsd-architecture

@@ -19,13 +19,14 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 | Component    | Count | Location                                                                   |
 | ------------ | ----- | -------------------------------------------------------------------------- |
-| Commands     | 45    | `.claude/commands/`                                                        |
+| Commands     | 51    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
-| Skills       | 9     | `.claude/skills/`                                                          |
+| Skills       | 10    | `.claude/skills/`                                                          |
 | Rules        | 8     | `.claude/rules/`                                                           |
 | Claude Hooks | 9     | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
+| ADRs         | 5     | `decisions/`                                                               |
 | Guides       | 13    | `guides/`                                                                  |
 
 ## Component Types
@@ -41,11 +42,13 @@ Slash commands are triggered explicitly by typing `/command`. They're expanded p
 | `debug/`     | browser, types, test, api, data, logs, rubber-duck, performance           | Systematic debugging                                                                    |
 | `docs/`      | reconcile                                                                 | Documentation drift detection                                                           |
 | `roadmap/`   | show, add, open, validate, analyze, prioritize, enrich, next, work, clear | Product roadmap management                                                              |
+| `adr/`       | create, list, from-spec                                                   | Architecture Decision Records                                                           |
 | `system/`    | ask, update, review, learn, release                                       | Harness maintenance                                                                     |
 | `app/`       | upgrade, cleanup                                                          | Application dependency and code management                                              |
 | `cc/notify/` | on, off, status                                                           | Notification sounds                                                                     |
 | `cc/ide/`    | set, reset                                                                | VS Code color schemes                                                                   |
 | `template/`  | check, update                                                             | Upstream template updates                                                               |
+| `worktree/`  | create, list, remove                                                      | Git worktree management                                                                 |
 | root         | ideate, ideate-to-spec, review-recent-work                                | Feature development                                                                     |
 
 ### Agents (Tool-Invoked)
@@ -91,6 +94,7 @@ Skills provide reusable expertise that Claude applies automatically when relevan
 | `orchestrating-parallel-work`  | Parallel agent execution, batch scheduling      | Coordinating multiple concurrent tasks, optimizing task ordering   |
 | `writing-changelogs`           | Human-friendly changelog entries, release notes | Populating changelog, preparing releases                           |
 | `organizing-fsd-architecture`  | Feature-Sliced Design layer placement, imports  | Structuring client code, creating features, reviewing architecture |
+| `writing-adrs`                 | Architecture Decision Records, decision signals | Creating ADRs, extracting decisions from specs, ADR quality        |
 
 ### Rules (Path-Triggered)
 
@@ -218,7 +222,8 @@ Project-wide documentation? ─────────────► CLAUDE.md
 ├── settings.json          # Hooks, permissions, environment
 ├── settings.local.json    # Local overrides, MCP servers
 │
-├── commands/              # Slash commands (45 total)
+├── commands/              # Slash commands (51 total)
+│   ├── adr/               # Architecture Decision Records
 │   ├── app/               # Application maintenance
 │   ├── spec/              # Specification workflow
 │   ├── git/               # Version control
@@ -230,6 +235,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   │   ├── notify/        # Notification sounds
 │   │   └── ide/           # IDE color schemes
 │   ├── template/          # Upstream template management
+│   ├── worktree/          # Git worktree management
 │   ├── ideate.md          # Feature ideation
 │   ├── ideate-to-spec.md  # Ideation → specification
 │   └── review-recent-work.md
@@ -250,6 +256,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── styling-with-tailwind-shadcn/
 │   ├── managing-roadmap-moscow/
 │   ├── organizing-fsd-architecture/
+│   ├── writing-adrs/
 │   ├── writing-developer-guides/
 │   ├── orchestrating-parallel-work/
 │   └── writing-changelogs/

@@ -1,3 +1,10 @@
+---
+slug: ngrok-tunnel
+number: 12
+created: 2026-02-12
+status: implemented
+---
+
 # ngrok Tunnel Integration
 
 **Slug:** ngrok-tunnel

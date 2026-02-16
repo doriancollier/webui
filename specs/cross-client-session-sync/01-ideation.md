@@ -1,3 +1,10 @@
+---
+slug: cross-client-session-sync
+number: 25
+created: 2026-02-13
+status: implemented
+---
+
 # Cross-Client Session Synchronization
 
 **Slug:** cross-client-session-sync

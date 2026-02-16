@@ -50,12 +50,15 @@ If the command includes `--roadmap-id <uuid>` or `--roadmap-item "<title>"`:
 
 1. Create a URL-safe slug from the task brief (e.g., "fix-chat-scroll-bug")
 2. Create feature directory: `mkdir -p specs/{slug}`
+3. Read `specs/manifest.json` → get `nextNumber` → assign as this spec's number
+4. Store the number and today's date for frontmatter
 
 Display:
 
 ```
 📋 Ideation: $TASK_BRIEF
    Slug: [slug]
+   Number: [number]
    Directory: specs/[slug]/
 ```
 
@@ -206,6 +209,9 @@ Create `specs/{slug}/01-ideation.md` with all gathered information.
 ---
 roadmapId: { ROADMAP_ITEM_ID } # Only if roadmap integration
 slug: { slug }
+number: { number }
+created: { current-date }
+status: ideation
 ---
 
 # {Task Title}
@@ -262,7 +268,13 @@ slug: { slug }
 - **Clarifications:** {numbered list with decisions for user}
 ```
 
-### Step 4.4: Display Completion Summary
+### Step 4.4: Update Spec Manifest
+
+After writing the ideation document, update `specs/manifest.json`:
+1. Add a new entry to the `specs` array with `number`, `slug`, `title`, `created` (today), and `status: "ideation"`
+2. Increment `nextNumber`
+
+### Step 4.5: Display Completion Summary
 
 ```
 ═══════════════════════════════════════════════════
@@ -308,6 +320,7 @@ Search for:
 - Architecture docs in the root directory
 - README files
 - Related spec files in `specs/`
+- Related Architecture Decision Records in `decisions/`
 
 ### 2. Search for Relevant Code
 

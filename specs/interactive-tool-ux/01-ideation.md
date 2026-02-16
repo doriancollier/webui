@@ -1,3 +1,10 @@
+---
+slug: interactive-tool-ux
+number: 24
+created: 2026-02-13
+status: implemented
+---
+
 # Interactive Tool UX Improvements
 
 **Slug:** interactive-tool-ux

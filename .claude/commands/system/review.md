@@ -28,6 +28,7 @@ Review Claude Code processes (commands, agents, hooks, configuration) for clarit
 | **Skills**              | `/.claude/skills/**/SKILL.md` | Skill definitions, descriptions, progressive disclosure |
 | **Rules**               | `/.claude/rules/*.md`         | Path patterns, content relevance, no overlaps           |
 | **Hooks**               | `/.claude/settings.json`      | Hook configuration, lifecycle events                    |
+| **ADRs**                | `/decisions/*.md`             | Frontmatter, active voice, consequences, manifest sync  |
 | **Developer Guides**    | `/guides/*.md`                | Patterns, best practices                                |
 | **UI Documentation**    | `apps/client/src/**/*.tsx`    | Stats accuracy, component lists, content currency       |
 
@@ -403,6 +404,18 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] **Documentation**: Listed in CLAUDE.md "Path-Specific Rules" section
 - [ ] **Relevance**: Content wouldn't fit better in CLAUDE.md, a Skill, or Developer Guide
 
+### For ADRs
+
+- [ ] Has valid YAML frontmatter (number, title, status, created, spec, superseded-by)
+- [ ] Status is one of: proposed, accepted, deprecated, superseded
+- [ ] Context section is 2-5 sentences, problem-focused (no solution in context)
+- [ ] Decision section uses active voice ("We will...")
+- [ ] Consequences section has both Positive and Negative subsections
+- [ ] Negative consequences are honest trade-offs (not empty)
+- [ ] `decisions/manifest.json` matches actual files (numbers, slugs, statuses)
+- [ ] `nextNumber` in manifest is higher than all existing ADR numbers
+- [ ] Spec links in frontmatter reference valid spec slugs
+
 ### For Hooks
 
 - [ ] Configured in `.claude/settings.json`
@@ -453,6 +466,11 @@ Rules ←→ Rules (do path patterns overlap? Is there conflict?)
 Rules ←→ CLAUDE.md (does rule content duplicate CLAUDE.md content?)
 Rules ←→ Developer Guides (is there duplication of patterns?)
 Hooks ←→ Lifecycle events (does hook use appropriate event?)
+
+# ADR Validation
+ADR manifest ←→ ADR files (do counts and numbers match?)
+ADR spec links ←→ Spec manifest (do referenced specs exist?)
+ADR statuses ←→ ADR files (do manifest statuses match frontmatter?)
 
 # UI Documentation Synchronization
 UI Pages ←→ README.md (do stats and component lists match?)

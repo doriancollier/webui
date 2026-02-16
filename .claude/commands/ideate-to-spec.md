@@ -749,9 +749,10 @@ If no remaining decisions:
 ### Recommended Next Steps
 
 1. [ ] Review the specification at specs/{slug}/02-specification.md
-2. [ ] Run /spec:decompose specs/{slug}/02-specification.md
-3. [ ] Implement with: /spec:execute specs/{slug}/02-specification.md
-4. [ ] Track progress with: TaskList() → filter by "[{slug}]"
+2. [ ] Consider extracting ADRs: `/adr:from-spec {slug}`
+3. [ ] Run /spec:decompose specs/{slug}/02-specification.md
+4. [ ] Implement with: /spec:execute specs/{slug}/02-specification.md
+5. [ ] Track progress with: TaskList() → filter by "[{slug}]"
 ```
 
 **If NEEDS WORK:**

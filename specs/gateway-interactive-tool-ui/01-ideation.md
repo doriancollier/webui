@@ -1,5 +1,8 @@
 ---
 slug: gateway-interactive-tool-ui
+number: 4
+created: 2026-02-08
+status: implemented
 ---
 
 # Gateway Interactive Tool UI Architecture

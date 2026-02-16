@@ -1,0 +1,230 @@
+{
+  "version": 1,
+  "nextNumber": 33,
+  "specs": [
+    {
+      "number": 1,
+      "slug": "claude-code-webui-api",
+      "title": "Claude Code WebUI & Reusable API",
+      "created": "2026-02-06",
+      "status": "implemented"
+    },
+    {
+      "number": 2,
+      "slug": "chat-markdown-rendering",
+      "title": "Chat Markdown Rendering",
+      "created": "2026-02-07",
+      "status": "implemented"
+    },
+    {
+      "number": 3,
+      "slug": "chat-ui-aesthetic-refinement",
+      "title": "Chat UI Aesthetic Refinement",
+      "created": "2026-02-07",
+      "status": "implemented"
+    },
+    {
+      "number": 4,
+      "slug": "gateway-interactive-tool-ui",
+      "title": "Gateway Interactive Tool UI Architecture",
+      "created": "2026-02-08",
+      "status": "implemented"
+    },
+    {
+      "number": 5,
+      "slug": "monorepo-turborepo-migration",
+      "title": "Turborepo Monorepo Migration",
+      "created": "2026-02-11",
+      "status": "implemented"
+    },
+    {
+      "number": 6,
+      "slug": "url-persisted-directory-state",
+      "title": "URL-Persisted Directory State",
+      "created": "2026-02-11",
+      "status": "implemented"
+    },
+    {
+      "number": 7,
+      "slug": "mobile-responsive-scale-system",
+      "title": "Mobile Responsive Scale System",
+      "created": "2026-02-11",
+      "status": "implemented"
+    },
+    {
+      "number": 8,
+      "slug": "inference-status-indicator",
+      "title": "Inference Status Indicator",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 9,
+      "slug": "settings-screen",
+      "title": "Settings Screen",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 10,
+      "slug": "smart-chat-scroll",
+      "title": "Smart Chat Scroll Behavior",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 11,
+      "slug": "smart-message-formatting",
+      "title": "Smart Message Formatting",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 12,
+      "slug": "ngrok-tunnel",
+      "title": "ngrok Tunnel Integration",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 13,
+      "slug": "auto-hide-tool-calls",
+      "title": "Auto-Hide Completed Tool Calls",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 14,
+      "slug": "cli-package",
+      "title": "CLI Package",
+      "created": "2026-02-12",
+      "status": "implemented"
+    },
+    {
+      "number": 15,
+      "slug": "question-prompt-tabs",
+      "title": "Question Prompt Tabs & Answer Summary",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 16,
+      "slug": "chat-message-area-improvements",
+      "title": "Chat Message Area Improvements",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 17,
+      "slug": "file-autocomplete",
+      "title": "File Autocomplete in Chat Input",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 18,
+      "slug": "git-status-bar",
+      "title": "Git Status in Status Bar",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 19,
+      "slug": "improve-slash-commands",
+      "title": "Improve Slash Command System",
+      "created": "2026-02-13",
+      "status": "specified"
+    },
+    {
+      "number": 20,
+      "slug": "settings-tabs-status-bar",
+      "title": "Settings Tabs & Status Bar Configuration",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 21,
+      "slug": "shortcut-chips",
+      "title": "Shortcut Chips",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 22,
+      "slug": "mobile-input-collapse-gesture",
+      "title": "Mobile Input Area Collapse Gesture",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 23,
+      "slug": "font-settings",
+      "title": "Font Selection Settings",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 24,
+      "slug": "interactive-tool-ux",
+      "title": "Interactive Tool UX Improvements",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 25,
+      "slug": "cross-client-session-sync",
+      "title": "Cross-Client Session Synchronization",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 26,
+      "slug": "task-celebrations",
+      "title": "Task Completion Celebrations",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 27,
+      "slug": "notification-sound",
+      "title": "Notification Sound on AI Response Completion",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 28,
+      "slug": "tab-identity",
+      "title": "Tab Identity: Differentiate Multiple Browser Tabs",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 29,
+      "slug": "title-status-emoji-prefixes",
+      "title": "Title Status Emoji Prefixes",
+      "created": "2026-02-13",
+      "status": "implemented"
+    },
+    {
+      "number": 30,
+      "slug": "fsd-architecture",
+      "title": "Feature-Sliced Design Architecture for DorkOS",
+      "created": "2026-02-15",
+      "status": "implemented"
+    },
+    {
+      "number": 31,
+      "slug": "documentation-infrastructure",
+      "title": "Documentation Infrastructure",
+      "created": "2026-02-16",
+      "status": "implemented"
+    },
+    {
+      "number": 32,
+      "slug": "dorkos-config-file-system",
+      "title": "DorkOS Configuration File System",
+      "created": "2026-02-16",
+      "status": "implemented"
+    }
+  ]
+}
