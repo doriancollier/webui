@@ -12,7 +12,7 @@ if (!process.env.CLIENT_DIST_PATH) {
   dotenv.config({ path: path.join(__dirname, '../../../.env') });
 }
 
-const PORT = parseInt(process.env.DORKOS_PORT || '6942', 10);
+const PORT = parseInt(process.env.DORKOS_PORT || '4242', 10);
 
 // Global reference for graceful shutdown
 let sessionBroadcaster: SessionBroadcaster | null = null;

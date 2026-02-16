@@ -31,17 +31,17 @@ describe('TunnelManager', () => {
 
   it('calls ngrok.forward() with correct options', async () => {
     const ngrok = await import('@ngrok/ngrok');
-    await manager.start({ port: 6942 });
+    await manager.start({ port: 4242 });
 
     expect(ngrok.forward).toHaveBeenCalledWith({
-      addr: 6942,
+      addr: 4242,
       authtoken_from_env: true,
     });
   });
 
   it('passes basic_auth array when configured', async () => {
     const ngrok = await import('@ngrok/ngrok');
-    await manager.start({ port: 6942, basicAuth: 'user:pass' });
+    await manager.start({ port: 4242, basicAuth: 'user:pass' });
 
     expect(ngrok.forward).toHaveBeenCalledWith(
       expect.objectContaining({ basic_auth: ['user:pass'] })
@@ -50,14 +50,14 @@ describe('TunnelManager', () => {
 
   it('passes domain when configured', async () => {
     const ngrok = await import('@ngrok/ngrok');
-    await manager.start({ port: 6942, domain: 'my.ngrok.app' });
+    await manager.start({ port: 4242, domain: 'my.ngrok.app' });
 
     expect(ngrok.forward).toHaveBeenCalledWith(expect.objectContaining({ domain: 'my.ngrok.app' }));
   });
 
   it('uses explicit authtoken over authtoken_from_env', async () => {
     const ngrok = await import('@ngrok/ngrok');
-    await manager.start({ port: 6942, authtoken: 'my-token' });
+    await manager.start({ port: 4242, authtoken: 'my-token' });
 
     const callArgs = (ngrok.forward as ReturnType<typeof vi.fn>).mock.calls[0][0];
     expect(callArgs.authtoken).toBe('my-token');
@@ -65,12 +65,12 @@ describe('TunnelManager', () => {
   });
 
   it('throws if already running', async () => {
-    await manager.start({ port: 6942 });
-    await expect(manager.start({ port: 6942 })).rejects.toThrow('Tunnel is already running');
+    await manager.start({ port: 4242 });
+    await expect(manager.start({ port: 4242 })).rejects.toThrow('Tunnel is already running');
   });
 
   it('stop() calls listener.close()', async () => {
-    await manager.start({ port: 6942 });
+    await manager.start({ port: 4242 });
     await manager.stop();
 
     expect(mockListener.close).toHaveBeenCalled();
@@ -83,7 +83,7 @@ describe('TunnelManager', () => {
   });
 
   it('status returns an immutable copy', async () => {
-    await manager.start({ port: 6942 });
+    await manager.start({ port: 4242 });
     const status1 = manager.status;
     status1.url = 'tampered';
     expect(manager.status.url).toBe('https://test.ngrok.io');

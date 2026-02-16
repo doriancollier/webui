@@ -21,7 +21,7 @@ npm install -g dorkos
 ## Usage
 
 ```bash
-# Start DorkOS (opens on http://localhost:6942)
+# Start DorkOS (opens on http://localhost:4242)
 dorkos
 
 # Custom port
@@ -38,7 +38,7 @@ NGROK_AUTHTOKEN=your_token dorkos --tunnel
 
 | Flag            | Short | Description         | Default           |
 | --------------- | ----- | ------------------- | ----------------- |
-| `--port <port>` | `-p`  | Port to listen on   | `6942`            |
+| `--port <port>` | `-p`  | Port to listen on   | `4242`            |
 | `--tunnel`      | `-t`  | Enable ngrok tunnel | `false`           |
 | `--dir <path>`  | `-d`  | Working directory   | Current directory |
 | `--help`        | `-h`  | Show help message   |                   |

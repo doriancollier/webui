@@ -544,7 +544,7 @@ const webAdapter: PlatformAdapter = {
 
 // Obsidian adapter
 const obsidianAdapter: PlatformAdapter = {
-  getApiBaseUrl: () => 'http://localhost:6942/api',
+  getApiBaseUrl: () => 'http://localhost:4242/api',
   getSessionId: () => store.getState().sessionId,
   setSessionId: (id) => store.setState({ sessionId: id }),
   isEmbedded: () => true,

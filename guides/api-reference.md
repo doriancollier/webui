@@ -4,8 +4,8 @@
 
 Start the server and visit:
 
-- **Scalar UI**: [http://localhost:6942/api/docs](http://localhost:6942/api/docs) - interactive API explorer
-- **Raw spec**: [http://localhost:6942/api/openapi.json](http://localhost:6942/api/openapi.json) - OpenAPI 3.1 JSON
+- **Scalar UI**: [http://localhost:4242/api/docs](http://localhost:4242/api/docs) - interactive API explorer
+- **Raw spec**: [http://localhost:4242/api/openapi.json](http://localhost:4242/api/openapi.json) - OpenAPI 3.1 JSON
 
 ## How Schemas Work
 

@@ -28,7 +28,7 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
     getConfig: vi.fn().mockResolvedValue({
       version: '1.0.0',
-      port: 6942,
+      port: 4242,
       uptime: 0,
       workingDirectory: '/test',
       nodeVersion: 'v20.0.0',

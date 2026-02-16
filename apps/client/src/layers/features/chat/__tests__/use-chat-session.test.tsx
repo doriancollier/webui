@@ -74,7 +74,7 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
     getConfig: vi.fn().mockResolvedValue({
       version: '1.0.0',
-      port: 6942,
+      port: 4242,
       uptime: 0,
       workingDirectory: '/test',
       nodeVersion: 'v20.0.0',

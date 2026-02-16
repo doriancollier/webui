@@ -90,7 +90,7 @@ afterEach(() => {
 
 const mockConfig = {
   version: '1.0.0',
-  port: 6942,
+  port: 4242,
   uptime: 8130,
   workingDirectory: '/home/user/project',
   nodeVersion: 'v20.11.0',
@@ -165,7 +165,7 @@ describe('SettingsDialog', () => {
     // All tab content is rendered (tabs are mocked to show all content)
     const version = await screen.findByText('1.0.0');
     expect(version).toBeDefined();
-    expect(screen.getByText('6942')).toBeDefined();
+    expect(screen.getByText('4242')).toBeDefined();
     expect(screen.getByText('/home/user/project')).toBeDefined();
   });
 

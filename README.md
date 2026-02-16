@@ -16,7 +16,7 @@ npx turbo dev
 
 This starts:
 
-- **Express server** on `http://localhost:6942` (API + SSE)
+- **Express server** on `http://localhost:4242` (API + SSE)
 - **Vite dev server** on `http://localhost:5173` (React UI with HMR)
 
 ## Development
@@ -78,7 +78,7 @@ dorkos/
 
 | Variable       | Default       | Description                 |
 | -------------- | ------------- | --------------------------- |
-| `DORKOS_PORT` | `6942`        | Port for the Express server |
+| `DORKOS_PORT` | `4242`        | Port for the Express server |
 | `NODE_ENV`     | `development` | Environment mode            |
 
 ## Key Technologies

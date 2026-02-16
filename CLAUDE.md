@@ -32,7 +32,7 @@ dorkos/
 ## Commands
 
 ```bash
-turbo dev              # Start both Express server (port 6942) and Vite dev server (port 3000)
+turbo dev              # Start both Express server (port 4242) and Vite dev server (port 3000)
 turbo dev --filter=@dorkos/server   # Express server only
 turbo dev --filter=@dorkos/client   # Vite dev server only (React UI with HMR)
 turbo test             # Vitest across client + server
@@ -58,7 +58,7 @@ DorkOS uses a **hexagonal architecture** with a `Transport` interface (`packages
 
 ### Server (`apps/server/src/`)
 
-Express server on port `DORKOS_PORT` (default 6942). Seven route groups:
+Express server on port `DORKOS_PORT` (default 4242). Seven route groups:
 
 - **`routes/sessions.ts`** - Session listing (from SDK transcripts), session creation, SSE message streaming, message history, tool approve/deny endpoints
 - **`routes/commands.ts`** - Slash command listing via `CommandRegistryService`, which scans `.claude/commands/` using gray-matter frontmatter parsing

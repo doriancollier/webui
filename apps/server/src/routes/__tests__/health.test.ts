@@ -59,7 +59,7 @@ describe('Health Route', () => {
       enabled: true,
       connected: true,
       url: 'https://test.ngrok.io',
-      port: 6942,
+      port: 4242,
       startedAt: '2025-01-01T00:00:00.000Z',
     };
 
@@ -68,7 +68,7 @@ describe('Health Route', () => {
     expect(res.body.tunnel).toEqual({
       connected: true,
       url: 'https://test.ngrok.io',
-      port: 6942,
+      port: 4242,
       startedAt: '2025-01-01T00:00:00.000Z',
     });
   });
@@ -78,7 +78,7 @@ describe('Health Route', () => {
       enabled: true,
       connected: false,
       url: null,
-      port: 6942,
+      port: 4242,
       startedAt: '2025-01-01T00:00:00.000Z',
     };
 
