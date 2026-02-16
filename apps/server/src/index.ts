@@ -1,6 +1,3 @@
-import dotenv from 'dotenv';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { createApp } from './app.js';
 import { agentManager } from './services/agent-manager.js';
 import { tunnelManager } from './services/tunnel-manager.js';
@@ -8,11 +5,6 @@ import { SessionBroadcaster } from './services/session-broadcaster.js';
 import { transcriptReader } from './services/transcript-reader.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-if (!process.env.CLIENT_DIST_PATH) {
-  dotenv.config({ path: path.join(__dirname, '../../../.env') });
-}
 
 const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
 
