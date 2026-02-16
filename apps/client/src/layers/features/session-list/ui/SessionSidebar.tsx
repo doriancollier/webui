@@ -7,7 +7,7 @@ import {
   useTheme,
   type Theme,
 } from '@/layers/shared/model';
-import { groupSessionsByTime } from '@/layers/shared/lib';
+import { groupSessionsByTime, TIMING } from '@/layers/shared/lib';
 import { PathBreadcrumb, HoverCard, HoverCardContent, HoverCardTrigger } from '@/layers/shared/ui';
 import { useSessionId, useDirectoryState } from '@/layers/entities/session';
 import { SessionItem } from './SessionItem';
@@ -66,8 +66,8 @@ export function SessionSidebar() {
       queryClient.invalidateQueries({ queryKey: ['sessions', selectedCwd] });
       setActiveSession(session.id);
       setJustCreatedId(session.id);
-      setTimeout(() => setJustCreatedId(null), 300);
-      if (isMobile) setTimeout(() => setSidebarOpen(false), 300);
+      setTimeout(() => setJustCreatedId(null), TIMING.NEW_SESSION_HIGHLIGHT_MS);
+      if (isMobile) setTimeout(() => setSidebarOpen(false), TIMING.SIDEBAR_AUTO_CLOSE_MS);
     },
   });
 

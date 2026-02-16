@@ -221,12 +221,7 @@ router.get('/:id/stream', (req, res) => {
   const cwd = (req.query.cwd as string) || vaultRoot;
   const sessionBroadcaster = req.app.locals.sessionBroadcaster;
 
-  // Set SSE headers
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
-  res.setHeader('X-Accel-Buffering', 'no'); // Disable nginx buffering
-  res.flushHeaders();
+  initSSEStream(res);
 
   // Register with broadcaster
   sessionBroadcaster.registerClient(sessionId, cwd, res);

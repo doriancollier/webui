@@ -1,4 +1,5 @@
 import type { Response } from 'express';
+import { SESSIONS } from '../config/constants.js';
 
 interface SessionLock {
   clientId: string;
@@ -14,7 +15,7 @@ interface SessionLock {
  */
 export class SessionLockManager {
   private locks = new Map<string, SessionLock>();
-  private readonly LOCK_TTL_MS = 5 * 60 * 1000; // 5 minutes
+  private readonly LOCK_TTL_MS = SESSIONS.LOCK_TTL_MS;
 
   /**
    * Attempt to acquire a lock on a session for a specific client.

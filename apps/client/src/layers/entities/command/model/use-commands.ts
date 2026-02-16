@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '@/layers/shared/model';
+import { QUERY_TIMING } from '@/layers/shared/lib';
 import type { CommandRegistry } from '@dorkos/shared/types';
 
 export function useCommands(cwd?: string | null) {
@@ -7,7 +8,7 @@ export function useCommands(cwd?: string | null) {
   return useQuery<CommandRegistry>({
     queryKey: ['commands', { cwd: cwd ?? null }],
     queryFn: () => transport.getCommands(false, cwd ?? undefined),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    staleTime: QUERY_TIMING.COMMANDS_STALE_TIME_MS,
+    gcTime: QUERY_TIMING.COMMANDS_GC_TIME_MS,
   });
 }

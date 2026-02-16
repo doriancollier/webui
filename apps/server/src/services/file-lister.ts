@@ -2,7 +2,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs/promises';
 import path from 'path';
-import { FILE_LIMITS } from '../config/constants.js';
+import { FILE_LIMITS, FILE_LISTING } from '../config/constants.js';
 
 /**
  * File listing service for the client file browser.
@@ -14,28 +14,15 @@ import { FILE_LIMITS } from '../config/constants.js';
  */
 const execFileAsync = promisify(execFile);
 
-const EXCLUDED_DIRS = new Set([
-  'node_modules',
-  '.git',
-  'dist',
-  'build',
-  '.next',
-  'coverage',
-  '__pycache__',
-  '.cache',
-]);
-const MAX_FILES = 10_000;
-const CACHE_TTL = 5 * 60 * 1000;
-
 class FileListService {
   private cache = new Map<string, { files: string[]; timestamp: number }>();
 
   async listFiles(cwd: string): Promise<{ files: string[]; truncated: boolean; total: number }> {
     const cached = this.cache.get(cwd);
-    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    if (cached && Date.now() - cached.timestamp < FILE_LISTING.CACHE_TTL_MS) {
       return {
         files: cached.files,
-        truncated: cached.files.length >= MAX_FILES,
+        truncated: cached.files.length >= FILE_LISTING.MAX_FILES,
         total: cached.files.length,
       };
     }
@@ -47,8 +34,8 @@ class FileListService {
       files = await this.listViaReaddir(cwd);
     }
 
-    const truncated = files.length > MAX_FILES;
-    if (truncated) files = files.slice(0, MAX_FILES);
+    const truncated = files.length > FILE_LISTING.MAX_FILES;
+    if (truncated) files = files.slice(0, FILE_LISTING.MAX_FILES);
 
     this.cache.set(cwd, { files, timestamp: Date.now() });
     return { files, truncated, total: files.length };
@@ -74,12 +61,12 @@ class FileListService {
       if (entry.name.startsWith('.') && entry.name !== '.') continue;
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
       if (entry.isDirectory()) {
-        if (EXCLUDED_DIRS.has(entry.name)) continue;
+        if (FILE_LISTING.EXCLUDED_DIRS.has(entry.name)) continue;
         results.push(...(await this.listViaReaddir(cwd, rel, depth + 1)));
       } else {
         results.push(rel);
       }
-      if (results.length >= MAX_FILES) break;
+      if (results.length >= FILE_LISTING.MAX_FILES) break;
     }
     return results;
   }

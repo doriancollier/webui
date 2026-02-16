@@ -9,7 +9,7 @@ import type { ToolApprovalHandle } from './ToolApproval';
 import { QuestionPrompt } from './QuestionPrompt';
 import type { QuestionPromptHandle } from './QuestionPrompt';
 import { useAppStore } from '@/layers/shared/model';
-import { cn } from '@/layers/shared/lib';
+import { cn, TIMING } from '@/layers/shared/lib';
 
 export type InteractiveToolHandle = ToolApprovalHandle | QuestionPromptHandle;
 
@@ -20,7 +20,7 @@ function useToolCallVisibility(status: string, autoHide: boolean): boolean {
 
   useEffect(() => {
     if (autoHide && status === 'complete' && initialStatusRef.current !== 'complete') {
-      const timer = setTimeout(() => setVisible(false), 5_000);
+      const timer = setTimeout(() => setVisible(false), TIMING.TOOL_CALL_AUTO_HIDE_MS);
       return () => clearTimeout(timer);
     }
   }, [status, autoHide]);

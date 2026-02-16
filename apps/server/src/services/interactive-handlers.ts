@@ -1,7 +1,6 @@
 import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
-
-const INTERACTION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+import { SESSIONS } from '../config/constants.js';
 
 export interface PendingInteraction {
   type: 'question' | 'approval';
@@ -37,7 +36,7 @@ export function handleAskUserQuestion(
     const timeout = setTimeout(() => {
       session.pendingInteractions.delete(toolUseId);
       resolve({ behavior: 'deny', message: 'User did not respond within 10 minutes' });
-    }, INTERACTION_TIMEOUT_MS);
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
 
     session.pendingInteractions.set(toolUseId, {
       type: 'question',
@@ -81,7 +80,7 @@ export function handleToolApproval(
     const timeout = setTimeout(() => {
       session.pendingInteractions.delete(toolUseId);
       resolve({ behavior: 'deny', message: 'Tool approval timed out after 10 minutes' });
-    }, INTERACTION_TIMEOUT_MS);
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
 
     session.pendingInteractions.set(toolUseId, {
       type: 'approval',

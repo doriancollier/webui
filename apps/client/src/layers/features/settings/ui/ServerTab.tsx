@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import type { ServerConfig } from '@dorkos/shared/types';
-import { cn } from '@/layers/shared/lib';
+import { cn, TIMING } from '@/layers/shared/lib';
 import { Badge } from '@/layers/shared/ui';
 
 interface ServerTabProps {
@@ -83,7 +83,7 @@ function useCopy() {
   const copy = useCallback((text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      setTimeout(() => setCopied(false), TIMING.COPY_FEEDBACK_MS);
     });
   }, []);
   return { copied, copy };

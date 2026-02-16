@@ -48,4 +48,11 @@ export {
   MINI_SPRING_CONFIG,
   SHIMMER_STYLE,
 } from './celebrations/effects';
-export { STORAGE_KEYS, FONT_SCALE_MAP, MAX_RECENT_CWDS } from './constants';
+export {
+  STORAGE_KEYS,
+  FONT_SCALE_MAP,
+  MAX_RECENT_CWDS,
+  TIMING,
+  QUERY_TIMING,
+  CELEBRATIONS,
+} from './constants';

@@ -11,6 +11,7 @@ import {
 } from '@anthropic-ai/claude-agent-sdk';
 import type { Response } from 'express';
 import type { StreamEvent, PermissionMode } from '@dorkos/shared/types';
+import { SESSIONS } from '../config/constants.js';
 import { SessionLockManager } from './session-lock.js';
 import {
   handleAskUserQuestion,
@@ -74,7 +75,7 @@ interface AgentSession {
 export class AgentManager {
   private sessions = new Map<string, AgentSession>();
   private lockManager = new SessionLockManager();
-  private readonly SESSION_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
+  private readonly SESSION_TIMEOUT_MS = SESSIONS.TIMEOUT_MS;
   private readonly cwd: string;
   private readonly claudeCliPath: string | undefined;
 

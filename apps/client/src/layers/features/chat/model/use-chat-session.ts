@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SessionStatusEvent, MessagePart, HistoryMessage } from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
+import { QUERY_TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ChatSessionOptions } from './chat-types';
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
 
@@ -103,11 +104,13 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const historyQuery = useQuery({
     queryKey: ['messages', sessionId, selectedCwd],
     queryFn: () => transport.getMessages(sessionId, selectedCwd ?? undefined),
-    staleTime: 0,
+    staleTime: QUERY_TIMING.MESSAGE_STALE_TIME_MS,
     refetchOnWindowFocus: false,
     refetchInterval: () => {
       if (isStreaming) return false;
-      return isTabVisible ? 3000 : 10000;
+      return isTabVisible
+        ? QUERY_TIMING.ACTIVE_TAB_REFETCH_MS
+        : QUERY_TIMING.BACKGROUND_TAB_REFETCH_MS;
     },
   });
 

@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '@/layers/shared/model';
+import { QUERY_TIMING } from '@/layers/shared/lib';
 import type { GitStatusResponse, GitStatusError } from '@dorkos/shared/types';
 
 export function useGitStatus(cwd: string | null) {
@@ -9,9 +10,9 @@ export function useGitStatus(cwd: string | null) {
     queryKey: ['git-status', cwd],
     queryFn: () => transport.getGitStatus(cwd ?? undefined),
     enabled: !!cwd,
-    refetchInterval: 10_000,
+    refetchInterval: QUERY_TIMING.GIT_STATUS_REFETCH_MS,
     refetchIntervalInBackground: false,
-    staleTime: 5_000,
+    staleTime: QUERY_TIMING.GIT_STATUS_STALE_TIME_MS,
   });
 }
 

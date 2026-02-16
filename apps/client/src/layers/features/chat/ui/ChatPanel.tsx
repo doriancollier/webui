@@ -9,7 +9,7 @@ import { useCommandPalette } from '../model/use-command-palette';
 import { useFileAutocomplete } from '../model/use-file-autocomplete';
 import { useSessionId, useSessionStatus, useDirectoryState } from '@/layers/entities/session';
 import { useIsMobile, useInteractiveShortcuts, useAppStore } from '@/layers/shared/model';
-import { playNotificationSound, STORAGE_KEYS } from '@/layers/shared/lib';
+import { playNotificationSound, STORAGE_KEYS, TIMING } from '@/layers/shared/lib';
 import { MessageList } from './MessageList';
 import type { MessageListHandle, ScrollState } from './MessageList';
 import { ChatInput } from './ChatInput';
@@ -191,7 +191,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       setShowHint(false);
       const count = parseInt(localStorage.getItem(STORAGE_KEYS.GESTURE_HINT_COUNT) || '0', 10);
       localStorage.setItem(STORAGE_KEYS.GESTURE_HINT_COUNT, String(count + 1));
-    }, 4000);
+    }, TIMING.GESTURE_HINT_DISMISS_MS);
     return () => clearTimeout(timer);
   }, [showHint]);
 

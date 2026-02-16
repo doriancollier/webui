@@ -25,3 +25,41 @@ export const GIT = {
   /** Timeout for `git status` commands (ms). */
   STATUS_TIMEOUT_MS: 5000,
 } as const;
+
+export const SESSIONS = {
+  /** In-memory session expiry (ms). */
+  TIMEOUT_MS: 30 * 60 * 1000,
+  /** Session write-lock TTL (ms). */
+  LOCK_TTL_MS: 5 * 60 * 1000,
+  /** Interactive tool approval/question timeout (ms). */
+  INTERACTION_TIMEOUT_MS: 10 * 60 * 1000,
+} as const;
+
+export const TRANSCRIPT = {
+  /** Bytes to read from file tail for latest status. */
+  TAIL_BUFFER_BYTES: 16384,
+  /** Bytes to read from file head for metadata. */
+  HEAD_BUFFER_BYTES: 8192,
+  /** Max characters for session title. */
+  TITLE_MAX_LENGTH: 80,
+  /** Characters to show from session ID in fallback title. */
+  SESSION_ID_PREVIEW_LENGTH: 8,
+} as const;
+
+export const FILE_LISTING = {
+  /** Maximum files returned by file lister. */
+  MAX_FILES: 10_000,
+  /** File list cache TTL (ms). */
+  CACHE_TTL_MS: 5 * 60 * 1000,
+  /** Directories excluded from recursive readdir. */
+  EXCLUDED_DIRS: new Set([
+    'node_modules',
+    '.git',
+    'dist',
+    'build',
+    '.next',
+    'coverage',
+    '__pycache__',
+    '.cache',
+  ]),
+} as const;

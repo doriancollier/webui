@@ -11,6 +11,7 @@ import type {
 import { parseTranscript, extractTextContent, stripSystemTags } from './transcript-parser.js';
 import type { TranscriptLine } from './transcript-parser.js';
 import { parseTasks } from './task-reader.js';
+import { TRANSCRIPT } from '../config/constants.js';
 
 export type { HistoryMessage, HistoryToolCall };
 
@@ -104,7 +105,7 @@ export class TranscriptReader {
     permissionMode?: PermissionMode;
     contextTokens?: number;
   }> {
-    const TAIL_SIZE = 16384;
+    const TAIL_SIZE = TRANSCRIPT.TAIL_BUFFER_BYTES;
     try {
       const stat = await fs.stat(filePath);
       const fileHandle = await fs.open(filePath, 'r');
@@ -175,8 +176,8 @@ export class TranscriptReader {
     const fileHandle = await fs.open(filePath, 'r');
     let chunk: string;
     try {
-      const buffer = Buffer.alloc(8192);
-      const { bytesRead } = await fileHandle.read(buffer, 0, 8192, 0);
+      const buffer = Buffer.alloc(TRANSCRIPT.HEAD_BUFFER_BYTES);
+      const { bytesRead } = await fileHandle.read(buffer, 0, TRANSCRIPT.HEAD_BUFFER_BYTES, 0);
       chunk = buffer.toString('utf-8', 0, bytesRead);
     } finally {
       await fileHandle.close();
@@ -262,8 +263,9 @@ export class TranscriptReader {
     }
 
     const title = firstUserMessage
-      ? firstUserMessage.slice(0, 80) + (firstUserMessage.length > 80 ? '...' : '')
-      : `Session ${sessionId.slice(0, 8)}`;
+      ? firstUserMessage.slice(0, TRANSCRIPT.TITLE_MAX_LENGTH) +
+        (firstUserMessage.length > TRANSCRIPT.TITLE_MAX_LENGTH ? '...' : '')
+      : `Session ${sessionId.slice(0, TRANSCRIPT.SESSION_ID_PREVIEW_LENGTH)}`;
 
     return {
       id: sessionId,

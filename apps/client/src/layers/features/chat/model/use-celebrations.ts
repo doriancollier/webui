@@ -1,6 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from 'react';
 import { useAppStore, useIdleDetector } from '@/layers/shared/model';
-import { CelebrationEngine, type CelebrationEvent } from '@/layers/shared/lib';
+import { CelebrationEngine, CELEBRATIONS, type CelebrationEvent } from '@/layers/shared/lib';
 import type { TaskItem, TaskUpdateEvent } from '@dorkos/shared/types';
 
 export interface CelebrationsAPI {
@@ -34,7 +34,7 @@ export function useCelebrations(): CelebrationsAPI {
 
   // Idle detection
   useIdleDetector({
-    timeoutMs: 30_000,
+    timeoutMs: CELEBRATIONS.IDLE_TIMEOUT_MS,
     onIdle: useCallback(() => {
       engineRef.current?.setIdle(true);
     }, []),
@@ -48,11 +48,11 @@ export function useCelebrations(): CelebrationsAPI {
   useEffect(() => {
     const engine = new CelebrationEngine({
       enabled: showTaskCelebrations,
-      miniProbability: 0.3,
-      debounceWindowMs: 2000,
-      debounceThreshold: 3,
-      minTasksForMajor: 3,
-      idleTimeoutMs: 30_000,
+      miniProbability: CELEBRATIONS.MINI_PROBABILITY,
+      debounceWindowMs: CELEBRATIONS.DEBOUNCE_WINDOW_MS,
+      debounceThreshold: CELEBRATIONS.DEBOUNCE_THRESHOLD,
+      minTasksForMajor: CELEBRATIONS.MIN_TASKS_FOR_MAJOR,
+      idleTimeoutMs: CELEBRATIONS.IDLE_TIMEOUT_MS,
       onCelebrate: (event) => {
         if (prefersReducedMotion.current && event.level === 'major') {
           // Reduced motion: downgrade major to mini (skip confetti/glow)

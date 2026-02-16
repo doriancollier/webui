@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, Copy, Check, ShieldOff } from 'lucide-react';
 import type { Session } from '@dorkos/shared/types';
-import { cn, formatRelativeTime } from '@/layers/shared/lib';
+import { cn, formatRelativeTime, TIMING } from '@/layers/shared/lib';
 import { useIsMobile } from '@/layers/shared/model';
 
 interface SessionItemProps {
@@ -35,7 +35,7 @@ function CopyButton({ text, label }: { text: string; label: string }) {
       try {
         await navigator.clipboard.writeText(text);
         setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+        setTimeout(() => setCopied(false), TIMING.COPY_FEEDBACK_MS);
       } catch {
         // Clipboard API not available
       }

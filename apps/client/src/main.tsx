@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NuqsAdapter } from 'nuqs/adapters/react';
 import { App } from './App';
-import { HttpTransport } from '@/layers/shared/lib';
+import { HttpTransport, QUERY_TIMING } from '@/layers/shared/lib';
 import { TransportProvider, useAppStore } from '@/layers/shared/model';
 import './index.css';
 
@@ -24,8 +24,8 @@ function DevtoolsToggle() {
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
-      retry: 1,
+      staleTime: QUERY_TIMING.DEFAULT_STALE_TIME_MS,
+      retry: QUERY_TIMING.DEFAULT_RETRY,
     },
   },
 });
