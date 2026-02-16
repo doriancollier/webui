@@ -353,6 +353,6 @@ interface CommandEntry {
    - Nice-to-have: File tree browser, vault search, agent status tracking, hook debugging panel
    - Future: Dark/light theme sync with vault theme, split-pane editor, MCP server management
 
-7. **Port Configuration:** You specified port 69420 - should this be configurable via environment variable (e.g., `GATEWAY_PORT=69420`) or hardcoded?
+7. **Port Configuration:** You specified port 42420 - should this be configurable via environment variable (e.g., `GATEWAY_PORT=42420`) or hardcoded?
 
 8. **Client-Server Split:** Should the Vite dev server proxy to the Express API server, or should Express serve the built React app in production? (Recommendation: Vite proxy in dev, Express serves static build in production)

@@ -482,7 +482,7 @@ npm install --save-dev turbo
 - `apps/server/` contains all 25 server source files
 - `apps/server/package.json` lists all server dependencies
 - Exports field exposes 3 service modules for the Obsidian plugin
-- `tsx watch apps/server/src/index.ts` starts Express on port 6942
+- `tsx watch apps/server/src/index.ts` starts Express on port 4242
 - API endpoints respond correctly
 - SSE streaming works
 - `__dirname` paths resolve correctly for: .env loading, static file serving, vault root
@@ -918,7 +918,7 @@ turbo dev
 Verify:
 
 - Vite dev server starts on port 3000
-- Express server starts on port 6942
+- Express server starts on port 4242
 - HMR works
 - API proxy works
 

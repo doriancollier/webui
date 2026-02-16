@@ -55,4 +55,5 @@ export {
   TIMING,
   QUERY_TIMING,
   CELEBRATIONS,
+  TIME_UNITS,
 } from './constants';

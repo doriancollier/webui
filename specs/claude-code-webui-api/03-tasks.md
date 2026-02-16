@@ -148,7 +148,7 @@ gateway/
 **.env**:
 
 ```
-GATEWAY_PORT=69420
+GATEWAY_PORT=42420
 ```
 
 **Implementation Steps**:
@@ -156,7 +156,7 @@ GATEWAY_PORT=69420
 1. Create `gateway/` directory at vault root
 2. Write `package.json` with all backend and frontend dependencies
 3. Write `tsconfig.json` (shared base) and `tsconfig.server.json` (server-specific)
-4. Write `.env` with `GATEWAY_PORT=69420`
+4. Write `.env` with `GATEWAY_PORT=42420`
 5. Create all subdirectories in `src/server/`, `src/client/`, `src/shared/`
 6. Create placeholder `public/` directory
 7. Run `npm install` to install all dependencies
@@ -168,7 +168,7 @@ GATEWAY_PORT=69420
 - [ ] `npm install` completes without errors
 - [ ] `npx tsc --noEmit` completes without errors
 - [ ] All subdirectories from architecture exist
-- [ ] `.env` contains `GATEWAY_PORT=69420`
+- [ ] `.env` contains `GATEWAY_PORT=42420`
 - [ ] Both tsconfig files present and valid
 
 ---
@@ -486,7 +486,7 @@ import { sessionStore } from './services/session-store';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const PORT = parseInt(process.env.GATEWAY_PORT || '69420', 10);
+const PORT = parseInt(process.env.GATEWAY_PORT || '42420', 10);
 const app = express();
 
 app.use(cors());
@@ -529,7 +529,7 @@ start();
 
 **Acceptance Criteria**:
 
-- [ ] Server starts and listens on port from GATEWAY_PORT env var (default 69420)
+- [ ] Server starts and listens on port from GATEWAY_PORT env var (default 42420)
 - [ ] Server binds to localhost only
 - [ ] CORS middleware active
 - [ ] JSON body parsing active
@@ -966,7 +966,7 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': `http://localhost:${process.env.GATEWAY_PORT || 69420}`,
+      '/api': `http://localhost:${process.env.GATEWAY_PORT || 42420}`,
     },
   },
 });
@@ -1057,7 +1057,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 **Acceptance Criteria**:
 
 - [ ] Vite dev server starts on port 3000
-- [ ] API requests proxied to localhost:69420
+- [ ] API requests proxied to localhost:42420
 - [ ] Tailwind CSS processing works
 - [ ] React 19 renders root component
 - [ ] Path aliases (@, @shared) resolve correctly
@@ -2769,7 +2769,7 @@ Contents should include:
 - Overview: What the gateway is and its purpose
 - Prerequisites: Node.js 20+, npm
 - Quick Start: `cd gateway && npm install && npm run dev`
-- Development: Server (port 69420) + Vite dev server (port 3000)
+- Development: Server (port 42420) + Vite dev server (port 3000)
 - Production: `npm run build && npm start`
 - API Reference: Table of all endpoints
 - Architecture: Brief overview of src/ structure

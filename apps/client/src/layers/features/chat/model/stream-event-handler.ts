@@ -8,6 +8,7 @@ import type {
   TaskUpdateEvent,
   MessagePart,
 } from '@dorkos/shared/types';
+import { TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ToolCallState, ChatSessionOptions } from './chat-types';
 
 interface StreamEventDeps {
@@ -260,7 +261,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         }
         if (streamStartTimeRef.current) {
           const elapsed = Date.now() - streamStartTimeRef.current;
-          if (elapsed >= 3000) {
+          if (elapsed >= TIMING.MIN_STREAM_DURATION_MS) {
             options.onStreamingDone?.();
           }
         }

@@ -83,7 +83,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
   options: {
-    port: { type: 'string', short: 'p', default: '6942' },
+    port: { type: 'string', short: 'p', default: '4242' },
     tunnel: { type: 'boolean', short: 't', default: false },
     dir: { type: 'string', short: 'd', default: process.cwd() },
     help: { type: 'boolean', short: 'h' },
@@ -368,7 +368,7 @@ npx dorkos
 ### Usage
 
 ```bash
-# Start with defaults (port 6942, no tunnel)
+# Start with defaults (port 4242, no tunnel)
 dorkos
 
 # Start with tunnel
@@ -384,12 +384,12 @@ dorkos --help
 ### Output
 
 ```
-DorkOS running on http://localhost:6942
+DorkOS running on http://localhost:4242
 
 ┌─────────────────────────────────────────────────┐
 │  ngrok tunnel active                            │
 │  URL:  https://abc123.ngrok-free.app            │
-│  Port: 6942                                     │
+│  Port: 4242                                     │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -421,7 +421,7 @@ More info: https://docs.anthropic.com/en/docs/claude-code
 - `--port 8080` sets `GATEWAY_PORT` env var
 - `--tunnel` sets `TUNNEL_ENABLED=true`
 - `--dir /tmp` sets `GATEWAY_CWD` and resolves to absolute path
-- Default values: port 6942, no tunnel, cwd = process.cwd()
+- Default values: port 4242, no tunnel, cwd = process.cwd()
 
 ### Integration Tests
 

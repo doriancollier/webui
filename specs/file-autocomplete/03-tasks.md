@@ -384,7 +384,7 @@ describe('FileListService', () => {
 
 - `npx turbo typecheck --filter=@dorkos/server` should pass
 - `npx vitest run apps/server/src/services/__tests__/file-lister.test.ts` should pass
-- `npx turbo dev --filter=@dorkos/server` then `curl 'http://localhost:6942/api/files?cwd=/path/to/project'` should return JSON with `files`, `truncated`, `total`
+- `npx turbo dev --filter=@dorkos/server` then `curl 'http://localhost:4242/api/files?cwd=/path/to/project'` should return JSON with `files`, `truncated`, `total`
 
 ---
 

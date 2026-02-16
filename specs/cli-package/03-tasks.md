@@ -192,7 +192,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const { values } = parseArgs({
   options: {
-    port: { type: 'string', short: 'p', default: '6942' },
+    port: { type: 'string', short: 'p', default: '4242' },
     tunnel: { type: 'boolean', short: 't', default: false },
     dir: { type: 'string', short: 'd', default: process.cwd() },
     help: { type: 'boolean', short: 'h' },
@@ -245,7 +245,7 @@ Usage: dorkos [options]
 Web-based interface and REST/SSE API for Claude Code
 
 Options:
-  -p, --port <port>  Port to listen on (default: 6942)
+  -p, --port <port>  Port to listen on (default: 4242)
   -t, --tunnel       Enable ngrok tunnel
   -d, --dir <path>   Working directory (default: current directory)
   -h, --help         Show this help message
@@ -259,7 +259,7 @@ Options:
 - `--port 8080` sets `GATEWAY_PORT=8080`
 - `--tunnel` sets `TUNNEL_ENABLED=true`
 - `--dir /tmp` sets `GATEWAY_CWD=/tmp` (resolved to absolute path)
-- Default values: port 6942, no tunnel, dir = process.cwd()
+- Default values: port 4242, no tunnel, dir = process.cwd()
 - `.env` from target directory is loaded if it exists
 - `CLIENT_DIST_PATH` is set to the correct relative dist/client path
 
@@ -477,7 +477,7 @@ Tests for CLI argument parsing:
 - `--port 8080` sets `GATEWAY_PORT` env var
 - `--tunnel` sets `TUNNEL_ENABLED=true`
 - `--dir /tmp` sets `GATEWAY_CWD` and resolves to absolute path
-- Default values: port 6942, no tunnel, cwd = process.cwd()
+- Default values: port 4242, no tunnel, cwd = process.cwd()
 
 **Acceptance Criteria**:
 

@@ -93,7 +93,7 @@ The key change. After `app.listen()` succeeds, conditionally start the tunnel:
 ```typescript
 import { TunnelManager } from '@dorkos/tunnel';
 
-const PORT = parseInt(process.env.GATEWAY_PORT || '6942', 10);
+const PORT = parseInt(process.env.GATEWAY_PORT || '4242', 10);
 const tunnelManager = new TunnelManager();
 
 async function start() {
@@ -166,7 +166,7 @@ Response when tunnel is active:
   "uptime": 123.456,
   "tunnel": {
     "url": "https://abc123.ngrok-free.app",
-    "port": 6942,
+    "port": 4242,
     "basicAuth": true,
     "domain": null
   }
@@ -187,7 +187,7 @@ Response when tunnel is active:
 ### 8. `.env` — Add tunnel config (commented out by default)
 
 ```diff
-  GATEWAY_PORT=6942
+  GATEWAY_PORT=4242
 +
 + # Tunnel (ngrok) — uncomment to expose server externally
 + # TUNNEL_ENABLED=true
@@ -235,7 +235,7 @@ turbo dev
 Console output:
 
 ```
-Gateway server running on http://localhost:6942
+Gateway server running on http://localhost:4242
 🌐 Tunnel active: https://abc123.ngrok-free.app
 ```
 
@@ -249,7 +249,7 @@ turbo dev
 Console output:
 
 ```
-Gateway server running on http://localhost:6942
+Gateway server running on http://localhost:4242
 🌐 Tunnel active: https://abc123.ngrok-free.app
 🔒 Basic auth enabled
 ```
@@ -257,7 +257,7 @@ Gateway server running on http://localhost:6942
 ### Checking the tunnel URL programmatically
 
 ```bash
-curl http://localhost:6942/api/health
+curl http://localhost:4242/api/health
 # → { "status": "ok", "tunnel": { "url": "https://abc123.ngrok-free.app", ... } }
 ```
 

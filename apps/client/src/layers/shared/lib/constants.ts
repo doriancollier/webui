@@ -31,6 +31,16 @@ export const TIMING = {
   GESTURE_HINT_DISMISS_MS: 4000,
   /** Long-press detection threshold (ms). */
   LONG_PRESS_MS: 500,
+  /** Minimum elapsed stream time before triggering done callback (ms). */
+  MIN_STREAM_DURATION_MS: 3000,
+  /** Auto-clear session busy state after this delay (ms). */
+  SESSION_BUSY_CLEAR_MS: 5000,
+} as const;
+
+/** Time conversion constants (milliseconds). */
+export const TIME_UNITS = {
+  MS_PER_MINUTE: 60_000,
+  MS_PER_HOUR: 3_600_000,
 } as const;
 
 export const QUERY_TIMING = {

@@ -159,7 +159,7 @@ router.get('/', async (_req, res) => {
 
   res.json({
     version: '1.0.0',
-    port: parseInt(process.env.GATEWAY_PORT || '6942', 10),
+    port: parseInt(process.env.GATEWAY_PORT || '4242', 10),
     uptime: process.uptime(),
     workingDirectory: process.cwd(),
     nodeVersion: process.version,
@@ -836,7 +836,7 @@ afterEach(() => {
 
 const mockConfig = {
   version: '1.0.0',
-  port: 6942,
+  port: 4242,
   uptime: 8130, // 2h 15m 30s
   workingDirectory: '/home/user/project',
   nodeVersion: 'v20.11.0',

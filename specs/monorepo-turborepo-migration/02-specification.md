@@ -746,7 +746,7 @@ No security implications. All packages are private (`"private": true`). No new n
 - Root `package.json` — move server deps to `apps/server/package.json`
 - `apps/server/src/app.ts` or `index.ts` — update static file serving path for production
 
-**Verification:** `turbo dev` starts Express on port 6942, API endpoints respond, SSE streaming works.
+**Verification:** `turbo dev` starts Express on port 4242, API endpoints respond, SSE streaming works.
 
 ### Phase 5: Extract Obsidian Plugin
 

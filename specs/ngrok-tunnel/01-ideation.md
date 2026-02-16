@@ -44,7 +44,7 @@
 - `packages/shared/src/types.ts`: Re-exports all types from `schemas.ts`. Will add `TunnelStatus` and `HealthResponse`.
 - `packages/shared/src/transport.ts`: `Transport` interface. `health()` returns `{ status, version, uptime }`. Will extend return type.
 - `turbo.json`: Env vars for build: `["NODE_ENV", "VITE_*", "GATEWAY_PORT"]`. Dev tasks have `cache: false`.
-- `.env`: Only contains `GATEWAY_PORT=6942`.
+- `.env`: Only contains `GATEWAY_PORT=4242`.
 - `apps/server/package.json`: Dependencies include Express, Claude SDK, cors, dotenv, gray-matter. Scripts include `dev` (tsx watch), `build` (tsc).
 - `apps/client/vite.config.ts`: Already has `server.allowedHosts: ['.ngrok-free.app']` — ngrok domains are pre-allowed.
 - `apps/server/src/services/openapi-registry.ts`: Registers OpenAPI schemas. Health endpoint is registered — will need to update the response schema.
@@ -201,7 +201,7 @@ N/A — This is a new feature, not a bug fix.
 
 4. **Free tier limits warning:** Include bandwidth and session limits in the console output box and in `.env` comments so users are informed. **Decision: Warn prominently.**
 
-5. **`dev:tunnel` default port:** Default to port 3000 (Vite) for the full UI+API experience. Document port 6942 for API-only tunneling. **Decision: Port 3000.**
+5. **`dev:tunnel` default port:** Default to port 3000 (Vite) for the full UI+API experience. Document port 4242 for API-only tunneling. **Decision: Port 3000.**
 
 ---
 

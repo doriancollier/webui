@@ -575,7 +575,7 @@ it('displays server configuration after loading', async () => {
   await user.click(screen.getByRole('tab', { name: /server/i }));
   const version = await screen.findByText('1.0.0');
   expect(version).toBeDefined();
-  expect(screen.getByText('6942')).toBeDefined();
+  expect(screen.getByText('4242')).toBeDefined();
   expect(screen.getByText('/home/user/project')).toBeDefined();
 });
 ```

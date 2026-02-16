@@ -2,7 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SessionStatusEvent, MessagePart, HistoryMessage } from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
-import { QUERY_TIMING } from '@/layers/shared/lib';
+import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ChatSessionOptions } from './chat-types';
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
 
@@ -241,7 +241,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
           sessionBusyTimerRef.current = setTimeout(() => {
             setSessionBusy(false);
             sessionBusyTimerRef.current = null;
-          }, 5000);
+          }, TIMING.SESSION_BUSY_CLEAR_MS);
         } else {
           setError((err as Error).message);
         }

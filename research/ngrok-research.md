@@ -25,7 +25,7 @@ import ngrok from '@ngrok/ngrok';
 
 // Start a tunnel
 const listener = await ngrok.forward({
-  addr: 6942, // Local port
+  addr: 4242, // Local port
   authtoken: 'your_auth_token_here',
 });
 
@@ -40,7 +40,7 @@ console.log(`Tunnel established: ${listener.url()}`);
 
 ```typescript
 const listener = await ngrok.forward({
-  addr: 6942,
+  addr: 4242,
   authtoken: process.env.NGROK_AUTHTOKEN,
   basic_auth: ['username:password'], // Can be array of multiple credentials
 });
@@ -55,7 +55,7 @@ import ngrok from '@ngrok/ngrok';
 
 const listener = await ngrok.forward({
   // Required
-  addr: 6942, // or 'localhost:6942' or '0.0.0.0:6942'
+  addr: 4242, // or 'localhost:4242' or '0.0.0.0:4242'
 
   // Auth
   authtoken: process.env.NGROK_AUTHTOKEN,
@@ -101,7 +101,7 @@ import express from 'express';
 import ngrok from '@ngrok/ngrok';
 
 const app = express();
-const PORT = 6942;
+const PORT = 4242;
 
 app.get('/', (req, res) => {
   res.send('Hello from ngrok!');
@@ -189,7 +189,7 @@ const tlsListener = await ngrok.forward({
 
    ```typescript
    await ngrok.forward({
-     addr: 6942,
+     addr: 4242,
      authtoken: 'your_token_here',
    });
    ```
@@ -203,7 +203,7 @@ const tlsListener = await ngrok.forward({
    Then omit from config:
 
    ```typescript
-   await ngrok.forward({ addr: 6942 }); // Reads from env
+   await ngrok.forward({ addr: 4242 }); // Reads from env
    ```
 
 3. **Default config file** (written by `ngrok config add-authtoken`):
@@ -263,7 +263,7 @@ Check current pricing at https://ngrok.com/pricing
 
 ```typescript
 try {
-  const listener = await ngrok.forward({ addr: 6942 });
+  const listener = await ngrok.forward({ addr: 4242 });
 } catch (error) {
   if (error.message.includes('authtoken')) {
     console.error('Auth token missing. Set NGROK_AUTHTOKEN or provide authtoken option.');
@@ -279,7 +279,7 @@ try {
 ```typescript
 try {
   const listener = await ngrok.forward({
-    addr: 6942,
+    addr: 4242,
     basic_auth: ['user:pass'], // This will fail on free plan
   });
 } catch (error) {
@@ -294,7 +294,7 @@ try {
 
 ```typescript
 try {
-  const listener = await ngrok.forward({ addr: 6942, authtoken: 'token' });
+  const listener = await ngrok.forward({ addr: 4242, authtoken: 'token' });
 } catch (error) {
   if (error.message.includes('ECONNREFUSED')) {
     console.error('Cannot connect to ngrok service');
@@ -323,7 +323,7 @@ import ngrok from '@ngrok/ngrok';
 import express from 'express';
 
 const app = express();
-const PORT = process.env.PORT || 6942;
+const PORT = process.env.PORT || 4242;
 
 async function startServer() {
   // First, start the Express server
@@ -381,7 +381,7 @@ startServer().then(({ server, listener }) => {
 import ngrok from '@ngrok/ngrok';
 
 const listener = await ngrok.forward({
-  addr: 6942,
+  addr: 4242,
   authtoken: process.env.NGROK_AUTHTOKEN,
 });
 
@@ -390,7 +390,7 @@ await listener.close();
 
 // With all common options
 const listener = await ngrok.forward({
-  addr: 6942,
+  addr: 4242,
   authtoken: process.env.NGROK_AUTHTOKEN,
   domain: 'my-app.ngrok.app', // Paid only
   basic_auth: ['user:pass'], // Paid only

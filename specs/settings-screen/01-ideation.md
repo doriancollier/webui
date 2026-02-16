@@ -100,7 +100,7 @@ N/A — New feature, not a bug fix.
 | Field | Source | Format |
 |-------|--------|--------|
 | Server version | `package.json` | `1.0.0` |
-| Server port | `GATEWAY_PORT` env | `6942` |
+| Server port | `GATEWAY_PORT` env | `4242` |
 | Server uptime | `process.uptime()` | Human-readable (e.g., "2h 15m") |
 | Working directory | `process.cwd()` | Full path |
 | Node.js version | `process.version` | `v22.x.x` |

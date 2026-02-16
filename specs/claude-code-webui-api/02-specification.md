@@ -166,7 +166,7 @@ gateway/
 ├── vite.config.ts
 ├── tailwind.config.ts
 ├── components.json                # shadcn configuration
-└── .env                           # GATEWAY_PORT=69420
+└── .env                           # GATEWAY_PORT=42420
 ```
 
 ### 6.2 Shared Types (`src/shared/types.ts`)
@@ -715,7 +715,7 @@ import { sessionStore } from './services/session-store';
 
 dotenv.config({ path: path.join(__dirname, '../../.env') });
 
-const PORT = parseInt(process.env.GATEWAY_PORT || '69420', 10);
+const PORT = parseInt(process.env.GATEWAY_PORT || '42420', 10);
 const app = express();
 
 app.use(cors());
@@ -1001,7 +1001,7 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': `http://localhost:${process.env.GATEWAY_PORT || 69420}`,
+      '/api': `http://localhost:${process.env.GATEWAY_PORT || 42420}`,
     },
   },
 });
@@ -1162,7 +1162,7 @@ data: {"sessionId":"abc","sdkSessionId":"def"}
 - Session store (JSON persistence)
 - Health endpoint
 - Package.json with all dependencies
-- `.env` with `GATEWAY_PORT=69420`
+- `.env` with `GATEWAY_PORT=42420`
 - npm scripts: `dev`, `build`, `start`
 
 ### Phase 2: SDK Integration & Chat Streaming

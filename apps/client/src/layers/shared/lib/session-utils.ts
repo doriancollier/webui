@@ -1,4 +1,5 @@
 import type { Session } from '@dorkos/shared/types';
+import { TIME_UNITS } from './constants';
 
 export type TimeGroup = 'Today' | 'Yesterday' | 'Previous 7 Days' | 'Previous 30 Days' | 'Older';
 
@@ -71,8 +72,8 @@ export function formatRelativeTime(isoString: string): string {
   const now = new Date();
   const date = new Date(isoString);
   const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMs / 3600000);
+  const diffMins = Math.floor(diffMs / TIME_UNITS.MS_PER_MINUTE);
+  const diffHours = Math.floor(diffMs / TIME_UNITS.MS_PER_HOUR);
 
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const yesterdayStart = new Date(todayStart);

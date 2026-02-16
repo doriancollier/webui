@@ -157,7 +157,7 @@ packages/cli/
 dorkos [options]
 
 Options:
-  -p, --port <port>     Port to listen on (default: 6942)
+  -p, --port <port>     Port to listen on (default: 4242)
   -t, --tunnel          Enable ngrok tunnel
   -d, --dir <path>      Working directory for Claude sessions (default: cwd)
   -h, --help            Show help

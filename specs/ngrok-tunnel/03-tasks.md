@@ -450,8 +450,8 @@ import { tunnelManager } from '../../services/tunnel-manager.js';
 Three tests:
 
 1. **Health returns ok without tunnel field when disabled** (existing test, slightly updated)
-2. **Health includes tunnel status when enabled and connected** — Set `tunnelManager.status` to `{ enabled: true, connected: true, url: 'https://test.ngrok.io', port: 6942, startedAt: '2025-01-01T00:00:00.000Z' }`, assert `res.body.tunnel` matches
-3. **Health shows disconnected tunnel after stop** — Set `tunnelManager.status` to `{ enabled: true, connected: false, url: null, port: 6942, startedAt: '2025-01-01T00:00:00.000Z' }`, assert `res.body.tunnel.connected` is false
+2. **Health includes tunnel status when enabled and connected** — Set `tunnelManager.status` to `{ enabled: true, connected: true, url: 'https://test.ngrok.io', port: 4242, startedAt: '2025-01-01T00:00:00.000Z' }`, assert `res.body.tunnel` matches
+3. **Health shows disconnected tunnel after stop** — Set `tunnelManager.status` to `{ enabled: true, connected: false, url: null, port: 4242, startedAt: '2025-01-01T00:00:00.000Z' }`, assert `res.body.tunnel.connected` is false
 
 **In 4 indirect test files** (`sessions.test.ts`, `sessions-interactive.test.ts`, `commands.test.ts`, `directory.test.ts`):
 
@@ -546,7 +546,7 @@ server: {
   },
   proxy: {
     '/api': {
-      target: `http://localhost:${process.env.GATEWAY_PORT || 6942}`,
+      target: `http://localhost:${process.env.GATEWAY_PORT || 4242}`,
       changeOrigin: true,
     },
   },

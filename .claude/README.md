@@ -22,7 +22,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Commands     | 45    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
 | Skills       | 9     | `.claude/skills/`                                                          |
-| Rules        | 5     | `.claude/rules/`                                                           |
+| Rules        | 8     | `.claude/rules/`                                                           |
 | Claude Hooks | 9     | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
@@ -103,6 +103,9 @@ Rules inject context-specific guidance when Claude works with matching files. Ea
 | `components.md`       | `apps/client/src/**/*.tsx`                           | Shadcn patterns, accessibility, styling              |
 | `fsd-layers.md`       | `apps/client/src/layers/**/*.ts(x)`                  | FSD layer dependency rules, barrel imports           |
 | `server-structure.md` | `apps/server/src/services/**/*.ts`, `routes/**/*.ts` | Service count monitoring, domain grouping thresholds |
+| `code-quality.md`    | `**/*.ts`, `**/*.tsx`                                | DRY violations, complexity limits, naming conventions |
+| `file-size.md`       | `**/*.ts`, `**/*.tsx`                                | File size thresholds, extraction patterns             |
+| `documentation.md`   | `**/*.ts`, `**/*.tsx`                                | TSDoc standards, barrel export docs                   |
 
 ### Hooks (Event-Triggered)
 
@@ -251,9 +254,12 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── orchestrating-parallel-work/
 │   └── writing-changelogs/
 │
-└── rules/                 # Path-specific guidance (5 total)
+└── rules/                 # Path-specific guidance (8 total)
     ├── api.md             # API route handlers
+    ├── code-quality.md    # DRY, complexity, naming
     ├── components.md      # UI components
+    ├── documentation.md   # TSDoc standards
+    ├── file-size.md       # File size limits
     ├── fsd-layers.md      # FSD layer imports
     ├── server-structure.md # Server size monitoring
     └── testing.md         # Test patterns

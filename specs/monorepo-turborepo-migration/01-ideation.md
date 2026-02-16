@@ -40,9 +40,9 @@
 - `package.json`: Single package with 22 dependencies + 14 devDependencies. Scripts: `dev` (concurrently tsx+vite), `build` (tsc+vite sequential), `build:obsidian` (vite+cp+mv). All deps are flat — React, Express, Obsidian, Zod, etc. in one file.
 - `tsconfig.json`: Target ES2022, module ESNext, bundler resolution, paths `@/*` → `./src/client/*` and `@shared/*` → `./src/shared/*`. Includes all of `src/**/*`.
 - `tsconfig.server.json`: Extends base, overrides to NodeNext module/resolution, outputs to `dist-server/`, includes `src/server/**/*` and `src/shared/**/*`.
-- `vite.config.ts`: React + Tailwind plugins, path aliases matching tsconfig, proxy `/api` to Express on port 6942, output to `dist/`.
+- `vite.config.ts`: React + Tailwind plugins, path aliases matching tsconfig, proxy `/api` to Express on port 4242, output to `dist/`.
 - `vite.config.obsidian.ts`: CJS library mode, 4 custom Vite plugins (copyManifest, fixDirnamePolyfill, safeRequires, patchElectronCompat), externals for Obsidian/Electron/Node builtins/CodeMirror, inline dynamic imports, output to `dist-obsidian/`, target node18.
-- `.env`: Contains `GATEWAY_PORT=6942`.
+- `.env`: Contains `GATEWAY_PORT=4242`.
 - `manifest.json`: Obsidian plugin manifest (dorkos-copilot v0.1.0).
 - `components.json`: shadcn/ui configuration (new-york style, neutral palette).
 

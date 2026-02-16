@@ -37,7 +37,7 @@ Add opt-in ngrok tunnel support to the Express server using `@ngrok/ngrok` (offi
 | ----------------- | ------------------- | --------------------- | ---------------------------------------------------- |
 | `TUNNEL_ENABLED`  | No                  | `undefined`           | Set to `true` to enable tunnel on server boot        |
 | `NGROK_AUTHTOKEN` | When tunnel enabled | —                     | ngrok auth token (SDK reads from env automatically)  |
-| `TUNNEL_PORT`     | No                  | `GATEWAY_PORT` (6942) | Port to tunnel (set to 3000 for Vite dev server)     |
+| `TUNNEL_PORT`     | No                  | `GATEWAY_PORT` (4242) | Port to tunnel (set to 3000 for Vite dev server)     |
 | `TUNNEL_AUTH`     | No                  | —                     | HTTP basic auth in `user:pass` format                |
 | `TUNNEL_DOMAIN`   | No                  | —                     | Reserved ngrok domain (e.g. `my-app.ngrok-free.app`) |
 
@@ -269,7 +269,7 @@ import { tunnelManager } from './services/tunnel-manager.js';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: path.join(__dirname, '../../../.env') });
 
-const PORT = parseInt(process.env.GATEWAY_PORT || '6942', 10);
+const PORT = parseInt(process.env.GATEWAY_PORT || '4242', 10);
 
 async function start() {
   const app = createApp();
@@ -422,7 +422,7 @@ server: {
     clientPort: 443,
   },
   watch: { ignored: ['**/state/**'] },
-  proxy: { '/api': { target: `http://localhost:${process.env.GATEWAY_PORT || 6942}`, changeOrigin: true } },
+  proxy: { '/api': { target: `http://localhost:${process.env.GATEWAY_PORT || 4242}`, changeOrigin: true } },
 },
 ```
 
@@ -531,8 +531,8 @@ SIGINT/SIGTERM → shutdown()
 | #   | Criterion                                                                               | Verification                           |
 | --- | --------------------------------------------------------------------------------------- | -------------------------------------- |
 | 1   | `turbo dev` with `TUNNEL_ENABLED=true` + `NGROK_AUTHTOKEN` starts tunnel and prints URL | Manual: run dev, observe console box   |
-| 2   | `GET /api/health` includes `tunnel` field when enabled                                  | `curl localhost:6942/api/health`       |
-| 3   | `GET /api/health` omits `tunnel` field when disabled                                    | `curl localhost:6942/api/health`       |
+| 2   | `GET /api/health` includes `tunnel` field when enabled                                  | `curl localhost:4242/api/health`       |
+| 3   | `GET /api/health` omits `tunnel` field when disabled                                    | `curl localhost:4242/api/health`       |
 | 4   | `TUNNEL_AUTH=user:pass` requires HTTP basic auth on tunnel                              | `curl <ngrok-url>` returns 401         |
 | 5   | `TUNNEL_PORT=3000` tunnels Vite dev server                                              | Access ngrok URL, see React UI         |
 | 6   | Tunnel failure does not prevent server startup                                          | Set invalid authtoken, observe warning |
