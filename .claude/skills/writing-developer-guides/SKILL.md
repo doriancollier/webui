@@ -125,7 +125,7 @@ Include when there are procedural tasks (adding X, configuring Y):
    // What to add
    ```
 
-3. **Verify**: Run `pnpm [command]` and check for [expected output]
+3. **Verify**: Run `npm run [command]` and check for [expected output]
 
 ````
 

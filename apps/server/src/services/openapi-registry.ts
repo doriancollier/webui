@@ -381,7 +381,7 @@ export function generateOpenAPISpec() {
     openapi: '3.1.0',
     info: {
       title: 'DorkOS API',
-      version: '0.1.0',
+      version: '0.2.0',
       description: 'REST/SSE API for Claude Code sessions, built with the Claude Agent SDK.',
     },
     servers: [{ url: `http://localhost:${process.env.DORKOS_PORT || DEFAULT_PORT}` }],

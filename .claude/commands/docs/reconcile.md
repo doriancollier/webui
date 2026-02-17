@@ -15,7 +15,7 @@ Parse `$ARGUMENTS` to determine the mode:
 
 | Argument              | Mode                | Description                                                               |
 | --------------------- | ------------------- | ------------------------------------------------------------------------- |
-| `<guide-name>`        | Single guide        | Check one specific guide (e.g., `03-database-prisma.md`)                  |
+| `<guide-name>`        | Single guide        | Check one specific guide (e.g., `data-fetching.md`)                       |
 | `--commit <sha>`      | Commit review       | Analyze a specific commit for documentation impact                        |
 | `--since <timeframe>` | Time range          | Check commits within a timeframe (e.g., `1 week`, `3 days`, `2024-12-01`) |
 | `--all`               | Full reconciliation | Check all guides against their last-reviewed dates                        |
@@ -24,7 +24,7 @@ Parse `$ARGUMENTS` to determine the mode:
 **Examples:**
 
 ```bash
-/docs:reconcile 03-database-prisma.md          # Check specific guide
+/docs:reconcile data-fetching.md               # Check specific guide
 /docs:reconcile --commit abc123                # Analyze one commit
 /docs:reconcile --since "1 week"               # Last week's commits
 /docs:reconcile --since "2024-12-15"           # Since specific date
@@ -116,14 +116,20 @@ For each commit/change gathered:
 ```bash
 # Pattern matching logic (from INDEX.md patterns)
 declare -A GUIDE_PATTERNS=(
-  ["01-project-structure.md"]="apps/server|apps/client|apps/obsidian-plugin|packages/shared|packages/test-utils"
-  ["02-environment-variables.md"]="env.ts|\.env|config.ts"
-  ["03-database-prisma.md"]="prisma|services/.*\.ts|lib/prisma|generated/prisma"
-  ["04-forms-validation.md"]="form|schema|model/types"
-  ["05-data-fetching.md"]="apps/server/src/routes|apps/client/src/hooks|query-client"
-  ["06-state-management.md"]="store|hooks/"
-  ["07-animations.md"]="animation|motion"
-  ["08-styling-theming.md"]="globals.css|packages/shared|components/ui|tailwind"
+  ["project-structure.md"]="apps/client/src/layers/|apps/server/src/|packages/"
+  ["architecture.md"]="transport.ts|direct-transport|http-transport|apps/obsidian-plugin/build-plugins"
+  ["design-system.md"]="apps/client/src/index.css|apps/client/src/layers/shared/ui/"
+  ["api-reference.md"]="openapi-registry|apps/server/src/routes/|packages/shared/src/schemas"
+  ["configuration.md"]="config-manager|config-schema|packages/cli/"
+  ["interactive-tools.md"]="interactive-handlers|apps/client/src/layers/features/chat/"
+  ["keyboard-shortcuts.md"]="use-interactive-shortcuts"
+  ["obsidian-plugin-development.md"]="apps/obsidian-plugin/"
+  ["data-fetching.md"]="apps/server/src/routes/|apps/client/src/layers/entities/|apps/client/src/layers/features/chat/"
+  ["state-management.md"]="app-store|apps/client/src/layers/entities/|apps/client/src/layers/shared/model/"
+  ["animations.md"]="animation|motion|apps/client/src/index.css"
+  ["styling-theming.md"]="index.css|apps/client/src/layers/shared/ui/|tailwind"
+  ["parallel-execution.md"]=".claude/agents/|\.claude/commands/"
+  ["autonomous-roadmap-execution.md"]=".claude/commands/roadmap/"
 )
 
 # For each file, find matching guides

@@ -26,13 +26,14 @@ The client will be available at `http://localhost:3000` and the server at `http:
 
 ## Monorepo Structure
 
-This is a Turborepo monorepo with three apps and four shared packages:
+This is a Turborepo monorepo with four apps and four shared packages:
 
 | Directory | Package | Description |
 |---|---|---|
 | `apps/client` | `@dorkos/client` | React 19 SPA (Vite 6, Tailwind 4, shadcn/ui) |
 | `apps/server` | `@dorkos/server` | Express API server |
 | `apps/obsidian-plugin` | `@dorkos/obsidian-plugin` | Obsidian sidebar plugin |
+| `apps/web` | `@dorkos/web` | Marketing site & docs (Next.js 16, Fumadocs) |
 | `packages/cli` | `dorkos` | Publishable npm CLI |
 | `packages/shared` | `@dorkos/shared` | Zod schemas, shared types |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |

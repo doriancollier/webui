@@ -9,10 +9,10 @@ This project uses [Motion](https://motion.dev/) (version 12.x, formerly Framer M
 | Concept                      | Location                                              |
 | ---------------------------- | ----------------------------------------------------- |
 | Motion library import        | `motion/react` package                                |
-| Animation utilities (CSS)    | `src/app/globals.css` (transition classes, keyframes) |
-| Tailwind animation utilities | `tw-animate-css` (imported in globals.css)            |
-| Accordion animations         | CSS keyframes in `globals.css`                        |
-| Common UI patterns           | `src/components/ui/*` (dropdowns, tooltips, etc.)     |
+| Animation utilities (CSS)    | `apps/client/src/index.css` (transition classes, keyframes) |
+| Tailwind animation utilities | `tw-animate-css` (imported in index.css)                    |
+| Accordion animations         | CSS keyframes in `index.css`                                |
+| Common UI patterns           | `apps/client/src/layers/shared/ui/` (dropdowns, tooltips)   |
 
 ## When to Use What
 
@@ -527,4 +527,4 @@ Faster animations feel more responsive; slower animations can feel laggy.
 
 - [Motion Documentation](https://motion.dev/) - Official API reference
 - [Calm Tech Design System](./design-system.md) - Animation philosophy and duration standards
-- [Styling and Theming Guide](./08-styling-theming.md) - CSS transitions and Tailwind utilities
+- [Styling and Theming Guide](./styling-theming.md) - CSS transitions and Tailwind utilities

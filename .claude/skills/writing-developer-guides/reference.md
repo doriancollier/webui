@@ -335,7 +335,7 @@ export default async function Page() {
 ### "Cannot find module '@/generated/prisma'"
 
 **Cause**: Prisma client hasn't been generated after schema changes.
-**Fix**: Run `pnpm prisma:generate`
+**Fix**: Run `npm run build`
 
 ### "The datasource property is required"
 

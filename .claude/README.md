@@ -143,20 +143,20 @@ All documentation lives in `contributing/`:
 
 | Guide                                | Content                                                             |
 | ------------------------------------ | ------------------------------------------------------------------- |
-| `01-project-structure.md`            | FSD layer hierarchy, directory layout, adding features              |
+| `project-structure.md`               | FSD layer hierarchy, directory layout, adding features              |
 | `architecture.md`                    | Hexagonal architecture, Transport interface, Electron compatibility |
 | `design-system.md`                   | Color palette, typography, spacing, motion specs                    |
 | `api-reference.md`                   | OpenAPI spec, Scalar docs UI, Zod schema patterns                   |
-| `configuration.md`                  | Config file system, settings reference, CLI commands, precedence    |
+| `configuration.md`                   | Config file system, settings reference, CLI commands, precedence    |
 | `interactive-tools.md`               | Tool approval, AskUserQuestion, TaskList flows                      |
 | `keyboard-shortcuts.md`              | Keyboard shortcuts and hotkeys                                      |
 | `obsidian-plugin-development.md`     | Plugin lifecycle, Vite build, Electron quirks                       |
-| `05-data-fetching.md`                | TanStack Query patterns, mutations                                  |
-| `06-state-management.md`             | Zustand vs TanStack Query decision guide                            |
-| `07-animations.md`                   | Motion library patterns                                             |
-| `08-styling-theming.md`              | Tailwind v4, dark mode, Shadcn                                      |
-| `11-parallel-execution.md`           | Parallel agent execution patterns, batching                         |
-| `13-autonomous-roadmap-execution.md` | Autonomous workflow, `/roadmap:work`                                |
+| `data-fetching.md`                   | TanStack Query patterns, Transport abstraction, SSE streaming       |
+| `state-management.md`                | Zustand vs TanStack Query decision guide                            |
+| `animations.md`                      | Motion library patterns                                             |
+| `styling-theming.md`                 | Tailwind v4, dark mode, Shadcn                                      |
+| `parallel-execution.md`              | Parallel agent execution patterns, batching                         |
+| `autonomous-roadmap-execution.md`    | Autonomous workflow, `/roadmap:work`                                |
 
 Skills often reference these guides for detailed patterns while keeping SKILL.md files concise.
 

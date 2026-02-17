@@ -38,14 +38,20 @@ fi
 # If INDEX.md patterns change significantly, update these mappings to match.
 # Format: "guide:pattern1|pattern2|pattern3"
 MAPPINGS=(
-  "01-project-structure.md:apps/server|apps/client|apps/obsidian-plugin|packages/shared|packages/test-utils"
-  "02-environment-variables.md:env.ts|\.env|config.ts"
-  "03-database-prisma.md:prisma|services/.*\.ts|lib/prisma|generated/prisma"
-  "04-forms-validation.md:form|schema|model/types"
-  "05-data-fetching.md:apps/server/src/routes|apps/client/src/hooks|query-client"
-  "06-state-management.md:store|hooks/"
-  "07-animations.md:animation|motion"
-  "08-styling-theming.md:globals.css|packages/shared|components/ui|tailwind"
+  "project-structure.md:apps/client/src/layers/|apps/server/src/|packages/"
+  "architecture.md:transport.ts|direct-transport|http-transport|apps/obsidian-plugin/build-plugins"
+  "design-system.md:apps/client/src/index.css|apps/client/src/layers/shared/ui/"
+  "api-reference.md:openapi-registry|apps/server/src/routes/|packages/shared/src/schemas"
+  "configuration.md:config-manager|config-schema|packages/cli/"
+  "interactive-tools.md:interactive-handlers|apps/client/src/layers/features/chat/"
+  "keyboard-shortcuts.md:use-interactive-shortcuts"
+  "obsidian-plugin-development.md:apps/obsidian-plugin/"
+  "data-fetching.md:apps/server/src/routes/|apps/client/src/layers/entities/|apps/client/src/layers/features/chat/"
+  "state-management.md:app-store|apps/client/src/layers/entities/|apps/client/src/layers/shared/model/"
+  "animations.md:animation|motion|apps/client/src/index.css"
+  "styling-theming.md:index.css|apps/client/src/layers/shared/ui/|tailwind"
+  "parallel-execution.md:.claude/agents/|\.claude/commands/"
+  "autonomous-roadmap-execution.md:.claude/commands/roadmap/"
 )
 
 # Track affected guides

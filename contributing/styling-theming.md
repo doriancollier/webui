@@ -2,26 +2,26 @@
 
 ## Overview
 
-This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI components following the "Calm Tech" design language. All theme tokens are defined in `src/app/globals.css` using OKLCH color space for better color manipulation and dark mode support.
+This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI components following the "Calm Tech" design language. All theme tokens are defined in `apps/client/src/index.css` using OKLCH color space for better color manipulation and dark mode support.
 
 ## Key Files
 
 | Concept             | Location                                       |
 | ------------------- | ---------------------------------------------- |
-| Theme configuration | `src/app/globals.css` (via `@theme` directive) |
+| Theme configuration | `apps/client/src/index.css` (via `@theme` directive) |
 | Design system spec  | `contributing/design-system.md`                      |
 | Shadcn components   | `src/layers/shared/ui/` (barrel export)        |
-| Base UI primitives  | `src/components/ui/` (installed components)    |
+| Shadcn components   | `apps/client/src/layers/shared/ui/` (barrel export)           |
 | Animation patterns  | `contributing/animations.md`                         |
 | cn() utility        | `src/layers/shared/lib/utils.ts`               |
-| ThemeProvider       | `src/app/providers.tsx`                        |
+| ThemeProvider       | `apps/client/src/App.tsx`                        |
 
 ## When to Use What
 
 | Scenario                                   | Approach                                             | Why                                        |
 | ------------------------------------------ | ---------------------------------------------------- | ------------------------------------------ |
 | Need semantic color (background, text)     | Use tokens (`bg-background`, `text-foreground`)      | Automatic dark mode, consistent design     |
-| Need arbitrary color (brand not in tokens) | Add to `@theme` in globals.css                       | Reusable, theme-aware                      |
+| Need arbitrary color (brand not in tokens) | Add to `@theme` in index.css                       | Reusable, theme-aware                      |
 | Need conditional classes                   | Use `cn()` utility                                   | Type-safe, handles conflicts correctly     |
 | Need component variants                    | Use built-in variants (`variant="outline"`)          | Consistent API, pre-styled                 |
 | Need custom component styling              | Pass `className` prop                                | Override defaults without editing source   |
@@ -33,9 +33,9 @@ This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI compo
 
 ## Core Patterns
 
-### Theme Token Definition (globals.css)
+### Theme Token Definition (index.css)
 
-All design tokens live in `src/app/globals.css`:
+All design tokens live in `apps/client/src/index.css`:
 
 ```css
 @import 'tailwindcss';
@@ -91,12 +91,12 @@ export function FeatureCard({ title, description }: FeatureCardProps) {
 
 ### Dark Mode with Class Strategy
 
-Dark mode uses next-themes with class strategy:
+Dark mode uses the `useTheme` hook with class strategy:
 
 ```tsx
 // Toggle theme
 'use client';
-import { useTheme } from 'next-themes';
+import { useTheme } from '@/layers/shared/model';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
@@ -216,12 +216,12 @@ export function ResponsiveText() {
 
 **Breakpoints:** `sm` (640px), `md` (768px), `lg` (1024px), `xl` (1280px), `2xl` (1536px)
 
-### Custom Utilities (globals.css)
+### Custom Utilities (index.css)
 
 Define custom utilities for project-specific patterns:
 
 ```css
-/* src/app/globals.css */
+/* apps/client/src/index.css */
 @layer utilities {
   /* Shadow utilities */
   .shadow-soft {
@@ -361,7 +361,7 @@ Usage:
 
 ```tsx
 // ❌ Don't modify Shadcn component source files
-// File: src/components/ui/button.tsx
+// File: apps/client/src/layers/shared/ui/button.tsx
 export function Button() {
   return <button className="bg-primary px-4 py-2">...</button>;
   // Changes lost on shadcn update
@@ -403,7 +403,7 @@ The "Calm Tech" design language specifications:
 
 ## Adding a New Theme Token
 
-1. **Add to `@theme` block** in `src/app/globals.css`:
+1. **Add to `@theme` block** in `apps/client/src/index.css`:
 
    ```css
    @theme {
@@ -474,20 +474,10 @@ module.exports = {
 **Fix**:
 
 ```tsx
-// src/app/layout.tsx
-import { ThemeProvider } from 'next-themes';
-
-export default function RootLayout({ children }) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          {children}
-        </ThemeProvider>
-      </body>
-    </html>
-  );
-}
+// apps/client/src/App.tsx
+// DorkOS uses a Vite SPA (not Next.js), so the theme provider
+// is configured in App.tsx, not a layout file.
+// The ThemeProvider wraps the entire app with class-based dark mode.
 ```
 
 ### "cn() not combining classes correctly"
@@ -508,10 +498,10 @@ export function cn(...inputs: ClassValue[]) {
 ### "Custom utility classes not found"
 
 **Cause**: Defined in wrong layer or not using `@layer`.
-**Fix**: Always use `@layer utilities` in globals.css:
+**Fix**: Always use `@layer utilities` in index.css:
 
 ```css
-/* src/app/globals.css */
+/* apps/client/src/index.css */
 @layer utilities {
   .shadow-soft {
     box-shadow: 0 2px 8px oklch(0% 0 0 / 0.08);
@@ -568,8 +558,8 @@ export function AccentButton(props) {
 
 - **[contributing/design-system.md](./design-system.md)** - Complete Calm Tech design language specification
 - **[contributing/animations.md](./animations.md)** - Motion library patterns and spring physics
-- **[src/app/globals.css](../src/app/globals.css)** - Live theme token definitions
+- **[apps/client/src/index.css](../apps/client/src/index.css)** - Live theme token definitions
 - **[Tailwind CSS v4 Docs](https://tailwindcss.com/docs)** - Official Tailwind CSS documentation
 - **[OKLCH Color Picker](https://oklch.com)** - Interactive OKLCH color space tool
 - **[Shadcn UI](https://ui.shadcn.com)** - Component documentation and examples
-- **[next-themes](https://github.com/pacocoursey/next-themes)** - Theme provider documentation
+- **[Theme Hook](../apps/client/src/layers/shared/model/)** - useTheme hook for dark mode toggling

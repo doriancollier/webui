@@ -5,7 +5,7 @@ changelog-populator.py - Git post-commit hook for auto-populating changelog
 Automatically adds entries to CHANGELOG.md [Unreleased] section
 based on conventional commit messages.
 
-Only processes commits that touch project files (src/, prisma/, etc.).
+Only processes commits that touch project files (apps/, packages/, etc.).
 Non-project files are ignored.
 
 Commit Message Format (Conventional Commits):
@@ -34,13 +34,13 @@ from typing import Optional, Tuple
 # System paths that trigger changelog entries
 SYSTEM_PATHS = [
     ".claude/",
-    "src/",
-    "prisma/",
+    "apps/",
+    "packages/",
     "contributing/",
-    "next.config.ts",
+    "docs/",
     "package.json",
     "tsconfig.json",
-    "VERSION",
+    "turbo.json",
 ]
 
 # Paths explicitly excluded (even if they match system paths)

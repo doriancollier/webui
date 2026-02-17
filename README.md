@@ -24,7 +24,7 @@ dorkos
 
 The server starts on port 4242 and opens your browser automatically.
 
-<!-- TODO: Add screenshot or GIF of the UI -->
+![DorkOS — Web interface for Claude Code](https://raw.githubusercontent.com/dork-labs/dorkos/main/meta/hero.png)
 
 ## Features
 
