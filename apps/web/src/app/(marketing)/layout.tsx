@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
+import { MarketingShell } from './marketing-shell'
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} - ${siteConfig.description}`,
@@ -61,7 +62,7 @@ export default function MarketingLayout({
           __html: JSON.stringify(websiteJsonLd).replace(/</g, '\\u003c'),
         }}
       />
-      {children}
+      <MarketingShell>{children}</MarketingShell>
     </div>
   )
 }

@@ -1,6 +1,10 @@
+'use client'
+
 import Image from 'next/image'
 import Link from 'next/link'
+import { motion } from 'motion/react'
 import { PulseAnimation } from './PulseAnimation'
+import { REVEAL } from '../lib/motion-variants'
 
 interface HeroProps {
   label?: string
@@ -44,14 +48,25 @@ export function Hero({
       />
 
       {/* Content */}
-      <div className="relative z-10 text-center max-w-4xl mx-auto">
+      <motion.div
+        className="relative z-10 text-center max-w-4xl mx-auto"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: {
+            transition: { staggerChildren: 0.1 },
+          },
+        }}
+      >
         {/* Label */}
-        <p className="font-mono text-2xs tracking-[0.2em] uppercase text-warm-gray-light mb-12">
+        <motion.p variants={REVEAL} className="font-mono text-2xs tracking-[0.2em] uppercase text-warm-gray-light mb-12">
           {label}
-        </p>
+        </motion.p>
 
         {/* Headline — increased lineHeight to 1.0 to prevent ascender clipping */}
-        <h1
+        <motion.h1
+          variants={REVEAL}
           className="font-bold text-brand-orange mb-10 tracking-[-0.04em] overflow-visible"
           style={{
             fontSize: 'clamp(48px, 8vw, 96px)',
@@ -59,39 +74,43 @@ export function Hero({
           }}
         >
           {headline}
-        </h1>
+        </motion.h1>
 
         {/* Subhead - one paragraph, no line breaks */}
-        <p className="text-warm-gray text-lg font-light leading-[1.7] max-w-[540px] mx-auto mb-8">
+        <motion.p variants={REVEAL} className="text-warm-gray text-lg font-light leading-[1.7] max-w-[540px] mx-auto mb-8">
           {subhead}
-        </p>
+        </motion.p>
 
         {/* Primary CTA with blinking cursor */}
-        <Link
-          href={ctaHref}
-          className="inline-flex items-center font-mono text-button tracking-[0.1em] text-brand-orange hover:text-brand-green transition-smooth"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {ctaText}
-          <span className="cursor-blink" aria-hidden="true" />
-        </Link>
+        <motion.div variants={REVEAL}>
+          <Link
+            href={ctaHref}
+            className="inline-flex items-center font-mono text-button tracking-[0.1em] text-brand-orange hover:text-brand-green transition-smooth"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {ctaText}
+            <span className="cursor-blink" aria-hidden="true" />
+          </Link>
+        </motion.div>
 
         {/* Secondary CTA - docs link */}
-        <div className="mt-6">
+        <motion.div variants={REVEAL} className="mt-6">
           <Link
             href="/docs/getting-started/quickstart"
             className="inline-flex items-center font-mono text-2xs tracking-[0.1em] text-warm-gray-light hover:text-brand-orange transition-smooth"
           >
             Watch it work &rarr;
           </Link>
-        </div>
+        </motion.div>
 
         {/* Heartbeat pulse line */}
-        <PulseAnimation />
+        <motion.div variants={REVEAL}>
+          <PulseAnimation />
+        </motion.div>
 
         {/* Product screenshot */}
-        <div className="mt-12 max-w-4xl mx-auto">
+        <motion.div variants={REVEAL} className="mt-12 max-w-4xl mx-auto">
           <Image
             src="/images/dorkos-screenshot.png"
             alt="DorkOS console with an active autonomous session"
@@ -100,8 +119,8 @@ export function Hero({
             className="rounded-lg shadow-elevated border border-[var(--border-warm)]"
             priority
           />
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* Subtle scan lines overlay */}
       <div

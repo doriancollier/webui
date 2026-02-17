@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { motion, useInView } from 'motion/react'
+import { REVEAL, STAGGER, VIEWPORT } from '../lib/motion-variants'
 
 interface Step {
   number: string
@@ -59,47 +61,44 @@ function TerminalBlock({ text, animate }: { text: string; animate: boolean }) {
 
 /** 3-step install/run/work section with scroll-triggered terminal animation. */
 export function HowItWorksSection() {
-  const sectionRef = useRef<HTMLElement>(null)
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    const el = sectionRef.current
-    if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true)
-          observer.disconnect()
-        }
-      },
-      { threshold: 0.3 },
-    )
-    observer.observe(el)
-    return () => observer.disconnect()
-  }, [])
+  const sectionRef = useRef<HTMLDivElement>(null)
+  const isInView = useInView(sectionRef, { once: true, amount: 0.3 })
 
   return (
-    <section ref={sectionRef} className="py-40 px-8 bg-cream-primary">
-      <span className="font-mono text-2xs tracking-[0.15em] uppercase text-brand-orange text-center block mb-20">
+    <motion.section
+      className="py-40 px-8 bg-cream-primary"
+      initial="hidden"
+      whileInView="visible"
+      viewport={VIEWPORT}
+      variants={STAGGER}
+    >
+      <motion.span
+        variants={REVEAL}
+        className="font-mono text-2xs tracking-[0.15em] uppercase text-brand-orange text-center block mb-20"
+      >
         How It Works
-      </span>
+      </motion.span>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 max-w-5xl mx-auto">
+      <motion.div
+        ref={sectionRef}
+        variants={STAGGER}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-12 max-w-5xl mx-auto"
+      >
         {steps.map((step, index) => (
-          <div key={step.number} className="text-center">
+          <motion.div key={step.number} variants={REVEAL} className="text-center">
             <span className="font-mono text-2xs tracking-[0.1em] text-brand-green block mb-4">
               {step.number}
             </span>
             <TerminalBlock
               text={step.command}
-              animate={isVisible && index < 2}
+              animate={isInView && index < 2}
             />
             <p className="text-warm-gray text-sm leading-relaxed">
               {step.description}
             </p>
-          </div>
+          </motion.div>
         ))}
-      </div>
-    </section>
+      </motion.div>
+    </motion.section>
   )
 }

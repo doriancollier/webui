@@ -47,4 +47,12 @@ export const systemModules: SystemModule[] = [
       'SMS, email, Telegram, Twitter. Agents that communicate outward.',
     status: 'coming-soon',
   },
+  {
+    id: 'mesh',
+    name: 'Mesh',
+    label: 'Agent Network',
+    description:
+      'The nervous system. Agents discover each other, share context, and coordinate across projects.',
+    status: 'coming-soon',
+  },
 ]

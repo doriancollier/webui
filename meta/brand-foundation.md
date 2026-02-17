@@ -4,7 +4,7 @@
 
 **DorkOS** is an autonomous agent operating system for developers, founders, and serious builders.
 
-It transforms Claude Code into an autonomous agent system — with a heartbeat that works while you sleep, a knowledge vault that remembers everything, and agents that talk to each other.
+It transforms Claude Code into an autonomous agent system — with a heartbeat that works while you sleep, a knowledge vault that remembers everything, and a mesh that lets agents discover and talk to each other.
 
 DorkOS is:
 
@@ -28,7 +28,7 @@ Autonomous Agent Operating System
 
 ### Positioning Statement
 
-DorkOS is the operating system for autonomous AI agents — giving developers a heartbeat, a knowledge vault, and full control over their Claude-powered infrastructure.
+DorkOS is the operating system for autonomous AI agents — giving developers a heartbeat, a knowledge vault, an agent mesh, and full control over their Claude-powered infrastructure.
 
 ### Target Audience
 
@@ -63,6 +63,7 @@ DorkOS turns Claude Code into:
 
 Your agents.
 Your heartbeat.
+Your mesh.
 Your rules.
 
 ---
@@ -139,6 +140,19 @@ Acts as:
 - Context repository
 
 This powers Life Infrastructure workflows.
+
+**Status: Coming Soon**
+
+#### 4.6 DorkOS Mesh (Agent Network)
+
+The nervous system. Turns isolated Claude instances into a coordinated network.
+
+- Folders as agents: each project is its own agent with its own rules, hooks, skills, and memories
+- Agent directory: a registry that makes agents aware of each other
+- Agent-to-agent communication: structured message passing between agents
+- Cross-domain coordination: your scheduling agent notifies your relationship agent about a birthday; your relationship agent asks your finance agent for a budget; your finance agent tells your purchasing agent to buy a gift
+
+The Mesh is what makes DorkOS an operating system, not just a runtime. Without it, you have isolated agents. With it, you have a workforce.
 
 **Status: Coming Soon**
 
@@ -236,7 +250,7 @@ DorkOS should feel like:
 - Deploy Your AI Workforce
 - The Operating System for AI Agents
 - Agents That Work While You Sleep
-- Your Heartbeat. Your Vault. Your Rules.
+- Your Heartbeat. Your Mesh. Your Rules.
 - Not a Chatbot. A System.
 - Intelligence from Anthropic. Everything Else Is Yours.
 
@@ -248,7 +262,7 @@ DorkOS should feel like:
 
 > **Your AI Never Sleeps.**
 >
-> DorkOS is an open-source operating system for autonomous AI agents. Built on Claude Code. Powered by a heartbeat. Connected through a knowledge vault.
+> DorkOS is an open-source operating system for autonomous AI agents. Built on Claude Code. Powered by a heartbeat. Connected through an agent mesh.
 >
 > `npm install -g dorkos`
 
@@ -287,7 +301,7 @@ DorkOS becomes:
 - The default autonomous agent operating system
 - The backbone of autonomous software development
 - The operating layer for AI-native companies
-- A distributed network of privately-run AI infrastructure
+- A distributed mesh of privately-run AI agents
 
 ---
 

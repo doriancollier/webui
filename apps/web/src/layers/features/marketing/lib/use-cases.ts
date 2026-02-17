@@ -15,7 +15,7 @@ export const useCases: UseCase[] = [
     id: 'agents-that-talk',
     title: 'Agents that talk to each other',
     description:
-      'Multiple Claude instances coordinating across projects. Agent-to-agent communication for complex workflows.',
+      'The Mesh turns folders into agents with their own rules and memory. They discover each other, share context, and coordinate — your scheduling agent talks to your finance agent talks to your purchasing agent.',
   },
   {
     id: 'brain-that-remembers',

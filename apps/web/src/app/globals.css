@@ -555,6 +555,57 @@ button:hover .cursor-blink,
   --default-mono-font-family: var(--font-ibm-plex-mono), ui-monospace, monospace;
 }
 
+/* ==========================================================================
+   Motion: Architecture Diagram & Pulse Animations
+   ========================================================================== */
+
+/* Architecture diagram — animated dashed strokes */
+@keyframes dash-flow {
+  to {
+    stroke-dashoffset: -20;
+  }
+}
+
+.architecture-dashes {
+  stroke-dasharray: 6 4;
+  animation: dash-flow 1.5s linear infinite;
+}
+
+/* Pulse animation — heartbeat draw */
+@keyframes draw-pulse {
+  0% {
+    stroke-dashoffset: 800;
+  }
+  50% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: -800;
+  }
+}
+
+.animate-pulse-draw {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: draw-pulse 3s ease-in-out infinite;
+}
+
+/* Reduced motion: disable all CSS and SMIL animations */
+@media (prefers-reduced-motion: reduce) {
+  .architecture-dashes {
+    animation: none !important;
+  }
+
+  .architecture-particles animateMotion {
+    display: none;
+  }
+
+  .animate-pulse-draw {
+    animation: none !important;
+    stroke-dashoffset: 0;
+  }
+}
+
 @utility noise-texture {
   position: relative;
   &::before {

@@ -1,6 +1,6 @@
 import { siteConfig } from '@/config/site'
 import {
-  Hero,
+  ActivityFeedHero,
   CredibilityBar,
   SystemArchitecture,
   HowItWorksSection,
@@ -51,10 +51,9 @@ export default function HomePage() {
       <MarketingHeader />
 
       <main>
-        <Hero
-          label="Open Source"
+        <ActivityFeedHero
           headline="Your AI Never Sleeps."
-          subhead="DorkOS is an open-source operating system for autonomous AI agents. Built on Claude Code. Powered by a heartbeat. Connected through a knowledge vault."
+          subhead="DorkOS is an open-source operating system for autonomous AI agents. Built on Claude Code. Powered by a heartbeat. Connected through an agent mesh."
           ctaText="npm install -g dorkos"
           ctaHref={siteConfig.npm}
         />
@@ -70,7 +69,7 @@ export default function HomePage() {
         <HonestySection />
 
         <AboutSection
-          description="DorkOS turns Claude Code into an autonomous agent system. Built on the Agent SDK, it reads the same JSONL session files as the CLI. The intelligence comes from Anthropic. Everything else — orchestration, heartbeat, vault, permissions — is yours."
+          description="DorkOS turns Claude Code into an autonomous agent system. Built on the Agent SDK, it reads the same JSONL session files as the CLI. The intelligence comes from Anthropic. Everything else — orchestration, heartbeat, mesh, vault, permissions — is yours."
           philosophyItems={philosophyItems}
         />
 

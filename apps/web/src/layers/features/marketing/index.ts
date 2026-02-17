@@ -1,5 +1,6 @@
 // UI components
 export { Hero } from './ui/Hero'
+export { ActivityFeedHero } from './ui/ActivityFeedHero'
 export { CredibilityBar } from './ui/CredibilityBar'
 export { ProblemSection } from './ui/ProblemSection'
 export { HowItWorksSection } from './ui/HowItWorksSection'
@@ -23,6 +24,9 @@ export { projects } from './lib/projects'
 export { philosophyItems } from './lib/philosophy'
 export { systemModules } from './lib/modules'
 export { useCases } from './lib/use-cases'
+
+// Motion
+export { SPRING, VIEWPORT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH } from './lib/motion-variants'
 
 // Types
 export type { Project, PhilosophyItem, NavLink } from './lib/types'
