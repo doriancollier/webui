@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 
 interface HeroProps {
@@ -78,6 +79,28 @@ export function Hero({
           {bylineText}
           <span className="cursor-blink" aria-hidden="true" />
         </Link>
+
+        {/* Docs CTA */}
+        <div className="mt-6">
+          <Link
+            href="/docs/getting-started/quickstart"
+            className="inline-flex items-center font-mono text-2xs tracking-[0.1em] text-warm-gray-light hover:text-brand-orange transition-smooth"
+          >
+            Read the docs &rarr;
+          </Link>
+        </div>
+
+        {/* Product screenshot */}
+        <div className="mt-16 max-w-4xl mx-auto">
+          <Image
+            src="/images/dorkos-screenshot.png"
+            alt="DorkOS chat interface showing tool approval flow"
+            width={1280}
+            height={800}
+            className="rounded-lg shadow-elevated border border-[var(--border-warm)]"
+            priority
+          />
+        </div>
       </div>
 
       {/* Subtle scan lines overlay */}

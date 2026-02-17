@@ -3,9 +3,8 @@
   "pages": [
     "getting-started",
     "guides",
-    "integrations",
     "api",
-    "self-hosting",
-    "contributing"
+    "contributing",
+    "changelog"
   ]
 }

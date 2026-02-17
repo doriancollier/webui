@@ -544,6 +544,16 @@ button:hover .cursor-blink,
 }
 
 /* Subtle noise texture - analog warmth */
+/* ==========================================================================
+   Fumadocs Font Override
+   Map Fumadocs CSS variables to Dorkian brand fonts (IBM Plex)
+   ========================================================================== */
+
+:root {
+  --fd-font-sans: var(--font-ibm-plex-sans), system-ui, -apple-system, sans-serif;
+  --fd-font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
+}
+
 @utility noise-texture {
   position: relative;
   &::before {

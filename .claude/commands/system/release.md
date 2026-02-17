@@ -458,11 +458,38 @@ Edit `CHANGELOG.md` using the Edit tool:
 [Previous [Unreleased] content here]
 ```
 
-### 5.5: Commit and Tag
+### 5.5: Sync Changelog to Docs
+
+Update `docs/changelog.mdx` to match `CHANGELOG.md`. Use the Edit tool to replace the content of `docs/changelog.mdx`, keeping the frontmatter and intro line but replacing all version sections.
+
+The sync should:
+1. Read the updated `CHANGELOG.md`
+2. Extract everything after the `## [Unreleased]` empty section (skip the Unreleased heading and its empty subsections)
+3. Strip the link reference definitions at the bottom (lines like `[Unreleased]: https://...`)
+4. Write to `docs/changelog.mdx` preserving this structure:
+
+```markdown
+---
+title: Changelog
+description: All notable changes to DorkOS, following Keep a Changelog format and Semantic Versioning.
+---
+
+All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [0.2.0] - 2026-02-17
+
+[released content here...]
+
+## [0.1.0] - 2025-02-08
+
+[previous releases...]
+```
+
+### 5.6: Commit and Tag
 
 ```bash
 # Stage all version-related changes
-git add VERSION CHANGELOG.md packages/cli/package.json package.json package-lock.json
+git add VERSION CHANGELOG.md docs/changelog.mdx packages/cli/package.json package.json package-lock.json
 
 # Commit (use HEREDOC for message)
 git commit -m "$(cat <<'EOF'
@@ -476,7 +503,7 @@ EOF
 git tag -a v0.2.0 -m "Release v0.2.0"
 ```
 
-### 5.6: Push to Origin
+### 5.7: Push to Origin
 
 ```bash
 # Push commit and tag
@@ -485,7 +512,7 @@ git push origin main && git push origin v0.2.0
 
 If push fails, report error and provide recovery commands.
 
-### 5.7: Publish to npm
+### 5.8: Publish to npm
 
 Ask using AskUserQuestion:
 
@@ -507,7 +534,7 @@ npm publish -w packages/cli
 
 The `prepublishOnly` hook in `packages/cli/package.json` will automatically build before publishing.
 
-### 5.8: GitHub Release Notes
+### 5.9: GitHub Release Notes
 
 **Reference**: Use the `writing-changelogs` skill for guidance on writing user-friendly release notes.
 

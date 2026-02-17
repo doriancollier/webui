@@ -9,9 +9,9 @@ export function PublicFooter() {
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           {/* Brand / Copyright */}
           <div className="space-y-1">
-            <p className="text-sm font-medium">Your Company</p>
+            <p className="text-sm font-medium">Dork Labs</p>
             <p className="text-xs text-muted-foreground">
-              © {currentYear} Your Company. All rights reserved.
+              © {currentYear} Dork Labs. All rights reserved.
             </p>
           </div>
 

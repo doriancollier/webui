@@ -44,29 +44,38 @@ export function MarketingHeader({
         paddingBottom: isScrolled ? '12px' : '20px',
       }}
     >
-      <Link href="/" className="flex flex-col items-center gap-1.5">
-        <Image
-          src={logoSrc}
-          alt={logoAlt}
-          width={20}
-          height={20}
-          className="w-auto transition-all duration-500 ease-out"
-          style={{
-            height: isScrolled ? '14px' : '20px',
-          }}
-          priority
-        />
-        <span
-          className="font-mono text-2xs tracking-[0.15em] uppercase text-warm-gray-light transition-all duration-500 ease-out overflow-hidden"
-          style={{
-            opacity: isScrolled ? 0 : 1,
-            maxHeight: isScrolled ? '0px' : '20px',
-            marginTop: isScrolled ? '0px' : '6px',
-          }}
+      <div className="flex items-center justify-between w-full">
+        <div className="w-16" />
+        <Link href="/" className="flex flex-col items-center gap-1.5">
+          <Image
+            src={logoSrc}
+            alt={logoAlt}
+            width={20}
+            height={20}
+            className="w-auto transition-all duration-500 ease-out"
+            style={{
+              height: isScrolled ? '14px' : '20px',
+            }}
+            priority
+          />
+          <span
+            className="font-mono text-2xs tracking-[0.15em] uppercase text-warm-gray-light transition-all duration-500 ease-out overflow-hidden"
+            style={{
+              opacity: isScrolled ? 0 : 1,
+              maxHeight: isScrolled ? '0px' : '20px',
+              marginTop: isScrolled ? '0px' : '6px',
+            }}
+          >
+            DorkOS
+          </span>
+        </Link>
+        <Link
+          href="/docs"
+          className="font-mono text-2xs tracking-[0.15em] uppercase text-warm-gray-light hover:text-brand-orange transition-smooth w-16 text-right"
         >
-          DorkOS
-        </span>
-      </Link>
+          Docs
+        </Link>
+      </div>
     </header>
   )
 }

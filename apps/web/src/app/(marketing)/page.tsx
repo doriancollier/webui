@@ -16,6 +16,7 @@ const navLinks = [
   { label: 'features', href: '#features' },
   { label: 'about', href: '#about' },
   { label: 'contact', href: '#contact' },
+  { label: 'docs', href: '/docs' },
 ]
 
 const socialLinks = [
