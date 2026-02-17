@@ -1,0 +1,130 @@
+---
+title: Sessions
+description: How DorkOS manages Claude conversation sessions and their lifecycle
+---
+
+# Sessions
+
+A session in DorkOS represents a single conversation with Claude. Sessions are the central unit of interaction — every message you send, every tool Claude uses, and every response you receive belongs to a session.
+
+## Session Lifecycle
+
+### Creating a Session
+
+When you start a new conversation in DorkOS, a session is created with:
+
+- A **unique ID** (UUID) that identifies the session across all clients
+- A **working directory** that tells Claude where to operate on your filesystem
+- A **permission mode** that controls whether tool calls require your approval
+
+You can create sessions through the DorkOS UI, the REST API, or by simply starting a conversation with the Claude Code CLI.
+
+### Sending Messages
+
+Each message you send is delivered to the Claude Agent SDK, which streams back a response. During streaming, you receive real-time events including:
+
+- **Text deltas** — Incremental chunks of Claude's response
+- **Tool calls** — Actions Claude wants to take (reading files, running commands, etc.)
+- **Approval requests** — Prompts for you to approve or deny a tool call
+- **Task updates** — Progress on multi-step operations
+
+### Session Locking
+
+Only one client can send messages to a session at a time. When you send a message, DorkOS acquires a lock on that session. If another client tries to send a message to the same session, it receives a 409 conflict response.
+
+Locks are identified by a client ID (sent via the `X-Client-Id` header) and automatically expire after 5 minutes. They are also released when the SSE connection closes.
+
+<Callout type="info">
+Multiple clients can view the same session simultaneously. Only sending messages requires an exclusive lock.
+</Callout>
+
+## Storage
+
+DorkOS does not use a database for sessions. All session data is stored in **JSONL transcript files** managed by the Claude Agent SDK.
+
+### Transcript Files
+
+Each session has a corresponding file at:
+
+```
+~/.claude/projects/{project-slug}/{session-id}.jsonl
+```
+
+These files contain every interaction in the session as newline-delimited JSON. The `TranscriptReader` service parses these files to extract:
+
+- **Session metadata** — ID, title (from the first user message), timestamps, permission mode
+- **Message history** — The full conversation including user messages, assistant responses, and tool results
+- **Session list** — Built by scanning the project directory for all `.jsonl` files
+
+### Cross-Client Visibility
+
+Because sessions are stored as plain files on disk, any session is visible to any client that can read the same filesystem:
+
+- A session you start in the **DorkOS web UI** appears in the **Claude Code CLI**
+- A session started from the **CLI** shows up when you open DorkOS
+- The **Obsidian plugin** reads from the same location
+
+This shared storage model means you can start a task in one tool and pick it up in another.
+
+## Session Sync
+
+When multiple clients are open, DorkOS keeps them in sync using a file-watching mechanism.
+
+### How Sync Works
+
+1. A client opens a session and subscribes to updates via a persistent SSE connection (`GET /api/sessions/:id/stream`)
+2. The server watches the session's JSONL file for changes using a file watcher
+3. When the file changes (from any source — DorkOS, CLI, or another client), the server sends a `sync_update` event
+4. The client re-fetches the message history to display the latest state
+
+Sync events are debounced (100ms) to handle rapid writes efficiently. The server uses incremental byte-offset reading so it only processes new content added to the file.
+
+### Sync Events
+
+| Event | When | Data |
+|---|---|---|
+| `sync_connected` | On initial SSE connection | `{ sessionId }` |
+| `sync_update` | When the transcript file changes | `{ sessionId, timestamp }` |
+
+<Callout type="info">
+The message history endpoint supports ETag caching. Clients send `If-None-Match` headers and receive 304 responses when nothing has changed, keeping re-fetches efficient.
+</Callout>
+
+## Session Metadata
+
+DorkOS extracts metadata from transcript files without requiring a separate index:
+
+| Field | Source |
+|---|---|
+| **ID** | UUID from the JSONL filename |
+| **Title** | First user message in the transcript |
+| **Preview** | Beginning of the last assistant message |
+| **Created** | File creation timestamp |
+| **Updated** | File modification timestamp |
+| **Permission mode** | Extracted from the SDK init message |
+
+This metadata is computed on every request, so it always reflects the current state of the transcript file.
+
+## Working Directories
+
+Each session operates within a working directory that determines where Claude can read and write files. The working directory is:
+
+- Set when the session is created
+- Persisted in the URL as the `?dir=` query parameter (in standalone mode)
+- Validated against a configurable boundary to prevent access outside allowed paths
+
+The directory picker in the DorkOS sidebar lets you browse and select a working directory before starting a session.
+
+## Next Steps
+
+<Cards>
+  <Card title="Architecture" href="/docs/concepts/architecture">
+    Understand how sessions fit into the overall DorkOS architecture.
+  </Card>
+  <Card title="Transport" href="/docs/concepts/transport">
+    See how session operations are delivered through the Transport interface.
+  </Card>
+  <Card title="Tool Approval" href="/docs/guides/tool-approval">
+    Learn how to review and approve tool calls during a session.
+  </Card>
+</Cards>

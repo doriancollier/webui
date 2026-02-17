@@ -9,25 +9,59 @@ DorkOS discovers slash commands from your project's `.claude/commands/` director
 
 ## Using Commands
 
-1. Type `/` in the chat input to open the command palette
-2. Search or browse available commands
-3. Select a command to insert it into the chat
-4. Optionally add arguments after the command name
+<Steps>
+<Step>
+### Open the command palette
+
+Type `/` in the chat input to open the command palette.
+</Step>
+
+<Step>
+### Find your command
+
+Search or browse available commands. Commands are sorted alphabetically and grouped by namespace.
+</Step>
+
+<Step>
+### Insert and run
+
+Select a command to insert it into the chat. Optionally add arguments after the command name, then send the message.
+</Step>
+</Steps>
 
 ## Command Discovery
 
-DorkOS scans `.claude/commands/` recursively. Directory nesting creates namespaced commands:
+DorkOS scans `.claude/commands/` recursively. Directory nesting creates namespaced commands using a `namespace:command` pattern:
 
-```
-.claude/commands/
-├── docs/
-│   ├── reconcile.md     → /docs:reconcile
-│   └── status.md        → /docs:status
-├── spec/
-│   ├── create.md        → /spec:create
-│   └── execute.md       → /spec:execute
-└── commit.md            → /commit
-```
+<Files>
+  <Folder name=".claude" defaultOpen>
+    <Folder name="commands" defaultOpen>
+      <Folder name="docs" defaultOpen>
+        <File name="reconcile.md" />
+        <File name="status.md" />
+      </Folder>
+      <Folder name="spec" defaultOpen>
+        <File name="create.md" />
+        <File name="execute.md" />
+      </Folder>
+      <File name="commit.md" />
+    </Folder>
+  </Folder>
+</Files>
+
+This structure produces the following commands:
+
+| File | Command |
+|---|---|
+| `docs/reconcile.md` | `/docs:reconcile` |
+| `docs/status.md` | `/docs:status` |
+| `spec/create.md` | `/spec:create` |
+| `spec/execute.md` | `/spec:execute` |
+| `commit.md` | `/commit` |
+
+<Callout type="info">
+Only `.md` files inside namespace subdirectories are discovered. Top-level files like `commit.md` are not currently picked up by the registry -- commands must be inside a subdirectory.
+</Callout>
 
 ## Command Format
 
@@ -48,19 +82,56 @@ category: documentation
 
 ### Frontmatter Fields
 
-| Field | Description | Required |
-|---|---|---|
-| `description` | Short description shown in the palette | No |
-| `argument-hint` | Placeholder text for command arguments | No |
-| `allowed-tools` | Comma-separated list of allowed tools | No |
-| `category` | Grouping category in the palette | No |
+<TypeTable type={{
+  "description": { type: "string", description: "Short description shown in the command palette", default: "''" },
+  "argument-hint": { type: "string", description: "Placeholder text for command arguments (e.g. '[guide-name | --all]')" },
+  "allowed-tools": { type: "string", description: "Comma-separated list of allowed tools (e.g. 'Read, Grep, Glob, Bash')" },
+  "category": { type: "string", description: "Grouping category in the palette" }
+}} />
+
+<Callout type="warn">
+If your frontmatter values contain special YAML characters (brackets, colons, pipes), wrap them in quotes. DorkOS includes a fallback parser for malformed YAML, but quoting is more reliable.
+</Callout>
 
 ## Creating Custom Commands
 
-1. Create a Markdown file in `.claude/commands/`
-2. Add frontmatter with at least a `description`
-3. Write instructions that Claude Code will follow
-4. Refresh the command list (or restart DorkOS)
+<Steps>
+<Step>
+### Create the directory structure
+
+Create a namespace directory inside `.claude/commands/`:
+
+```bash
+mkdir -p .claude/commands/mytools
+```
+</Step>
+
+<Step>
+### Write the command file
+
+Create a Markdown file with frontmatter and instructions:
+
+```bash
+cat > .claude/commands/mytools/greet.md << 'EOF'
+---
+description: Generate a friendly greeting
+argument-hint: '[name]'
+allowed-tools: Read, Bash
+---
+
+# Greeting Generator
+
+Say hello to the user by name. Be friendly and enthusiastic.
+EOF
+```
+</Step>
+
+<Step>
+### Refresh the command list
+
+Click the refresh button in the command palette, or call the API with the `refresh` query parameter.
+</Step>
+</Steps>
 
 ## Refreshing Commands
 
@@ -68,6 +139,10 @@ The command registry caches results for performance. To refresh:
 
 - Click the refresh button in the command palette
 - Or call the API with `?refresh=true`
+
+<Callout type="info">
+The cache is also invalidated when the server restarts. During development, use the refresh button for the fastest feedback loop.
+</Callout>
 
 ## API
 
@@ -78,3 +153,19 @@ curl http://localhost:4242/api/commands
 # Force refresh the command cache
 curl http://localhost:4242/api/commands?refresh=true
 ```
+
+The response includes a `lastScanned` timestamp and an array of `commands`, each with `namespace`, `command`, `fullCommand`, `description`, `argumentHint`, `allowedTools`, and `filePath`.
+
+## Next Steps
+
+<Cards>
+  <Card title="Tool Approval" href="/docs/guides/tool-approval">
+    Learn how to control which tools your commands can use
+  </Card>
+  <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
+    Speed up your workflow with keyboard shortcuts
+  </Card>
+  <Card title="CLI Usage" href="/docs/guides/cli-usage">
+    Configure the DorkOS CLI for your project
+  </Card>
+</Cards>

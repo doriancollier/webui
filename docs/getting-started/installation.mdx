@@ -1,25 +1,51 @@
 ---
 title: Installation
-description: Install DorkOS via npm and start your first session
+description: Install DorkOS as an npm CLI, Obsidian plugin, or self-hosted server
 ---
 
 # Installation
 
+DorkOS runs in three modes: as a standalone **npm CLI**, as an **Obsidian plugin**, or as a **self-hosted** development server. Pick the one that fits your workflow.
+
 ## Prerequisites
 
-- [Node.js](https://nodejs.org/) 20 or later
-- npm 10 or later
-- A Claude API key ([get one here](https://console.anthropic.com/))
+<Callout type="info">
+  All installation methods require [Node.js](https://nodejs.org/) 20 or later and a Claude API key from the [Anthropic Console](https://console.anthropic.com/).
+</Callout>
 
-## Install
+## Choose Your Install Method
 
-Install DorkOS globally via npm:
+<Tabs items={['npm CLI', 'Obsidian Plugin', 'Self-Hosted']}>
 
-```bash
+<Tab value="npm CLI">
+
+The fastest way to get started. Install the `dorkos` package globally and run it from any directory.
+
+<Steps>
+<Step>
+
+### Install the package
+
+```bash tab="npm"
 npm install -g dorkos
 ```
 
-## Set Your API Key
+```bash tab="pnpm"
+pnpm add -g dorkos
+```
+
+```bash tab="yarn"
+yarn global add dorkos
+```
+
+```bash tab="bun"
+bun add -g dorkos
+```
+
+</Step>
+<Step>
+
+### Set your API key
 
 DorkOS needs your Anthropic API key to communicate with Claude:
 
@@ -29,14 +55,144 @@ export ANTHROPIC_API_KEY=your-key-here
 
 To persist this, add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
 
-## Start DorkOS
+</Step>
+<Step>
+
+### Verify the installation
+
+```bash
+dorkos --version
+```
+
+</Step>
+<Step>
+
+### Start DorkOS
 
 ```bash
 dorkos
 ```
 
-The server starts on port 4242 and opens your browser automatically.
+The server starts on port 4242 and opens your browser automatically. Visit [http://localhost:4242](http://localhost:4242) to see the interface.
 
-## Verify
+</Step>
+</Steps>
 
-Visit [http://localhost:4242](http://localhost:4242) to see the DorkOS interface.
+<Callout type="info">
+  You can pass flags to customize startup: `dorkos --port 8080 --dir ~/projects/my-app`. Run `dorkos --help` for all options.
+</Callout>
+
+</Tab>
+
+<Tab value="Obsidian Plugin">
+
+Run DorkOS directly inside [Obsidian](https://obsidian.md/) as a sidebar panel, with full access to your vault files.
+
+<Steps>
+<Step>
+
+### Open Obsidian settings
+
+Go to **Settings** then **Community Plugins** and make sure community plugins are enabled.
+
+</Step>
+<Step>
+
+### Search for DorkOS
+
+Click **Browse** and search for **DorkOS** in the community plugin directory.
+
+</Step>
+<Step>
+
+### Install and enable
+
+Click **Install**, then toggle the plugin on. DorkOS appears as a sidebar view.
+
+</Step>
+<Step>
+
+### Configure your API key
+
+Open the DorkOS plugin settings and enter your Anthropic API key.
+
+</Step>
+</Steps>
+
+<Callout type="warn">
+  The Obsidian plugin requires Node.js 20+ installed on your system. It uses the same Claude Agent SDK as the CLI but runs in-process via the DirectTransport adapter.
+</Callout>
+
+</Tab>
+
+<Tab value="Self-Hosted">
+
+Clone the repository and run the full development stack. Useful for contributing or customizing DorkOS.
+
+<Steps>
+<Step>
+
+### Clone the repository
+
+```bash
+git clone https://github.com/dork-labs/dorkos.git
+cd dorkos
+```
+
+</Step>
+<Step>
+
+### Install dependencies
+
+```bash tab="npm"
+npm install
+```
+
+```bash tab="pnpm"
+pnpm install
+```
+
+```bash tab="yarn"
+yarn install
+```
+
+```bash tab="bun"
+bun install
+```
+
+</Step>
+<Step>
+
+### Configure environment
+
+Create a `.env` file in the repository root:
+
+```bash
+ANTHROPIC_API_KEY=your-key-here
+```
+
+</Step>
+<Step>
+
+### Start the development server
+
+```bash
+npm run dev
+```
+
+This starts both the Express API server and Vite dev server. The interface is available at [http://localhost:3000](http://localhost:3000) with hot module replacement.
+
+</Step>
+</Steps>
+
+<Callout type="info">
+  For production builds, run `npm run build` then `npm start` to serve the compiled app on port 4242.
+</Callout>
+
+</Tab>
+
+</Tabs>
+
+## Next Steps
+
+You are ready to start using DorkOS. Head to the [Quickstart](/docs/getting-started/quickstart) guide to walk through your first conversation, or check out [Configuration](/docs/getting-started/configuration) to customize your setup.

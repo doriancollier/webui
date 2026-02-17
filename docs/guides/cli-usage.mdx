@@ -3,11 +3,12 @@ title: CLI Usage
 description: Command-line options and workflows for the dorkos CLI
 ---
 
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { Callout } from 'fumadocs-ui/components/callout'
+
 # CLI Usage
 
-The `dorkos` CLI is a standalone npm package that bundles the server and client into a single command. Install it globally and run it from any project directory.
-
-## Installation
+The `dorkos` CLI bundles the server and client into a single command. Install globally and run from any project directory.
 
 ```bash
 npm install -g dorkos
@@ -24,12 +25,12 @@ The server starts on port 4242 and opens your browser automatically.
 
 ## Command-Line Flags
 
-| Flag | Short | Description | Default |
-|---|---|---|---|
-| `--port <number>` | `-p` | Port for the server | `4242` |
-| `--dir <path>` | `-d` | Default working directory | Current directory |
-| `--boundary <path>` | `-b` | Directory boundary (restricts file access) | Home directory |
-| `--tunnel` | `-t` | Enable ngrok tunnel for remote access | `false` |
+<TypeTable type={{
+  "--port, -p": { type: "number", description: "Port for the server", default: "4242" },
+  "--dir, -d": { type: "string", description: "Default working directory", default: "Current directory" },
+  "--boundary, -b": { type: "string", description: "Directory boundary — restricts file access to this path and its children", default: "Home directory" },
+  "--tunnel, -t": { type: "boolean", description: "Enable ngrok tunnel for remote access", default: "false" },
+}} />
 
 ### Examples
 
@@ -39,6 +40,9 @@ dorkos --port 8080
 
 # Start with a specific project directory
 dorkos --dir /path/to/my/project
+
+# Restrict file access to a project directory
+dorkos --boundary /home/user/projects
 
 # Enable tunnel for remote access
 dorkos --tunnel
@@ -57,7 +61,7 @@ dorkos config --reset  # Reset to defaults
 
 ### `dorkos init`
 
-Interactive setup wizard for first-time configuration.
+Interactive setup wizard for first-time configuration. Walks you through setting your API key, default port, and working directory.
 
 ```bash
 dorkos init
@@ -67,21 +71,22 @@ dorkos init
 
 On first run, DorkOS creates `~/.dork/` for persistent storage:
 
-```
-~/.dork/
-└── config.json    # User configuration
-```
+<Files>
+  <Folder name="~/.dork" defaultOpen>
+    <File name="config.json" />
+  </Folder>
+</Files>
 
 ## Environment Variables
 
-| Variable | Description | Default |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Claude API key (required) | - |
-| `DORKOS_PORT` | Server port | `4242` |
-| `DORKOS_DEFAULT_CWD` | Default working directory | Current directory |
-| `DORKOS_BOUNDARY` | Directory boundary | Home directory |
-| `TUNNEL_ENABLED` | Enable ngrok tunnel | `false` |
-| `NGROK_AUTHTOKEN` | ngrok auth token (for tunnels) | - |
+<TypeTable type={{
+  "ANTHROPIC_API_KEY": { type: "string", description: "Claude API key (required)" },
+  "DORKOS_PORT": { type: "number", description: "Server port", default: "4242" },
+  "DORKOS_DEFAULT_CWD": { type: "string", description: "Default working directory", default: "Current directory" },
+  "DORKOS_BOUNDARY": { type: "string", description: "Directory boundary for file access", default: "Home directory" },
+  "TUNNEL_ENABLED": { type: "boolean", description: "Enable ngrok tunnel", default: "false" },
+  "NGROK_AUTHTOKEN": { type: "string", description: "ngrok auth token (required for tunnels)" },
+}} />
 
 ## Config Precedence
 
@@ -91,3 +96,21 @@ Configuration is resolved in this order (highest priority first):
 2. Environment variables (`DORKOS_PORT`, etc.)
 3. Config file (`~/.dork/config.json`)
 4. Built-in defaults
+
+<Callout type="info">
+  Use `dorkos config` to view the resolved configuration and see which values come from which source.
+</Callout>
+
+## Next Steps
+
+<Cards>
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Full configuration reference with all settings.
+  </Card>
+  <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
+    Configure ngrok for remote access.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Walk through your first conversation.
+  </Card>
+</Cards>

@@ -3,29 +3,110 @@ title: DorkOS Documentation
 description: Web-based interface and REST/SSE API for Claude Code
 ---
 
-# DorkOS Documentation
+import { Cards, Card } from 'fumadocs-ui/components/card'
 
-DorkOS is a web-based interface and REST/SSE API for Claude Code, built with the Claude Agent SDK. It provides a chat UI for interacting with Claude Code sessions, with tool approval flows and slash command discovery.
+# DorkOS
 
-## Getting Started
+A web-based chat interface and REST/SSE API for [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview), built on the Claude Agent SDK.
 
-New to DorkOS? Start here:
+DorkOS gives you a browser UI for Claude Code sessions — with real-time streaming, tool approval flows, slash command discovery, and multi-client sync. Use it standalone via npm, embed it in Obsidian, or build your own client against the API.
 
-- [Installation](/docs/getting-started/installation) — Install via npm and start your first session
-- [Quickstart](/docs/getting-started/quickstart) — Walk through your first conversation
-- [Configuration](/docs/getting-started/configuration) — Environment variables and options
+## Get Started
+
+<Cards>
+  <Card title="Installation" href="/docs/getting-started/installation">
+    Install via npm, Obsidian, or clone for self-hosting.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Go from zero to your first Claude Code conversation in 5 minutes.
+  </Card>
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Environment variables, config file, and CLI flags.
+  </Card>
+</Cards>
 
 ## Guides
 
-- [CLI Usage](/docs/guides/cli-usage) — Command-line options and workflows
-- [Obsidian Plugin](/docs/guides/obsidian-plugin) — Use DorkOS inside Obsidian
-- [Tool Approval](/docs/guides/tool-approval) — Understanding tool approval flows
-- [Slash Commands](/docs/guides/slash-commands) — Discover and use slash commands
-- [Keyboard Shortcuts](/docs/guides/keyboard-shortcuts) — Navigate the UI efficiently
+Task-oriented walkthroughs for common workflows.
 
-## For Developers
+<Cards>
+  <Card title="CLI Usage" href="/docs/guides/cli-usage">
+    Command-line flags, subcommands, and config management.
+  </Card>
+  <Card title="Obsidian Plugin" href="/docs/guides/obsidian-plugin">
+    Use DorkOS as an Obsidian sidebar panel.
+  </Card>
+  <Card title="Tool Approval" href="/docs/guides/tool-approval">
+    Understand and configure tool approval flows.
+  </Card>
+  <Card title="Slash Commands" href="/docs/guides/slash-commands">
+    Discover and create custom slash commands.
+  </Card>
+  <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
+    Access DorkOS remotely via ngrok tunnels.
+  </Card>
+  <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
+    Navigate the UI efficiently with hotkeys.
+  </Card>
+</Cards>
 
-- [API Reference](/docs/api) — REST and SSE API documentation
-- [Building Integrations](/docs/integrations/building-integrations) — Create custom clients using the Transport interface
-- [SSE Protocol](/docs/integrations/sse-protocol) — Server-Sent Events streaming protocol
-- [Architecture](/docs/contributing/architecture) — System architecture overview
+## Concepts
+
+Understand how DorkOS works under the hood.
+
+<Cards>
+  <Card title="Architecture" href="/docs/concepts/architecture">
+    How DorkOS connects to Claude Code via the Agent SDK.
+  </Card>
+  <Card title="Sessions" href="/docs/concepts/sessions">
+    The JSONL-based session model and multi-client visibility.
+  </Card>
+  <Card title="Transport" href="/docs/concepts/transport">
+    The Transport abstraction that decouples UI from backend.
+  </Card>
+</Cards>
+
+## Integrations
+
+Build custom clients or connect DorkOS to your workflow.
+
+<Cards>
+  <Card title="Building Integrations" href="/docs/integrations/building-integrations">
+    Use the Transport interface or REST API to build custom clients.
+  </Card>
+  <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
+    Wire format, event types, and connection lifecycle.
+  </Card>
+  <Card title="API Reference" href="/docs/api">
+    Interactive OpenAPI documentation for all endpoints.
+  </Card>
+</Cards>
+
+## Self-Hosting
+
+Run DorkOS on your own infrastructure.
+
+<Cards>
+  <Card title="Deployment" href="/docs/self-hosting/deployment">
+    Build, configure, and run DorkOS in production.
+  </Card>
+  <Card title="Reverse Proxy" href="/docs/self-hosting/reverse-proxy">
+    nginx and Caddy configs with SSE support.
+  </Card>
+</Cards>
+
+## Contributing
+
+Help improve DorkOS.
+
+<Cards>
+  <Card title="Development Setup" href="/docs/contributing/development-setup">
+    Clone, install, and run the dev servers.
+  </Card>
+  <Card title="Architecture" href="/docs/contributing/architecture">
+    Hexagonal architecture, FSD layers, and service overview.
+  </Card>
+  <Card title="Testing" href="/docs/contributing/testing">
+    Vitest patterns, mock Transport, and test conventions.
+  </Card>
+</Cards>

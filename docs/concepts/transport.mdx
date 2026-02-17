@@ -1,0 +1,111 @@
+---
+title: Transport
+description: How the Transport interface enables DorkOS to run in multiple environments
+---
+
+# Transport
+
+The Transport interface is the core abstraction that makes DorkOS work across different environments. It defines a contract between the React client and whatever backend serves Claude responses — whether that is an Express server over HTTP or direct in-process calls inside Obsidian.
+
+## Why Transport Exists
+
+DorkOS needs to run in two very different environments:
+
+- **Standalone web** — A browser talking to an Express server over the network
+- **Obsidian plugin** — A React app embedded in Electron, calling services directly in the same process
+
+Without an abstraction layer, the client code would be full of conditional logic: "if we're in a browser, use fetch; if we're in Obsidian, call the service directly." The Transport interface eliminates this entirely. The client calls `transport.sendMessage()` and never knows (or cares) how that message reaches Claude.
+
+## The Interface
+
+Transport defines methods for every operation the client needs:
+
+| Method | Purpose |
+|---|---|
+| `createSession` | Start a new Claude conversation |
+| `listSessions` | Get all sessions, optionally filtered by directory |
+| `getSession` | Fetch metadata for a single session |
+| `updateSession` | Change session settings (permission mode, model) |
+| `getMessages` | Load message history for a session |
+| `sendMessage` | Send a message and stream the response |
+| `approveTool` | Approve a pending tool call |
+| `denyTool` | Deny a pending tool call |
+| `submitAnswers` | Respond to an interactive question prompt |
+| `getTasks` | Get the current task list for a session |
+| `browseDirectory` | Browse the filesystem for directory selection |
+| `getDefaultCwd` | Get the server's default working directory |
+| `getCommands` | List available slash commands |
+| `listFiles` | List files in a directory |
+| `getGitStatus` | Get git branch and change information |
+| `health` | Server health check |
+| `getConfig` | Retrieve server configuration |
+
+<Callout type="info">
+The Transport interface is defined in the shared package (`@dorkos/shared`) so both the client and server can reference the same types.
+</Callout>
+
+## Streaming with Callbacks
+
+The `sendMessage` method deserves special attention because it handles real-time streaming. Rather than returning a stream object, it accepts an `onEvent` callback:
+
+```
+transport.sendMessage(sessionId, content, onEvent, signal, cwd)
+```
+
+Each time a new event arrives (a text chunk, a tool call, an approval request), the transport calls `onEvent` with a `StreamEvent` object. This callback pattern works naturally with both adapters:
+
+- **HttpTransport** parses SSE lines from a `ReadableStream` and calls `onEvent` for each parsed event
+- **DirectTransport** iterates an `AsyncGenerator` from the Agent SDK and calls `onEvent` for each yielded event
+
+The optional `AbortSignal` parameter lets you cancel an in-progress request, which is useful when the user clicks "Stop" during streaming.
+
+## HttpTransport
+
+The default adapter for standalone web deployments. It communicates with the DorkOS Express server using standard web APIs.
+
+**How it works:**
+
+- CRUD operations (`listSessions`, `getMessages`, etc.) use `fetch()` with JSON request/response bodies
+- `sendMessage` uses `fetch()` with a streaming response — the server sends Server-Sent Events, and the transport parses them into `StreamEvent` objects
+- Constructor takes a `baseUrl` (defaults to `/api`)
+
+**When to use:** Any deployment where the DorkOS server runs as a separate process — local development, self-hosted servers, or tunneled remote access.
+
+## DirectTransport
+
+The adapter for the Obsidian plugin. It calls service instances directly without any network communication.
+
+**How it works:**
+
+- Service methods are called directly as function calls in the same process
+- `sendMessage` iterates the `AsyncGenerator<StreamEvent>` returned by `AgentManager` and forwards each event to the callback
+- Session IDs are generated locally with `crypto.randomUUID()`
+- No HTTP overhead, no serialization, no port binding
+
+**When to use:** Inside the Obsidian plugin, where the React client and backend services share the same Electron process.
+
+## Dependency Injection
+
+Transport is injected into the React component tree via React Context. At the app root, a `TransportProvider` wraps the component tree with the appropriate adapter:
+
+**Standalone web:**
+The entry point creates an `HttpTransport` pointing at the server's API base URL and wraps the app with `TransportProvider`.
+
+**Obsidian plugin:**
+The plugin view creates service instances (`AgentManager`, `TranscriptReader`, `CommandRegistryService`), passes them to a `DirectTransport`, and wraps the app with `TransportProvider`.
+
+Any component or hook that needs to communicate with the backend calls `useTransport()` to get the current transport instance. This keeps all client code transport-agnostic.
+
+## Next Steps
+
+<Cards>
+  <Card title="Architecture" href="/docs/concepts/architecture">
+    See how Transport fits into the overall hexagonal architecture.
+  </Card>
+  <Card title="Sessions" href="/docs/concepts/sessions">
+    Understand the session lifecycle that Transport methods operate on.
+  </Card>
+  <Card title="Building Integrations" href="/docs/integrations/building-integrations">
+    Use the REST API (backed by HttpTransport) to build your own clients.
+  </Card>
+</Cards>

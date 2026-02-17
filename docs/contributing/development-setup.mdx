@@ -9,19 +9,29 @@ Get DorkOS running locally for development.
 
 ## Prerequisites
 
+<Callout type="info">
+DorkOS requires Node.js 20 or later. Check your version with `node --version`.
+</Callout>
+
 - **Node.js 20+**
 - **npm 10+**
 - **A Claude API key** from [console.anthropic.com](https://console.anthropic.com/)
 
 ## Installation
 
+<Steps>
+<Step>
+### Clone and install
+
 ```bash
 git clone https://github.com/dork-labs/dorkos.git
 cd dorkos
 npm install
 ```
+</Step>
 
-## Environment Setup
+<Step>
+### Configure environment
 
 Copy the example environment file and add your API key:
 
@@ -30,39 +40,51 @@ cp .env.example .env
 ```
 
 Edit `.env` and set `ANTHROPIC_API_KEY=your-key-here`.
+</Step>
 
-## Running Development Servers
+<Step>
+### Start development servers
 
 ```bash
 npm run dev
 ```
 
-This starts both the Express server (port 4242) and the Vite dev server (port 3000). Open http://localhost:3000 in your browser.
+This starts both the Express server (port 4242) and the Vite dev server (port 3000). Open [http://localhost:3000](http://localhost:3000) in your browser.
+</Step>
+</Steps>
 
 ### Running Individual Apps
 
+<Tabs items={["Server only", "Client only"]}>
+<Tab value="Server only">
 ```bash
-# Server only
 dotenv -- turbo dev --filter=@dorkos/server
-
-# Client only
+```
+</Tab>
+<Tab value="Client only">
+```bash
 dotenv -- turbo dev --filter=@dorkos/client
 ```
+</Tab>
+</Tabs>
 
-**Important**: Use `npm run` scripts or prefix with `dotenv --` to ensure `.env` is loaded.
+<Callout type="warn">
+Always use `npm run` scripts or prefix commands with `dotenv --` to ensure `.env` is loaded. Running bare `turbo` will not pick up environment variables.
+</Callout>
 
 ## Common Commands
 
-| Command | Description |
-|---|---|
-| `npm run dev` | Start all dev servers |
-| `npm test` | Run all tests (Vitest) |
-| `npm test -- --run` | Single test run (no watch) |
-| `npm run build` | Build all packages |
-| `npm run typecheck` | Type-check all packages |
-| `npm run lint` | ESLint across all packages |
-| `npm run lint -- --fix` | Auto-fix ESLint issues |
-| `npm run format` | Prettier format all files |
+<TypeTable type={{
+  "npm run dev": { type: "command", description: "Start all dev servers" },
+  "npm test": { type: "command", description: "Run all tests (Vitest, watch mode)" },
+  "npm test -- --run": { type: "command", description: "Single test run (no watch)" },
+  "npm run build": { type: "command", description: "Build all packages" },
+  "npm run typecheck": { type: "command", description: "Type-check all packages" },
+  "npm run lint": { type: "command", description: "ESLint across all packages" },
+  "npm run lint -- --fix": { type: "command", description: "Auto-fix ESLint issues" },
+  "npm run format": { type: "command", description: "Prettier format all files" },
+  "npm run format:check": { type: "command", description: "Check formatting without writing" }
+}} />
 
 ## Running Specific Tests
 
@@ -74,6 +96,40 @@ npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 
 DorkOS is a Turborepo monorepo with four apps and four shared packages:
 
+<Files>
+  <Folder name="apps" defaultOpen>
+    <Folder name="client">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="server">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="web">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="obsidian-plugin">
+      <File name="package.json" />
+    </Folder>
+  </Folder>
+  <Folder name="packages" defaultOpen>
+    <Folder name="cli">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="shared">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="typescript-config">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="test-utils">
+      <File name="package.json" />
+    </Folder>
+  </Folder>
+  <File name="turbo.json" />
+  <File name="vitest.workspace.ts" />
+  <File name="package.json" />
+</Files>
+
 | Directory | Package | Description |
 |---|---|---|
 | `apps/client` | `@dorkos/client` | React 19 SPA (Vite 6, Tailwind 4, shadcn/ui) |
@@ -84,3 +140,17 @@ DorkOS is a Turborepo monorepo with four apps and four shared packages:
 | `packages/shared` | `@dorkos/shared` | Zod schemas, shared types |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |
 | `packages/test-utils` | `@dorkos/test-utils` | Mock factories, test helpers |
+
+## Next Steps
+
+<Cards>
+  <Card title="Architecture" href="/docs/contributing/architecture">
+    Understand the hexagonal architecture, Transport interface, and data flow
+  </Card>
+  <Card title="Testing" href="/docs/contributing/testing">
+    Learn testing patterns, conventions, and how to write component and service tests
+  </Card>
+  <Card title="API Reference" href="/docs/api">
+    Explore the REST and SSE endpoints
+  </Card>
+</Cards>

@@ -1,30 +1,124 @@
 ---
 title: Quickstart
-description: Walk through your first DorkOS conversation
+description: Go from install to your first Claude Code conversation in under two minutes.
 ---
 
 # Quickstart
 
-This guide walks you through your first conversation with Claude Code via DorkOS.
+This guide takes you from installation to your first Claude Code conversation through the DorkOS web interface.
 
-## Start a Session
+## Prerequisites
 
-1. Launch DorkOS with `dorkos`
-2. The web interface opens in your browser
-3. Type a message in the chat input and press Enter
+Before you begin, make sure you have:
 
-## Working Directory
+- **Node.js 18+** installed
+- **Claude Code CLI** installed and authenticated (`claude` must be available in your PATH)
+- **DorkOS** installed globally via `npm install -g dorkos`
 
-DorkOS operates in a working directory, just like Claude Code CLI. By default, it uses the directory where you launched `dorkos`. You can change the working directory using the directory picker in the sidebar.
+<Callout type="info">
+  Need help with installation? See the [Installation guide](/docs/getting-started/installation) for detailed setup instructions.
+</Callout>
 
-## Tool Approval
+## Launch DorkOS
 
-When Claude wants to use a tool (read files, run commands, etc.), you will see an approval prompt. Review the tool call and approve or deny it.
+<Steps>
 
-## Slash Commands
+<Step>
+### Start the server
 
-Type `/` in the chat input to see available slash commands. These are loaded from `.claude/commands/` in your working directory.
+Open a terminal, navigate to your project directory, and run:
 
-## Sessions
+```bash
+dorkos
+```
 
-Your conversations are saved as sessions. Use the sidebar to switch between sessions or start new ones. Sessions are stored as SDK transcript files and are visible across all Claude Code clients (CLI, DorkOS, etc.).
+DorkOS starts on port **4242** by default and opens the web interface in your browser.
+
+```
+  DorkOS v1.x.x
+  Local:   http://localhost:4242 // [!code highlight]
+  Network: http://192.168.1.100:4242
+```
+
+To use a different port or project directory:
+
+```bash
+dorkos --port 8080 --dir ~/projects/myapp
+```
+
+</Step>
+
+<Step>
+### Send your first message
+
+Type a message in the chat input at the bottom of the screen and press **Enter**. Claude will begin streaming its response in real time.
+
+Try something like:
+
+```
+Explain the structure of this project
+```
+
+</Step>
+
+<Step>
+### Approve tool calls
+
+When Claude needs to read files, run commands, or make edits, it will request permission through a tool approval card. Review what Claude wants to do, then click **Approve** or **Deny**.
+
+<Callout type="warn">
+  Tool approval is a safety mechanism. Always review tool calls before approving, especially for write operations and shell commands.
+</Callout>
+
+</Step>
+
+</Steps>
+
+## Explore the Interface
+
+<Tabs items={["Sessions", "Slash Commands", "Working Directory"]}>
+
+<Tab value="Sessions">
+The **sidebar** lists all your conversation sessions. Sessions are stored as SDK transcript files, so conversations started from any Claude Code client (CLI, DorkOS, Obsidian) all appear here.
+
+- Click a session to switch to it
+- Click **New Session** to start a fresh conversation
+- Session history persists across restarts
+</Tab>
+
+<Tab value="Slash Commands">
+Type `/` in the chat input to open the **command palette**. Slash commands are loaded from `.claude/commands/` in your working directory and can inject predefined prompts or workflows.
+</Tab>
+
+<Tab value="Working Directory">
+DorkOS operates in a working directory, just like the Claude Code CLI. By default it uses the directory where you launched `dorkos`. Use the **directory picker** in the sidebar to switch directories without restarting.
+</Tab>
+
+</Tabs>
+
+## CLI Quick Reference
+
+| Flag | Short | Description | Default |
+|------|-------|-------------|---------|
+| `--port <port>` | `-p` | Server port | `4242` |
+| `--dir <path>` | `-d` | Working directory | Current directory |
+| `--boundary <path>` | `-b` | Directory access boundary | Home directory |
+| `--tunnel` | `-t` | Enable ngrok tunnel | Off |
+| `--log-level <level>` | `-l` | Log verbosity (`fatal` through `trace`) | `info` |
+
+## Next Steps
+
+<Cards>
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Customize ports, directories, and persistent settings via config file or CLI flags.
+  </Card>
+  <Card title="Tool Approval" href="/docs/guides/tool-approval">
+    Learn how the tool approval flow works and how to configure permission modes.
+  </Card>
+  <Card title="Slash Commands" href="/docs/guides/slash-commands">
+    Create custom slash commands to streamline your workflows.
+  </Card>
+  <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
+    Speed up your workflow with keyboard shortcuts.
+  </Card>
+</Cards>

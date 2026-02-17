@@ -9,29 +9,80 @@ DorkOS uses Vitest for all testing, with React Testing Library for component tes
 
 ## Running Tests
 
+<Tabs items={["All tests", "Single run", "Specific file"]}>
+<Tab value="All tests">
 ```bash
-npm test                                    # Run all tests (watch mode)
-npm test -- --run                           # Single run (no watch)
-npx vitest run path/to/test.ts              # Run a specific test file
+npm test
 ```
+Runs all tests in watch mode.
+</Tab>
+<Tab value="Single run">
+```bash
+npm test -- --run
+```
+Runs all tests once without watch mode. Useful for CI.
+</Tab>
+<Tab value="Specific file">
+```bash
+npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
+```
+Runs a single test file directly.
+</Tab>
+</Tabs>
 
 ## Test File Structure
 
 Tests live alongside source code in `__tests__/` directories:
 
-```
-apps/server/src/services/__tests__/transcript-reader.test.ts
-apps/client/src/layers/features/chat/__tests__/ChatPanel.test.tsx
-```
+<Files>
+  <Folder name="apps" defaultOpen>
+    <Folder name="server/src" defaultOpen>
+      <Folder name="services" defaultOpen>
+        <Folder name="__tests__" defaultOpen>
+          <File name="transcript-reader.test.ts" />
+          <File name="agent-manager.test.ts" />
+          <File name="session-broadcaster.test.ts" />
+        </Folder>
+      </Folder>
+    </Folder>
+    <Folder name="client/src/layers" defaultOpen>
+      <Folder name="features/chat" defaultOpen>
+        <Folder name="__tests__" defaultOpen>
+          <File name="ChatPanel.test.tsx" />
+        </Folder>
+      </Folder>
+    </Folder>
+  </Folder>
+  <Folder name="packages" defaultOpen>
+    <Folder name="test-utils" defaultOpen>
+      <File name="index.ts" />
+    </Folder>
+  </Folder>
+</Files>
 
 ## Component Tests
 
-Component tests require the jsdom environment directive and a mock Transport:
+Component tests require the jsdom environment directive and a mock Transport.
+
+<Steps>
+<Step>
+### Add the environment directive
+
+Every component test file must start with the jsdom directive:
 
 ```typescript
 /**
  * @vitest-environment jsdom
  */
+```
+</Step>
+
+<Step>
+### Set up the mock Transport
+
+Use `createMockTransport()` from `@dorkos/test-utils` and wrap components in `TransportProvider`:
+
+```typescript
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -47,7 +98,13 @@ function Wrapper({ children }: { children: React.ReactNode }) {
     </TransportProvider>
   );
 }
+```
+</Step>
 
+<Step>
+### Write your tests
+
+```typescript
 describe('MyComponent', () => {
   it('renders expected content', () => {
     render(<MyComponent />, { wrapper: Wrapper });
@@ -55,6 +112,8 @@ describe('MyComponent', () => {
   });
 });
 ```
+</Step>
+</Steps>
 
 ## Service Tests
 
@@ -74,17 +133,95 @@ describe('TranscriptReader', () => {
 });
 ```
 
+## Hook Tests
+
+```typescript
+import { renderHook, waitFor } from '@testing-library/react';
+
+describe('useCustomHook', () => {
+  it('returns expected state', async () => {
+    const { result } = renderHook(() => useCustomHook(), {
+      wrapper: Wrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.data).toBeDefined();
+    });
+  });
+});
+```
+
 ## Key Conventions
 
-- **Component tests** need `@vitest-environment jsdom` directive
-- **Always provide** a mock Transport via `createMockTransport()` from `@dorkos/test-utils`
-- **Wrap components** in context providers (TransportProvider, QueryClientProvider)
-- **Use** `@testing-library/jest-dom` matchers for DOM assertions
-- **Mock browser APIs** (matchMedia, etc.) in `beforeAll` when needed
+<TypeTable type={{
+  "@vitest-environment jsdom": { type: "directive", description: "Required at the top of every component test file" },
+  "createMockTransport()": { type: "function", description: "Creates a fully mocked Transport object from @dorkos/test-utils" },
+  "TransportProvider wrapper": { type: "pattern", description: "Wrap components in TransportProvider with mock Transport" },
+  "@testing-library/jest-dom": { type: "import", description: "Provides DOM assertion matchers like toBeInTheDocument()" },
+  "matchMedia mock": { type: "pattern", description: "Mock window.matchMedia in beforeAll for responsive components" }
+}} />
+
+## Mock Browser APIs
+
+<Callout type="warn">
+Components that use browser APIs like `matchMedia` need explicit mocks. Add these in `beforeAll` and clean up in `afterEach`.
+</Callout>
+
+```typescript
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
+```
 
 ## Test Utilities
 
 The `@dorkos/test-utils` package provides:
 
-- `createMockTransport()` — Creates a fully mocked Transport object
+- `createMockTransport()` — Creates a fully mocked Transport object with all 9 methods
 - Mock factories for sessions, messages, and other domain objects
+
+## Anti-Patterns
+
+<Callout type="error">
+Avoid these common testing mistakes.
+</Callout>
+
+```typescript
+// NEVER test implementation details
+expect(component.state.isOpen).toBe(true); // Wrong - test behavior instead
+
+// NEVER use waitFor without an assertion
+await waitFor(() => {}); // Wrong - always include an expect()
+
+// NEVER leave console mocks without cleanup
+vi.spyOn(console, 'error'); // Add mockRestore in afterEach
+
+// NEVER use arbitrary timeouts
+await new Promise((r) => setTimeout(r, 1000)); // Wrong - use waitFor
+```
+
+## Next Steps
+
+<Cards>
+  <Card title="Architecture" href="/docs/contributing/architecture">
+    Understand the Transport interface and how mock Transports fit in
+  </Card>
+  <Card title="Development Setup" href="/docs/contributing/development-setup">
+    Get your local environment configured for running tests
+  </Card>
+  <Card title="API Reference" href="/docs/api">
+    Explore the endpoints your tests may need to mock
+  </Card>
+</Cards>

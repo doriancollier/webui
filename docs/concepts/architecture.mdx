@@ -1,0 +1,119 @@
+---
+title: Architecture
+description: How DorkOS connects your browser to Claude Code using a hexagonal architecture
+---
+
+# Architecture
+
+DorkOS sits between you and Claude Code, providing a web-based chat interface on top of the Claude Agent SDK. Understanding how the pieces fit together helps you troubleshoot issues, choose the right deployment mode, and build integrations.
+
+## The Big Picture
+
+DorkOS uses a **hexagonal architecture** (also called ports and adapters) to keep the UI completely separate from how it communicates with Claude. This means the same React client works in two very different environments without any code changes.
+
+```
+You (browser)
+  |
+  v
+DorkOS Client (React SPA)
+  |
+  v
+Transport (interface)
+  |
+  +---> HttpTransport ---> DorkOS Server (Express) ---> Claude Agent SDK ---> Claude API
+  |
+  +---> DirectTransport ---> Claude Agent SDK ---> Claude API (Obsidian plugin, no server)
+```
+
+The **Transport interface** is the key abstraction. It defines a contract for all client-server communication — creating sessions, sending messages, approving tools, and more. The React client only talks to this interface, never directly to HTTP endpoints or SDK calls.
+
+## Two Deployment Modes
+
+### Standalone Web
+
+The default mode. The DorkOS server runs as an Express application, and the React client communicates with it over HTTP and Server-Sent Events (SSE).
+
+- **Client** sends REST requests and receives streamed responses via SSE
+- **Server** manages Claude Agent SDK sessions and reads transcript files from disk
+- Works with any modern browser, no plugins required
+- Supports multiple simultaneous clients viewing the same session
+
+### Obsidian Plugin
+
+DorkOS also runs as an Obsidian plugin, embedded directly inside the note-taking app. In this mode, there is no separate server process.
+
+- **DirectTransport** calls service instances in the same Electron process
+- No HTTP, no port binding, no network traffic
+- The plugin creates its own `AgentManager` and `TranscriptReader` instances
+- Sessions are still stored as JSONL files in the same location, so CLI-started sessions are visible too
+
+<Callout type="info">
+Both modes read from the same session storage on disk. A session started with the Claude Code CLI appears in DorkOS, and vice versa.
+</Callout>
+
+## How a Message Flows
+
+When you type a message and press Enter, here is what happens:
+
+1. **ChatPanel** captures your input and calls `transport.sendMessage()`
+2. The **Transport adapter** delivers the message to the Claude Agent SDK (via HTTP or directly)
+3. The **Agent SDK** calls the Claude API and begins streaming a response
+4. Stream events flow back through the transport as callbacks: text deltas, tool calls, approvals, and the final result
+5. The **React client** updates the UI in real time as each event arrives
+
+This flow is identical regardless of which transport adapter is in use. The `onEvent` callback pattern means the client code never needs to know whether events came from an SSE stream or an in-process generator.
+
+## Key Components
+
+### Server
+
+The Express server handles seven concerns:
+
+- **Sessions** — Create, list, and stream messages for Claude agent sessions
+- **Commands** — Discover slash commands from `.claude/commands/` directories
+- **Health** — Status checks, including optional tunnel status
+- **Directory** — File system browsing for working directory selection
+- **Config** — Read and update persistent user configuration
+- **Files** — File listing for the built-in file browser
+- **Git** — Branch and change status for the current working directory
+
+### Client
+
+The React SPA uses a layered architecture (Feature-Sliced Design) with strict dependency rules. The main features are:
+
+- **Chat** — Message list, streaming text, tool call cards, and the input area
+- **Session list** — Sidebar for browsing and creating sessions
+- **Commands** — Palette for discovering and using slash commands
+- **Settings** — Theme, configuration, and preferences
+
+### Shared Package
+
+Types, Zod schemas, and the Transport interface definition live in `@dorkos/shared`. Both the client and server import from this package to stay in sync.
+
+## Session Storage
+
+All session data lives in SDK transcript files on disk at `~/.claude/projects/{project-slug}/`. DorkOS does not maintain its own database. The `TranscriptReader` service scans these JSONL files to build session lists, extract metadata, and replay message history.
+
+This design means:
+
+- Sessions persist across DorkOS restarts
+- Sessions created by the CLI or other tools are automatically visible
+- There is no delete operation — sessions exist as long as their transcript files do
+
+<Callout type="warn">
+Session transcript files can grow large for long conversations. DorkOS reads them incrementally where possible, but very long sessions may take a moment to load.
+</Callout>
+
+## Next Steps
+
+<Cards>
+  <Card title="Sessions" href="/docs/concepts/sessions">
+    Learn how sessions are created, stored, and synchronized across clients.
+  </Card>
+  <Card title="Transport" href="/docs/concepts/transport">
+    Dive deeper into the Transport interface and how the two adapters work.
+  </Card>
+  <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
+    Understand the streaming event protocol used for real-time communication.
+  </Card>
+</Cards>

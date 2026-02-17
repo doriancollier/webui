@@ -5,52 +5,103 @@ description: Configure ngrok tunnels for remote access to DorkOS
 
 # Tunnel Setup
 
-DorkOS includes optional ngrok tunnel support for accessing your instance remotely from any device.
+DorkOS includes optional ngrok tunnel support for accessing your instance remotely from any device. The tunnel is non-blocking -- if it fails to start, the server continues working locally.
 
 ## Prerequisites
 
 - An [ngrok account](https://ngrok.com/) (free tier works)
-- An ngrok auth token from your ngrok dashboard
+- An ngrok auth token from your [ngrok dashboard](https://dashboard.ngrok.com/get-started/your-authtoken)
 
 ## Quick Start
 
+<Steps>
+<Step>
+### Set your ngrok auth token
+
+Export your token as an environment variable:
+
 ```bash
+export NGROK_AUTHTOKEN=your-token-here
+```
+</Step>
+
+<Step>
+### Start DorkOS with tunneling enabled
+
+Use the `--tunnel` flag:
+
+```bash
+dorkos --tunnel
+```
+
+Or use the environment variable:
+
+```bash
+export TUNNEL_ENABLED=true
+dorkos
+```
+</Step>
+
+<Step>
+### Access the tunnel URL
+
+The tunnel URL appears in the terminal output after the server starts. Use this URL to access DorkOS from any device.
+</Step>
+</Steps>
+
+## Configuration
+
+<TypeTable type={{
+  "TUNNEL_ENABLED": { type: "boolean", description: "Enable the ngrok tunnel", default: "false" },
+  "NGROK_AUTHTOKEN": { type: "string", description: "ngrok authentication token (required when tunnel is enabled)" },
+  "TUNNEL_PORT": { type: "number", description: "Local port to tunnel to", default: "3000" },
+  "TUNNEL_AUTH": { type: "string", description: "HTTP basic auth credentials in 'user:pass' format" },
+  "TUNNEL_DOMAIN": { type: "string", description: "Custom ngrok domain (requires paid ngrok plan)", default: "Auto-assigned" }
+}} />
+
+## Security
+
+<Callout type="error">
+Tunnels expose your DorkOS instance to the public internet. Always protect your tunnel with basic auth in production.
+</Callout>
+
+Set up basic auth by providing credentials in the `TUNNEL_AUTH` variable:
+
+```bash
+export TUNNEL_AUTH=myuser:mypassword
 export NGROK_AUTHTOKEN=your-token-here
 dorkos --tunnel
 ```
 
-Or using environment variables:
-
-```bash
-export TUNNEL_ENABLED=true
-export NGROK_AUTHTOKEN=your-token-here
-dorkos
-```
-
-## Configuration
-
-| Variable | Description | Default |
-|---|---|---|
-| `TUNNEL_ENABLED` | Enable the ngrok tunnel | `false` |
-| `NGROK_AUTHTOKEN` | ngrok authentication token | - |
-| `TUNNEL_PORT` | Port to tunnel | `3000` |
-| `TUNNEL_AUTH` | HTTP basic auth (`user:pass`) | - |
-| `TUNNEL_DOMAIN` | Custom ngrok domain | Auto-assigned |
-
-## Security
-
-Tunnels expose your DorkOS instance to the internet. Always protect with basic auth:
-
-```bash
-export TUNNEL_AUTH=myuser:mypassword
-```
+With basic auth enabled, anyone accessing the tunnel URL will be prompted for a username and password before they can reach DorkOS.
 
 ## How It Works
 
-1. DorkOS starts the Express server normally on the configured port
-2. After the server binds, the tunnel manager creates an ngrok tunnel
-3. The tunnel URL appears in the terminal output
-4. If tunnel creation fails, the server continues working locally (non-blocking)
+<Steps>
+<Step>
+### Server starts normally
+
+DorkOS starts the Express server on the configured port (default 4242).
+</Step>
+
+<Step>
+### Tunnel connects
+
+After the server binds, the tunnel manager dynamically imports the `@ngrok/ngrok` SDK and creates a tunnel. This dynamic import means there is zero overhead when tunneling is disabled.
+</Step>
+
+<Step>
+### URL is available
+
+The tunnel URL appears in the terminal output. If tunnel creation fails, the server continues working locally -- the failure is non-blocking.
+</Step>
+
+<Step>
+### Graceful shutdown
+
+When you stop the server (via SIGINT or SIGTERM), the tunnel is closed automatically before the process exits.
+</Step>
+</Steps>
 
 ## Health Check
 
@@ -58,13 +109,51 @@ When a tunnel is active, the health endpoint includes tunnel status:
 
 ```bash
 curl http://localhost:4242/api/health
-# { "status": "ok", "tunnel": "https://your-domain.ngrok.io" }
 ```
+
+```json
+{
+  "status": "ok",
+  "tunnel": "https://your-domain.ngrok.io"
+}
+```
+
+<Callout type="info">
+The `tunnel` field only appears in the health response when a tunnel is actively connected. Use this to programmatically verify tunnel availability.
+</Callout>
 
 ## Development Mode
 
-For development with tunnels (tunnels the Vite dev server on port 3000):
+For development with tunnels, use the dedicated dev tunnel script which tunnels the Vite dev server on port 3000:
 
 ```bash
 npm run dev:tunnel -w apps/server
 ```
+
+This starts the full dev environment (Express + Vite HMR) and creates an ngrok tunnel pointing at the Vite dev server port.
+
+## Troubleshooting
+
+<Callout type="warn">
+If the tunnel fails to start, check that your `NGROK_AUTHTOKEN` is valid and that you have not exceeded your ngrok account's tunnel limit. The server will continue running locally even if the tunnel fails.
+</Callout>
+
+Common issues:
+
+- **"Tunnel is already running"** -- The tunnel manager is a singleton. Restart the server to create a new tunnel.
+- **Auth token not found** -- Ensure `NGROK_AUTHTOKEN` is exported in your shell, not just set in a `.env` file that the tunnel manager cannot read.
+- **Custom domain errors** -- Custom domains require a paid ngrok plan. Remove `TUNNEL_DOMAIN` to use an auto-assigned URL.
+
+## Next Steps
+
+<Cards>
+  <Card title="CLI Usage" href="/docs/guides/cli-usage">
+    See all CLI flags and configuration options
+  </Card>
+  <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
+    Navigate DorkOS faster with keyboard shortcuts
+  </Card>
+  <Card title="Slash Commands" href="/docs/guides/slash-commands">
+    Discover and create custom slash commands
+  </Card>
+</Cards>

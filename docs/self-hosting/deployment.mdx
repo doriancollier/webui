@@ -15,44 +15,85 @@ export ANTHROPIC_API_KEY=your-key-here
 dorkos --port 4242
 ```
 
+The server serves both the API (Express) and the client (built React SPA) from a single port.
+
 ## Production Setup
 
-### 1. Install
+<Steps>
+
+<Step>
+### Install DorkOS
 
 ```bash
 npm install -g dorkos
 ```
+</Step>
 
-### 2. Configure
+<Step>
+### Configure environment
 
-Set environment variables or use the config file:
+Set environment variables or use the interactive setup wizard:
 
+<Tabs items={["Environment Variables", "Interactive Setup"]}>
+
+<Tab value="Environment Variables">
 ```bash
 export ANTHROPIC_API_KEY=your-key-here
 export DORKOS_PORT=4242
 export DORKOS_DEFAULT_CWD=/path/to/projects
 export DORKOS_BOUNDARY=/path/to/boundary
+export NODE_ENV=production
 ```
+</Tab>
 
-Or configure interactively:
-
+<Tab value="Interactive Setup">
 ```bash
 dorkos init
 ```
 
-### 3. Run
+The setup wizard walks you through configuring port, working directory, boundary, and optional tunnel settings. Configuration is saved to `~/.dork/config.json`.
+</Tab>
+
+</Tabs>
+</Step>
+
+<Step>
+### Start the server
 
 ```bash
 dorkos
 ```
 
-The server serves both the API (Express) and the client (built React SPA) from a single port.
+<Callout type="info">
+  Config precedence: CLI flags > environment variables > `~/.dork/config.json` > built-in defaults.
+</Callout>
+</Step>
+
+</Steps>
+
+## Environment Variables
+
+<TypeTable type={{
+  "ANTHROPIC_API_KEY": { type: "string", description: "Claude API key (required)" },
+  "DORKOS_PORT": { type: "number", description: "Server port", default: "'4242'" },
+  "DORKOS_DEFAULT_CWD": { type: "string", description: "Default working directory", default: "Current directory" },
+  "DORKOS_BOUNDARY": { type: "string", description: "Directory boundary for file access", default: "Home directory" },
+  "NODE_ENV": { type: "string", description: "Set to 'production' for production mode", default: "'development'" },
+}} />
+
+## Directory Boundary
+
+The `DORKOS_BOUNDARY` setting restricts file access to a specific directory tree. All `cwd`, `path`, and `dir` parameters are validated against this boundary, returning 403 for paths outside it.
+
+<Callout type="warn">
+  The default boundary is the user's home directory. For production deployments, set a tighter boundary to limit the directories Claude can access.
+</Callout>
 
 ## systemd Service
 
-Create `/etc/systemd/system/dorkos.service`:
+For long-running deployments on Linux, create a systemd service unit:
 
-```ini
+```ini title="/etc/systemd/system/dorkos.service"
 [Unit]
 Description=DorkOS - Web UI for Claude Code
 After=network.target
@@ -79,22 +120,6 @@ sudo systemctl enable dorkos
 sudo systemctl start dorkos
 ```
 
-## Environment Variables
-
-| Variable | Description | Default |
-|---|---|---|
-| `ANTHROPIC_API_KEY` | Claude API key (required) | - |
-| `DORKOS_PORT` | Server port | `4242` |
-| `DORKOS_DEFAULT_CWD` | Default working directory | Current directory |
-| `DORKOS_BOUNDARY` | Directory boundary for file access | Home directory |
-| `NODE_ENV` | Set to `production` for production mode | `development` |
-
-## Directory Boundary
-
-The `DORKOS_BOUNDARY` setting restricts file access to a specific directory tree. All `cwd`, `path`, and `dir` parameters are validated against this boundary, returning 403 for paths outside it.
-
-Default: user's home directory.
-
 ## Health Check
 
 Verify the server is running:
@@ -104,6 +129,20 @@ curl http://localhost:4242/api/health
 # { "status": "ok", "version": "0.2.0", "uptime": 12345 }
 ```
 
-## Reverse Proxy
+<Callout type="info">
+  The health endpoint is unauthenticated and suitable for load balancer or monitoring integration.
+</Callout>
 
-For HTTPS and domain routing, see the [Reverse Proxy](/docs/self-hosting/reverse-proxy) guide.
+## Next Steps
+
+<Cards>
+  <Card title="Reverse Proxy" href="/docs/self-hosting/reverse-proxy">
+    Set up nginx or Caddy for HTTPS, domain routing, and SSE compatibility.
+  </Card>
+  <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
+    Expose your instance remotely via ngrok without a reverse proxy.
+  </Card>
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Full configuration reference for ports, directories, and persistent settings.
+  </Card>
+</Cards>

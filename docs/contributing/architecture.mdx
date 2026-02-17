@@ -16,19 +16,38 @@ This guide explains how the pieces fit together.
 
 DorkOS is organized as a Turborepo monorepo with npm workspaces:
 
-```
-dorkos/
-├── apps/
-│   ├── client/           # React 19 + Vite 6 + Tailwind 4
-│   ├── server/           # Express + TypeScript
-│   ├── web/              # Marketing site & docs (Next.js 16, Fumadocs)
-│   └── obsidian-plugin/  # Obsidian plugin (Vite lib build)
-├── packages/
-│   ├── cli/              # Publishable npm CLI package
-│   ├── shared/           # Shared types and schemas
-│   ├── typescript-config/ # Shared TypeScript configs
-│   └── test-utils/       # Mock factories and test helpers
-```
+<Files>
+  <Folder name="dorkos" defaultOpen>
+    <Folder name="apps" defaultOpen>
+      <Folder name="client">
+        <File name="React 19 + Vite 6 + Tailwind 4" />
+      </Folder>
+      <Folder name="server">
+        <File name="Express + TypeScript" />
+      </Folder>
+      <Folder name="web">
+        <File name="Next.js 16 + Fumadocs" />
+      </Folder>
+      <Folder name="obsidian-plugin">
+        <File name="Vite lib build (CJS)" />
+      </Folder>
+    </Folder>
+    <Folder name="packages" defaultOpen>
+      <Folder name="cli">
+        <File name="Publishable npm CLI" />
+      </Folder>
+      <Folder name="shared">
+        <File name="Zod schemas, shared types" />
+      </Folder>
+      <Folder name="typescript-config">
+        <File name="Shared TypeScript configs" />
+      </Folder>
+      <Folder name="test-utils">
+        <File name="Mock factories, test helpers" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
 
 ## Hexagonal Architecture: The Transport Interface
 
@@ -50,21 +69,26 @@ interface Transport {
 
 ### Two Transport Implementations
 
-#### HttpTransport (Standalone Web)
-
+<Tabs items={["HttpTransport (Standalone Web)", "DirectTransport (Obsidian Plugin)"]}>
+<Tab value="HttpTransport (Standalone Web)">
 `HttpTransport` communicates with the Express server over HTTP:
 
 - Uses standard `fetch()` for CRUD operations
 - Parses Server-Sent Events (SSE) streams in `sendMessage()`
 - Converts SSE events into `StreamEvent` objects that update the UI
 
-#### DirectTransport (Obsidian Plugin)
-
+**Location:** `apps/client/src/layers/shared/lib/http-transport.ts`
+</Tab>
+<Tab value="DirectTransport (Obsidian Plugin)">
 `DirectTransport` calls service instances directly in the same process:
 
 - No HTTP, no port binding, no network serialization
 - Iterates `AsyncGenerator<StreamEvent>` from the Agent SDK
 - Much lower latency, perfect for embedded contexts
+
+**Location:** `apps/client/src/layers/shared/lib/direct-transport.ts`
+</Tab>
+</Tabs>
 
 Both implementations expose the same interface, so the React client doesn't know (or care) which one it's using.
 
@@ -72,17 +96,20 @@ Both implementations expose the same interface, so the React client doesn't know
 
 The Transport is injected into the React app via a Context provider:
 
+<Tabs items={["Standalone Web", "Obsidian Plugin"]}>
+<Tab value="Standalone Web">
 ```typescript
-// Standalone web (main.tsx)
+// main.tsx
 const transport = new HttpTransport({ baseUrl: '/api' })
 
 <TransportProvider transport={transport}>
   <App />
 </TransportProvider>
 ```
-
+</Tab>
+<Tab value="Obsidian Plugin">
 ```typescript
-// Obsidian plugin (CopilotView.tsx)
+// CopilotView.tsx
 const agentManager = new AgentManager(repoRoot)
 const transcriptReader = new TranscriptReader()
 const commandRegistry = new CommandRegistryService(repoRoot)
@@ -100,6 +127,8 @@ const transport = new DirectTransport({
   </ObsidianApp>
 </TransportProvider>
 ```
+</Tab>
+</Tabs>
 
 Components and hooks access the transport via `useTransport()`:
 
@@ -121,45 +150,42 @@ The Express server (`apps/server/`) is organized into routes and services:
 
 Seven route groups handle REST/SSE endpoints:
 
-- **`sessions.ts`** — Session listing, creation, message streaming, tool approval/denial
-- **`commands.ts`** — Slash command discovery
-- **`health.ts`** — Health checks and tunnel status
-- **`directory.ts`** — Directory browsing for working directory selection
-- **`config.ts`** — Configuration management
-- **`files.ts`** — File operations
-- **`git.ts`** — Git status and branch info
+<TypeTable type={{
+  "sessions.ts": { type: "route", description: "Session listing, creation, message streaming, tool approval/denial" },
+  "commands.ts": { type: "route", description: "Slash command discovery" },
+  "health.ts": { type: "route", description: "Health checks and tunnel status" },
+  "directory.ts": { type: "route", description: "Directory browsing for working directory selection" },
+  "config.ts": { type: "route", description: "Configuration management" },
+  "files.ts": { type: "route", description: "File operations" },
+  "git.ts": { type: "route", description: "Git status and branch info" }
+}} />
 
 ### Services
 
-Sixteen services provide the core business logic:
+Key services provide the core business logic:
 
-- **`agent-manager.ts`** — Manages Claude Agent SDK sessions, calls `query()` with streaming
-- **`transcript-reader.ts`** — Reads SDK JSONL transcript files (single source of truth for session data)
-- **`session-broadcaster.ts`** — Watches JSONL files for changes, broadcasts sync events to clients
-- **`stream-adapter.ts`** — SSE helpers for formatting `StreamEvent` objects
-- **`command-registry.ts`** — Scans `.claude/commands/` for slash commands
-- **`openapi-registry.ts`** — Auto-generates OpenAPI spec from Zod schemas
-- **`file-lister.ts`** — Lists files in directories
-- **`git-status.ts`** — Provides git status information
-- **`tunnel-manager.ts`** — Optional ngrok tunnel lifecycle
-- **`config-manager.ts`** — Persistent user config at `~/.dork/config.json`
-- **`session-lock.ts`** — Prevents concurrent writes to sessions
-- **`interactive-handlers.ts`** — Handles tool approval and question responses
-- **`transcript-parser.ts`** — Parses JSONL transcript content
-- **`task-reader.ts`** — Reads task data from sessions
-- **`build-task-event.ts`** — Constructs task update events
-- **`update-checker.ts`** — Checks for new DorkOS versions
+<TypeTable type={{
+  "agent-manager.ts": { type: "service", description: "Manages Claude Agent SDK sessions, calls query() with streaming" },
+  "transcript-reader.ts": { type: "service", description: "Reads SDK JSONL transcript files (single source of truth for session data)" },
+  "session-broadcaster.ts": { type: "service", description: "Watches JSONL files for changes, broadcasts sync events to clients" },
+  "stream-adapter.ts": { type: "service", description: "SSE helpers for formatting StreamEvent objects" },
+  "command-registry.ts": { type: "service", description: "Scans .claude/commands/ for slash commands" },
+  "openapi-registry.ts": { type: "service", description: "Auto-generates OpenAPI spec from Zod schemas" },
+  "config-manager.ts": { type: "service", description: "Persistent user config at ~/.dork/config.json" },
+  "tunnel-manager.ts": { type: "service", description: "Optional ngrok tunnel lifecycle" },
+  "session-lock.ts": { type: "service", description: "Prevents concurrent writes to sessions" }
+}} />
 
 ### Session Storage: SDK JSONL Transcripts
 
-Sessions are **not** stored in a database. Instead, the `TranscriptReader` scans SDK JSONL files at `~/.claude/projects/{slug}/*.jsonl`. This means:
+<Callout type="info">
+Sessions are **not** stored in a database. The `TranscriptReader` scans SDK JSONL files at `~/.claude/projects/\{slug\}/*.jsonl`. All sessions are visible regardless of which client created them.
+</Callout>
 
-- All sessions are visible (CLI-started, DorkOS-started, etc.)
 - Session ID = SDK session ID (UUID from filename)
 - No delete endpoint (sessions persist in SDK storage)
 - Session metadata (title, preview, timestamps) is extracted from file content on every request
-
-The `AgentManager` calls the SDK's `query()` function with `resume: sessionId` for continuity across clients.
+- The `AgentManager` calls the SDK's `query()` function with `resume: sessionId` for continuity across clients
 
 ## Client Architecture
 
@@ -182,7 +208,9 @@ The React client (`apps/client/`) uses Feature-Sliced Design (FSD) architecture:
 | `features/status/`       | Status bar                  | StatusLine, GitStatusItem, ModelItem    |
 | `widgets/app-layout/`    | App-level layout components | PermissionBanner                        |
 
-Layers follow a strict dependency rule: `shared` ← `entities` ← `features` ← `widgets` ← `app` (unidirectional only).
+<Callout type="warn">
+Layers follow a strict dependency rule: `shared` ← `entities` ← `features` ← `widgets` ← `app` (unidirectional only). Cross-feature model/hook imports are forbidden.
+</Callout>
 
 ### State Management
 
@@ -194,10 +222,10 @@ Layers follow a strict dependency rule: `shared` ← `entities` ← `features` �
 
 Assistant messages are rendered as rich markdown via the `streamdown` library (from Vercel). The `StreamingText` component wraps `<Streamdown>` with syntax highlighting (Shiki) and shows a blinking cursor during active streaming. User messages remain plain text.
 
-## Data Flow: Message from UI → Claude → Back
+## Data Flow: Message from UI to Claude and Back
 
-### Standalone Web (HttpTransport)
-
+<Tabs items={["Standalone Web (HttpTransport)", "Obsidian Plugin (DirectTransport)"]}>
+<Tab value="Standalone Web (HttpTransport)">
 ```
 User types message
   ↓
@@ -215,9 +243,8 @@ HttpTransport parses SSE → calls onEvent(event)
   ↓
 React state updates → UI re-renders with new message chunks
 ```
-
-### Obsidian Plugin (DirectTransport)
-
+</Tab>
+<Tab value="Obsidian Plugin (DirectTransport)">
 ```
 User types message
   ↓
@@ -233,33 +260,84 @@ DirectTransport iterates generator → calls onEvent(event)
   ↓
 React state updates → UI re-renders with new message chunks
 ```
+</Tab>
+</Tabs>
 
 ### StreamEvent Types
 
 Events flowing from the SDK to the UI include:
 
-- **`text_delta`** — Incremental text for assistant messages
-- **`tool_call_start`** — Tool invocation begins
-- **`tool_call_delta`** — Incremental tool input/output
-- **`tool_call_end`** — Tool invocation completes
-- **`tool_result`** — Tool execution result
-- **`approval_required`** — Tool needs user approval
-- **`question_prompt`** — Claude is asking the user a question
-- **`error`** — Error occurred during execution
-- **`done`** — Message stream complete
-- **`session_status`** — Session state changed
-- **`task_update`** — Task list updated
+<TypeTable type={{
+  "text_delta": { type: "StreamEvent", description: "Incremental text for assistant messages" },
+  "tool_call_start": { type: "StreamEvent", description: "Tool invocation begins" },
+  "tool_call_delta": { type: "StreamEvent", description: "Incremental tool input/output" },
+  "tool_call_end": { type: "StreamEvent", description: "Tool invocation completes" },
+  "tool_result": { type: "StreamEvent", description: "Tool execution result" },
+  "approval_required": { type: "StreamEvent", description: "Tool needs user approval" },
+  "question_prompt": { type: "StreamEvent", description: "Claude is asking the user a question" },
+  "error": { type: "StreamEvent", description: "Error occurred during execution" },
+  "done": { type: "StreamEvent", description: "Message stream complete" },
+  "session_status": { type: "StreamEvent", description: "Session state changed" },
+  "task_update": { type: "StreamEvent", description: "Task list updated" }
+}} />
 
 ## Session Sync Protocol
 
-Clients can subscribe to real-time session changes via `GET /api/sessions/:id/stream` (persistent SSE connection). This enables multi-client sync (e.g., CLI writes → DorkOS UI updates automatically).
+Clients can subscribe to real-time session changes via `GET /api/sessions/:id/stream` (persistent SSE connection). This enables multi-client sync (e.g., CLI writes then DorkOS UI updates automatically).
 
 Events:
 
-- **`sync_connected`** — Sent on initial connection
-- **`sync_update`** — Sent when new content is written to the session's JSONL file
+- **`sync_connected`** — Sent on initial connection. Data: `{ sessionId }`
+- **`sync_update`** — Sent when new content is written to the session's JSONL file. Data: `{ sessionId, timestamp }`
 
 Clients receiving `sync_update` should re-fetch message history. The `GET /messages` endpoint supports ETag caching for efficient polling.
+
+## Module Layout
+
+<Files>
+  <Folder name="packages" defaultOpen>
+    <Folder name="shared/src" defaultOpen>
+      <File name="transport.ts" />
+      <File name="types.ts" />
+      <File name="schemas.ts" />
+      <File name="config-schema.ts" />
+    </Folder>
+  </Folder>
+  <Folder name="apps" defaultOpen>
+    <Folder name="client/src/layers" defaultOpen>
+      <Folder name="shared" defaultOpen>
+        <Folder name="model">
+          <File name="TransportContext.tsx" />
+          <File name="app-store.ts" />
+        </Folder>
+        <Folder name="lib">
+          <File name="http-transport.ts" />
+          <File name="direct-transport.ts" />
+        </Folder>
+      </Folder>
+    </Folder>
+    <Folder name="server/src" defaultOpen>
+      <Folder name="routes">
+        <File name="sessions.ts" />
+        <File name="commands.ts" />
+        <File name="health.ts" />
+      </Folder>
+      <Folder name="services">
+        <File name="agent-manager.ts" />
+        <File name="transcript-reader.ts" />
+        <File name="command-registry.ts" />
+      </Folder>
+    </Folder>
+    <Folder name="obsidian-plugin/src" defaultOpen>
+      <Folder name="views">
+        <File name="CopilotView.tsx" />
+      </Folder>
+      <Folder name="components">
+        <File name="ObsidianApp.tsx" />
+      </Folder>
+    </Folder>
+  </Folder>
+</Files>
 
 ## Testing
 
@@ -286,43 +364,28 @@ render(<MyComponent />, { wrapper: Wrapper })
 
 This pattern provides type safety and explicit test setup without global mocks.
 
-## Getting Started with Development
-
-1. **Clone the repo** and install dependencies:
-   ```bash
-   git clone https://github.com/dork-labs/dorkos.git
-   cd dorkos
-   npm install
-   ```
-
-2. **Set up environment variables** (copy `.env.example` to `.env`)
-
-3. **Start the dev server**:
-   ```bash
-   npm run dev  # Runs both client (Vite) and server (Express)
-   ```
-
-4. **Open the browser**: http://localhost:3000
-
-5. **Explore the codebase**:
-   - Client UI components: `apps/client/src/layers/`
-   - Server routes: `apps/server/src/routes/`
-   - Server services: `apps/server/src/services/`
-   - Shared types: `packages/shared/src/`
-
 ## Key Architectural Benefits
 
-✅ **Same React app runs standalone and embedded** — Transport abstraction enables code reuse
-✅ **Server-optional** — Obsidian plugin has zero network latency
-✅ **Type-safe** — Zod schemas generate both TypeScript types and OpenAPI specs
-✅ **Testable** — Mock Transport objects make testing React hooks and components straightforward
-✅ **Real-time sync** — SSE streaming and file watching keep all clients in sync
-✅ **SDK-first** — JSONL transcripts are the single source of truth (no separate database)
+- **Same React app runs standalone and embedded** — Transport abstraction enables code reuse
+- **Server-optional** — Obsidian plugin has zero network latency
+- **Type-safe** — Zod schemas generate both TypeScript types and OpenAPI specs
+- **Testable** — Mock Transport objects make testing React hooks and components straightforward
+- **Real-time sync** — SSE streaming and file watching keep all clients in sync
+- **SDK-first** — JSONL transcripts are the single source of truth (no separate database)
 
----
+## Next Steps
 
-For more detailed documentation, see:
-
-- [API Reference](/docs/api) — OpenAPI spec, Zod schemas, endpoints
-- [SSE Protocol](/docs/integrations/sse-protocol) — Real-time streaming and session sync
-- [Building Integrations](/docs/integrations/building-integrations) — Transport interface for custom clients
+<Cards>
+  <Card title="Development Setup" href="/docs/contributing/development-setup">
+    Get your local environment configured and running
+  </Card>
+  <Card title="Testing" href="/docs/contributing/testing">
+    Learn testing patterns, mock Transport setup, and test conventions
+  </Card>
+  <Card title="API Reference" href="/docs/api">
+    Explore the REST and SSE endpoints with the interactive Scalar UI
+  </Card>
+  <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
+    Deep dive into real-time streaming and session sync
+  </Card>
+</Cards>

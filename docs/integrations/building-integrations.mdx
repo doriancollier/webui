@@ -13,40 +13,56 @@ The Transport interface (`packages/shared/src/transport.ts`) defines all client-
 
 ```typescript
 interface Transport {
-  createSession(opts)        → Session
-  listSessions(cwd?)         → Session[]
-  getSession(id)             → Session
-  getMessages(sessionId)     → { messages: HistoryMessage[] }
-  sendMessage(id, content, onEvent, signal, cwd?) → void
-  approveTool(sessionId, toolCallId)  → { ok: boolean }
-  denyTool(sessionId, toolCallId)     → { ok: boolean }
-  getCommands(refresh?)      → CommandRegistry
-  health()                   → { status, version, uptime }
+  createSession(opts: CreateSessionRequest): Promise<Session>;
+  listSessions(cwd?: string): Promise<Session[]>;
+  getSession(id: string, cwd?: string): Promise<Session>;
+  updateSession(id: string, opts: UpdateSessionRequest, cwd?: string): Promise<Session>;
+  getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }>;
+  sendMessage(sessionId, content, onEvent, signal?, cwd?): Promise<void>;
+  approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
+  denyTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
+  submitAnswers(sessionId, toolCallId, answers): Promise<{ ok: boolean }>;
+  getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }>;
+  browseDirectory(dirPath?, showHidden?): Promise<BrowseDirectoryResponse>;
+  getDefaultCwd(): Promise<{ path: string }>;
+  getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
+  listFiles(cwd: string): Promise<FileListResponse>;
+  getGitStatus(cwd?: string): Promise<GitStatusResponse | GitStatusError>;
+  health(): Promise<HealthResponse>;
+  getConfig(): Promise<ServerConfig>;
 }
 ```
 
 ## Built-in Implementations
 
-### HttpTransport (Standalone Web)
+<Tabs items={["HttpTransport", "DirectTransport"]}>
 
-Communicates with the Express server over HTTP and SSE:
+<Tab value="HttpTransport">
+**HttpTransport** is used by the standalone web client and communicates with the Express server over HTTP and SSE:
 
 - Standard `fetch()` for CRUD operations
 - Server-Sent Events for streaming in `sendMessage()`
 - Parses SSE events into `StreamEvent` objects
+- Includes `X-Client-Id` header for session locking
+</Tab>
 
-### DirectTransport (Obsidian Plugin)
-
-Calls service instances directly in the same process:
+<Tab value="DirectTransport">
+**DirectTransport** is used by the Obsidian plugin and calls service instances directly in the same process:
 
 - No HTTP, no port binding, no network serialization
 - Iterates `AsyncGenerator<StreamEvent>` from the Agent SDK
 - Lower latency, ideal for embedded contexts
+</Tab>
+
+</Tabs>
 
 ## Building a Custom Client
 
-### Option 1: REST/SSE API
+Choose the approach that best fits your platform and requirements:
 
+<Tabs items={["REST/SSE API", "Custom Transport", "React Integration"]}>
+
+<Tab value="REST/SSE API">
 Use the REST API directly for any language or platform:
 
 ```bash
@@ -69,8 +85,12 @@ Content-Type: application/json
 { "toolCallId": "tc_123" }
 ```
 
-### Option 2: Custom Transport
+<Callout type="info">
+  The full REST API is documented interactively at `/api/docs` (Scalar UI) when the server is running, or see the [API Reference](/docs/api).
+</Callout>
+</Tab>
 
+<Tab value="Custom Transport">
 Implement the Transport interface for deeper integration:
 
 ```typescript
@@ -90,8 +110,12 @@ class MyCustomTransport implements Transport {
 }
 ```
 
-### Option 3: React Integration
+<Callout type="warn">
+  All methods in the Transport interface must be implemented. TypeScript will report compile-time errors for any missing methods.
+</Callout>
+</Tab>
 
+<Tab value="React Integration">
 If building a React app, inject your Transport via context:
 
 ```typescript
@@ -108,22 +132,39 @@ function App() {
 }
 ```
 
+All DorkOS hooks (`useSessions`, `useChatSession`, etc.) consume the Transport from context, so your custom implementation powers the entire UI automatically.
+</Tab>
+
+</Tabs>
+
 ## StreamEvent Types
 
 Events emitted during message streaming:
 
-| Event | Description |
-|---|---|
-| `text_delta` | Incremental text for assistant messages |
-| `tool_call_start` | Tool invocation begins |
-| `tool_call_delta` | Incremental tool input/output |
-| `tool_call_end` | Tool invocation completes |
-| `tool_result` | Tool execution result |
-| `approval_required` | Tool needs user approval |
-| `question_prompt` | Claude is asking the user a question |
-| `error` | Error occurred during execution |
-| `done` | Message stream complete |
-| `session_status` | Session state changed |
-| `task_update` | Task list updated |
+<TypeTable type={{
+  "text_delta": { type: "StreamEvent", description: "Incremental text chunk for the assistant message" },
+  "tool_call_start": { type: "StreamEvent", description: "Tool invocation begins (includes toolCallId, toolName)" },
+  "tool_call_delta": { type: "StreamEvent", description: "Incremental tool input/output" },
+  "tool_call_end": { type: "StreamEvent", description: "Tool invocation completes" },
+  "tool_result": { type: "StreamEvent", description: "Tool execution result" },
+  "approval_required": { type: "StreamEvent", description: "Tool needs user approval before executing" },
+  "question_prompt": { type: "StreamEvent", description: "Claude is asking the user a question with options" },
+  "error": { type: "StreamEvent", description: "Error occurred during execution" },
+  "done": { type: "StreamEvent", description: "Message stream complete" },
+  "session_status": { type: "StreamEvent", description: "Session state changed" },
+  "task_update": { type: "StreamEvent", description: "Task list updated" },
+}} />
 
-See the [SSE Protocol](/docs/integrations/sse-protocol) guide for wire format details.
+## Next Steps
+
+<Cards>
+  <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
+    Wire format details, event schemas, and connection lifecycle for the streaming protocol.
+  </Card>
+  <Card title="API Reference" href="/docs/api">
+    Full interactive API documentation with request and response schemas.
+  </Card>
+  <Card title="Architecture" href="/docs/contributing/architecture">
+    Deep dive into the hexagonal architecture and Transport interface design.
+  </Card>
+</Cards>
