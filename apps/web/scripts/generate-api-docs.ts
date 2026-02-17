@@ -10,15 +10,23 @@
  */
 import { generateFiles } from 'fumadocs-openapi'
 import { createOpenAPI } from 'fumadocs-openapi/server'
+import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const repoRoot = path.resolve(scriptDir, '../../..')
+const openapiPath = path.join(repoRoot, 'docs/api/openapi.json')
 const outputDir = path.join(repoRoot, 'docs/api')
 
-// Use the same relative path as lib/openapi.ts so generated MDX references
-// match the runtime resolution in the Next.js server context.
+// Skip generation if the OpenAPI spec doesn't exist (e.g., CI builds
+// where docs:export-api hasn't been run). The pre-committed MDX files
+// in docs/api/api/ will still be used by the Fumadocs pipeline.
+if (!fs.existsSync(openapiPath)) {
+  console.log('[generate-api-docs] Skipping: docs/api/openapi.json not found')
+  process.exit(0)
+}
+
 const openapi = createOpenAPI({
   input: ['../../docs/api/openapi.json'],
 })
