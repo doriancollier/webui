@@ -30,6 +30,7 @@ The server starts on port 4242 and opens your browser automatically.
   "--dir, -d": { type: "string", description: "Default working directory", default: "Current directory" },
   "--boundary, -b": { type: "string", description: "Directory boundary — restricts file access to this path and its children", default: "Home directory" },
   "--tunnel, -t": { type: "boolean", description: "Enable ngrok tunnel for remote access", default: "false" },
+  "--log-level, -l": { type: "string", description: "Log verbosity (fatal, error, warn, info, debug, trace)", default: "info" },
 }} />
 
 ### Examples
@@ -55,8 +56,14 @@ dorkos --tunnel
 Manage persistent configuration stored at `~/.dork/config.json`.
 
 ```bash
-dorkos config          # Show current config
-dorkos config --reset  # Reset to defaults
+dorkos config                        # Show all effective settings
+dorkos config get <key>              # Get a single config value
+dorkos config set <key> <value>      # Set a single config value
+dorkos config list                   # Full JSON output
+dorkos config reset [key]            # Reset all or a specific key to defaults
+dorkos config edit                   # Open config in $EDITOR
+dorkos config path                   # Print config file location
+dorkos config validate               # Check config validity
 ```
 
 ### `dorkos init`
@@ -65,6 +72,7 @@ Interactive setup wizard for first-time configuration. Walks you through setting
 
 ```bash
 dorkos init
+dorkos init --yes    # Accept all defaults
 ```
 
 ## Config Directory
@@ -100,6 +108,23 @@ Configuration is resolved in this order (highest priority first):
 <Callout type="info">
   Use `dorkos config` to view the resolved configuration and see which values come from which source.
 </Callout>
+
+## Automatic Update Checks
+
+DorkOS checks the npm registry for new versions each time it starts. If a newer version is available, you will see a notification in the terminal:
+
+```
+┌───────────────────────────────────────┐
+│   Update available: 0.2.0 → 0.3.0    │
+│   Run npm install -g dorkos@latest    │
+└───────────────────────────────────────┘
+```
+
+The check runs in the background with a 3-second timeout and caches results for 24 hours, so it never slows down startup. To update manually:
+
+```bash
+npm install -g dorkos@latest
+```
 
 ## Next Steps
 

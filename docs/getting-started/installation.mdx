@@ -10,7 +10,7 @@ DorkOS runs in three modes: as a standalone **npm CLI**, as an **Obsidian plugin
 ## Prerequisites
 
 <Callout type="info">
-  All installation methods require [Node.js](https://nodejs.org/) 20 or later and a Claude API key from the [Anthropic Console](https://console.anthropic.com/).
+  All installation methods require [Node.js](https://nodejs.org/) 18 or later and a Claude API key from the [Anthropic Console](https://console.anthropic.com/).
 </Callout>
 
 ## Choose Your Install Method
@@ -120,7 +120,7 @@ Open the DorkOS plugin settings and enter your Anthropic API key.
 </Steps>
 
 <Callout type="warn">
-  The Obsidian plugin requires Node.js 20+ installed on your system. It uses the same Claude Agent SDK as the CLI but runs in-process via the DirectTransport adapter.
+  The Obsidian plugin requires Node.js 18+ installed on your system. It uses the same Claude Agent SDK as the CLI but runs in-process via the DirectTransport adapter.
 </Callout>
 
 </Tab>
@@ -188,6 +188,58 @@ This starts both the Express API server and Vite dev server. The interface is av
 <Callout type="info">
   For production builds, run `npm run build` then `npm start` to serve the compiled app on port 4242.
 </Callout>
+
+</Tab>
+
+</Tabs>
+
+## Updating
+
+<Tabs items={['npm CLI', 'Obsidian Plugin', 'Self-Hosted']}>
+
+<Tab value="npm CLI">
+
+Update to the latest version using the same package manager you installed with:
+
+```bash tab="npm"
+npm install -g dorkos@latest
+```
+
+```bash tab="pnpm"
+pnpm add -g dorkos@latest
+```
+
+```bash tab="yarn"
+yarn global add dorkos@latest
+```
+
+```bash tab="bun"
+bun add -g dorkos@latest
+```
+
+DorkOS checks for new versions on startup and shows a notification when an update is available. You can check your current version at any time:
+
+```bash
+dorkos --version
+```
+
+</Tab>
+
+<Tab value="Obsidian Plugin">
+
+Obsidian handles plugin updates automatically. To check manually, go to **Settings** then **Community Plugins**, find DorkOS in your installed plugins, and click **Update** if available.
+
+</Tab>
+
+<Tab value="Self-Hosted">
+
+Pull the latest changes and rebuild:
+
+```bash
+git pull origin main
+npm install
+npm run build
+```
 
 </Tab>
 

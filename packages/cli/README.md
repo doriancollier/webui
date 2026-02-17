@@ -23,6 +23,45 @@ dorkos
 
 The server starts on port 4242 and opens your browser automatically. You'll see the DorkOS chat interface where you can start Claude Code sessions, approve tool calls, and use slash commands.
 
+## Updating
+
+```bash
+npm install -g dorkos@latest
+```
+
+DorkOS checks for updates automatically on startup and displays a notification when a new version is available. You can also check your current version with:
+
+```bash
+dorkos --version
+```
+
+## CLI Flags
+
+| Flag | Description |
+|---|---|
+| `-p, --port <port>` | Port to listen on (default: 4242) |
+| `-d, --dir <path>` | Working directory (default: current directory) |
+| `-b, --boundary <path>` | Directory boundary (default: home directory) |
+| `-t, --tunnel` | Enable ngrok tunnel |
+| `-l, --log-level <level>` | Log level (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
+| `-h, --help` | Show help message |
+| `-v, --version` | Show version number |
+
+## Subcommands
+
+| Command | Description |
+|---|---|
+| `dorkos config` | Show all effective settings |
+| `dorkos config get <key>` | Get a single config value |
+| `dorkos config set <key> <value>` | Set a single config value |
+| `dorkos config list` | Full JSON output |
+| `dorkos config reset [key]` | Reset to defaults |
+| `dorkos config edit` | Open config in `$EDITOR` |
+| `dorkos config path` | Print config file location |
+| `dorkos config validate` | Check config validity |
+| `dorkos init` | Interactive setup wizard |
+| `dorkos init --yes` | Accept all defaults |
+
 ## Configuration
 
 ### Required
@@ -61,7 +100,8 @@ When running, DorkOS serves interactive API documentation at `/api/docs` (powere
 
 ## Links
 
-- [Documentation](https://github.com/dork-labs/dorkos/tree/main/docs)
+- [Documentation](https://dorkos.dev/docs)
+- [Changelog](https://dorkos.dev/docs/changelog)
 - [GitHub](https://github.com/dork-labs/dorkos)
 - [Issues](https://github.com/dork-labs/dorkos/issues)
 

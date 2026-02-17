@@ -232,7 +232,7 @@ console.log('');
 checkForUpdate(__CLI_VERSION__).then((latestVersion) => {
   if (latestVersion) {
     const msg = `Update available: ${__CLI_VERSION__} → ${latestVersion}`;
-    const cmd = 'Run npm update -g dorkos to update';
+    const cmd = 'Run npm install -g dorkos@latest to update';
     const width = Math.max(msg.length, cmd.length) + 6;
     const pad = (s: string) => `│   ${s}${' '.repeat(width - s.length - 6)}   │`;
     console.log('');
