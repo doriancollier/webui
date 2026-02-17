@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 55" fill="#CE2021">
+  <!-- Triangle 1 (leftmost) - small right triangle -->
+  <path d="M4 51 Q2 51 2 49 L2 4 Q2 2 4 4 L30 49 Q32 51 30 51 Z"/>
+  <!-- Triangle 2 (middle) - medium right triangle -->
+  <path d="M44 51 Q42 51 42 49 L42 4 Q42 2 44 4 L96 49 Q98 51 96 51 Z"/>
+  <!-- Triangle 3 (rightmost) - larger right triangle -->
+  <path d="M110 51 Q108 51 108 49 L108 4 Q108 2 110 4 L196 49 Q198 51 196 51 Z"/>
+</svg>

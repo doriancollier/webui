@@ -3,9 +3,12 @@
   "ui": "tui",
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**", "dist-server/**", "dist-obsidian/**"],
-      "env": ["NODE_ENV", "VITE_*", "DORKOS_PORT", "NGROK_*", "TUNNEL_*"]
+      "dependsOn": ["generate:api-docs", "^build"],
+      "outputs": ["dist/**", "dist-server/**", "dist-obsidian/**", ".next/**"],
+      "env": ["NODE_ENV", "VITE_*", "DORKOS_PORT", "NGROK_*", "TUNNEL_*", "NEXT_PUBLIC_*", "POSTHOG_*"]
+    },
+    "generate:api-docs": {
+      "cache": true
     },
     "dev": {
       "dependsOn": ["^build"],

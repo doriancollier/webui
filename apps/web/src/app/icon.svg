@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- White background -->
+  <rect width="32" height="32" fill="white"/>
+  <!-- Single triangle from 144 logo (middle one), scaled and centered -->
+  <g transform="translate(-17, 3.5) scale(0.47)" fill="#1A1A1A">
+    <path d="M44 51 Q42 51 42 49 L42 4 Q42 2 44 4 L96 49 Q98 51 96 51 Z"/>
+  </g>
+</svg>

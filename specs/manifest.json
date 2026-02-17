@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 35,
+  "nextNumber": 37,
   "specs": [
     {
       "number": 1,
@@ -237,6 +237,20 @@
       "number": 34,
       "slug": "directory-boundary-enforcement",
       "title": "Centralized Directory Boundary Enforcement",
+      "created": "2026-02-16",
+      "status": "implemented"
+    },
+    {
+      "number": 35,
+      "slug": "dorkos-website-publishing",
+      "title": "DorkOS Website & Documentation Publishing",
+      "created": "2026-02-16",
+      "status": "ideation"
+    },
+    {
+      "number": 36,
+      "slug": "logging-infrastructure",
+      "title": "Logging Infrastructure",
       "created": "2026-02-16",
       "status": "specified"
     }

@@ -1,0 +1,51 @@
+# dependencies
+node_modules
+.pnpm-store
+
+# next.js
+.next/
+out/
+
+# environment
+.env
+.env*.local
+.mcp.json
+
+# prisma
+src/generated/
+
+# misc
+.DS_Store
+*.pem
+*.log
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# testing
+coverage/
+
+# ide
+.idea/
+
+# Dev server logs
+.logs/
+
+# Local database (SQLite)
+.data/
+
+# temp
+.temp/
+.tmp/
+
+# roadmap server runtime files
+roadmap/.server.pid
+roadmap/.server.port.claude/projects/
+
+# Simple Task Master - User tasks are git-ignored
+.simple-task-master/tasks/
+.simple-task-master/lock
