@@ -87,7 +87,7 @@ export function MarketingFooter({
 
         {/* System status - retro tech detail */}
         <p className="font-mono text-3xs tracking-[0.2em] uppercase text-cream-tertiary/40 mt-12">
-          v1.0 · System Online
+          v0.2.0 · System Online
         </p>
       </footer>
     </>

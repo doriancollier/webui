@@ -3,20 +3,18 @@ import Link from 'next/link'
 
 interface HeroProps {
   label?: string
-  taglineLine1: string
-  taglineLine2: string
+  headline: string
   subhead: string
-  bylineText: string
-  bylineHref: string
+  ctaText: string
+  ctaHref: string
 }
 
 export function Hero({
-  label = 'Independent Studio',
-  taglineLine1,
-  taglineLine2,
+  label = 'Open Source',
+  headline,
   subhead,
-  bylineText,
-  bylineHref,
+  ctaText,
+  ctaHref,
 }: HeroProps) {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center px-6">
@@ -51,36 +49,34 @@ export function Hero({
           {label}
         </p>
 
-        {/* Tagline */}
+        {/* Headline - single line, brand-orange */}
         <h1
-          className="font-bold text-charcoal mb-10 tracking-[-0.04em]"
+          className="font-bold text-brand-orange mb-10 tracking-[-0.04em]"
           style={{
             fontSize: 'clamp(48px, 8vw, 96px)',
             lineHeight: 0.9,
           }}
         >
-          {taglineLine1}
-          <br />
-          <span className="text-brand-orange">{taglineLine2}</span>
+          {headline}
         </h1>
 
-        {/* Subhead */}
-        <p className="text-warm-gray text-lg font-light leading-[1.7] max-w-[400px] mx-auto mb-8">
+        {/* Subhead - one paragraph, no line breaks */}
+        <p className="text-warm-gray text-lg font-light leading-[1.7] max-w-[500px] mx-auto mb-8">
           {subhead}
         </p>
 
-        {/* Byline with blinking cursor */}
+        {/* Primary CTA with blinking cursor */}
         <Link
-          href={bylineHref}
+          href={ctaHref}
           className="inline-flex items-center font-mono text-button tracking-[0.1em] text-brand-orange hover:text-brand-green transition-smooth"
           target="_blank"
           rel="noopener noreferrer"
         >
-          {bylineText}
+          {ctaText}
           <span className="cursor-blink" aria-hidden="true" />
         </Link>
 
-        {/* Docs CTA */}
+        {/* Secondary CTA - docs link */}
         <div className="mt-6">
           <Link
             href="/docs/getting-started/quickstart"

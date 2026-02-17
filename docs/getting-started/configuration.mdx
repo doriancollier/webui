@@ -3,36 +3,102 @@ title: Configuration
 description: Environment variables and configuration options for DorkOS
 ---
 
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
 # Configuration
 
-DorkOS is configured via environment variables.
+DorkOS is configured via environment variables and a persistent config file at `~/.dork/config.json`. CLI flags take highest precedence; built-in defaults apply when nothing else is set.
+
+<Callout type="info">
+Config precedence: CLI flags &gt; environment variables &gt; `~/.dork/config.json` &gt; built-in defaults.
+</Callout>
 
 ## Required
 
-| Variable | Description |
-|---|---|
-| `ANTHROPIC_API_KEY` | Your Anthropic API key |
+<TypeTable
+  type={{
+    ANTHROPIC_API_KEY: {
+      description: 'Your Anthropic API key. Required to start any Claude Code session.',
+      type: 'string',
+    },
+  }}
+/>
 
 ## Optional
 
-| Variable | Default | Description |
-|---|---|---|
-| `DORKOS_PORT` | `4242` | Port for the DorkOS server |
-| `DORKOS_DEFAULT_CWD` | Current directory | Default working directory for sessions |
-| `DORKOS_BOUNDARY` | Home directory | Directory boundary root (restricts all filesystem access) |
-| `LOG_LEVEL` | `info` | Log verbosity (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
+<TypeTable
+  type={{
+    DORKOS_PORT: {
+      description: 'Port for the DorkOS server.',
+      type: 'number',
+      default: '4242',
+    },
+    DORKOS_DEFAULT_CWD: {
+      description: 'Default working directory for new sessions.',
+      type: 'string',
+      default: 'Current directory',
+    },
+    DORKOS_BOUNDARY: {
+      description: 'Directory boundary root. Restricts all filesystem access to this path and below.',
+      type: 'string',
+      default: 'Home directory',
+    },
+    LOG_LEVEL: {
+      description: 'Log verbosity level.',
+      type: '"fatal" | "error" | "warn" | "info" | "debug" | "trace"',
+      default: '"info"',
+    },
+  }}
+/>
 
 ## Tunnel Configuration
 
-DorkOS supports ngrok tunnels for remote access.
+DorkOS supports ngrok tunnels for remote access. See the [Tunnel Setup](/docs/guides/tunnel-setup) guide for full details.
 
-| Variable | Description |
-|---|---|
-| `TUNNEL_ENABLED` | Set to `true` to enable ngrok tunnel |
-| `NGROK_AUTHTOKEN` | Your ngrok authentication token |
-| `TUNNEL_DOMAIN` | Custom tunnel domain (optional) |
-| `TUNNEL_AUTH` | Basic auth for the tunnel in `user:pass` format (optional) |
+<TypeTable
+  type={{
+    TUNNEL_ENABLED: {
+      description: 'Set to `true` to enable the ngrok tunnel on startup.',
+      type: 'boolean',
+      default: 'false',
+    },
+    NGROK_AUTHTOKEN: {
+      description: 'Your ngrok authentication token.',
+      type: 'string',
+    },
+    TUNNEL_DOMAIN: {
+      description: 'Custom tunnel domain (requires a paid ngrok plan).',
+      type: 'string',
+    },
+    TUNNEL_AUTH: {
+      description: 'Basic auth credentials for the tunnel in `user:pass` format.',
+      type: 'string',
+    },
+  }}
+/>
+
+<Callout type="warn">
+Always set `TUNNEL_AUTH` when exposing DorkOS publicly via a tunnel. Without it, anyone with the tunnel URL can access your sessions.
+</Callout>
 
 ## Config Directory
 
 DorkOS creates a `~/.dork/` directory on startup for storing configuration. Structured logs are written to `~/.dork/logs/dorkos.log` as NDJSON (newline-delimited JSON).
+
+Use `dorkos config path` to print the path to your config file, and `dorkos config list` to view all active settings.
+
+## Next Steps
+
+<Cards>
+  <Card title="CLI Usage" href="/docs/guides/cli-usage">
+    Manage config via CLI subcommands: get, set, list, reset, edit.
+  </Card>
+  <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
+    Access DorkOS remotely via ngrok tunnels.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Get up and running with your first session.
+  </Card>
+</Cards>

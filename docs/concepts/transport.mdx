@@ -3,6 +3,9 @@ title: Transport
 description: How the Transport interface enables DorkOS to run in multiple environments
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
 # Transport
 
 The Transport interface is the core abstraction that makes DorkOS work across different environments. It defines a contract between the React client and whatever backend serves Claude responses — whether that is an Express server over HTTP or direct in-process calls inside Obsidian.

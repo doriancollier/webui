@@ -6,7 +6,7 @@
  */
 export const siteConfig = {
   name: 'DorkOS',
-  description: 'A web UI for Claude Code',
+  description: 'Remote access to Claude Code. On your machine.',
   url: 'https://dorkos.ai',
   contactEmail: 'hey@dorkos.ai',
   github: 'https://github.com/dork-labs/dorkos',

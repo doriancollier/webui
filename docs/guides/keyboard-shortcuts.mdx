@@ -3,6 +3,10 @@ title: Keyboard Shortcuts
 description: Navigate DorkOS efficiently with keyboard shortcuts
 ---
 
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+
 # Keyboard Shortcuts
 
 DorkOS supports keyboard shortcuts to help you respond to Claude's requests without reaching for the mouse. When Claude needs your approval or input, you can use these shortcuts to interact quickly.
@@ -11,39 +15,74 @@ DorkOS supports keyboard shortcuts to help you respond to Claude's requests with
 
 Keyboard shortcuts activate automatically when Claude pauses to ask for your approval or answer. You'll see visual indicators (amber borders and key hints) on the active request.
 
-**Note:** Shortcuts are only available on desktop (screens 768px and wider). On mobile devices, use the on-screen buttons.
+<Callout type="info">
+Shortcuts are only available on desktop (screens 768px and wider). On mobile devices, use the on-screen buttons.
+</Callout>
 
 ## Tool Approval Shortcuts
 
-When Claude asks to approve a tool (like running a command or accessing a file), you can respond with:
+When Claude asks to approve a tool (like running a command or accessing a file):
 
-| Key | Action |
-|-----|--------|
-| `Enter` | Approve the tool call |
-| `Escape` | Deny the tool call |
+<TypeTable
+  type={{
+    Enter: {
+      description: 'Approve the tool call.',
+      type: 'key',
+    },
+    Escape: {
+      description: 'Deny the tool call.',
+      type: 'key',
+    },
+  }}
+/>
 
 ## Question Response Shortcuts
 
-When Claude asks you a question with multiple options, you can use these shortcuts to select answers:
+When Claude asks you a question with multiple options:
 
 ### Selecting Options
 
-| Key | Action |
-|-----|--------|
-| `1` - `9` | Toggle the option at that position (1 is the first option, 2 is the second, etc.) |
-| `↑` (Arrow Up) | Move focus to the previous option |
-| `↓` (Arrow Down) | Move focus to the next option |
-| `Space` | Toggle the currently focused option |
-| `Enter` | Submit your answer(s) |
+<TypeTable
+  type={{
+    '1 - 9': {
+      description: 'Toggle the option at that position (1 is first, 2 is second, etc.).',
+      type: 'key',
+    },
+    '↑ Arrow Up': {
+      description: 'Move focus to the previous option.',
+      type: 'key',
+    },
+    '↓ Arrow Down': {
+      description: 'Move focus to the next option.',
+      type: 'key',
+    },
+    Space: {
+      description: 'Toggle the currently focused option.',
+      type: 'key',
+    },
+    Enter: {
+      description: 'Submit your answer(s).',
+      type: 'key',
+    },
+  }}
+/>
 
 ### Navigating Between Questions
 
-When Claude asks multiple questions at once, you can switch between them:
+When Claude asks multiple questions at once:
 
-| Key | Action |
-|-----|--------|
-| `←` (Arrow Left) or `[` | Go to the previous question |
-| `→` (Arrow Right) or `]` | Go to the next question |
+<TypeTable
+  type={{
+    '← Arrow Left or [': {
+      description: 'Go to the previous question.',
+      type: 'key',
+    },
+    '→ Arrow Right or ]': {
+      description: 'Go to the next question.',
+      type: 'key',
+    },
+  }}
+/>
 
 ### Free-Text Responses
 
@@ -64,3 +103,17 @@ If Claude asks for multiple approvals or answers at once, only the first pending
 ## Chat Input
 
 When you're typing a message in the chat input, all shortcuts are disabled so you can type freely. Shortcuts only activate when Claude is waiting for your approval or answer.
+
+## Next Steps
+
+<Cards>
+  <Card title="Tool Approval" href="/docs/guides/tool-approval">
+    Understand how to review and manage tool approval flows.
+  </Card>
+  <Card title="Slash Commands" href="/docs/guides/slash-commands">
+    Speed up workflows with custom slash commands.
+  </Card>
+  <Card title="Quickstart" href="/docs/getting-started/quickstart">
+    Go from zero to your first Claude Code conversation in 5 minutes.
+  </Card>
+</Cards>

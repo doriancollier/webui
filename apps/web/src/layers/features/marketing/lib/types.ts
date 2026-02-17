@@ -1,12 +1,7 @@
-export type ProjectStatus = 'stable' | 'beta' | 'planned' | 'experimental'
-export type ProjectType = 'Core' | 'Interface' | 'Developer' | 'Integration'
-
 export interface Project {
   id: string
   title: string
   description: string
-  status: ProjectStatus
-  type: ProjectType
   href?: string
 }
 

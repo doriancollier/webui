@@ -15,7 +15,7 @@ export function ProjectsGrid({ projects }: ProjectsGridProps) {
 
       {/* Grid - 1px gap with border background */}
       <div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+        className="grid grid-cols-1 md:grid-cols-2"
         style={{
           gap: '1px',
           backgroundColor: 'var(--border-warm)',
