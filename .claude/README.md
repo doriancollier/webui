@@ -19,7 +19,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 | Component    | Count | Location                                                                   |
 | ------------ | ----- | -------------------------------------------------------------------------- |
-| Commands     | 51    | `.claude/commands/`                                                        |
+| Commands     | 52    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
 | Skills       | 11    | `.claude/skills/`                                                          |
 | Rules        | 8     | `.claude/rules/`                                                           |
@@ -27,7 +27,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
 | ADRs         | 5     | `decisions/`                                                               |
-| Guides       | 14    | `contributing/`                                                                  |
+| Guides       | 15    | `contributing/` (14 guides + INDEX.md)                                           |
 
 ## Component Types
 
@@ -225,7 +225,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 ├── settings.json          # Hooks, permissions, environment
 ├── settings.local.json    # Local overrides, MCP servers
 │
-├── commands/              # Slash commands (51 total)
+├── commands/              # Slash commands (52 total)
 │   ├── adr/               # Architecture Decision Records
 │   ├── app/               # Application maintenance
 │   ├── spec/              # Specification workflow
