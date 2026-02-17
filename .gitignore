@@ -7,8 +7,7 @@ dist-server/
 dist-obsidian/
 *.tsbuildinfo
 
-# Generated docs
-docs/api/openapi.json
+# Generated docs (openapi.json is committed for Vercel builds)
 
 # Turborepo
 .turbo/
