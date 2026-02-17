@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/layers/shared/ui';
 import { ServerTab } from './ServerTab';
+import { TunnelDialog } from './TunnelDialog';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ interface SettingsDialogProps {
 export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance');
+  const [tunnelDialogOpen, setTunnelDialogOpen] = useState(false);
   const {
     showTimestamps,
     setShowTimestamps,
@@ -65,6 +67,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setEnableNotificationSound,
     showStatusBarSound,
     setShowStatusBarSound,
+    showStatusBarTunnel,
+    setShowStatusBarTunnel,
   } = useAppStore();
 
   const transport = useTransport();
@@ -266,14 +270,18 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <SettingRow label="Show sound toggle" description="Display notification sound toggle">
                 <Switch checked={showStatusBarSound} onCheckedChange={setShowStatusBarSound} />
               </SettingRow>
+              <SettingRow label="Show tunnel" description="Display tunnel status and control">
+                <Switch checked={showStatusBarTunnel} onCheckedChange={setShowStatusBarTunnel} />
+              </SettingRow>
             </TabsContent>
 
             <TabsContent value="server" className="mt-0">
-              <ServerTab config={config} isLoading={isLoading} />
+              <ServerTab config={config} isLoading={isLoading} onOpenTunnelDialog={() => setTunnelDialogOpen(true)} />
             </TabsContent>
           </div>
         </Tabs>
       </ResponsiveDialogContent>
+      <TunnelDialog open={tunnelDialogOpen} onOpenChange={setTunnelDialogOpen} />
     </ResponsiveDialog>
   );
 }

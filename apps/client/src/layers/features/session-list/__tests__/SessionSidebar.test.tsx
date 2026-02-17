@@ -92,6 +92,8 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
       },
     }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
+    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
+    stopTunnel: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

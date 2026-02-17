@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react';
 import type { ServerConfig } from '@dorkos/shared/types';
 import { cn, TIMING } from '@/layers/shared/lib';
-import { Badge } from '@/layers/shared/ui';
 
 interface ServerTabProps {
   config: ServerConfig | undefined;
   isLoading: boolean;
+  onOpenTunnelDialog?: () => void;
 }
 
-export function ServerTab({ config, isLoading }: ServerTabProps) {
+export function ServerTab({ config, isLoading, onOpenTunnelDialog }: ServerTabProps) {
   return (
     <div className="space-y-3">
       <h3 className="text-foreground text-sm font-semibold">Server</h3>
@@ -61,36 +61,15 @@ export function ServerTab({ config, isLoading }: ServerTabProps) {
             muted={!config.claudeCliPath}
           />
 
-          <ConfigBadgeRow
-            label="Tunnel"
-            value={config.tunnel.enabled ? 'Enabled' : 'Disabled'}
-            variant={config.tunnel.enabled ? 'default' : 'secondary'}
-          />
-
-          {config.tunnel.enabled && (
-            <>
-              <ConfigBadgeRow
-                label="Tunnel Status"
-                value={config.tunnel.connected ? 'Connected' : 'Disconnected'}
-                variant={config.tunnel.connected ? 'default' : 'secondary'}
-              />
-
-              {config.tunnel.url && (
-                <ConfigRow label="Tunnel URL" value={config.tunnel.url} mono />
-              )}
-
-              <ConfigRow
-                label="Tunnel Auth"
-                value={config.tunnel.authEnabled ? 'Enabled' : 'Disabled'}
-              />
-
-              <ConfigBadgeRow
-                label="ngrok Token"
-                value={config.tunnel.tokenConfigured ? 'Configured' : 'Not configured'}
-                variant={config.tunnel.tokenConfigured ? 'default' : 'secondary'}
-              />
-            </>
-          )}
+          <div className="hover:bg-muted/50 -mx-1 flex items-center justify-between rounded px-1 py-1">
+            <span className="text-muted-foreground text-sm">Tunnel</span>
+            <button
+              onClick={onOpenTunnelDialog}
+              className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md border bg-transparent px-2.5 py-1 text-xs font-medium shadow-sm transition-colors"
+            >
+              Manage
+            </button>
+          </div>
         </div>
       ) : null}
     </div>
@@ -144,32 +123,6 @@ function ConfigRow({
         >
           {value}
         </span>
-      )}
-    </button>
-  );
-}
-
-function ConfigBadgeRow({
-  label,
-  value,
-  variant,
-}: {
-  label: string;
-  value: string;
-  variant: 'default' | 'secondary';
-}) {
-  const { copied, copy } = useCopy();
-  return (
-    <button
-      type="button"
-      onClick={() => copy(value)}
-      className="hover:bg-muted/50 active:bg-muted/70 -mx-1 flex w-full items-center justify-between rounded px-1 py-1 transition-colors duration-100"
-    >
-      <span className="text-muted-foreground text-sm">{label}</span>
-      {copied ? (
-        <span className="text-muted-foreground text-xs">Copied</span>
-      ) : (
-        <Badge variant={variant}>{value}</Badge>
       )}
     </button>
   );

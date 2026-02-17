@@ -41,6 +41,8 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
         tokenConfigured: false,
       },
     }),
+    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
+    stopTunnel: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

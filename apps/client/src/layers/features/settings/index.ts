@@ -4,3 +4,4 @@
  * @module features/settings
  */
 export { SettingsDialog } from './ui/SettingsDialog';
+export { TunnelDialog } from './ui/TunnelDialog';

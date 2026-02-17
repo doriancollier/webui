@@ -76,4 +76,8 @@ export interface Transport {
   health(): Promise<HealthResponse>;
   /** Get server configuration (version, tunnel status, paths). */
   getConfig(): Promise<ServerConfig>;
+  /** Start the ngrok tunnel and return the public URL. */
+  startTunnel(): Promise<{ url: string }>;
+  /** Stop the ngrok tunnel. */
+  stopTunnel(): Promise<void>;
 }

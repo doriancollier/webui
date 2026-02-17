@@ -10,6 +10,7 @@ import { CostItem } from './CostItem';
 import { ContextItem } from './ContextItem';
 import { GitStatusItem } from './GitStatusItem';
 import { NotificationSoundItem } from './NotificationSoundItem';
+import { TunnelItem } from './TunnelItem';
 import { VersionItem } from './VersionItem';
 import { useGitStatus } from '../model/use-git-status';
 import type { SessionStatusEvent } from '@dorkos/shared/types';
@@ -32,6 +33,7 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
     showStatusBarContext,
     showStatusBarGit,
     showStatusBarSound,
+    showStatusBarTunnel,
     showStatusBarVersion,
     enableNotificationSound,
     setEnableNotificationSound,
@@ -90,6 +92,12 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
           onToggle={() => setEnableNotificationSound(!enableNotificationSound)}
         />
       ),
+    });
+  }
+  if (showStatusBarTunnel && serverConfig?.tunnel) {
+    entries.push({
+      key: 'tunnel',
+      node: <TunnelItem tunnel={serverConfig.tunnel} />,
     });
   }
   if (showStatusBarVersion && serverConfig) {

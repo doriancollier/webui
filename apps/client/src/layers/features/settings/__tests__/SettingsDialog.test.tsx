@@ -123,6 +123,8 @@ function createMockTransport(configOverrides?: Partial<typeof mockConfig>): Tran
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
     getConfig: vi.fn().mockResolvedValue({ ...mockConfig, ...configOverrides }),
+    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
+    stopTunnel: vi.fn().mockResolvedValue(undefined),
   };
 }
 
@@ -169,14 +171,14 @@ describe('SettingsDialog', () => {
     expect(screen.getByText('/home/user/project')).toBeDefined();
   });
 
-  // Verifies sensitive values show badges, not raw token values
-  it('shows badges for sensitive values instead of raw data', async () => {
+  // Verifies tunnel section shows Manage button instead of raw config data
+  it('shows Manage button for tunnel section', async () => {
     const transport = createMockTransport();
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
-    const badge = await screen.findByText('Configured');
-    expect(badge).toBeDefined();
+    const manageBtn = await screen.findByText('Manage');
+    expect(manageBtn).toBeDefined();
   });
 
   // Verifies the dialog content is not rendered when closed
@@ -241,7 +243,7 @@ describe('SettingsDialog', () => {
     const statusBarLabel = screen.getByText(/show directory/i);
     const statusBarPanel = statusBarLabel.closest('[role="tabpanel"]')!;
     const switches = statusBarPanel.querySelectorAll('[role="switch"]');
-    expect(switches.length).toBe(7);
+    expect(switches.length).toBe(8);
     switches.forEach((sw) => {
       expect(sw.getAttribute('data-state')).toBe('checked');
     });

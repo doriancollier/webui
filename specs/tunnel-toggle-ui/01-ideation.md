@@ -10,6 +10,7 @@ status: ideation
 **Slug:** tunnel-toggle-ui
 **Author:** Claude Code
 **Date:** 2026-02-17
+**Branch:** preflight/tunnel-toggle-ui
 **Related:** Builds on spec #12 (ngrok-tunnel)
 
 ---
@@ -72,7 +73,11 @@ User clicks toggle -> useTunnelControl hook -> transport.startTunnel() -> POST /
 - Transport interface: 3 files (interface + 2 adapters)
 - No existing tests need modification (all new functionality)
 
-## 4) Research
+## 4) Root Cause Analysis
+
+N/A — this is a new feature, not a bug fix.
+
+## 5) Research
 
 **QR Code Library:** `react-qr-code` (13.8 kB unpacked, SVG-only, actively maintained). 8x smaller than `qrcode.react`. Simple prop-driven API: `<QRCode value={url} size={200} level="M" />`
 
@@ -82,7 +87,7 @@ User clicks toggle -> useTunnelControl hook -> transport.startTunnel() -> POST /
 
 **Full research:** `research/20260217_tunnel_toggle_ux_research.md`
 
-## 5) Clarification
+## 6) Clarification
 
 All clarifications resolved during design:
 

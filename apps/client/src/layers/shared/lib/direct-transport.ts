@@ -222,4 +222,12 @@ export class DirectTransport implements Transport {
       },
     };
   }
+
+  async startTunnel(): Promise<{ url: string }> {
+    throw new Error('Tunnel is not supported in embedded mode');
+  }
+
+  async stopTunnel(): Promise<void> {
+    throw new Error('Tunnel is not supported in embedded mode');
+  }
 }

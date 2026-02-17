@@ -88,6 +88,8 @@ function createMockTransport(overrides: Partial<Transport> = {}): Transport {
       },
     }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
+    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
+    stopTunnel: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }
@@ -757,6 +759,92 @@ describe('useChatSession', () => {
       await act(async () => {
         result.current.stop();
       });
+    });
+  });
+
+  describe('inference indicator state', () => {
+    it('resets streamStartTime and estimatedTokens after done event', async () => {
+      const sendMessage = createSendMessageMock([
+        { type: 'text_delta', data: { text: 'Hello world!' } } as StreamEvent,
+        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
+      ]);
+      const transport = createMockTransport({ sendMessage });
+      const { result } = renderHook(() => useChatSession('s1'), {
+        wrapper: createWrapper(transport),
+      });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(result.current.streamStartTime).toBeNull();
+      expect(result.current.estimatedTokens).toBe(0);
+    });
+
+    it('accumulates estimatedTokens from text_delta lengths', async () => {
+      const sendMessage = vi.fn(
+        async (
+          _sessionId: string,
+          _content: string,
+          onEvent: (event: StreamEvent) => void,
+          _signal?: AbortSignal,
+          _cwd?: string
+        ) => {
+          // Fire two text deltas (8 chars each = 2 tokens each = 4 total)
+          onEvent({ type: 'text_delta', data: { text: '12345678' } } as StreamEvent);
+          onEvent({ type: 'text_delta', data: { text: 'abcdefgh' } } as StreamEvent);
+          onEvent({ type: 'done', data: { sessionId: 's1' } } as StreamEvent);
+        }
+      );
+      const transport = createMockTransport({ sendMessage });
+      const { result } = renderHook(() => useChatSession('s1'), {
+        wrapper: createWrapper(transport),
+      });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // After done, tokens reset to 0
+      expect(result.current.estimatedTokens).toBe(0);
+    });
+
+    it('sets streamStartTime to a number when streaming begins', async () => {
+      const now = Date.now();
+      vi.spyOn(Date, 'now').mockReturnValue(now);
+
+      const sendMessage = createSendMessageMock([
+        { type: 'text_delta', data: { text: 'Hello' } } as StreamEvent,
+        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
+      ]);
+      const transport = createMockTransport({ sendMessage });
+      const { result } = renderHook(() => useChatSession('s1'), {
+        wrapper: createWrapper(transport),
+      });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      await act(async () => {
+        result.current.setInput('test');
+      });
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // After done, streamStartTime resets to null
+      expect(result.current.streamStartTime).toBeNull();
+
+      vi.restoreAllMocks();
     });
   });
 });

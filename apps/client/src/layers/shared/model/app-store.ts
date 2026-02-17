@@ -87,6 +87,8 @@ interface AppState {
   setShowStatusBarSound: (v: boolean) => void;
   showStatusBarVersion: boolean;
   setShowStatusBarVersion: (v: boolean) => void;
+  showStatusBarTunnel: boolean;
+  setShowStatusBarTunnel: (v: boolean) => void;
   verboseLogging: boolean;
   setVerboseLogging: (v: boolean) => void;
   fontSize: 'small' | 'medium' | 'large';
@@ -124,6 +126,7 @@ const BOOL_KEYS = {
   enableNotificationSound: 'dorkos-enable-notification-sound',
   showStatusBarSound: 'dorkos-show-status-bar-sound',
   showStatusBarVersion: 'dorkos-show-status-bar-version',
+  showStatusBarTunnel: 'dorkos-show-status-bar-tunnel',
   verboseLogging: 'dorkos-verbose-logging',
 } as const;
 
@@ -143,6 +146,7 @@ const BOOL_DEFAULTS: Record<keyof typeof BOOL_KEYS, boolean> = {
   enableNotificationSound: true,
   showStatusBarSound: true,
   showStatusBarVersion: true,
+  showStatusBarTunnel: true,
   verboseLogging: false,
 };
 
@@ -253,6 +257,11 @@ export const useAppStore = create<AppState>()(
       setShowStatusBarVersion: (v) => {
         writeBool(BOOL_KEYS.showStatusBarVersion, v);
         set({ showStatusBarVersion: v });
+      },
+      showStatusBarTunnel: readBool(BOOL_KEYS.showStatusBarTunnel, true),
+      setShowStatusBarTunnel: (v) => {
+        writeBool(BOOL_KEYS.showStatusBarTunnel, v);
+        set({ showStatusBarTunnel: v });
       },
       verboseLogging: readBool(BOOL_KEYS.verboseLogging, false),
       setVerboseLogging: (v) => {

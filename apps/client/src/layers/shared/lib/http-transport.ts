@@ -247,4 +247,12 @@ export class HttpTransport implements Transport {
   getConfig(): Promise<ServerConfig> {
     return fetchJSON<ServerConfig>(this.baseUrl, '/config');
   }
+
+  startTunnel(): Promise<{ url: string }> {
+    return fetchJSON<{ url: string }>(this.baseUrl, '/tunnel/start', { method: 'POST' });
+  }
+
+  async stopTunnel(): Promise<void> {
+    await fetchJSON<{ ok: boolean }>(this.baseUrl, '/tunnel/stop', { method: 'POST' });
+  }
 }

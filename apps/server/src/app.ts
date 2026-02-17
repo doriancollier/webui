@@ -10,6 +10,7 @@ import directoryRoutes from './routes/directory.js';
 import configRoutes from './routes/config.js';
 import fileRoutes from './routes/files.js';
 import gitRoutes from './routes/git.js';
+import tunnelRoutes from './routes/tunnel.js';
 import { generateOpenAPISpec } from './services/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
@@ -31,6 +32,7 @@ export function createApp() {
   app.use('/api/config', configRoutes);
   app.use('/api/files', fileRoutes);
   app.use('/api/git', gitRoutes);
+  app.use('/api/tunnel', tunnelRoutes);
 
   // OpenAPI spec + interactive docs
   const spec = generateOpenAPISpec();
