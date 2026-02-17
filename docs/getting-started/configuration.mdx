@@ -20,6 +20,7 @@ DorkOS is configured via environment variables.
 | `DORKOS_PORT` | `4242` | Port for the DorkOS server |
 | `DORKOS_DEFAULT_CWD` | Current directory | Default working directory for sessions |
 | `DORKOS_BOUNDARY` | Home directory | Directory boundary root (restricts all filesystem access) |
+| `LOG_LEVEL` | `info` | Log verbosity (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
 
 ## Tunnel Configuration
 
@@ -34,4 +35,4 @@ DorkOS supports ngrok tunnels for remote access.
 
 ## Config Directory
 
-DorkOS creates a `~/.dork/` directory on startup for storing configuration.
+DorkOS creates a `~/.dork/` directory on startup for storing configuration. Structured logs are written to `~/.dork/logs/dorkos.log` as NDJSON (newline-delimited JSON).

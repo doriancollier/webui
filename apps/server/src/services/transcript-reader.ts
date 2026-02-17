@@ -305,6 +305,7 @@ export class TranscriptReader {
    * List available SDK session transcript IDs.
    */
   async listTranscripts(vaultRoot: string): Promise<string[]> {
+    await validateBoundary(vaultRoot);
     const transcriptsDir = this.getTranscriptsDir(vaultRoot);
     try {
       const files = await fs.readdir(transcriptsDir);

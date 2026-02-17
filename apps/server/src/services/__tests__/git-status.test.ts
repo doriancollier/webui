@@ -107,6 +107,17 @@ describe('parsePorcelainOutput', () => {
 });
 
 describe('getGitStatus', () => {
+  it('returns not_git_repo when cwd is outside boundary', async () => {
+    const { validateBoundary, BoundaryError } = await import('../../lib/boundary.js');
+    (validateBoundary as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
+    );
+
+    const { getGitStatus } = await import('../git-status.js');
+    const result = await getGitStatus('/outside/boundary');
+    expect(result).toEqual({ error: 'not_git_repo' });
+  });
+
   // Integration test — calls real git CLI
   it('returns not_git_repo error for non-existent directory', async () => {
     const { getGitStatus } = await import('../git-status.js');

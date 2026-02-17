@@ -310,6 +310,32 @@ describe('AgentManager', () => {
     });
   });
 
+  describe('sendMessage() boundary enforcement', () => {
+    it('yields error event when cwd violates boundary', async () => {
+      const { validateBoundary } = await import('../../lib/boundary.js');
+      const { BoundaryError } = await import('../../lib/boundary.js');
+
+      // Make validateBoundary reject with BoundaryError
+      (validateBoundary as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
+      );
+
+      agentManager.ensureSession('boundary-test', {
+        permissionMode: 'default',
+        cwd: '/outside/boundary',
+      });
+
+      const events = [];
+      for await (const event of agentManager.sendMessage('boundary-test', 'hello')) {
+        events.push(event);
+      }
+
+      const errorEvent = events.find((e) => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect((errorEvent!.data as any).message).toContain('Directory boundary violation');
+    });
+  });
+
   describe('approveTool()', () => {
     it('returns false when no pending approval', () => {
       agentManager.ensureSession('s1', { permissionMode: 'default' });

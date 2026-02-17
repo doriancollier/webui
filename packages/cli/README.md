@@ -38,6 +38,7 @@ The server starts on port 4242 and opens your browser automatically. You'll see 
 | `DORKOS_PORT` | `4242` | Server port |
 | `DORKOS_DEFAULT_CWD` | Current directory | Default working directory for sessions |
 | `DORKOS_BOUNDARY` | Home directory | Directory boundary root (restricts filesystem access) |
+| `LOG_LEVEL` | `info` | Log verbosity (`fatal`, `error`, `warn`, `info`, `debug`, `trace`) |
 
 ### Tunnel Configuration
 
@@ -52,7 +53,7 @@ DorkOS supports ngrok tunnels for remote access:
 
 ## Config Directory
 
-DorkOS creates a `~/.dork/` directory on startup for configuration storage.
+DorkOS creates a `~/.dork/` directory on startup for configuration storage. Log files are written to `~/.dork/logs/dorkos.log` as NDJSON.
 
 ## API Documentation
 

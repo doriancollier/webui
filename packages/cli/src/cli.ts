@@ -6,6 +6,7 @@ import fs from 'fs';
 import { checkClaude } from './check-claude.js';
 import { checkForUpdate } from './update-check.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
+import { LOG_LEVEL_MAP } from '@dorkos/shared/config-schema';
 
 // Injected at build time by esbuild define
 declare const __CLI_VERSION__: string;
@@ -18,6 +19,7 @@ const { values, positionals } = parseArgs({
     tunnel: { type: 'boolean', short: 't', default: false },
     dir: { type: 'string', short: 'd' },
     boundary: { type: 'string', short: 'b' },
+    'log-level': { type: 'string', short: 'l' },
     help: { type: 'boolean', short: 'h' },
     version: { type: 'boolean', short: 'v' },
     yes: { type: 'boolean', short: 'y', default: false },
@@ -48,6 +50,7 @@ Options:
   -t, --tunnel           Enable ngrok tunnel
   -d, --dir <path>       Working directory (default: current directory)
   -b, --boundary <path>  Directory boundary (default: home directory)
+  -l, --log-level <level>  Log level (fatal|error|warn|info|debug|trace)
   -h, --help             Show this help message
   -v, --version          Show version number
 
@@ -76,6 +79,7 @@ if (values.version) {
 // Ensure ~/.dork config directory exists
 const DORK_HOME = path.join(os.homedir(), '.dork');
 fs.mkdirSync(DORK_HOME, { recursive: true });
+fs.mkdirSync(path.join(DORK_HOME, 'logs'), { recursive: true });
 process.env.DORK_HOME = DORK_HOME;
 
 // Handle subcommands that don't need the full server
@@ -182,6 +186,13 @@ if (resolvedDir !== effectiveBoundary && !resolvedDir.startsWith(effectiveBounda
   );
   process.env.DORKOS_DEFAULT_CWD = effectiveBoundary;
 }
+
+// Log level: CLI flag > env var > config > default
+const logLevelName = values['log-level']
+  || process.env.LOG_LEVEL
+  || (cfgMgr.getDot('logging.level') as string | null)
+  || (process.env.NODE_ENV === 'production' ? 'info' : 'debug');
+process.env.DORKOS_LOG_LEVEL = String(LOG_LEVEL_MAP[logLevelName] ?? 3);
 
 // Load .env from user's cwd (project-local, optional)
 // Re-read env var in case CWD was overridden by boundary fallback above

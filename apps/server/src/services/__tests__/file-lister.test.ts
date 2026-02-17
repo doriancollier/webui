@@ -153,6 +153,17 @@ describe('FileListService', () => {
     expect(result.files).toEqual(['src/app.ts', 'index.ts']);
   });
 
+  it('throws BoundaryError when cwd is outside boundary', async () => {
+    const { validateBoundary, BoundaryError } = await import('../../lib/boundary.js');
+    (validateBoundary as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
+    );
+
+    await expect(fileLister.listFiles('/outside/boundary')).rejects.toThrow(
+      'Access denied: path outside directory boundary'
+    );
+  });
+
   it('invalidateCache clears specific cwd', async () => {
     mockGitSuccess(['a.ts']);
     await fileLister.listFiles('/proj-a');

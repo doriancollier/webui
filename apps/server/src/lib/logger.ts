@@ -25,11 +25,23 @@ const MAX_LOG_FILES = 7;
 function createFileReporter() {
   return {
     log(logObj: LogObject) {
+      // Separate structured context objects from string message parts
+      let context: Record<string, unknown> | undefined;
+      const msgParts: string[] = [];
+      for (const arg of logObj.args) {
+        if (typeof arg === 'object' && arg !== null && !Array.isArray(arg)) {
+          context = arg as Record<string, unknown>;
+        } else {
+          msgParts.push(String(arg));
+        }
+      }
+
       const entry = JSON.stringify({
         level: logObj.type,
         time: logObj.date.toISOString(),
-        msg: logObj.args.map(String).join(' '),
+        msg: msgParts.join(' '),
         tag: logObj.tag || undefined,
+        ...context,
       });
       fs.appendFileSync(LOG_FILE, entry + '\n');
     },
@@ -81,10 +93,6 @@ export function initLogger(options?: { level?: number }): void {
 
   const level = options?.level ?? (process.env.NODE_ENV === 'production' ? 3 : 4);
 
-  logger = createConsola({
-    level,
-    reporters: [],
-  });
-
+  logger = createConsola({ level });
   logger.addReporter(createFileReporter());
 }

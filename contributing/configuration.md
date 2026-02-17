@@ -52,6 +52,7 @@ dorkos config path
 | `tunnel.domain`   | string \| null                 | `null`    | Custom ngrok domain                        |
 | `tunnel.authtoken`| string \| null                 | `null`    | ngrok auth token (sensitive)               |
 | `tunnel.auth`     | string \| null                 | `null`    | HTTP basic auth for tunnel, `user:pass` format (sensitive) |
+| `logging.level`   | `"fatal"` \| `"error"` \| `"warn"` \| `"info"` \| `"debug"` \| `"trace"` | `"info"` | Log verbosity level |
 | `ui.theme`        | `"light"` \| `"dark"` \| `"system"` | `"system"` | UI color theme                           |
 
 The config file also contains a `version` field (always `1`) used for schema migrations.
@@ -148,6 +149,19 @@ dorkos config set tunnel.auth admin:secretpassword
 
 Equivalent env var: `TUNNEL_AUTH`
 
+### logging.level
+
+The log verbosity level for the server. Controls both console output and NDJSON file logging to `~/.dork/logs/dorkos.log`.
+
+```bash
+dorkos config set logging.level debug
+```
+
+Equivalent CLI flag: `--log-level` / `-l`
+Equivalent env var: `LOG_LEVEL`
+
+Log files are written as NDJSON (newline-delimited JSON) and rotated at startup when they exceed 10MB. The last 7 rotated files are retained.
+
 ### ui.theme
 
 The UI color theme. Options: `light`, `dark`, or `system` (follows OS preference).
@@ -193,6 +207,15 @@ process.cwd()            # Current directory (fallback)
 TUNNEL_ENABLED=true      # Env var (wins if no CLI flag)
 tunnel.enabled: true     # config.json (wins if no env var)
 false                    # Built-in default (fallback)
+```
+
+**Log level resolution:**
+
+```
+--log-level debug        # CLI flag (wins if provided)
+LOG_LEVEL=debug          # Env var (wins if no CLI flag)
+logging.level: debug     # config.json (wins if no env var)
+info                     # Built-in default (fallback)
 ```
 
 **Boundary resolution:**

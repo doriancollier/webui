@@ -15,7 +15,10 @@ const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
 let sessionBroadcaster: SessionBroadcaster | null = null;
 
 async function start() {
-  initLogger();
+  const logLevel = process.env.DORKOS_LOG_LEVEL
+    ? parseInt(process.env.DORKOS_LOG_LEVEL, 10)
+    : undefined;
+  initLogger({ level: logLevel });
   initConfigManager();
 
   // Initialize directory boundary (must happen before app creation)

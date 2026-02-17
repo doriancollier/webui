@@ -12,6 +12,7 @@ import fileRoutes from './routes/files.js';
 import gitRoutes from './routes/git.js';
 import { generateOpenAPISpec } from './services/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
+import { requestLogger } from './middleware/request-logger.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -20,6 +21,7 @@ export function createApp() {
 
   app.use(cors());
   app.use(express.json());
+  app.use(requestLogger);
 
   // API routes
   app.use('/api/sessions', sessionRoutes);
