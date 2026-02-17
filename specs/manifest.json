@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 33,
+  "nextNumber": 35,
   "specs": [
     {
       "number": 1,
@@ -225,6 +225,20 @@
       "title": "DorkOS Configuration File System",
       "created": "2026-02-16",
       "status": "implemented"
+    },
+    {
+      "number": 33,
+      "slug": "versioning-release-system",
+      "title": "Versioning, Release & Update System",
+      "created": "2026-02-16",
+      "status": "implemented"
+    },
+    {
+      "number": 34,
+      "slug": "directory-boundary-enforcement",
+      "title": "Centralized Directory Boundary Enforcement",
+      "created": "2026-02-16",
+      "status": "specified"
     }
   ]
 }

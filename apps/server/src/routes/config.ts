@@ -5,9 +5,18 @@ import { resolveClaudeCliPath } from '../services/agent-manager.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { configManager } from '../services/config-manager.js';
 import { UserConfigSchema, SENSITIVE_CONFIG_KEYS } from '@dorkos/shared/config-schema';
+import { getLatestVersion } from '../services/update-checker.js';
 
-const require = createRequire(import.meta.url);
-const { version: SERVER_VERSION } = require('../../package.json') as { version: string };
+declare const __CLI_VERSION__: string | undefined;
+
+// Use build-time injected version when bundled; fall back to root package.json in dev mode
+let SERVER_VERSION: string;
+if (typeof __CLI_VERSION__ !== 'undefined') {
+  SERVER_VERSION = __CLI_VERSION__;
+} else {
+  const req = createRequire(import.meta.url);
+  SERVER_VERSION = (req('../../package.json') as { version: string }).version;
+}
 
 const router = Router();
 
@@ -64,7 +73,7 @@ function flattenKeys(obj: Record<string, unknown>, prefix = ''): string[] {
   return keys;
 }
 
-router.get('/', (_req, res) => {
+router.get('/', async (_req, res) => {
   let claudeCliPath: string | null = null;
   try {
     claudeCliPath = resolveClaudeCliPath() ?? null;
@@ -73,9 +82,11 @@ router.get('/', (_req, res) => {
   }
 
   const tunnel = tunnelManager.status;
+  const latestVersion = await getLatestVersion();
 
   res.json({
     version: SERVER_VERSION,
+    latestVersion,
     port: parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10),
     uptime: process.uptime(),
     workingDirectory: process.cwd(),

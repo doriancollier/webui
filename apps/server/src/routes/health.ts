@@ -2,8 +2,16 @@ import { Router } from 'express';
 import { createRequire } from 'module';
 import { tunnelManager } from '../services/tunnel-manager.js';
 
-const require = createRequire(import.meta.url);
-const { version: SERVER_VERSION } = require('../../package.json') as { version: string };
+declare const __CLI_VERSION__: string | undefined;
+
+// Use build-time injected version when bundled; fall back to root package.json in dev mode
+let SERVER_VERSION: string;
+if (typeof __CLI_VERSION__ !== 'undefined') {
+  SERVER_VERSION = __CLI_VERSION__;
+} else {
+  const req = createRequire(import.meta.url);
+  SERVER_VERSION = (req('../../package.json') as { version: string }).version;
+}
 
 const router = Router();
 

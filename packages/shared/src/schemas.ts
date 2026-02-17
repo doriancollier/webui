@@ -456,7 +456,11 @@ export type HealthResponse = z.infer<typeof HealthResponseSchema>;
 
 export const ServerConfigSchema = z
   .object({
-    version: z.string(),
+    version: z.string().openapi({ description: 'Current server version' }),
+    latestVersion: z
+      .string()
+      .nullable()
+      .openapi({ description: 'Latest available version from npm, or null if unknown' }),
     port: z.number().int(),
     uptime: z.number(),
     workingDirectory: z.string(),

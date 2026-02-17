@@ -45,6 +45,7 @@ async function buildCLI() {
       'conf',
       '@inquirer/prompts',
     ],
+    define: { __CLI_VERSION__: JSON.stringify(version) },
     sourcemap: true,
     banner: {
       js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",

@@ -4,4 +4,5 @@
  * @module features/status
  */
 export { StatusLine } from './ui/StatusLine';
+export { VersionItem } from './ui/VersionItem';
 export { useGitStatus } from './model/use-git-status';

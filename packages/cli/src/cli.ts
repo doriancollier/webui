@@ -1,9 +1,10 @@
 import { parseArgs } from 'node:util';
-import os from 'os';
+import os, { networkInterfaces } from 'os';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
 import { checkClaude } from './check-claude.js';
+import { checkForUpdate } from './update-check.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 
 // Injected at build time by esbuild define
@@ -158,3 +159,44 @@ if (fs.existsSync(envPath)) {
 
 // Start the server
 await import('../server/index.js');
+
+// Print startup banner
+const port = process.env.DORKOS_PORT || String(DEFAULT_PORT);
+console.log('');
+console.log(`  DorkOS v${__CLI_VERSION__}`);
+console.log(`  Local:   http://localhost:${port}`);
+
+// Find first non-internal IPv4 address
+const nets = networkInterfaces();
+let networkUrl: string | null = null;
+for (const name of Object.keys(nets)) {
+  for (const net of nets[name] ?? []) {
+    if (net.family === 'IPv4' && !net.internal) {
+      networkUrl = `http://${net.address}:${port}`;
+      break;
+    }
+  }
+  if (networkUrl) break;
+}
+if (networkUrl) {
+  console.log(`  Network: ${networkUrl}`);
+}
+console.log('');
+
+// Non-blocking update check (fire-and-forget)
+checkForUpdate(__CLI_VERSION__).then((latestVersion) => {
+  if (latestVersion) {
+    const msg = `Update available: ${__CLI_VERSION__} → ${latestVersion}`;
+    const cmd = 'Run npm update -g dorkos to update';
+    const width = Math.max(msg.length, cmd.length) + 6;
+    const pad = (s: string) => `│   ${s}${' '.repeat(width - s.length - 6)}   │`;
+    console.log('');
+    console.log(`┌${'─'.repeat(width - 2)}┐`);
+    console.log(pad(msg));
+    console.log(pad(cmd));
+    console.log(`└${'─'.repeat(width - 2)}┘`);
+    console.log('');
+  }
+}).catch(() => {
+  // Silently ignore — never interrupt server
+});

@@ -1,7 +1,8 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { useQuery } from '@tanstack/react-query';
 import { useSessionStatus } from '@/layers/entities/session';
-import { useAppStore } from '@/layers/shared/model';
+import { useAppStore, useTransport } from '@/layers/shared/model';
 import { CwdItem } from './CwdItem';
 import { PermissionModeItem } from './PermissionModeItem';
 import { ModelItem } from './ModelItem';
@@ -9,6 +10,7 @@ import { CostItem } from './CostItem';
 import { ContextItem } from './ContextItem';
 import { GitStatusItem } from './GitStatusItem';
 import { NotificationSoundItem } from './NotificationSoundItem';
+import { VersionItem } from './VersionItem';
 import { useGitStatus } from '../model/use-git-status';
 import type { SessionStatusEvent } from '@dorkos/shared/types';
 
@@ -30,10 +32,17 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
     showStatusBarContext,
     showStatusBarGit,
     showStatusBarSound,
+    showStatusBarVersion,
     enableNotificationSound,
     setEnableNotificationSound,
   } = useAppStore();
   const { data: gitStatus } = useGitStatus(status.cwd);
+  const transport = useTransport();
+  const { data: serverConfig } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => transport.getConfig(),
+    staleTime: 5 * 60 * 1000,
+  });
 
   // Build ordered list of visible item entries with stable keys
   const entries: { key: string; node: React.ReactNode }[] = [];
@@ -79,6 +88,17 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
         <NotificationSoundItem
           enabled={enableNotificationSound}
           onToggle={() => setEnableNotificationSound(!enableNotificationSound)}
+        />
+      ),
+    });
+  }
+  if (showStatusBarVersion && serverConfig) {
+    entries.push({
+      key: 'version',
+      node: (
+        <VersionItem
+          version={serverConfig.version}
+          latestVersion={serverConfig.latestVersion}
         />
       ),
     });

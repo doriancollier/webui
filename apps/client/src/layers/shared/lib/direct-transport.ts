@@ -207,6 +207,7 @@ export class DirectTransport implements Transport {
   async getConfig(): Promise<ServerConfig> {
     return {
       version: '0.1.0',
+      latestVersion: null,
       port: 0,
       uptime: 0,
       workingDirectory: this.services.vaultRoot,

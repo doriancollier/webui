@@ -1,12 +1,12 @@
 ---
-description: Create a new release with version bump, changelog update, git tag, and optional GitHub Release
+description: Create a new release with version bump, changelog update, git tag, npm publish, and optional GitHub Release
 argument-hint: [patch|minor|major|X.Y.Z] [--dry-run]
 allowed-tools: Bash, Read, Write, Edit, Glob, AskUserQuestion, Task
 ---
 
 # System Release Command (Orchestrator)
 
-Create a new release by bumping the version, updating the changelog, creating a git tag, and optionally publishing a GitHub Release.
+Create a new release by bumping the version, updating the changelog, creating a git tag, publishing to npm, and optionally creating a GitHub Release.
 
 This command operates as an **orchestrator** that:
 
@@ -18,46 +18,47 @@ This command operates as an **orchestrator** that:
 
 - `$ARGUMENTS` - Optional bump type or explicit version, plus optional flags:
   - _(no argument)_ - **Auto-detect** version bump from changelog and commits
-  - `patch` - Force patch version (0.5.0 → 0.5.1)
-  - `minor` - Force minor version (0.5.0 → 0.6.0)
-  - `major` - Force major version (0.5.0 → 1.0.0)
-  - `X.Y.Z` - Explicit version number (e.g., `0.7.0`)
+  - `patch` - Force patch version (0.1.0 -> 0.1.1)
+  - `minor` - Force minor version (0.1.0 -> 0.2.0)
+  - `major` - Force major version (0.1.0 -> 1.0.0)
+  - `X.Y.Z` - Explicit version number (e.g., `0.2.0`)
   - `--dry-run` - Show what would happen without making changes
 
 ## Semantic Versioning
 
-| Bump Type | When to Use                                  | Example       |
-| --------- | -------------------------------------------- | ------------- |
-| **MAJOR** | Breaking changes to user config or workflows | 0.5.0 → 1.0.0 |
-| **MINOR** | New features, backward compatible            | 0.5.0 → 0.6.0 |
-| **PATCH** | Bug fixes, documentation updates             | 0.5.0 → 0.5.1 |
+| Bump Type | When to Use                                  | Example        |
+| --------- | -------------------------------------------- | -------------- |
+| **MAJOR** | Breaking changes to user config or workflows | 0.1.0 -> 1.0.0 |
+| **MINOR** | New features, backward compatible            | 0.1.0 -> 0.2.0 |
+| **PATCH** | Bug fixes, documentation updates             | 0.1.0 -> 0.1.1 |
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    MAIN CONTEXT (Orchestrator)              │
-│                                                             │
-│  Phase 1: Parse arguments                                   │
-│  Phase 2: Pre-flight checks (git status, branch, VERSION)   │
-│           ↓                                                 │
-│  Phase 3: If auto-detect needed → spawn analysis agent      │
-│           ↓                                                 │
-│  Phase 4: Present recommendation, get user confirmation     │
-│  Phase 5: Execute release (VERSION, changelog, git)         │
-│  Phase 6: Report results                                    │
-└─────────────────────────────────────────────────────────────┘
-                           │
-                           ▼ (only if auto-detect)
-┌─────────────────────────────────────────────────────────────┐
-│              SUBAGENT: Release Analyzer                     │
-│              (context-isolator, model: haiku)               │
-│                                                             │
-│  - Read changelog [Unreleased] section                      │
-│  - Get commits since last tag                               │
-│  - Analyze patterns (feat:, fix:, BREAKING, etc.)           │
-│  - Return structured recommendation                         │
-└─────────────────────────────────────────────────────────────┘
++-------------------------------------------------------------+
+|                    MAIN CONTEXT (Orchestrator)                |
+|                                                               |
+|  Phase 1: Parse arguments                                     |
+|  Phase 2: Pre-flight checks (git status, branch, VERSION)     |
+|           |                                                   |
+|  Phase 3: If auto-detect needed -> spawn analysis agent       |
+|           |                                                   |
+|  Phase 4: Present recommendation, get user confirmation       |
+|  Phase 5: Execute release (VERSION, package.json, changelog,  |
+|           git, npm publish)                                   |
+|  Phase 6: Report results                                      |
++-------------------------------------------------------------+
+                           |
+                           v (only if auto-detect)
++-------------------------------------------------------------+
+|              SUBAGENT: Release Analyzer                       |
+|              (context-isolator, model: haiku)                 |
+|                                                               |
+|  - Read changelog [Unreleased] section                        |
+|  - Get commits since last tag                                 |
+|  - Analyze patterns (feat:, fix:, BREAKING, etc.)             |
+|  - Return structured recommendation                           |
++-------------------------------------------------------------+
 ```
 
 ---
@@ -109,7 +110,7 @@ Switch to main: `git checkout main`
 ```
 
 ```bash
-# Check 3: Read current version
+# Check 3: Read current version from VERSION file (single source of truth)
 cat VERSION
 ```
 
@@ -119,29 +120,31 @@ git describe --tags --abbrev=0 2>/dev/null || echo "none"
 ```
 
 ```bash
-# Check 5: Run changelog backfill analysis to check for missing entries
-python3 .claude/scripts/changelog_backfill.py --json
+# Check 5: Analyze commits since last tag for changelog completeness
+git log $(git describe --tags --abbrev=0 2>/dev/null || echo "")..HEAD --oneline
 ```
 
-Parse the JSON output:
+Parse the git log output to identify commits not represented in the [Unreleased] section of CHANGELOG.md:
 
-- `existing_entries` - Current entries in [Unreleased]
-- `missing_entries` - Commits not yet in changelog
-- `commits_analyzed` - Total commits since last tag
+- Read the current [Unreleased] section from CHANGELOG.md
+- Compare commit messages against existing entries
+- Categorize missing commits by conventional commit type:
+  - `feat:` / `feat(...)` -> Added
+  - `fix:` / `fix(...)` -> Fixed
+  - `refactor:` / `chore:` / `docs:` -> Changed
+  - `BREAKING CHANGE` or `!` after type -> Breaking
 
 ### If missing entries exist (changelog is incomplete)
-
-This is the most important check. Even if [Unreleased] has some entries, commits may be missing.
 
 Report and ask:
 
 ```markdown
 ## Changelog Review
 
-**Since tag**: [since_tag]
-**Commits analyzed**: [commits_analyzed]
-**Current entries**: [existing_entries]
-**Missing entries**: [count of missing_entries]
+**Since tag**: [last_tag]
+**Commits analyzed**: [count]
+**Current entries**: [count from Unreleased section]
+**Missing entries**: [count]
 
 ### Missing from Changelog
 
@@ -149,13 +152,13 @@ The following commits are not represented in the [Unreleased] section:
 
 #### Added
 
-- [entry] ([commit])
-  _From_: `[original message]`
+- [user-friendly description] ([short sha])
+  _From_: `[original commit message]`
 
 #### Fixed
 
-- [entry] ([commit])
-  _From_: `[original message]`
+- [user-friendly description] ([short sha])
+  _From_: `[original commit message]`
 ```
 
 Use AskUserQuestion:
@@ -172,17 +175,16 @@ options:
     description: "Exit so you can edit the changelog yourself"
 ```
 
-If user selects "Yes, add all":
-
-```bash
-python3 .claude/scripts/changelog_backfill.py --apply
-```
+If user selects "Yes, add all": Use the Edit tool to add the missing entries to the appropriate sections in the [Unreleased] block of CHANGELOG.md. Rewrite entries to be user-friendly using the `/writing-changelogs` skill guidelines:
+- Focus on what users can DO, not what files changed
+- Use imperative verbs (Add, Fix, Change, Remove)
+- Explain benefits, not just mechanisms
 
 Then continue to Phase 3.
 
 ### If no entries exist at all (completely empty)
 
-If both `existing_entries` and `missing_entries` are 0:
+If both the [Unreleased] section and commit history are empty since the last release:
 
 ```
 ## Cannot Release: No Changes
@@ -190,7 +192,7 @@ If both `existing_entries` and `missing_entries` are 0:
 Both the [Unreleased] section and commit history are empty since the last release.
 There's nothing to release.
 
-**Tip**: Use conventional commit format (feat:, fix:, etc.) so the changelog-populator hook can track changes automatically.
+**Tip**: Use conventional commit format (feat:, fix:, etc.) so changes are easy to track.
 ```
 
 **STOP** the release process.
@@ -205,9 +207,9 @@ Skip analysis, calculate next version directly:
 
 | Current | Bump Type | Next  |
 | ------- | --------- | ----- |
-| 0.5.0   | patch     | 0.5.1 |
-| 0.5.0   | minor     | 0.6.0 |
-| 0.5.0   | major     | 1.0.0 |
+| 0.1.0   | patch     | 0.1.1 |
+| 0.1.0   | minor     | 0.2.0 |
+| 0.1.0   | major     | 1.0.0 |
 
 Proceed to Phase 4.
 
@@ -328,8 +330,8 @@ Present the release plan to the user:
 ```markdown
 ## Release Preview
 
-**Current Version**: v0.5.0
-**New Version**: v0.6.0
+**Current Version**: v0.1.0
+**New Version**: v0.2.0
 **Bump Type**: MINOR (auto-detected)
 
 ### Reasoning
@@ -340,9 +342,9 @@ Present the release plan to the user:
 
 **Changelog signals:**
 
-- ✓ "### Added" section has 3 items
-- ✗ No breaking changes detected
-- ✓ "### Fixed" section has 2 items
+- [check] "### Added" section has 3 items
+- [x] No breaking changes detected
+- [check] "### Fixed" section has 2 items
 
 **Commit signals (12 commits):**
 
@@ -356,14 +358,21 @@ Present the release plan to the user:
 
 ### Files to be Modified
 
-1. `VERSION` — 0.5.0 → 0.6.0
-2. `CHANGELOG.md` — [Unreleased] → [0.6.0] - YYYY-MM-DD
+1. `VERSION` - 0.1.0 -> 0.2.0
+2. `packages/cli/package.json` - 0.1.0 -> 0.2.0
+3. `package.json` - 0.1.0 -> 0.2.0
+4. `package-lock.json` - updated by npm version
+5. `CHANGELOG.md` - [Unreleased] -> [0.2.0] - YYYY-MM-DD
 
 ### Git Operations
 
-1. Commit: "Release v0.6.0"
-2. Tag: v0.6.0 (annotated)
+1. Commit: "chore(release): v0.2.0"
+2. Tag: v0.2.0 (annotated)
 3. Push: origin main + tag
+
+### npm Publish
+
+4. `npm publish -w packages/cli` (publishes `dorkos` to npm)
 ```
 
 If `--dry-run` flag is present, **STOP** here.
@@ -372,14 +381,14 @@ Otherwise, use AskUserQuestion:
 
 ```
 header: "Confirm Release"
-question: "Create release v0.6.0?"
+question: "Create release v0.2.0?"
 options:
   - label: "Yes, MINOR is correct (Recommended)"
     description: "New features added, backward compatible"
   - label: "No, make it PATCH"
-    description: "These are just bug fixes (0.5.0 → 0.5.1)"
+    description: "These are just bug fixes (0.1.0 -> 0.1.1)"
   - label: "No, make it MAJOR"
-    description: "There are breaking changes (0.5.0 → 1.0.0)"
+    description: "There are breaking changes (0.1.0 -> 1.0.0)"
   - label: "Cancel"
     description: "Abort without making changes"
 ```
@@ -393,7 +402,7 @@ If user overrides the bump type, recalculate version.
 ### 5.1: Check tag doesn't exist
 
 ```bash
-git tag -l "v0.6.0"
+git tag -l "v0.2.0"
 ```
 
 If tag exists, **STOP**:
@@ -401,17 +410,29 @@ If tag exists, **STOP**:
 ```
 ## Cannot Release: Tag Already Exists
 
-Tag v0.6.0 already exists. Choose a different version or delete:
-- `git tag -d v0.6.0 && git push origin :refs/tags/v0.6.0`
+Tag v0.2.0 already exists. Choose a different version or delete:
+- `git tag -d v0.2.0 && git push origin :refs/tags/v0.2.0`
 ```
 
 ### 5.2: Update VERSION File
 
 ```bash
-echo "0.6.0" > VERSION
+printf "0.2.0" > VERSION
 ```
 
-### 5.3: Update Changelog
+### 5.3: Sync Version to package.json Files
+
+```bash
+# Update packages/cli/package.json (the published npm package)
+npm version 0.2.0 --no-git-tag-version -w packages/cli
+
+# Update root package.json
+npm version 0.2.0 --no-git-tag-version
+```
+
+This updates `packages/cli/package.json`, `package.json`, and `package-lock.json` in one go.
+
+### 5.4: Update Changelog
 
 Edit `CHANGELOG.md` using the Edit tool:
 
@@ -432,39 +453,61 @@ Edit `CHANGELOG.md` using the Edit tool:
 
 ---
 
-## [0.6.0] - 2026-01-31
+## [0.2.0] - 2026-02-16
 
 [Previous [Unreleased] content here]
 ```
 
-### 5.4: Commit and Tag
+### 5.5: Commit and Tag
 
 ```bash
-# Stage changes
-git add VERSION CHANGELOG.md
+# Stage all version-related changes
+git add VERSION CHANGELOG.md packages/cli/package.json package.json package-lock.json
 
 # Commit (use HEREDOC for message)
 git commit -m "$(cat <<'EOF'
-Release v0.6.0
+chore(release): v0.2.0
 
-Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>
 EOF
 )"
 
 # Create annotated tag
-git tag -a v0.6.0 -m "Version 0.6.0"
+git tag -a v0.2.0 -m "Release v0.2.0"
 ```
 
-### 5.5: Push to Origin
+### 5.6: Push to Origin
 
 ```bash
 # Push commit and tag
-git push origin main && git push origin v0.6.0
+git push origin main && git push origin v0.2.0
 ```
 
 If push fails, report error and provide recovery commands.
 
-### 5.6: GitHub Release Notes
+### 5.7: Publish to npm
+
+Ask using AskUserQuestion:
+
+```
+header: "npm Publish"
+question: "Publish dorkos v0.2.0 to npm?"
+options:
+  - label: "Yes, publish to npm (Recommended)"
+    description: "Runs npm publish -w packages/cli to publish the dorkos package"
+  - label: "No, skip npm publish"
+    description: "Tag is pushed, but package is not published to npm"
+```
+
+If yes:
+
+```bash
+npm publish -w packages/cli
+```
+
+The `prepublishOnly` hook in `packages/cli/package.json` will automatically build before publishing.
+
+### 5.8: GitHub Release Notes
 
 **Reference**: Use the `writing-changelogs` skill for guidance on writing user-friendly release notes.
 
@@ -485,7 +528,7 @@ If yes, generate **narrative release notes** (not just a copy of the changelog):
 #### Release Notes Template
 
 ```markdown
-## What's New in v0.6.0
+## What's New in v0.2.0
 
 [1-2 sentence theme describing the focus of this release]
 
@@ -500,7 +543,13 @@ If yes, generate **narrative release notes** (not just a copy of the changelog):
 - [User-friendly bullet list]
 - [Include references when available: (#123) or (abc1234)]
 
-**Full Changelog**: https://github.com/doriancollier/dorkian-next-stack/compare/v[prev]...v[new]
+### Install / Update
+
+```
+npm update -g dorkos
+```
+
+**Full Changelog**: https://github.com/dork-labs/dorkos/compare/v[prev]...v[new]
 ```
 
 #### Pre-Release Checklist
@@ -517,22 +566,23 @@ For the overall release:
 - [ ] Has a theme sentence summarizing the release focus
 - [ ] 2-3 highlights for significant changes
 - [ ] Link to full changelog
+- [ ] Install/update instructions included
 
 #### Emoji Reference
 
 | Emoji | Use For             |
 | ----- | ------------------- |
-| ✨    | Major new feature   |
-| 🎨    | UI/UX, themes       |
-| 📂    | File handling       |
-| 🔧    | Fixes, improvements |
-| ⚡    | Performance         |
-| 🔒    | Security            |
+| star  | Major new feature   |
+| art   | UI/UX, themes       |
+| folder | File handling      |
+| wrench | Fixes, improvements |
+| zap   | Performance         |
+| lock  | Security            |
 
 #### Create the Release
 
 ```bash
-gh release create v0.6.0 --title "v0.6.0" --notes "[narrative release notes]"
+gh release create v0.2.0 --title "v0.2.0" --notes "[narrative release notes]"
 ```
 
 ---
@@ -542,19 +592,22 @@ gh release create v0.6.0 --title "v0.6.0" --notes "[narrative release notes]"
 ```markdown
 ## Release Complete
 
-**Version**: v0.6.0
-**Tag**: v0.6.0
+**Version**: v0.2.0
+**Tag**: v0.2.0
 **Commit**: [short sha from `git rev-parse --short HEAD`]
+**npm**: dorkos@0.2.0
 
 ### Links
 
-- Tag: https://github.com/doriancollier/dorkian-next-stack/releases/tag/v0.6.0
-- Compare: https://github.com/doriancollier/dorkian-next-stack/compare/v0.5.0...v0.6.0
+- npm: https://www.npmjs.com/package/dorkos
+- Tag: https://github.com/dork-labs/dorkos/releases/tag/v0.2.0
+- Compare: https://github.com/dork-labs/dorkos/compare/v0.1.0...v0.2.0
 
 ### What's Next
 
+- Package is available on npm: `npm install -g dorkos@0.2.0`
 - Tag is available on GitHub
-- Users can pull latest changes with `git pull`
+- Users can update with `npm update -g dorkos`
 
 ### Release Notes
 
@@ -575,11 +628,27 @@ Error: [error message]
 
 To retry:
 - `git push origin main`
-- `git push origin v0.6.0`
+- `git push origin v0.2.0`
 
 To undo local changes:
 - `git reset --hard HEAD~1`
-- `git tag -d v0.6.0`
+- `git tag -d v0.2.0`
+```
+
+### npm Publish Fails
+
+```
+## npm Publish Failed
+
+The git tag was pushed but npm publish failed.
+Error: [error message]
+
+To retry:
+- `npm publish -w packages/cli`
+
+Common fixes:
+- `npm login` (if auth expired)
+- Check npm token: `npm whoami`
 ```
 
 ### No GitHub CLI
@@ -592,7 +661,7 @@ Install GitHub CLI to create releases:
 - Then: `gh auth login`
 
 Or create the release manually at:
-https://github.com/doriancollier/dorkian-next-stack/releases/new?tag=v0.6.0
+https://github.com/dork-labs/dorkos/releases/new?tag=v0.2.0
 ```
 
 ---
