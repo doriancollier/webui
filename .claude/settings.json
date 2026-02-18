@@ -82,7 +82,16 @@
       }
     ],
     "SubagentStop": [],
-    "SessionStart": []
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd \"$(git rev-parse --show-toplevel)\" && .claude/hooks/check-adr-curation.sh"
+          }
+        ]
+      }
+    ]
   },
   "enabledPlugins": {},
   "environmentVariables": {
