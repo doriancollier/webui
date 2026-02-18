@@ -105,6 +105,14 @@ function createMockTransport(tunnelOverrides?: Partial<typeof baseTunnel>): Tran
     }),
     startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
     stopTunnel: vi.fn().mockResolvedValue(undefined),
+    listSchedules: vi.fn().mockResolvedValue([]),
+    createSchedule: vi.fn(),
+    updateSchedule: vi.fn(),
+    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
+    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
+    listRuns: vi.fn().mockResolvedValue([]),
+    getRun: vi.fn(),
+    cancelRun: vi.fn().mockResolvedValue({ success: true }),
   };
 }
 
@@ -126,14 +134,14 @@ describe('TunnelDialog', () => {
       wrapper: createWrapper(),
     });
     expect(screen.getByRole('switch')).toBeDefined();
-    expect(screen.getByText('Enable tunnel')).toBeDefined();
+    expect(screen.getByText('Enable remote access')).toBeDefined();
   });
 
-  it('renders "Tunnel" title when open', () => {
+  it('renders "Remote Access" title when open', () => {
     render(<TunnelDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(),
     });
-    expect(screen.getByText('Tunnel')).toBeDefined();
+    expect(screen.getByText('Remote Access')).toBeDefined();
   });
 
   it('shows auth token input when tokenConfigured is false', async () => {
@@ -142,7 +150,7 @@ describe('TunnelDialog', () => {
       wrapper: createWrapper(transport),
     });
     await waitFor(() => {
-      expect(screen.getByPlaceholderText('ngrok auth token')).toBeDefined();
+      expect(screen.getByPlaceholderText('Paste token here')).toBeDefined();
     });
   });
 
@@ -161,13 +169,13 @@ describe('TunnelDialog', () => {
     render(<TunnelDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
-    expect(screen.queryByPlaceholderText('ngrok auth token')).toBeNull();
+    expect(screen.queryByPlaceholderText('Paste token here')).toBeNull();
   });
 
   it('does not render content when closed', () => {
     render(<TunnelDialog open={false} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(),
     });
-    expect(screen.queryByText('Enable tunnel')).toBeNull();
+    expect(screen.queryByText('Enable remote access')).toBeNull();
   });
 });

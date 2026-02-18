@@ -12,6 +12,8 @@ interface ActivityFeedHeroProps {
   subhead: string
   ctaText: string
   ctaHref: string
+  /** GitHub repo URL — used as primary mobile CTA. */
+  githubHref?: string
 }
 
 type ModuleId = 'core' | 'pulse' | 'vault' | 'mesh' | 'channels' | 'agent'
@@ -324,33 +326,6 @@ function ActivityFeedPanel() {
   )
 }
 
-// ─── StatBadge ────────────────────────────────────────────────────────────────
-
-function StatBadge({ value, label }: { value: string; label: string }) {
-  return (
-    <div
-      className="flex flex-col items-start px-3 py-2 rounded-[6px]"
-      style={{
-        background: 'rgba(232, 93, 4, 0.06)',
-        border: '1px solid rgba(232, 93, 4, 0.15)',
-      }}
-    >
-      <span
-        className="font-mono text-lg font-bold leading-none tracking-[-0.03em]"
-        style={{ color: '#E85D04' }}
-      >
-        {value}
-      </span>
-      <span
-        className="font-mono text-[9px] tracking-[0.08em] uppercase mt-0.5"
-        style={{ color: '#7A756A' }}
-      >
-        {label}
-      </span>
-    </div>
-  )
-}
-
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 /**
@@ -360,7 +335,7 @@ function StatBadge({ value, label }: { value: string; label: string }) {
  * the right showing agents committing code, managing tasks, automating
  * life, and occasionally plotting world domination.
  */
-export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref }: ActivityFeedHeroProps) {
+export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref, githubHref }: ActivityFeedHeroProps) {
   return (
     <section className="relative min-h-[85vh] bg-cream-primary flex flex-col items-center justify-center px-6 py-16 overflow-hidden">
       {/* Subtle graph-paper background */}
@@ -391,12 +366,15 @@ export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref }: Activi
           </p>
         </motion.div>
 
-        {/* Main layout — left prose + right feed */}
-        <div className="flex flex-col lg:flex-row gap-10 lg:gap-16 items-start">
+        {/*
+          Grid layout — 3 logical sections, interleaved on mobile.
+          Mobile (single column): prose → feed → CTA (natural document order).
+          Desktop (2-col): left column = prose + CTA, right column = feed spanning both rows.
+        */}
+        <div className="grid grid-cols-1 lg:grid-cols-[55%_1fr] gap-y-8 lg:gap-x-16 items-start">
 
-          {/* ── Left column ── */}
-          <div className="flex-[0_0_55%] max-w-[55%] max-lg:max-w-full flex flex-col gap-8">
-
+          {/* ── Prose (headline + subhead) ── */}
+          <div className="flex flex-col gap-8">
             {/* Headline */}
             <motion.div variants={REVEAL}>
               <h1
@@ -415,60 +393,11 @@ export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref }: Activi
             >
               {subhead}
             </motion.p>
-
-            {/* Stats row */}
-            <motion.div
-              variants={REVEAL}
-              className="flex flex-wrap gap-3"
-            >
-              <StatBadge value="10x" label="Agent throughput" />
-              <StatBadge value="24/7" label="Autonomous ops" />
-              <StatBadge value="∞" label="Parallel tasks" />
-            </motion.div>
-
-            {/* CTA group */}
-            <motion.div
-              variants={REVEAL}
-              className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pt-2"
-            >
-              <Link
-                href={ctaHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="marketing-btn inline-flex items-center gap-2"
-                style={{
-                  background: '#E85D04',
-                  color: '#FFFEFB',
-                }}
-              >
-                {ctaText}
-                <span className="cursor-blink" aria-hidden="true" />
-              </Link>
-
-              <Link
-                href="/docs/getting-started/quickstart"
-                className="inline-flex items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
-              >
-                Read the docs
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-            </motion.div>
-
-            {/* Social proof */}
-            <motion.p
-              variants={REVEAL}
-              className="font-mono text-2xs tracking-[0.06em]"
-              style={{ color: '#7A756A' }}
-            >
-              npm install -g dorkos &mdash; free to start, no card required
-            </motion.p>
           </div>
 
-          {/* ── Right column — Activity feed ── */}
+          {/* ── Activity feed — between prose and CTA on mobile, right column on desktop ── */}
           <motion.div
-            className="flex-[0_0_45%] max-w-[45%] max-lg:max-w-full w-full"
+            className="w-full lg:row-span-2 lg:col-start-2 lg:row-start-1"
             initial={{ opacity: 0, x: 32 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.55, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
@@ -492,6 +421,80 @@ export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref }: Activi
               Simulated. Real agents log every action, in real time.
             </p>
           </motion.div>
+
+          {/* ── CTA group — below feed on mobile, continues in left column on desktop ── */}
+          <div className="flex flex-col gap-5">
+            <motion.div
+              variants={REVEAL}
+              className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pt-2"
+            >
+              {/* Desktop: npm install button */}
+              <Link
+                href={ctaHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="marketing-btn hidden lg:inline-flex items-center gap-2"
+                style={{
+                  background: '#E85D04',
+                  color: '#FFFEFB',
+                }}
+              >
+                {ctaText}
+                <span className="cursor-blink" aria-hidden="true" />
+              </Link>
+
+              {/* Mobile: docs as primary action */}
+              <Link
+                href="/docs/getting-started/quickstart"
+                className="marketing-btn inline-flex lg:hidden items-center gap-2"
+                style={{
+                  background: '#E85D04',
+                  color: '#FFFEFB',
+                }}
+              >
+                Get started
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+
+              {/* Desktop: docs as secondary */}
+              <Link
+                href="/docs/getting-started/quickstart"
+                className="hidden lg:inline-flex items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
+              >
+                Read the docs
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                  <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </Link>
+
+              {/* Mobile: GitHub as secondary */}
+              {githubHref && (
+                <Link
+                  href={githubHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex lg:hidden items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
+                >
+                  View on GitHub
+                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </Link>
+              )}
+            </motion.div>
+
+            {/* Install hint — desktop: actionable, mobile: informational */}
+            <motion.p
+              variants={REVEAL}
+              className="font-mono text-2xs tracking-[0.06em]"
+              style={{ color: '#7A756A' }}
+            >
+              <span className="hidden lg:inline">npm install -g dorkos &mdash; free to start, no card required</span>
+              <span className="lg:hidden">Install on desktop: <code className="text-charcoal">npm install -g dorkos</code></span>
+            </motion.p>
+          </div>
         </div>
       </motion.div>
     </section>

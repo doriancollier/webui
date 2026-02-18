@@ -74,7 +74,7 @@ describe('Tunnel Route', () => {
           enabled: true,
           connected: true,
           url: 'https://test.ngrok.io',
-          port: 4242,
+          port: 3000,
           startedAt: new Date().toISOString(),
         };
         return 'https://test.ngrok.io';
@@ -84,9 +84,36 @@ describe('Tunnel Route', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.url).toBe('https://test.ngrok.io');
+      // In dev (NODE_ENV !== 'production'), defaults to Vite's port (3000)
+      expect(tunnelManager.start).toHaveBeenCalledWith(
+        expect.objectContaining({ authtoken: 'test-token-123', port: 3000 }),
+      );
+    });
+
+    it('uses Express port in production mode', async () => {
+      process.env.NGROK_AUTHTOKEN = 'test-token-123';
+      process.env.NODE_ENV = 'production';
+      mockConfigGet.mockReturnValue(undefined);
+      mockTunnelStart.mockImplementation(async () => {
+        (tunnelManager as unknown as Record<string, unknown>).status = {
+          enabled: true,
+          connected: true,
+          url: 'https://test.ngrok.io',
+          port: 4242,
+          startedAt: new Date().toISOString(),
+        };
+        return 'https://test.ngrok.io';
+      });
+
+      const res = await request(app).post('/api/tunnel/start');
+
+      expect(res.status).toBe(200);
       expect(tunnelManager.start).toHaveBeenCalledWith(
         expect.objectContaining({ authtoken: 'test-token-123', port: 4242 }),
       );
+
+      // Restore for other tests
+      process.env.NODE_ENV = 'development';
     });
 
     it('returns 400 when no auth token is configured', async () => {

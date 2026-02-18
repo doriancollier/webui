@@ -4,10 +4,25 @@
  * @module routes/tunnel
  */
 import { Router } from 'express';
+import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { tunnelManager } from '../services/tunnel-manager.js';
 import { configManager } from '../services/config-manager.js';
 
+/** Default port for the Vite dev server. */
+const DEV_CLIENT_PORT = 3000;
+
 const router = Router();
+
+/**
+ * Resolve the port the tunnel should forward to.
+ * In dev, Vite serves the UI on DEV_CLIENT_PORT and proxies /api to Express,
+ * so the tunnel targets Vite. In production, Express serves everything.
+ */
+function resolveTunnelPort(): number {
+  if (process.env.TUNNEL_PORT) return Number(process.env.TUNNEL_PORT);
+  const isDev = process.env.NODE_ENV !== 'production';
+  return isDev ? DEV_CLIENT_PORT : Number(process.env.DORKOS_PORT) || DEFAULT_PORT;
+}
 
 router.post('/start', async (_req, res) => {
   try {
@@ -18,10 +33,7 @@ router.post('/start', async (_req, res) => {
       return res.status(400).json({ error: 'No ngrok auth token configured' });
     }
 
-    const port =
-      Number(process.env.TUNNEL_PORT) ||
-      Number(process.env.DORKOS_PORT) ||
-      4242;
+    const port = resolveTunnelPort();
     const tunnelConfig = configManager.get('tunnel');
     const config = {
       port,
