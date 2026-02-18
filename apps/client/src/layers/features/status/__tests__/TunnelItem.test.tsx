@@ -97,6 +97,14 @@ function createMockTransport(): Transport {
     }),
     startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
     stopTunnel: vi.fn().mockResolvedValue(undefined),
+    listSchedules: vi.fn().mockResolvedValue([]),
+    createSchedule: vi.fn(),
+    updateSchedule: vi.fn(),
+    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
+    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
+    listRuns: vi.fn().mockResolvedValue([]),
+    getRun: vi.fn(),
+    cancelRun: vi.fn().mockResolvedValue({ success: true }),
   };
 }
 
@@ -158,6 +166,6 @@ describe('TunnelItem', () => {
   it('opens dialog on click', () => {
     render(<TunnelItem tunnel={makeTunnel()} />, { wrapper: createWrapper() });
     fireEvent.click(screen.getByRole('button'));
-    expect(screen.getByText('Enable tunnel')).toBeDefined();
+    expect(screen.getByText('Enable remote access')).toBeDefined();
   });
 });

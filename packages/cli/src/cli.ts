@@ -19,6 +19,7 @@ const { values, positionals } = parseArgs({
     tunnel: { type: 'boolean', short: 't', default: false },
     dir: { type: 'string', short: 'd' },
     boundary: { type: 'string', short: 'b' },
+    pulse: { type: 'boolean' },
     'log-level': { type: 'string', short: 'l' },
     help: { type: 'boolean', short: 'h' },
     version: { type: 'boolean', short: 'v' },
@@ -50,6 +51,8 @@ Options:
   -t, --tunnel           Enable ngrok tunnel
   -d, --dir <path>       Working directory (default: current directory)
   -b, --boundary <path>  Directory boundary (default: home directory)
+      --pulse              Enable Pulse scheduler
+      --no-pulse           Disable Pulse scheduler
   -l, --log-level <level>  Log level (fatal|error|warn|info|debug|trace)
   -h, --help             Show this help message
   -v, --version          Show version number
@@ -143,6 +146,13 @@ if (tunnelAuth && !process.env.TUNNEL_AUTH) {
 const tunnelDomain = cfgMgr.getDot('tunnel.domain') as string | null;
 if (tunnelDomain && !process.env.TUNNEL_DOMAIN) {
   process.env.TUNNEL_DOMAIN = tunnelDomain;
+}
+
+// Pulse scheduler: CLI flag > env var > config
+if (values.pulse !== undefined) {
+  process.env.DORKOS_PULSE_ENABLED = values.pulse ? 'true' : 'false';
+} else if (!process.env.DORKOS_PULSE_ENABLED && cfgMgr.getDot('scheduler.enabled')) {
+  process.env.DORKOS_PULSE_ENABLED = 'true';
 }
 
 // Working directory: CLI flag > env var > config > cwd

@@ -24,6 +24,11 @@ import {
   ErrorResponseSchema,
   HistoryMessageSchema,
   TaskItemSchema,
+  PulseScheduleSchema,
+  PulseRunSchema,
+  CreateScheduleRequestSchema,
+  UpdateScheduleRequestSchema,
+  ListRunsQuerySchema,
 } from '@dorkos/shared/schemas';
 import { z } from 'zod';
 
@@ -367,6 +372,166 @@ registry.registerPath({
     },
     400: {
       description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// --- Pulse Scheduler ---
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/pulse/schedules',
+  tags: ['Pulse'],
+  summary: 'List all schedules',
+  responses: {
+    200: {
+      description: 'Array of schedules with nextRun',
+      content: { 'application/json': { schema: z.array(PulseScheduleSchema) } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/pulse/schedules',
+  tags: ['Pulse'],
+  summary: 'Create a schedule',
+  request: {
+    body: {
+      content: { 'application/json': { schema: CreateScheduleRequestSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Created schedule',
+      content: { 'application/json': { schema: PulseScheduleSchema } },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+    403: {
+      description: 'CWD outside directory boundary',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/pulse/schedules/{id}',
+  tags: ['Pulse'],
+  summary: 'Update a schedule',
+  request: {
+    params: z.object({ id: z.string() }),
+    body: {
+      content: { 'application/json': { schema: UpdateScheduleRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Updated schedule',
+      content: { 'application/json': { schema: PulseScheduleSchema } },
+    },
+    404: {
+      description: 'Schedule not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/pulse/schedules/{id}',
+  tags: ['Pulse'],
+  summary: 'Delete a schedule',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Deleted',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Schedule not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/pulse/schedules/{id}/trigger',
+  tags: ['Pulse'],
+  summary: 'Manually trigger a schedule run',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    201: {
+      description: 'Run started',
+      content: { 'application/json': { schema: z.object({ runId: z.string() }) } },
+    },
+    404: {
+      description: 'Schedule not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/pulse/runs',
+  tags: ['Pulse'],
+  summary: 'List runs',
+  request: {
+    query: ListRunsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Array of runs',
+      content: { 'application/json': { schema: z.array(PulseRunSchema) } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/pulse/runs/{id}',
+  tags: ['Pulse'],
+  summary: 'Get a specific run',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Run details',
+      content: { 'application/json': { schema: PulseRunSchema } },
+    },
+    404: {
+      description: 'Run not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/pulse/runs/{id}/cancel',
+  tags: ['Pulse'],
+  summary: 'Cancel a running job',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Cancelled',
+      content: { 'application/json': { schema: z.object({ success: z.boolean() }) } },
+    },
+    404: {
+      description: 'Run not found or not active',
       content: { 'application/json': { schema: ErrorResponseSchema } },
     },
   },

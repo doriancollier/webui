@@ -13,6 +13,11 @@ import type {
   GitStatusResponse,
   GitStatusError,
   SessionLockedError,
+  PulseSchedule,
+  PulseRun,
+  CreateScheduleInput,
+  UpdateScheduleRequest,
+  ListRunsQuery,
 } from '@dorkos/shared/types';
 import type { Transport } from '@dorkos/shared/transport';
 
@@ -254,5 +259,56 @@ export class HttpTransport implements Transport {
 
   async stopTunnel(): Promise<void> {
     await fetchJSON<{ ok: boolean }>(this.baseUrl, '/tunnel/stop', { method: 'POST' });
+  }
+
+  // --- Pulse Scheduler ---
+
+  listSchedules(): Promise<PulseSchedule[]> {
+    return fetchJSON<PulseSchedule[]>(this.baseUrl, '/pulse/schedules');
+  }
+
+  createSchedule(opts: CreateScheduleInput): Promise<PulseSchedule> {
+    return fetchJSON<PulseSchedule>(this.baseUrl, '/pulse/schedules', {
+      method: 'POST',
+      body: JSON.stringify(opts),
+    });
+  }
+
+  updateSchedule(id: string, opts: UpdateScheduleRequest): Promise<PulseSchedule> {
+    return fetchJSON<PulseSchedule>(this.baseUrl, `/pulse/schedules/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(opts),
+    });
+  }
+
+  deleteSchedule(id: string): Promise<{ success: boolean }> {
+    return fetchJSON<{ success: boolean }>(this.baseUrl, `/pulse/schedules/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  triggerSchedule(id: string): Promise<{ runId: string }> {
+    return fetchJSON<{ runId: string }>(this.baseUrl, `/pulse/schedules/${id}/trigger`, {
+      method: 'POST',
+    });
+  }
+
+  listRuns(opts?: Partial<ListRunsQuery>): Promise<PulseRun[]> {
+    const params = new URLSearchParams();
+    if (opts?.scheduleId) params.set('scheduleId', opts.scheduleId);
+    if (opts?.limit) params.set('limit', String(opts.limit));
+    if (opts?.offset) params.set('offset', String(opts.offset));
+    const qs = params.toString();
+    return fetchJSON<PulseRun[]>(this.baseUrl, `/pulse/runs${qs ? `?${qs}` : ''}`);
+  }
+
+  getRun(id: string): Promise<PulseRun> {
+    return fetchJSON<PulseRun>(this.baseUrl, `/pulse/runs/${id}`);
+  }
+
+  cancelRun(id: string): Promise<{ success: boolean }> {
+    return fetchJSON<{ success: boolean }>(this.baseUrl, `/pulse/runs/${id}/cancel`, {
+      method: 'POST',
+    });
   }
 }

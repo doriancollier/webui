@@ -68,7 +68,7 @@ DorkOS uses a **hexagonal architecture** with a `Transport` interface (`packages
 
 ### Server (`apps/server/src/`)
 
-Express server on port `DORKOS_PORT` (default 4242). All endpoints that accept `cwd`, `path`, or `dir` parameters enforce directory boundary validation via `lib/boundary.ts`, returning 403 for paths outside the configured boundary (default: home directory). Eight route groups:
+Express server on port `DORKOS_PORT` (default 4242). All endpoints that accept `cwd`, `path`, or `dir` parameters enforce directory boundary validation via `lib/boundary.ts`, returning 403 for paths outside the configured boundary (default: home directory). Nine route groups:
 
 - **`routes/sessions.ts`** - Session listing (from SDK transcripts), session creation, SSE message streaming, message history, tool approve/deny endpoints
 - **`routes/commands.ts`** - Slash command listing via `CommandRegistryService`, which scans `.claude/commands/` using gray-matter frontmatter parsing
@@ -78,8 +78,9 @@ Express server on port `DORKOS_PORT` (default 4242). All endpoints that accept `
 - **`routes/files.ts`** - File operations (read/list files)
 - **`routes/git.ts`** - Git status and branch information
 - **`routes/tunnel.ts`** - Runtime tunnel control (POST /start and /stop). Resolves auth token from env var or config, delegates to `tunnelManager`, persists enabled state
+- **`routes/pulse.ts`** - Pulse scheduler CRUD (GET/POST/PATCH/DELETE schedules, POST trigger, GET/POST runs). Delegates to SchedulerService and PulseStore
 
-Twenty services (+ 1 lib utility):
+Twenty-two services (+ 1 lib utility):
 
 - **`services/agent-manager.ts`** - Manages Claude Agent SDK sessions. Calls `query()` with streaming, delegates event mapping to `sdk-event-mapper.ts`. Injects runtime context via `context-builder.ts` into `systemPrompt: { type: 'preset', preset: 'claude_code', append }`. Tracks active sessions in-memory with 30-minute timeout. All sessions use `resume: sessionId` for SDK continuity. Accepts optional `cwd` constructor param (used by Obsidian plugin). Injects MCP tool servers via `setMcpServers()`.
 - **`services/agent-types.ts`** - `AgentSession` and `ToolState` interfaces, plus `createToolState()` factory. Shared by agent-manager, sdk-event-mapper, and interactive-handlers.
@@ -100,8 +101,10 @@ Twenty services (+ 1 lib utility):
 - **`services/git-status.ts`** - Provides git status information (branch, changed files).
 - **`services/tunnel-manager.ts`** - Opt-in ngrok tunnel lifecycle. Singleton that wraps `@ngrok/ngrok` SDK with dynamic import (zero cost when disabled). Configured via env vars: `TUNNEL_ENABLED`, `NGROK_AUTHTOKEN`, `TUNNEL_PORT`, `TUNNEL_AUTH`, `TUNNEL_DOMAIN`. Started after Express binds in `index.ts`; tunnel failure is non-blocking. Exposes `status` getter consumed by `health.ts` and `routes/tunnel.ts`. Graceful shutdown via SIGINT/SIGTERM.
 - **`services/config-manager.ts`** - Manages persistent user config at `~/.dork/config.json`. Uses `conf` for atomic JSON I/O with Ajv validation. Singleton initialized via `initConfigManager()` at server startup and in CLI subcommands. Handles first-run detection, corrupt config recovery (backup + recreate), and sensitive field warnings.
-- **`services/mcp-tool-server.ts`** - In-process MCP tool server for Claude Agent SDK. Uses `createSdkMcpServer()` and `tool()` from the SDK to register tools that agents can call. Three PoC tools: `ping` (connectivity check), `get_server_info` (server metadata), `get_session_count` (transcript session count). Factory function `createDorkOsToolServer(deps)` accepts `McpToolDeps` (transcriptReader, defaultCwd) for dependency injection. Created once at startup in `index.ts` and injected into AgentManager.
+- **`services/mcp-tool-server.ts`** - In-process MCP tool server for Claude Agent SDK. Uses `createSdkMcpServer()` and `tool()` from the SDK to register tools that agents can call. Core tools: `ping`, `get_server_info`, `get_session_count`. Pulse tools: `list_schedules`, `create_schedule`, `update_schedule`, `delete_schedule`, `get_run_history`. Agent-created schedules enter `pending_approval` state. Factory function `createDorkOsToolServer(deps)` accepts `McpToolDeps` (transcriptReader, defaultCwd, pulseStore) for dependency injection.
 - **`services/update-checker.ts`** - Server-side npm registry check with in-memory cache (1-hour TTL). Fetches latest version from npm for update notifications. Used by config route to populate `latestVersion` in server config.
+- **`services/pulse-store.ts`** - SQLite database (`~/.dork/pulse.db`) + JSON file (`~/.dork/schedules.json`) for Pulse scheduler state. Uses `better-sqlite3` with WAL mode. Manages schedule CRUD, run lifecycle, and retention pruning. Auto-migrates schema via `PRAGMA user_version`.
+- **`services/scheduler-service.ts`** - Cron scheduling engine using `croner` with overrun protection (`protect: true`). Loads schedules on startup, dispatches jobs to AgentManager as isolated sessions. Tracks active runs via `Map<string, AbortController>` for cancellation/timeout. Configurable concurrency cap (`maxConcurrentRuns`).
 
 ### Session Architecture
 
@@ -125,11 +128,13 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `shared/lib/`            | cn, Transports, font-config, favicon-utils, celebrations, etc.     | Domain-agnostic utilities   |
 | `entities/session/`      | useSessionId, useSessions, useDirectoryState, useDefaultCwd        | Session domain hooks        |
 | `entities/command/`      | useCommands                                                        | Command domain hook         |
+| `entities/pulse/`        | useSchedules, useRuns, useCancelRun                                | Pulse scheduler domain hooks|
 | `features/chat/`         | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession  | Chat interface              |
 | `features/session-list/` | SessionSidebar, SessionItem, DirectoryPicker                       | Session management          |
 | `features/commands/`     | CommandPalette                                                     | Slash command palette       |
 | `features/settings/`     | SettingsDialog                                                     | Settings UI                 |
 | `features/files/`        | FilePalette, useFiles                                              | File browser                |
+| `features/pulse/`        | PulsePanel, CreateScheduleDialog, RunHistoryPanel                  | Pulse scheduler UI          |
 | `features/status/`       | StatusLine, GitStatusItem, ModelItem, etc.                         | Status bar                  |
 | `widgets/app-layout/`    | PermissionBanner                                                   | App-level layout components |
 
@@ -200,7 +205,7 @@ The plugin build (`apps/obsidian-plugin/vite.config.ts`) includes four Vite plug
 
 The `dorkos` npm package bundles the server + client into a standalone CLI tool. Published to npm as `dorkos` (unscoped). Install via `npm install -g dorkos`, run via `dorkos`. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@dorkos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The version is injected at build time via esbuild's `define` config (reads from `packages/cli/package.json`). The CLI creates `~/.dork/` on startup for config storage and sets `DORK_HOME` env var. It also sets `DORKOS_PORT`, `CLIENT_DIST_PATH`, `DORKOS_DEFAULT_CWD`, `DORKOS_BOUNDARY`, `TUNNEL_ENABLED`, and `NODE_ENV` before dynamically importing the bundled server.
 
-CLI subcommands: `dorkos config` (manage config), `dorkos init` (interactive setup wizard). CLI flags include `--port`/`-p`, `--dir`/`-d`, `--boundary`/`-b`, and `--tunnel`/`-t`. Config precedence: CLI flags > environment variables > `~/.dork/config.json` > built-in defaults.
+CLI subcommands: `dorkos config` (manage config), `dorkos init` (interactive setup wizard). CLI flags include `--port`/`-p`, `--dir`/`-d`, `--boundary`/`-b`, `--tunnel`/`-t`, and `--pulse`/`--no-pulse`. Config precedence: CLI flags > environment variables > `~/.dork/config.json` > built-in defaults.
 
 ## Guides
 

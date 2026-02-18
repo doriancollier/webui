@@ -33,6 +33,19 @@ export const UserConfigSchema = z.object({
     })
     .default(() => ({ theme: 'system' as const })),
   logging: LoggingConfigSchema.default(() => ({ level: 'info' as const })),
+  scheduler: z
+    .object({
+      enabled: z.boolean().default(false),
+      maxConcurrentRuns: z.number().int().min(1).max(10).default(1),
+      timezone: z.string().nullable().default(null),
+      retentionCount: z.number().int().min(1).default(100),
+    })
+    .default(() => ({
+      enabled: false,
+      maxConcurrentRuns: 1,
+      timezone: null,
+      retentionCount: 100,
+    })),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;

@@ -125,6 +125,14 @@ function createMockTransport(configOverrides?: Partial<typeof mockConfig>): Tran
     getConfig: vi.fn().mockResolvedValue({ ...mockConfig, ...configOverrides }),
     startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
     stopTunnel: vi.fn().mockResolvedValue(undefined),
+    listSchedules: vi.fn().mockResolvedValue([]),
+    createSchedule: vi.fn(),
+    updateSchedule: vi.fn(),
+    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
+    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
+    listRuns: vi.fn().mockResolvedValue([]),
+    getRun: vi.fn(),
+    cancelRun: vi.fn().mockResolvedValue({ success: true }),
   };
 }
 

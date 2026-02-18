@@ -46,4 +46,13 @@ export type {
   SessionLockedError,
   ConfigPatchRequest,
   ConfigPatchResponse,
+  PulseScheduleStatus,
+  PulseRunStatus,
+  PulseRunTrigger,
+  PulseSchedule,
+  PulseRun,
+  CreateScheduleRequest,
+  CreateScheduleInput,
+  UpdateScheduleRequest,
+  ListRunsQuery,
 } from './schemas.js';

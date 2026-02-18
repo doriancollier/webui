@@ -527,6 +527,106 @@ export const SessionLockedErrorSchema = z
 
 export type SessionLockedError = z.infer<typeof SessionLockedErrorSchema>;
 
+// === Pulse Scheduler Types ===
+
+export const PulseScheduleStatusSchema = z
+  .enum(['active', 'paused', 'pending_approval'])
+  .openapi('PulseScheduleStatus');
+
+export type PulseScheduleStatus = z.infer<typeof PulseScheduleStatusSchema>;
+
+export const PulseRunStatusSchema = z
+  .enum(['running', 'completed', 'failed', 'cancelled'])
+  .openapi('PulseRunStatus');
+
+export type PulseRunStatus = z.infer<typeof PulseRunStatusSchema>;
+
+export const PulseRunTriggerSchema = z.enum(['scheduled', 'manual']).openapi('PulseRunTrigger');
+
+export type PulseRunTrigger = z.infer<typeof PulseRunTriggerSchema>;
+
+export const PulseScheduleSchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    prompt: z.string(),
+    cron: z.string(),
+    timezone: z.string().nullable(),
+    cwd: z.string().nullable(),
+    enabled: z.boolean(),
+    maxRuntime: z.number().int().nullable(),
+    permissionMode: PermissionModeSchema,
+    status: PulseScheduleStatusSchema,
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    nextRun: z.string().nullable().optional(),
+  })
+  .openapi('PulseSchedule');
+
+export type PulseSchedule = z.infer<typeof PulseScheduleSchema>;
+
+export const PulseRunSchema = z
+  .object({
+    id: z.string(),
+    scheduleId: z.string(),
+    status: PulseRunStatusSchema,
+    startedAt: z.string().nullable(),
+    finishedAt: z.string().nullable(),
+    durationMs: z.number().int().nullable(),
+    outputSummary: z.string().nullable(),
+    error: z.string().nullable(),
+    sessionId: z.string().nullable(),
+    trigger: PulseRunTriggerSchema,
+    createdAt: z.string(),
+  })
+  .openapi('PulseRun');
+
+export type PulseRun = z.infer<typeof PulseRunSchema>;
+
+export const CreateScheduleRequestSchema = z
+  .object({
+    name: z.string().min(1),
+    prompt: z.string().min(1),
+    cron: z.string().min(1),
+    timezone: z.string().nullable().optional(),
+    cwd: z.string().nullable().optional(),
+    enabled: z.boolean().optional().default(true),
+    maxRuntime: z.number().int().positive().nullable().optional(),
+    permissionMode: PermissionModeSchema.optional().default('acceptEdits'),
+  })
+  .openapi('CreateScheduleRequest');
+
+export type CreateScheduleRequest = z.infer<typeof CreateScheduleRequestSchema>;
+
+/** Input type for creating a schedule (before Zod defaults are applied). */
+export type CreateScheduleInput = z.input<typeof CreateScheduleRequestSchema>;
+
+export const UpdateScheduleRequestSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    prompt: z.string().min(1).optional(),
+    cron: z.string().min(1).optional(),
+    timezone: z.string().nullable().optional(),
+    cwd: z.string().nullable().optional(),
+    enabled: z.boolean().optional(),
+    maxRuntime: z.number().int().positive().nullable().optional(),
+    permissionMode: PermissionModeSchema.optional(),
+    status: PulseScheduleStatusSchema.optional(),
+  })
+  .openapi('UpdateScheduleRequest');
+
+export type UpdateScheduleRequest = z.infer<typeof UpdateScheduleRequestSchema>;
+
+export const ListRunsQuerySchema = z
+  .object({
+    scheduleId: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(500).optional().default(50),
+    offset: z.coerce.number().int().min(0).optional().default(0),
+  })
+  .openapi('ListRunsQuery');
+
+export type ListRunsQuery = z.infer<typeof ListRunsQuerySchema>;
+
 // === Config PATCH Schemas ===
 
 export const ConfigPatchRequestSchema = z

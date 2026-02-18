@@ -14,6 +14,11 @@ import type {
   ServerConfig,
   GitStatusResponse,
   GitStatusError,
+  PulseSchedule,
+  PulseRun,
+  CreateScheduleInput,
+  UpdateScheduleRequest,
+  ListRunsQuery,
 } from '@dorkos/shared/types';
 
 export interface DirectTransportServices {
@@ -229,5 +234,38 @@ export class DirectTransport implements Transport {
 
   async stopTunnel(): Promise<void> {
     throw new Error('Tunnel is not supported in embedded mode');
+  }
+
+  // Pulse scheduler is not supported in embedded mode
+  async listSchedules(): Promise<PulseSchedule[]> {
+    return [];
+  }
+
+  async createSchedule(_opts: CreateScheduleInput): Promise<PulseSchedule> {
+    throw new Error('Pulse scheduler is not supported in embedded mode');
+  }
+
+  async updateSchedule(_id: string, _opts: UpdateScheduleRequest): Promise<PulseSchedule> {
+    throw new Error('Pulse scheduler is not supported in embedded mode');
+  }
+
+  async deleteSchedule(_id: string): Promise<{ success: boolean }> {
+    throw new Error('Pulse scheduler is not supported in embedded mode');
+  }
+
+  async triggerSchedule(_id: string): Promise<{ runId: string }> {
+    throw new Error('Pulse scheduler is not supported in embedded mode');
+  }
+
+  async listRuns(_opts?: Partial<ListRunsQuery>): Promise<PulseRun[]> {
+    return [];
+  }
+
+  async getRun(_id: string): Promise<PulseRun> {
+    throw new Error('Pulse scheduler is not supported in embedded mode');
+  }
+
+  async cancelRun(_id: string): Promise<{ success: boolean }> {
+    throw new Error('Pulse scheduler is not supported in embedded mode');
   }
 }

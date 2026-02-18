@@ -1,18 +1,25 @@
+import os from 'os';
+import path from 'path';
 import { createApp } from './app.js';
 import { agentManager } from './services/agent-manager.js';
 import { tunnelManager } from './services/tunnel-manager.js';
 import { SessionBroadcaster } from './services/session-broadcaster.js';
 import { transcriptReader } from './services/transcript-reader.js';
-import { initConfigManager } from './services/config-manager.js';
+import { initConfigManager, configManager } from './services/config-manager.js';
 import { initBoundary } from './lib/boundary.js';
 import { initLogger, logger } from './lib/logger.js';
+import { createDorkOsToolServer } from './services/mcp-tool-server.js';
+import { PulseStore } from './services/pulse-store.js';
+import { SchedulerService } from './services/scheduler-service.js';
+import { createPulseRouter } from './routes/pulse.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
 
 const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
 
-// Global reference for graceful shutdown
+// Global references for graceful shutdown
 let sessionBroadcaster: SessionBroadcaster | null = null;
+let schedulerService: SchedulerService | null = null;
 
 async function start() {
   const logLevel = process.env.DORKOS_LOG_LEVEL
@@ -26,7 +33,42 @@ async function start() {
   const resolvedBoundary = await initBoundary(boundaryConfig);
   logger.info(`[Boundary] Directory boundary: ${resolvedBoundary}`);
 
+  // Initialize Pulse scheduler if enabled
+  const schedulerConfig = configManager.get('scheduler') as {
+    enabled: boolean;
+    maxConcurrentRuns: number;
+    timezone: string | null;
+    retentionCount: number;
+  };
+  const pulseEnabled = process.env.DORKOS_PULSE_ENABLED === 'true' || schedulerConfig.enabled;
+
+  let pulseStore: PulseStore | undefined;
+  if (pulseEnabled) {
+    const dorkHome = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
+    pulseStore = new PulseStore(dorkHome);
+    logger.info('[Pulse] PulseStore initialized');
+  }
+
+  // Create MCP tool server and inject into AgentManager
+  const mcpToolServer = createDorkOsToolServer({
+    transcriptReader,
+    defaultCwd: process.env.DORKOS_DEFAULT_CWD ?? process.cwd(),
+    ...(pulseStore && { pulseStore }),
+  });
+  agentManager.setMcpServers({ dorkos: mcpToolServer });
+
   const app = createApp();
+
+  // Mount Pulse routes if enabled
+  if (pulseEnabled && pulseStore) {
+    schedulerService = new SchedulerService(pulseStore, agentManager, {
+      maxConcurrentRuns: schedulerConfig.maxConcurrentRuns,
+      retentionCount: schedulerConfig.retentionCount,
+      timezone: schedulerConfig.timezone,
+    });
+    app.use('/api/pulse', createPulseRouter(pulseStore, schedulerService));
+    logger.info('[Pulse] Routes mounted and scheduler configured');
+  }
 
   // Initialize SessionBroadcaster and attach to app.locals
   sessionBroadcaster = new SessionBroadcaster(transcriptReader);
@@ -36,6 +78,12 @@ async function start() {
   app.listen(PORT, host, () => {
     logger.info(`DorkOS server running on http://localhost:${PORT}`);
   });
+
+  // Start Pulse scheduler after server is listening
+  if (schedulerService) {
+    await schedulerService.start();
+    logger.info('[Pulse] Scheduler started');
+  }
 
   // Run session health check periodically
   setInterval(
@@ -75,14 +123,16 @@ async function start() {
 }
 
 // Graceful shutdown
-function shutdown() {
+async function shutdown() {
   logger.info('Shutting down...');
   if (sessionBroadcaster) {
     sessionBroadcaster.shutdown();
   }
-  tunnelManager.stop().finally(() => {
-    process.exit(0);
-  });
+  if (schedulerService) {
+    await schedulerService.stop();
+  }
+  await tunnelManager.stop();
+  process.exit(0);
 }
 
 process.on('SIGINT', shutdown);

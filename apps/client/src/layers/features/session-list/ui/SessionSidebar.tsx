@@ -25,6 +25,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { SettingsDialog } from '@/layers/features/settings';
+import { PulsePanel } from '@/layers/features/pulse';
 import type { Session } from '@dorkos/shared/types';
 
 const themeOrder: Theme[] = ['light', 'dark', 'system'];
@@ -38,6 +39,7 @@ export function SessionSidebar() {
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pulseOpen, setPulseOpen] = useState(false);
   const [selectedCwd] = useDirectoryState();
   const { theme, setTheme } = useTheme();
   const ThemeIcon = { light: Sun, dark: Moon, system: Monitor }[theme];
@@ -181,19 +183,13 @@ export function SessionSidebar() {
               Relay not connected
             </HoverCardContent>
           </HoverCard>
-          <HoverCard openDelay={200} closeDelay={100}>
-            <HoverCardTrigger asChild>
-              <button
-                className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
-                aria-label="Heartbeat status"
-              >
-                <HeartPulse className="size-(--size-icon-sm)" />
-              </button>
-            </HoverCardTrigger>
-            <HoverCardContent side="top" align="center" className="w-auto px-3 py-1.5 text-xs">
-              Pulse not detected
-            </HoverCardContent>
-          </HoverCard>
+          <button
+            onClick={() => setPulseOpen(true)}
+            className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
+            aria-label="Pulse scheduler"
+          >
+            <HeartPulse className="size-(--size-icon-sm)" />
+          </button>
           <button
             onClick={cycleTheme}
             className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
@@ -218,6 +214,23 @@ export function SessionSidebar() {
       </div>
       <DirectoryPicker open={pickerOpen} onOpenChange={setPickerOpen} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
+      {pulseOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-2xl rounded-xl bg-background shadow-lg max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b px-4 py-3">
+              <h2 className="text-lg font-semibold">Pulse Scheduler</h2>
+              <button
+                onClick={() => setPulseOpen(false)}
+                className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
+                aria-label="Close"
+              >
+                &times;
+              </button>
+            </div>
+            <PulsePanel />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

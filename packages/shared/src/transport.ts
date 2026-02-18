@@ -21,6 +21,11 @@ import type {
   FileListResponse,
   GitStatusResponse,
   GitStatusError,
+  PulseSchedule,
+  PulseRun,
+  CreateScheduleInput,
+  UpdateScheduleRequest,
+  ListRunsQuery,
 } from './types.js';
 
 export interface Transport {
@@ -80,4 +85,23 @@ export interface Transport {
   startTunnel(): Promise<{ url: string }>;
   /** Stop the ngrok tunnel. */
   stopTunnel(): Promise<void>;
+
+  // --- Pulse Scheduler ---
+
+  /** List all Pulse schedules. */
+  listSchedules(): Promise<PulseSchedule[]>;
+  /** Create a new Pulse schedule. */
+  createSchedule(opts: CreateScheduleInput): Promise<PulseSchedule>;
+  /** Update an existing Pulse schedule. */
+  updateSchedule(id: string, opts: UpdateScheduleRequest): Promise<PulseSchedule>;
+  /** Delete a Pulse schedule. */
+  deleteSchedule(id: string): Promise<{ success: boolean }>;
+  /** Trigger a manual run of a schedule. */
+  triggerSchedule(id: string): Promise<{ runId: string }>;
+  /** List Pulse runs with optional filters. */
+  listRuns(opts?: Partial<ListRunsQuery>): Promise<PulseRun[]>;
+  /** Get a specific Pulse run. */
+  getRun(id: string): Promise<PulseRun>;
+  /** Cancel a running Pulse job. */
+  cancelRun(id: string): Promise<{ success: boolean }>;
 }
