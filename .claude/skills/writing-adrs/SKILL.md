@@ -67,10 +67,18 @@ When scanning specs for ADR candidates, look for:
 
 | Status | Meaning |
 |--------|---------|
-| `proposed` | Under discussion, not yet committed |
+| `draft` | Auto-extracted from spec, not yet evaluated for significance |
+| `proposed` | Under discussion or promoted from draft, not yet committed |
 | `accepted` | Active decision guiding implementation |
 | `deprecated` | No longer relevant (project evolved past it) |
 | `superseded` | Replaced by a newer ADR (link via `superseded-by`) |
+| `archived` | Curation determined this is trivial; moved to `decisions/archive/` |
+
+### Auto-Extraction
+
+Draft ADRs are created automatically by `/ideate-to-spec` (Step 7.0) when a spec is validated. Every decision signal is captured as a draft. The `/adr:curate` command (triggered daily via SessionStart hook) evaluates drafts against the criteria in "When to Write an ADR" above:
+- **Promote** (draft → proposed): Meets 2+ criteria
+- **Archive** (draft → archived): Meets 0-1 criteria, moved to `decisions/archive/`
 
 ## Common Pitfalls
 
