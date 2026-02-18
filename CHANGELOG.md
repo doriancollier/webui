@@ -15,6 +15,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.3.0] - 2026-02-18
+
+### Added
+
+- Add Pulse scheduler for autonomous cron-based agent jobs with web UI, REST API, MCP tools, and SQLite persistence
+- Add runtime tunnel toggle with QR code sharing from the sidebar
+- Add blog infrastructure with Fumadocs
+- Add ADR draft/archived lifecycle with daily auto-curation and auto-extraction from specs
+- Add context builder for SDK system prompt injection
+- Add activity feed hero and marketing page sections
+
+### Changed
+
+- Refactor agent-manager to use modular context-builder pattern
+- Redesign landing page with new hero variants and content sections
+- Complete documentation overhaul — fill all stubs, add concepts section, rewrite stale guides
+
 ## [0.2.0] - 2026-02-17
 
 ### Added
@@ -64,6 +81,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/dork-labs/dorkos/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dork-labs/dorkos/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/dork-labs/dorkos/releases/tag/v0.1.0

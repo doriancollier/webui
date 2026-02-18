@@ -1,0 +1,41 @@
+---
+title: DorkOS 0.3.0
+description: Pulse scheduler brings autonomous agent jobs, plus tunnel sharing, blog infrastructure, and a documentation overhaul.
+date: 2026-02-18
+author: DorkOS Team
+category: release
+tags: [release, pulse, scheduler, tunnel, documentation]
+---
+
+DorkOS 0.3.0 introduces the Pulse scheduler — a cron-based system that makes DorkOS autonomous by dispatching prompts to the Claude Agent SDK on a schedule. This release also adds tunnel sharing with QR codes and a comprehensive documentation refresh.
+
+## Highlights
+
+**Pulse Scheduler** — Define cron jobs that run Claude Agent SDK prompts on a schedule. Full observability through the web UI, REST API, and MCP tools. Jobs persist in SQLite, and each run links back to its session transcript.
+
+**Tunnel Toggle with QR Code** — Start and stop ngrok tunnels from the sidebar without restarting the server. Share access instantly via QR code.
+
+**Documentation Overhaul** — All documentation stubs filled, concepts section added, and stale guides rewritten for accuracy.
+
+## All Changes
+
+### Added
+
+- Add Pulse scheduler for autonomous cron-based agent jobs with web UI, REST API, MCP tools, and SQLite persistence
+- Add runtime tunnel toggle with QR code sharing from the sidebar
+- Add blog infrastructure with Fumadocs
+- Add ADR draft/archived lifecycle with daily auto-curation and auto-extraction from specs
+- Add context builder for SDK system prompt injection
+- Add activity feed hero and marketing page sections
+
+### Changed
+
+- Refactor agent-manager to use modular context-builder pattern
+- Redesign landing page with new hero variants and content sections
+- Complete documentation overhaul — fill all stubs, add concepts section, rewrite stale guides
+
+## Install / Update
+
+```
+npm install -g dorkos@0.3.0
+```
