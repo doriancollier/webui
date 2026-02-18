@@ -1,7 +1,7 @@
 ---
 number: NNNN
 title: [Short imperative title]
-status: proposed | accepted | deprecated | superseded
+status: draft | proposed | accepted | deprecated | superseded | archived
 created: YYYY-MM-DD
 spec: [slug or null]
 superseded-by: [NNNN or null]
