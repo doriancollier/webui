@@ -12,9 +12,9 @@ category: documentation
 
 Read `decisions/manifest.json` to get all decision entries.
 
-### Step 2: Display Table
+### Step 2: Display Main Table
 
-Format and display all ADRs as a markdown table:
+Format and display all non-draft ADRs as a markdown table, sorted by number:
 
 ```markdown
 ## Architecture Decision Records
@@ -25,10 +25,26 @@ Format and display all ADRs as a markdown table:
 | 0002 | [Title](decisions/0002-slug.md) | accepted | 2026-02-15 | fsd-architecture |
 ```
 
-### Step 3: Display Summary
+### Step 3: Display Draft ADRs (if any)
+
+If any entries have `"status": "draft"`, show a separate section:
+
+```markdown
+### Draft ADRs (pending curation)
+
+| # | Title | Date | Extracted From |
+|---|-------|------|----------------|
+| 0006 | [Title](decisions/0006-slug.md) | 2026-02-18 | spec-slug |
+
+Run `/adr:curate` to promote or archive these.
+```
+
+If no drafts exist, skip this section entirely.
+
+### Step 4: Display Summary
 
 ```
-Total: N decisions (A accepted, P proposed, D deprecated, S superseded)
+Total: N decisions (A accepted, P proposed, D draft, X deprecated, S superseded)
 ```
 
 ## Notes
