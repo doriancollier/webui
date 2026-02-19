@@ -16,9 +16,9 @@ const ORANGE_DIM   = 'rgba(232, 93, 4, 0.18)'
 
 // ─── Node positions (force-directed style, hand-tuned) ────────────────────────
 //
-// Core sits slightly above center — gravitational anchor for the system.
+// Engine sits slightly above center — gravitational anchor for the system.
 // Modules with heavy connections (Console, Mesh) are pulled closer.
-// Lightly-connected modules (Channels) push to the periphery.
+// Lightly-connected modules (Relay) push to the periphery.
 
 const NODE_POS: Record<string, { x: number; y: number }> = {
   core:     { x: 450, y: 240 },   // gravitational center
@@ -51,11 +51,11 @@ interface ConnectionDef {
 }
 
 const CONNECTIONS: ConnectionDef[] = [
-  { from: 'core', to: 'console',  weight: 'heavy',  bidir: true  },
-  { from: 'core', to: 'mesh',     weight: 'heavy',  bidir: true  },
-  { from: 'core', to: 'wing',    weight: 'medium', bidir: true  },
-  { from: 'core', to: 'pulse',    weight: 'medium', bidir: true  },
-  { from: 'mesh', to: 'channels', weight: 'light',  bidir: false },
+  { from: 'engine', to: 'console',  weight: 'heavy',  bidir: true  },
+  { from: 'engine', to: 'mesh',     weight: 'heavy',  bidir: true  },
+  { from: 'engine', to: 'wing',    weight: 'medium', bidir: true  },
+  { from: 'engine', to: 'pulse',    weight: 'medium', bidir: true  },
+  { from: 'mesh', to: 'relay', weight: 'light',  bidir: false },
   { from: 'mesh', to: 'pulse',    weight: 'light',  bidir: false },
 ]
 
@@ -152,7 +152,7 @@ const OPACITY_TABLE = Array.from({ length: 64 }, () => 0.32 + _rng() * 0.48)
 // ─── Node geometry ────────────────────────────────────────────────────────────
 
 function nodeRadius(id: string, status: SystemModule['status']): number {
-  if (id === 'core') return 34
+  if (id === 'engine') return 34
   return status === 'available' ? 26 : 22
 }
 
@@ -276,18 +276,18 @@ function ParticleStream({ conn, index, entranceDone }: StreamProps) {
 
 interface NodeBodyProps {
   module: SystemModule
-  isCore: boolean
+  isEngine: boolean
 }
 
 /** Node circle with inner labels and external name tag. */
-function NodeBody({ module, isCore }: NodeBodyProps) {
+function NodeBody({ module, isEngine }: NodeBodyProps) {
   const pos = NODE_POS[module.id]
   const lbl = LABEL_OFFSETS[module.id]
   if (!pos || !lbl) return null
 
   const r         = nodeRadius(module.id, module.status)
   const available = module.status === 'available'
-  const fillId    = isCore ? 'fill-core' : available ? 'fill-avail' : 'fill-soon'
+  const fillId    = isEngine ? 'fill-core' : available ? 'fill-avail' : 'fill-soon'
 
   return (
     <motion.g variants={SCALE_IN} style={{ transformOrigin: `${pos.x}px ${pos.y}px` }}>
@@ -298,8 +298,8 @@ function NodeBody({ module, isCore }: NodeBodyProps) {
           r={r + 4}
           fill="none"
           stroke={ORANGE}
-          strokeWidth={isCore ? 2 : 1.5}
-          strokeOpacity={isCore ? 0.55 : 0.35}
+          strokeWidth={isEngine ? 2 : 1.5}
+          strokeOpacity={isEngine ? 0.55 : 0.35}
           filter="url(#node-glow)"
         />
       )}
@@ -310,19 +310,19 @@ function NodeBody({ module, isCore }: NodeBodyProps) {
         r={r}
         fill={`url(#${fillId})`}
         stroke={ORANGE}
-        strokeWidth={isCore ? 2.5 : available ? 1.8 : 1.2}
-        strokeOpacity={isCore ? 0.75 : available ? 0.5 : 0.25}
+        strokeWidth={isEngine ? 2.5 : available ? 1.8 : 1.2}
+        strokeOpacity={isEngine ? 0.75 : available ? 0.5 : 0.25}
         filter={available ? 'url(#node-glow)' : undefined}
       />
 
       {/* Module name — inside node */}
       <text
-        x={pos.x} y={pos.y - (isCore ? 4 : 2)}
+        x={pos.x} y={pos.y - (isEngine ? 4 : 2)}
         textAnchor="middle"
         dominantBaseline="middle"
         fill="var(--color-charcoal)"
         style={{
-          fontSize: isCore ? '11px' : '9px',
+          fontSize: isEngine ? '11px' : '9px',
           fontWeight: 700,
           letterSpacing: '0.05em',
           fontFamily: 'var(--font-ibm-plex-mono), ui-monospace, monospace',
@@ -333,7 +333,7 @@ function NodeBody({ module, isCore }: NodeBodyProps) {
 
       {/* Module label — small, below name */}
       <text
-        x={pos.x} y={pos.y + (isCore ? 9 : 8)}
+        x={pos.x} y={pos.y + (isEngine ? 9 : 8)}
         textAnchor="middle"
         dominantBaseline="middle"
         fill={ORANGE}
@@ -353,8 +353,8 @@ function NodeBody({ module, isCore }: NodeBodyProps) {
         textAnchor={lbl.anchor}
         fill="var(--color-charcoal)"
         style={{
-          fontSize: isCore ? '13px' : '11px',
-          fontWeight: isCore ? 700 : 600,
+          fontSize: isEngine ? '13px' : '11px',
+          fontWeight: isEngine ? 700 : 600,
           letterSpacing: '-0.01em',
           opacity: available ? 1.0 : 0.5,
         }}
@@ -393,14 +393,14 @@ function NodeBody({ module, isCore }: NodeBodyProps) {
   )
 }
 
-interface CorePulseProps {
+interface EnginePulseProps {
   active: boolean
 }
 
-/** Expanding pulse rings on Core — animated after entrance is done. */
-function CorePulse({ active }: CorePulseProps) {
+/** Expanding pulse rings on Engine — animated after entrance is done. */
+function EnginePulse({ active }: EnginePulseProps) {
   const { x, y } = NODE_POS.core
-  const base = nodeRadius('core', 'available')
+  const base = nodeRadius('engine', 'available')
 
   const pulseConfig = [
     { rBase: base + 8,  rEnd: base + 32, opPeak: 0.35, delay: 0    },
@@ -532,7 +532,7 @@ export function DiagramV10({ modules }: { modules: SystemModule[] }) {
               cx={pos.x} cy={pos.y}
               r={r + (m.status === 'available' ? 22 : 12)}
               fill={ORANGE_DIM}
-              opacity={m.id === 'core' ? 0.9 : 0.6}
+              opacity={m.id === 'engine' ? 0.9 : 0.6}
             />
           )
         })}
@@ -547,12 +547,12 @@ export function DiagramV10({ modules }: { modules: SystemModule[] }) {
           />
         ))}
 
-        {/* ── Layer 4: Core pulse rings ──────────────────────────────────── */}
-        <CorePulse active={entranceDone} />
+        {/* ── Layer 4: Engine pulse rings ──────────────────────────────────── */}
+        <EnginePulse active={entranceDone} />
 
         {/* ── Layer 5: Module nodes (staggered entrance) ────────────────── */}
         {modules.map((m) => (
-          <NodeBody key={m.id} module={m} isCore={m.id === 'core'} />
+          <NodeBody key={m.id} module={m} isEngine={m.id === 'engine'} />
         ))}
 
         {/* ── Layer 6: Legend ───────────────────────────────────────────── */}

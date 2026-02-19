@@ -10,25 +10,45 @@ interface SystemArchitectureProps {
 }
 
 const nodes = [
-  { x: 100, y: 50, label: 'Console' },
-  { x: 300, y: 50, label: 'Core' },
-  { x: 500, y: 50, label: 'Wing' },
-  { x: 100, y: 160, label: 'Pulse' },
-  { x: 300, y: 160, label: 'Mesh' },
-  { x: 500, y: 160, label: 'Channels' },
+  { x: 150, y: 40, label: 'Console' },
+  { x: 350, y: 40, label: 'Engine' },
+  { x: 100, y: 140, label: 'Pulse' },
+  { x: 300, y: 140, label: 'Mesh' },
+  { x: 500, y: 140, label: 'Relay' },
+  { x: 150, y: 240, label: 'Wing' },
+  { x: 350, y: 240, label: 'Loop' },
 ] as const
 
 const connections = [
-  { d: 'M150,50 L250,50', delay: 0 },
-  { d: 'M350,50 L450,50', delay: 0.15 },
-  { d: 'M300,75 L300,135', delay: 0.3 },
-  { d: 'M150,160 L250,160', delay: 0.45 },
-  { d: 'M350,160 L450,160', delay: 0.6 },
+  { d: 'M200,40 L300,40', delay: 0 },
+  { d: 'M340,65 L140,115', delay: 0.15 },
+  { d: 'M350,65 L300,115', delay: 0.3 },
+  { d: 'M360,65 L460,115', delay: 0.45 },
 ] as const
 
-/** Interactive architecture diagram showing the 6 DorkOS modules as a connected system. */
+const GROUP_LABELS: Record<string, string> = {
+  platform: 'The Platform',
+  'engine-capability': 'Built into Engine',
+  extension: 'Extensions',
+}
+
+const GROUP_ORDER: Array<SystemModule['group']> = ['platform', 'engine-capability', 'extension']
+
+const GROUP_COLS: Record<string, string> = {
+  platform: 'grid-cols-1 md:grid-cols-2',
+  'engine-capability': 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3',
+  extension: 'grid-cols-1 md:grid-cols-2',
+}
+
+/** Interactive architecture diagram showing the 7 DorkOS modules as a connected system. */
 export function SystemArchitecture({ modules }: SystemArchitectureProps) {
   const [revealComplete, setRevealComplete] = useState(false)
+
+  const grouped = GROUP_ORDER.map((group) => ({
+    group,
+    label: GROUP_LABELS[group],
+    modules: modules.filter((m) => m.group === group),
+  }))
 
   return (
     <section id="system" className="py-32 px-8 bg-cream-tertiary">
@@ -50,22 +70,22 @@ export function SystemArchitecture({ modules }: SystemArchitectureProps) {
             variants={REVEAL}
             className="text-charcoal text-[28px] md:text-[32px] font-medium tracking-[-0.02em] leading-[1.3] text-center max-w-2xl mx-auto mb-6"
           >
-            Six modules. One operating layer.
+            Seven modules. One operating layer.
           </motion.p>
 
           <motion.p
             variants={REVEAL}
             className="text-warm-gray text-base leading-[1.7] text-center max-w-xl mx-auto mb-16"
           >
-            DorkOS isn&apos;t a chat UI. It&apos;s an autonomous agent system with
-            a heartbeat, a life layer, and an agent mesh.
+            DorkOS isn&apos;t a chat UI. It&apos;s an autonomous agent operating
+            system — an engine, a life layer, and a mesh of coordinating agents.
           </motion.p>
         </motion.div>
 
         {/* Architecture diagram - SVG connections */}
         <div className="hidden md:block mb-16">
           <motion.svg
-            viewBox="0 0 600 200"
+            viewBox="0 0 600 280"
             className="w-full max-w-2xl mx-auto h-auto architecture-particles"
             preserveAspectRatio="xMidYMid meet"
             aria-hidden="true"
@@ -124,18 +144,31 @@ export function SystemArchitecture({ modules }: SystemArchitectureProps) {
           </motion.svg>
         </div>
 
-        {/* Module cards grid with spotlight + lift hover */}
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-4xl mx-auto"
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          variants={STAGGER}
-        >
-          {modules.map((mod) => (
-            <ModuleCard key={mod.id} mod={mod} />
-          ))}
-        </motion.div>
+        {/* Module cards grouped by type */}
+        {grouped.map(({ group, label, modules: groupModules }) => (
+          <div key={group} className="mb-10 last:mb-0">
+            <motion.p
+              initial="hidden"
+              whileInView="visible"
+              viewport={VIEWPORT}
+              variants={REVEAL}
+              className="font-mono text-2xs tracking-[0.12em] uppercase text-warm-gray-light mb-4 max-w-4xl mx-auto"
+            >
+              {label}
+            </motion.p>
+            <motion.div
+              className={`grid ${GROUP_COLS[group]} gap-6 max-w-4xl mx-auto`}
+              initial="hidden"
+              whileInView="visible"
+              viewport={VIEWPORT}
+              variants={STAGGER}
+            >
+              {groupModules.map((mod) => (
+                <ModuleCard key={mod.id} mod={mod} />
+              ))}
+            </motion.div>
+          </div>
+        ))}
       </div>
     </section>
   )

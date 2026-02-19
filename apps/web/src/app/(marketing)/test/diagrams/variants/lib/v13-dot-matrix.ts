@@ -36,7 +36,7 @@ export const ORANGE_B   = 4
 
 // ─── Architecture layout (normalized 0–1 coordinates) ────────────────────────
 //
-// 3×2 grid: Core and Mesh occupy the inner columns, others wrap around.
+// 3×2 grid: Engine and Mesh occupy the inner columns, others wrap around.
 // These are multiplied by canvas dimensions at render time.
 
 export const MODULE_POSITIONS: Record<string, { nx: number; ny: number }> = {
@@ -50,12 +50,12 @@ export const MODULE_POSITIONS: Record<string, { nx: number; ny: number }> = {
 
 /** Connections between modules */
 export const CONNECTIONS: Array<[string, string]> = [
-  ['core',    'console'],
-  ['core',    'wing'],
-  ['core',    'mesh'],
+  ['engine',    'console'],
+  ['engine',    'wing'],
+  ['engine',    'mesh'],
   ['mesh',    'pulse'],
-  ['mesh',    'channels'],
-  ['core',    'pulse'],     // secondary diagonal
+  ['mesh',    'relay'],
+  ['engine',    'pulse'],     // secondary diagonal
 ]
 
 // ─── Types ────────────────────────────────────────────────────────────────────

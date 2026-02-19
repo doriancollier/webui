@@ -59,37 +59,37 @@ function vhPath(x1: number, y1: number, x2: number, y2: number): string {
  * - pulseLen: approximate total path length (for animateMotion timing)
  */
 const TRACES = [
-  // Console ─── horizontal ──► Core (left pin of Core to right pin of Console)
+  // Console ─── horizontal ──► Engine (left pin of Engine to right pin of Console)
   {
     id: 'console-core',
     d: `M ${POS.console.x + SIDE_W / 2} ${POS.console.y} L ${POS.core.x - CORE_W / 2} ${POS.console.y}`,
     delay: 0,
     dur: 2.2,
   },
-  // Core ─── horizontal ──► Wing (right pin of Core to left pin of Wing)
+  // Engine ─── horizontal ──► Wing (right pin of Engine to left pin of Wing)
   {
-    id: 'core-wing',
+    id: 'engine-wing',
     d: `M ${POS.core.x + CORE_W / 2} ${POS.core.y} L ${POS.wing.x - SIDE_W / 2} ${POS.wing.y}`,
     delay: 0.2,
     dur: 2.4,
   },
-  // Core ──► Mesh (vertical drop from bottom pin of Core to top pin of Mesh)
+  // Engine ──► Mesh (vertical drop from bottom pin of Engine to top pin of Mesh)
   {
-    id: 'core-mesh',
+    id: 'engine-mesh',
     d: vhPath(POS.core.x, POS.core.y + CORE_H / 2, POS.mesh.x, POS.mesh.y - BUS_H / 2),
     delay: 0.4,
     dur: 2.0,
   },
-  // Core ──► Pulse (down then left — elbow routing)
+  // Engine ──► Pulse (down then left — elbow routing)
   {
-    id: 'core-pulse',
+    id: 'engine-pulse',
     d: hvPath(POS.core.x, POS.core.y + CORE_H / 2 + 20, POS.pulse.x, POS.pulse.y - BUS_H / 2),
     delay: 0.6,
     dur: 2.8,
   },
-  // Core ──► Channels (down then right — elbow routing)
+  // Engine ──► Relay (down then right — elbow routing)
   {
-    id: 'core-channels',
+    id: 'engine-channels',
     d: hvPath(POS.core.x, POS.core.y + CORE_H / 2 + 20, POS.channels.x, POS.channels.y - BUS_H / 2),
     delay: 0.8,
     dur: 2.6,
@@ -141,11 +141,11 @@ interface ChipProps {
   name: string
   label: string
   status: 'available' | 'coming-soon'
-  isCore?: boolean
+  isEngine?: boolean
 }
 
 /** IC chip rectangle with notch, pin connectors, name, label, and status LED. */
-function Chip({ cx, cy, w, h, name, label, status, isCore }: ChipProps) {
+function Chip({ cx, cy, w, h, name, label, status, isEngine }: ChipProps) {
   const x = cx - w / 2
   const y = cy - h / 2
   const statusColor = status === 'available' ? '#228B22' : '#7A756A'
@@ -166,13 +166,13 @@ function Chip({ cx, cy, w, h, name, label, status, isCore }: ChipProps) {
   ].join(' ')
 
   return (
-    <motion.g variants={isCore ? SCALE_IN : REVEAL}>
+    <motion.g variants={isEngine ? SCALE_IN : REVEAL}>
       {/* Chip body */}
       <path
         d={bodyPath}
         fill="var(--color-cream-white)"
         stroke="var(--color-charcoal)"
-        strokeWidth={isCore ? 1.5 : 1.2}
+        strokeWidth={isEngine ? 1.5 : 1.2}
         opacity={0.97}
       />
 
@@ -218,7 +218,7 @@ function Chip({ cx, cy, w, h, name, label, status, isCore }: ChipProps) {
         y={cy - 6}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={isCore ? 13 : 11}
+        fontSize={isEngine ? 13 : 11}
         fontWeight={600}
         fontFamily="var(--font-mono, ui-monospace)"
         fill="var(--color-charcoal)"
@@ -233,7 +233,7 @@ function Chip({ cx, cy, w, h, name, label, status, isCore }: ChipProps) {
         y={cy + 11}
         textAnchor="middle"
         dominantBaseline="middle"
-        fontSize={isCore ? 9 : 8}
+        fontSize={isEngine ? 9 : 8}
         fontFamily="var(--font-mono, ui-monospace)"
         fill="var(--color-warm-gray)"
         letterSpacing="0.06em"
@@ -261,19 +261,19 @@ function Chip({ cx, cy, w, h, name, label, status, isCore }: ChipProps) {
 // ─── Solder joint positions (where traces meet chip edges) ─────────────────────
 
 const SOLDER_JOINTS = [
-  // Console–Core horizontal trace endpoints
+  // Console–Engine horizontal trace endpoints
   { cx: POS.console.x + SIDE_W / 2,    cy: POS.console.y },
   { cx: POS.core.x - CORE_W / 2,       cy: POS.core.y },
-  // Core–Wing horizontal trace endpoints
+  // Engine–Wing horizontal trace endpoints
   { cx: POS.core.x + CORE_W / 2,       cy: POS.core.y },
   { cx: POS.wing.x - SIDE_W / 2,      cy: POS.wing.y },
-  // Core–Mesh vertical trace: bottom of Core, top of Mesh
+  // Engine–Mesh vertical trace: bottom of Engine, top of Mesh
   { cx: POS.core.x,                    cy: POS.core.y + CORE_H / 2 },
   { cx: POS.mesh.x,                    cy: POS.mesh.y - BUS_H / 2 },
-  // Core–Pulse elbow: elbow corner and Pulse top
+  // Engine–Pulse elbow: elbow corner and Pulse top
   { cx: POS.core.x,                    cy: POS.core.y + CORE_H / 2 + 20 },
   { cx: POS.pulse.x,                   cy: POS.pulse.y - BUS_H / 2 },
-  // Core–Channels elbow: elbow corner and Channels top
+  // Engine–Relay elbow: elbow corner and Relay top
   { cx: POS.channels.x,               cy: POS.core.y + CORE_H / 2 + 20 },
   { cx: POS.channels.x,               cy: POS.channels.y - BUS_H / 2 },
 ] as const
@@ -459,17 +459,17 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
 
         {/* ── IC Chip modules ── */}
 
-        {/* Core — center, larger chip */}
+        {/* Engine — center, larger chip */}
         <Chip
           id="core"
           cx={POS.core.x}
           cy={POS.core.y}
           w={CORE_W}
           h={CORE_H}
-          name={byId['core']?.name ?? 'Core'}
-          label={byId['core']?.label ?? 'AI Server'}
-          status={byId['core']?.status ?? 'available'}
-          isCore
+          name={byId['engine']?.name ?? 'Engine'}
+          label={byId['engine']?.label ?? 'AI Server'}
+          status={byId['engine']?.status ?? 'available'}
+          isEngine
         />
 
         {/* Console — left flank */}
@@ -496,7 +496,7 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
           status={byId['wing']?.status ?? 'coming-soon'}
         />
 
-        {/* Lower bus — Pulse, Mesh, Channels */}
+        {/* Lower bus — Pulse, Mesh, Relay */}
         <Chip
           id="pulse"
           cx={POS.pulse.x}
@@ -523,9 +523,9 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
           cy={POS.channels.y}
           w={BUS_W}
           h={BUS_H}
-          name={byId['channels']?.name ?? 'Channels'}
-          label={byId['channels']?.label ?? 'Integrations'}
-          status={byId['channels']?.status ?? 'coming-soon'}
+          name={byId['relay']?.name ?? 'Relay'}
+          label={byId['relay']?.label ?? 'Integrations'}
+          status={byId['relay']?.status ?? 'coming-soon'}
         />
 
         {/* ── Silkscreen module reference designators ── */}

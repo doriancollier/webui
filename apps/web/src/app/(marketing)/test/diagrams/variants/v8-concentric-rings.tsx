@@ -34,12 +34,12 @@ interface ModuleLayout {
 
 // Explicit placement for visual balance
 const MODULE_LAYOUT: ModuleLayout[] = [
-  // Core is always at center, not on any ring
+  // Engine is always at center, not on any ring
   { id: 'console', ring: 0, angleDeg: -60 },
   { id: 'wing', ring: 1, angleDeg: 210 },
   { id: 'pulse', ring: 1, angleDeg: 30 },
   { id: 'mesh', ring: 2, angleDeg: -120 },
-  { id: 'channels', ring: 2, angleDeg: 70 },
+  { id: 'relay', ring: 2, angleDeg: 70 },
 ]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
   const uid = useId().replace(/:/g, '')
   const [entranceDone, setEntranceDone] = useState(false)
 
-  const coreModule = modules.find((m) => m.id === 'core')
+  const coreModule = modules.find((m) => m.id === 'engine')
 
   // Build resolved node list: match layout entries to module data
   const nodes = MODULE_LAYOUT.flatMap((layout) => {
@@ -331,7 +331,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             </feMerge>
           </filter>
 
-          {/* Core radial glow */}
+          {/* Engine radial glow */}
           <radialGradient id={coreGlowId} cx="50%" cy="50%" r="50%">
             <stop offset="0%" stopColor="#E85D04" stopOpacity="0.22" />
             <stop offset="100%" stopColor="#E85D04" stopOpacity="0" />
@@ -459,7 +459,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
           />
         ))}
 
-        {/* ── Core node (always at center) ── */}
+        {/* ── Engine node (always at center) ── */}
         <motion.g variants={SCALE_IN}>
           {/* Pulse ring — breathes after entrance */}
           <motion.circle
@@ -481,7 +481,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             transition={{ duration: 2.8, repeat: Infinity, ease: 'easeOut' }}
           />
 
-          {/* Core outer glow ring */}
+          {/* Engine outer glow ring */}
           <circle
             cx={CX}
             cy={CY}
@@ -493,7 +493,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             filter={`url(#${glowFilterId})`}
           />
 
-          {/* Core body */}
+          {/* Engine body */}
           <circle
             cx={CX}
             cy={CY}
@@ -504,7 +504,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             strokeOpacity="0.75"
           />
 
-          {/* Core crosshair lines (inner) */}
+          {/* Engine crosshair lines (inner) */}
           <line
             x1={CX - CORE_R + 6}
             y1={CY}
@@ -524,7 +524,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             strokeOpacity="0.4"
           />
 
-          {/* Core name */}
+          {/* Engine name */}
           <text
             x={CX}
             y={CY - 4}
@@ -541,7 +541,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             {coreModule?.name ?? 'CORE'}
           </text>
 
-          {/* Core label */}
+          {/* Engine label */}
           <text
             x={CX}
             y={CY + 8}
@@ -558,7 +558,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
             {coreModule?.label ?? 'AI SERVER'}
           </text>
 
-          {/* Core status pip — bright green dot */}
+          {/* Engine status pip — bright green dot */}
           <circle
             cx={CX + CORE_R - 4}
             cy={CY - CORE_R + 4}

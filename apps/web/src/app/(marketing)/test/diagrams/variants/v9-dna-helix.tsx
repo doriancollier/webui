@@ -49,13 +49,13 @@ const RUNG_COLOR = 'rgba(139,90,43,0.22)'
 
 // ─── Module layout ─────────────────────────────────────────────────────────────
 //
-// Left strand  (orange) — user-facing: Console, Core, Wing  (top → bottom)
-// Right strand (blue)   — autonomous:  Pulse,   Mesh, Channels (top → bottom)
+// Left strand  (orange) — user-facing: Console, Engine, Wing  (top → bottom)
+// Right strand (blue)   — autonomous:  Pulse,   Mesh, Relay (top → bottom)
 //
 // Each triplet: [moduleId, rungIndex]
 
-const LEFT_IDS = ['console', 'core', 'wing'] as const
-const RIGHT_IDS = ['pulse', 'mesh', 'channels'] as const
+const LEFT_IDS = ['console', 'engine', 'wing'] as const
+const RIGHT_IDS = ['pulse', 'mesh', 'relay'] as const
 
 // ─── SVG path builders ─────────────────────────────────────────────────────────
 
@@ -326,8 +326,8 @@ function NucleotideParticle({
  * DiagramV9 — DNA Helix architecture visualization.
  *
  * Renders DorkOS modules as base pairs on a double helix structure.
- * Left strand (orange) = user-facing layer: Console, Core, Wing.
- * Right strand (blue) = autonomous layer: Pulse, Mesh, Channels.
+ * Left strand (orange) = user-facing layer: Console, Engine, Wing.
+ * Right strand (blue) = autonomous layer: Pulse, Mesh, Relay.
  * Paired modules are connected by horizontal rungs.
  */
 export function DiagramV9({ modules }: { modules: SystemModule[] }) {

@@ -4,48 +4,45 @@ export interface SystemModule {
   label: string
   description: string
   status: 'available' | 'coming-soon'
+  group: 'platform' | 'engine-capability' | 'extension'
 }
 
 export const systemModules: SystemModule[] = [
   {
-    id: 'core',
-    name: 'Core',
-    label: 'AI Server',
+    id: 'engine',
+    name: 'Engine',
+    label: 'Runtime',
     description:
-      'The engine. Wraps Claude Code CLI, exposes a secure API, enables remote access.',
+      'The runtime that powers everything. Connects your AI agents, exposes a secure API, and runs Pulse, Relay, and Mesh as integrated capabilities.',
     status: 'available',
+    group: 'platform',
   },
   {
     id: 'console',
     name: 'Console',
-    label: 'Web UI',
+    label: 'Interface',
     description:
-      'Browser-based interface. Connect to your Claude instance from anywhere.',
+      'Your command center. Chat with agents, manage schedules, coordinate modules, and access your system from any browser.',
     status: 'available',
+    group: 'platform',
   },
   {
     id: 'pulse',
     name: 'Pulse',
-    label: 'Heartbeat',
+    label: 'Scheduler',
     description:
       'Autonomous execution loop that works while you sleep. Executes roadmaps, solicits feedback, self-improves.',
     status: 'coming-soon',
+    group: 'engine-capability',
   },
   {
-    id: 'wing',
-    name: 'Wing',
-    label: 'Life Layer',
+    id: 'relay',
+    name: 'Relay',
+    label: 'Communications',
     description:
-      'Your always-on AI companion. Remembers what matters, helps you plan, keeps you accountable, and gives AI agents persistent context about your goals and life.',
+      'Outbound agent communication. SMS, email, Telegram, Slack — agents that reach the outside world.',
     status: 'coming-soon',
-  },
-  {
-    id: 'channels',
-    name: 'Channels',
-    label: 'Integrations',
-    description:
-      'SMS, email, Telegram, Twitter. Agents that communicate outward.',
-    status: 'coming-soon',
+    group: 'engine-capability',
   },
   {
     id: 'mesh',
@@ -54,5 +51,24 @@ export const systemModules: SystemModule[] = [
     description:
       'The nervous system. Agents discover each other, share context, and coordinate across projects.',
     status: 'coming-soon',
+    group: 'engine-capability',
+  },
+  {
+    id: 'wing',
+    name: 'Wing',
+    label: 'Life Layer',
+    description:
+      'Your always-on AI companion. Remembers what matters, helps you plan, keeps you accountable, and gives AI agents persistent context about your goals and life.',
+    status: 'coming-soon',
+    group: 'extension',
+  },
+  {
+    id: 'loop',
+    name: 'Loop',
+    label: 'Improvement Engine',
+    description:
+      'Closes the feedback loop. Turns signals into hypotheses, hypotheses into tasks, and outcomes into the next iteration. Your system gets better while you sleep.',
+    status: 'coming-soon',
+    group: 'extension',
   },
 ]

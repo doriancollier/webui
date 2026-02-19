@@ -28,7 +28,7 @@ const DEFAULT_POSITIONS: Record<string, { x: number; y: number }> = {
   channels: { x: 725, y: 330 },
 }
 
-/** Which connections to render. `spine` = thicker Core↔Mesh line. */
+/** Which connections to render. `spine` = thicker Engine↔Mesh line. */
 interface ConnectionDef {
   id: string
   from: string
@@ -37,11 +37,11 @@ interface ConnectionDef {
 }
 
 const CONNECTIONS: ConnectionDef[] = [
-  { id: 'core-console',  from: 'core',  to: 'console'  },
-  { id: 'core-wing',    from: 'core',  to: 'wing'    },
-  { id: 'core-pulse',    from: 'core',  to: 'pulse'    },
-  { id: 'core-mesh',     from: 'core',  to: 'mesh',    spine: true },
-  { id: 'mesh-channels', from: 'mesh',  to: 'channels' },
+  { id: 'engine-console',  from: 'engine',  to: 'console'  },
+  { id: 'engine-wing',    from: 'engine',  to: 'wing'    },
+  { id: 'engine-pulse',    from: 'engine',  to: 'pulse'    },
+  { id: 'engine-mesh',     from: 'engine',  to: 'mesh',    spine: true },
+  { id: 'mesh-relay', from: 'mesh',  to: 'relay' },
   { id: 'mesh-pulse',    from: 'mesh',  to: 'pulse'    },
 ]
 

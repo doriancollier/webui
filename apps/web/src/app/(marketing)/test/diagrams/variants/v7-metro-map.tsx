@@ -20,8 +20,8 @@ const STATIONS = {
   channels: { x: 450, y: 490 },
 } as const
 
-// Transfer station IDs (Core, Mesh) — rendered larger with interchange ring
-const TRANSFER_IDS = new Set(['core', 'mesh'])
+// Transfer station IDs (Engine, Mesh) — rendered larger with interchange ring
+const TRANSFER_IDS = new Set(['engine', 'mesh'])
 
 // ─── Line definitions ──────────────────────────────────────────────────────────
 
@@ -46,9 +46,9 @@ const METRO_LINES: MetroLine[] = [
     name: 'User-Facing',
     color: 'var(--color-brand-orange)',
     strokeWidth: 6,
-    // Console → H-right → elbow → Core → H-left → V-down → H-left → Wing
+    // Console → H-right → elbow → Engine → H-left → V-down → H-left → Wing
     path: 'M 150 155 H 310 L 450 280 H 280 V 405 H 150',
-    stations: ['console', 'core', 'wing'],
+    stations: ['console', 'engine', 'wing'],
     trainDur: '8s',
     trainBegin: '3.0s',
   },
@@ -57,9 +57,9 @@ const METRO_LINES: MetroLine[] = [
     name: 'Autonomy',
     color: 'var(--color-brand-green)',
     strokeWidth: 6,
-    // Core → H-right → V-up → H-right → Pulse → V-down → Mesh
+    // Engine → H-right → V-up → H-right → Pulse → V-down → Mesh
     path: 'M 450 280 H 620 V 155 H 750 V 405',
-    stations: ['core', 'pulse', 'mesh'],
+    stations: ['engine', 'pulse', 'mesh'],
     trainDur: '9s',
     trainBegin: '4.2s',
   },
@@ -68,9 +68,9 @@ const METRO_LINES: MetroLine[] = [
     name: 'Communication',
     color: 'var(--color-brand-blue)',
     strokeWidth: 5,
-    // Mesh → V-down → H-left → Channels
+    // Mesh → V-down → H-left → Relay
     path: 'M 750 405 V 490 H 450',
-    stations: ['mesh', 'channels'],
+    stations: ['mesh', 'relay'],
     trainDur: '6s',
     trainBegin: '5.8s',
   },
@@ -79,9 +79,9 @@ const METRO_LINES: MetroLine[] = [
     name: 'Spine',
     color: 'var(--color-brand-purple)',
     strokeWidth: 8,
-    // Core → V-down → H-right → Mesh (thicker — express line)
+    // Engine → V-down → H-right → Mesh (thicker — express line)
     path: 'M 450 280 V 405 H 750',
-    stations: ['core', 'mesh'],
+    stations: ['engine', 'mesh'],
     trainDur: '7s',
     trainBegin: '6.8s',
   },
@@ -118,7 +118,7 @@ function Station({ id, x, y, mod, lineColors, isTransfer }: StationProps) {
   // Label placement: stations on the left go left, right go right, bottom go below
   const labelAnchor = x < 400 ? 'end' : x > 500 ? 'start' : 'middle'
   const labelX = x < 400 ? x - outerR - 10 : x > 500 ? x + outerR + 10 : x
-  const labelY = id === 'channels' ? y + outerR + 22 : y
+  const labelY = id === 'relay' ? y + outerR + 22 : y
 
   return (
     <g>
@@ -175,7 +175,7 @@ function Station({ id, x, y, mod, lineColors, isTransfer }: StationProps) {
       {/* Station name */}
       <text
         x={labelX}
-        y={id === 'channels' ? labelY - 8 : labelY - 3}
+        y={id === 'relay' ? labelY - 8 : labelY - 3}
         textAnchor={labelAnchor}
         dominantBaseline="middle"
         fill="var(--color-charcoal)"
@@ -187,7 +187,7 @@ function Station({ id, x, y, mod, lineColors, isTransfer }: StationProps) {
       {/* Station sub-label (module type) */}
       <text
         x={labelX}
-        y={id === 'channels' ? labelY + 8 : labelY + 11}
+        y={id === 'relay' ? labelY + 8 : labelY + 11}
         textAnchor={labelAnchor}
         dominantBaseline="middle"
         fill="var(--color-warm-gray)"
@@ -199,7 +199,7 @@ function Station({ id, x, y, mod, lineColors, isTransfer }: StationProps) {
       {/* Status dot */}
       <circle
         cx={x < 400 ? x - outerR - 3 : x > 500 ? x + outerR + 3 : x + outerR + 3}
-        cy={id === 'channels' ? y - outerR - 3 : y - 3}
+        cy={id === 'relay' ? y - outerR - 3 : y - 3}
         r={3}
         fill={available ? 'var(--color-brand-green)' : 'var(--color-warm-gray-light)'}
         opacity={available ? 0.9 : 0.55}
@@ -376,7 +376,7 @@ export function DiagramV7({ modules }: { modules: SystemModule[] }) {
         )
       })}
 
-      {/* ── Layer 4: Transfer station pulse rings (Core + Mesh) ── */}
+      {/* ── Layer 4: Transfer station pulse rings (Engine + Mesh) ── */}
       {entranceDone &&
         Array.from(TRANSFER_IDS).map((sid) => {
           const pos = STATIONS[sid as keyof typeof STATIONS]

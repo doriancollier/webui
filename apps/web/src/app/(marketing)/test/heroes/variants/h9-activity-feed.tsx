@@ -14,7 +14,7 @@ interface HeroProps {
   ctaHref: string
 }
 
-type ModuleId = 'core' | 'pulse' | 'wing' | 'mesh' | 'channels' | 'agent'
+type ModuleId = 'engine' | 'pulse' | 'wing' | 'mesh' | 'relay' | 'agent' | 'loop'
 
 interface FeedEntry {
   /** Unique key for AnimatePresence — never reused. */
@@ -35,22 +35,24 @@ const FEED_INTERVAL_MS = 2400
 
 /** Module dot colors matching brand palette. */
 const MODULE_COLORS: Record<ModuleId, string> = {
-  core: '#E85D04',
+  engine: '#E85D04',
   pulse: '#F07D2A',
   wing: '#228B22',
   mesh: '#4A90A4',
-  channels: '#8B7BA4',
+  relay: '#8B7BA4',
   agent: '#7A756A',
+  loop: '#B8860B',
 }
 
 /** Module label for the badge. */
 const MODULE_LABELS: Record<ModuleId, string> = {
-  core: 'Core',
+  engine: 'Engine',
   pulse: 'Pulse',
   wing: 'Wing',
   mesh: 'Mesh',
-  channels: 'Channels',
+  relay: 'Relay',
   agent: 'Agent',
+  loop: 'Loop',
 }
 
 /** The full activity pool — cycled through in order, looping back. */
@@ -67,16 +69,16 @@ const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
   { module: 'agent', text: 'Agent refactored auth module — removed 340 lines of dead code' },
   { module: 'pulse', text: 'Pulse triaged 12 GitHub issues while you were asleep' },
   // Business & money
-  { module: 'channels', text: 'Channels sent deployment notification to Slack' },
+  { module: 'relay', text: 'Relay sent deployment notification to Slack' },
   { module: 'agent', text: 'Agent drafted Q2 investor update — ready for review' },
-  { module: 'channels', text: 'Channels replied to 6 support emails with context from Wing' },
+  { module: 'relay', text: 'Relay replied to 6 support emails with context from Wing' },
   { module: 'agent', text: 'Agent found $2,400/yr in unused AWS resources — PR open to delete' },
   { module: 'wing', text: 'Wing compiled competitive analysis from 14 sources' },
   { module: 'pulse', text: 'Pulse generated monthly revenue report — MRR up 23%' },
   // Life automation
-  { module: 'channels', text: 'Channels ordered anniversary flowers — delivery confirmed for Friday' },
+  { module: 'relay', text: 'Relay ordered anniversary flowers — delivery confirmed for Friday' },
   { module: 'agent', text: 'Agent booked dentist appointment for Thursday 2pm' },
-  { module: 'channels', text: 'Channels negotiated internet bill down $40/mo — new rate locked in' },
+  { module: 'relay', text: 'Relay negotiated internet bill down $40/mo — new rate locked in' },
   { module: 'wing', text: 'Wing organized 2,847 photos by date, location, and who\u2019s in them' },
   { module: 'agent', text: 'Agent meal-prepped grocery list for the week — ordered via Instacart' },
   { module: 'pulse', text: 'Pulse filed your quarterly taxes 3 days before the deadline' },
@@ -84,11 +86,14 @@ const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
   { module: 'mesh', text: 'Mesh assembled 7 agents for Operation Birthday Surprise' },
   { module: 'agent', text: 'Agent wrote a passive income bot — estimated $300/mo on autopilot' },
   { module: 'pulse', text: 'Pulse started next iteration cycle' },
-  { module: 'channels', text: 'Channels sent "thinking of you" text to mom — she loved it' },
+  { module: 'relay', text: 'Relay sent "thinking of you" text to mom — she loved it' },
   { module: 'wing', text: 'Wing has your full context — ask me anything' },
   { module: 'mesh', text: 'Mesh coordinating world domination — ETA 47 minutes' },
   { module: 'agent', text: 'Agent applied to 30 jobs on your behalf — 4 interviews booked' },
   { module: 'pulse', text: 'Pulse optimized your portfolio — up 12% since last rebalance' },
+  { module: 'loop', text: 'Loop triaged 8 signals — 3 became hypotheses' },
+  { module: 'loop', text: 'Loop validated hypothesis — conversion up 2.1% after fix' },
+  { module: 'loop', text: 'Loop dispatched next priority task to Pulse' },
 ]
 
 /** Seconds-ago values used for the initial snapshot display. */

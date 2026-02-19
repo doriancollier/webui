@@ -226,9 +226,9 @@ JSONL transcripts stored at `~/.claude/projects/`. Always local.
 
 **Proposed:** Reduce to 4 cards — cut the ones that are table stakes (Dark Mode, Mobile Responsive). Focus on differentiating capabilities.
 
-1. **Chat Interface** — "Rich markdown, streaming responses, and syntax highlighting. Claude Code in a real browser UI." (stable, Core)
-2. **Tool Approval** — "Review and approve every tool call before it executes. Full control over what Claude does on your machine." (stable, Core)
-3. **Session Management** — "Browse, resume, and sync sessions across devices. Works with CLI-started sessions. One source of truth." (stable, Core)
+1. **Chat Interface** — "Rich markdown, streaming responses, and syntax highlighting. Claude Code in a real browser UI." (stable, Engine)
+2. **Tool Approval** — "Review and approve every tool call before it executes. Full control over what Claude does on your machine." (stable, Engine)
+3. **Session Management** — "Browse, resume, and sync sessions across devices. Works with CLI-started sessions. One source of truth." (stable, Engine)
 4. **Slash Commands** — "Discover and run commands from .claude/commands/ with a searchable palette. Your workflows, surfaced." (stable, Developer)
 
 **Design:** Keep the current grid layout (now 2x2 on desktop). Remove status/type badges — everything shown is shipped and stable.
@@ -310,4 +310,4 @@ The email reveal mechanism is distinctive and well-executed. No changes needed.
 | 3 | Social proof / testimonials | **Skip for now** — No testimonials section until we have real, curated developer quotes. None > fake. |
 | 4 | Footer version | **Show real npm version** — Display actual version (e.g., "v0.2.0"). Ogilvy: specificity is believability. |
 | 5 | Problem section tone | **Direct "you" address** — "Every AI coding interface you've used..." Makes the reader the protagonist. |
-| 6 | Site structure | **Single page** — One scrolling page. DorkOS is one product with one install. Go multi-page when Pulse/Channels/Wing ship. |
+| 6 | Site structure | **Single page** — One scrolling page. DorkOS is one product with one install. Go multi-page when Pulse/Relay/Wing ship. |

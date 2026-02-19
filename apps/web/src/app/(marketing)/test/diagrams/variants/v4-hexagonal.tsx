@@ -99,13 +99,13 @@ function sharedEdge(
 const RING_ANGLES_DEG = [270, 330, 30, 90, 150, 210] as const
 
 /** Module IDs assigned to each ring position (index 5 = empty/decorative). */
-const RING_MODULE_IDS = ['console', 'wing', 'channels', 'mesh', 'pulse', null] as const
+const RING_MODULE_IDS = ['console', 'wing', 'relay', 'mesh', 'pulse', null] as const
 
 interface HexCell {
   id: string | null
   cx: number
   cy: number
-  /** Whether this hex is the center Core cell. */
+  /** Whether this hex is the center Engine cell. */
   isCenter: boolean
   /** Ring slot index (0-5), or -1 for center. */
   slot: number
@@ -113,7 +113,7 @@ interface HexCell {
 
 function buildLayout(): HexCell[] {
   const cells: HexCell[] = [
-    { id: 'core', cx: CX, cy: CY, isCenter: true, slot: -1 },
+    { id: 'engine', cx: CX, cy: CY, isCenter: true, slot: -1 },
   ]
 
   for (let i = 0; i < 6; i++) {
@@ -232,7 +232,7 @@ function HexCellShape({ cell, module, animDelay, isDecorativeEmpty }: HexCellPro
         fillOpacity={isDecorativeEmpty ? 0 : 1}
       />
 
-      {/* Inner double-ring on Core */}
+      {/* Inner double-ring on Engine */}
       {innerPts && (
         <polygon
           points={innerPts}
@@ -446,8 +446,8 @@ function SharedEdgeGlow({ ax, ay, bx, by, animDelay, moduleId }: SharedEdgeProps
 /**
  * V4 — Hexagonal Grid architecture diagram.
  *
- * Core sits at the center hexagon. Five modules surround it in a honeycomb ring.
- * Shared edges between Core and each module glow and carry traveling energy dots.
+ * Engine sits at the center hexagon. Five modules surround it in a honeycomb ring.
+ * Shared edges between Engine and each module glow and carry traveling energy dots.
  * Staggered entrance animation ripples outward from center.
  */
 export function DiagramV4({ modules }: { modules: SystemModule[] }) {
@@ -569,10 +569,10 @@ export function DiagramV4({ modules }: { modules: SystemModule[] }) {
         {/* Hex cells — center first, then ring with staggered timing          */}
         {/* ----------------------------------------------------------------- */}
 
-        {/* Center — Core */}
+        {/* Center — Engine */}
         <HexCellShape
           cell={HEX_CELLS[0]}
-          module={moduleMap.get('core')}
+          module={moduleMap.get('engine')}
           animDelay={0}
           isDecorativeEmpty={false}
         />

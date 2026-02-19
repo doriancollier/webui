@@ -117,8 +117,8 @@ interface BlockConfig {
 }
 
 const BLOCK_CONFIGS: BlockConfig[] = [
-  // Core — tallest, center
-  { id: 'core', col: 2, row: 1, blockHeight: 90, order: 0 },
+  // Engine — tallest, center
+  { id: 'engine', col: 2, row: 1, blockHeight: 90, order: 0 },
   // Console — medium, left of core
   { id: 'console', col: 0, row: 1, blockHeight: 60, order: 1 },
   // Wing — medium, right of core
@@ -127,8 +127,8 @@ const BLOCK_CONFIGS: BlockConfig[] = [
   { id: 'pulse', col: 0, row: 3, blockHeight: 38, order: 3 },
   // Mesh — shorter, forward-center
   { id: 'mesh', col: 2, row: 3, blockHeight: 38, order: 4 },
-  // Channels — shorter, forward-right
-  { id: 'channels', col: 4, row: 3, blockHeight: 38, order: 5 },
+  // Relay — shorter, forward-right
+  { id: 'relay', col: 4, row: 3, blockHeight: 38, order: 5 },
 ]
 
 // ---------------------------------------------------------------------------
@@ -163,16 +163,16 @@ function pipePath(
 }
 
 const PIPE_DEFINITIONS = [
-  // Core ↔ Console (top row)
-  { from: 'console', to: 'core' },
-  // Core ↔ Wing (top row)
-  { from: 'core', to: 'wing' },
+  // Engine ↔ Console (top row)
+  { from: 'console', to: 'engine' },
+  // Engine ↔ Wing (top row)
+  { from: 'engine', to: 'wing' },
   // Console ↔ Pulse (front column)
   { from: 'console', to: 'pulse' },
-  // Core ↔ Mesh (front column)
-  { from: 'core', to: 'mesh' },
-  // Wing ↔ Channels (front column)
-  { from: 'wing', to: 'channels' },
+  // Engine ↔ Mesh (front column)
+  { from: 'engine', to: 'mesh' },
+  // Wing ↔ Relay (front column)
+  { from: 'wing', to: 'relay' },
 ]
 
 // ---------------------------------------------------------------------------

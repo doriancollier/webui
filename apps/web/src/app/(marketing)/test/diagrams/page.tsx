@@ -28,7 +28,7 @@ const variants = [
     id: 1,
     title: 'Radial Orbit',
     description:
-      'Core sits at the center with modules orbiting around it. Connections shown as orbital paths with traveling particles.',
+      'Engine sits at the center with modules orbiting around it. Connections shown as orbital paths with traveling particles.',
     Component: lazyVariant(() => import('./variants/v1-radial-orbit'), 'DiagramV1'),
   },
   {
@@ -77,7 +77,7 @@ const variants = [
     id: 8,
     title: 'Concentric Rings',
     description:
-      'Layered rings radiating outward from Core. Inner ring = available, outer ring = coming soon. Radar sweep animation.',
+      'Layered rings radiating outward from Engine. Inner ring = available, outer ring = coming soon. Radar sweep animation.',
     Component: lazyVariant(() => import('./variants/v8-concentric-rings'), 'DiagramV8'),
   },
   {

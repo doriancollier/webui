@@ -110,14 +110,14 @@ export interface DiagramV1Props {
 }
 
 /**
- * Radial orbit architecture diagram — Core at center, 5 satellites in orbit.
+ * Radial orbit architecture diagram — Engine at center, 5 satellites in orbit.
  * Uses Framer Motion for entrance + SMIL animateMotion for continuous particles.
  */
 export function DiagramV1({ modules }: DiagramV1Props) {
   const [entranceDone, setEntranceDone] = useState(false)
 
-  const coreModule = modules.find((m) => m.id === 'core')
-  const satellites = modules.filter((m) => m.id !== 'core')
+  const coreModule = modules.find((m) => m.id === 'engine')
+  const satellites = modules.filter((m) => m.id !== 'engine')
 
   // Pre-compute satellite geometry
   const satelliteNodes = satellites.map((mod, i) => {
@@ -172,7 +172,7 @@ export function DiagramV1({ modules }: DiagramV1Props) {
           <stop offset="100%" stopColor="var(--cream-secondary)" stopOpacity="1" />
         </radialGradient>
 
-        {/* Core fill gradient */}
+        {/* Engine fill gradient */}
         <radialGradient id="core-fill" cx="40%" cy="35%" r="65%">
           <stop offset="0%" stopColor="var(--cream-white)" />
           <stop offset="100%" stopColor="var(--cream-tertiary)" />
@@ -334,7 +334,7 @@ export function DiagramV1({ modules }: DiagramV1Props) {
         </motion.g>
       ))}
 
-      {/* ── Layer 7: Core node (largest, pulses gently) ── */}
+      {/* ── Layer 7: Engine node (largest, pulses gently) ── */}
       <motion.g variants={SCALE_IN}>
         {/* Pulse rings — CSS animation handled by Framer Motion animate prop
             after entrance is done; use two concentric rings */}
@@ -375,7 +375,7 @@ export function DiagramV1({ modules }: DiagramV1Props) {
           transition={{ duration: 3, repeat: Infinity, ease: 'easeOut', delay: 0.6 }}
         />
 
-        {/* Core outer ring — glowing orange stroke */}
+        {/* Engine outer ring — glowing orange stroke */}
         <circle
           cx={CX}
           cy={CY}
@@ -387,7 +387,7 @@ export function DiagramV1({ modules }: DiagramV1Props) {
           filter="url(#orange-glow)"
         />
 
-        {/* Core node body */}
+        {/* Engine node body */}
         <circle
           cx={CX}
           cy={CY}
@@ -398,7 +398,7 @@ export function DiagramV1({ modules }: DiagramV1Props) {
           strokeOpacity="0.7"
         />
 
-        {/* Core: module name */}
+        {/* Engine: module name */}
         <text
           x={CX}
           y={CY - 5}
@@ -407,10 +407,10 @@ export function DiagramV1({ modules }: DiagramV1Props) {
           className="fill-charcoal font-mono"
           style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.04em' }}
         >
-          {coreModule?.name ?? 'Core'}
+          {coreModule?.name ?? 'Engine'}
         </text>
 
-        {/* Core: label */}
+        {/* Engine: label */}
         <text
           x={CX}
           y={CY + 8}
@@ -422,7 +422,7 @@ export function DiagramV1({ modules }: DiagramV1Props) {
           {coreModule?.label ?? 'AI Server'}
         </text>
 
-        {/* Core: available status dot */}
+        {/* Engine: available status dot */}
         <circle
           cx={CX + CORE_R + 6}
           cy={CY - CORE_R + 2}

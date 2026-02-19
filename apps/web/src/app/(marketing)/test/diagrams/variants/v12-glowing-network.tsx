@@ -16,7 +16,7 @@ const BLUE_GLOW   = 'rgba(59, 130, 246, 0.25)'
 // ─── Layout — organic network positions ──────────────────────────────────────
 //
 // Percentages of container width/height — cards are absolutely positioned.
-// Core sits near center. Others spiral loosely around it.
+// Engine sits near center. Others spiral loosely around it.
 // The SVG beam layer uses the same percentage system to draw connections.
 
 interface CardLayout {
@@ -45,11 +45,11 @@ interface BeamDef {
 }
 
 const BEAMS: BeamDef[] = [
-  { from: 'core',    to: 'console',  dur: 2.2 },
-  { from: 'core',    to: 'mesh',     dur: 2.5 },
-  { from: 'core',    to: 'wing',    dur: 2.8 },
-  { from: 'core',    to: 'pulse',    dur: 2.4 },
-  { from: 'core',    to: 'channels', dur: 2.0 },
+  { from: 'engine',    to: 'console',  dur: 2.2 },
+  { from: 'engine',    to: 'mesh',     dur: 2.5 },
+  { from: 'engine',    to: 'wing',    dur: 2.8 },
+  { from: 'engine',    to: 'pulse',    dur: 2.4 },
+  { from: 'engine',    to: 'relay', dur: 2.0 },
   { from: 'mesh',    to: 'pulse',    dur: 3.1 },
   { from: 'console', to: 'wing',    dur: 3.4 },
 ]
@@ -116,7 +116,7 @@ const KEYFRAMES = `
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface MovingBorderProps {
-  isCore:   boolean
+  isEngine:   boolean
   isActive: boolean
   isAvail:  boolean
 }
@@ -128,11 +128,11 @@ interface MovingBorderProps {
  * rotates inside it, producing the illusion of a light tracing the perimeter.
  * An inner div masks the card center so only the border ring is exposed.
  */
-function MovingBorder({ isCore, isActive, isAvail }: MovingBorderProps) {
+function MovingBorder({ isEngine, isActive, isAvail }: MovingBorderProps) {
   const color  = isAvail ? ORANGE : BLUE_SOON
   const glow   = isAvail ? ORANGE_GLOW : BLUE_GLOW
-  const radius = isCore ? '14px' : '12px'
-  const spinCls = isCore ? 'v12-spin' : 'v12-spin-slow'
+  const radius = isEngine ? '14px' : '12px'
+  const spinCls = isEngine ? 'v12-spin' : 'v12-spin-slow'
 
   // Active state: brighter sweep + secondary ghost arc
   const gradient = isActive
@@ -183,7 +183,7 @@ function MovingBorder({ isCore, isActive, isAvail }: MovingBorderProps) {
         style={{
           position:     'absolute',
           inset:        '2px',
-          borderRadius: isCore ? '13px' : '11px',
+          borderRadius: isEngine ? '13px' : '11px',
           background:   '#0a0a0f',
           zIndex:       1,
         }}
@@ -204,7 +204,7 @@ interface GlowCardProps {
 function GlowCard({ module, isHovered, isActive, onHover, onActivate }: GlowCardProps) {
   const layout  = CARD_LAYOUT[module.id]
   const isAvail = module.status === 'available'
-  const isCore  = module.id === 'core'
+  const isEngine  = module.id === 'engine'
 
   if (!layout) return null
 
@@ -242,20 +242,20 @@ function GlowCard({ module, isHovered, isActive, onHover, onActivate }: GlowCard
       onClick={() => onActivate(module.id)}
     >
       {/* Animated moving border */}
-      <MovingBorder isCore={isCore} isActive={isActive} isAvail={isAvail} />
+      <MovingBorder isEngine={isEngine} isActive={isActive} isAvail={isAvail} />
 
       {/* Card surface */}
       <div
-        className={isCore && isActive ? 'v12-core-pulse' : undefined}
+        className={isEngine && isActive ? 'v12-core-pulse' : undefined}
         style={{
           position:      'relative',
           width:         '100%',
           height:        '100%',
-          borderRadius:  isCore ? '13px' : '11px',
+          borderRadius:  isEngine ? '13px' : '11px',
           background:    cardBg,
           boxShadow,
           zIndex:        2,
-          padding:       isCore ? '16px 18px' : '14px 16px',
+          padding:       isEngine ? '16px 18px' : '14px 16px',
           display:       'flex',
           flexDirection: 'column',
           justifyContent:'space-between',
@@ -295,7 +295,7 @@ function GlowCard({ module, isHovered, isActive, onHover, onActivate }: GlowCard
           <span
             style={{
               fontFamily:    'var(--font-ibm-plex-mono, ui-monospace, monospace)',
-              fontSize:      isCore ? '13px' : '11px',
+              fontSize:      isEngine ? '13px' : '11px',
               fontWeight:    700,
               letterSpacing: '0.07em',
               textTransform: 'uppercase',
@@ -553,7 +553,7 @@ function Spotlight({ x, y, visible }: SpotlightProps) {
  */
 export function DiagramV12({ modules }: { modules: SystemModule[] }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null)
-  const [activeIds, setActiveIds] = useState<Set<string>>(new Set(['core']))
+  const [activeIds, setActiveIds] = useState<Set<string>>(new Set(['engine']))
   const [spotlight, setSpotlight] = useState({ x: 0, y: 0, visible: false })
 
   const containerRef = useRef<HTMLDivElement>(null)
@@ -576,8 +576,8 @@ export function DiagramV12({ modules }: { modules: SystemModule[] }) {
   const handleActivate = useCallback((id: string) => {
     setActiveIds((prev) => {
       const next = new Set(prev)
-      // Core is always active — cannot be toggled off
-      if (id === 'core') return next
+      // Engine is always active — cannot be toggled off
+      if (id === 'engine') return next
       if (next.has(id)) {
         next.delete(id)
       } else {

@@ -23,12 +23,12 @@ const GRID_POS: Record<string, [number, number]> = {
 
 /** Directed edges for tracing beams. */
 const CONNECTIONS: [string, string][] = [
-  ['core', 'console'],
-  ['core', 'wing'],
-  ['core', 'pulse'],
-  ['core', 'mesh'],
-  ['core', 'channels'],
-  ['mesh', 'channels'],
+  ['engine', 'console'],
+  ['engine', 'wing'],
+  ['engine', 'pulse'],
+  ['engine', 'mesh'],
+  ['engine', 'relay'],
+  ['mesh', 'relay'],
 ]
 
 // ─── Tilt math ────────────────────────────────────────────────────────────────
@@ -107,7 +107,7 @@ function TiltCard({
   const [tilt, setTilt] = useState<TiltState>(NEUTRAL_TILT)
 
   const available = module.status === 'available'
-  const isCore    = module.id === 'core'
+  const isEngine    = module.id === 'engine'
 
   const handleMouseMove = useCallback((e: MouseEvent<HTMLDivElement>) => {
     const el = e.currentTarget
@@ -199,7 +199,7 @@ function TiltCard({
           <div
             className="absolute top-0 left-0 right-0"
             style={{
-              height:  isCore ? '3px' : '2px',
+              height:  isEngine ? '3px' : '2px',
               background: available
                 ? `linear-gradient(90deg, transparent 0%, ${ORANGE} 30%, ${ORANGE} 70%, transparent 100%)`
                 : `linear-gradient(90deg, transparent 0%, rgba(232,93,4,0.3) 30%, rgba(232,93,4,0.3) 70%, transparent 100%)`,
@@ -226,7 +226,7 @@ function TiltCard({
                   className="font-semibold tracking-tight leading-none"
                   style={{
                     color:    'var(--color-charcoal)',
-                    fontSize: isCore ? '20px' : '17px',
+                    fontSize: isEngine ? '20px' : '17px',
                   }}
                 >
                   {module.name}

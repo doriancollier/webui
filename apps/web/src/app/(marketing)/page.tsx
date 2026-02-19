@@ -54,7 +54,7 @@ export default function HomePage() {
       <main>
         <ActivityFeedHero
           headline="Your AI Never Sleeps."
-          subhead="DorkOS is an open-source operating system for autonomous AI agents. Built on Claude Code. Powered by a heartbeat. Connected through an agent mesh."
+          subhead="DorkOS is an open-source operating system for autonomous AI agents. Powered by an engine that never stops. Connected through an agent mesh."
           ctaText="npm install -g dorkos"
           ctaHref={siteConfig.npm}
           githubHref={siteConfig.github}
@@ -71,7 +71,7 @@ export default function HomePage() {
         <HonestySection />
 
         <AboutSection
-          description="DorkOS turns Claude Code into an autonomous agent system. Built on the Agent SDK, it reads the same JSONL session files as the CLI. The intelligence comes from Anthropic. Everything else — orchestration, heartbeat, mesh, wing, permissions — is yours."
+          description="DorkOS is an autonomous agent operating system. It makes your AI agents more capable — giving them a heartbeat, a memory, a communication layer, and the ability to coordinate. The intelligence comes from the agents. Everything else — engine, console, pulse, wing, relay, mesh — is yours."
           philosophyItems={philosophyItems}
         />
 

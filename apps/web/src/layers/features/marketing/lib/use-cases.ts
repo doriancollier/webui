@@ -9,13 +9,13 @@ export const useCases: UseCase[] = [
     id: 'ship-while-you-sleep',
     title: 'Ship while you sleep',
     description:
-      'The Heartbeat executes your roadmap autonomously. Wake up to PRs, not TODO lists.',
+      'Pulse executes your roadmap autonomously. Wake up to PRs, not TODO lists.',
   },
   {
     id: 'agents-that-talk',
     title: 'Agents that talk to each other',
     description:
-      'The Mesh turns folders into agents with their own rules and memory. They discover each other, share context, and coordinate — your scheduling agent talks to your finance agent talks to your purchasing agent.',
+      'Mesh turns projects into agents with their own rules and memory. They discover each other, share context, and coordinate — your scheduling agent talks to your finance agent talks to your purchasing agent.',
   },
   {
     id: 'life-layer',
@@ -27,7 +27,7 @@ export const useCases: UseCase[] = [
     id: 'access-from-anywhere',
     title: 'Access from anywhere',
     description:
-      'Browser UI + tunnel. Your full dev environment from any device, any browser.',
+      'Console gives you a browser-based command center. Chat with agents, manage schedules, and control your system from any device.',
   },
   {
     id: 'your-rules',
@@ -36,9 +36,9 @@ export const useCases: UseCase[] = [
       'Tool approval flows, session management, slash commands. Full control without sacrificing power.',
   },
   {
-    id: 'works-with-cli',
-    title: 'Works with the CLI you already use',
+    id: 'continuous-improvement',
+    title: 'AI that improves itself',
     description:
-      'Same JSONL transcripts, same sessions. DorkOS adds a layer on top, never replaces what works.',
+      'Loop closes the feedback loop — turning signals into hypotheses, hypotheses into tasks, and outcomes into the next iteration. Your system gets better while you sleep.',
   },
 ]

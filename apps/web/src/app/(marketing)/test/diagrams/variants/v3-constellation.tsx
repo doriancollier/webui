@@ -17,7 +17,7 @@ const ORANGE_DIM = 'rgba(232, 93, 4, 0.35)'
 
 // ─── Star Positions ────────────────────────────────────────────────────────────
 //
-// Layout inspired loosely by the Scorpius constellation — Core is the bright
+// Layout inspired loosely by the Scorpius constellation — Engine is the bright
 // alpha star at center-left, arms sweep outward in an asymmetric arc.
 //
 // Module order: core, console, pulse, wing, channels, mesh
@@ -44,15 +44,15 @@ const LABEL_OFFSETS: Record<
   channels: { dx:   0, dy:  30, anchor: 'middle' },
 }
 
-/** Constellation edges — Core connects to all; a few lateral links. */
+/** Constellation edges — Engine connects to all; a few lateral links. */
 const EDGES: Array<[string, string]> = [
-  ['core', 'console'],
-  ['core', 'pulse'],
-  ['core', 'wing'],
-  ['core', 'mesh'],
-  ['core', 'channels'],
+  ['engine', 'console'],
+  ['engine', 'pulse'],
+  ['engine', 'wing'],
+  ['engine', 'mesh'],
+  ['engine', 'relay'],
   ['console', 'pulse'],
-  ['mesh', 'channels'],
+  ['mesh', 'relay'],
   ['pulse', 'wing'],
 ]
 
@@ -184,11 +184,11 @@ function StarNode({ module, index }: StarNodeProps) {
   if (!pos || !labelOff) return null
 
   const isAvailable = module.status === 'available'
-  const isCore = module.id === 'core'
+  const isEngine = module.id === 'engine'
 
   // Size tiers
-  const coreR = isCore ? 5.5 : isAvailable ? 3.5 : 2.5
-  const haloR  = isCore ? 36  : isAvailable ? 24  : 18
+  const coreR = isEngine ? 5.5 : isAvailable ? 3.5 : 2.5
+  const haloR  = isEngine ? 36  : isAvailable ? 24  : 18
   const glowId = `star-glow-${module.id}`
 
   const variant = {
@@ -232,7 +232,7 @@ function StarNode({ module, index }: StarNodeProps) {
         <circle
           cx={pos.x}
           cy={pos.y}
-          r={isCore ? 2.2 : 1.4}
+          r={isEngine ? 2.2 : 1.4}
           fill={CREAM}
         />
       )}
@@ -242,8 +242,8 @@ function StarNode({ module, index }: StarNodeProps) {
         x={pos.x + labelOff.dx}
         y={pos.y + labelOff.dy}
         textAnchor={labelOff.anchor}
-        fontSize={isCore ? 12 : 10}
-        fontWeight={isCore ? '600' : '400'}
+        fontSize={isEngine ? 12 : 10}
+        fontWeight={isEngine ? '600' : '400'}
         letterSpacing="0.06em"
         fill={isAvailable ? CREAM : CREAM_DIM}
         fontFamily="var(--font-ibm-plex-mono), ui-monospace, monospace"
@@ -254,7 +254,7 @@ function StarNode({ module, index }: StarNodeProps) {
       {/* Sub-label (module.label) */}
       <text
         x={pos.x + labelOff.dx}
-        y={pos.y + labelOff.dy + (isCore ? 14 : 12)}
+        y={pos.y + labelOff.dy + (isEngine ? 14 : 12)}
         textAnchor={labelOff.anchor}
         fontSize={8}
         letterSpacing="0.1em"
@@ -354,7 +354,7 @@ export function DiagramV3({ modules }: { modules: SystemModule[] }) {
         {/* Background fill */}
         <rect width={VIEWBOX_W} height={VIEWBOX_H} fill="#0E0C0A" />
 
-        {/* Nebula glow centred near Core */}
+        {/* Nebula glow centred near Engine */}
         <ellipse cx="370" cy="240" rx="200" ry="150" fill="url(#nebula)" />
 
         {/* Background stars */}

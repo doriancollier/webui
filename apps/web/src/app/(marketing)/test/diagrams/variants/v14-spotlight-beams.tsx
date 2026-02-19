@@ -17,7 +17,7 @@ const CARD_BORDER_HOVER = 'rgba(232, 93, 4, 0.35)'
 // ─── Grid layout: 3x2, module order matching the brief ────────────────────────
 
 /** Display order: row-major, 3 columns. */
-const GRID_ORDER = ['console', 'core', 'wing', 'pulse', 'mesh', 'channels']
+const GRID_ORDER = ['console', 'engine', 'wing', 'pulse', 'mesh', 'relay']
 
 /** Card grid positions (col 0-2, row 0-1) for connection line math. */
 const CARD_COLS = 3
@@ -32,11 +32,11 @@ const GRID_PAD  = 32    // container padding
 
 /** Pairs that share a visible connection arc on hover. */
 const CONNECTIONS: Array<[string, string]> = [
-  ['console', 'core'],
-  ['core',    'wing'],
-  ['core',    'pulse'],
-  ['core',    'mesh'],
-  ['mesh',    'channels'],
+  ['console', 'engine'],
+  ['engine',    'wing'],
+  ['engine',    'pulse'],
+  ['engine',    'mesh'],
+  ['mesh',    'relay'],
   ['mesh',    'pulse'],
 ]
 

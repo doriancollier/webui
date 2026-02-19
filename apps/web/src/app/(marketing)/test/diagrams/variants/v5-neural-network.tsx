@@ -72,7 +72,7 @@ interface DendriteConnection {
 }
 
 const DENDRITES: DendriteConnection[] = [
-  // Core → Console
+  // Engine → Console
   {
     id: 'd-core-console',
     d: 'M 440,106 C 390,145 290,168 210,200',
@@ -80,7 +80,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '3.2s',
     hasPulse: true,
   },
-  // Core → Pulse
+  // Engine → Pulse
   {
     id: 'd-core-pulse',
     d: 'M 462,108 C 510,148 618,170 700,195',
@@ -88,7 +88,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '2.8s',
     hasPulse: true,
   },
-  // Core → r1 (relay)
+  // Engine → r1 (relay)
   {
     id: 'd-core-r1',
     d: 'M 435,108 C 400,120 355,128 328,130',
@@ -96,7 +96,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '4.0s',
     hasPulse: false,
   },
-  // Core → r2 (relay)
+  // Engine → r2 (relay)
   {
     id: 'd-core-r2',
     d: 'M 464,108 C 500,120 545,118 572,118',
@@ -104,7 +104,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '4.5s',
     hasPulse: false,
   },
-  // Core → r10 (relay — directly below)
+  // Engine → r10 (relay — directly below)
   {
     id: 'd-core-r10',
     d: 'M 453,114 C 452,130 500,148 516,155',
@@ -136,7 +136,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '3.2s',
     hasPulse: false,
   },
-  // Pulse → Channels
+  // Pulse → Relay
   {
     id: 'd-pulse-channels',
     d: 'M 718,218 C 730,272 748,320 754,346',
@@ -208,7 +208,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '3.2s',
     hasPulse: true,
   },
-  // r4 → Channels
+  // r4 → Relay
   {
     id: 'd-r4-channels',
     d: 'M 632,286 C 672,310 720,338 748,358',
@@ -256,7 +256,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '4.2s',
     hasPulse: false,
   },
-  // Channels → r8
+  // Relay → r8
   {
     id: 'd-channels-r8',
     d: 'M 748,383 C 730,408 702,428 668,448',
@@ -288,7 +288,7 @@ const DENDRITES: DendriteConnection[] = [
     pulseDur: '3.0s',
     hasPulse: true,
   },
-  // Channels → Mesh
+  // Relay → Mesh
   {
     id: 'd-channels-mesh',
     d: 'M 740,365 C 680,375 590,392 470,408',
