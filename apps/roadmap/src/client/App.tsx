@@ -33,8 +33,8 @@ function AppShell() {
   useTheme();
 
   return (
-    <div className="flex h-dvh flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100">
-      <div className="flex items-center border-b border-neutral-200 dark:border-neutral-700">
+    <div className="flex h-dvh flex-col bg-background text-foreground">
+      <div className="flex items-center border-b border-border">
         <HealthBar {...stats} />
         <div className="ml-auto pr-4">
           <ThemeToggle />

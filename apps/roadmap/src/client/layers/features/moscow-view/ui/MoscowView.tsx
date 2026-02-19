@@ -56,7 +56,7 @@ export function MoscowView() {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-neutral-500">Loading items…</p>
+        <p className="text-sm text-muted-foreground">Loading items…</p>
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function MoscowView() {
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-red-500">Failed to load roadmap items.</p>
+        <p className="text-sm text-destructive">Failed to load roadmap items.</p>
       </div>
     );
   }

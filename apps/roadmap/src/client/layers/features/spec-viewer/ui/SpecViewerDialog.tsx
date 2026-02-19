@@ -71,20 +71,20 @@ export function SpecViewerDialog() {
     >
       {/* Dialog content */}
       <div
-        className="w-full max-w-3xl rounded-xl bg-white shadow-xl"
+        className="w-full max-w-3xl rounded-xl bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label="Spec viewer"
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
-          <h2 className="truncate text-base font-semibold text-neutral-900">{viewingSpecPath}</h2>
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="truncate text-base font-semibold text-foreground">{viewingSpecPath}</h2>
           <button
             type="button"
             aria-label="Close dialog"
             onClick={handleClose}
-            className="ml-4 shrink-0 rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            className="ml-4 shrink-0 rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             ✕
           </button>
@@ -93,13 +93,13 @@ export function SpecViewerDialog() {
         {/* Body */}
         <div className="max-h-[80vh] overflow-y-auto px-6 py-5">
           {isLoading && (
-            <p className="text-sm text-neutral-500">Loading…</p>
+            <p className="text-sm text-muted-foreground">Loading…</p>
           )}
           {error && (
-            <p className="text-sm text-red-600">{error}</p>
+            <p className="text-sm text-destructive">{error}</p>
           )}
           {content !== null && !isLoading && (
-            <div className="prose prose-neutral max-w-none">
+            <div className="prose dark:prose-invert max-w-none">
               <ReactMarkdown>{content}</ReactMarkdown>
             </div>
           )}

@@ -4,7 +4,7 @@ import { useAppStore } from '@/layers/shared/model';
 
 /** Map from status value to display label and color class. */
 const STATUS_STYLES: Record<RoadmapStatus, { label: string; className: string }> = {
-  'not-started': { label: 'Not Started', className: 'bg-neutral-100 text-neutral-600' },
+  'not-started': { label: 'Not Started', className: 'bg-muted text-muted-foreground' },
   'in-progress': { label: 'In Progress', className: 'bg-blue-100 text-blue-700' },
   completed: { label: 'Completed', className: 'bg-green-100 text-green-700' },
   'on-hold': { label: 'On Hold', className: 'bg-amber-100 text-amber-700' },
@@ -46,9 +46,9 @@ export function MoscowCard({ item, index }: MoscowCardProps) {
           tabIndex={0}
           aria-label={`Edit ${item.title}`}
           className={[
-            'cursor-pointer rounded-md border bg-white p-3 shadow-sm',
-            'hover:border-neutral-300 hover:shadow-md',
-            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400',
+            'cursor-pointer rounded-md border border-border bg-card p-3 shadow-sm',
+            'hover:border-border hover:shadow-md',
+            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
             'transition-shadow duration-150',
             snapshot.isDragging ? 'rotate-1 shadow-lg' : '',
           ]
@@ -62,7 +62,7 @@ export function MoscowCard({ item, index }: MoscowCardProps) {
             }
           }}
         >
-          <p className="mb-2 text-sm font-medium text-neutral-800 leading-snug">{item.title}</p>
+          <p className="mb-2 text-sm font-medium text-foreground leading-snug">{item.title}</p>
           <div className="flex flex-wrap gap-1">
             <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${statusStyle.className}`}>
               {statusStyle.label}

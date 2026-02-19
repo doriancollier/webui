@@ -67,7 +67,7 @@ export function GanttView() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
         Loading…
       </div>
     );
@@ -79,7 +79,7 @@ export function GanttView() {
   if (ganttItems.length === 0) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           No items with date ranges. Add startDate and endDate to items to see them on the Gantt
           chart.
         </p>
@@ -96,13 +96,13 @@ export function GanttView() {
   return (
     <div className="flex h-full flex-col gap-4 overflow-auto p-4">
       {hiddenCount > 0 && (
-        <p className="text-xs text-neutral-400">
+        <p className="text-xs text-muted-foreground">
           {hiddenCount} item{hiddenCount !== 1 ? 's' : ''} hidden — missing startDate or endDate.
         </p>
       )}
 
       {/* Timeline header */}
-      <div className="flex items-center justify-between text-xs text-neutral-400">
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>{formatDate(new Date(rangeStart).toISOString())}</span>
         <span>{formatDate(new Date(rangeEnd).toISOString())}</span>
       </div>
@@ -117,14 +117,14 @@ export function GanttView() {
             <div key={item.id} className="flex items-center gap-3">
               {/* Label */}
               <div
-                className="w-40 shrink-0 truncate text-sm text-neutral-700 dark:text-neutral-300"
+                className="w-40 shrink-0 truncate text-sm text-foreground"
                 title={item.title}
               >
                 {item.title}
               </div>
 
               {/* Bar track */}
-              <div className="relative h-6 flex-1 rounded-sm bg-neutral-100 dark:bg-neutral-800">
+              <div className="relative h-6 flex-1 rounded-sm bg-muted">
                 <button
                   type="button"
                   className="absolute inset-y-0 cursor-pointer rounded-sm opacity-90 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-1"

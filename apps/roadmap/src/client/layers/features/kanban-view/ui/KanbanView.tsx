@@ -49,7 +49,7 @@ export function KanbanView() {
 
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-neutral-500">
+      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
         Loading…
       </div>
     );

@@ -52,7 +52,7 @@ export function TableView() {
 
   if (isLoading) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-neutral-500">
+      <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
         Loading items…
       </div>
     );
@@ -60,7 +60,7 @@ export function TableView() {
 
   if (isError) {
     return (
-      <div className="flex flex-1 items-center justify-center text-sm text-red-500">
+      <div className="flex flex-1 items-center justify-center text-sm text-destructive">
         Failed to load roadmap items.
       </div>
     );
@@ -73,25 +73,25 @@ export function TableView() {
         placeholder="Filter items…"
         value={globalFilter}
         onChange={(e) => setGlobalFilter(e.target.value)}
-        className="w-full max-w-sm rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+        className="w-full max-w-sm rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         aria-label="Filter roadmap items"
       />
 
-      <div className="overflow-x-auto rounded-lg border border-neutral-200">
+      <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full border-collapse text-sm">
-          <thead className="bg-neutral-50">
+          <thead className="bg-muted">
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id}>
                 {headerGroup.headers.map((header) => (
                   <th
                     key={header.id}
-                    className="border-b border-neutral-200 px-4 py-2.5 text-left font-medium text-neutral-600"
+                    className="border-b border-border px-4 py-2.5 text-left font-medium text-muted-foreground"
                   >
                     {header.column.getCanSort() ? (
                       <button
                         type="button"
                         onClick={header.column.getToggleSortingHandler()}
-                        className="flex items-center gap-1.5 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
+                        className="flex items-center gap-1.5 hover:text-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                       >
                         {flexRender(
                           header.column.columnDef.header,
@@ -110,12 +110,12 @@ export function TableView() {
               </tr>
             ))}
           </thead>
-          <tbody className="divide-y divide-neutral-100 bg-white">
+          <tbody className="divide-y divide-border bg-card">
             {table.getRowModel().rows.length === 0 ? (
               <tr>
                 <td
                   colSpan={roadmapColumns.length}
-                  className="px-4 py-8 text-center text-neutral-400"
+                  className="px-4 py-8 text-center text-muted-foreground"
                 >
                   No items match the current filter.
                 </td>
@@ -125,7 +125,7 @@ export function TableView() {
                 <tr
                   key={row.id}
                   onClick={() => setEditingItemId(row.original.id)}
-                  className="cursor-pointer hover:bg-neutral-50 focus-within:bg-neutral-50"
+                  className="cursor-pointer hover:bg-accent focus-within:bg-accent"
                   tabIndex={0}
                   role="button"
                   aria-label={`Edit ${row.original.title}`}
@@ -147,7 +147,7 @@ export function TableView() {
         </table>
       </div>
 
-      <p className="text-xs text-neutral-400">
+      <p className="text-xs text-muted-foreground">
         {table.getRowModel().rows.length} of {items.length} item
         {items.length !== 1 ? 's' : ''}
       </p>

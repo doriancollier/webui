@@ -116,9 +116,9 @@ function buildPayload(fields: FormFields): CreateItemRequest | UpdateItemRequest
 // === Component ===
 
 const inputClass =
-  'w-full rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-400 disabled:opacity-50';
+  'w-full rounded-md border border-border bg-card px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50';
 
-const labelClass = 'block text-xs font-medium text-neutral-600 mb-1';
+const labelClass = 'block text-xs font-medium text-muted-foreground mb-1';
 
 /**
  * Controlled form for creating or editing a roadmap item.
@@ -360,7 +360,7 @@ export function ItemForm({ initialValues, isSubmitting, onSubmit, onDelete }: It
         <button
           type="submit"
           disabled={isDisabled}
-          className="rounded-md bg-neutral-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40"
+          className="rounded-md bg-primary px-4 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/80 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {isSubmitting ? 'Saving...' : 'Save'}
         </button>

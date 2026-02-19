@@ -12,7 +12,7 @@ const STATUS_LABELS: Record<RoadmapStatus, string> = {
 
 /** Tailwind color classes for each column header. */
 const STATUS_HEADER_COLORS: Record<RoadmapStatus, string> = {
-  'not-started': 'bg-neutral-100 text-neutral-700',
+  'not-started': 'bg-muted text-muted-foreground',
   'in-progress': 'bg-blue-50 text-blue-700',
   completed: 'bg-green-50 text-green-700',
   'on-hold': 'bg-amber-50 text-amber-700',
@@ -31,7 +31,7 @@ interface KanbanColumnProps {
  */
 export function KanbanColumn({ status, items }: KanbanColumnProps) {
   return (
-    <div className="flex min-w-[240px] flex-1 flex-col rounded-lg border border-neutral-200 bg-neutral-50">
+    <div className="flex min-w-[240px] flex-1 flex-col rounded-lg border border-border bg-muted">
       {/* Column header */}
       <div
         className={[
@@ -40,7 +40,7 @@ export function KanbanColumn({ status, items }: KanbanColumnProps) {
         ].join(' ')}
       >
         <span className="text-sm font-semibold">{STATUS_LABELS[status]}</span>
-        <span className="ml-2 rounded-full bg-white/60 px-2 py-0.5 text-xs font-medium tabular-nums">
+        <span className="ml-2 rounded-full bg-card/60 px-2 py-0.5 text-xs font-medium tabular-nums">
           {items.length}
         </span>
       </div>
@@ -53,7 +53,7 @@ export function KanbanColumn({ status, items }: KanbanColumnProps) {
             {...provided.droppableProps}
             className={[
               'flex flex-1 flex-col gap-2 p-2 transition-colors',
-              snapshot.isDraggingOver ? 'bg-blue-50' : '',
+              snapshot.isDraggingOver ? 'bg-accent' : '',
             ]
               .filter(Boolean)
               .join(' ')}

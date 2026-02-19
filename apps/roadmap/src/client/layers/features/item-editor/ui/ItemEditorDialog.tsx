@@ -61,20 +61,20 @@ export function ItemEditorDialog() {
     >
       {/* Dialog content */}
       <div
-        className="w-full max-w-lg rounded-xl bg-white shadow-xl"
+        className="w-full max-w-lg rounded-xl bg-card shadow-xl"
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
         aria-label={title}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-neutral-100 px-6 py-4">
-          <h2 className="text-base font-semibold text-neutral-900">{title}</h2>
+        <div className="flex items-center justify-between border-b border-border px-6 py-4">
+          <h2 className="text-base font-semibold text-foreground">{title}</h2>
           <button
             type="button"
             aria-label="Close dialog"
             onClick={handleClose}
-            className="rounded-md p-1 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600"
+            className="rounded-md p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             ✕
           </button>

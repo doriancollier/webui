@@ -18,7 +18,7 @@ export function ViewTabs() {
 
   return (
     <div
-      className="flex gap-1 border-b border-neutral-200 bg-white px-6"
+      className="flex gap-1 border-b border-border bg-card px-6"
       role="tablist"
       aria-label="View mode"
     >
@@ -31,10 +31,10 @@ export function ViewTabs() {
             role="tab"
             aria-selected={isActive}
             onClick={() => setViewMode(tab.id)}
-            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 ${
+            className={`border-b-2 px-4 py-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
               isActive
-                ? 'border-neutral-900 text-neutral-900'
-                : 'border-transparent text-neutral-500 hover:border-neutral-300 hover:text-neutral-700'
+                ? 'border-foreground text-foreground'
+                : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'
             }`}
           >
             {tab.label}

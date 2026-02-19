@@ -21,10 +21,10 @@ export const metadata: Metadata = {
 }
 
 const categoryColors: Record<string, string> = {
-  release: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200',
-  tutorial: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  announcement: 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200',
-  news: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
+  release: 'bg-emerald-100/60 text-emerald-900',
+  tutorial: 'bg-blue-100/60 text-blue-900',
+  announcement: 'bg-amber-100/60 text-amber-900',
+  news: 'bg-purple-100/60 text-purple-900',
 }
 
 export default function BlogIndex() {
@@ -34,8 +34,8 @@ export default function BlogIndex() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-24">
-      <h1 className="mb-2 font-mono text-3xl font-bold tracking-tight">Blog</h1>
-      <p className="mb-12 text-neutral-600 dark:text-neutral-400">
+      <h1 className="mb-2 font-mono text-3xl font-bold tracking-tight text-charcoal">Blog</h1>
+      <p className="mb-12 text-warm-gray">
         Release notes, tutorials, and updates from the {siteConfig.name} team.
       </p>
 
@@ -43,7 +43,7 @@ export default function BlogIndex() {
         {posts.map((post) => (
           <article key={post.url} className="group">
             <Link href={post.url} className="block">
-              <div className="flex items-center gap-3 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex items-center gap-3 text-sm text-warm-gray-light">
                 <time dateTime={new Date(post.data.date).toISOString()}>
                   {new Date(post.data.date).toLocaleDateString('en-US', {
                     year: 'numeric',
@@ -53,17 +53,17 @@ export default function BlogIndex() {
                 </time>
                 {post.data.category && (
                   <span
-                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${categoryColors[post.data.category] ?? 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'}`}
+                    className={`rounded-full px-2 py-0.5 text-xs font-medium ${categoryColors[post.data.category] ?? 'bg-warm-gray/10 text-warm-gray'}`}
                   >
                     {post.data.category}
                   </span>
                 )}
               </div>
-              <h2 className="mt-1 text-xl font-semibold group-hover:underline">
+              <h2 className="mt-1 text-xl font-semibold text-charcoal group-hover:underline">
                 {post.data.title}
               </h2>
               {post.data.description && (
-                <p className="mt-1 text-neutral-600 dark:text-neutral-400">
+                <p className="mt-1 text-warm-gray">
                   {post.data.description}
                 </p>
               )}
@@ -72,7 +72,7 @@ export default function BlogIndex() {
         ))}
 
         {posts.length === 0 && (
-          <p className="text-neutral-500 dark:text-neutral-400">No posts yet.</p>
+          <p className="text-warm-gray-light">No posts yet.</p>
         )}
       </div>
     </div>
