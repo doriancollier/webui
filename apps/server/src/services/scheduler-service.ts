@@ -12,7 +12,7 @@ export interface SchedulerAgentManager {
   sendMessage(
     sessionId: string,
     content: string,
-    opts?: { permissionMode?: PermissionMode; cwd?: string }
+    opts?: { permissionMode?: PermissionMode; cwd?: string; systemPromptAppend?: string }
   ): AsyncGenerator<StreamEvent>;
 }
 
@@ -211,9 +211,11 @@ export class SchedulerService {
         hasStarted: false,
       });
 
+      const pulseAppend = buildPulseAppend(schedule, run);
       const stream = this.agentManager.sendMessage(sessionId, schedule.prompt, {
         permissionMode,
         cwd: schedule.cwd ?? undefined,
+        systemPromptAppend: pulseAppend,
       });
 
       for await (const event of stream) {

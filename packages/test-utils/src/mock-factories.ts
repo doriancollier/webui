@@ -1,4 +1,4 @@
-import type { Session, StreamEvent, CommandEntry } from '@dorkos/shared/types';
+import type { Session, StreamEvent, CommandEntry, PulseSchedule, PulseRun } from '@dorkos/shared/types';
 import type { RoadmapItem, RoadmapMeta } from '@dorkos/shared/roadmap-schemas';
 
 export function createMockSession(overrides: Partial<Session> = {}): Session {
@@ -42,6 +42,44 @@ export function createMockRoadmapItem(overrides: Partial<RoadmapItem> = {}): Roa
     timeHorizon: 'now',
     createdAt: '2025-01-01T00:00:00.000Z',
     updatedAt: '2025-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+/** Create a mock PulseSchedule with sensible defaults. */
+export function createMockSchedule(overrides: Partial<PulseSchedule> = {}): PulseSchedule {
+  return {
+    id: 'sched-1',
+    name: 'Daily review',
+    prompt: 'Review open PRs',
+    cron: '0 9 * * 1-5',
+    enabled: true,
+    status: 'active',
+    cwd: null,
+    timezone: null,
+    maxRuntime: null,
+    permissionMode: 'acceptEdits',
+    nextRun: new Date(Date.now() + 86400000).toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+/** Create a mock PulseRun with sensible defaults. */
+export function createMockRun(overrides: Partial<PulseRun> = {}): PulseRun {
+  return {
+    id: 'run-1',
+    scheduleId: 'sched-1',
+    sessionId: 'session-1',
+    status: 'completed',
+    trigger: 'scheduled',
+    startedAt: new Date().toISOString(),
+    finishedAt: new Date(Date.now() + 60000).toISOString(),
+    durationMs: 60000,
+    outputSummary: null,
+    error: null,
+    createdAt: new Date().toISOString(),
     ...overrides,
   };
 }

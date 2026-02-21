@@ -71,7 +71,7 @@ export class AgentManager {
   async *sendMessage(
     sessionId: string,
     content: string,
-    opts?: { permissionMode?: PermissionMode; cwd?: string }
+    opts?: { permissionMode?: PermissionMode; cwd?: string; systemPromptAppend?: string }
   ): AsyncGenerator<StreamEvent> {
     // Auto-create session if it doesn't exist (for resuming SDK sessions).
     if (!this.sessions.has(sessionId)) {
@@ -94,7 +94,11 @@ export class AgentManager {
       return;
     }
 
-    const systemPromptAppend = await buildSystemPromptAppend(effectiveCwd);
+    const baseAppend = await buildSystemPromptAppend(effectiveCwd);
+    // Concatenate caller-supplied append (e.g. Pulse scheduler context) after the base
+    const systemPromptAppend = opts?.systemPromptAppend
+      ? `${baseAppend}\n\n${opts.systemPromptAppend}`
+      : baseAppend;
 
     const sdkOptions: Options = {
       cwd: effectiveCwd,

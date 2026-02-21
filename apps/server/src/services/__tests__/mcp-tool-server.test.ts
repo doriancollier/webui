@@ -5,6 +5,11 @@ import {
   handleGetServerInfo,
   createGetSessionCountHandler,
   createDorkOsToolServer,
+  createListSchedulesHandler,
+  createCreateScheduleHandler,
+  createUpdateScheduleHandler,
+  createDeleteScheduleHandler,
+  createGetRunHistoryHandler,
 } from '../mcp-tool-server.js';
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
@@ -40,6 +45,29 @@ function makeMockDeps(
       listSessions: overrides.listSessions ?? vi.fn().mockResolvedValue([]),
     } as unknown as McpToolDeps['transcriptReader'],
     defaultCwd: '/test/cwd',
+  };
+}
+
+/** Create a mock PulseStore with sensible defaults */
+function makeMockPulseStore(overrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}) {
+  return {
+    getSchedules: vi.fn().mockReturnValue([]),
+    getSchedule: vi.fn().mockReturnValue(null),
+    createSchedule: vi.fn().mockReturnValue({ id: 'new-1', name: 'Test' }),
+    updateSchedule: vi.fn().mockReturnValue(null),
+    deleteSchedule: vi.fn().mockReturnValue(false),
+    listRuns: vi.fn().mockReturnValue([]),
+    ...overrides,
+  } as unknown as McpToolDeps['pulseStore'];
+}
+
+/** Create mock deps with Pulse enabled */
+function makePulseDeps(
+  storeOverrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}
+): McpToolDeps {
+  return {
+    ...makeMockDeps(),
+    pulseStore: makeMockPulseStore(storeOverrides),
   };
 }
 
@@ -168,6 +196,198 @@ describe('MCP Tool Handlers', () => {
       expect(result.isError).toBe(true);
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.error).toBe('Failed to list sessions');
+    });
+  });
+
+  describe('createListSchedulesHandler', () => {
+    it('returns all schedules when Pulse enabled', async () => {
+      const schedules = [
+        { id: 's1', name: 'Daily', enabled: true },
+        { id: 's2', name: 'Weekly', enabled: false },
+      ];
+      const handler = createListSchedulesHandler(
+        makePulseDeps({ getSchedules: vi.fn().mockReturnValue(schedules) })
+      );
+      const result = await handler({});
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.schedules).toEqual(schedules);
+      expect(parsed.count).toBe(2);
+    });
+
+    it('filters to enabled_only when flag set', async () => {
+      const schedules = [
+        { id: 's1', name: 'Daily', enabled: true },
+        { id: 's2', name: 'Weekly', enabled: false },
+      ];
+      const handler = createListSchedulesHandler(
+        makePulseDeps({ getSchedules: vi.fn().mockReturnValue(schedules) })
+      );
+      const result = await handler({ enabled_only: true });
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.schedules).toHaveLength(1);
+      expect(parsed.schedules[0].id).toBe('s1');
+    });
+
+    it('returns error when pulseStore undefined', async () => {
+      const handler = createListSchedulesHandler(makeMockDeps());
+      const result = await handler({});
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('not enabled');
+    });
+
+    it('handles empty schedule list', async () => {
+      const handler = createListSchedulesHandler(makePulseDeps());
+      const result = await handler({});
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.schedules).toEqual([]);
+      expect(parsed.count).toBe(0);
+    });
+  });
+
+  describe('createCreateScheduleHandler', () => {
+    it('creates schedule and sets pending_approval status', async () => {
+      const created = { id: 'new-1', name: 'Nightly' };
+      const updated = { ...created, status: 'pending_approval' };
+      const handler = createCreateScheduleHandler(
+        makePulseDeps({
+          createSchedule: vi.fn().mockReturnValue(created),
+          updateSchedule: vi.fn().mockReturnValue(updated),
+          getSchedule: vi.fn().mockReturnValue(updated),
+        })
+      );
+      const result = await handler({
+        name: 'Nightly',
+        prompt: 'Run tests',
+        cron: '0 2 * * *',
+      });
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.schedule.status).toBe('pending_approval');
+      expect(parsed.note).toContain('pending_approval');
+    });
+
+    it('returns created schedule with approval note', async () => {
+      const handler = createCreateScheduleHandler(
+        makePulseDeps({
+          createSchedule: vi.fn().mockReturnValue({ id: 'x' }),
+          updateSchedule: vi.fn(),
+          getSchedule: vi.fn().mockReturnValue({ id: 'x', status: 'pending_approval' }),
+        })
+      );
+      const result = await handler({ name: 'Test', prompt: 'Do stuff', cron: '* * * * *' });
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.note).toContain('approve');
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('returns error when Pulse disabled', async () => {
+      const handler = createCreateScheduleHandler(makeMockDeps());
+      const result = await handler({ name: 'X', prompt: 'Y', cron: '* * * * *' });
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('not enabled');
+    });
+  });
+
+  describe('createUpdateScheduleHandler', () => {
+    it('updates existing schedule', async () => {
+      const updated = { id: 'u1', name: 'Updated Name' };
+      const handler = createUpdateScheduleHandler(
+        makePulseDeps({ updateSchedule: vi.fn().mockReturnValue(updated) })
+      );
+      const result = await handler({ id: 'u1', name: 'Updated Name' });
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.schedule).toEqual(updated);
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('returns error for non-existent ID', async () => {
+      const handler = createUpdateScheduleHandler(
+        makePulseDeps({ updateSchedule: vi.fn().mockReturnValue(null) })
+      );
+      const result = await handler({ id: 'missing' });
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('missing');
+      expect(parsed.error).toContain('not found');
+    });
+
+    it('handles permissionMode string conversion', async () => {
+      const store = makeMockPulseStore({
+        updateSchedule: vi.fn().mockReturnValue({ id: 'u1', permissionMode: 'plan' }),
+      });
+      const deps = { ...makeMockDeps(), pulseStore: store };
+      const handler = createUpdateScheduleHandler(deps);
+      await handler({ id: 'u1', permissionMode: 'plan' });
+      expect(store!.updateSchedule).toHaveBeenCalledWith('u1', { permissionMode: 'plan' });
+    });
+
+    it('returns error when Pulse disabled', async () => {
+      const handler = createUpdateScheduleHandler(makeMockDeps());
+      const result = await handler({ id: 'x' });
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('not enabled');
+    });
+  });
+
+  describe('createDeleteScheduleHandler', () => {
+    it('deletes existing schedule and returns success', async () => {
+      const handler = createDeleteScheduleHandler(
+        makePulseDeps({ deleteSchedule: vi.fn().mockReturnValue(true) })
+      );
+      const result = await handler({ id: 'del-1' });
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.success).toBe(true);
+      expect(parsed.id).toBe('del-1');
+      expect(result.isError).toBeUndefined();
+    });
+
+    it('returns error for non-existent ID', async () => {
+      const handler = createDeleteScheduleHandler(
+        makePulseDeps({ deleteSchedule: vi.fn().mockReturnValue(false) })
+      );
+      const result = await handler({ id: 'ghost' });
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('ghost');
+      expect(parsed.error).toContain('not found');
+    });
+
+    it('returns error when Pulse disabled', async () => {
+      const handler = createDeleteScheduleHandler(makeMockDeps());
+      const result = await handler({ id: 'x' });
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('not enabled');
+    });
+  });
+
+  describe('createGetRunHistoryHandler', () => {
+    it('returns runs with default limit', async () => {
+      const runs = [{ id: 'r1' }, { id: 'r2' }];
+      const listRuns = vi.fn().mockReturnValue(runs);
+      const handler = createGetRunHistoryHandler(makePulseDeps({ listRuns }));
+      const result = await handler({ schedule_id: 'sched-1' });
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.runs).toEqual(runs);
+      expect(parsed.count).toBe(2);
+      expect(listRuns).toHaveBeenCalledWith({ scheduleId: 'sched-1', limit: 20 });
+    });
+
+    it('respects custom limit parameter', async () => {
+      const listRuns = vi.fn().mockReturnValue([]);
+      const handler = createGetRunHistoryHandler(makePulseDeps({ listRuns }));
+      await handler({ schedule_id: 'sched-1', limit: 5 });
+      expect(listRuns).toHaveBeenCalledWith({ scheduleId: 'sched-1', limit: 5 });
+    });
+
+    it('returns error when Pulse disabled', async () => {
+      const handler = createGetRunHistoryHandler(makeMockDeps());
+      const result = await handler({ schedule_id: 'x' });
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('not enabled');
     });
   });
 

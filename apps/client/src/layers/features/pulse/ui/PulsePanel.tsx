@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import cronstrue from 'cronstrue';
+import { Pencil } from 'lucide-react';
 import {
   useSchedules,
   useUpdateSchedule,
@@ -112,6 +113,17 @@ export function PulsePanel() {
                       }}
                     >
                       Run Now
+                    </button>
+                    <button
+                      aria-label={`Edit ${schedule.name}`}
+                      className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md p-1 text-xs transition-colors"
+                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                        e.stopPropagation();
+                        setEditSchedule(schedule);
+                        setDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="size-3.5" />
                     </button>
                     <button
                       className={cn(

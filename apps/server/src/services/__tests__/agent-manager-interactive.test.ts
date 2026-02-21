@@ -18,6 +18,10 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
+vi.mock('../context-builder.js', () => ({
+  buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
+}));
+
 // Mock child_process and fs to prevent resolveClaudeCliPath side effects
 vi.mock('child_process', async (importOriginal) => {
   const actual = await importOriginal<typeof import('child_process')>();

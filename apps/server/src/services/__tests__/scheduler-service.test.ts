@@ -100,6 +100,32 @@ describe('SchedulerService', () => {
       await service.stop();
     });
 
+    it('passes systemPromptAppend with pulse context to sendMessage', async () => {
+      const sched = store.createSchedule({
+        name: 'Context Test',
+        prompt: 'do stuff',
+        cron: '0 * * * *',
+      });
+
+      vi.mocked(mockAgent.sendMessage).mockImplementation(async function* () {
+        // no events
+      });
+
+      const service = new SchedulerService(store, mockAgent, DEFAULT_CONFIG);
+      await service.triggerManualRun(sched.id);
+
+      // Wait for async execution to complete
+      await new Promise((r) => setTimeout(r, 100));
+
+      expect(mockAgent.sendMessage).toHaveBeenCalledOnce();
+      const [, , opts] = vi.mocked(mockAgent.sendMessage).mock.calls[0];
+      expect(opts?.systemPromptAppend).toBeDefined();
+      expect(opts?.systemPromptAppend).toContain('PULSE SCHEDULER CONTEXT');
+      expect(opts?.systemPromptAppend).toContain('Context Test');
+
+      await service.stop();
+    });
+
     it('returns null for nonexistent schedule', async () => {
       const service = new SchedulerService(store, mockAgent, DEFAULT_CONFIG);
       const run = await service.triggerManualRun('nonexistent');
