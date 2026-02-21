@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 47,
+  "nextNumber": 49,
   "specs": [
     {
       "number": 1,
@@ -323,6 +323,20 @@
       "title": "Pulse Implementation Completion Gaps",
       "created": "2026-02-21",
       "status": "specified"
+    },
+    {
+      "number": 47,
+      "slug": "pulse-ui-overhaul",
+      "title": "Pulse UI/UX Overhaul — World-Class Scheduler Experience",
+      "created": "2026-02-21",
+      "status": "specified"
+    },
+    {
+      "number": 48,
+      "slug": "pulse-v2-enhancements",
+      "title": "Pulse V2 Enhancements — Visual Cron Builder, DirectoryPicker, Calm Notifications",
+      "created": "2026-02-21",
+      "status": "ideation"
     }
   ]
 }

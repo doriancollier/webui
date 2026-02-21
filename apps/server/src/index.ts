@@ -12,6 +12,7 @@ import { createDorkOsToolServer } from './services/mcp-tool-server.js';
 import { PulseStore } from './services/pulse-store.js';
 import { SchedulerService } from './services/scheduler-service.js';
 import { createPulseRouter } from './routes/pulse.js';
+import { setPulseEnabled } from './services/pulse-state.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
 
@@ -67,6 +68,7 @@ async function start() {
       timezone: schedulerConfig.timezone,
     });
     app.use('/api/pulse', createPulseRouter(pulseStore, schedulerService));
+    setPulseEnabled(true);
     logger.info('[Pulse] Routes mounted and scheduler configured');
   }
 

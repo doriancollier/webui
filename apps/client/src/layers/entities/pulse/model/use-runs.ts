@@ -4,14 +4,20 @@ import type { ListRunsQuery } from '@dorkos/shared/types';
 
 const RUNS_KEY = ['pulse', 'runs'] as const;
 
-/** Fetch Pulse runs with optional filters. */
-export function useRuns(opts?: Partial<ListRunsQuery>) {
+/**
+ * Fetch Pulse runs with optional filters.
+ *
+ * @param opts - Optional query filters (scheduleId, status, limit).
+ * @param enabled - When false, the query is skipped entirely (Pulse feature gate).
+ */
+export function useRuns(opts?: Partial<ListRunsQuery>, enabled = true) {
   const transport = useTransport();
 
   return useQuery({
     queryKey: [...RUNS_KEY, opts],
     queryFn: () => transport.listRuns(opts),
     refetchInterval: 10_000,
+    enabled,
   });
 }
 
@@ -23,6 +29,25 @@ export function useRun(id: string | null) {
     queryKey: [...RUNS_KEY, id],
     queryFn: () => transport.getRun(id!),
     enabled: !!id,
+  });
+}
+
+/**
+ * Return the count of currently running Pulse jobs.
+ *
+ * @param enabled - When false the query is skipped (Pulse feature gate).
+ */
+export function useActiveRunCount(enabled = true) {
+  const transport = useTransport();
+
+  return useQuery({
+    queryKey: [...RUNS_KEY, 'active-count'],
+    queryFn: async () => {
+      const runs = await transport.listRuns({ limit: 50 });
+      return runs.filter((r) => r.status === 'running').length;
+    },
+    enabled,
+    refetchInterval: 10_000,
   });
 }
 

@@ -240,6 +240,36 @@ Both overlays live in a `relative flex-1 min-h-0` wrapper in ChatPanel, position
 - **Empty state**: Centered "No conversations yet" message
 - **Item spacing**: `space-y-0.5` within groups, `space-y-5` between groups
 
+### Tooltip
+
+Standard shadcn Radix tooltip from `shared/ui/tooltip.tsx`. Used for:
+- Disabled state indicators (e.g., "Pulse is disabled" on HeartPulse icon)
+- Contextual information on icon-only buttons
+
+`TooltipProvider` is mounted in `App.tsx`. Use `<Tooltip>` + `<TooltipTrigger>` + `<TooltipContent>` pattern.
+
+### Toast Notifications (Sonner)
+
+Theme-aware toast via `sonner` from `shared/ui/sonner.tsx`. `<Toaster />` mounted in `App.tsx`.
+
+**When to toast:**
+- Background actions with no immediate visible UI change ("Run triggered", "Schedule approved")
+- Error notifications for failed mutations
+
+**When NOT to toast:**
+- Toggle on/off (switch state is self-evidencing)
+- Form submission success (dialog closes)
+- Cancel run (status updates inline)
+- Reject schedule
+
+Usage: `import { toast } from 'sonner'` then `toast('message')` or `toast.error('message')`.
+
+### Command (cmdk)
+
+Searchable combobox from `shared/ui/command.tsx`. Used with Popover for dropdown positioning. Primary use case: timezone selection in Pulse CreateScheduleDialog.
+
+Pattern: `Popover` > `PopoverTrigger` > `PopoverContent` > `Command` > `CommandInput` + `CommandList` > `CommandGroup` > `CommandItem`.
+
 ---
 
 ## Interaction States

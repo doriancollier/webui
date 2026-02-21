@@ -5,6 +5,7 @@ import { SessionSidebar } from '../ui/SessionSidebar';
 import type { Transport } from '@dorkos/shared/transport';
 import type { Session } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
+import { TooltipProvider } from '@/layers/shared/ui';
 
 // Mock motion/react
 vi.mock('motion/react', () => ({
@@ -43,6 +44,11 @@ vi.mock('@/layers/shared/model/app-store', () => ({
 // Mock useIsMobile
 vi.mock('@/layers/shared/model/use-is-mobile', () => ({
   useIsMobile: () => false,
+}));
+
+// Mock usePulseEnabled
+vi.mock('@/layers/entities/pulse/model/use-pulse-config', () => ({
+  usePulseEnabled: () => true,
 }));
 
 // Mock session-utils to avoid time-dependent behavior
@@ -141,7 +147,9 @@ function renderWithQuery(ui: React.ReactElement) {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <TransportProvider transport={mockTransport}>{ui}</TransportProvider>
+      <TransportProvider transport={mockTransport}>
+        <TooltipProvider>{ui}</TooltipProvider>
+      </TransportProvider>
     </QueryClientProvider>
   );
 }

@@ -3,6 +3,7 @@
  *
  * @module entities/pulse
  */
+export { usePulseEnabled } from './model/use-pulse-config';
 export {
   useSchedules,
   useCreateSchedule,
@@ -10,4 +11,4 @@ export {
   useDeleteSchedule,
   useTriggerSchedule,
 } from './model/use-schedules';
-export { useRuns, useRun, useCancelRun } from './model/use-runs';
+export { useRuns, useRun, useCancelRun, useActiveRunCount } from './model/use-runs';

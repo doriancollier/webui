@@ -5,6 +5,16 @@
  */
 export { Badge, badgeVariants } from './badge';
 export {
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandShortcut,
+  CommandSeparator,
+} from './command';
+export {
   Dialog,
   DialogPortal,
   DialogOverlay,
@@ -32,7 +42,9 @@ export {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuGroup,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -70,3 +82,5 @@ export {
 export { Separator } from './separator';
 export { Switch } from './switch';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export { Toaster } from './sonner';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip';

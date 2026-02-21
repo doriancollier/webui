@@ -7,8 +7,22 @@ import {
   useTheme,
   type Theme,
 } from '@/layers/shared/model';
-import { groupSessionsByTime, TIMING } from '@/layers/shared/lib';
-import { PathBreadcrumb, HoverCard, HoverCardContent, HoverCardTrigger } from '@/layers/shared/ui';
+import { cn, groupSessionsByTime, TIMING } from '@/layers/shared/lib';
+import {
+  PathBreadcrumb,
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from '@/layers/shared/ui';
+import { usePulseEnabled, useActiveRunCount } from '@/layers/entities/pulse';
 import { useSessionId, useDirectoryState } from '@/layers/entities/session';
 import { SessionItem } from './SessionItem';
 import { DirectoryPicker } from './DirectoryPicker';
@@ -41,6 +55,8 @@ export function SessionSidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pulseOpen, setPulseOpen] = useState(false);
   const [selectedCwd] = useDirectoryState();
+  const pulseEnabled = usePulseEnabled();
+  const { data: activeRunCount = 0 } = useActiveRunCount(pulseEnabled);
   const { theme, setTheme } = useTheme();
   const ThemeIcon = { light: Sun, dark: Moon, system: Monitor }[theme];
   const cycleTheme = useCallback(() => {
@@ -183,13 +199,28 @@ export function SessionSidebar() {
               Relay not connected
             </HoverCardContent>
           </HoverCard>
-          <button
-            onClick={() => setPulseOpen(true)}
-            className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
-            aria-label="Pulse scheduler"
-          >
-            <HeartPulse className="size-(--size-icon-sm)" />
-          </button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => setPulseOpen(true)}
+                className={cn(
+                  'relative rounded-md p-1 transition-colors duration-150 max-md:p-2',
+                  pulseEnabled
+                    ? 'text-muted-foreground/50 hover:text-muted-foreground'
+                    : 'text-muted-foreground/25 hover:text-muted-foreground/40'
+                )}
+                aria-label="Pulse scheduler"
+              >
+                <HeartPulse className="size-(--size-icon-sm)" />
+                {activeRunCount > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-green-500 animate-pulse" />
+                )}
+              </button>
+            </TooltipTrigger>
+            {!pulseEnabled && (
+              <TooltipContent side="top">Pulse is disabled</TooltipContent>
+            )}
+          </Tooltip>
           <button
             onClick={cycleTheme}
             className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
@@ -214,23 +245,21 @@ export function SessionSidebar() {
       </div>
       <DirectoryPicker open={pickerOpen} onOpenChange={setPickerOpen} />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-      {pulseOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-2xl rounded-xl bg-background shadow-lg max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b px-4 py-3">
-              <h2 className="text-lg font-semibold">Pulse Scheduler</h2>
-              <button
-                onClick={() => setPulseOpen(false)}
-                className="text-muted-foreground hover:text-foreground rounded-md p-1 transition-colors"
-                aria-label="Close"
-              >
-                &times;
-              </button>
-            </div>
+      <ResponsiveDialog open={pulseOpen} onOpenChange={setPulseOpen}>
+        <ResponsiveDialogContent className="max-w-2xl gap-0 p-0">
+          <ResponsiveDialogHeader className="border-b px-4 py-3">
+            <ResponsiveDialogTitle className="text-sm font-medium">
+              Pulse Scheduler
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription className="sr-only">
+              Manage scheduled AI agent tasks
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="overflow-y-auto">
             <PulsePanel />
           </div>
-        </div>
-      )}
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
     </div>
   );
 }

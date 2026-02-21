@@ -6,6 +6,7 @@ import { PanelLeft } from 'lucide-react';
 import { PermissionBanner } from '@/layers/widgets/app-layout';
 import { SessionSidebar } from '@/layers/features/session-list';
 import { ChatPanel } from '@/layers/features/chat';
+import { Toaster, TooltipProvider } from '@/layers/shared/ui';
 
 interface AppProps {
   /** Optional transform applied to message content before sending to server */
@@ -50,39 +51,89 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   // Embedded mode: overlay sidebar (absolute positioning, scoped to container)
   if (embedded) {
     return (
-      <MotionConfig reducedMotion="user">
-        <div
-          ref={containerRef}
-          className="bg-background text-foreground relative flex h-full flex-col"
-        >
-          <PermissionBanner sessionId={activeSessionId} />
-          <div className="relative flex-1 overflow-hidden">
-            {/* Overlay sidebar — always uses overlay pattern in embedded mode */}
-            <AnimatePresence>
-              {sidebarOpen && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute inset-0 z-40 bg-black/40"
-                    onClick={() => setSidebarOpen(false)}
-                    aria-label="Close sidebar"
-                  />
-                  <motion.div
-                    initial={{ x: -320 }}
-                    animate={{ x: 0 }}
-                    exit={{ x: -320 }}
-                    transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                    className="bg-background absolute top-0 left-0 z-50 h-full w-80 overflow-y-auto border-r"
-                  >
-                    <SessionSidebar />
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+      <TooltipProvider>
+        <MotionConfig reducedMotion="user">
+          <div
+            ref={containerRef}
+            className="bg-background text-foreground relative flex h-full flex-col"
+          >
+            <PermissionBanner sessionId={activeSessionId} />
+            <div className="relative flex-1 overflow-hidden">
+              {/* Overlay sidebar — always uses overlay pattern in embedded mode */}
+              <AnimatePresence>
+                {sidebarOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute inset-0 z-40 bg-black/40"
+                      onClick={() => setSidebarOpen(false)}
+                      aria-label="Close sidebar"
+                    />
+                    <motion.div
+                      initial={{ x: -320 }}
+                      animate={{ x: 0 }}
+                      exit={{ x: -320 }}
+                      transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+                      className="bg-background absolute top-0 left-0 z-50 h-full w-80 overflow-y-auto border-r"
+                    >
+                      <SessionSidebar />
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
 
+              {/* Floating toggle — visible when sidebar is closed */}
+              <AnimatePresence>
+                {!sidebarOpen && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
+                    transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
+                    onClick={toggleSidebar}
+                    className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
+                    aria-label="Open sidebar"
+                  >
+                    <PanelLeft className="size-(--size-icon-md)" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
+
+              <main className="h-full flex-1 overflow-hidden">
+                {activeSessionId ? (
+                  <ChatPanel
+                    key={activeSessionId}
+                    sessionId={activeSessionId}
+                    transformContent={transformContent}
+                  />
+                ) : (
+                  <div className="flex h-full flex-1 items-center justify-center">
+                    <div className="text-center">
+                      <p className="text-muted-foreground text-base">New conversation</p>
+                      <p className="text-muted-foreground/60 mt-2 text-sm">
+                        Select a session or start a new one
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </main>
+            </div>
+          </div>
+          <Toaster />
+        </MotionConfig>
+      </TooltipProvider>
+    );
+  }
+
+  return (
+    <TooltipProvider>
+      <MotionConfig reducedMotion="user">
+        <div ref={containerRef} className="bg-background text-foreground flex h-dvh flex-col">
+          <PermissionBanner sessionId={activeSessionId} />
+          <div className="relative flex flex-1 overflow-hidden">
             {/* Floating toggle — visible when sidebar is closed */}
             <AnimatePresence>
               {!sidebarOpen && (
@@ -100,7 +151,46 @@ export function App({ transformContent, embedded }: AppProps = {}) {
               )}
             </AnimatePresence>
 
-            <main className="h-full flex-1 overflow-hidden">
+            {isMobile ? (
+              /* Mobile: overlay sidebar with backdrop */
+              <AnimatePresence>
+                {sidebarOpen && (
+                  <>
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="fixed inset-0 z-40 bg-black/40"
+                      onClick={() => setSidebarOpen(false)}
+                      aria-label="Close sidebar"
+                    />
+                    <motion.div
+                      initial={{ x: '-90vw' }}
+                      animate={{ x: 0 }}
+                      exit={{ x: '-90vw' }}
+                      transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+                      className="bg-background fixed top-0 left-0 z-50 h-full w-[90vw] overflow-y-auto border-r"
+                    >
+                      <SessionSidebar />
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            ) : (
+              /* Desktop: push sidebar */
+              <motion.div
+                animate={{ width: sidebarOpen ? 320 : 0 }}
+                transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+                className="flex-shrink-0 overflow-hidden border-r"
+              >
+                <div className="h-full w-80 overflow-y-auto">
+                  <SessionSidebar />
+                </div>
+              </motion.div>
+            )}
+
+            <main className="flex-1 overflow-hidden">
               {activeSessionId ? (
                 <ChatPanel
                   key={activeSessionId}
@@ -120,91 +210,8 @@ export function App({ transformContent, embedded }: AppProps = {}) {
             </main>
           </div>
         </div>
+        <Toaster />
       </MotionConfig>
-    );
-  }
-
-  return (
-    <MotionConfig reducedMotion="user">
-      <div ref={containerRef} className="bg-background text-foreground flex h-dvh flex-col">
-        <PermissionBanner sessionId={activeSessionId} />
-        <div className="relative flex flex-1 overflow-hidden">
-          {/* Floating toggle — visible when sidebar is closed */}
-          <AnimatePresence>
-            {!sidebarOpen && (
-              <motion.button
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-                onClick={toggleSidebar}
-                className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
-                aria-label="Open sidebar"
-              >
-                <PanelLeft className="size-(--size-icon-md)" />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {isMobile ? (
-            /* Mobile: overlay sidebar with backdrop */
-            <AnimatePresence>
-              {sidebarOpen && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="fixed inset-0 z-40 bg-black/40"
-                    onClick={() => setSidebarOpen(false)}
-                    aria-label="Close sidebar"
-                  />
-                  <motion.div
-                    initial={{ x: '-90vw' }}
-                    animate={{ x: 0 }}
-                    exit={{ x: '-90vw' }}
-                    transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                    className="bg-background fixed top-0 left-0 z-50 h-full w-[90vw] overflow-y-auto border-r"
-                  >
-                    <SessionSidebar />
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          ) : (
-            /* Desktop: push sidebar */
-            <motion.div
-              animate={{ width: sidebarOpen ? 320 : 0 }}
-              transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-              className="flex-shrink-0 overflow-hidden border-r"
-            >
-              <div className="h-full w-80 overflow-y-auto">
-                <SessionSidebar />
-              </div>
-            </motion.div>
-          )}
-
-          <main className="flex-1 overflow-hidden">
-            {activeSessionId ? (
-              <ChatPanel
-                key={activeSessionId}
-                sessionId={activeSessionId}
-                transformContent={transformContent}
-              />
-            ) : (
-              <div className="flex h-full flex-1 items-center justify-center">
-                <div className="text-center">
-                  <p className="text-muted-foreground text-base">New conversation</p>
-                  <p className="text-muted-foreground/60 mt-2 text-sm">
-                    Select a session or start a new one
-                  </p>
-                </div>
-              </div>
-            )}
-          </main>
-        </div>
-      </div>
-    </MotionConfig>
+    </TooltipProvider>
   );
 }

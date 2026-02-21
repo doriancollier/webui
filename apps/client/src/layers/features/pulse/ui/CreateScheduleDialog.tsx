@@ -1,13 +1,32 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import cronstrue from 'cronstrue';
+import { ChevronRight } from 'lucide-react';
 import { useCreateSchedule, useUpdateSchedule } from '@/layers/entities/pulse';
+import {
+  ResponsiveDialog,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  Label,
+} from '@/layers/shared/ui';
+import { cn } from '@/layers/shared/lib';
 import type { PulseSchedule } from '@dorkos/shared/types';
+import { CronPresets } from './CronPresets';
+import { TimezoneCombobox } from './TimezoneCombobox';
 
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editSchedule?: PulseSchedule;
 }
+
+type PermissionMode = 'acceptEdits' | 'bypassPermissions';
+
+const DEFAULT_MAX_RUNTIME_MIN = 10;
+const MAX_NAME_LENGTH = 100;
+const MAX_RUNTIME_MIN = 720;
 
 function getCronPreview(cron: string): string {
   if (!cron.trim()) return '';
@@ -18,65 +37,73 @@ function getCronPreview(cron: string): string {
   }
 }
 
+function buildInitialState(editSchedule?: PulseSchedule) {
+  if (editSchedule) {
+    return {
+      name: editSchedule.name,
+      prompt: editSchedule.prompt,
+      cron: editSchedule.cron,
+      cwd: editSchedule.cwd ?? '',
+      timezone: editSchedule.timezone ?? '',
+      permissionMode: (editSchedule.permissionMode === 'bypassPermissions'
+        ? 'bypassPermissions'
+        : 'acceptEdits') as PermissionMode,
+      maxRuntimeMin: editSchedule.maxRuntime ? editSchedule.maxRuntime / 60_000 : DEFAULT_MAX_RUNTIME_MIN,
+    };
+  }
+  return {
+    name: '',
+    prompt: '',
+    cron: '',
+    cwd: '',
+    timezone: '',
+    permissionMode: 'acceptEdits' as PermissionMode,
+    maxRuntimeMin: DEFAULT_MAX_RUNTIME_MIN,
+  };
+}
+
+interface FormState {
+  name: string;
+  prompt: string;
+  cron: string;
+  cwd: string;
+  timezone: string;
+  permissionMode: PermissionMode;
+  maxRuntimeMin: number;
+}
+
+/** Create or edit a Pulse schedule using ResponsiveDialog with progressive disclosure. */
 export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props) {
   const createSchedule = useCreateSchedule();
   const updateSchedule = useUpdateSchedule();
 
-  const [name, setName] = useState('');
-  const [prompt, setPrompt] = useState('');
-  const [cron, setCron] = useState('');
-  const [cwd, setCwd] = useState('');
-  const [timezone, setTimezone] = useState('');
-  const [permissionMode, setPermissionMode] = useState<'acceptEdits' | 'bypassPermissions'>(
-    'acceptEdits'
-  );
-  const [maxRuntimeMin, setMaxRuntimeMin] = useState(10);
+  const [form, setForm] = useState<FormState>(() => buildInitialState(editSchedule));
 
-  const timezones = useMemo(() => {
-    try {
-      return Intl.supportedValuesOf('timeZone');
-    } catch {
-      return [];
-    }
-  }, []);
-
+  // Reset form when dialog opens or switches between create/edit
   useEffect(() => {
-    if (editSchedule) {
-      setName(editSchedule.name);
-      setPrompt(editSchedule.prompt);
-      setCron(editSchedule.cron);
-      setCwd(editSchedule.cwd ?? '');
-      setTimezone(editSchedule.timezone ?? '');
-      setPermissionMode(
-        editSchedule.permissionMode === 'bypassPermissions' ? 'bypassPermissions' : 'acceptEdits'
-      );
-      setMaxRuntimeMin(editSchedule.maxRuntime ? editSchedule.maxRuntime / 60_000 : 10);
-    } else {
-      setName('');
-      setPrompt('');
-      setCron('');
-      setCwd('');
-      setTimezone('');
-      setPermissionMode('acceptEdits');
-      setMaxRuntimeMin(10);
-    }
+    setForm(buildInitialState(editSchedule));
   }, [editSchedule, open]);
 
-  const cronPreview = getCronPreview(cron);
-  const isValid = name.trim() && prompt.trim() && cron.trim();
+  function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const cronPreview = getCronPreview(form.cron);
+  const isValid = form.name.trim() && form.prompt.trim() && form.cron.trim();
+  const isPending = createSchedule.isPending || updateSchedule.isPending;
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!isValid) return;
+    if (!isValid || isPending) return;
 
     const input = {
-      name: name.trim(),
-      prompt: prompt.trim(),
-      cron: cron.trim(),
-      ...(cwd && { cwd }),
-      ...(timezone && { timezone }),
-      permissionMode,
-      maxRuntime: maxRuntimeMin * 60_000,
+      name: form.name.trim(),
+      prompt: form.prompt.trim(),
+      cron: form.cron.trim(),
+      ...(form.cwd.trim() && { cwd: form.cwd.trim() }),
+      ...(form.timezone && { timezone: form.timezone }),
+      permissionMode: form.permissionMode,
+      maxRuntime: form.maxRuntimeMin * 60_000,
     };
 
     if (editSchedule) {
@@ -89,135 +116,166 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
     }
   }
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="mx-4 w-full max-w-lg rounded-xl bg-background p-6 shadow-lg">
-        <h2 className="mb-4 text-lg font-semibold">
-          {editSchedule ? 'Edit Schedule' : 'New Schedule'}
-        </h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1 block text-sm font-medium">Name *</label>
-            <input
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              maxLength={100}
-              placeholder="Daily code review"
-            />
-          </div>
+    <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
+      <ResponsiveDialogContent className="max-w-lg gap-0 p-0">
+        <ResponsiveDialogHeader className="border-b px-4 py-3">
+          <ResponsiveDialogTitle>
+            {editSchedule ? 'Edit Schedule' : 'New Schedule'}
+          </ResponsiveDialogTitle>
+          <ResponsiveDialogDescription className="sr-only">
+            {editSchedule ? 'Edit an existing Pulse schedule' : 'Create a new Pulse schedule'}
+          </ResponsiveDialogDescription>
+        </ResponsiveDialogHeader>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Prompt *</label>
-            <textarea
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              rows={4}
-              placeholder="Review all pending PRs and summarize findings..."
-            />
-          </div>
+        <form onSubmit={handleSubmit} id="schedule-form">
+          <div className="space-y-5 overflow-y-auto px-4 py-5" style={{ maxHeight: 'calc(75vh - 8rem)' }}>
+            {/* ── Essential fields ── */}
+            <div className="space-y-1.5">
+              <Label htmlFor="schedule-name">Name *</Label>
+              <input
+                id="schedule-name"
+                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                value={form.name}
+                onChange={(e) => updateField('name', e.target.value)}
+                maxLength={MAX_NAME_LENGTH}
+                placeholder="Daily code review"
+                required
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Cron Expression *</label>
-            <input
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-mono"
-              value={cron}
-              onChange={(e) => setCron(e.target.value)}
-              placeholder="0 9 * * 1-5"
-            />
-            {cronPreview && (
-              <p className="mt-1 text-xs text-muted-foreground">{cronPreview}</p>
-            )}
-          </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="schedule-prompt">Prompt *</Label>
+              <textarea
+                id="schedule-prompt"
+                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                value={form.prompt}
+                onChange={(e) => updateField('prompt', e.target.value)}
+                rows={4}
+                placeholder="Review all pending PRs and summarize findings..."
+                required
+              />
+            </div>
 
-          <div>
-            <label className="mb-1 block text-sm font-medium">Working Directory</label>
-            <input
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm font-mono"
-              value={cwd}
-              onChange={(e) => setCwd(e.target.value)}
-              placeholder="~/projects/myapp"
-            />
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">Timezone</label>
-            <select
-              className="w-full rounded-md border bg-transparent px-3 py-2 text-sm"
-              value={timezone}
-              onChange={(e) => setTimezone(e.target.value)}
-            >
-              <option value="">System default</option>
-              {timezones.map((tz) => (
-                <option key={tz} value={tz}>
-                  {tz}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="mb-1 block text-sm font-medium">Max Runtime (minutes)</label>
-            <input
-              type="number"
-              className="w-24 rounded-md border bg-transparent px-3 py-2 text-sm"
-              value={maxRuntimeMin}
-              onChange={(e) => setMaxRuntimeMin(Number(e.target.value))}
-              min={1}
-              max={720}
-            />
-          </div>
-
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium">Permission Mode</legend>
             <div className="space-y-2">
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="permissionMode"
-                  checked={permissionMode === 'acceptEdits'}
-                  onChange={() => setPermissionMode('acceptEdits')}
-                />
-                Allow file edits
-              </label>
-              <label className="flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="permissionMode"
-                  checked={permissionMode === 'bypassPermissions'}
-                  onChange={() => setPermissionMode('bypassPermissions')}
-                />
-                Full autonomy
-              </label>
-              {permissionMode === 'bypassPermissions' && (
-                <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                  Warning: This allows the agent to execute any tool without approval.
+              <Label htmlFor="schedule-cron">Schedule *</Label>
+              <CronPresets value={form.cron} onChange={(cron) => updateField('cron', cron)} />
+              <input
+                id="schedule-cron"
+                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 font-mono text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                value={form.cron}
+                onChange={(e) => updateField('cron', e.target.value)}
+                placeholder="0 9 * * 1-5"
+                required
+              />
+              {cronPreview && (
+                <p
+                  className={cn(
+                    'text-xs',
+                    cronPreview === 'Invalid cron expression'
+                      ? 'text-destructive'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {cronPreview}
                 </p>
               )}
             </div>
-          </fieldset>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <button
-              type="button"
-              className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-              onClick={() => onOpenChange(false)}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={!isValid}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium shadow-sm transition-colors disabled:pointer-events-none disabled:opacity-50"
-            >
-              {editSchedule ? 'Save' : 'Create'}
-            </button>
+            {/* ── Common fields ── */}
+            <div className="border-t pt-4">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="schedule-cwd">Working Directory</Label>
+                  <input
+                    id="schedule-cwd"
+                    className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 font-mono text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                    value={form.cwd}
+                    onChange={(e) => updateField('cwd', e.target.value)}
+                    placeholder="~/projects/myapp"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label>Timezone</Label>
+                  <TimezoneCombobox
+                    value={form.timezone}
+                    onChange={(tz) => updateField('timezone', tz)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ── Advanced settings (collapsed by default) ── */}
+            <details className="group">
+              <summary className="flex cursor-pointer list-none items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+                <ChevronRight className="size-4 transition-transform group-open:rotate-90" />
+                Advanced settings
+              </summary>
+
+              <div className="mt-3 space-y-4 pl-6">
+                <fieldset className="space-y-2">
+                  <legend className="mb-1.5 text-sm font-medium">Permission Mode</legend>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="permissionMode"
+                      checked={form.permissionMode === 'acceptEdits'}
+                      onChange={() => updateField('permissionMode', 'acceptEdits')}
+                    />
+                    Allow file edits
+                  </label>
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="radio"
+                      name="permissionMode"
+                      checked={form.permissionMode === 'bypassPermissions'}
+                      onChange={() => updateField('permissionMode', 'bypassPermissions')}
+                    />
+                    Full autonomy
+                  </label>
+                  {form.permissionMode === 'bypassPermissions' && (
+                    <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                      Warning: This allows the agent to execute any tool without approval.
+                    </p>
+                  )}
+                </fieldset>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="schedule-max-runtime">Max Runtime (minutes)</Label>
+                  <input
+                    id="schedule-max-runtime"
+                    type="number"
+                    className="border-input focus-visible:ring-ring w-24 rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                    value={form.maxRuntimeMin}
+                    onChange={(e) => updateField('maxRuntimeMin', Number(e.target.value))}
+                    min={1}
+                    max={MAX_RUNTIME_MIN}
+                  />
+                </div>
+              </div>
+            </details>
           </div>
         </form>
-      </div>
-    </div>
+
+        <ResponsiveDialogFooter className="border-t px-4 py-3">
+          <button
+            type="button"
+            className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
+            onClick={() => onOpenChange(false)}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="schedule-form"
+            disabled={!isValid || isPending}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium shadow-sm transition-colors disabled:pointer-events-none disabled:opacity-50"
+          >
+            {isPending ? 'Saving...' : editSchedule ? 'Save' : 'Create'}
+          </button>
+        </ResponsiveDialogFooter>
+      </ResponsiveDialogContent>
+    </ResponsiveDialog>
   );
 }

@@ -76,7 +76,7 @@ Express server on port `DORKOS_PORT` (default 4242). All endpoints that accept `
 - **`routes/commands.ts`** - Slash command listing via `CommandRegistryService`, which scans `.claude/commands/` using gray-matter frontmatter parsing
 - **`routes/health.ts`** - Health check; includes optional `tunnel` status field when ngrok is enabled
 - **`routes/directory.ts`** - Directory browsing for working directory selection
-- **`routes/config.ts`** - Configuration management endpoints (GET for server config, PATCH for user config updates with Zod validation)
+- **`routes/config.ts`** - Configuration management endpoints (GET for server config including `pulse.enabled`, PATCH for user config updates with Zod validation)
 - **`routes/files.ts`** - File operations (read/list files)
 - **`routes/git.ts`** - Git status and branch information
 - **`routes/tunnel.ts`** - Runtime tunnel control (POST /start and /stop). Resolves auth token from env var or config, delegates to `tunnelManager`, persists enabled state
@@ -125,18 +125,18 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 
 | Layer                    | Modules                                                            | Purpose                     |
 | ------------------------ | ------------------------------------------------------------------ | --------------------------- |
-| `shared/ui/`             | 14 shadcn primitives (Badge, Dialog, Select, Tabs, etc.)           | Reusable UI primitives      |
+| `shared/ui/`             | 17 shadcn primitives (Badge, Command, Dialog, Select, Tabs, Tooltip, Toaster, etc.) | Reusable UI primitives      |
 | `shared/model/`          | TransportContext, app-store, 8 hooks (useTheme, useIsMobile, etc.) | Hooks, stores, context      |
 | `shared/lib/`            | cn, Transports, font-config, favicon-utils, celebrations, etc.     | Domain-agnostic utilities   |
 | `entities/session/`      | useSessionId, useSessions, useDirectoryState, useDefaultCwd        | Session domain hooks        |
 | `entities/command/`      | useCommands                                                        | Command domain hook         |
-| `entities/pulse/`        | useSchedules, useRuns, useCancelRun                                | Pulse scheduler domain hooks|
+| `entities/pulse/`        | usePulseEnabled, useSchedules, useRuns, useActiveRunCount, useCancelRun | Pulse scheduler domain hooks|
 | `features/chat/`         | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession  | Chat interface              |
 | `features/session-list/` | SessionSidebar, SessionItem, DirectoryPicker                       | Session management          |
 | `features/commands/`     | CommandPalette                                                     | Slash command palette       |
 | `features/settings/`     | SettingsDialog                                                     | Settings UI                 |
 | `features/files/`        | FilePalette, useFiles                                              | File browser                |
-| `features/pulse/`        | PulsePanel, CreateScheduleDialog, RunHistoryPanel                  | Pulse scheduler UI          |
+| `features/pulse/`        | PulsePanel, ScheduleRow, CreateScheduleDialog, RunHistoryPanel, CronPresets, TimezoneCombobox | Pulse scheduler UI          |
 | `features/status/`       | StatusLine, GitStatusItem, ModelItem, etc.                         | Status bar                  |
 | `widgets/app-layout/`    | PermissionBanner                                                   | App-level layout components |
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 6,
+  "nextNumber": 8,
   "decisions": [
     {
       "number": 1,
@@ -41,6 +41,24 @@
       "status": "accepted",
       "created": "2026-02-11",
       "specSlug": "url-persisted-directory-state"
+    },
+    {
+      "number": 6,
+      "slug": "adopt-sonner-for-toast-notifications",
+      "title": "Adopt Sonner for Toast Notifications",
+      "status": "draft",
+      "created": "2026-02-21",
+      "extractedFrom": "pulse-ui-overhaul",
+      "specSlug": "pulse-ui-overhaul"
+    },
+    {
+      "number": 7,
+      "slug": "adopt-cmdk-for-searchable-combobox",
+      "title": "Adopt cmdk for Searchable Combobox Patterns",
+      "status": "draft",
+      "created": "2026-02-21",
+      "extractedFrom": "pulse-ui-overhaul",
+      "specSlug": "pulse-ui-overhaul"
     }
   ]
 }

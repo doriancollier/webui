@@ -6,6 +6,7 @@ import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { configManager } from '../services/config-manager.js';
 import { UserConfigSchema, SENSITIVE_CONFIG_KEYS } from '@dorkos/shared/config-schema';
 import { getLatestVersion } from '../services/update-checker.js';
+import { isPulseEnabled } from '../services/pulse-state.js';
 
 declare const __CLI_VERSION__: string | undefined;
 
@@ -98,6 +99,9 @@ router.get('/', async (_req, res) => {
       url: tunnel.url,
       authEnabled: !!process.env.TUNNEL_AUTH,
       tokenConfigured: !!(process.env.NGROK_AUTHTOKEN || configManager.get('tunnel')?.authtoken),
+    },
+    pulse: {
+      enabled: isPulseEnabled(),
     },
   });
 });

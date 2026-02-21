@@ -473,6 +473,12 @@ export const ServerConfigSchema = z
       authEnabled: z.boolean(),
       tokenConfigured: z.boolean(),
     }),
+    pulse: z
+      .object({
+        enabled: z.boolean().openapi({ description: 'Whether the Pulse scheduler is enabled' }),
+      })
+      .optional()
+      .openapi({ description: 'Pulse scheduler feature state' }),
   })
   .openapi('ServerConfig');
 

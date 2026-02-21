@@ -4,13 +4,18 @@ import type { CreateScheduleInput, UpdateScheduleRequest } from '@dorkos/shared/
 
 const SCHEDULES_KEY = ['pulse', 'schedules'] as const;
 
-/** Fetch all Pulse schedules. */
-export function useSchedules() {
+/**
+ * Fetch all Pulse schedules.
+ *
+ * @param enabled - When false, the query is skipped entirely (Pulse feature gate).
+ */
+export function useSchedules(enabled = true) {
   const transport = useTransport();
 
   return useQuery({
     queryKey: [...SCHEDULES_KEY],
     queryFn: () => transport.listSchedules(),
+    enabled,
   });
 }
 

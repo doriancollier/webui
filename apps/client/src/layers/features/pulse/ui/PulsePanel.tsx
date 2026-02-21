@@ -1,166 +1,121 @@
 import { useState } from 'react';
-import cronstrue from 'cronstrue';
-import { Pencil } from 'lucide-react';
-import {
-  useSchedules,
-  useUpdateSchedule,
-  useTriggerSchedule,
-  useDeleteSchedule,
-} from '@/layers/entities/pulse';
-import { cn } from '@/layers/shared/lib';
+import { AnimatePresence, motion } from 'motion/react';
+import { HeartPulse, Clock } from 'lucide-react';
+import { usePulseEnabled, useSchedules } from '@/layers/entities/pulse';
 import type { PulseSchedule } from '@dorkos/shared/types';
 import { CreateScheduleDialog } from './CreateScheduleDialog';
-import { RunHistoryPanel } from './RunHistoryPanel';
+import { ScheduleRow } from './ScheduleRow';
 
-function formatCron(cron: string): string {
-  try {
-    return cronstrue.toString(cron);
-  } catch {
-    return cron;
-  }
-}
-
-function StatusDot({ schedule }: { schedule: PulseSchedule }) {
-  const color =
-    schedule.status === 'pending_approval'
-      ? 'bg-yellow-500'
-      : !schedule.enabled
-        ? 'bg-neutral-400'
-        : 'bg-green-500';
-
-  return <span className={cn('inline-block size-2 rounded-full', color)} />;
-}
-
+/** Main Pulse panel — renders schedule list or empty/loading/disabled states. */
 export function PulsePanel() {
-  const { data: schedules = [], isLoading } = useSchedules();
-  const updateSchedule = useUpdateSchedule();
-  const triggerSchedule = useTriggerSchedule();
-  const deleteSchedule = useDeleteSchedule();
+  const pulseEnabled = usePulseEnabled();
+  const { data: schedules = [], isLoading } = useSchedules(pulseEnabled);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSchedule, setEditSchedule] = useState<PulseSchedule | undefined>();
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
-  if (isLoading) {
-    return <div className="p-6 text-sm text-muted-foreground">Loading schedules...</div>;
+  if (!pulseEnabled) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <HeartPulse className="size-8 text-muted-foreground/50" />
+        <div>
+          <p className="font-medium">Pulse is not enabled</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pulse runs AI agent tasks on a schedule. Start DorkOS with the --pulse flag to enable
+            it.
+          </p>
+        </div>
+        <code className="mt-2 rounded-md bg-muted px-3 py-1.5 font-mono text-sm">
+          dorkos --pulse
+        </code>
+      </div>
+    );
   }
 
-  return (
-    <div className="space-y-4 p-4">
-      <div className="flex items-center justify-end">
+  if (isLoading) {
+    return (
+      <div className="space-y-2 p-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-lg border p-3">
+            <div className="flex items-center gap-3">
+              <div className="size-2 animate-pulse rounded-full bg-muted" />
+              <div className="flex-1 space-y-1.5">
+                <div className="h-4 w-32 animate-pulse rounded bg-muted" />
+                <div className="h-3 w-48 animate-pulse rounded bg-muted" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (schedules.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
+        <Clock className="size-8 text-muted-foreground/30" />
+        <div>
+          <p className="font-medium">No schedules yet</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Pulse runs AI agent tasks on a schedule — code reviews, health checks, reports, and
+            more.
+          </p>
+        </div>
         <button
-          className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium shadow-sm transition-colors"
           onClick={() => {
             setEditSchedule(undefined);
             setDialogOpen(true);
           }}
+          className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium shadow-sm transition-colors"
+        >
+          New Schedule
+        </button>
+        <CreateScheduleDialog
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          editSchedule={editSchedule}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 p-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-medium text-muted-foreground">Schedules</h3>
+        <button
+          onClick={() => {
+            setEditSchedule(undefined);
+            setDialogOpen(true);
+          }}
+          className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium shadow-sm transition-colors"
         >
           New Schedule
         </button>
       </div>
-
-      {schedules.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No scheduled jobs. Create one to get started.
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {schedules.map((schedule) => (
-            <div key={schedule.id} className="rounded-lg border">
-              <div
-                className="flex cursor-pointer items-center gap-3 p-3"
-                onClick={() => setExpandedId(expandedId === schedule.id ? null : schedule.id)}
-              >
-                <StatusDot schedule={schedule} />
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium">{schedule.name}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {formatCron(schedule.cron)}
-                    {schedule.nextRun && (
-                      <> &middot; Next: {new Date(schedule.nextRun).toLocaleString()}</>
-                    )}
-                  </div>
-                </div>
-
-                {schedule.status === 'pending_approval' ? (
-                  <div className="flex gap-1">
-                    <button
-                      className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md border bg-transparent px-2.5 py-1 text-xs font-medium shadow-sm transition-colors"
-                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        e.stopPropagation();
-                        updateSchedule.mutate({ id: schedule.id, status: 'active', enabled: true });
-                      }}
-                    >
-                      Approve
-                    </button>
-                    <button
-                      className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium transition-colors"
-                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        e.stopPropagation();
-                        deleteSchedule.mutate(schedule.id);
-                      }}
-                    >
-                      Reject
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <button
-                      className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md px-2.5 py-1 text-xs font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
-                      disabled={!schedule.enabled}
-                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        e.stopPropagation();
-                        triggerSchedule.mutate(schedule.id);
-                      }}
-                    >
-                      Run Now
-                    </button>
-                    <button
-                      aria-label={`Edit ${schedule.name}`}
-                      className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md p-1 text-xs transition-colors"
-                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        e.stopPropagation();
-                        setEditSchedule(schedule);
-                        setDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="size-3.5" />
-                    </button>
-                    <button
-                      className={cn(
-                        'relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors',
-                        schedule.enabled ? 'bg-primary' : 'bg-input'
-                      )}
-                      role="switch"
-                      aria-checked={schedule.enabled}
-                      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                        e.stopPropagation();
-                        updateSchedule.mutate({
-                          id: schedule.id,
-                          enabled: !schedule.enabled,
-                        });
-                      }}
-                    >
-                      <span
-                        className={cn(
-                          'pointer-events-none block size-4 rounded-full bg-background shadow-sm ring-0 transition-transform',
-                          schedule.enabled ? 'translate-x-4' : 'translate-x-0'
-                        )}
-                      />
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {expandedId === schedule.id && (
-                <div className="border-t px-3 pb-3 pt-2">
-                  <RunHistoryPanel scheduleId={schedule.id} />
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
+      <AnimatePresence initial={false}>
+        {schedules.map((schedule) => (
+          <motion.div
+            key={schedule.id}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+          >
+            <ScheduleRow
+              schedule={schedule}
+              expanded={expandedId === schedule.id}
+              onToggleExpand={() =>
+                setExpandedId(expandedId === schedule.id ? null : schedule.id)
+              }
+              onEdit={() => {
+                setEditSchedule(schedule);
+                setDialogOpen(true);
+              }}
+            />
+          </motion.div>
+        ))}
+      </AnimatePresence>
       <CreateScheduleDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
