@@ -1,11 +1,24 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "ui": "tui",
+  "globalPassThroughEnv": [
+    "DORKOS_PORT",
+    "DORKOS_DEFAULT_CWD",
+    "DORKOS_BOUNDARY",
+    "DORKOS_LOG_LEVEL",
+    "DORK_HOME",
+    "DORKOS_PULSE_ENABLED",
+    "TUNNEL_ENABLED",
+    "TUNNEL_PORT",
+    "TUNNEL_AUTH",
+    "TUNNEL_DOMAIN",
+    "NGROK_AUTHTOKEN"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["generate:api-docs", "^build"],
       "outputs": ["dist/**", "dist-server/**", "dist-obsidian/**", ".next/**"],
-      "env": ["NODE_ENV", "VITE_*", "DORKOS_PORT", "NGROK_*", "TUNNEL_*", "NEXT_PUBLIC_*", "POSTHOG_*"]
+      "env": ["NODE_ENV", "VITE_*", "NEXT_PUBLIC_*", "POSTHOG_*"]
     },
     "generate:api-docs": {
       "cache": true
