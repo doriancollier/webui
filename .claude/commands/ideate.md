@@ -1,6 +1,6 @@
 ---
 description: Structured ideation with documentation
-allowed-tools: Read, Grep, Glob, Task, TaskOutput, Write, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(python3:*), Bash(mkdir:*)
+allowed-tools: Read, Grep, Glob, Task, TaskOutput, Write, AskUserQuestion, Bash(git:*), Bash(npm:*), Bash(npx:*), Bash(python3:*), Bash(mkdir:*)
 argument-hint: '[--roadmap-id <uuid> | --roadmap-item "<title>"] <task-brief>'
 category: workflow
 ---
@@ -18,7 +18,8 @@ This command uses **parallel background agents** for maximum efficiency:
 1. **Main context**: Lightweight orchestration (~15% of context)
 2. **Codebase exploration agent**: Maps relevant code (background, isolated)
 3. **Research agent**: Investigates best practices (background, parallel)
-4. **Main context**: Synthesize findings and write document
+4. **Main context**: Resolve key decisions interactively with the user
+5. **Main context**: Synthesize findings and write document
 
 **Context savings**: ~80% reduction vs sequential foreground execution
 
@@ -177,6 +178,60 @@ Display:
 
 ---
 
+## Phase 3.5: Interactive Clarification
+
+Now that you have exploration and research findings, resolve key decisions with the user BEFORE writing the document.
+
+### Step 3.5.1: Identify Key Decisions
+
+Analyze the exploration and research findings to identify 2-4 unresolved decisions that would meaningfully affect the ideation outcome. Look for:
+
+- **Scope boundaries** — What's included vs excluded when the task brief is ambiguous
+- **Technical approach** — When research found multiple viable solutions with different trade-offs
+- **Architecture choices** — When exploration revealed multiple valid integration points or patterns
+- **Behavioral decisions** — Error handling, edge cases, UX flows that aren't specified
+
+**Skip this phase if** the task brief is sufficiently clear and exploration/research findings converge on an obvious approach. Not every ideation needs interactive clarification — use judgment.
+
+### Step 3.5.2: Ask Clarifying Questions
+
+Use AskUserQuestion with up to 4 questions in a single call. For EACH question:
+
+1. **Think deeply** before formulating — consider what the codebase exploration revealed about existing patterns, what the research found about best practices, and what the user's intent likely is
+2. **The FIRST option MUST be your recommendation**, with `(Recommended)` appended to the label
+3. **The recommended option's description MUST explain WHY** — reference specific findings (e.g., "Follows the existing pattern in `features/chat/`" or "Research shows this is the industry standard for...")
+4. Provide 2-3 alternative options that represent genuinely different approaches, not minor variations
+
+Example:
+
+```
+AskUserQuestion:
+  questions:
+    - question: "How should error states be displayed in the new panel?"
+      header: "Error UX"
+      options:
+        - label: "Inline toast notification (Recommended)"
+          description: "Consistent with the existing pattern in ChatPanel — exploration found 4 other features using toasts via sonner. Least disruptive to user flow."
+        - label: "Inline error banner"
+          description: "More visible but takes up panel space. Would be a new pattern in the codebase."
+        - label: "Status bar indicator"
+          description: "Minimal UI impact but easy to miss. Used by StatusLine for non-critical info."
+```
+
+### Step 3.5.3: Incorporate Answers
+
+Store the user's answers (including any custom "Other" responses) for incorporation into the ideation document. These become resolved decisions in Section 6, not open questions.
+
+Display:
+
+```
+✅ Clarification complete:
+   → [N] decisions resolved
+   → Proceeding to synthesis...
+```
+
+---
+
 ## Phase 4: Synthesis & Document (Main Context)
 
 ### Step 4.1: Root Cause Analysis (Bug Fixes Only)
@@ -191,15 +246,7 @@ If the task is a bug fix:
 
 2. Select the most likely hypothesis with evidence from exploration
 
-### Step 4.2: Clarification Questions
-
-Based on exploration and research findings, create a list of:
-
-- Unspecified requirements
-- Decisions the user needs to make
-- Trade-offs that need resolution
-
-### Step 4.3: Write Ideation Document
+### Step 4.2: Write Ideation Document
 
 Create `specs/{slug}/01-ideation.md` with all gathered information.
 
@@ -263,18 +310,25 @@ status: ideation
 - **Potential solutions:** {numbered list with pros and cons}
 - **Recommendation:** {concise description}
 
-## 6) Clarification
+## 6) Decisions
 
-- **Clarifications:** {numbered list with decisions for user}
+{From interactive clarification phase — resolved, not open}
+
+| # | Decision | Choice | Rationale |
+|---|----------|--------|-----------|
+| 1 | {What was decided} | {User's choice} | {Why — from exploration/research or user reasoning} |
+| 2 | {What was decided} | {User's choice} | {Why} |
+
+{If no clarification was needed, state: "No ambiguities identified — task brief and findings were sufficiently clear."}
 ```
 
-### Step 4.4: Update Spec Manifest
+### Step 4.3: Update Spec Manifest
 
 After writing the ideation document, update `specs/manifest.json`:
 1. Add a new entry to the `specs` array with `number`, `slug`, `title`, `created` (today), and `status: "ideation"`
 2. Increment `nextNumber`
 
-### Step 4.5: Display Completion Summary
+### Step 4.4: Display Completion Summary
 
 ```
 ═══════════════════════════════════════════════════
@@ -288,13 +342,12 @@ After writing the ideation document, update `specs/manifest.json`:
    - Components mapped: [Y]
    - Approaches researched: [Z]
 
-📝 Clarifications needed: [N] items
-   (Review section 6 of the ideation document)
+📝 Decisions resolved: [N] items
+   (See section 6 of the ideation document)
 
 🚀 Next Steps:
    1. Review the ideation document
-   2. Answer clarification questions if any
-   3. Run: /ideate-to-spec specs/[slug]/01-ideation.md
+   2. Run: /ideate-to-spec specs/[slug]/01-ideation.md
 
 ═══════════════════════════════════════════════════
 ```

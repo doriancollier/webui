@@ -153,27 +153,30 @@ Too many questions overwhelms. Pick the highest-impact clarifications.
 ↳ This affects routing, state management, and URL structure
 ```
 
-### Do: Suggest Defaults When Reasonable
+### Do: Always Recommend (Not Just Suggest)
+
+Every question must have a recommendation. Don't just "suggest defaults" — **take a position** and explain why based on what you know about the codebase, research, and domain:
 
 ```
 **Error handling:** How should we handle API failures?
-↳ I'd suggest showing a toast notification with retry option (our standard pattern), unless you have a different preference.
+↳ I recommend toast notifications with retry (our standard pattern in ChatPanel and PulsePanel).
+  This keeps the UI consistent and users already understand the interaction.
 ```
 
 ### Do: Use AskUserQuestion for Bounded Choices
 
-When there are clear options, use the structured question tool:
+When there are clear options, use the structured question tool. **The first option MUST be your recommendation**, marked with `(Recommended)` in the label. The description should explain WHY based on evidence:
 
 ```
 AskUserQuestion:
   question: "How should we handle authentication failures?"
   options:
+    - label: "Silent retry with refresh token (Recommended)"
+      description: "Best UX — matches the existing session refresh pattern in agent-manager.ts. Users never see transient auth failures."
     - label: "Redirect to login"
-      description: "Standard approach, clears session"
+      description: "Simpler to implement but disruptive — user loses context"
     - label: "Show inline error"
-      description: "Keeps user on page, can retry"
-    - label: "Silent retry with refresh token"
-      description: "Best UX but more complex"
+      description: "Keeps user on page but adds a new error pattern not used elsewhere in the codebase"
 ```
 
 ### Do: Group Related Questions
@@ -204,6 +207,67 @@ Track what's been established in the conversation.
 ### Don't: Delay Simple Tasks
 
 If the request is genuinely simple and clear, just do it.
+
+### Don't: Ask Without Recommending
+
+Never present options without a recommendation. If you've explored the codebase and done research, you have enough context to have a point of view. The only exception is when you genuinely have no basis to recommend (rare — e.g., pure aesthetic preferences with no codebase precedent).
+
+## Recommendation Discipline
+
+**Core principle: Asking a question without a recommendation is lazy.**
+
+You have access to the codebase, research findings, existing patterns, and domain knowledge. Use them to form a point of view on every question you ask. The user hired you to think, not just to enumerate options.
+
+### Why This Matters
+
+- **Saves user cognitive load** — they evaluate your reasoning instead of starting from scratch
+- **Demonstrates understanding** — your recommendation proves you've thought about the problem in context
+- **Speeds decisions** — most users will accept a well-reasoned recommendation, turning a back-and-forth into a single confirmation
+- **Catches bad options** — by forcing yourself to rank options, you'll notice when one is clearly wrong
+
+### How to Form a Recommendation
+
+Before asking any question, think through these lenses:
+
+1. **Codebase precedent** — Is there an existing pattern? "The codebase uses X in 4 places" is strong evidence
+2. **Research findings** — Did research reveal a best practice? "Industry standard is Y" carries weight
+3. **Architectural fit** — Which option aligns with the project's architecture? Reference specific decisions or conventions
+4. **Simplicity** — When in doubt, recommend the simpler option. Complexity needs justification
+5. **Blast radius** — Prefer options that affect fewer files and introduce fewer new patterns
+
+### Recommendation Format in AskUserQuestion
+
+```
+AskUserQuestion:
+  questions:
+    - question: "Where should the new settings panel live?"
+      header: "Location"
+      options:
+        - label: "Extend existing SettingsDialog (Recommended)"
+          description: "Follows FSD patterns — SettingsDialog already handles config. Adding a tab keeps navigation consistent with the existing 3-tab layout."
+        - label: "New standalone panel"
+          description: "More isolation but introduces a new navigation pattern. Would need its own route and state management."
+        - label: "Inline in the sidebar"
+          description: "Quick access but limited space. Would need collapsible sections for complex settings."
+```
+
+### Anti-Pattern: The Option Menu
+
+```
+❌ BAD — No recommendation, no reasoning:
+"How should we store this data?"
+- Option A: localStorage
+- Option B: Database
+- Option C: File system
+
+✅ GOOD — Clear recommendation with evidence:
+"How should we store this data?"
+- localStorage (Recommended) — Matches the existing theme/preference storage pattern.
+  Single-user tool, no cross-device sync needed.
+- Database — Overkill for user preferences. Would add a migration and schema change
+  for data that's inherently client-scoped.
+- File system — Only useful if the CLI needs access. Currently no CLI preference commands exist.
+```
 
 ## Detecting Hidden Complexity
 
@@ -267,27 +331,38 @@ Not everything needs formal workflows. For casual requests that trigger complexi
 - No location specified: Where does the toggle live?
 - No design guidance: What colors? Existing tokens?
 
-**Response:**
+**Response using AskUserQuestion with recommendations:**
 
 ```
-Before I implement dark mode, I have a few questions to make sure I build the right thing:
+AskUserQuestion:
+  questions:
+    - question: "How should dark mode be triggered?"
+      header: "Trigger"
+      options:
+        - label: "System preference with manual override (Recommended)"
+          description: "Best UX — respects OS setting but lets users override. This is the pattern used by most modern apps and Tailwind's dark: variant supports it natively."
+        - label: "Manual toggle only"
+          description: "User must explicitly switch. Simpler but ignores OS preference."
+        - label: "System preference only"
+          description: "No user control. Simplest but frustrating if user's OS setting doesn't match their preference for this app."
 
-1. **Trigger mechanism:** Should this be:
-   - A manual toggle in the UI (and where should it appear?)
-   - Automatic based on system preference
-   - Both (system default with manual override)
+    - question: "Where should the preference be persisted?"
+      header: "Persistence"
+      options:
+        - label: "localStorage (Recommended)"
+          description: "Single-user tool — no cross-device sync needed. Matches how useTheme already stores theme state in this codebase."
+        - label: "User account / database"
+          description: "Persists across devices but requires backend changes and a user model."
+        - label: "Session only"
+          description: "Resets on refresh. Poor UX for a visual preference."
 
-2. **Persistence:** Should the preference be:
-   - Saved to user account (persists across devices)
-   - Saved to localStorage (this device only)
-   - Session only (resets on page refresh)
-
-3. **Existing design tokens:** I see you have color tokens in globals.css. Should I:
-   - Create new dark mode variants of existing tokens
-   - Use Tailwind's built-in dark: variant
-   - Something else?
-
-I can proceed with reasonable defaults (system preference + localStorage + Tailwind dark:) if you'd like to skip these questions.
+    - question: "How should dark mode colors be implemented?"
+      header: "Colors"
+      options:
+        - label: "Tailwind dark: variant with CSS custom properties (Recommended)"
+          description: "globals.css already uses CSS custom properties for colors. Adding dark: variants is the standard Tailwind v4 approach and requires no new dependencies."
+        - label: "Separate dark theme file"
+          description: "More isolation but harder to maintain — changes require updating two files."
 ```
 
 ## Balancing Act
@@ -307,8 +382,8 @@ The goal is to be helpful, not interrogative. Use judgment:
 
 1. **Analyze every non-trivial request** for gaps, ambiguities, assumptions
 2. **Ask the questions users didn't know to ask**
-3. **Limit to 2-4 high-impact questions** per interaction
-4. **Explain why each question matters**
-5. **Suggest defaults** when you have reasonable guesses
+3. **Always recommend** — every question gets a recommendation backed by evidence
+4. **Limit to 2-4 high-impact questions** per interaction
+5. **Explain why each question matters** and why you recommend what you do
 6. **Don't delay simple tasks** with unnecessary questions
 7. **Surface risks and alternatives** proactively
