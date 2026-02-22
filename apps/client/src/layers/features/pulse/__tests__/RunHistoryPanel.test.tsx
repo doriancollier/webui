@@ -11,9 +11,11 @@ import { createMockRun } from '@dorkos/test-utils';
 import { RunHistoryPanel } from '../ui/RunHistoryPanel';
 
 const mockSetActiveSession = vi.fn();
+const mockSetSelectedCwd = vi.fn();
 
 vi.mock('@/layers/entities/session', () => ({
   useSessionId: vi.fn(() => [null, mockSetActiveSession]),
+  useDirectoryState: vi.fn(() => ['/current/dir', mockSetSelectedCwd]),
 }));
 
 function createMockTransport(overrides: Partial<Transport> = {}): Transport {
@@ -99,7 +101,7 @@ describe('RunHistoryPanel', () => {
 
     render(
       <Wrapper>
-        <RunHistoryPanel scheduleId="sched-1" />
+        <RunHistoryPanel scheduleId="sched-1" scheduleCwd="/test/cwd" />
       </Wrapper>
     );
 
@@ -121,7 +123,7 @@ describe('RunHistoryPanel', () => {
 
     render(
       <Wrapper>
-        <RunHistoryPanel scheduleId="sched-1" />
+        <RunHistoryPanel scheduleId="sched-1" scheduleCwd="/test/cwd" />
       </Wrapper>
     );
 
@@ -143,7 +145,7 @@ describe('RunHistoryPanel', () => {
 
     render(
       <Wrapper>
-        <RunHistoryPanel scheduleId="sched-1" />
+        <RunHistoryPanel scheduleId="sched-1" scheduleCwd="/test/cwd" />
       </Wrapper>
     );
 
@@ -156,7 +158,7 @@ describe('RunHistoryPanel', () => {
     expect(cancelButtons).toHaveLength(1);
   });
 
-  it('clicking a run navigates to its session', async () => {
+  it('clicking a run navigates to its session (same cwd)', async () => {
     const runs = [
       createMockRun({ id: 'run-1', status: 'completed', sessionId: 'session-abc' }),
     ];
@@ -167,7 +169,7 @@ describe('RunHistoryPanel', () => {
 
     render(
       <Wrapper>
-        <RunHistoryPanel scheduleId="sched-1" />
+        <RunHistoryPanel scheduleId="sched-1" scheduleCwd="/current/dir" />
       </Wrapper>
     );
 
@@ -180,7 +182,40 @@ describe('RunHistoryPanel', () => {
     expect(row).toBeTruthy();
     fireEvent.click(row!);
 
+    // Same cwd — should set session directly without changing directory
     expect(mockSetActiveSession).toHaveBeenCalledWith('session-abc');
+    expect(mockSetSelectedCwd).not.toHaveBeenCalled();
+  });
+
+  it('clicking a run with different cwd navigates to directory first', async () => {
+    const runs = [
+      createMockRun({ id: 'run-1', status: 'completed', sessionId: 'session-xyz' }),
+    ];
+    const transport = createMockTransport({
+      listRuns: vi.fn().mockResolvedValue(runs),
+    });
+    const Wrapper = createWrapper(transport);
+
+    render(
+      <Wrapper>
+        <RunHistoryPanel scheduleId="sched-1" scheduleCwd="/other/dir" />
+      </Wrapper>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTitle('Completed')).toBeTruthy();
+    });
+
+    const row = screen.getByTitle('Completed').closest('[class*="cursor-pointer"]');
+    fireEvent.click(row!);
+
+    // Different cwd — should set directory first
+    expect(mockSetSelectedCwd).toHaveBeenCalledWith('/other/dir');
+
+    // Session is set via setTimeout(0) — wait for it
+    await waitFor(() => {
+      expect(mockSetActiveSession).toHaveBeenCalledWith('session-xyz');
+    });
   });
 
   it('shows loading state', () => {
@@ -191,10 +226,11 @@ describe('RunHistoryPanel', () => {
 
     render(
       <Wrapper>
-        <RunHistoryPanel scheduleId="sched-1" />
+        <RunHistoryPanel scheduleId="sched-1" scheduleCwd="/test/cwd" />
       </Wrapper>
     );
 
-    expect(screen.getByText('Loading runs...')).toBeTruthy();
+    // Loading state now renders skeleton rows instead of text
+    expect(screen.getByLabelText('Loading runs...')).toBeTruthy();
   });
 });

@@ -189,7 +189,7 @@ export function ScheduleRow({ schedule, expanded, onToggleExpand, onEdit }: Sche
               className="overflow-hidden"
             >
               <div className="border-t px-3 pb-3 pt-2">
-                <RunHistoryPanel scheduleId={schedule.id} />
+                <RunHistoryPanel scheduleId={schedule.id} scheduleCwd={schedule.cwd} />
               </div>
             </motion.div>
           )}

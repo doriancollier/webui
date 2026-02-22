@@ -121,28 +121,53 @@ describe('useRuns', () => {
     expect(result.current.data).toBeUndefined();
   });
 
-  it('has a 10-second refetch interval', async () => {
+  it('polls every 10 seconds when a run is active', async () => {
     vi.useFakeTimers();
-    const transport = createMockTransport({
-      listRuns: vi.fn().mockResolvedValue([]),
-    });
+    try {
+      const runs = [createMockRun({ id: 'run-1', status: 'running' })];
+      const transport = createMockTransport({
+        listRuns: vi.fn().mockResolvedValue(runs),
+      });
 
-    renderHook(() => useRuns(), { wrapper: createWrapper(transport) });
+      renderHook(() => useRuns(), { wrapper: createWrapper(transport) });
 
-    // Wait for initial fetch
-    await vi.advanceTimersByTimeAsync(0);
+      // Wait for initial fetch
+      await vi.advanceTimersByTimeAsync(0);
+      const initialCallCount = (transport.listRuns as ReturnType<typeof vi.fn>).mock.calls.length;
 
-    // Reset call count after initial fetch
-    const initialCallCount = (transport.listRuns as ReturnType<typeof vi.fn>).mock.calls.length;
+      // Advance past the refetch interval
+      await vi.advanceTimersByTimeAsync(10_000);
 
-    // Advance past the refetch interval
-    await vi.advanceTimersByTimeAsync(10_000);
+      expect((transport.listRuns as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
+        initialCallCount,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
-    expect((transport.listRuns as ReturnType<typeof vi.fn>).mock.calls.length).toBeGreaterThan(
-      initialCallCount,
-    );
+  it('stops polling when no runs are active', async () => {
+    vi.useFakeTimers();
+    try {
+      const transport = createMockTransport({
+        listRuns: vi.fn().mockResolvedValue([]),
+      });
 
-    vi.useRealTimers();
+      renderHook(() => useRuns(), { wrapper: createWrapper(transport) });
+
+      // Wait for initial fetch
+      await vi.advanceTimersByTimeAsync(0);
+      const initialCallCount = (transport.listRuns as ReturnType<typeof vi.fn>).mock.calls.length;
+
+      // Advance well past the refetch interval — should not trigger a refetch
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      expect((transport.listRuns as ReturnType<typeof vi.fn>).mock.calls.length).toBe(
+        initialCallCount,
+      );
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

@@ -296,6 +296,7 @@ export class HttpTransport implements Transport {
   listRuns(opts?: Partial<ListRunsQuery>): Promise<PulseRun[]> {
     const params = new URLSearchParams();
     if (opts?.scheduleId) params.set('scheduleId', opts.scheduleId);
+    if (opts?.status) params.set('status', opts.status);
     if (opts?.limit) params.set('limit', String(opts.limit));
     if (opts?.offset) params.set('offset', String(opts.offset));
     const qs = params.toString();

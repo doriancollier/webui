@@ -31,6 +31,7 @@ interface RunRow {
 /** Options for listing runs. */
 interface ListRunsOptions {
   scheduleId?: string;
+  status?: string;
   limit?: number;
   offset?: number;
 }
@@ -259,15 +260,28 @@ export class PulseStore {
     return row ? mapRunRow(row) : null;
   }
 
-  /** List runs with optional schedule filter and pagination. */
+  /** List runs with optional schedule/status filter and pagination. */
   listRuns(opts: ListRunsOptions = {}): PulseRun[] {
     const limit = opts.limit ?? 50;
     const offset = opts.offset ?? 0;
 
-    const rows = opts.scheduleId
-      ? (this.stmts.listRunsBySchedule.all(opts.scheduleId, limit, offset) as RunRow[])
-      : (this.stmts.listRuns.all(limit, offset) as RunRow[]);
+    const conditions: string[] = [];
+    const params: (string | number)[] = [];
 
+    if (opts.scheduleId) {
+      conditions.push('schedule_id = ?');
+      params.push(opts.scheduleId);
+    }
+    if (opts.status) {
+      conditions.push('status = ?');
+      params.push(opts.status);
+    }
+
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `SELECT * FROM runs ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const rows = this.db.prepare(sql).all(...params) as RunRow[];
     return rows.map(mapRunRow);
   }
 

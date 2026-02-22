@@ -16,7 +16,8 @@ export function useRuns(opts?: Partial<ListRunsQuery>, enabled = true) {
   return useQuery({
     queryKey: [...RUNS_KEY, opts],
     queryFn: () => transport.listRuns(opts),
-    refetchInterval: 10_000,
+    refetchInterval: (query) =>
+      query.state.data?.some((r) => r.status === 'running') ? 10_000 : false,
     enabled,
   });
 }

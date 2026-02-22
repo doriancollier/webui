@@ -109,6 +109,7 @@ export function createPulseRouter(store: PulseStore, scheduler: SchedulerService
 
     const runs = store.listRuns({
       scheduleId: result.data.scheduleId,
+      status: result.data.status,
       limit: result.data.limit,
       offset: result.data.offset,
     });

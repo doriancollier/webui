@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 49,
+  "nextNumber": 50,
   "specs": [
     {
       "number": 1,
@@ -336,6 +336,13 @@
       "slug": "pulse-v2-enhancements",
       "title": "Pulse V2 Enhancements — Visual Cron Builder, DirectoryPicker, Calm Notifications",
       "created": "2026-02-21",
+      "status": "specified"
+    },
+    {
+      "number": 49,
+      "slug": "pulse-run-history-improvements",
+      "title": "Pulse RunHistoryPanel Improvements & RunRow Navigation Bug Fix",
+      "created": "2026-02-22",
       "status": "specified"
     }
   ]
