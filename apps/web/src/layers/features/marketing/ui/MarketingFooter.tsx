@@ -38,9 +38,9 @@ export function MarketingFooter({
           <Image
             src={logoSrc}
             alt={logoAlt}
-            width={20}
-            height={20}
-            className="h-5 w-auto mx-auto"
+            width={40}
+            height={40}
+            className="h-10 w-auto mx-auto"
           />
         </Link>
 

@@ -7,15 +7,15 @@ export function DocsNavTitle() {
       <Image
         src="/images/dorkian-logo.svg"
         alt="DorkOS"
-        width={20}
-        height={20}
+        width={40}
+        height={40}
         className="block dark:hidden"
       />
       <Image
         src="/images/dorkian-logo-white.svg"
         alt="DorkOS"
-        width={20}
-        height={20}
+        width={40}
+        height={40}
         className="hidden dark:block"
       />
       <span className="font-mono text-xs tracking-[0.15em] uppercase font-medium">

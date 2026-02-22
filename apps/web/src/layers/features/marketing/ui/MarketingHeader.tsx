@@ -50,11 +50,11 @@ export function MarketingHeader({
           <Image
             src={logoSrc}
             alt={logoAlt}
-            width={20}
-            height={20}
+            width={40}
+            height={40}
             className="w-auto transition-all duration-500 ease-out"
             style={{
-              height: isScrolled ? '14px' : '20px',
+              height: isScrolled ? '28px' : '40px',
             }}
             priority
           />
