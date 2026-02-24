@@ -10,9 +10,6 @@ import {
 import { cn, groupSessionsByTime, TIMING, updateTabBadge } from '@/layers/shared/lib';
 import {
   PathBreadcrumb,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogHeader,
@@ -24,6 +21,7 @@ import {
   TooltipContent,
 } from '@/layers/shared/ui';
 import { usePulseEnabled, useActiveRunCount, useCompletedRunBadge } from '@/layers/entities/pulse';
+import { useRelayEnabled } from '@/layers/entities/relay';
 import { toast } from 'sonner';
 import { useSessionId, useDirectoryState } from '@/layers/entities/session';
 import { SessionItem } from './SessionItem';
@@ -41,6 +39,7 @@ import {
 } from 'lucide-react';
 import { SettingsDialog } from '@/layers/features/settings';
 import { PulsePanel } from '@/layers/features/pulse';
+import { RelayPanel } from '@/layers/features/relay';
 import type { Session } from '@dorkos/shared/types';
 
 const themeOrder: Theme[] = ['light', 'dark', 'system'];
@@ -55,6 +54,8 @@ export function SessionSidebar() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pulseOpen, setPulseOpen] = useState(false);
+  const [relayOpen, setRelayOpen] = useState(false);
+  const relayEnabled = useRelayEnabled();
   const [selectedCwd, setSelectedCwd] = useDirectoryState();
   const pulseEnabled = usePulseEnabled();
   const { data: activeRunCount = 0 } = useActiveRunCount(pulseEnabled);
@@ -230,19 +231,25 @@ export function SessionSidebar() {
           >
             <Settings className="size-(--size-icon-sm)" />
           </button>
-          <HoverCard openDelay={200} closeDelay={100}>
-            <HoverCardTrigger asChild>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <button
-                className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
-                aria-label="Relay status"
+                onClick={() => setRelayOpen(true)}
+                className={cn(
+                  'rounded-md p-1 transition-colors duration-150 max-md:p-2',
+                  relayEnabled
+                    ? 'text-muted-foreground/50 hover:text-muted-foreground'
+                    : 'text-muted-foreground/25 hover:text-muted-foreground/40'
+                )}
+                aria-label="Relay messaging"
               >
                 <Route className="size-(--size-icon-sm)" />
               </button>
-            </HoverCardTrigger>
-            <HoverCardContent side="top" align="center" className="w-auto px-3 py-1.5 text-xs">
-              Relay not connected
-            </HoverCardContent>
-          </HoverCard>
+            </TooltipTrigger>
+            {!relayEnabled && (
+              <TooltipContent side="top">Relay is disabled</TooltipContent>
+            )}
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
@@ -309,6 +316,21 @@ export function SessionSidebar() {
           </ResponsiveDialogHeader>
           <div className="overflow-y-auto">
             <PulsePanel />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+      <ResponsiveDialog open={relayOpen} onOpenChange={setRelayOpen}>
+        <ResponsiveDialogContent className="max-w-2xl gap-0 p-0">
+          <ResponsiveDialogHeader className="border-b px-4 py-3">
+            <ResponsiveDialogTitle className="text-sm font-medium">
+              Relay
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription className="sr-only">
+              Inter-agent messaging activity and endpoints
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="overflow-y-auto">
+            <RelayPanel />
           </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>

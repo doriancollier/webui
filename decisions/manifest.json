@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 14,
+  "nextNumber": 19,
   "decisions": [
     {
       "number": 1,
@@ -113,6 +113,51 @@
       "created": "2026-02-24",
       "extractedFrom": "relay-core-library",
       "specSlug": "relay-core-library"
+    },
+    {
+      "number": 14,
+      "slug": "use-sliding-window-log-for-rate-limiting",
+      "title": "Use Sliding Window Log for Relay Rate Limiting",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-advanced-reliability",
+      "specSlug": "relay-advanced-reliability"
+    },
+    {
+      "number": 15,
+      "slug": "in-memory-per-endpoint-circuit-breakers",
+      "title": "Use In-Memory Per-Endpoint Circuit Breakers",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-advanced-reliability",
+      "specSlug": "relay-advanced-reliability"
+    },
+    {
+      "number": 16,
+      "slug": "structured-publishresult-rejections",
+      "title": "Use Structured PublishResult Rejections for Reliability",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-advanced-reliability",
+      "specSlug": "relay-advanced-reliability"
+    },
+    {
+      "number": 17,
+      "slug": "standardize-subsystem-integration-pattern",
+      "title": "Standardize Subsystem Integration Pattern Following Pulse",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-server-client-integration",
+      "specSlug": "relay-server-client-integration"
+    },
+    {
+      "number": 18,
+      "slug": "server-side-sse-subject-filtering",
+      "title": "Use Server-Side Subject Filtering for Relay SSE Streams",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-server-client-integration",
+      "specSlug": "relay-server-client-integration"
     }
   ]
 }

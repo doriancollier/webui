@@ -30,6 +30,13 @@ import {
   UpdateScheduleRequestSchema,
   ListRunsQuerySchema,
 } from '@dorkos/shared/schemas';
+import {
+  RelayEnvelopeSchema,
+  SendMessageRequestSchema as RelaySendMessageRequestSchema,
+  MessageListQuerySchema,
+  InboxQuerySchema,
+  EndpointRegistrationSchema,
+} from '@dorkos/shared/relay-schemas';
 import { z } from 'zod';
 
 const registry = new OpenAPIRegistry();
@@ -533,6 +540,242 @@ registry.registerPath({
     404: {
       description: 'Run not found or not active',
       content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+// --- Relay ---
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/relay/messages',
+  tags: ['Relay'],
+  summary: 'Send a relay message',
+  request: {
+    body: {
+      content: { 'application/json': { schema: RelaySendMessageRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Message sent',
+      content: {
+        'application/json': {
+          schema: z.object({ messageId: z.string(), deliveredTo: z.number() }),
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/messages',
+  tags: ['Relay'],
+  summary: 'List relay messages',
+  request: {
+    query: MessageListQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Array of messages with cursor',
+      content: {
+        'application/json': {
+          schema: z.object({
+            messages: z.array(RelayEnvelopeSchema),
+            cursor: z.string().optional(),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/messages/{id}',
+  tags: ['Relay'],
+  summary: 'Get a specific message',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Message details',
+      content: { 'application/json': { schema: RelayEnvelopeSchema } },
+    },
+    404: {
+      description: 'Message not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/endpoints',
+  tags: ['Relay'],
+  summary: 'List registered endpoints',
+  responses: {
+    200: {
+      description: 'Array of endpoints',
+      content: {
+        'application/json': {
+          schema: z.array(
+            z.object({ subject: z.string(), description: z.string().optional() })
+          ),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/relay/endpoints',
+  tags: ['Relay'],
+  summary: 'Register an endpoint',
+  request: {
+    body: {
+      content: { 'application/json': { schema: EndpointRegistrationSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Endpoint registered',
+      content: {
+        'application/json': {
+          schema: z.object({ subject: z.string(), created: z.boolean() }),
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/relay/endpoints/{subject}',
+  tags: ['Relay'],
+  summary: 'Unregister an endpoint',
+  request: {
+    params: z.object({ subject: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Endpoint removed',
+      content: {
+        'application/json': { schema: z.object({ success: z.boolean() }) },
+      },
+    },
+    404: {
+      description: 'Endpoint not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/endpoints/{subject}/inbox',
+  tags: ['Relay'],
+  summary: 'Read inbox for an endpoint',
+  request: {
+    params: z.object({ subject: z.string() }),
+    query: InboxQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Inbox messages with cursor',
+      content: {
+        'application/json': {
+          schema: z.object({
+            messages: z.array(RelayEnvelopeSchema),
+            cursor: z.string().optional(),
+          }),
+        },
+      },
+    },
+    404: {
+      description: 'Endpoint not found',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/dead-letters',
+  tags: ['Relay'],
+  summary: 'List dead-letter messages',
+  request: {
+    query: MessageListQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Dead-letter messages',
+      content: {
+        'application/json': {
+          schema: z.object({
+            messages: z.array(RelayEnvelopeSchema),
+            cursor: z.string().optional(),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/metrics',
+  tags: ['Relay'],
+  summary: 'Relay system metrics',
+  responses: {
+    200: {
+      description: 'Metrics data',
+      content: {
+        'application/json': {
+          schema: z.object({
+            totalMessages: z.number(),
+            totalEndpoints: z.number(),
+            totalDeadLetters: z.number(),
+          }),
+        },
+      },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/relay/stream',
+  tags: ['Relay'],
+  summary: 'SSE event stream for relay activity',
+  description:
+    'Server-Sent Events stream for real-time relay activity. ' +
+    'Supports server-side subject filtering via query param. ' +
+    'Event types: relay_connected, relay_message, relay_delivery, relay_dead_letter, relay_metrics.',
+  request: {
+    query: z.object({
+      subject: z.string().optional().openapi({ description: 'Subject pattern filter' }),
+    }),
+  },
+  responses: {
+    200: {
+      description: 'SSE event stream',
+      content: {
+        'text/event-stream': {
+          schema: z.string().openapi({ description: 'Server-Sent Events stream' }),
+        },
+      },
     },
   },
 });

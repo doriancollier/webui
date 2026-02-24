@@ -785,3 +785,457 @@ describe('end-to-end integration', () => {
     expect(received[0].payload).toEqual({ target: 'a' });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Reliability pipeline integration
+// ---------------------------------------------------------------------------
+
+describe('reliability pipeline integration', () => {
+  let rTmpDir: string;
+  let rRelay: RelayCore;
+
+  beforeEach(async () => {
+    rTmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'relay-reliability-test-'));
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        rateLimit: { enabled: true, maxPerWindow: 5, windowSecs: 60 },
+        circuitBreaker: { enabled: true, failureThreshold: 3, cooldownMs: 1000 },
+        backpressure: { enabled: true, maxMailboxSize: 10, pressureWarningAt: 0.8 },
+      },
+    });
+  });
+
+  afterEach(async () => {
+    await rRelay.close();
+    await fs.rm(rTmpDir, { recursive: true, force: true });
+  });
+
+  it('rate limit check runs before fan-out (one check for multi-endpoint publish)', async () => {
+    await rRelay.registerEndpoint('relay.agent.proj.a');
+    await rRelay.registerEndpoint('relay.agent.proj.b');
+
+    // Exhaust the rate limit (maxPerWindow: 5) by publishing to endpoint A
+    for (let i = 0; i < 5; i++) {
+      await rRelay.publish(
+        'relay.agent.proj.a',
+        { i },
+        { from: 'relay.flood' },
+      );
+    }
+
+    // The 6th publish from the same sender should be rate-limited
+    // even though it targets a different endpoint — rate limit is per-sender, before fan-out
+    const result = await rRelay.publish(
+      'relay.agent.proj.b',
+      { data: 'blocked' },
+      { from: 'relay.flood' },
+    );
+
+    expect(result.deliveredTo).toBe(0);
+    expect(result.rejected).toBeDefined();
+    expect(result.rejected!.some((r) => r.reason === 'rate_limited')).toBe(true);
+  });
+
+  it('rate-limited publish returns rejected array with reason', async () => {
+    await rRelay.registerEndpoint('relay.agent.rate');
+
+    // Exhaust the rate limit
+    for (let i = 0; i < 5; i++) {
+      await rRelay.publish(
+        'relay.agent.rate',
+        { i },
+        { from: 'relay.sender.rate' },
+      );
+    }
+
+    const result = await rRelay.publish(
+      'relay.agent.rate',
+      { data: 'over-limit' },
+      { from: 'relay.sender.rate' },
+    );
+
+    expect(result.messageId).toBe('');
+    expect(result.deliveredTo).toBe(0);
+    expect(result.rejected).toEqual([
+      { endpointHash: '*', reason: 'rate_limited' },
+    ]);
+  });
+
+  it('backpressure rejection skips Maildir delivery', async () => {
+    // Use a relay with a very small mailbox to trigger backpressure
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        backpressure: { enabled: true, maxMailboxSize: 3, pressureWarningAt: 0.5 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    const info = await rRelay.registerEndpoint('relay.agent.bp');
+    // No subscriber — messages stay in new/, building up backpressure
+
+    // Fill the mailbox to capacity
+    for (let i = 0; i < 3; i++) {
+      await rRelay.publish(
+        'relay.agent.bp',
+        { i },
+        { from: 'relay.sender.bp' },
+      );
+    }
+
+    // Next publish should be rejected by backpressure
+    const result = await rRelay.publish(
+      'relay.agent.bp',
+      { data: 'backpressured' },
+      { from: 'relay.sender.bp' },
+    );
+
+    expect(result.deliveredTo).toBe(0);
+    expect(result.rejected).toBeDefined();
+    expect(result.rejected!.some((r) => r.reason === 'backpressure')).toBe(true);
+
+    // Verify no file was written for the rejected message by checking
+    // the new/ directory still has exactly 3 files
+    const newDir = path.join(info.maildirPath, 'new');
+    const files = await fs.readdir(newDir);
+    expect(files.length).toBe(3);
+  });
+
+  it('circuit breaker rejection skips Maildir delivery', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        circuitBreaker: { enabled: true, failureThreshold: 3, cooldownMs: 60_000 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    const info = await rRelay.registerEndpoint('relay.agent.cb');
+
+    // Cause Maildir write errors by removing the tmp/ directory.
+    // This triggers recordFailure WITHOUT a preceding recordSuccess,
+    // so consecutiveFailures actually accumulates and trips the breaker.
+    await fs.rm(path.join(info.maildirPath, 'tmp'), { recursive: true, force: true });
+
+    // Cause enough failures to trip the circuit breaker (failureThreshold: 3)
+    for (let i = 0; i < 3; i++) {
+      await rRelay.publish(
+        'relay.agent.cb',
+        { i },
+        { from: 'relay.sender.cb' },
+      );
+    }
+
+    // Restore the tmp/ directory so the Maildir write check isn't what blocks
+    // the next publish — the circuit breaker should block it first
+    await fs.mkdir(path.join(info.maildirPath, 'tmp'), { recursive: true });
+
+    // The breaker should now be OPEN — next publish should be rejected
+    const result = await rRelay.publish(
+      'relay.agent.cb',
+      { data: 'circuit-open' },
+      { from: 'relay.sender.cb' },
+    );
+
+    expect(result.deliveredTo).toBe(0);
+    expect(result.rejected).toBeDefined();
+    expect(result.rejected!.some((r) => r.reason === 'circuit_open')).toBe(true);
+
+    // Verify no new file was written for the circuit-breaker-rejected message
+    const newDir = path.join(info.maildirPath, 'new');
+    const newFiles = await fs.readdir(newDir);
+    expect(newFiles.length).toBe(0);
+  });
+
+  it('circuit breaker records success after successful delivery', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        circuitBreaker: { enabled: true, failureThreshold: 3, cooldownMs: 60_000 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    await rRelay.registerEndpoint('relay.agent.cb-ok');
+    rRelay.subscribe('relay.agent.cb-ok', () => {
+      // Successful handler — does nothing
+    });
+
+    // Publish a message that succeeds
+    const result = await rRelay.publish(
+      'relay.agent.cb-ok',
+      { data: 'success' },
+      { from: 'relay.sender.cb-ok' },
+    );
+
+    expect(result.deliveredTo).toBe(1);
+
+    // If circuit breaker recorded success, subsequent publishes should still work
+    // (breaker stays CLOSED). Publish more messages to confirm.
+    const result2 = await rRelay.publish(
+      'relay.agent.cb-ok',
+      { data: 'also-success' },
+      { from: 'relay.sender.cb-ok' },
+    );
+
+    expect(result2.deliveredTo).toBe(1);
+    expect(result2.rejected).toBeUndefined();
+  });
+
+  it('circuit breaker records failure on Maildir write error', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        circuitBreaker: { enabled: true, failureThreshold: 2, cooldownMs: 60_000 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    const info = await rRelay.registerEndpoint('relay.agent.cb-fail');
+
+    // Cause Maildir write errors by removing the tmp/ directory
+    // (deliver() writes to tmp/ first, then renames to new/)
+    await fs.rm(path.join(info.maildirPath, 'tmp'), { recursive: true, force: true });
+
+    // These publishes should fail at the Maildir write stage
+    await rRelay.publish(
+      'relay.agent.cb-fail',
+      { data: 'fail1' },
+      { from: 'relay.sender.write' },
+    );
+    await rRelay.publish(
+      'relay.agent.cb-fail',
+      { data: 'fail2' },
+      { from: 'relay.sender.write' },
+    );
+
+    // After 2 failures (failureThreshold: 2), the circuit breaker should trip
+    const result = await rRelay.publish(
+      'relay.agent.cb-fail',
+      { data: 'should-be-circuit-open' },
+      { from: 'relay.sender.write' },
+    );
+
+    expect(result.deliveredTo).toBe(0);
+    expect(result.rejected).toBeDefined();
+    expect(result.rejected!.some((r) => r.reason === 'circuit_open')).toBe(true);
+  });
+
+  it('backpressure signal emitted when pressure exceeds warning threshold', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        backpressure: { enabled: true, maxMailboxSize: 5, pressureWarningAt: 0.6 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    await rRelay.registerEndpoint('relay.agent.bp-signal');
+    // No subscriber so messages stay in new/
+
+    const signals: Array<{ subject: string; signal: Signal }> = [];
+    rRelay.onSignal('relay.agent.bp-signal', (subject, signal) => {
+      signals.push({ subject, signal });
+    });
+
+    // Publish 3 messages to reach 3/5 = 0.6 pressure (equal to warning threshold)
+    for (let i = 0; i < 3; i++) {
+      await rRelay.publish(
+        'relay.agent.bp-signal',
+        { i },
+        { from: 'relay.sender.bp-signal' },
+      );
+    }
+
+    // At 3/5 = 0.6 >= pressureWarningAt (0.6), a backpressure warning signal should be emitted
+    // The signal is emitted during the 4th message's delivery check (when count is 3)
+    // Actually, the count is checked BEFORE delivery, so:
+    // Message 1: count=0 -> 0/5=0.0 < 0.6, no signal
+    // Message 2: count=1 -> 1/5=0.2 < 0.6, no signal
+    // Message 3: count=2 -> 2/5=0.4 < 0.6, no signal
+    // Message 4: count=3 -> 3/5=0.6 >= 0.6, signal!
+    await rRelay.publish(
+      'relay.agent.bp-signal',
+      { data: 'trigger-signal' },
+      { from: 'relay.sender.bp-signal' },
+    );
+
+    expect(signals.length).toBeGreaterThanOrEqual(1);
+    const bpSignal = signals.find((s) => s.signal.type === 'backpressure');
+    expect(bpSignal).toBeDefined();
+    expect(bpSignal!.signal.state).toBe('warning');
+    expect(bpSignal!.signal.data).toBeDefined();
+  });
+
+  it('mailboxPressure included in PublishResult for all endpoints', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        backpressure: { enabled: true, maxMailboxSize: 100, pressureWarningAt: 0.9 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    const infoA = await rRelay.registerEndpoint('relay.agent.pressure.a');
+    // No subscriber so messages stay in new/
+
+    // Publish a message to create some pressure
+    const result = await rRelay.publish(
+      'relay.agent.pressure.a',
+      { data: 'pressure-test' },
+      { from: 'relay.sender.pressure' },
+    );
+
+    // mailboxPressure should be included with pressure for endpoint A
+    expect(result.mailboxPressure).toBeDefined();
+    expect(result.mailboxPressure![infoA.hash]).toBeDefined();
+    expect(typeof result.mailboxPressure![infoA.hash]).toBe('number');
+    expect(result.mailboxPressure![infoA.hash]).toBeGreaterThanOrEqual(0);
+  });
+
+  it('reliability rejections do NOT appear in dead letter queue', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        backpressure: { enabled: true, maxMailboxSize: 2, pressureWarningAt: 0.5 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    const info = await rRelay.registerEndpoint('relay.agent.no-dlq');
+    // No subscriber — messages stay in new/
+
+    // Fill mailbox to capacity
+    for (let i = 0; i < 2; i++) {
+      await rRelay.publish(
+        'relay.agent.no-dlq',
+        { i },
+        { from: 'relay.sender.no-dlq' },
+      );
+    }
+
+    // This message should be rejected by backpressure
+    const result = await rRelay.publish(
+      'relay.agent.no-dlq',
+      { data: 'rejected' },
+      { from: 'relay.sender.no-dlq' },
+    );
+
+    expect(result.deliveredTo).toBe(0);
+    expect(result.rejected!.some((r) => r.reason === 'backpressure')).toBe(true);
+
+    // The backpressure-rejected message should NOT appear in the DLQ
+    const deadLetters = await rRelay.getDeadLetters({ endpointHash: info.hash });
+    // DLQ should have 0 entries — backpressure rejections skip DLQ
+    expect(deadLetters.length).toBe(0);
+  });
+
+  it('publish works normally with all reliability features disabled', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        rateLimit: { enabled: false },
+        circuitBreaker: { enabled: false },
+        backpressure: { enabled: false },
+      },
+    });
+
+    const received: RelayEnvelope[] = [];
+    await rRelay.registerEndpoint('relay.agent.disabled');
+    rRelay.subscribe('relay.agent.disabled', (env) => {
+      received.push(env);
+    });
+
+    const result = await rRelay.publish(
+      'relay.agent.disabled',
+      { data: 'normal' },
+      { from: 'relay.sender.disabled' },
+    );
+
+    expect(result.deliveredTo).toBe(1);
+    expect(result.rejected).toBeUndefined();
+    expect(received.length).toBe(1);
+    expect(received[0].payload).toEqual({ data: 'normal' });
+  });
+
+  it('budget enforcement still runs after reliability checks pass', async () => {
+    // Use the default relay which has reliability features enabled
+    const info = await rRelay.registerEndpoint('relay.agent.budget-after-reliability');
+
+    // Publish with an expired TTL — should pass reliability checks
+    // but fail budget enforcement
+    const result = await rRelay.publish(
+      'relay.agent.budget-after-reliability',
+      { data: 'expired' },
+      { from: 'relay.sender.budget', budget: { ttl: Date.now() - 1000 } },
+    );
+
+    expect(result.deliveredTo).toBe(0);
+
+    // Budget-rejected message should go to DLQ (unlike reliability rejections)
+    const deadLetters = await rRelay.getDeadLetters({ endpointHash: info.hash });
+    expect(deadLetters.length).toBeGreaterThanOrEqual(1);
+    expect(deadLetters.some((dl) => dl.reason.includes('expired'))).toBe(true);
+  });
+
+  it('multiple endpoints: some rejected (backpressure), some delivered', async () => {
+    await rRelay.close();
+    rRelay = new RelayCore({
+      dataDir: rTmpDir,
+      reliability: {
+        backpressure: { enabled: true, maxMailboxSize: 2, pressureWarningAt: 0.5 },
+        rateLimit: { enabled: false },
+      },
+    });
+
+    const infoA = await rRelay.registerEndpoint('relay.agent.multi.a');
+    const infoB = await rRelay.registerEndpoint('relay.agent.multi.b');
+
+    // Fill endpoint A's mailbox to capacity (no subscriber, messages stay in new/)
+    for (let i = 0; i < 2; i++) {
+      await rRelay.publish(
+        'relay.agent.multi.a',
+        { i },
+        { from: 'relay.sender.multi' },
+      );
+    }
+
+    // Now publish to both endpoints at once using a subscriber on endpoint B
+    const received: RelayEnvelope[] = [];
+    rRelay.subscribe('relay.agent.multi.b', (env) => {
+      received.push(env);
+    });
+
+    // Publish separately to each — A should reject, B should deliver
+    const resultA = await rRelay.publish(
+      'relay.agent.multi.a',
+      { target: 'a' },
+      { from: 'relay.sender.multi' },
+    );
+
+    const resultB = await rRelay.publish(
+      'relay.agent.multi.b',
+      { target: 'b' },
+      { from: 'relay.sender.multi' },
+    );
+
+    // Endpoint A should be rejected by backpressure
+    expect(resultA.deliveredTo).toBe(0);
+    expect(resultA.rejected).toBeDefined();
+    expect(resultA.rejected!.some((r) => r.reason === 'backpressure' && r.endpointHash === infoA.hash)).toBe(true);
+
+    // Endpoint B should be delivered successfully
+    expect(resultB.deliveredTo).toBe(1);
+    expect(received.length).toBe(1);
+    expect(received[0].payload).toEqual({ target: 'b' });
+  });
+});

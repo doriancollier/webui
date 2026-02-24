@@ -3,6 +3,7 @@ import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Transport } from '@dorkos/shared/transport';
+import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { SettingsDialog } from '../ui/SettingsDialog';
 
@@ -104,43 +105,17 @@ const mockConfig = {
   },
 };
 
-function createMockTransport(configOverrides?: Partial<typeof mockConfig>): Transport {
-  return {
-    listSessions: vi.fn().mockResolvedValue([]),
-    createSession: vi.fn(),
-    getSession: vi.fn(),
-    getMessages: vi.fn().mockResolvedValue({ messages: [] }),
-    getTasks: vi.fn().mockResolvedValue({ tasks: [] }),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    denyTool: vi.fn(),
-    submitAnswers: vi.fn().mockResolvedValue({ ok: true }),
-    getCommands: vi.fn(),
-    health: vi.fn(),
-    updateSession: vi.fn(),
-    browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
-    getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
-    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
+function createSettingsTransport(configOverrides?: Partial<typeof mockConfig>): Transport {
+  return createMockTransport({
     getConfig: vi.fn().mockResolvedValue({ ...mockConfig, ...configOverrides }),
-    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
-    stopTunnel: vi.fn().mockResolvedValue(undefined),
-    listSchedules: vi.fn().mockResolvedValue([]),
-    createSchedule: vi.fn(),
-    updateSchedule: vi.fn(),
-    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
-    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
-    listRuns: vi.fn().mockResolvedValue([]),
-    getRun: vi.fn(),
-    cancelRun: vi.fn().mockResolvedValue({ success: true }),
-  };
+  });
 }
 
 function createWrapper(transport?: Transport) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const t = transport || createMockTransport();
+  const t = transport || createSettingsTransport();
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <TransportProvider transport={t}>{children}</TransportProvider>
@@ -168,7 +143,7 @@ describe('SettingsDialog', () => {
 
   // Verifies server config section appears with fetched data
   it('displays server configuration after loading', async () => {
-    const transport = createMockTransport();
+    const transport = createSettingsTransport();
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
@@ -181,7 +156,7 @@ describe('SettingsDialog', () => {
 
   // Verifies tunnel section shows Manage button instead of raw config data
   it('shows Manage button for tunnel section', async () => {
-    const transport = createMockTransport();
+    const transport = createSettingsTransport();
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
@@ -197,7 +172,7 @@ describe('SettingsDialog', () => {
 
   // Verifies uptime is formatted in human-readable form
   it('formats uptime as human-readable string', async () => {
-    const transport = createMockTransport({ uptime: 8130 });
+    const transport = createSettingsTransport({ uptime: 8130 });
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
@@ -259,7 +234,7 @@ describe('SettingsDialog', () => {
 
   // Verifies server tab content is accessible
   it('switches to Server tab and shows config', async () => {
-    const transport = createMockTransport();
+    const transport = createSettingsTransport();
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });

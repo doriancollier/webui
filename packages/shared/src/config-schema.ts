@@ -33,6 +33,12 @@ export const UserConfigSchema = z.object({
     })
     .default(() => ({ theme: 'system' as const })),
   logging: LoggingConfigSchema.default(() => ({ level: 'info' as const })),
+  relay: z
+    .object({
+      enabled: z.boolean().default(false),
+      dataDir: z.string().nullable().default(null),
+    })
+    .default(() => ({ enabled: false, dataDir: null })),
   scheduler: z
     .object({
       enabled: z.boolean().default(false),

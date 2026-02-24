@@ -104,4 +104,37 @@ export interface Transport {
   getRun(id: string): Promise<PulseRun>;
   /** Cancel a running Pulse job. */
   cancelRun(id: string): Promise<{ success: boolean }>;
+
+  // --- Relay Message Bus ---
+
+  /** List relay messages with optional filters. */
+  listRelayMessages(filters?: {
+    subject?: string;
+    status?: string;
+    from?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ messages: unknown[]; nextCursor?: string }>;
+  /** Get a single relay message by ID. */
+  getRelayMessage(id: string): Promise<unknown>;
+  /** Send a relay message. */
+  sendRelayMessage(opts: {
+    subject: string;
+    payload: unknown;
+    from: string;
+    replyTo?: string;
+  }): Promise<{ messageId: string; deliveredTo: number }>;
+  /** List relay endpoints. */
+  listRelayEndpoints(): Promise<unknown[]>;
+  /** Register a relay endpoint. */
+  registerRelayEndpoint(subject: string): Promise<unknown>;
+  /** Unregister a relay endpoint. */
+  unregisterRelayEndpoint(subject: string): Promise<{ success: boolean }>;
+  /** Read inbox for a relay endpoint. */
+  readRelayInbox(
+    subject: string,
+    opts?: { status?: string; cursor?: string; limit?: number }
+  ): Promise<{ messages: unknown[]; nextCursor?: string }>;
+  /** Get relay system metrics. */
+  getRelayMetrics(): Promise<unknown>;
 }

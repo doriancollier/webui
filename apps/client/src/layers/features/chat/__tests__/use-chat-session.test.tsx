@@ -4,6 +4,7 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
 import type { Transport } from '@dorkos/shared/transport';
+import { createMockTransport } from '@dorkos/test-utils';
 import type { StreamEvent } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
 
@@ -54,53 +55,6 @@ class MockEventSource {
 }
 
 globalThis.EventSource = MockEventSource as unknown as typeof EventSource;
-
-function createMockTransport(overrides: Partial<Transport> = {}): Transport {
-  return {
-    listSessions: vi.fn().mockResolvedValue([]),
-    createSession: vi.fn(),
-    getSession: vi.fn(),
-    getMessages: vi.fn().mockResolvedValue({ messages: [] }),
-    getTasks: vi.fn().mockResolvedValue({ tasks: [] }),
-    sendMessage: vi.fn().mockResolvedValue(undefined),
-    approveTool: vi.fn(),
-    denyTool: vi.fn(),
-    submitAnswers: vi.fn().mockResolvedValue({ ok: true }),
-    getCommands: vi.fn(),
-    health: vi.fn(),
-    updateSession: vi.fn(),
-    browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
-    getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
-    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getConfig: vi.fn().mockResolvedValue({
-      version: '1.0.0',
-      port: 4242,
-      uptime: 0,
-      workingDirectory: '/test',
-      nodeVersion: 'v20.0.0',
-      claudeCliPath: null,
-      tunnel: {
-        enabled: false,
-        connected: false,
-        url: null,
-        authEnabled: false,
-        tokenConfigured: false,
-      },
-    }),
-    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
-    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
-    stopTunnel: vi.fn().mockResolvedValue(undefined),
-    listSchedules: vi.fn().mockResolvedValue([]),
-    createSchedule: vi.fn(),
-    updateSchedule: vi.fn(),
-    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
-    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
-    listRuns: vi.fn().mockResolvedValue([]),
-    getRun: vi.fn(),
-    cancelRun: vi.fn().mockResolvedValue({ success: true }),
-    ...overrides,
-  };
-}
 
 function createWrapper(transport: Transport) {
   const queryClient = new QueryClient({

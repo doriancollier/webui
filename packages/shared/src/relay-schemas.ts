@@ -21,7 +21,7 @@ export const PerformativeSchema = z
 export type Performative = z.infer<typeof PerformativeSchema>;
 
 export const SignalTypeSchema = z
-  .enum(['typing', 'presence', 'read_receipt', 'delivery_receipt', 'progress'])
+  .enum(['typing', 'presence', 'read_receipt', 'delivery_receipt', 'progress', 'backpressure'])
   .openapi('SignalType');
 
 export type SignalType = z.infer<typeof SignalTypeSchema>;
@@ -130,3 +130,99 @@ export const RelayAccessRuleSchema = z
   .openapi('RelayAccessRule');
 
 export type RelayAccessRule = z.infer<typeof RelayAccessRuleSchema>;
+
+// === Reliability Configuration ===
+
+export const RateLimitConfigSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    windowSecs: z.number().int().min(1).default(60),
+    maxPerWindow: z.number().int().min(1).default(100),
+    perSenderOverrides: z.record(z.string(), z.number().int().min(1)).optional(),
+  })
+  .openapi('RateLimitConfig');
+
+export type RateLimitConfig = z.infer<typeof RateLimitConfigSchema>;
+
+export const CircuitBreakerConfigSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    failureThreshold: z.number().int().min(1).default(5),
+    cooldownMs: z.number().int().min(1000).default(30_000),
+    halfOpenProbeCount: z.number().int().min(1).default(1),
+    successToClose: z.number().int().min(1).default(2),
+  })
+  .openapi('CircuitBreakerConfig');
+
+export type CircuitBreakerConfig = z.infer<typeof CircuitBreakerConfigSchema>;
+
+export const BackpressureConfigSchema = z
+  .object({
+    enabled: z.boolean().default(true),
+    maxMailboxSize: z.number().int().min(1).default(1000),
+    pressureWarningAt: z.number().min(0).max(1).default(0.8),
+  })
+  .openapi('BackpressureConfig');
+
+export type BackpressureConfig = z.infer<typeof BackpressureConfigSchema>;
+
+export const ReliabilityConfigSchema = z
+  .object({
+    rateLimit: RateLimitConfigSchema.partial().optional(),
+    circuitBreaker: CircuitBreakerConfigSchema.partial().optional(),
+    backpressure: BackpressureConfigSchema.partial().optional(),
+  })
+  .openapi('ReliabilityConfig');
+
+export type ReliabilityConfig = z.infer<typeof ReliabilityConfigSchema>;
+
+// === HTTP API Request/Query Schemas ===
+
+export const SendMessageRequestSchema = z
+  .object({
+    subject: z.string().min(1),
+    payload: z.unknown(),
+    from: z.string().min(1),
+    replyTo: z.string().optional(),
+    budget: z
+      .object({
+        maxHops: z.number().int().min(1).optional(),
+        ttl: z.number().int().optional(),
+        callBudgetRemaining: z.number().int().min(0).optional(),
+      })
+      .optional(),
+  })
+  .openapi('SendMessageRequest');
+
+export type SendMessageRequest = z.infer<typeof SendMessageRequestSchema>;
+
+export const MessageListQuerySchema = z
+  .object({
+    subject: z.string().optional(),
+    status: z.enum(['new', 'cur', 'failed']).optional(),
+    from: z.string().optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .openapi('MessageListQuery');
+
+export type MessageListQuery = z.infer<typeof MessageListQuerySchema>;
+
+export const InboxQuerySchema = z
+  .object({
+    status: z.enum(['new', 'cur', 'failed']).optional(),
+    cursor: z.string().optional(),
+    limit: z.coerce.number().int().min(1).max(100).default(50),
+  })
+  .openapi('InboxQuery');
+
+export type InboxQuery = z.infer<typeof InboxQuerySchema>;
+
+export const EndpointRegistrationSchema = z
+  .object({
+    subject: z.string().min(1),
+    description: z.string().optional(),
+  })
+  .openapi('EndpointRegistration');
+
+export type EndpointRegistration = z.infer<typeof EndpointRegistrationSchema>;

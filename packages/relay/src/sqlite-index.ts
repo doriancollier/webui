@@ -65,6 +65,10 @@ const MIGRATIONS = [
   CREATE INDEX IF NOT EXISTS idx_messages_endpoint_hash ON messages(endpoint_hash, created_at DESC);
   CREATE INDEX IF NOT EXISTS idx_messages_status ON messages(status);
   CREATE INDEX IF NOT EXISTS idx_messages_ttl ON messages(ttl);`,
+
+  // Version 2: composite index for rate-limiting sender lookups
+  `CREATE INDEX IF NOT EXISTS idx_messages_sender_created
+    ON messages(sender, created_at DESC);`,
 ];
 
 // === SqliteIndex ===
@@ -104,6 +108,8 @@ export class SqliteIndex {
     countBySubject: Database.Statement;
     totalCount: Database.Statement;
     getMessage: Database.Statement;
+    countSenderInWindow: Database.Statement;
+    countNewByEndpoint: Database.Statement;
   };
 
   constructor(options: SqliteIndexOptions) {
@@ -147,6 +153,16 @@ export class SqliteIndex {
       ),
       getMessage: this.db.prepare(
         `SELECT * FROM messages WHERE id = ?`
+      ),
+      /** Count messages from a sender within a time window (for rate limiting). */
+      countSenderInWindow: this.db.prepare(
+        `SELECT COUNT(*) as cnt FROM messages
+         WHERE sender = ? AND created_at > ?`
+      ),
+      /** Count unprocessed messages for an endpoint (for backpressure). */
+      countNewByEndpoint: this.db.prepare(
+        `SELECT COUNT(*) as cnt FROM messages
+         WHERE endpoint_hash = ? AND status = 'new'`
       ),
     };
   }
@@ -218,6 +234,90 @@ export class SqliteIndex {
   getByEndpoint(endpointHash: string): IndexedMessage[] {
     const rows = this.stmts.getByEndpoint.all(endpointHash) as MessageRow[];
     return rows.map(mapMessageRow);
+  }
+
+  /**
+   * Count messages sent by a specific sender within a time window.
+   * Used by the rate limiter for sliding window log checks.
+   *
+   * @param sender - The sender's subject identifier.
+   * @param windowStartIso - ISO 8601 timestamp marking the start of the window.
+   * @returns The number of messages from this sender after the window start.
+   */
+  countSenderInWindow(sender: string, windowStartIso: string): number {
+    const row = this.stmts.countSenderInWindow.get(sender, windowStartIso) as { cnt: number };
+    return row.cnt;
+  }
+
+  /**
+   * Count unprocessed (status='new') messages for an endpoint.
+   * Used by backpressure detection.
+   *
+   * @param endpointHash - The endpoint hash to check.
+   * @returns The number of messages with status 'new' for this endpoint.
+   */
+  countNewByEndpoint(endpointHash: string): number {
+    const row = this.stmts.countNewByEndpoint.get(endpointHash) as { cnt: number };
+    return row.cnt;
+  }
+
+  // --- Query Operations ---
+
+  /**
+   * Query messages with optional filters and cursor-based pagination.
+   *
+   * Supports filtering by subject, status, sender, and endpoint hash.
+   * Uses ULID cursor for pagination (messages are sorted by created_at DESC).
+   *
+   * @param filters - Optional query filters
+   * @returns An object with messages array and optional nextCursor
+   */
+  queryMessages(filters?: {
+    subject?: string;
+    status?: string;
+    sender?: string;
+    endpointHash?: string;
+    cursor?: string;
+    limit?: number;
+  }): { messages: IndexedMessage[]; nextCursor?: string } {
+    const conditions: string[] = [];
+    const params: unknown[] = [];
+
+    if (filters?.subject) {
+      conditions.push('subject = ?');
+      params.push(filters.subject);
+    }
+    if (filters?.status) {
+      conditions.push('status = ?');
+      params.push(filters.status);
+    }
+    if (filters?.sender) {
+      conditions.push('sender = ?');
+      params.push(filters.sender);
+    }
+    if (filters?.endpointHash) {
+      conditions.push('endpoint_hash = ?');
+      params.push(filters.endpointHash);
+    }
+    if (filters?.cursor) {
+      conditions.push('id < ?');
+      params.push(filters.cursor);
+    }
+
+    const limit = filters?.limit ?? 50;
+    const where = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    const sql = `SELECT * FROM messages ${where} ORDER BY id DESC LIMIT ?`;
+    params.push(limit + 1);
+
+    const rows = this.db.prepare(sql).all(...params) as MessageRow[];
+    const hasMore = rows.length > limit;
+    const pageRows = hasMore ? rows.slice(0, limit) : rows;
+    const messages = pageRows.map(mapMessageRow);
+
+    return {
+      messages,
+      ...(hasMore && messages.length > 0 && { nextCursor: messages[messages.length - 1].id }),
+    };
   }
 
   // --- Maintenance Operations ---

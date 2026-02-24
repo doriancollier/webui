@@ -453,6 +453,66 @@ describe('persistence', () => {
 });
 
 // ---------------------------------------------------------------------------
+// countSenderInWindow
+// ---------------------------------------------------------------------------
+
+describe('countSenderInWindow', () => {
+  it('returns 0 for no matching messages', () => {
+    const count = index.countSenderInWindow('unknown-sender', '2020-01-01T00:00:00.000Z');
+    expect(count).toBe(0);
+  });
+
+  it('counts only messages from the specified sender', () => {
+    index.insertMessage(makeMessage({ id: 'a1', sender: 'alice', createdAt: '2026-01-15T10:00:00.000Z' }));
+    index.insertMessage(makeMessage({ id: 'a2', sender: 'alice', createdAt: '2026-01-15T10:01:00.000Z' }));
+    index.insertMessage(makeMessage({ id: 'b1', sender: 'bob', createdAt: '2026-01-15T10:00:30.000Z' }));
+
+    const aliceCount = index.countSenderInWindow('alice', '2026-01-01T00:00:00.000Z');
+    expect(aliceCount).toBe(2);
+
+    const bobCount = index.countSenderInWindow('bob', '2026-01-01T00:00:00.000Z');
+    expect(bobCount).toBe(1);
+  });
+
+  it('filters by window start time', () => {
+    index.insertMessage(makeMessage({ id: 'old', sender: 'alice', createdAt: '2026-01-10T00:00:00.000Z' }));
+    index.insertMessage(makeMessage({ id: 'recent', sender: 'alice', createdAt: '2026-01-15T12:00:00.000Z' }));
+
+    // Window starts after the old message
+    const count = index.countSenderInWindow('alice', '2026-01-12T00:00:00.000Z');
+    expect(count).toBe(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// countNewByEndpoint
+// ---------------------------------------------------------------------------
+
+describe('countNewByEndpoint', () => {
+  it('returns 0 for empty endpoint', () => {
+    const count = index.countNewByEndpoint('nonexistent-hash');
+    expect(count).toBe(0);
+  });
+
+  it('counts only messages with status new', () => {
+    index.insertMessage(makeMessage({ id: 'n1', endpointHash: 'ep1', status: 'new' }));
+    index.insertMessage(makeMessage({ id: 'n2', endpointHash: 'ep1', status: 'new' }));
+    index.insertMessage(makeMessage({ id: 'c1', endpointHash: 'ep1', status: 'cur' }));
+
+    const count = index.countNewByEndpoint('ep1');
+    expect(count).toBe(2);
+  });
+
+  it('excludes cur and failed messages', () => {
+    index.insertMessage(makeMessage({ id: 'c1', endpointHash: 'ep1', status: 'cur' }));
+    index.insertMessage(makeMessage({ id: 'f1', endpointHash: 'ep1', status: 'failed' }));
+
+    const count = index.countNewByEndpoint('ep1');
+    expect(count).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // Migration idempotency
 // ---------------------------------------------------------------------------
 
@@ -468,5 +528,24 @@ describe('migrations', () => {
     const result = idx2.getMessage('mig1');
     expect(result).not.toBeNull();
     idx2.close();
+  });
+
+  it('migration version 2 creates the sender+created_at composite index', () => {
+    const dbPath = path.join(tmpDir, 'migrate-v2.db');
+    const idx = new SqliteIndex({ dbPath });
+
+    // Query sqlite_master for the new index
+    // Access the db through a fresh Database connection to verify
+    const Database = require('better-sqlite3');
+    const verifyDb = new Database(dbPath);
+    const row = verifyDb.prepare(
+      `SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'idx_messages_sender_created'`
+    ).get() as { name: string } | undefined;
+
+    expect(row).toBeDefined();
+    expect(row!.name).toBe('idx_messages_sender_created');
+
+    verifyDb.close();
+    idx.close();
   });
 });

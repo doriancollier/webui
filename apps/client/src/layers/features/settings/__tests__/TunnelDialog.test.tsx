@@ -4,6 +4,7 @@ import { render, screen, waitFor, cleanup } from '@testing-library/react';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Transport } from '@dorkos/shared/transport';
+import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { TunnelDialog } from '../ui/TunnelDialog';
 
@@ -75,24 +76,8 @@ const baseTunnel = {
   tokenConfigured: true,
 };
 
-function createMockTransport(tunnelOverrides?: Partial<typeof baseTunnel>): Transport {
-  return {
-    listSessions: vi.fn().mockResolvedValue([]),
-    createSession: vi.fn(),
-    getSession: vi.fn(),
-    getMessages: vi.fn().mockResolvedValue({ messages: [] }),
-    getTasks: vi.fn().mockResolvedValue({ tasks: [] }),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    denyTool: vi.fn(),
-    submitAnswers: vi.fn().mockResolvedValue({ ok: true }),
-    getCommands: vi.fn(),
-    health: vi.fn(),
-    updateSession: vi.fn(),
-    browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
-    getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
-    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
+function createTunnelTransport(tunnelOverrides?: Partial<typeof baseTunnel>): Transport {
+  return createMockTransport({
     getConfig: vi.fn().mockResolvedValue({
       version: '1.0.0',
       latestVersion: null,
@@ -103,24 +88,14 @@ function createMockTransport(tunnelOverrides?: Partial<typeof baseTunnel>): Tran
       claudeCliPath: null,
       tunnel: { ...baseTunnel, ...tunnelOverrides },
     }),
-    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
-    stopTunnel: vi.fn().mockResolvedValue(undefined),
-    listSchedules: vi.fn().mockResolvedValue([]),
-    createSchedule: vi.fn(),
-    updateSchedule: vi.fn(),
-    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
-    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
-    listRuns: vi.fn().mockResolvedValue([]),
-    getRun: vi.fn(),
-    cancelRun: vi.fn().mockResolvedValue({ success: true }),
-  };
+  });
 }
 
 function createWrapper(transport?: Transport) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
-  const t = transport || createMockTransport();
+  const t = transport || createTunnelTransport();
   return ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={queryClient}>
       <TransportProvider transport={t}>{children}</TransportProvider>
@@ -145,7 +120,7 @@ describe('TunnelDialog', () => {
   });
 
   it('shows auth token input when tokenConfigured is false', async () => {
-    const transport = createMockTransport({ tokenConfigured: false });
+    const transport = createTunnelTransport({ tokenConfigured: false });
     render(<TunnelDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
@@ -155,7 +130,7 @@ describe('TunnelDialog', () => {
   });
 
   it('shows Save button alongside auth token input', async () => {
-    const transport = createMockTransport({ tokenConfigured: false });
+    const transport = createTunnelTransport({ tokenConfigured: false });
     render(<TunnelDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });
@@ -165,7 +140,7 @@ describe('TunnelDialog', () => {
   });
 
   it('does not show auth token input when tokenConfigured is true', () => {
-    const transport = createMockTransport({ tokenConfigured: true });
+    const transport = createTunnelTransport({ tokenConfigured: true });
     render(<TunnelDialog open={true} onOpenChange={vi.fn()} />, {
       wrapper: createWrapper(transport),
     });

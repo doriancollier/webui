@@ -479,6 +479,12 @@ export const ServerConfigSchema = z
       })
       .optional()
       .openapi({ description: 'Pulse scheduler feature state' }),
+    relay: z
+      .object({
+        enabled: z.boolean().openapi({ description: 'Whether the Relay message bus is enabled' }),
+      })
+      .optional()
+      .openapi({ description: 'Relay message bus feature state' }),
   })
   .openapi('ServerConfig');
 

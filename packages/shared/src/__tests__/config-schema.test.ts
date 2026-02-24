@@ -16,6 +16,7 @@ describe('UserConfigSchema', () => {
       tunnel: { enabled: false, domain: null, authtoken: null, auth: null },
       ui: { theme: 'system' },
       logging: { level: 'info' },
+      relay: { enabled: false, dataDir: null },
       scheduler: { enabled: false, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
     });
   });
@@ -195,6 +196,7 @@ describe('USER_CONFIG_DEFAULTS', () => {
       tunnel: { enabled: false, domain: null, authtoken: null, auth: null },
       ui: { theme: 'system' },
       logging: { level: 'info' },
+      relay: { enabled: false, dataDir: null },
       scheduler: { enabled: false, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
     });
   });

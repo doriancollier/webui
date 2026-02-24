@@ -15,6 +15,7 @@
  */
 import * as path from 'node:path';
 import * as os from 'node:os';
+import fs from 'node:fs';
 import chokidar, { type FSWatcher } from 'chokidar';
 import { monotonicFactory } from 'ulidx';
 import { validateSubject, matchesPattern } from './subject-matcher.js';
@@ -26,8 +27,14 @@ import { SqliteIndex } from './sqlite-index.js';
 import { DeadLetterQueue } from './dead-letter-queue.js';
 import { AccessControl } from './access-control.js';
 import { SignalEmitter } from './signal-emitter.js';
+import { checkRateLimit, DEFAULT_RATE_LIMIT_CONFIG } from './rate-limiter.js';
+import { CircuitBreakerManager, DEFAULT_CB_CONFIG } from './circuit-breaker.js';
+import { checkBackpressure, DEFAULT_BP_CONFIG } from './backpressure.js';
 import type { RelayEnvelope, RelayBudget, Signal } from '@dorkos/shared/relay-schemas';
+import { ReliabilityConfigSchema } from '@dorkos/shared/relay-schemas';
 import type {
+  RateLimitConfig,
+  BackpressureConfig,
   RelayOptions,
   PublishOptions,
   MessageHandler,
@@ -69,6 +76,25 @@ export interface PublishResult {
 
   /** Number of endpoints the message was delivered to. */
   deliveredTo: number;
+
+  /** Endpoints that rejected the message, with structured reasons. */
+  rejected?: Array<{
+    endpointHash: string;
+    reason: 'backpressure' | 'circuit_open' | 'rate_limited' | 'budget_exceeded';
+  }>;
+
+  /** Per-endpoint pressure ratios for proactive signaling (0.0-1.0). */
+  mailboxPressure?: Record<string, number>;
+}
+
+/** Internal result from delivering to a single endpoint. */
+interface EndpointDeliveryResult {
+  delivered: boolean;
+  rejected?: {
+    endpointHash: string;
+    reason: 'backpressure' | 'circuit_open' | 'rate_limited' | 'budget_exceeded';
+  };
+  pressure?: number;
 }
 
 // === RelayCore ===
@@ -110,6 +136,11 @@ export class RelayCore {
   private readonly watchers = new Map<string, FSWatcher>();
   private readonly generateUlid = monotonicFactory();
   private readonly opts: ResolvedOptions;
+  private rateLimitConfig: RateLimitConfig;
+  private circuitBreaker: CircuitBreakerManager;
+  private backpressureConfig: BackpressureConfig;
+  private readonly configPath: string;
+  private configWatcher: FSWatcher | null = null;
   private closed = false;
 
   constructor(options?: RelayOptions) {
@@ -135,6 +166,20 @@ export class RelayCore {
     });
     this.accessControl = new AccessControl(dataDir);
     this.signalEmitter = new SignalEmitter();
+    this.rateLimitConfig = {
+      ...DEFAULT_RATE_LIMIT_CONFIG,
+      ...options?.reliability?.rateLimit,
+    };
+    this.circuitBreaker = new CircuitBreakerManager(options?.reliability?.circuitBreaker);
+    this.backpressureConfig = {
+      ...DEFAULT_BP_CONFIG,
+      ...options?.reliability?.backpressure,
+    };
+
+    // Config hot-reload: load from disk then watch for changes
+    this.configPath = path.join(dataDir, 'config.json');
+    this.loadReliabilityConfig();
+    this.startConfigWatcher();
   }
 
   // --- Publish ---
@@ -145,10 +190,11 @@ export class RelayCore {
    * Pipeline:
    * 1. Validate subject
    * 2. Check access control (from -> subject)
-   * 3. Build envelope with ULID ID, budget, and payload
-   * 4. Find all registered endpoints matching the subject
-   * 5. For each endpoint: enforce budget, deliver via Maildir, index in SQLite
-   * 6. If no endpoints match, reject to dead letter queue
+   * 3. Rate limit check (per-sender sliding window, before fan-out)
+   * 4. Build envelope with ULID ID, budget, and payload
+   * 5. Find all registered endpoints matching the subject
+   * 6. For each endpoint: enforce budget, deliver via Maildir, index in SQLite
+   * 7. If no endpoints match, reject to dead letter queue
    *
    * @param subject - The target subject for the message
    * @param payload - The message payload (any JSON-serializable value)
@@ -180,7 +226,26 @@ export class RelayCore {
       );
     }
 
-    // 3. Build envelope
+    // 3. Rate limit check (per-sender, before fan-out)
+    if (this.rateLimitConfig.enabled) {
+      const windowStartIso = new Date(
+        Date.now() - this.rateLimitConfig.windowSecs * 1000,
+      ).toISOString();
+      const countInWindow = this.sqliteIndex.countSenderInWindow(
+        options.from,
+        windowStartIso,
+      );
+      const rateLimitResult = checkRateLimit(options.from, countInWindow, this.rateLimitConfig);
+      if (!rateLimitResult.allowed) {
+        return {
+          messageId: '',
+          deliveredTo: 0,
+          rejected: [{ endpointHash: '*', reason: 'rate_limited' }],
+        };
+      }
+    }
+
+    // 4. Build envelope
     const messageId = this.generateUlid();
     const budget = createDefaultBudget({
       maxHops: this.opts.maxHops,
@@ -198,10 +263,10 @@ export class RelayCore {
       payload,
     };
 
-    // 4. Find matching endpoints
+    // 5. Find matching endpoints
     const matchingEndpoints = this.findMatchingEndpoints(subject);
 
-    // 5. Deliver to each matching endpoint
+    // 6. Deliver to each matching endpoint
     if (matchingEndpoints.length === 0) {
       // No matching endpoints — send to DLQ for the sender's information
       // We still create a hash for DLQ storage based on subject
@@ -213,14 +278,29 @@ export class RelayCore {
     }
 
     let deliveredTo = 0;
+    const rejected: PublishResult['rejected'] = [];
+    const mailboxPressure: Record<string, number> = {};
+
     for (const endpoint of matchingEndpoints) {
-      const delivered = await this.deliverToEndpoint(endpoint, envelope);
-      if (delivered) {
+      const result = await this.deliverToEndpoint(endpoint, envelope);
+
+      if (result.delivered) {
         deliveredTo++;
+      }
+      if (result.rejected) {
+        rejected.push(result.rejected);
+      }
+      if (result.pressure !== undefined) {
+        mailboxPressure[endpoint.hash] = result.pressure;
       }
     }
 
-    return { messageId, deliveredTo };
+    return {
+      messageId,
+      deliveredTo,
+      ...(rejected.length > 0 && { rejected }),
+      ...(Object.keys(mailboxPressure).length > 0 && { mailboxPressure }),
+    };
   }
 
   // --- Subscribe ---
@@ -300,6 +380,79 @@ export class RelayCore {
     return this.endpointRegistry.unregisterEndpoint(subject);
   }
 
+  // --- Query Facade ---
+
+  /**
+   * List all registered endpoints.
+   *
+   * @returns Array of EndpointInfo objects
+   */
+  listEndpoints(): EndpointInfo[] {
+    this.assertOpen();
+    return this.endpointRegistry.listEndpoints();
+  }
+
+  /**
+   * Get a single message from the index by ID.
+   *
+   * @param id - The ULID of the message
+   * @returns The indexed message, or null if not found
+   */
+  getMessage(id: string): import('./sqlite-index.js').IndexedMessage | null {
+    this.assertOpen();
+    return this.sqliteIndex.getMessage(id);
+  }
+
+  /**
+   * Query messages with optional filters and cursor-based pagination.
+   *
+   * @param filters - Optional query filters (subject, status, from, cursor, limit)
+   * @returns Object with messages array and optional nextCursor
+   */
+  listMessages(filters?: {
+    subject?: string;
+    status?: string;
+    from?: string;
+    cursor?: string;
+    limit?: number;
+  }): { messages: import('./sqlite-index.js').IndexedMessage[]; nextCursor?: string } {
+    this.assertOpen();
+    return this.sqliteIndex.queryMessages({
+      subject: filters?.subject,
+      status: filters?.status,
+      sender: filters?.from,
+      cursor: filters?.cursor,
+      limit: filters?.limit,
+    });
+  }
+
+  /**
+   * Read inbox messages for a specific endpoint.
+   *
+   * @param subject - The endpoint subject to read inbox for
+   * @param options - Optional query filters (status, cursor, limit)
+   * @returns Object with messages array and optional nextCursor
+   * @throws If the endpoint is not found
+   */
+  readInbox(
+    subject: string,
+    options?: { status?: string; cursor?: string; limit?: number },
+  ): { messages: import('./sqlite-index.js').IndexedMessage[]; nextCursor?: string } {
+    this.assertOpen();
+    const endpoint = this.endpointRegistry.getEndpoint(subject);
+    if (!endpoint) {
+      const error = new Error(`Endpoint not found: ${subject}`);
+      (error as Error & { code: string }).code = 'ENDPOINT_NOT_FOUND';
+      throw error;
+    }
+    return this.sqliteIndex.queryMessages({
+      endpointHash: endpoint.hash,
+      status: options?.status,
+      cursor: options?.cursor,
+      limit: options?.limit,
+    });
+  }
+
   // --- Dead Letter Queue ---
 
   /**
@@ -364,6 +517,12 @@ export class RelayCore {
       this.watchers.delete(hash);
     }
 
+    // Stop config watcher
+    if (this.configWatcher) {
+      await this.configWatcher.close();
+      this.configWatcher = null;
+    }
+
     // Close access control (stops its chokidar watcher)
     this.accessControl.close();
 
@@ -393,24 +552,57 @@ export class RelayCore {
   /**
    * Deliver an envelope to a single endpoint.
    *
-   * Enforces budget constraints, writes to Maildir, indexes in SQLite,
-   * and dispatches to matching subscription handlers synchronously.
-   * If budget enforcement fails, the envelope is sent to the dead letter
-   * queue. Handler errors move the message to `failed/`.
+   * Pipeline order:
+   * 1. Backpressure check — rejects if mailbox is full, emits warning signal
+   * 2. Circuit breaker check — rejects if breaker is OPEN for this endpoint
+   * 3. Budget enforcement — rejects expired/over-hop/over-call messages to DLQ
+   * 4. Maildir delivery — writes envelope file, records CB success/failure
+   * 5. SQLite indexing + synchronous handler dispatch
    *
-   * The synchronous dispatch is the fast path for messages published via
-   * this RelayCore instance. The chokidar watcher handles messages written
-   * by external processes.
+   * All return paths include `pressure` so the publish() aggregator can
+   * build the `mailboxPressure` map for every endpoint.
    *
    * @param endpoint - The target endpoint
    * @param envelope - The envelope to deliver
-   * @returns `true` if delivery succeeded, `false` if rejected
+   * @returns An EndpointDeliveryResult with delivery status, rejection info, and pressure
    */
   private async deliverToEndpoint(
     endpoint: EndpointInfo,
     envelope: RelayEnvelope,
-  ): Promise<boolean> {
-    // Budget enforcement
+  ): Promise<EndpointDeliveryResult> {
+    // 1. Backpressure check (before circuit breaker and budget)
+    const newCount = this.sqliteIndex.countNewByEndpoint(endpoint.hash);
+    const bpResult = checkBackpressure(newCount, this.backpressureConfig);
+
+    if (bpResult.pressure >= this.backpressureConfig.pressureWarningAt) {
+      this.signalEmitter.emit(endpoint.subject, {
+        type: 'backpressure',
+        state: bpResult.allowed ? 'warning' : 'critical',
+        endpointSubject: endpoint.subject,
+        timestamp: new Date().toISOString(),
+        data: { pressure: bpResult.pressure, currentSize: bpResult.currentSize },
+      });
+    }
+
+    if (!bpResult.allowed) {
+      return {
+        delivered: false,
+        rejected: { endpointHash: endpoint.hash, reason: 'backpressure' },
+        pressure: bpResult.pressure,
+      };
+    }
+
+    // 2. Circuit breaker check (after backpressure, before budget)
+    const cbResult = this.circuitBreaker.check(endpoint.hash);
+    if (!cbResult.allowed) {
+      return {
+        delivered: false,
+        rejected: { endpointHash: endpoint.hash, reason: 'circuit_open' },
+        pressure: bpResult.pressure,
+      };
+    }
+
+    // 3. Budget enforcement
     const budgetResult = enforceBudget(envelope, endpoint.subject);
     if (!budgetResult.allowed) {
       await this.deadLetterQueue.reject(
@@ -418,7 +610,11 @@ export class RelayCore {
         envelope,
         budgetResult.reason ?? 'budget enforcement failed',
       );
-      return false;
+      return {
+        delivered: false,
+        rejected: { endpointHash: endpoint.hash, reason: 'budget_exceeded' },
+        pressure: bpResult.pressure,
+      };
     }
 
     // Build the envelope with updated budget for this specific delivery
@@ -427,16 +623,20 @@ export class RelayCore {
       budget: budgetResult.updatedBudget!,
     };
 
-    // Deliver to Maildir
+    // 4. Deliver to Maildir
     const deliverResult = await this.maildirStore.deliver(endpoint.hash, deliveryEnvelope);
     if (!deliverResult.ok) {
+      this.circuitBreaker.recordFailure(endpoint.hash);
       await this.deadLetterQueue.reject(
         endpoint.hash,
         envelope,
         `delivery failed: ${deliverResult.error}`,
       );
-      return false;
+      return { delivered: false, pressure: bpResult.pressure };
     }
+
+    // Record successful delivery for circuit breaker
+    this.circuitBreaker.recordSuccess(endpoint.hash);
 
     // Index in SQLite
     this.sqliteIndex.insertMessage({
@@ -453,7 +653,7 @@ export class RelayCore {
     // This avoids relying on chokidar timing for locally-published messages
     await this.dispatchToSubscribers(endpoint, deliverResult.messageId, deliveryEnvelope);
 
-    return true;
+    return { delivered: true, pressure: bpResult.pressure };
   }
 
   /**
@@ -486,10 +686,11 @@ export class RelayCore {
       await this.maildirStore.complete(endpoint.hash, messageId);
       this.sqliteIndex.updateStatus(messageId, 'cur');
     } catch (err) {
-      // Handler failed — move to failed/
+      // Handler failed — move to failed/ and record for circuit breaker
       const reason = err instanceof Error ? err.message : String(err);
       await this.maildirStore.fail(endpoint.hash, messageId, reason);
       this.sqliteIndex.updateStatus(messageId, 'failed');
+      this.circuitBreaker.recordFailure(endpoint.hash);
     }
   }
 
@@ -577,6 +778,46 @@ export class RelayCore {
       void watcher.close();
       this.watchers.delete(endpointHash);
     }
+  }
+
+  /**
+   * Load reliability configuration from the config file on disk.
+   *
+   * Reads `{dataDir}/config.json`, parses the `reliability` key with
+   * the Zod schema, and updates rate limit, circuit breaker, and
+   * backpressure configs. If the file doesn't exist or contains invalid
+   * JSON, the current settings are silently retained.
+   */
+  private loadReliabilityConfig(): void {
+    try {
+      const raw = fs.readFileSync(this.configPath, 'utf-8');
+      const json: unknown = JSON.parse(raw);
+      const obj = json as Record<string, unknown>;
+      const parsed = ReliabilityConfigSchema.safeParse(obj.reliability);
+      if (parsed.success) {
+        this.rateLimitConfig = { ...DEFAULT_RATE_LIMIT_CONFIG, ...parsed.data.rateLimit };
+        this.circuitBreaker.updateConfig({ ...DEFAULT_CB_CONFIG, ...parsed.data.circuitBreaker });
+        this.backpressureConfig = { ...DEFAULT_BP_CONFIG, ...parsed.data.backpressure };
+      }
+    } catch {
+      // File doesn't exist or is invalid — keep current config
+    }
+  }
+
+  /**
+   * Start a chokidar watcher on the config file for hot-reload.
+   *
+   * When `config.json` changes on disk (e.g., edited externally or by
+   * another process), the reliability configuration is reloaded automatically.
+   */
+  private startConfigWatcher(): void {
+    this.configWatcher = chokidar.watch(this.configPath, {
+      persistent: true,
+      ignoreInitial: true,
+      awaitWriteFinish: { stabilityThreshold: 100, pollInterval: 50 },
+    });
+    this.configWatcher.on('change', () => this.loadReliabilityConfig());
+    this.configWatcher.on('add', () => this.loadReliabilityConfig());
   }
 
   /**

@@ -312,4 +312,72 @@ export class HttpTransport implements Transport {
       method: 'POST',
     });
   }
+
+  // --- Relay Message Bus ---
+
+  listRelayMessages(filters?: {
+    subject?: string;
+    status?: string;
+    from?: string;
+    cursor?: string;
+    limit?: number;
+  }): Promise<{ messages: unknown[]; nextCursor?: string }> {
+    const params = new URLSearchParams();
+    if (filters?.subject) params.set('subject', filters.subject);
+    if (filters?.status) params.set('status', filters.status);
+    if (filters?.from) params.set('from', filters.from);
+    if (filters?.cursor) params.set('cursor', filters.cursor);
+    if (filters?.limit) params.set('limit', String(filters.limit));
+    const qs = params.toString();
+    return fetchJSON(this.baseUrl, `/relay/messages${qs ? `?${qs}` : ''}`);
+  }
+
+  getRelayMessage(id: string): Promise<unknown> {
+    return fetchJSON(this.baseUrl, `/relay/messages/${id}`);
+  }
+
+  sendRelayMessage(opts: {
+    subject: string;
+    payload: unknown;
+    from: string;
+    replyTo?: string;
+  }): Promise<{ messageId: string; deliveredTo: number }> {
+    return fetchJSON(this.baseUrl, '/relay/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(opts),
+    });
+  }
+
+  listRelayEndpoints(): Promise<unknown[]> {
+    return fetchJSON(this.baseUrl, '/relay/endpoints');
+  }
+
+  registerRelayEndpoint(subject: string): Promise<unknown> {
+    return fetchJSON(this.baseUrl, '/relay/endpoints', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subject }),
+    });
+  }
+
+  unregisterRelayEndpoint(subject: string): Promise<{ success: boolean }> {
+    return fetchJSON(this.baseUrl, `/relay/endpoints/${subject}`, { method: 'DELETE' });
+  }
+
+  readRelayInbox(
+    subject: string,
+    opts?: { status?: string; cursor?: string; limit?: number },
+  ): Promise<{ messages: unknown[]; nextCursor?: string }> {
+    const params = new URLSearchParams();
+    if (opts?.status) params.set('status', opts.status);
+    if (opts?.cursor) params.set('cursor', opts.cursor);
+    if (opts?.limit) params.set('limit', String(opts.limit));
+    const qs = params.toString();
+    return fetchJSON(this.baseUrl, `/relay/endpoints/${subject}/inbox${qs ? `?${qs}` : ''}`);
+  }
+
+  getRelayMetrics(): Promise<unknown> {
+    return fetchJSON(this.baseUrl, '/relay/metrics');
+  }
 }

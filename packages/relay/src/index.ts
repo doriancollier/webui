@@ -48,6 +48,11 @@ export { validateSubject, matchesPattern } from './subject-matcher.js';
 export type { SubjectValidationResult, SubjectValidationError } from './subject-matcher.js';
 export { enforceBudget, createDefaultBudget } from './budget-enforcer.js';
 
+// Reliability modules
+export { checkRateLimit, resolveLimit, DEFAULT_RATE_LIMIT_CONFIG } from './rate-limiter.js';
+export { CircuitBreakerManager, DEFAULT_CB_CONFIG } from './circuit-breaker.js';
+export { checkBackpressure, DEFAULT_BP_CONFIG } from './backpressure.js';
+
 // Types
 export type {
   MessageHandler,
@@ -61,4 +66,17 @@ export type {
   RelayMetrics,
   RelayOptions,
   PublishOptions,
+} from './types.js';
+
+// Reliability types
+export type {
+  RateLimitResult,
+  RateLimitConfig,
+  CircuitState,
+  CircuitBreakerState,
+  CircuitBreakerResult,
+  CircuitBreakerConfig,
+  BackpressureResult,
+  BackpressureConfig,
+  ReliabilityConfig,
 } from './types.js';

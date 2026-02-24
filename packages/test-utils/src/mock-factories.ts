@@ -1,4 +1,6 @@
+import { vi } from 'vitest';
 import type { Session, StreamEvent, CommandEntry, PulseSchedule, PulseRun } from '@dorkos/shared/types';
+import type { Transport } from '@dorkos/shared/transport';
 import type { RoadmapItem, RoadmapMeta } from '@dorkos/shared/roadmap-schemas';
 
 export function createMockSession(overrides: Partial<Session> = {}): Session {
@@ -80,6 +82,64 @@ export function createMockRun(overrides: Partial<PulseRun> = {}): PulseRun {
     outputSummary: null,
     error: null,
     createdAt: new Date().toISOString(),
+    ...overrides,
+  };
+}
+
+/** Create a mock Transport with all methods stubbed via `vi.fn()`. */
+export function createMockTransport(overrides: Partial<Transport> = {}): Transport {
+  return {
+    listSessions: vi.fn().mockResolvedValue([]),
+    createSession: vi.fn(),
+    getSession: vi.fn(),
+    getMessages: vi.fn().mockResolvedValue({ messages: [] }),
+    getTasks: vi.fn().mockResolvedValue({ tasks: [] }),
+    sendMessage: vi.fn(),
+    approveTool: vi.fn(),
+    denyTool: vi.fn(),
+    submitAnswers: vi.fn().mockResolvedValue({ ok: true }),
+    getCommands: vi.fn(),
+    health: vi.fn(),
+    updateSession: vi.fn(),
+    browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
+    getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
+    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
+    getConfig: vi.fn().mockResolvedValue({
+      version: '1.0.0',
+      port: 4242,
+      uptime: 0,
+      workingDirectory: '/test',
+      nodeVersion: 'v20.0.0',
+      claudeCliPath: null,
+      tunnel: {
+        enabled: false,
+        connected: false,
+        url: null,
+        authEnabled: false,
+        tokenConfigured: false,
+      },
+    }),
+    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
+    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
+    stopTunnel: vi.fn().mockResolvedValue(undefined),
+    // Pulse
+    listSchedules: vi.fn().mockResolvedValue([]),
+    createSchedule: vi.fn(),
+    updateSchedule: vi.fn(),
+    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
+    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
+    listRuns: vi.fn().mockResolvedValue([]),
+    getRun: vi.fn(),
+    cancelRun: vi.fn().mockResolvedValue({ success: true }),
+    // Relay
+    listRelayMessages: vi.fn().mockResolvedValue({ messages: [] }),
+    getRelayMessage: vi.fn(),
+    sendRelayMessage: vi.fn().mockResolvedValue({ messageId: 'msg-1', deliveredTo: 0 }),
+    listRelayEndpoints: vi.fn().mockResolvedValue([]),
+    registerRelayEndpoint: vi.fn(),
+    unregisterRelayEndpoint: vi.fn().mockResolvedValue({ success: true }),
+    readRelayInbox: vi.fn().mockResolvedValue({ messages: [] }),
+    getRelayMetrics: vi.fn().mockResolvedValue({ totalMessages: 0, byStatus: {}, bySubject: [] }),
     ...overrides,
   };
 }

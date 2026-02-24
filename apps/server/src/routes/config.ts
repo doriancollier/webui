@@ -7,6 +7,7 @@ import { configManager } from '../services/config-manager.js';
 import { UserConfigSchema, SENSITIVE_CONFIG_KEYS } from '@dorkos/shared/config-schema';
 import { getLatestVersion } from '../services/update-checker.js';
 import { isPulseEnabled } from '../services/pulse-state.js';
+import { isRelayEnabled } from '../services/relay-state.js';
 
 declare const __CLI_VERSION__: string | undefined;
 
@@ -102,6 +103,9 @@ router.get('/', async (_req, res) => {
     },
     pulse: {
       enabled: isPulseEnabled(),
+    },
+    relay: {
+      enabled: isRelayEnabled(),
     },
   });
 });

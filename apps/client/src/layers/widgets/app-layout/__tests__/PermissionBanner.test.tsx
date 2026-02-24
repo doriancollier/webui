@@ -4,57 +4,12 @@ import { render, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { PermissionBanner } from '../ui/PermissionBanner';
 import type { Transport } from '@dorkos/shared/transport';
+import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 
 afterEach(() => {
   cleanup();
 });
-
-function createMockTransport(): Transport {
-  return {
-    listSessions: vi.fn().mockResolvedValue([]),
-    createSession: vi.fn(),
-    getSession: vi.fn(),
-    getMessages: vi.fn().mockResolvedValue({ messages: [] }),
-    getTasks: vi.fn().mockResolvedValue({ tasks: [] }),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    denyTool: vi.fn(),
-    submitAnswers: vi.fn().mockResolvedValue({ ok: true }),
-    getCommands: vi.fn(),
-    health: vi.fn(),
-    updateSession: vi.fn(),
-    browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
-    getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
-    listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),
-    getConfig: vi.fn().mockResolvedValue({
-      version: '1.0.0',
-      port: 4242,
-      uptime: 0,
-      workingDirectory: '/test',
-      nodeVersion: 'v20.0.0',
-      claudeCliPath: null,
-      tunnel: {
-        enabled: false,
-        connected: false,
-        url: null,
-        authEnabled: false,
-        tokenConfigured: false,
-      },
-    }),
-    getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
-    startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
-    stopTunnel: vi.fn().mockResolvedValue(undefined),
-    listSchedules: vi.fn().mockResolvedValue([]),
-    createSchedule: vi.fn(),
-    updateSchedule: vi.fn(),
-    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
-    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
-    listRuns: vi.fn().mockResolvedValue([]),
-    getRun: vi.fn(),
-    cancelRun: vi.fn().mockResolvedValue({ success: true }),
-  };
-}
 
 function createWrapper(sessionData?: Record<string, unknown>) {
   const queryClient = new QueryClient({

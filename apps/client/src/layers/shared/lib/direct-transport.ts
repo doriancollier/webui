@@ -268,4 +268,37 @@ export class DirectTransport implements Transport {
   async cancelRun(_id: string): Promise<{ success: boolean }> {
     throw new Error('Pulse scheduler is not supported in embedded mode');
   }
+
+  // Relay message bus is not supported in embedded mode
+  async listRelayMessages(): Promise<{ messages: unknown[]; nextCursor?: string }> {
+    return { messages: [] };
+  }
+
+  async getRelayMessage(_id: string): Promise<unknown> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
+  async sendRelayMessage(): Promise<{ messageId: string; deliveredTo: number }> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
+  async listRelayEndpoints(): Promise<unknown[]> {
+    return [];
+  }
+
+  async registerRelayEndpoint(): Promise<unknown> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
+  async unregisterRelayEndpoint(): Promise<{ success: boolean }> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
+  async readRelayInbox(): Promise<{ messages: unknown[]; nextCursor?: string }> {
+    return { messages: [] };
+  }
+
+  async getRelayMetrics(): Promise<unknown> {
+    return { totalMessages: 0, byStatus: {}, bySubject: [] };
+  }
 }

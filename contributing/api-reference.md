@@ -152,6 +152,144 @@ The `warnings` field is only present when the patch includes keys listed in `SEN
 }
 ```
 
+## Relay Endpoints
+
+All relay endpoints are under `/api/relay/` and require `DORKOS_RELAY_ENABLED=true`. Returns 503 when relay is disabled.
+
+### POST /api/relay/messages
+
+Send a message to a subject pattern.
+
+**Request body:** `SendMessageRequest` (from `@dorkos/shared/relay-schemas`)
+
+```json
+{
+  "subject": "relay.agent.task-runner",
+  "payload": { "content": "Run the tests" },
+  "from": "relay.agent.orchestrator",
+  "replyTo": "relay.agent.orchestrator",
+  "budget": { "maxHops": 5, "ttl": 300000 }
+}
+```
+
+**Responses:**
+
+- `200` - Message sent: `{ messageId: string, deliveredTo: number }`
+- `400` - Validation error
+
+### GET /api/relay/messages
+
+List messages with optional filtering and cursor-based pagination.
+
+**Query params:**
+
+- `subject` (optional) - Filter by subject pattern
+- `status` (optional) - Filter by status: `new`, `cur`, `failed`
+- `from` (optional) - Filter by sender
+- `cursor` (optional) - ULID cursor for pagination
+- `limit` (optional, default 50, max 100)
+
+**Responses:**
+
+- `200` - `{ messages: RelayEnvelope[], cursor?: string }`
+
+### GET /api/relay/messages/:id
+
+Get a single message by ID.
+
+**Responses:**
+
+- `200` - `RelayEnvelope`
+- `404` - Message not found
+
+### GET /api/relay/endpoints
+
+List all registered endpoints.
+
+**Responses:**
+
+- `200` - Array of `{ subject: string, description?: string }`
+
+### POST /api/relay/endpoints
+
+Register a new endpoint.
+
+**Request body:** `EndpointRegistration`
+
+```json
+{
+  "subject": "relay.agent.my-agent",
+  "description": "My custom agent endpoint"
+}
+```
+
+**Responses:**
+
+- `201` - `{ subject: string, created: boolean }`
+- `400` - Validation error
+
+### DELETE /api/relay/endpoints/:subject
+
+Unregister an endpoint.
+
+**Responses:**
+
+- `200` - `{ success: boolean }`
+- `404` - Endpoint not found
+
+### GET /api/relay/endpoints/:subject/inbox
+
+Read inbox messages for a specific endpoint.
+
+**Query params:**
+
+- `status` (optional) - Filter by status
+- `cursor` (optional) - ULID cursor
+- `limit` (optional, default 50, max 100)
+
+**Responses:**
+
+- `200` - `{ messages: RelayEnvelope[], cursor?: string }`
+- `404` - Endpoint not found
+
+### GET /api/relay/dead-letters
+
+List dead-letter messages (undeliverable).
+
+**Query params:** Same as GET /api/relay/messages.
+
+**Responses:**
+
+- `200` - `{ messages: RelayEnvelope[], cursor?: string }`
+
+### GET /api/relay/metrics
+
+Relay system metrics.
+
+**Responses:**
+
+- `200` - `{ totalMessages: number, totalEndpoints: number, totalDeadLetters: number }`
+
+### GET /api/relay/stream
+
+SSE event stream for real-time relay activity. Supports server-side subject filtering.
+
+**Query params:**
+
+- `subject` (optional) - Subject pattern filter (e.g., `relay.agent.*`)
+
+**Events:**
+
+- `relay_connected` - Connection established
+- `relay_message` - New message published
+- `relay_delivery` - Message delivered to endpoint
+- `relay_dead_letter` - Message became dead letter
+- `relay_metrics` - Periodic metrics update
+
+**Keepalive:** `: keepalive\n\n` comment every 15 seconds.
+
+**Usage:** Clients should close the EventSource when the relay panel is not visible.
+
 ## Validation Errors
 
 Invalid requests return HTTP 400 with a structured error body:

@@ -13,6 +13,9 @@ import { PulseStore } from './services/pulse-store.js';
 import { SchedulerService } from './services/scheduler-service.js';
 import { createPulseRouter } from './routes/pulse.js';
 import { setPulseEnabled } from './services/pulse-state.js';
+import { RelayCore } from '@dorkos/relay';
+import { createRelayRouter } from './routes/relay.js';
+import { setRelayEnabled } from './services/relay-state.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
 
@@ -21,6 +24,7 @@ const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
 // Global references for graceful shutdown
 let sessionBroadcaster: SessionBroadcaster | null = null;
 let schedulerService: SchedulerService | null = null;
+let relayCore: RelayCore | undefined;
 
 async function start() {
   const logLevel = process.env.DORKOS_LOG_LEVEL
@@ -50,11 +54,24 @@ async function start() {
     logger.info('[Pulse] PulseStore initialized');
   }
 
+  // Initialize Relay if enabled
+  const relayConfig = configManager.get('relay') as { enabled: boolean; dataDir?: string | null };
+  const relayEnabled = process.env.DORKOS_RELAY_ENABLED === 'true' || relayConfig?.enabled;
+
+  if (relayEnabled) {
+    const dorkHome = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
+    const dataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
+    relayCore = new RelayCore({ dataDir });
+    await relayCore.registerEndpoint('relay.system.console');
+    logger.info('[Relay] RelayCore initialized');
+  }
+
   // Create MCP tool server and inject into AgentManager
   const mcpToolServer = createDorkOsToolServer({
     transcriptReader,
     defaultCwd: process.env.DORKOS_DEFAULT_CWD ?? process.cwd(),
     ...(pulseStore && { pulseStore }),
+    ...(relayCore && { relayCore }),
   });
   agentManager.setMcpServers({ dorkos: mcpToolServer });
 
@@ -70,6 +87,13 @@ async function start() {
     app.use('/api/pulse', createPulseRouter(pulseStore, schedulerService));
     setPulseEnabled(true);
     logger.info('[Pulse] Routes mounted and scheduler configured');
+  }
+
+  // Mount Relay routes if enabled
+  if (relayEnabled && relayCore) {
+    app.use('/api/relay', createRelayRouter(relayCore));
+    setRelayEnabled(true);
+    logger.info('[Relay] Routes mounted');
   }
 
   // Initialize SessionBroadcaster and attach to app.locals
@@ -132,6 +156,9 @@ async function shutdown() {
   }
   if (schedulerService) {
     await schedulerService.stop();
+  }
+  if (relayCore) {
+    await relayCore.close();
   }
   await tunnelManager.stop();
   process.exit(0);
