@@ -5,5 +5,6 @@ export default defineWorkspace([
   'apps/roadmap',
   'apps/server',
   'packages/cli',
+  'packages/relay',
   'packages/shared',
 ]);

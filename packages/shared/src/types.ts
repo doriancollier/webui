@@ -56,3 +56,16 @@ export type {
   UpdateScheduleRequest,
   ListRunsQuery,
 } from './schemas.js';
+
+export type {
+  Performative,
+  SignalType,
+  ChannelType,
+  RelayBudget,
+  RelayEnvelope,
+  Attachment,
+  ResponseContext,
+  StandardPayload,
+  Signal,
+  RelayAccessRule,
+} from './relay-schemas.js';

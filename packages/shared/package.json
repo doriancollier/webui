@@ -27,6 +27,10 @@
     "./roadmap-schemas": {
       "types": "./src/roadmap-schemas.ts",
       "default": "./dist/roadmap-schemas.js"
+    },
+    "./relay-schemas": {
+      "types": "./src/relay-schemas.ts",
+      "default": "./dist/relay-schemas.js"
     }
   },
   "scripts": {

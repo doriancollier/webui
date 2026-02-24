@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 50,
+  "nextNumber": 51,
   "specs": [
     {
       "number": 1,
@@ -344,6 +344,13 @@
       "title": "Pulse RunHistoryPanel Improvements & RunRow Navigation Bug Fix",
       "created": "2026-02-22",
       "status": "specified"
+    },
+    {
+      "number": 50,
+      "slug": "relay-core-library",
+      "title": "Relay Core Library",
+      "created": "2026-02-24",
+      "status": "implemented"
     }
   ]
 }

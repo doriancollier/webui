@@ -34,6 +34,8 @@ elif [[ "$FILE_PATH" =~ ^packages/shared/ ]]; then
   WORKSPACE_DIR="packages/shared"
 elif [[ "$FILE_PATH" =~ ^packages/test-utils/ ]]; then
   WORKSPACE_DIR="packages/test-utils"
+elif [[ "$FILE_PATH" =~ ^packages/relay/ ]]; then
+  WORKSPACE_DIR="packages/relay"
 else
   # Fallback: run from repo root
   WORKSPACE_DIR="."

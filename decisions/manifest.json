@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 10,
+  "nextNumber": 14,
   "decisions": [
     {
       "number": 1,
@@ -77,6 +77,42 @@
       "created": "2026-02-21",
       "extractedFrom": "pulse-v2-enhancements",
       "specSlug": "pulse-v2-enhancements"
+    },
+    {
+      "number": 10,
+      "slug": "use-maildir-for-relay-message-storage",
+      "title": "Use Maildir for Relay Message Storage",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-core-library",
+      "specSlug": "relay-core-library"
+    },
+    {
+      "number": 11,
+      "slug": "use-nats-style-subject-matching",
+      "title": "Use NATS-Style Hierarchical Subject Matching",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-core-library",
+      "specSlug": "relay-core-library"
+    },
+    {
+      "number": 12,
+      "slug": "use-ulid-for-relay-message-ids",
+      "title": "Use ULID for Relay Message IDs",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-core-library",
+      "specSlug": "relay-core-library"
+    },
+    {
+      "number": 13,
+      "slug": "hybrid-maildir-sqlite-storage",
+      "title": "Use Hybrid Maildir + SQLite for Relay Storage",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "relay-core-library",
+      "specSlug": "relay-core-library"
     }
   ]
 }
