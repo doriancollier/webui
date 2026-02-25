@@ -999,7 +999,7 @@ registry.registerPath({
 // --- Generator ---
 
 /** Generate the full OpenAPI 3.1.0 document from registered paths and schemas. */
-export function generateOpenAPISpec() {
+export function generateOpenAPISpec(): ReturnType<InstanceType<typeof OpenApiGeneratorV31>['generateDocument']> {
   const generator = new OpenApiGeneratorV31(registry.definitions);
   return generator.generateDocument({
     openapi: '3.1.0',

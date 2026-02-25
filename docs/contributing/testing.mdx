@@ -12,19 +12,19 @@ DorkOS uses Vitest for all testing, with React Testing Library for component tes
 <Tabs items={["All tests", "Single run", "Specific file"]}>
 <Tab value="All tests">
 ```bash
-npm test
+pnpm test
 ```
 Runs all tests in watch mode.
 </Tab>
 <Tab value="Single run">
 ```bash
-npm test -- --run
+pnpm test -- --run
 ```
 Runs all tests once without watch mode. Useful for CI.
 </Tab>
 <Tab value="Specific file">
 ```bash
-npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
+pnpm vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 ```
 Runs a single test file directly.
 </Tab>

@@ -14,7 +14,7 @@ DorkOS requires Node.js 18 or later. Check your version with `node --version`.
 </Callout>
 
 - **Node.js 18+**
-- **npm 10+**
+- **pnpm 10+**
 - **A Claude API key** from [console.anthropic.com](https://console.anthropic.com/)
 
 ## Installation
@@ -26,7 +26,7 @@ DorkOS requires Node.js 18 or later. Check your version with `node --version`.
 ```bash
 git clone https://github.com/dork-labs/dorkos.git
 cd dorkos
-npm install
+pnpm install
 ```
 </Step>
 
@@ -46,7 +46,7 @@ Edit `.env` and set `ANTHROPIC_API_KEY=your-key-here`.
 ### Start development servers
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 This starts both the Express server (port 4242) and the Vite dev server (port 3000). Open [http://localhost:3000](http://localhost:3000) in your browser.
@@ -69,27 +69,27 @@ dotenv -- turbo dev --filter=@dorkos/client
 </Tabs>
 
 <Callout type="warn">
-Always use `npm run` scripts or prefix commands with `dotenv --` to ensure `.env` is loaded. Running bare `turbo` will not pick up environment variables.
+Always use `pnpm` scripts or prefix commands with `dotenv --` to ensure `.env` is loaded. Running bare `turbo` will not pick up environment variables.
 </Callout>
 
 ## Common Commands
 
 <TypeTable type={{
-  "npm run dev": { type: "command", description: "Start all dev servers" },
-  "npm test": { type: "command", description: "Run all tests (Vitest, watch mode)" },
-  "npm test -- --run": { type: "command", description: "Single test run (no watch)" },
-  "npm run build": { type: "command", description: "Build all packages" },
-  "npm run typecheck": { type: "command", description: "Type-check all packages" },
-  "npm run lint": { type: "command", description: "ESLint across all packages" },
-  "npm run lint -- --fix": { type: "command", description: "Auto-fix ESLint issues" },
-  "npm run format": { type: "command", description: "Prettier format all files" },
-  "npm run format:check": { type: "command", description: "Check formatting without writing" }
+  "pnpm dev": { type: "command", description: "Start all dev servers" },
+  "pnpm test": { type: "command", description: "Run all tests (Vitest, watch mode)" },
+  "pnpm test -- --run": { type: "command", description: "Single test run (no watch)" },
+  "pnpm build": { type: "command", description: "Build all packages" },
+  "pnpm typecheck": { type: "command", description: "Type-check all packages" },
+  "pnpm lint": { type: "command", description: "ESLint across all packages" },
+  "pnpm lint -- --fix": { type: "command", description: "Auto-fix ESLint issues" },
+  "pnpm format": { type: "command", description: "Prettier format all files" },
+  "pnpm format:check": { type: "command", description: "Check formatting without writing" }
 }} />
 
 ## Running Specific Tests
 
 ```bash
-npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
+pnpm vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 ```
 
 ## Monorepo Structure

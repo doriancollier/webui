@@ -9,7 +9,7 @@ DorkOS is a web-based interface and REST/SSE API for Claude Code, built with the
 Before you begin, ensure you have:
 
 - **Node.js 20+**
-- **npm 10+**
+- **pnpm 10+**
 - **A Claude API key** (ANTHROPIC_API_KEY) — Get one from [console.anthropic.com](https://console.anthropic.com/)
 
 ## Getting Started
@@ -17,9 +17,9 @@ Before you begin, ensure you have:
 ```bash
 git clone https://github.com/dork-labs/dorkos.git
 cd dorkos
-npm install
+pnpm install
 cp .env.example .env  # Add your ANTHROPIC_API_KEY
-npm run dev
+pnpm dev
 ```
 
 The client will be available at `http://localhost:3000` and the server at `http://localhost:4242`.
@@ -44,15 +44,15 @@ This is a Turborepo monorepo with five apps and four shared packages:
 
 | Command | Description |
 |---|---|
-| `npm run dev` | Start server + client dev servers |
-| `npm test` | Run all tests (Vitest) |
-| `npm test -- --run` | Single test run (no watch mode) |
-| `npm run build` | Build all packages |
-| `npm run typecheck` | Type-check all packages |
-| `npm run lint` | ESLint across all packages |
-| `npm run lint -- --fix` | Auto-fix ESLint issues |
-| `npm run format` | Prettier format all files |
-| `npm run format:check` | Check formatting without writing |
+| `pnpm dev` | Start server + client dev servers |
+| `pnpm test` | Run all tests (Vitest) |
+| `pnpm test -- --run` | Single test run (no watch mode) |
+| `pnpm build` | Build all packages |
+| `pnpm typecheck` | Type-check all packages |
+| `pnpm lint` | ESLint across all packages |
+| `pnpm lint -- --fix` | Auto-fix ESLint issues |
+| `pnpm format` | Prettier format all files |
+| `pnpm format:check` | Check formatting without writing |
 
 ### Filtering Commands
 
@@ -67,7 +67,7 @@ dotenv -- turbo build --filter=@dorkos/obsidian-plugin  # Build plugin only
 ### Running Specific Tests
 
 ```bash
-npx vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
+pnpm vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 ```
 
 ## Architecture
@@ -116,9 +116,9 @@ For details, see [contributing/project-structure.md](contributing/project-struct
 Tests use **Vitest** with **React Testing Library** for components. Tests live alongside source in `__tests__/` directories.
 
 ```bash
-npm test                                    # Run all tests
-npm test -- --run                           # Single run (no watch)
-npx vitest run path/to/test.ts              # Run specific test
+pnpm test                                   # Run all tests
+pnpm test -- --run                          # Single run (no watch)
+pnpm vitest run path/to/test.ts             # Run specific test
 ```
 
 ### Testing Conventions
@@ -165,8 +165,8 @@ For more testing patterns, see [.claude/rules/testing.md](.claude/rules/testing.
 ESLint 9 (flat config) + Prettier enforce code quality. Run before committing:
 
 ```bash
-npm run lint
-npm run format
+pnpm lint
+pnpm format
 ```
 
 ### ESLint Rules
@@ -189,9 +189,9 @@ See [.claude/rules/file-size.md](.claude/rules/file-size.md) for enforcement det
 1. **Fork the repository**
 2. **Create a feature branch** (`git checkout -b feat/my-feature`)
 3. **Make your changes**
-4. **Ensure tests pass** (`npm test -- --run`)
-5. **Ensure linting is clean** (`npm run lint`)
-6. **Ensure formatting is consistent** (`npm run format`)
+4. **Ensure tests pass** (`pnpm test -- --run`)
+5. **Ensure linting is clean** (`pnpm lint`)
+6. **Ensure formatting is consistent** (`pnpm format`)
 7. **Open a pull request** with a clear description of your changes
 
 ## Commit Conventions

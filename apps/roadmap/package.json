@@ -11,7 +11,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@dorkos/shared": "*",
+    "@dorkos/shared": "workspace:*",
     "cors": "^2.8.5",
     "express": "^4.21.0",
     "lowdb": "^7.0.0",
@@ -19,8 +19,8 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@dorkos/test-utils": "*",
-    "@dorkos/typescript-config": "*",
+    "@dorkos/test-utils": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@hello-pangea/dnd": "^18.0.0",
     "@tailwindcss/vite": "^4.0.0",
     "@tanstack/react-query": "^5.62.0",
@@ -29,11 +29,13 @@
     "@testing-library/react": "^16.0.0",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
+    "@types/express-serve-static-core": "^5.1.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "latest",
+    "clsx": "^2.1.1",
     "concurrently": "^9.0.0",
     "jsdom": "^28.0.0",
     "lucide-react": "latest",
@@ -42,6 +44,7 @@
     "react-dom": "^19.0.0",
     "react-markdown": "^9.0.0",
     "supertest": "^7.2.2",
+    "tailwind-merge": "^3.4.0",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.0.0",
     "typescript": "^5.7.0",

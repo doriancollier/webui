@@ -19,7 +19,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@dorkos/shared": "*",
+    "@dorkos/shared": "workspace:*",
     "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-dropdown-menu": "^2.1.16",
     "@radix-ui/react-label": "^2.1.8",
@@ -53,7 +53,8 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
-    "@dorkos/typescript-config": "*",
+    "@dorkos/test-utils": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.0.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.0.0",

@@ -21,7 +21,9 @@
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
     "@asteasolutions/zod-to-openapi": "^8.4.0",
-    "@dorkos/shared": "*",
+    "@dorkos/mesh": "workspace:*",
+    "@dorkos/relay": "workspace:*",
+    "@dorkos/shared": "workspace:*",
     "@ngrok/ngrok": "^1.7.0",
     "@scalar/express-api-reference": "^0.8.40",
     "better-sqlite3": "^12.6.2",
@@ -36,13 +38,15 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@dorkos/test-utils": "*",
-    "@dorkos/typescript-config": "*",
+    "@dorkos/test-utils": "workspace:*",
+    "@dorkos/typescript-config": "workspace:*",
     "@types/better-sqlite3": "^7.6.13",
     "@types/cors": "^2.8.0",
     "@types/express": "^5.0.0",
+    "@types/express-serve-static-core": "^5.0.0",
     "@types/supertest": "^6.0.3",
     "@types/uuid": "^10.0.0",
+    "openapi3-ts": "^4.5.0",
     "supertest": "^7.2.2",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",

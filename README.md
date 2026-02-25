@@ -59,9 +59,9 @@ See [CLAUDE.md](CLAUDE.md) for comprehensive technical documentation.
 ```bash
 git clone https://github.com/dork-labs/dorkos.git
 cd dorkos
-npm install
+pnpm install
 cp .env.example .env  # Add your ANTHROPIC_API_KEY
-npm run dev
+pnpm dev
 ```
 
 This starts the Express server on port 4242 and the Vite dev server on port 5173.

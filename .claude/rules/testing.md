@@ -192,8 +192,8 @@ await new Promise((r) => setTimeout(r, 1000)); // Wrong - use waitFor
 ## Running Tests
 
 ```bash
-npx turbo test                    # Run all tests via Turborepo
-npx turbo test -- --run           # Single run (no watch)
-npx vitest run path/to/test.ts    # Run a specific test file
-npx vitest --watch                # Watch mode
+pnpm test                         # Run all tests via Turborepo
+pnpm test -- --run                # Single run (no watch)
+pnpm vitest run path/to/test.ts   # Run a specific test file
+pnpm vitest --watch               # Watch mode
 ```

@@ -17,7 +17,7 @@ fi
 
 # Health check
 if ! curl -sf "${API%/roadmap}/health" > /dev/null 2>&1; then
-  echo "Error: Roadmap server is not running. Start it with: npm run dev --filter=@dorkos/roadmap" >&2
+  echo "Error: Roadmap server is not running. Start it with: pnpm dev --filter=@dorkos/roadmap" >&2
   exit 1
 fi
 

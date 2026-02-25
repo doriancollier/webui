@@ -616,7 +616,7 @@ See `contributing/architecture.md` > "Electron Compatibility Layer" for details 
 turbo run build --filter=obsidian-plugin
 
 # Or from apps/obsidian-plugin/:
-npm run build
+pnpm build
 ```
 
 ### Development Workflow
@@ -932,7 +932,7 @@ If you don't see "main.js module loaded", the error is in module evaluation (top
 
 ### Development Workflow
 
-1. Run the build from the monorepo root (`turbo run build --filter=obsidian-plugin`) or from `apps/obsidian-plugin/` (`npm run build`)
+1. Run the build from the monorepo root (`turbo run build --filter=obsidian-plugin`) or from `apps/obsidian-plugin/` (`pnpm build`)
 2. Restart Obsidian or use the Hot Reload plugin
 3. Open dev console (`Cmd+Option+I`) before enabling the plugin
 4. Check console for errors

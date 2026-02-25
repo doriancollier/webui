@@ -2,17 +2,14 @@
   "name": "dorkos",
   "version": "0.3.0",
   "type": "module",
-  "packageManager": "npm@10.9.2",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
+  "packageManager": "pnpm@10.28.2",
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev": "dotenv -- turbo dev",
     "build": "dotenv -- turbo build",
     "test": "dotenv -- turbo test",
     "typecheck": "dotenv -- turbo typecheck",
-    "start": "dotenv -- npm run start --workspace=@dorkos/server",
+    "start": "dotenv -- pnpm --filter=@dorkos/server run start",
     "lint": "turbo lint",
     "lint:fix": "turbo lint -- --fix",
     "format": "prettier --write .",
@@ -34,5 +31,15 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "turbo": "^2.8.7",
     "typescript-eslint": "^8.55.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "sharp",
+      "protobufjs",
+      "unrs-resolver",
+      "core-js"
+    ]
   }
 }

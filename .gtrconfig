@@ -2,7 +2,7 @@
     include = .env.example
 
 [gtr "hook"]
-    postCreate = npm install
+    postCreate = pnpm install
     postCreate = .claude/scripts/worktree-setup.sh
 
 [gtr "defaults"]

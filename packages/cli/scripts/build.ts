@@ -19,7 +19,7 @@ async function buildCLI() {
 
   // 1. Build client (Vite)
   console.log('[1/3] Building client...');
-  execSync('npx turbo build --filter=@dorkos/client', { cwd: ROOT, stdio: 'inherit' });
+  execSync('pnpm turbo build --filter=@dorkos/client', { cwd: ROOT, stdio: 'inherit' });
   await fs.cp(path.join(ROOT, 'apps/client/dist'), path.join(OUT, 'client'), { recursive: true });
 
   // 2. Bundle server (esbuild) — inlines @dorkos/shared, externalizes node_modules

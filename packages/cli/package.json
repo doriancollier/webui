@@ -43,7 +43,7 @@
   },
   "scripts": {
     "build": "tsx scripts/build.ts",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
@@ -60,7 +60,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@dorkos/typescript-config": "*",
+    "@dorkos/typescript-config": "workspace:*",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0"

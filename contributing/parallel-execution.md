@@ -379,7 +379,7 @@ Git worktrees provide process-level isolation for parallel work on different bra
 ### Commands
 
 ```bash
-git gtr new <branch> --yes          # Create worktree (auto npm install + port setup)
+git gtr new <branch> --yes          # Create worktree (auto pnpm install + port setup)
 git gtr new <branch> --from-current --yes  # Branch from current instead of main
 git gtr list                        # List worktrees
 git gtr rm <branch> --yes           # Remove worktree

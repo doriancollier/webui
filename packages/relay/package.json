@@ -16,7 +16,7 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@dorkos/shared": "*",
+    "@dorkos/shared": "workspace:*",
     "@grammyjs/auto-retry": "^2.0.2",
     "better-sqlite3": "^11.0.0",
     "chokidar": "^4.0.0",
@@ -24,7 +24,8 @@
     "ulidx": "^2.4.0"
   },
   "devDependencies": {
-    "@dorkos/typescript-config": "*",
-    "@types/better-sqlite3": "^7.6.0"
+    "@dorkos/typescript-config": "workspace:*",
+    "@types/better-sqlite3": "^7.6.0",
+    "vitest": "^4.0.18"
   }
 }

@@ -43,10 +43,11 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "zod": "^4.3.6",
-    "@asteasolutions/zod-to-openapi": "^8.4.0"
+    "@asteasolutions/zod-to-openapi": "^8.4.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@dorkos/typescript-config": "*"
+    "@dorkos/typescript-config": "workspace:*",
+    "vitest": "^4.0.18"
   }
 }

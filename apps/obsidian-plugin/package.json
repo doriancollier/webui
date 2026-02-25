@@ -10,16 +10,21 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@dorkos/shared": "*",
-    "@dorkos/server": "*",
-    "@dorkos/client": "*",
+    "@dorkos/shared": "workspace:*",
+    "@dorkos/server": "workspace:*",
+    "@dorkos/client": "workspace:*",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
-    "@dorkos/typescript-config": "*",
+    "@dorkos/typescript-config": "workspace:*",
     "@tailwindcss/vite": "^4.0.0",
+    "@tanstack/react-query": "^5.62.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "latest",
+    "lucide-react": "latest",
+    "nuqs": "^2.0.0",
     "obsidian": "latest",
     "tailwindcss": "^4.0.0",
     "typescript": "^5.7.0",

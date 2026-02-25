@@ -6,7 +6,7 @@ This guide covers the AI-driven browser testing system for DorkOS. The system ha
 
 ```bash
 # Run all browser tests (reuses running dev server)
-npm run test:browser
+pnpm test:browser
 
 # Run specific feature
 cd apps/e2e && npx playwright test tests/chat/
@@ -15,7 +15,7 @@ cd apps/e2e && npx playwright test tests/chat/
 cd apps/e2e && npx playwright test --grep @smoke
 
 # Interactive UI mode
-npm run test:browser:ui
+pnpm test:browser:ui
 
 # Debug mode (opens browser inspector)
 cd apps/e2e && PWDEBUG=1 npx playwright test tests/chat/send-message.spec.ts
@@ -25,7 +25,7 @@ cd apps/e2e && PWDEBUG=1 npx playwright test tests/chat/send-message.spec.ts
 
 - Chromium browser installed: `cd apps/e2e && npx playwright install chromium`
 - For `@integration` tests: `ANTHROPIC_API_KEY` must be set in `.env`
-- Dev servers running (auto-started if not): `npm run dev`
+- Dev servers running (auto-started if not): `pnpm dev`
 
 ## Architecture
 
@@ -111,8 +111,8 @@ test.describe('Feature — Description @smoke', () => { ... });
 
 | Command | Description |
 |---------|-------------|
-| `npm run test:browser` | Run all tests via Turbo |
-| `npm run test:browser:ui` | Playwright interactive UI mode |
+| `pnpm test:browser` | Run all tests via Turbo |
+| `pnpm test:browser:ui` | Playwright interactive UI mode |
 | `cd apps/e2e && npx playwright test` | Run directly (faster iteration) |
 | `cd apps/e2e && npx playwright test --grep @smoke` | Smoke tests only |
 | `cd apps/e2e && npx playwright test tests/chat/` | Specific feature |
