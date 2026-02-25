@@ -17,6 +17,11 @@ import { RelayCore, AdapterRegistry } from '@dorkos/relay';
 import { createRelayRouter } from './routes/relay.js';
 import { setRelayEnabled } from './services/relay/relay-state.js';
 import { AdapterManager } from './services/relay/adapter-manager.js';
+import { TraceStore } from './services/relay/trace-store.js';
+import { MessageReceiver } from './services/relay/message-receiver.js';
+import { MeshCore } from '@dorkos/mesh';
+import { createMeshRouter } from './routes/mesh.js';
+import { setMeshEnabled } from './services/mesh/mesh-state.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
 
@@ -27,6 +32,9 @@ let sessionBroadcaster: SessionBroadcaster | null = null;
 let schedulerService: SchedulerService | null = null;
 let relayCore: RelayCore | undefined;
 let adapterManager: AdapterManager | undefined;
+let traceStore: TraceStore | undefined;
+let messageReceiver: MessageReceiver | undefined;
+let meshCore: MeshCore | undefined;
 
 async function start() {
   const logLevel = process.env.DORKOS_LOG_LEVEL
@@ -73,6 +81,34 @@ async function start() {
     adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath);
     await adapterManager.initialize();
     logger.info('[Relay] AdapterManager initialized');
+
+    // Initialize trace store (shares the Relay SQLite database)
+    const dbPath = path.join(dataDir, 'index.db');
+    traceStore = new TraceStore({ dbPath });
+    logger.info('[Relay] TraceStore initialized');
+
+    // Initialize message receiver (bridges Relay -> AgentManager)
+    messageReceiver = new MessageReceiver({
+      relayCore,
+      agentManager,
+      traceStore,
+      defaultCwd: process.env.DORKOS_DEFAULT_CWD ?? process.cwd(),
+    });
+    messageReceiver.start();
+    logger.info('[Relay] MessageReceiver started');
+  }
+
+  // Initialize Mesh if enabled
+  const meshConfig = configManager.get('mesh') as { enabled: boolean } | undefined;
+  const meshEnabled = process.env.DORKOS_MESH_ENABLED === 'true' || meshConfig?.enabled;
+
+  if (meshEnabled) {
+    const dorkHome = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
+    meshCore = new MeshCore({
+      dataDir: path.join(dorkHome, 'mesh'),
+      relayCore,
+    });
+    logger.info('[Mesh] MeshCore initialized');
   }
 
   // Create MCP tool server and inject into AgentManager
@@ -82,6 +118,8 @@ async function start() {
     ...(pulseStore && { pulseStore }),
     ...(relayCore && { relayCore }),
     ...(adapterManager && { adapterManager }),
+    ...(traceStore && { traceStore }),
+    ...(meshCore && { meshCore }),
   });
   agentManager.setMcpServers({ dorkos: mcpToolServer });
 
@@ -101,9 +139,20 @@ async function start() {
 
   // Mount Relay routes if enabled
   if (relayEnabled && relayCore) {
-    app.use('/api/relay', createRelayRouter(relayCore, adapterManager));
+    app.use('/api/relay', createRelayRouter(relayCore, adapterManager, traceStore));
     setRelayEnabled(true);
+
+    // Store relayCore on app.locals so the sessions router can access it
+    app.locals.relayCore = relayCore;
+
     logger.info('[Relay] Routes mounted');
+  }
+
+  // Mount Mesh routes if enabled
+  if (meshEnabled && meshCore) {
+    app.use('/api/mesh', createMeshRouter(meshCore));
+    setMeshEnabled(true);
+    logger.info('[Mesh] Routes mounted');
   }
 
   // Initialize SessionBroadcaster and attach to app.locals
@@ -167,12 +216,23 @@ async function shutdown() {
   if (schedulerService) {
     await schedulerService.stop();
   }
+  // Stop message receiver first — prevents new dispatches during shutdown
+  if (messageReceiver) {
+    messageReceiver.stop();
+  }
   // Stop adapters before RelayCore — adapters may need to drain in-flight messages
   if (adapterManager) {
     await adapterManager.shutdown();
   }
   if (relayCore) {
     await relayCore.close();
+  }
+  // Close trace store after RelayCore — ensures final spans are flushed
+  if (traceStore) {
+    traceStore.close();
+  }
+  if (meshCore) {
+    meshCore.close();
   }
   await tunnelManager.stop();
   process.exit(0);

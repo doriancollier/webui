@@ -145,9 +145,32 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     unregisterRelayEndpoint: vi.fn().mockResolvedValue({ success: true }),
     readRelayInbox: vi.fn().mockResolvedValue({ messages: [] }),
     getRelayMetrics: vi.fn().mockResolvedValue({ totalMessages: 0, byStatus: {}, bySubject: [] }),
+    // Relay Convergence
+    sendMessageRelay: vi.fn().mockResolvedValue({ messageId: 'msg-1', traceId: 'trace-1' }),
+    getRelayTrace: vi.fn().mockResolvedValue({ traceId: 'trace-1', spans: [] }),
+    getRelayDeliveryMetrics: vi.fn().mockResolvedValue({
+      totalMessages: 0,
+      deliveredCount: 0,
+      failedCount: 0,
+      deadLetteredCount: 0,
+      avgDeliveryLatencyMs: null,
+      p95DeliveryLatencyMs: null,
+      activeEndpoints: 0,
+      budgetRejections: { hopLimit: 0, ttlExpired: 0, cycleDetected: 0, budgetExhausted: 0 },
+    }),
     // Relay Adapters
     listRelayAdapters: vi.fn().mockResolvedValue([]),
     toggleRelayAdapter: vi.fn().mockResolvedValue({ ok: true }),
+    // Mesh
+    discoverMeshAgents: vi.fn().mockResolvedValue({ candidates: [] }),
+    listMeshAgents: vi.fn().mockResolvedValue({ agents: [] }),
+    getMeshAgent: vi.fn(),
+    registerMeshAgent: vi.fn(),
+    updateMeshAgent: vi.fn(),
+    unregisterMeshAgent: vi.fn().mockResolvedValue({ success: true }),
+    denyMeshAgent: vi.fn().mockResolvedValue({ success: true }),
+    listDeniedMeshAgents: vi.fn().mockResolvedValue({ denied: [] }),
+    clearMeshDenial: vi.fn().mockResolvedValue({ success: true }),
     ...overrides,
   };
 }

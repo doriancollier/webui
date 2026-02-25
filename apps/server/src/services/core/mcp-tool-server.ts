@@ -4,6 +4,8 @@ import type { TranscriptReader } from '../session/transcript-reader.js';
 import type { PulseStore } from '../pulse/pulse-store.js';
 import type { RelayCore } from '@dorkos/relay';
 import type { AdapterManager } from '../relay/adapter-manager.js';
+import type { TraceStore } from '../relay/trace-store.js';
+import type { MeshCore } from '@dorkos/mesh';
 
 /**
  * Explicit dependency interface for MCP tool handlers.
@@ -19,6 +21,10 @@ export interface McpToolDeps {
   relayCore?: RelayCore;
   /** Optional AdapterManager — undefined when Relay adapters are not configured */
   adapterManager?: AdapterManager;
+  /** Optional TraceStore — undefined when Relay tracing is disabled */
+  traceStore?: TraceStore;
+  /** Optional MeshCore — undefined when Mesh is disabled */
+  meshCore?: MeshCore;
 }
 
 /**
@@ -356,6 +362,156 @@ export function createRelayReloadAdaptersHandler(deps: McpToolDeps) {
   };
 }
 
+// --- Trace Tools ---
+
+/** Guard that returns an error response when TraceStore is not available. */
+function requireTraceStore(deps: McpToolDeps) {
+  if (!deps.traceStore) {
+    return jsonContent({ error: 'Relay tracing is not enabled', code: 'TRACING_DISABLED' }, true);
+  }
+  return null;
+}
+
+/** Get the full trace for a message by its ID. */
+export function createRelayGetTraceHandler(deps: McpToolDeps) {
+  return async (args: { messageId: string }) => {
+    const err = requireTraceStore(deps);
+    if (err) return err;
+    const span = deps.traceStore!.getSpanByMessageId(args.messageId);
+    if (!span) {
+      return jsonContent({ error: 'Trace not found', messageId: args.messageId }, true);
+    }
+    const spans = deps.traceStore!.getTrace(span.traceId);
+    return jsonContent({ traceId: span.traceId, spans });
+  };
+}
+
+/** Get aggregate delivery metrics from the TraceStore. */
+export function createRelayGetMetricsHandler(deps: McpToolDeps) {
+  return async () => {
+    const err = requireTraceStore(deps);
+    if (err) return err;
+    const metrics = deps.traceStore!.getMetrics();
+    return jsonContent(metrics);
+  };
+}
+
+// --- Mesh Tools ---
+
+/** Guard that returns an error response when Mesh is disabled. */
+function requireMesh(deps: McpToolDeps) {
+  if (!deps.meshCore) {
+    return jsonContent({ error: 'Mesh is not enabled', code: 'MESH_DISABLED' }, true);
+  }
+  return null;
+}
+
+/** Discover agents by scanning directories. */
+export function createMeshDiscoverHandler(deps: McpToolDeps) {
+  return async (args: { roots: string[]; maxDepth?: number }) => {
+    const err = requireMesh(deps);
+    if (err) return err;
+    try {
+      const candidates = [];
+      for await (const candidate of deps.meshCore!.discover(args.roots, {
+        maxDepth: args.maxDepth,
+      })) {
+        candidates.push(candidate);
+      }
+      return jsonContent({ candidates, count: candidates.length });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Discovery failed';
+      return jsonContent({ error: message, code: 'DISCOVER_FAILED' }, true);
+    }
+  };
+}
+
+/** Register an agent from a filesystem path. */
+export function createMeshRegisterHandler(deps: McpToolDeps) {
+  return async (args: {
+    path: string;
+    name?: string;
+    description?: string;
+    runtime?: string;
+    capabilities?: string[];
+  }) => {
+    const err = requireMesh(deps);
+    if (err) return err;
+    try {
+      const overrides: Record<string, unknown> = {};
+      if (args.name) overrides.name = args.name;
+      if (args.description) overrides.description = args.description;
+      if (args.runtime) overrides.runtime = args.runtime;
+      if (args.capabilities) overrides.capabilities = args.capabilities;
+      const agent = await deps.meshCore!.registerByPath(
+        args.path,
+        {
+          name: args.name ?? args.path.split('/').pop() ?? 'unnamed',
+          runtime: (args.runtime ?? 'claude-code') as 'claude-code' | 'cursor' | 'codex' | 'other',
+          ...(args.description && { description: args.description }),
+          ...(args.capabilities && { capabilities: args.capabilities }),
+        },
+        'mcp-tool',
+      );
+      return jsonContent({ agent });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Registration failed';
+      return jsonContent({ error: message, code: 'REGISTER_FAILED' }, true);
+    }
+  };
+}
+
+/** List registered agents with optional filters. */
+export function createMeshListHandler(deps: McpToolDeps) {
+  return async (args: { runtime?: string; capability?: string }) => {
+    const err = requireMesh(deps);
+    if (err) return err;
+    const agents = deps.meshCore!.list(
+      args.runtime || args.capability
+        ? {
+            runtime: args.runtime as 'claude-code' | 'cursor' | 'codex' | 'other' | undefined,
+            capability: args.capability,
+          }
+        : undefined,
+    );
+    return jsonContent({ agents, count: agents.length });
+  };
+}
+
+/** Deny a candidate path from future discovery. */
+export function createMeshDenyHandler(deps: McpToolDeps) {
+  return async (args: { path: string; reason?: string }) => {
+    const err = requireMesh(deps);
+    if (err) return err;
+    try {
+      await deps.meshCore!.deny(args.path, args.reason, 'mcp-tool');
+      return jsonContent({ success: true, path: args.path });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Deny failed';
+      return jsonContent({ error: message, code: 'DENY_FAILED' }, true);
+    }
+  };
+}
+
+/** Unregister an agent by ID. */
+export function createMeshUnregisterHandler(deps: McpToolDeps) {
+  return async (args: { agentId: string }) => {
+    const err = requireMesh(deps);
+    if (err) return err;
+    try {
+      const agent = deps.meshCore!.get(args.agentId);
+      if (!agent) {
+        return jsonContent({ error: `Agent ${args.agentId} not found` }, true);
+      }
+      await deps.meshCore!.unregister(args.agentId);
+      return jsonContent({ success: true, agentId: args.agentId });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Unregister failed';
+      return jsonContent({ error: message, code: 'UNREGISTER_FAILED' }, true);
+    }
+  };
+}
+
 /**
  * Create the DorkOS MCP tool server with all registered tools.
  * Called once at server startup. The returned server instance is injected
@@ -494,6 +650,77 @@ export function createDorkOsToolServer(deps: McpToolDeps) {
       ]
     : [];
 
+  // Trace tools — only registered when traceStore is provided
+  const traceTools = deps.traceStore
+    ? [
+        tool(
+          'relay_get_trace',
+          'Get the full delivery trace for a Relay message. Returns all spans in the trace chain.',
+          { messageId: z.string().describe('Message ID to look up the trace for') },
+          createRelayGetTraceHandler(deps)
+        ),
+        tool(
+          'relay_get_metrics',
+          'Get aggregate delivery metrics for the Relay message bus. Includes counts, latency stats, and budget rejections.',
+          {},
+          createRelayGetMetricsHandler(deps)
+        ),
+      ]
+    : [];
+
+  // Mesh tools — only registered when meshCore is provided
+  const meshTools = deps.meshCore
+    ? [
+        tool(
+          'mesh_discover',
+          'Scan directories for agent candidates. Returns paths with detected runtime, capabilities, and suggested names.',
+          {
+            roots: z.array(z.string()).describe('Root directories to scan for agents'),
+            maxDepth: z.number().int().min(1).optional().describe('Maximum directory depth (default 3)'),
+          },
+          createMeshDiscoverHandler(deps)
+        ),
+        tool(
+          'mesh_register',
+          'Register an agent from a filesystem path. Creates a .dork/agent.json manifest and adds the agent to the registry.',
+          {
+            path: z.string().describe('Filesystem path to the agent directory'),
+            name: z.string().optional().describe('Display name override'),
+            description: z.string().optional().describe('Agent description'),
+            runtime: z.string().optional().describe('Runtime: claude-code, cursor, codex, or other'),
+            capabilities: z.array(z.string()).optional().describe('Agent capabilities'),
+          },
+          createMeshRegisterHandler(deps)
+        ),
+        tool(
+          'mesh_list',
+          'List all registered agents with optional filters.',
+          {
+            runtime: z.string().optional().describe('Filter by runtime'),
+            capability: z.string().optional().describe('Filter by capability'),
+          },
+          createMeshListHandler(deps)
+        ),
+        tool(
+          'mesh_deny',
+          'Deny a candidate path from future discovery scans.',
+          {
+            path: z.string().describe('Path to deny'),
+            reason: z.string().optional().describe('Reason for denial'),
+          },
+          createMeshDenyHandler(deps)
+        ),
+        tool(
+          'mesh_unregister',
+          'Unregister an agent by ID, removing it from the registry.',
+          {
+            agentId: z.string().describe('Agent ID to unregister'),
+          },
+          createMeshUnregisterHandler(deps)
+        ),
+      ]
+    : [];
+
   return createSdkMcpServer({
     name: 'dorkos',
     version: '1.0.0',
@@ -519,6 +746,8 @@ export function createDorkOsToolServer(deps: McpToolDeps) {
       ...pulseTools,
       ...relayTools,
       ...adapterTools,
+      ...traceTools,
+      ...meshTools,
     ],
   });
 }

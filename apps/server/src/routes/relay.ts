@@ -15,14 +15,20 @@ import {
 } from '@dorkos/shared/relay-schemas';
 import { initSSEStream } from '../services/core/stream-adapter.js';
 import type { AdapterManager } from '../services/relay/adapter-manager.js';
+import type { TraceStore } from '../services/relay/trace-store.js';
 
 /**
  * Create the Relay router with message, endpoint, and adapter management endpoints.
  *
  * @param relayCore - The RelayCore instance for message bus operations
  * @param adapterManager - Optional adapter lifecycle manager for external channel adapters
+ * @param traceStore - Optional trace store for message delivery tracking
  */
-export function createRelayRouter(relayCore: RelayCore, adapterManager?: AdapterManager): Router {
+export function createRelayRouter(
+  relayCore: RelayCore,
+  adapterManager?: AdapterManager,
+  traceStore?: TraceStore,
+): Router {
   const router = Router();
 
   // POST /messages — Send a message
@@ -121,9 +127,31 @@ export function createRelayRouter(relayCore: RelayCore, adapterManager?: Adapter
     return res.json(deadLetters);
   });
 
-  // GET /metrics — Relay system metrics
+  // GET /metrics — Relay system metrics (from RelayCore)
   router.get('/metrics', (_req, res) => {
     const metrics = relayCore.getMetrics();
+    return res.json(metrics);
+  });
+
+  // GET /messages/:id/trace — Full trace for a message
+  router.get('/messages/:id/trace', (_req, res) => {
+    if (!traceStore) {
+      return res.status(404).json({ error: 'Tracing not available' });
+    }
+    const span = traceStore.getSpanByMessageId(_req.params.id);
+    if (!span) {
+      return res.status(404).json({ error: 'Trace not found' });
+    }
+    const spans = traceStore.getTrace(span.traceId);
+    return res.json({ traceId: span.traceId, spans });
+  });
+
+  // GET /trace/metrics — Aggregate delivery metrics from TraceStore
+  router.get('/trace/metrics', (_req, res) => {
+    if (!traceStore) {
+      return res.status(404).json({ error: 'Tracing not available' });
+    }
+    const metrics = traceStore.getMetrics();
     return res.json(metrics);
   });
 

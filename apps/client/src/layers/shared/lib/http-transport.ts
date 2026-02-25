@@ -20,6 +20,8 @@ import type {
   ListRunsQuery,
 } from '@dorkos/shared/types';
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
+import type { TraceSpan, DeliveryMetrics } from '@dorkos/shared/relay-schemas';
+import type { AgentManifest, DiscoveryCandidate, DenialRecord } from '@dorkos/shared/mesh-schemas';
 
 async function fetchJSON<T>(baseUrl: string, url: string, opts?: RequestInit): Promise<T> {
   const res = await fetch(`${baseUrl}${url}`, {
@@ -381,6 +383,36 @@ export class HttpTransport implements Transport {
     return fetchJSON(this.baseUrl, '/relay/metrics');
   }
 
+  // --- Relay Convergence ---
+
+  async sendMessageRelay(
+    sessionId: string,
+    content: string,
+    options?: { clientId?: string },
+  ): Promise<{ messageId: string; traceId: string }> {
+    const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Id': options?.clientId ?? this.clientId,
+      },
+      body: JSON.stringify({ content }),
+    });
+    if (res.status !== 202 && !res.ok) {
+      const error = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(error.error || `HTTP ${res.status}`);
+    }
+    return res.json();
+  }
+
+  getRelayTrace(messageId: string): Promise<{ traceId: string; spans: TraceSpan[] }> {
+    return fetchJSON(this.baseUrl, `/relay/messages/${messageId}/trace`);
+  }
+
+  getRelayDeliveryMetrics(): Promise<DeliveryMetrics> {
+    return fetchJSON(this.baseUrl, '/relay/trace/metrics');
+  }
+
   // --- Relay Adapters ---
 
   listRelayAdapters(): Promise<AdapterListItem[]> {
@@ -391,5 +423,59 @@ export class HttpTransport implements Transport {
     return fetchJSON(this.baseUrl, `/relay/adapters/${id}/${enabled ? 'enable' : 'disable'}`, {
       method: 'POST',
     });
+  }
+
+  // --- Mesh Agent Discovery ---
+
+  discoverMeshAgents(roots: string[], maxDepth?: number): Promise<{ candidates: DiscoveryCandidate[] }> {
+    return fetchJSON(this.baseUrl, '/mesh/discover', {
+      method: 'POST',
+      body: JSON.stringify({ roots, ...(maxDepth !== undefined && { maxDepth }) }),
+    });
+  }
+
+  listMeshAgents(filters?: { runtime?: string; capability?: string }): Promise<{ agents: AgentManifest[] }> {
+    const params = new URLSearchParams();
+    if (filters?.runtime) params.set('runtime', filters.runtime);
+    if (filters?.capability) params.set('capability', filters.capability);
+    const qs = params.toString();
+    return fetchJSON(this.baseUrl, `/mesh/agents${qs ? `?${qs}` : ''}`);
+  }
+
+  getMeshAgent(id: string): Promise<AgentManifest> {
+    return fetchJSON(this.baseUrl, `/mesh/agents/${id}`);
+  }
+
+  registerMeshAgent(path: string, overrides?: Partial<AgentManifest>, approver?: string): Promise<AgentManifest> {
+    return fetchJSON(this.baseUrl, '/mesh/agents', {
+      method: 'POST',
+      body: JSON.stringify({ path, ...(overrides && { overrides }), ...(approver && { approver }) }),
+    });
+  }
+
+  updateMeshAgent(id: string, updates: Partial<AgentManifest>): Promise<AgentManifest> {
+    return fetchJSON(this.baseUrl, `/mesh/agents/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(updates),
+    });
+  }
+
+  unregisterMeshAgent(id: string): Promise<{ success: boolean }> {
+    return fetchJSON(this.baseUrl, `/mesh/agents/${id}`, { method: 'DELETE' });
+  }
+
+  denyMeshAgent(path: string, reason?: string, denier?: string): Promise<{ success: boolean }> {
+    return fetchJSON(this.baseUrl, '/mesh/deny', {
+      method: 'POST',
+      body: JSON.stringify({ path, ...(reason && { reason }), ...(denier && { denier }) }),
+    });
+  }
+
+  listDeniedMeshAgents(): Promise<{ denied: DenialRecord[] }> {
+    return fetchJSON(this.baseUrl, '/mesh/denied');
+  }
+
+  clearMeshDenial(path: string): Promise<{ success: boolean }> {
+    return fetchJSON(this.baseUrl, `/mesh/denied/${encodeURIComponent(path)}`, { method: 'DELETE' });
   }
 }

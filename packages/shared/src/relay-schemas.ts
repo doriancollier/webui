@@ -313,3 +313,87 @@ export const AdaptersConfigFileSchema = z
   .openapi('AdaptersConfigFile');
 
 export type AdaptersConfigFile = z.infer<typeof AdaptersConfigFileSchema>;
+
+// === Trace & Metrics ===
+
+export const TraceSpanStatusSchema = z
+  .enum(['pending', 'delivered', 'processed', 'failed', 'dead_lettered'])
+  .openapi('TraceSpanStatus');
+
+export type TraceSpanStatus = z.infer<typeof TraceSpanStatusSchema>;
+
+export const TraceSpanSchema = z
+  .object({
+    messageId: z.string(),
+    traceId: z.string(),
+    spanId: z.string(),
+    parentSpanId: z.string().nullable(),
+    subject: z.string(),
+    fromEndpoint: z.string(),
+    toEndpoint: z.string(),
+    status: TraceSpanStatusSchema,
+    budgetHopsUsed: z.number().int().nullable(),
+    budgetTtlRemainingMs: z.number().int().nullable(),
+    sentAt: z.number().int(),
+    deliveredAt: z.number().int().nullable(),
+    processedAt: z.number().int().nullable(),
+    error: z.string().nullable(),
+  })
+  .openapi('TraceSpan');
+
+export type TraceSpan = z.infer<typeof TraceSpanSchema>;
+
+export const BudgetRejectionsSchema = z
+  .object({
+    hopLimit: z.number().int(),
+    ttlExpired: z.number().int(),
+    cycleDetected: z.number().int(),
+    budgetExhausted: z.number().int(),
+  })
+  .openapi('BudgetRejections');
+
+export type BudgetRejections = z.infer<typeof BudgetRejectionsSchema>;
+
+export const DeliveryMetricsSchema = z
+  .object({
+    totalMessages: z.number().int(),
+    deliveredCount: z.number().int(),
+    failedCount: z.number().int(),
+    deadLetteredCount: z.number().int(),
+    avgDeliveryLatencyMs: z.number().nullable(),
+    p95DeliveryLatencyMs: z.number().nullable(),
+    activeEndpoints: z.number().int(),
+    budgetRejections: BudgetRejectionsSchema,
+  })
+  .openapi('DeliveryMetrics');
+
+export type DeliveryMetrics = z.infer<typeof DeliveryMetricsSchema>;
+
+// === Pulse Dispatch ===
+
+export const PulseDispatchPayloadSchema = z
+  .object({
+    type: z.literal('pulse_dispatch'),
+    scheduleId: z.string(),
+    runId: z.string(),
+    prompt: z.string(),
+    cwd: z.string().nullable(),
+    permissionMode: z.string(),
+    scheduleName: z.string(),
+    cron: z.string(),
+    trigger: z.string(),
+  })
+  .openapi('PulseDispatchPayload');
+
+export type PulseDispatchPayload = z.infer<typeof PulseDispatchPayloadSchema>;
+
+// === Console Relay Receipt ===
+
+export const RelayReceiptSchema = z
+  .object({
+    messageId: z.string(),
+    traceId: z.string(),
+  })
+  .openapi('RelayReceipt');
+
+export type RelayReceipt = z.infer<typeof RelayReceiptSchema>;

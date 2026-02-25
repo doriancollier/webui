@@ -332,6 +332,26 @@ Outbound: RelayCore.publish() → AdapterRegistry.deliver() → Adapter.deliver(
 
 See `contributing/relay-adapters.md` for the full developer guide on creating custom adapters.
 
+## Relay Convergence (when DORKOS_RELAY_ENABLED=true)
+
+When the Relay feature flag is enabled, both Console (chat) and Pulse (scheduled) message flows are routed through the Relay message bus instead of calling AgentManager directly. This provides unified message tracing, delivery tracking, and subject-based routing.
+
+### Console Message Flow
+
+```
+Client POST → relay.publish('relay.agent.{sessionId}') → MessageReceiver → agentManager.sendMessage() → Claude SDK → response → relay.publish('relay.human.console.{clientId}') → SSE fan-in → client EventSource
+```
+
+### Pulse Dispatch Flow
+
+```
+SchedulerService → relay.publish('relay.system.pulse.{scheduleId}') → MessageReceiver.handlePulseMessage() → agentManager.sendMessage() → Claude SDK
+```
+
+### Message Tracing
+
+Every `relay.publish()` records a TraceSpan in SQLite. API: `GET /api/relay/messages/:id/trace`, `GET /api/relay/trace/metrics`.
+
 ## Testing
 
 All hooks and components use mock `Transport` objects injected via `TransportProvider` in test wrappers:

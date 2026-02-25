@@ -4,6 +4,10 @@ import type { Response } from 'express';
 import type { TranscriptReader } from './transcript-reader.js';
 import { WATCHER } from '../../config/constants.js';
 import { logger } from '../../lib/logger.js';
+import type { RelayCore } from '@dorkos/relay';
+
+/** Unsubscribe function returned by RelayCore.subscribe(). */
+type Unsubscribe = () => void;
 
 /**
  * SessionBroadcaster manages file watching and SSE broadcasting for cross-client session sync.
@@ -30,8 +34,22 @@ export class SessionBroadcaster {
   private watchers = new Map<string, FSWatcher>();
   private offsets = new Map<string, number>();
   private debounceTimers = new Map<string, NodeJS.Timeout>();
+  private relaySubscriptions = new Map<Response, Unsubscribe>();
+  private relay: RelayCore | null = null;
 
   constructor(private transcriptReader: TranscriptReader) {}
+
+  /**
+   * Set the RelayCore instance for relay subscription fan-in.
+   *
+   * When set, SSE clients that provide a clientId will automatically
+   * receive relay messages published to `relay.human.console.{clientId}`.
+   *
+   * @param relay - The RelayCore instance
+   */
+  setRelay(relay: RelayCore): void {
+    this.relay = relay;
+  }
 
   /**
    * Register an SSE client for a session.
@@ -40,13 +58,15 @@ export class SessionBroadcaster {
    * - Starts a file watcher if none exists for this session
    * - Initializes offset to current file size (only broadcast new content)
    * - Sends sync_connected event to the client
+   * - If relay is set and clientId is provided, subscribes to relay messages
    * - Auto-deregisters on response close
    *
    * @param sessionId - Session UUID
    * @param vaultRoot - Vault root path for resolving transcript directory
    * @param res - Express Response object configured for SSE
+   * @param clientId - Optional client identifier for relay subscription
    */
-  registerClient(sessionId: string, vaultRoot: string, res: Response): void {
+  registerClient(sessionId: string, vaultRoot: string, res: Response, clientId?: string): void {
     // Add client to set
     if (!this.clients.has(sessionId)) {
       this.clients.set(sessionId, new Set());
@@ -56,6 +76,11 @@ export class SessionBroadcaster {
     // Start watcher if this is the first client for this session
     if (!this.watchers.has(sessionId)) {
       this.startWatcher(sessionId, vaultRoot);
+    }
+
+    // Subscribe to relay messages for this client
+    if (this.relay && clientId) {
+      this.subscribeToRelay(res, clientId);
     }
 
     // Send sync_connected event
@@ -78,6 +103,9 @@ export class SessionBroadcaster {
    * @param res - Express Response object to remove
    */
   deregisterClient(sessionId: string, res: Response): void {
+    // Clean up relay subscription for this client
+    this.unsubscribeFromRelay(res);
+
     const clientSet = this.clients.get(sessionId);
     if (!clientSet) return;
 
@@ -102,6 +130,46 @@ export class SessionBroadcaster {
         clearTimeout(timer);
         this.debounceTimers.delete(sessionId);
       }
+    }
+  }
+
+  /**
+   * Subscribe an SSE client to relay messages on `relay.human.console.{clientId}`.
+   *
+   * Incoming relay envelopes are forwarded as SSE `relay_message` events.
+   *
+   * @param res - The SSE response to write relay events to
+   * @param clientId - Client identifier used to build the relay subject
+   */
+  private subscribeToRelay(res: Response, clientId: string): void {
+    const subject = `relay.human.console.${clientId}`;
+    const unsub = this.relay!.subscribe(subject, (envelope) => {
+      const eventData = `event: relay_message\ndata: ${JSON.stringify({
+        messageId: envelope.id,
+        payload: envelope.payload,
+        subject: envelope.subject,
+      })}\n\n`;
+
+      try {
+        res.write(eventData);
+      } catch (err) {
+        logger.error(`[SessionBroadcaster] Failed to write relay event to client:`, err);
+      }
+    });
+
+    this.relaySubscriptions.set(res, unsub);
+  }
+
+  /**
+   * Unsubscribe an SSE client from its relay subject.
+   *
+   * @param res - The SSE response to unsubscribe
+   */
+  private unsubscribeFromRelay(res: Response): void {
+    const unsub = this.relaySubscriptions.get(res);
+    if (unsub) {
+      unsub();
+      this.relaySubscriptions.delete(res);
     }
   }
 
@@ -243,6 +311,12 @@ export class SessionBroadcaster {
       watcher.close();
     });
     this.watchers.clear();
+
+    // Unsubscribe all relay subscriptions
+    for (const unsub of this.relaySubscriptions.values()) {
+      unsub();
+    }
+    this.relaySubscriptions.clear();
 
     // End all client responses
     Array.from(this.clients.values()).forEach((clientSet) => {

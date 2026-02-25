@@ -55,6 +55,9 @@ export type {
   CreateScheduleInput,
   UpdateScheduleRequest,
   ListRunsQuery,
+  RelayReceiptEvent,
+  MessageDeliveredEvent,
+  RelayMessageEvent,
 } from './schemas.js';
 
 export type {

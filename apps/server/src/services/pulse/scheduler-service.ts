@@ -1,6 +1,9 @@
 import { Cron } from 'croner';
+import type { RelayCore } from '@dorkos/relay';
 import type { PulseSchedule, PulseRun, PermissionMode, StreamEvent } from '@dorkos/shared/types';
+import type { PulseDispatchPayload } from '@dorkos/shared/relay-schemas';
 import type { PulseStore } from './pulse-store.js';
+import { isRelayEnabled } from '../relay/relay-state.js';
 import { logger } from '../../lib/logger.js';
 
 /** Narrow interface for the AgentManager methods used by the scheduler. */
@@ -21,6 +24,15 @@ export interface SchedulerConfig {
   maxConcurrentRuns: number;
   retentionCount: number;
   timezone: string | null;
+}
+
+/** Dependencies for the scheduler service. */
+export interface SchedulerDeps {
+  store: PulseStore;
+  agentManager: SchedulerAgentManager;
+  config: SchedulerConfig;
+  /** Optional RelayCore instance for dispatching runs via the Relay message bus. */
+  relay?: RelayCore | null;
 }
 
 /**
@@ -57,11 +69,29 @@ export class SchedulerService {
   private store: PulseStore;
   private agentManager: SchedulerAgentManager;
   private config: SchedulerConfig;
+  private relay: RelayCore | null;
 
-  constructor(store: PulseStore, agentManager: SchedulerAgentManager, config: SchedulerConfig) {
-    this.store = store;
-    this.agentManager = agentManager;
-    this.config = config;
+  constructor(store: PulseStore, agentManager: SchedulerAgentManager, config: SchedulerConfig, relay?: RelayCore | null);
+  constructor(deps: SchedulerDeps);
+  constructor(
+    storeOrDeps: PulseStore | SchedulerDeps,
+    agentManager?: SchedulerAgentManager,
+    config?: SchedulerConfig,
+    relay?: RelayCore | null,
+  ) {
+    if ('store' in storeOrDeps && 'agentManager' in storeOrDeps && 'config' in storeOrDeps) {
+      // SchedulerDeps object form
+      this.store = storeOrDeps.store;
+      this.agentManager = storeOrDeps.agentManager;
+      this.config = storeOrDeps.config;
+      this.relay = storeOrDeps.relay ?? null;
+    } else {
+      // Positional args form (backwards-compatible)
+      this.store = storeOrDeps as PulseStore;
+      this.agentManager = agentManager!;
+      this.config = config!;
+      this.relay = relay ?? null;
+    }
   }
 
   /** Start the scheduler: recover from crashes, prune old runs, register enabled schedules. */
@@ -185,8 +215,65 @@ export class SchedulerService {
     await this.executeRun(current, run);
   }
 
-  /** Execute a run — manages AbortController, streams agent output, updates run status. */
+  /** Execute a run — branches between Relay dispatch and direct AgentManager execution. */
   private async executeRun(schedule: PulseSchedule, run: PulseRun): Promise<void> {
+    if (isRelayEnabled() && this.relay) {
+      return this.executeRunViaRelay(schedule, run);
+    }
+    return this.executeRunDirect(schedule, run);
+  }
+
+  /**
+   * Execute a run by publishing a PulseDispatchPayload via the Relay message bus.
+   *
+   * Builds an envelope with the schedule/run metadata and publishes to
+   * `relay.system.pulse.{scheduleId}`. If no receiver is subscribed
+   * (deliveredTo === 0), the run is immediately marked as failed.
+   * Otherwise it is marked as running — the receiver will update
+   * status on completion via a separate response flow.
+   */
+  private async executeRunViaRelay(schedule: PulseSchedule, run: PulseRun): Promise<void> {
+    const payload: PulseDispatchPayload = {
+      type: 'pulse_dispatch',
+      scheduleId: schedule.id,
+      runId: run.id,
+      prompt: schedule.prompt,
+      cwd: schedule.cwd || process.cwd(),
+      permissionMode: schedule.permissionMode,
+      scheduleName: schedule.name,
+      cron: schedule.cron,
+      trigger: run.trigger,
+    };
+
+    const subject = `relay.system.pulse.${schedule.id}`;
+    const result = await this.relay!.publish(subject, payload, {
+      from: 'relay.system.pulse.scheduler',
+      replyTo: `relay.system.pulse.${schedule.id}.response`,
+      budget: {
+        maxHops: 3,
+        ttl: Date.now() + (schedule.maxRuntime || 3_600_000),
+        callBudgetRemaining: 5,
+      },
+    });
+
+    if (result.deliveredTo === 0) {
+      this.store.updateRun(run.id, {
+        status: 'failed',
+        finishedAt: new Date().toISOString(),
+        durationMs: 0,
+        error: 'No receiver for pulse dispatch',
+      });
+      logger.warn(`Pulse: no receiver for relay dispatch of run ${run.id}`);
+    } else {
+      this.store.updateRun(run.id, {
+        status: 'running',
+      });
+      logger.info(`Pulse: relay dispatch for run ${run.id} delivered to ${result.deliveredTo} endpoint(s)`);
+    }
+  }
+
+  /** Execute a run directly via AgentManager — manages AbortController, streams output, updates status. */
+  private async executeRunDirect(schedule: PulseSchedule, run: PulseRun): Promise<void> {
     const controller = new AbortController();
     this.activeRuns.set(run.id, controller);
 

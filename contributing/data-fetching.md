@@ -230,6 +230,44 @@ useQuery({ queryKey: ['sessions'], ... }); // Duplicate, easy to drift
 **Cause**: ETag mismatch between cached and actual content.
 **Fix**: Force refetch by invalidating the query: `queryClient.invalidateQueries({ queryKey: ['messages', sessionId] })`.
 
+## Relay Entity Hooks
+
+When `DORKOS_RELAY_ENABLED` is true, additional entity hooks are available for message tracing and delivery metrics.
+
+### useMessageTrace
+
+Fetches trace spans for a specific Relay message. The query is disabled when `messageId` is null.
+
+```typescript
+// apps/client/src/layers/entities/relay/model/use-message-trace.ts
+import { useQuery } from '@tanstack/react-query';
+
+export function useMessageTrace(messageId: string | null) {
+  return useQuery({
+    queryKey: ['relay', 'trace', messageId],
+    queryFn: () => fetch(`/api/relay/messages/${messageId}/trace`).then(r => r.json()),
+    enabled: messageId !== null,
+  });
+}
+```
+
+### useDeliveryMetrics
+
+Fetches aggregate delivery metrics for the Relay system with automatic 30-second refresh.
+
+```typescript
+// apps/client/src/layers/entities/relay/model/use-delivery-metrics.ts
+import { useQuery } from '@tanstack/react-query';
+
+export function useDeliveryMetrics() {
+  return useQuery({
+    queryKey: ['relay', 'trace', 'metrics'],
+    queryFn: () => fetch('/api/relay/trace/metrics').then(r => r.json()),
+    refetchInterval: 30_000,
+  });
+}
+```
+
 ## References
 
 - [State Management Guide](./state-management.md) - When to use TanStack Query vs Zustand

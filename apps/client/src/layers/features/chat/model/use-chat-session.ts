@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { SessionStatusEvent, MessagePart, HistoryMessage } from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
+import { useRelayEnabled } from '@/layers/entities/relay';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ChatSessionOptions } from './chat-types';
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
@@ -55,6 +56,8 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const transport = useTransport();
   const queryClient = useQueryClient();
   const selectedCwd = useAppStore((s) => s.selectedCwd);
+  const relayEnabled = useRelayEnabled();
+  const clientIdRef = useRef(crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle');
@@ -99,6 +102,32 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   }, []);
 
   const isStreaming = status === 'streaming';
+
+  // Create stream event handler at hook level so it can be shared between
+  // handleSubmit (legacy SSE path) and EventSource relay_message listener
+  const streamEventHandler = useMemo(
+    () =>
+      createStreamEventHandler({
+        currentPartsRef,
+        assistantCreatedRef,
+        sessionStatusRef,
+        streamStartTimeRef,
+        estimatedTokensRef,
+        textStreamingTimerRef,
+        isTextStreamingRef,
+        setMessages,
+        setError,
+        setStatus,
+        setSessionStatus,
+        setEstimatedTokens,
+        setStreamStartTime,
+        setIsTextStreaming,
+        sessionId,
+        options,
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Refs are stable; options/sessionId drive recreation
+    [sessionId, options]
+  );
 
   // Load message history from SDK transcript via TanStack Query with adaptive polling
   const historyQuery = useQuery({
@@ -158,10 +187,26 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       // Optional: track connection status
     });
 
+    // Relay protocol: response chunks arrive as relay_message events on this EventSource
+    if (relayEnabled) {
+      eventSource.addEventListener('relay_message', (event: MessageEvent) => {
+        const streamEvent = JSON.parse(event.data);
+        streamEventHandler(streamEvent.type, streamEvent.data, assistantIdRef.current);
+      });
+
+      eventSource.addEventListener('relay_receipt', () => {
+        // Receipt confirmation — delivery indicator (no-op for now)
+      });
+
+      eventSource.addEventListener('message_delivered', () => {
+        // Delivery confirmation (no-op for now)
+      });
+    }
+
     return () => {
       eventSource.close();
     };
-  }, [sessionId, isStreaming, queryClient]);
+  }, [sessionId, isStreaming, queryClient, relayEnabled, streamEventHandler]);
 
   // Cleanup sessionBusy timer on unmount
   useEffect(() => {
@@ -199,39 +244,28 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     const abortController = new AbortController();
     abortRef.current = abortController;
 
-    const handleStreamEvent = createStreamEventHandler({
-      currentPartsRef,
-      assistantCreatedRef,
-      sessionStatusRef,
-      streamStartTimeRef,
-      estimatedTokensRef,
-      textStreamingTimerRef,
-      isTextStreamingRef,
-      setMessages,
-      setError,
-      setStatus,
-      setSessionStatus,
-      setEstimatedTokens,
-      setStreamStartTime,
-      setIsTextStreaming,
-      sessionId,
-      options,
-    });
-
     try {
       const finalContent = options.transformContent
         ? await options.transformContent(userMessage.content)
         : userMessage.content;
 
-      await transport.sendMessage(
-        sessionId,
-        finalContent,
-        (event) => handleStreamEvent(event.type, event.data, assistantIdRef.current),
-        abortController.signal,
-        selectedCwd ?? undefined
-      );
-
-      setStatus('idle');
+      if (relayEnabled) {
+        // Relay path: POST returns 202 receipt, response chunks arrive via EventSource
+        await transport.sendMessageRelay(sessionId, finalContent, {
+          clientId: clientIdRef.current,
+        });
+        // Status stays 'streaming' — done event will arrive via EventSource relay_message
+      } else {
+        // Legacy path: POST streams SSE inline
+        await transport.sendMessage(
+          sessionId,
+          finalContent,
+          (event) => streamEventHandler(event.type, event.data, assistantIdRef.current),
+          abortController.signal,
+          selectedCwd ?? undefined
+        );
+        setStatus('idle');
+      }
     } catch (err) {
       if ((err as Error).name !== 'AbortError') {
         if ((err as { code?: string }).code === 'SESSION_LOCKED') {
@@ -252,7 +286,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       setIsTextStreaming(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: stable refs for transport/options/cwd
-  }, [input, status, sessionId]);
+  }, [input, status, sessionId, relayEnabled, streamEventHandler]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();

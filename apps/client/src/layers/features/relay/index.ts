@@ -5,3 +5,5 @@
  */
 export { RelayPanel } from './ui/RelayPanel';
 export { AdapterCard } from './ui/AdapterCard';
+export { MessageTrace } from './ui/MessageTrace';
+export { DeliveryMetricsDashboard } from './ui/DeliveryMetrics';

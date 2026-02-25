@@ -13,6 +13,8 @@ import {
   ListSessionsQuerySchema,
 } from '@dorkos/shared/schemas';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
+import { isRelayEnabled } from '../services/relay/relay-state.js';
+import type { RelayCore } from '@dorkos/relay';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const vaultRoot = path.resolve(__dirname, '../../../../');
@@ -184,7 +186,55 @@ router.patch('/:id', async (req, res) => {
   res.json(session ?? { id: req.params.id, permissionMode, model });
 });
 
-// POST /api/sessions/:id/messages - Send message (SSE stream response)
+/**
+ * Publish a user message to the Relay bus and return a 202 receipt.
+ *
+ * Registers a console endpoint for the client, publishes the message
+ * to `relay.agent.{sessionId}`, and returns the publish receipt.
+ *
+ * @param relayCore - The RelayCore instance
+ * @param sessionId - Target session UUID
+ * @param clientId - Client identifier (from X-Client-Id header)
+ * @param content - User message text
+ * @param cwd - Optional working directory
+ */
+async function publishViaRelay(
+  relayCore: RelayCore,
+  sessionId: string,
+  clientId: string,
+  content: string,
+  cwd?: string,
+): Promise<{ messageId: string; traceId: string }> {
+  const consoleEndpoint = `relay.human.console.${clientId}`;
+
+  // Register the console endpoint (idempotent — catch duplicate registration)
+  try {
+    await relayCore.registerEndpoint(consoleEndpoint);
+  } catch {
+    // Endpoint already registered — ignore
+  }
+
+  const publishResult = await relayCore.publish(
+    `relay.agent.${sessionId}`,
+    { content, cwd },
+    {
+      from: consoleEndpoint,
+      replyTo: consoleEndpoint,
+      budget: {
+        maxHops: 5,
+        ttl: Date.now() + 300_000,
+        callBudgetRemaining: 10,
+      },
+    },
+  );
+
+  return {
+    messageId: publishResult.messageId,
+    traceId: 'no-trace',
+  };
+}
+
+// POST /api/sessions/:id/messages - Send message (SSE stream or Relay 202 receipt)
 router.post('/:id/messages', async (req, res) => {
   const parsed = SendMessageRequestSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -197,7 +247,7 @@ router.post('/:id/messages', async (req, res) => {
   // Read X-Client-Id header, or generate UUID if missing
   const clientId = (req.headers['x-client-id'] as string) || crypto.randomUUID();
 
-  // Acquire lock before starting SSE stream
+  // Acquire lock before processing
   const lockAcquired = agentManager.acquireLock(sessionId, clientId, res);
   if (!lockAcquired) {
     const lockInfo = agentManager.getLockInfo(sessionId);
@@ -209,6 +259,21 @@ router.post('/:id/messages', async (req, res) => {
     });
   }
 
+  // Relay path: publish to message bus and return 202 receipt
+  const relayCore = req.app.locals.relayCore as RelayCore | undefined;
+  if (isRelayEnabled() && relayCore) {
+    try {
+      const receipt = await publishViaRelay(relayCore, sessionId, clientId, content, cwd);
+      return res.status(202).json(receipt);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Relay publish failed';
+      return res.status(500).json({ error: message });
+    } finally {
+      agentManager.releaseLock(sessionId, clientId);
+    }
+  }
+
+  // Legacy path: stream SSE response on the POST connection
   // Guarantee lock release if client disconnects before try block
   res.on('close', () => {
     agentManager.releaseLock(sessionId, clientId);
@@ -283,12 +348,13 @@ router.post('/:id/submit-answers', async (req, res) => {
 router.get('/:id/stream', (req, res) => {
   const sessionId = req.params.id;
   const cwd = (req.query.cwd as string) || vaultRoot;
+  const clientId = req.query.clientId as string | undefined;
   const sessionBroadcaster = req.app.locals.sessionBroadcaster;
 
   initSSEStream(res);
 
-  // Register with broadcaster
-  sessionBroadcaster.registerClient(sessionId, cwd, res);
+  // Register with broadcaster (clientId enables relay subscription fan-in)
+  sessionBroadcaster.registerClient(sessionId, cwd, res, clientId);
 
   // The broadcaster handles:
   // - Sending sync_connected event

@@ -290,6 +290,68 @@ SSE event stream for real-time relay activity. Supports server-side subject filt
 
 **Usage:** Clients should close the EventSource when the relay panel is not visible.
 
+### POST /api/sessions/:id/messages (Relay Mode)
+
+When `DORKOS_RELAY_ENABLED` is true, this endpoint publishes the message to Relay instead of streaming directly. The response changes from SSE to a JSON receipt.
+
+**Responses:**
+
+- `202` - Message accepted for Relay delivery:
+
+```json
+{
+  "messageId": "01HXYZ...",
+  "traceId": "tr_01HXYZ..."
+}
+```
+
+Response chunks are delivered asynchronously via the SSE stream (`GET /api/sessions/:id/stream`) as `relay_message` events.
+
+### GET /api/relay/messages/:id/trace
+
+Get delivery trace for a specific message. Requires `DORKOS_RELAY_ENABLED=true`.
+
+**Responses:**
+
+- `200` - Trace with spans:
+
+```json
+{
+  "traceId": "tr_01HXYZ...",
+  "spans": [
+    {
+      "spanId": "sp_01HXYZ...",
+      "messageId": "01HXYZ...",
+      "subject": "relay.agent.session-123",
+      "operation": "publish",
+      "status": "completed",
+      "startedAt": "2026-02-25T10:00:00Z",
+      "completedAt": "2026-02-25T10:00:01Z"
+    }
+  ]
+}
+```
+
+- `404` - Message not found
+
+### GET /api/relay/trace/metrics
+
+Aggregate delivery metrics for the Relay system. Requires `DORKOS_RELAY_ENABLED=true`.
+
+**Responses:**
+
+- `200` - `DeliveryMetrics` aggregate:
+
+```json
+{
+  "totalMessages": 1234,
+  "totalDelivered": 1200,
+  "totalFailed": 34,
+  "avgDeliveryMs": 45.2,
+  "p99DeliveryMs": 210.5
+}
+```
+
 ## Validation Errors
 
 Invalid requests return HTTP 400 with a structured error body:

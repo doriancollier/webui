@@ -1,4 +1,6 @@
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
+import type { TraceSpan, DeliveryMetrics } from '@dorkos/shared/relay-schemas';
+import type { AgentManifest, DiscoveryCandidate, DenialRecord } from '@dorkos/shared/mesh-schemas';
 import type {
   StreamEvent,
   Session,
@@ -302,6 +304,23 @@ export class DirectTransport implements Transport {
     return { totalMessages: 0, byStatus: {}, bySubject: [] };
   }
 
+  // Relay convergence is not supported in embedded mode
+  async sendMessageRelay(
+    _sessionId: string,
+    _content: string,
+    _options?: { clientId?: string },
+  ): Promise<{ messageId: string; traceId: string }> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
+  async getRelayTrace(_messageId: string): Promise<{ traceId: string; spans: TraceSpan[] }> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
+  async getRelayDeliveryMetrics(): Promise<DeliveryMetrics> {
+    throw new Error('Relay is not supported in embedded mode');
+  }
+
   // Relay adapters are not supported in embedded mode
   async listRelayAdapters(): Promise<AdapterListItem[]> {
     return [];
@@ -309,5 +328,42 @@ export class DirectTransport implements Transport {
 
   async toggleRelayAdapter(_id: string, _enabled: boolean): Promise<{ ok: boolean }> {
     throw new Error('Relay adapters are not supported in embedded mode');
+  }
+
+  // Mesh agent discovery is not supported in embedded mode
+  async discoverMeshAgents(_roots: string[], _maxDepth?: number): Promise<{ candidates: DiscoveryCandidate[] }> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async listMeshAgents(_filters?: { runtime?: string; capability?: string }): Promise<{ agents: AgentManifest[] }> {
+    return { agents: [] };
+  }
+
+  async getMeshAgent(_id: string): Promise<AgentManifest> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async registerMeshAgent(_path: string, _overrides?: Partial<AgentManifest>, _approver?: string): Promise<AgentManifest> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async updateMeshAgent(_id: string, _updates: Partial<AgentManifest>): Promise<AgentManifest> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async unregisterMeshAgent(_id: string): Promise<{ success: boolean }> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async denyMeshAgent(_path: string, _reason?: string, _denier?: string): Promise<{ success: boolean }> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async listDeniedMeshAgents(): Promise<{ denied: DenialRecord[] }> {
+    return { denied: [] };
+  }
+
+  async clearMeshDenial(_path: string): Promise<{ success: boolean }> {
+    throw new Error('Mesh is not supported in embedded mode');
   }
 }

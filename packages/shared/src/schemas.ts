@@ -41,6 +41,9 @@ export const StreamEventTypeSchema = z
     'task_update',
     'sync_update',
     'sync_connected',
+    'relay_receipt',
+    'message_delivered',
+    'relay_message',
   ])
   .openapi('StreamEventType');
 
@@ -261,6 +264,36 @@ export const SyncConnectedEventSchema = z
 
 export type SyncConnectedEvent = z.infer<typeof SyncConnectedEventSchema>;
 
+export const RelayReceiptEventSchema = z
+  .object({
+    messageId: z.string(),
+    traceId: z.string(),
+  })
+  .openapi('RelayReceiptEvent');
+
+export type RelayReceiptEvent = z.infer<typeof RelayReceiptEventSchema>;
+
+export const MessageDeliveredEventSchema = z
+  .object({
+    messageId: z.string(),
+    subject: z.string(),
+    status: z.enum(['delivered', 'failed']),
+  })
+  .openapi('MessageDeliveredEvent');
+
+export type MessageDeliveredEvent = z.infer<typeof MessageDeliveredEventSchema>;
+
+export const RelayMessageEventSchema = z
+  .object({
+    messageId: z.string(),
+    payload: z.unknown(),
+    subject: z.string().optional(),
+    from: z.string().optional(),
+  })
+  .openapi('RelayMessageEvent');
+
+export type RelayMessageEvent = z.infer<typeof RelayMessageEventSchema>;
+
 export const StreamEventSchema = z
   .object({
     type: StreamEventTypeSchema,
@@ -275,6 +308,9 @@ export const StreamEventSchema = z
       TaskUpdateEventSchema,
       SyncUpdateEventSchema,
       SyncConnectedEventSchema,
+      RelayReceiptEventSchema,
+      MessageDeliveredEventSchema,
+      RelayMessageEventSchema,
     ]),
   })
   .openapi('StreamEvent');
@@ -485,6 +521,14 @@ export const ServerConfigSchema = z
       })
       .optional()
       .openapi({ description: 'Relay message bus feature state' }),
+    mesh: z
+      .object({
+        enabled: z
+          .boolean()
+          .openapi({ description: 'Whether the Mesh agent discovery subsystem is enabled' }),
+      })
+      .optional()
+      .openapi({ description: 'Mesh agent discovery feature state' }),
   })
   .openapi('ServerConfig');
 

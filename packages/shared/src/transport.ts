@@ -27,7 +27,8 @@ import type {
   UpdateScheduleRequest,
   ListRunsQuery,
 } from './types.js';
-import type { AdapterConfigZ, AdapterStatusZ } from './relay-schemas.js';
+import type { AdapterConfigZ, AdapterStatusZ, TraceSpan, DeliveryMetrics } from './relay-schemas.js';
+import type { AgentManifest, DiscoveryCandidate, DenialRecord } from './mesh-schemas.js';
 
 /** A single entry in the adapter list — config plus live status. */
 export interface AdapterListItem {
@@ -145,10 +146,44 @@ export interface Transport {
   /** Get relay system metrics. */
   getRelayMetrics(): Promise<unknown>;
 
+  // --- Relay Convergence ---
+
+  /** Send a message via Relay, returns receipt. Only available when Relay enabled. */
+  sendMessageRelay(
+    sessionId: string,
+    content: string,
+    options?: { clientId?: string }
+  ): Promise<{ messageId: string; traceId: string }>;
+  /** Get full trace for a message. */
+  getRelayTrace(messageId: string): Promise<{ traceId: string; spans: TraceSpan[] }>;
+  /** Get aggregate delivery metrics. */
+  getRelayDeliveryMetrics(): Promise<DeliveryMetrics>;
+
   // --- Relay Adapters ---
 
   /** List all relay adapters with their live status. */
   listRelayAdapters(): Promise<AdapterListItem[]>;
   /** Enable or disable a relay adapter by ID. */
   toggleRelayAdapter(id: string, enabled: boolean): Promise<{ ok: boolean }>;
+
+  // --- Mesh Agent Discovery ---
+
+  /** Discover agent candidates by scanning filesystem roots. */
+  discoverMeshAgents(roots: string[], maxDepth?: number): Promise<{ candidates: DiscoveryCandidate[] }>;
+  /** List registered mesh agents with optional filters. */
+  listMeshAgents(filters?: { runtime?: string; capability?: string }): Promise<{ agents: AgentManifest[] }>;
+  /** Get a single mesh agent by ID. */
+  getMeshAgent(id: string): Promise<AgentManifest>;
+  /** Register a discovered agent into the mesh registry. */
+  registerMeshAgent(path: string, overrides?: Partial<AgentManifest>, approver?: string): Promise<AgentManifest>;
+  /** Update an existing mesh agent's metadata. */
+  updateMeshAgent(id: string, updates: Partial<AgentManifest>): Promise<AgentManifest>;
+  /** Unregister a mesh agent by ID. */
+  unregisterMeshAgent(id: string): Promise<{ success: boolean }>;
+  /** Deny a discovered agent path, preventing future registration. */
+  denyMeshAgent(path: string, reason?: string, denier?: string): Promise<{ success: boolean }>;
+  /** List all denied agent paths. */
+  listDeniedMeshAgents(): Promise<{ denied: DenialRecord[] }>;
+  /** Clear a denial record for a previously denied path. */
+  clearMeshDenial(path: string): Promise<{ success: boolean }>;
 }

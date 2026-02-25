@@ -408,7 +408,8 @@ describe('Sessions Routes', () => {
       expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
         's1',
         expect.any(String),
-        expect.anything()
+        expect.anything(),
+        undefined
       );
     });
   });
