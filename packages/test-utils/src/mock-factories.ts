@@ -120,6 +120,9 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
         authEnabled: false,
         tokenConfigured: false,
       },
+      pulse: {
+        enabled: true,
+      },
     }),
     getGitStatus: vi.fn().mockResolvedValue({ error: 'not_git_repo' as const }),
     startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),

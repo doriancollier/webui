@@ -70,6 +70,14 @@ describe('DirectoryPicker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockTransport = createMockTransport();
+    vi.mocked(mockTransport.browseDirectory).mockResolvedValue({
+      path: '/home/user',
+      entries: [
+        { name: 'Documents', path: '/home/user/Documents', isDirectory: true },
+        { name: 'Projects', path: '/home/user/Projects', isDirectory: true },
+      ],
+      parent: '/',
+    });
     localStorage.clear();
   });
   afterEach(() => {
