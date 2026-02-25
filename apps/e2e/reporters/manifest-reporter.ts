@@ -29,10 +29,18 @@ interface Manifest {
   }>;
 }
 
+interface TestCaseResult {
+  title: string;
+  status: string;
+  file: string;
+  feature: string;
+  duration: number;
+}
+
 class ManifestReporter implements Reporter {
   private manifestPath: string;
   private manifest: Manifest;
-  private runResults: { title: string; status: string; file: string; duration: number }[] = [];
+  private runResults: TestCaseResult[] = [];
   private startTime = Date.now();
 
   constructor() {
@@ -52,32 +60,12 @@ class ManifestReporter implements Reporter {
     const testsDir = path.resolve(import.meta.dirname, '..', 'tests');
     const relativeFile = path.relative(testsDir, test.location.file);
     const feature = relativeFile.split(path.sep)[0] || 'unknown';
-    const testKey = path.basename(test.location.file, '.spec.ts');
-
-    const existing = this.manifest.tests[testKey] || {
-      specFile: `tests/${relativeFile}`,
-      feature,
-      description: test.title,
-      lastRun: '',
-      lastStatus: '',
-      runCount: 0,
-      passCount: 0,
-      failCount: 0,
-      relatedCode: [],
-      lastModified: '',
-    };
-
-    existing.lastRun = new Date().toISOString();
-    existing.lastStatus = result.status;
-    existing.runCount++;
-    if (result.status === 'passed') existing.passCount++;
-    if (result.status === 'failed') existing.failCount++;
-    this.manifest.tests[testKey] = existing;
 
     this.runResults.push({
       title: test.title,
       status: result.status,
       file: relativeFile,
+      feature,
       duration: result.duration,
     });
   }
@@ -85,6 +73,40 @@ class ManifestReporter implements Reporter {
   onEnd(_result: FullResult) {
     const now = new Date();
     const runId = now.toISOString().replace(/[:.]/g, '-').slice(0, 19);
+
+    // Aggregate results per spec file (not per test case)
+    const byFile = new Map<string, TestCaseResult[]>();
+    for (const r of this.runResults) {
+      const group = byFile.get(r.file) ?? [];
+      group.push(r);
+      byFile.set(r.file, group);
+    }
+
+    for (const [file, results] of byFile) {
+      const testKey = path.basename(file, '.spec.ts');
+      const allPassed = results.every((r) => r.status === 'passed');
+      const anyFailed = results.some((r) => r.status === 'failed');
+
+      const existing = this.manifest.tests[testKey] || {
+        specFile: `tests/${file}`,
+        feature: results[0].feature,
+        description: results.map((r) => r.title).join(', '),
+        lastRun: '',
+        lastStatus: '',
+        runCount: 0,
+        passCount: 0,
+        failCount: 0,
+        relatedCode: [],
+        lastModified: '',
+      };
+
+      existing.lastRun = now.toISOString();
+      existing.lastStatus = allPassed ? 'passed' : anyFailed ? 'failed' : 'mixed';
+      existing.runCount++;
+      if (allPassed) existing.passCount++;
+      if (anyFailed) existing.failCount++;
+      this.manifest.tests[testKey] = existing;
+    }
 
     this.manifest.runHistory.push({
       id: runId,

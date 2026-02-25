@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Aggregate manifest reporter counts per spec file, not per test case
 - Wire live health data into Mesh topology graph and fix aggregate SQL boundary
 - Support array subjectPrefix in Relay and wire adapter context builder
 - Fix 7 critical wiring bugs in Relay convergence implementation
