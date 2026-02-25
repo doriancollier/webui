@@ -22,6 +22,7 @@ import {
 } from '@/layers/shared/ui';
 import { usePulseEnabled, useActiveRunCount, useCompletedRunBadge } from '@/layers/entities/pulse';
 import { useRelayEnabled } from '@/layers/entities/relay';
+import { useMeshEnabled } from '@/layers/entities/mesh';
 import { toast } from 'sonner';
 import { useSessionId, useDirectoryState } from '@/layers/entities/session';
 import { SessionItem } from './SessionItem';
@@ -33,6 +34,7 @@ import {
   Moon,
   Monitor,
   Route,
+  Network,
   HeartPulse,
   Bug,
   Settings,
@@ -40,6 +42,7 @@ import {
 import { SettingsDialog } from '@/layers/features/settings';
 import { PulsePanel } from '@/layers/features/pulse';
 import { RelayPanel } from '@/layers/features/relay';
+import { MeshPanel } from '@/layers/features/mesh';
 import type { Session } from '@dorkos/shared/types';
 
 const themeOrder: Theme[] = ['light', 'dark', 'system'];
@@ -55,7 +58,9 @@ export function SessionSidebar() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [pulseOpen, setPulseOpen] = useState(false);
   const [relayOpen, setRelayOpen] = useState(false);
+  const [meshOpen, setMeshOpen] = useState(false);
   const relayEnabled = useRelayEnabled();
+  const meshEnabled = useMeshEnabled();
   const [selectedCwd, setSelectedCwd] = useDirectoryState();
   const pulseEnabled = usePulseEnabled();
   const { data: activeRunCount = 0 } = useActiveRunCount(pulseEnabled);
@@ -253,6 +258,25 @@ export function SessionSidebar() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
+                onClick={() => setMeshOpen(true)}
+                className={cn(
+                  'rounded-md p-1 transition-colors duration-150 max-md:p-2',
+                  meshEnabled
+                    ? 'text-muted-foreground/50 hover:text-muted-foreground'
+                    : 'text-muted-foreground/25 hover:text-muted-foreground/40'
+                )}
+                aria-label="Mesh agent discovery"
+              >
+                <Network className="size-(--size-icon-sm)" />
+              </button>
+            </TooltipTrigger>
+            {!meshEnabled && (
+              <TooltipContent side="top">Mesh is disabled</TooltipContent>
+            )}
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
                 onClick={() => setPulseOpen(true)}
                 className={cn(
                   'relative rounded-md p-1 transition-colors duration-150 max-md:p-2',
@@ -331,6 +355,21 @@ export function SessionSidebar() {
           </ResponsiveDialogHeader>
           <div className="overflow-y-auto">
             <RelayPanel />
+          </div>
+        </ResponsiveDialogContent>
+      </ResponsiveDialog>
+      <ResponsiveDialog open={meshOpen} onOpenChange={setMeshOpen}>
+        <ResponsiveDialogContent className="max-w-2xl gap-0 p-0">
+          <ResponsiveDialogHeader className="border-b px-4 py-3">
+            <ResponsiveDialogTitle className="text-sm font-medium">
+              Mesh
+            </ResponsiveDialogTitle>
+            <ResponsiveDialogDescription className="sr-only">
+              Agent discovery and registry
+            </ResponsiveDialogDescription>
+          </ResponsiveDialogHeader>
+          <div className="overflow-y-auto">
+            <MeshPanel />
           </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>

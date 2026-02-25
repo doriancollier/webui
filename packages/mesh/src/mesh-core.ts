@@ -11,7 +11,7 @@ import { mkdirSync } from 'fs';
 import path from 'path';
 import os from 'os';
 import { monotonicFactory } from 'ulidx';
-import type { AgentManifest, AgentRuntime, DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
+import type { AgentManifest, AgentRuntime, DenialRecord, DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import type { RelayCore } from '@dorkos/relay';
 import type { DiscoveryStrategy } from './discovery-strategy.js';
 import { AgentRegistry } from './agent-registry.js';
@@ -236,6 +236,35 @@ export class MeshCore {
    */
   async undeny(filePath: string): Promise<void> {
     this.denialList.clear(filePath);
+  }
+
+  // --- Listing Denials ---
+
+  /**
+   * List all denial records.
+   *
+   * @returns All denials ordered by denial date (newest first)
+   */
+  listDenied(): DenialRecord[] {
+    return this.denialList.list();
+  }
+
+  // --- Update ---
+
+  /**
+   * Update mutable fields of a registered agent.
+   *
+   * @param agentId - The agent's ULID
+   * @param partial - Fields to update (name, description, capabilities, etc.)
+   * @returns The updated agent manifest, or undefined if not found
+   */
+  update(agentId: string, partial: Partial<AgentManifest>): AgentManifest | undefined {
+    const updated = this.registry.update(agentId, partial);
+    if (!updated) return undefined;
+    const entry = this.registry.get(agentId);
+    if (!entry) return undefined;
+    const { projectPath: _path, ...manifest } = entry;
+    return manifest;
   }
 
   // --- Unregistration ---

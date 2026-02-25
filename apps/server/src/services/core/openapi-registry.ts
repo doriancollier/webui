@@ -37,6 +37,16 @@ import {
   InboxQuerySchema,
   EndpointRegistrationSchema,
 } from '@dorkos/shared/relay-schemas';
+import {
+  AgentManifestSchema,
+  DiscoveryCandidateSchema,
+  DenialRecordSchema,
+  DiscoverRequestSchema as MeshDiscoverRequestSchema,
+  RegisterAgentRequestSchema,
+  DenyRequestSchema as MeshDenyRequestSchema,
+  UpdateAgentRequestSchema,
+  AgentListQuerySchema,
+} from '@dorkos/shared/mesh-schemas';
 import { z } from 'zod';
 
 const registry = new OpenAPIRegistry();
@@ -776,6 +786,212 @@ registry.registerPath({
           schema: z.string().openapi({ description: 'Server-Sent Events stream' }),
         },
       },
+    },
+  },
+});
+
+// --- Mesh ---
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/mesh/discover',
+  tags: ['Mesh'],
+  summary: 'Discover mesh agents',
+  request: {
+    body: {
+      content: { 'application/json': { schema: MeshDiscoverRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Discovered candidates',
+      content: {
+        'application/json': {
+          schema: z.object({ candidates: z.array(DiscoveryCandidateSchema) }),
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/mesh/agents',
+  tags: ['Mesh'],
+  summary: 'Register a mesh agent',
+  request: {
+    body: {
+      content: { 'application/json': { schema: RegisterAgentRequestSchema } },
+    },
+  },
+  responses: {
+    201: {
+      description: 'Registered agent',
+      content: { 'application/json': { schema: AgentManifestSchema } },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/mesh/agents',
+  tags: ['Mesh'],
+  summary: 'List mesh agents',
+  request: {
+    query: AgentListQuerySchema,
+  },
+  responses: {
+    200: {
+      description: 'Array of agents',
+      content: {
+        'application/json': {
+          schema: z.object({ agents: z.array(AgentManifestSchema) }),
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/mesh/agents/{id}',
+  tags: ['Mesh'],
+  summary: 'Get mesh agent',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Agent details',
+      content: { 'application/json': { schema: AgentManifestSchema } },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/mesh/agents/{id}',
+  tags: ['Mesh'],
+  summary: 'Update mesh agent',
+  request: {
+    params: z.object({ id: z.string() }),
+    body: {
+      content: { 'application/json': { schema: UpdateAgentRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Updated agent',
+      content: { 'application/json': { schema: AgentManifestSchema } },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/mesh/agents/{id}',
+  tags: ['Mesh'],
+  summary: 'Unregister mesh agent',
+  request: {
+    params: z.object({ id: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Agent removed',
+      content: {
+        'application/json': { schema: z.object({ success: z.boolean() }) },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/mesh/deny',
+  tags: ['Mesh'],
+  summary: 'Deny a mesh candidate',
+  request: {
+    body: {
+      content: { 'application/json': { schema: MeshDenyRequestSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: 'Candidate denied',
+      content: {
+        'application/json': { schema: z.object({ success: z.boolean() }) },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/mesh/denied',
+  tags: ['Mesh'],
+  summary: 'List denied mesh candidates',
+  responses: {
+    200: {
+      description: 'Denied candidates',
+      content: {
+        'application/json': {
+          schema: z.object({ denied: z.array(DenialRecordSchema) }),
+        },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
+    },
+  },
+});
+
+registry.registerPath({
+  method: 'delete',
+  path: '/api/mesh/denied/{encodedPath}',
+  tags: ['Mesh'],
+  summary: 'Clear mesh denial',
+  request: {
+    params: z.object({ encodedPath: z.string() }),
+  },
+  responses: {
+    200: {
+      description: 'Denial cleared',
+      content: {
+        'application/json': { schema: z.object({ success: z.boolean() }) },
+      },
+    },
+    400: {
+      description: 'Validation error',
+      content: { 'application/json': { schema: ErrorResponseSchema } },
     },
   },
 });

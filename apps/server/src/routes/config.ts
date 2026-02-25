@@ -8,6 +8,7 @@ import { UserConfigSchema, SENSITIVE_CONFIG_KEYS } from '@dorkos/shared/config-s
 import { getLatestVersion } from '../services/core/update-checker.js';
 import { isPulseEnabled } from '../services/pulse/pulse-state.js';
 import { isRelayEnabled } from '../services/relay/relay-state.js';
+import { isMeshEnabled } from '../services/mesh/mesh-state.js';
 
 declare const __CLI_VERSION__: string | undefined;
 
@@ -106,6 +107,9 @@ router.get('/', async (_req, res) => {
     },
     relay: {
       enabled: isRelayEnabled(),
+    },
+    mesh: {
+      enabled: isMeshEnabled(),
     },
   });
 });

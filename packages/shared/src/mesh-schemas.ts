@@ -95,3 +95,58 @@ export const DenialRecordSchema = z
   .openapi('DenialRecord');
 
 export type DenialRecord = z.infer<typeof DenialRecordSchema>;
+
+// === HTTP Request/Response Schemas ===
+
+/** Request body for POST /api/mesh/discover */
+export const DiscoverRequestSchema = z
+  .object({
+    roots: z.array(z.string().min(1)).min(1),
+    maxDepth: z.number().int().min(1).optional(),
+  })
+  .openapi('DiscoverRequest');
+
+export type DiscoverRequest = z.infer<typeof DiscoverRequestSchema>;
+
+/** Request body for POST /api/mesh/agents */
+export const RegisterAgentRequestSchema = z
+  .object({
+    path: z.string().min(1),
+    overrides: AgentManifestSchema.partial().optional(),
+    approver: z.string().optional(),
+  })
+  .openapi('RegisterAgentRequest');
+
+export type RegisterAgentRequest = z.infer<typeof RegisterAgentRequestSchema>;
+
+/** Request body for POST /api/mesh/deny */
+export const DenyRequestSchema = z
+  .object({
+    path: z.string().min(1),
+    reason: z.string().optional(),
+    denier: z.string().optional(),
+  })
+  .openapi('DenyRequest');
+
+export type DenyRequest = z.infer<typeof DenyRequestSchema>;
+
+/** Request body for PATCH /api/mesh/agents/:id */
+export const UpdateAgentRequestSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    description: z.string().optional(),
+    capabilities: z.array(z.string()).optional(),
+  })
+  .openapi('UpdateAgentRequest');
+
+export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequestSchema>;
+
+/** Query params for GET /api/mesh/agents */
+export const AgentListQuerySchema = z
+  .object({
+    runtime: AgentRuntimeSchema.optional(),
+    capability: z.string().optional(),
+  })
+  .openapi('AgentListQuery');
+
+export type AgentListQuery = z.infer<typeof AgentListQuerySchema>;

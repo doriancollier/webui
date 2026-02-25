@@ -18,6 +18,7 @@ describe('UserConfigSchema', () => {
       logging: { level: 'info' },
       relay: { enabled: false, dataDir: null },
       scheduler: { enabled: false, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
+      mesh: { enabled: false },
     });
   });
 
@@ -198,6 +199,7 @@ describe('USER_CONFIG_DEFAULTS', () => {
       logging: { level: 'info' },
       relay: { enabled: false, dataDir: null },
       scheduler: { enabled: false, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
+      mesh: { enabled: false },
     });
   });
 

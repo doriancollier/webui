@@ -52,6 +52,11 @@ export const UserConfigSchema = z.object({
       timezone: null,
       retentionCount: 100,
     })),
+  mesh: z
+    .object({
+      enabled: z.boolean().default(false),
+    })
+    .default(() => ({ enabled: false })),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;
