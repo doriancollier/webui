@@ -1,0 +1,341 @@
+---
+title: Relay Messaging
+description: Enable the Relay message bus and send messages between agents, humans, and external platforms
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
+# Relay Messaging
+
+Relay is the inter-agent message bus built into DorkOS. It routes messages between agents, humans, and external platforms like Telegram using a subject-based publish/subscribe model. Every message is persisted to disk, indexed in SQLite, and tracked with delivery tracing.
+
+This guide walks through enabling Relay, sending your first message, configuring adapters, and integrating with the Pulse scheduler.
+
+## What is Relay?
+
+Relay provides the communication layer for multi-agent workflows. Rather than agents calling each other directly, they publish messages to named subjects and Relay handles routing those messages to the right recipients. This decoupling means agents do not need to know about each other -- they only need to agree on subject naming conventions.
+
+Messages flow through a pipeline that includes subject validation, access control checks, rate limiting, budget enforcement, and per-endpoint circuit breakers. Failed deliveries land in a dead letter queue for later inspection. The entire delivery path is traced end-to-end so you can see exactly what happened to any message.
+
+When Relay is enabled, it also takes over the standard DorkOS session messaging path. Instead of POST `/api/sessions/:id/messages` directly calling the Agent SDK, the message is published to `relay.agent.{sessionId}` and the Claude Code adapter picks it up. This means every session message benefits from Relay's tracing, budget enforcement, and reliability features.
+
+## Enabling Relay
+
+<Steps>
+<Step>
+### Set the environment variable
+
+Add `DORKOS_RELAY_ENABLED=true` to your environment. You can set this in your `.env` file or export it directly:
+
+```bash
+export DORKOS_RELAY_ENABLED=true
+```
+</Step>
+
+<Step>
+### Start DorkOS
+
+Launch DorkOS as usual. The server log will confirm that Relay is active:
+
+```bash
+dorkos
+```
+
+```
+DorkOS server listening on port 4242 // [!code highlight]
+Relay message bus enabled // [!code highlight]
+```
+
+When Relay starts, it creates its data directory at `~/.dork/relay/` with the SQLite index database and Maildir message store.
+</Step>
+
+<Step>
+### Verify with the health endpoint
+
+Check that Relay is reported in the server configuration:
+
+```bash
+curl http://localhost:4242/api/config
+```
+
+The response includes `relay.enabled: true` when the subsystem is active.
+</Step>
+</Steps>
+
+<Callout type="info">
+Relay is fully opt-in. When `DORKOS_RELAY_ENABLED` is not set or is `false`, all Relay routes return 404 and the session messaging path uses the direct Agent SDK call. You can toggle Relay on and off without losing any data -- the Maildir files and SQLite index persist between restarts.
+</Callout>
+
+## Sending Messages
+
+Messages are sent by publishing to a subject. Every message is wrapped in an envelope that carries routing metadata alongside the payload.
+
+### Using the REST API
+
+Publish a message with a POST request to the Relay messages endpoint:
+
+```bash
+curl -X POST http://localhost:4242/api/relay/messages \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "subject": "relay.agent.backend",
+    "payload": { "task": "Run the test suite" },
+    "from": "relay.human.console.my-client"
+  }'
+```
+
+The response includes the message ID and delivery results:
+
+```json
+{
+  "id": "01HX...",
+  "delivered": 1,
+  "deadLettered": 0
+}
+```
+
+### Using MCP Tools
+
+When interacting with Claude Code through DorkOS, the agent has access to built-in MCP tools for Relay operations. These tools allow agents to send messages, read inboxes, and manage endpoints without making HTTP calls:
+
+```
+relay_send        Send a message to a Relay subject
+relay_inbox       Read inbox messages for an endpoint
+relay_list_endpoints   List all registered endpoints
+relay_register_endpoint  Register a new endpoint
+```
+
+An agent can send a message by calling the `relay_send` tool with a subject, payload, and sender identifier. The tool handles envelope construction and delivery internally.
+
+### Subject Naming
+
+Subjects use a hierarchical dot-separated format: `relay.{audience}.{identifier}`. Common patterns include:
+
+| Subject Pattern | Purpose |
+|---|---|
+| `relay.agent.{agentId}` | Messages addressed to a specific agent |
+| `relay.human.console.{clientId}` | Messages destined for a human's browser console |
+| `relay.human.telegram.{chatId}` | Messages routed to a Telegram chat |
+| `relay.system.pulse.{scheduleId}` | System messages from the Pulse scheduler |
+
+Wildcards are supported for subscriptions: `*` matches exactly one segment, and `>` matches one or more trailing segments. For example, subscribing to `relay.agent.>` receives messages addressed to any agent.
+
+### Budget Constraints
+
+Every message carries a budget that prevents runaway chains. You can set budget fields when publishing:
+
+```bash
+curl -X POST http://localhost:4242/api/relay/messages \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "subject": "relay.agent.backend",
+    "payload": { "task": "Refactor the auth module" },
+    "from": "relay.human.console.my-client",
+    "budget": {
+      "maxHops": 3,
+      "ttlMs": 300000,
+      "callBudgetRemaining": 50
+    }
+  }'
+```
+
+<Callout type="warn">
+If you omit budget fields, Relay applies defaults: 5 maximum hops, 1-hour TTL, and no call budget limit. For automated agent-to-agent workflows, always set explicit budgets to prevent unexpected resource consumption.
+</Callout>
+
+## Built-in Adapters
+
+Adapters bridge external platforms into the Relay subject hierarchy. DorkOS ships with three built-in adapters configured through `~/.dork/relay/adapters.json`.
+
+### Claude Code Adapter
+
+The Claude Code adapter is enabled by default when Relay starts. It subscribes to `relay.agent.*` subjects and routes incoming messages to Claude Agent SDK sessions. Response chunks flow back through Relay to the sender's `replyTo` subject.
+
+```json
+{
+  "adapters": [
+    {
+      "id": "claude-code",
+      "type": "claude-code",
+      "builtin": true,
+      "enabled": true,
+      "config": {
+        "maxConcurrent": 3,
+        "defaultTimeoutMs": 300000
+      }
+    }
+  ]
+}
+```
+
+The `maxConcurrent` field limits how many parallel agent sessions the adapter will run. The `defaultTimeoutMs` sets the maximum time an agent session can run before being terminated.
+
+### Telegram Adapter
+
+The Telegram adapter connects a Telegram bot to the Relay bus. Inbound messages from Telegram are published to `relay.human.telegram.{chatId}`, and outbound messages on matching subjects are delivered back to the Telegram chat.
+
+To enable it, add a Telegram adapter entry to `adapters.json` with your bot token:
+
+```json
+{
+  "id": "telegram",
+  "type": "telegram",
+  "builtin": true,
+  "enabled": true,
+  "config": {
+    "botToken": "123456:ABC-DEF..."
+  }
+}
+```
+
+### Webhook Adapter
+
+The webhook adapter provides a generic HTTP bridge with HMAC-SHA256 signature verification. It supports both inbound webhooks (external services posting to DorkOS) and outbound delivery (Relay messages forwarded as HTTP requests).
+
+```json
+{
+  "id": "my-webhook",
+  "type": "webhook",
+  "builtin": true,
+  "enabled": true,
+  "config": {
+    "url": "https://example.com/hook",
+    "secret": "your-hmac-secret",
+    "subjectPrefix": "relay.webhook.incoming"
+  }
+}
+```
+
+Inbound webhooks are received at `POST /api/relay/webhooks/{adapterId}`. The adapter verifies the HMAC signature, extracts the payload, and publishes it to the configured subject prefix. Secret rotation is supported with a 24-hour transition window where both old and new secrets are accepted.
+
+### Hot Reload
+
+Adapter configuration is watched for changes via chokidar. When you edit `~/.dork/relay/adapters.json`, DorkOS automatically reconciles the running adapters -- stopping removed or disabled adapters and starting newly enabled ones. No server restart is required.
+
+You can also trigger a reload via the API:
+
+```bash
+curl -X POST http://localhost:4242/api/relay/adapters/reload
+```
+
+## Message Tracing
+
+Every message published through Relay gets a trace that tracks its delivery end-to-end. Each delivery to an endpoint creates a span with timing information, budget consumption, and error details.
+
+Retrieve the trace for a specific message:
+
+```bash
+curl http://localhost:4242/api/relay/messages/{messageId}/trace
+```
+
+```json
+{
+  "traceId": "01HX...",
+  "spans": [
+    {
+      "messageId": "01HX...",
+      "traceId": "01HX...",
+      "spanId": "span-abc",
+      "subject": "relay.agent.backend",
+      "fromEndpoint": "relay.human.console.client-1",
+      "toEndpoint": "relay.agent.backend",
+      "status": "delivered",
+      "budgetHopsUsed": 1,
+      "sentAt": 1709000000000,
+      "deliveredAt": 1709000000050,
+      "processedAt": 1709000000200
+    }
+  ]
+}
+```
+
+The trace span statuses are: `pending` (in flight), `delivered` (written to endpoint), `processed` (handler completed), `failed` (handler errored), and `dead_lettered` (rejected by budget or access control).
+
+For more detailed observability, see the [Relay Observability](/docs/guides/relay-observability) guide.
+
+## Relay and Pulse Integration
+
+When both Relay and Pulse are enabled, scheduled jobs are dispatched through Relay instead of calling the Agent SDK directly. The Pulse scheduler publishes a dispatch message to `relay.system.pulse.{scheduleId}`, and the Claude Code adapter picks it up and starts the agent session.
+
+This integration means scheduled runs benefit from Relay's full delivery pipeline -- budget enforcement, tracing, dead letter handling, and access control all apply.
+
+To enable both subsystems:
+
+```bash
+export DORKOS_RELAY_ENABLED=true
+export DORKOS_PULSE_ENABLED=true
+dorkos
+```
+
+When a scheduled run executes, you can trace its message through Relay to see exactly when it was dispatched, delivered, and processed. The `relay.system.pulse.*` subject pattern lets you subscribe to all Pulse dispatch events via the SSE stream.
+
+## Configuration Reference
+
+Relay stores its configuration and data in the `~/.dork/relay/` directory.
+
+<TypeTable type={{
+  "DORKOS_RELAY_ENABLED": { type: "boolean", description: "Enable the Relay message bus subsystem", default: "false" },
+}} />
+
+### Data Directory Structure
+
+| Path | Purpose |
+|---|---|
+| `~/.dork/relay/index.db` | SQLite index database (messages, traces, WAL mode) |
+| `~/.dork/relay/endpoints/` | Maildir message store, one directory per endpoint |
+| `~/.dork/relay/adapters.json` | Adapter configuration (hot-reloaded) |
+| `~/.dork/relay/config.json` | Reliability settings (rate limits, circuit breakers, backpressure) |
+| `~/.dork/relay/access-rules.json` | Access control rules (hot-reloaded) |
+
+### Reliability Settings
+
+The `config.json` file controls rate limiting, circuit breakers, and backpressure. Changes are hot-reloaded without a server restart.
+
+<TypeTable type={{
+  "rateLimit.maxPerWindow": { type: "number", description: "Maximum messages per sender per window", default: "100" },
+  "rateLimit.windowMs": { type: "number", description: "Sliding window duration in milliseconds", default: "60000" },
+  "circuitBreaker.failureThreshold": { type: "number", description: "Consecutive failures before circuit opens", default: "5" },
+  "circuitBreaker.cooldownMs": { type: "number", description: "Time before half-open probe in milliseconds", default: "30000" },
+  "backpressure.warnThreshold": { type: "number", description: "Mailbox percentage that triggers a warning signal", default: "0.8" },
+  "backpressure.maxMessages": { type: "number", description: "Maximum messages in an endpoint mailbox before rejection", default: "1000" },
+}} />
+
+### REST API Endpoints
+
+| Method | Path | Description |
+|---|---|---|
+| `POST` | `/api/relay/messages` | Publish a message to a subject |
+| `GET` | `/api/relay/messages` | List messages with filters and cursor pagination |
+| `GET` | `/api/relay/messages/:id` | Get a single message by ID |
+| `GET` | `/api/relay/messages/:id/trace` | Get the full delivery trace for a message |
+| `GET` | `/api/relay/endpoints` | List registered endpoints |
+| `POST` | `/api/relay/endpoints` | Register a new endpoint |
+| `DELETE` | `/api/relay/endpoints/:subject` | Unregister an endpoint |
+| `GET` | `/api/relay/endpoints/:subject/inbox` | Read inbox for an endpoint |
+| `GET` | `/api/relay/dead-letters` | List dead letter messages |
+| `GET` | `/api/relay/metrics` | Relay system metrics |
+| `GET` | `/api/relay/trace/metrics` | Aggregate delivery metrics |
+| `GET` | `/api/relay/stream` | SSE event stream (supports `?subject=` filter) |
+| `GET` | `/api/relay/adapters` | List adapters with status |
+| `POST` | `/api/relay/adapters/reload` | Hot-reload adapter configuration |
+| `POST` | `/api/relay/adapters/:id/enable` | Enable an adapter |
+| `POST` | `/api/relay/adapters/:id/disable` | Disable an adapter |
+| `POST` | `/api/relay/webhooks/:adapterId` | Inbound webhook receiver |
+
+## Next Steps
+
+<Cards>
+  <Card title="Relay Observability" href="/docs/guides/relay-observability">
+    Dive deeper into message tracing, delivery metrics, and debugging failed deliveries.
+  </Card>
+  <Card title="Relay Concepts" href="/docs/concepts/relay">
+    Understand Relay's architecture, envelope format, delivery pipeline, and storage model.
+  </Card>
+  <Card title="Agent Discovery" href="/docs/guides/agent-discovery">
+    Discover and register agents that communicate through Relay using Mesh.
+  </Card>
+</Cards>

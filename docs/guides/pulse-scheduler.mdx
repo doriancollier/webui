@@ -1,0 +1,212 @@
+---
+title: Pulse Scheduler
+description: Autonomous cron-based agent jobs that work while you sleep
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
+# Pulse Scheduler
+
+Pulse is DorkOS's cron scheduling system for AI agents. You define schedules with cron expressions and prompts, and Pulse triggers autonomous agent sessions at the specified intervals. Agents run with their own working directory and prompt, producing results you can review in the run history.
+
+## Enabling Pulse
+
+Pulse is enabled by default. If it has been disabled, re-enable it:
+
+<Steps>
+<Step>
+### Set the environment variable
+
+Add `DORKOS_PULSE_ENABLED=true` to your `.env` file, or pass the flag to the CLI:
+
+```bash
+dorkos --pulse
+```
+
+To explicitly disable Pulse, use `--no-pulse` or set `DORKOS_PULSE_ENABLED=false`.
+</Step>
+
+<Step>
+### Verify in the sidebar
+
+The Pulse tab appears in the sidebar navigation when Pulse is enabled. Open it to see your schedules and run history.
+</Step>
+</Steps>
+
+## Creating Schedules
+
+There are three ways to create a Pulse schedule.
+
+### PulsePanel UI
+
+Open the Pulse tab and click "Create Schedule". The dialog lets you configure:
+
+- **Name** -- A human-readable label for the schedule (e.g., "Daily code review")
+- **Cron expression** -- When the job should run (see [Cron Syntax](#cron-syntax) below)
+- **Prompt** -- The instruction sent to the agent when the job triggers
+- **Working directory** -- The directory the agent operates in
+- **Timezone** -- The timezone for the cron expression (defaults to your system timezone)
+
+### REST API
+
+Create a schedule with a POST request:
+
+```bash
+curl -X POST http://localhost:4242/api/pulse/schedules \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Daily dependency check",
+    "cron": "0 9 * * *",
+    "prompt": "Check for outdated npm dependencies and create a summary of what needs updating.",
+    "cwd": "/home/user/projects/my-app",
+    "timezone": "America/New_York"
+  }'
+```
+
+The response includes the schedule ID and its initial state (`active`).
+
+### MCP Tools
+
+Agents can create schedules using the `create_schedule` MCP tool. Schedules created by agents enter the `pending_approval` state and must be approved by a human before they start running.
+
+```
+create_schedule({
+  name: "Nightly test suite",
+  cron: "0 2 * * *",
+  prompt: "Run the full test suite and report any failures.",
+  cwd: "/home/user/projects/my-app"
+})
+```
+
+<Callout type="warn">
+Agent-created schedules require human approval. This prevents agents from autonomously scheduling expensive or unintended recurring tasks. Approve pending schedules from the PulsePanel UI.
+</Callout>
+
+## Cron Syntax
+
+Pulse uses standard five-field cron expressions. The PulsePanel includes a CronVisualBuilder component that lets you build expressions visually, and CronPresets for common patterns.
+
+```
+┌───────────── minute (0-59)
+│ ┌───────────── hour (0-23)
+│ │ ┌───────────── day of month (1-31)
+│ │ │ ┌───────────── month (1-12)
+│ │ │ │ ┌───────────── day of week (0-6, Sunday=0)
+│ │ │ │ │
+* * * * *
+```
+
+### Common Presets
+
+<TypeTable type={{
+  "*/15 * * * *": { type: "preset", description: "Every 15 minutes" },
+  "0 * * * *": { type: "preset", description: "Every hour on the hour" },
+  "0 9 * * *": { type: "preset", description: "Daily at 9:00 AM" },
+  "0 0 * * *": { type: "preset", description: "Daily at midnight" },
+  "0 9 * * 1": { type: "preset", description: "Every Monday at 9:00 AM" },
+  "0 0 1 * *": { type: "preset", description: "First day of every month at midnight" },
+}} />
+
+The TimezoneCombobox in the create dialog lets you pick a timezone for the schedule. All cron expressions are evaluated in the selected timezone.
+
+<Callout type="info">
+For help building cron expressions, the visual builder in the UI is the easiest approach. You can also reference [crontab.guru](https://crontab.guru) for syntax validation.
+</Callout>
+
+## Run History
+
+Every schedule execution creates a run record stored in SQLite at `~/.dork/pulse.db`. The RunHistoryPanel in the Pulse tab shows past runs with their status and timing.
+
+### Run States
+
+<TypeTable type={{
+  "running": { type: "status", description: "The agent session is currently executing" },
+  "success": { type: "status", description: "The agent completed the task without errors" },
+  "failure": { type: "status", description: "The agent encountered an error during execution" },
+  "cancelled": { type: "status", description: "The run was manually cancelled by a user" },
+  "timeout": { type: "status", description: "The run exceeded the configured timeout" },
+}} />
+
+Click any run in the history to see its details, including the prompt that was sent, the working directory, timestamps, and any output the agent produced.
+
+### Managing Runs
+
+You can cancel an active run from the UI or via the API:
+
+```bash
+# Cancel a running job
+curl -X POST http://localhost:4242/api/pulse/runs/{runId}/cancel
+```
+
+You can also manually trigger a schedule outside its cron timing:
+
+```bash
+# Trigger an immediate run
+curl -X POST http://localhost:4242/api/pulse/schedules/{scheduleId}/trigger
+```
+
+Pulse enforces a configurable concurrency cap on simultaneous runs. If the cap is reached, new triggers are queued until a running job completes. Overrun protection ensures a schedule cannot start a new run if its previous run is still active.
+
+## Pulse + Relay
+
+When both Pulse and [Relay](/docs/guides/relay-messaging) are enabled, schedule dispatch integrates with the message bus. Instead of calling the AgentManager directly, Pulse publishes to `relay.system.pulse.{scheduleId}`. The ClaudeCodeAdapter picks up the message and routes it to a new agent session.
+
+This integration provides several benefits:
+
+- **Message tracing** -- Every scheduled run gets a Relay trace ID, so you can track the full delivery path from schedule trigger through agent execution.
+- **Unified metrics** -- Scheduled run deliveries appear in the Relay delivery metrics dashboard alongside interactive session messages.
+- **Adapter routing** -- Scheduled messages flow through the same adapter pipeline as all other Relay messages, benefiting from the same reliability mechanisms (circuit breakers, backpressure, dead letter queue).
+
+<Callout type="info">
+When Relay is disabled, Pulse falls back to direct in-process calls to the AgentManager. Schedules work the same way -- you just lose the tracing and metrics integration.
+</Callout>
+
+## Configuration
+
+<TypeTable type={{
+  "DORKOS_PULSE_ENABLED": { type: "boolean", description: "Enable or disable the Pulse scheduler", default: "true" },
+  "Max concurrent runs": { type: "number", description: "Maximum number of agent sessions running simultaneously from scheduled jobs" },
+  "Overrun protection": { type: "boolean", description: "Prevent a schedule from starting a new run while the previous one is still active", default: "true" },
+  "Retention pruning": { type: "boolean", description: "Automatically prune old run records to keep the database manageable", default: "true" },
+}} />
+
+### Schedule States
+
+<TypeTable type={{
+  "active": { type: "state", description: "The schedule is running on its cron timing" },
+  "paused": { type: "state", description: "The schedule is temporarily paused and will not trigger" },
+  "pending_approval": { type: "state", description: "The schedule was created by an agent and awaits human approval" },
+}} />
+
+Pause and resume schedules from the PulsePanel UI or via PATCH requests:
+
+```bash
+# Pause a schedule
+curl -X PATCH http://localhost:4242/api/pulse/schedules/{scheduleId} \
+  -H "Content-Type: application/json" \
+  -d '{ "state": "paused" }'
+
+# Resume a schedule
+curl -X PATCH http://localhost:4242/api/pulse/schedules/{scheduleId} \
+  -H "Content-Type: application/json" \
+  -d '{ "state": "active" }'
+```
+
+Pulse data is stored in SQLite at `~/.dork/pulse.db` with WAL mode for concurrent read/write access. Schedule definitions are also persisted in `~/.dork/schedules.json` as a backup.
+
+## Next Steps
+
+<Cards>
+  <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
+    Understand how Pulse integrates with the Relay message bus.
+  </Card>
+  <Card title="CLI Usage" href="/docs/guides/cli-usage">
+    See the --pulse and --no-pulse CLI flags.
+  </Card>
+  <Card title="Agent Coordination" href="/docs/guides/agent-coordination">
+    Multi-agent workflow patterns for scheduled and interactive agents.
+  </Card>
+</Cards>

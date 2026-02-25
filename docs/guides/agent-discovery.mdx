@@ -1,0 +1,219 @@
+---
+title: Agent Discovery
+description: Discover, register, and coordinate agents across your network with Mesh
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
+# Agent Discovery
+
+Mesh is the agent discovery and registry system in DorkOS. It scans your filesystem for AI agent projects, registers them with capability manifests, and connects them to [Relay](/docs/concepts/relay) for inter-agent communication. For a deeper look at the architecture, see the [Mesh concept page](/docs/concepts/mesh).
+
+## Enabling Mesh
+
+<Steps>
+<Step>
+### Set the environment variable
+
+Add `DORKOS_MESH_ENABLED=true` to your `.env` file, or export it in your shell:
+
+```bash
+export DORKOS_MESH_ENABLED=true
+```
+</Step>
+
+<Step>
+### Restart DorkOS
+
+Restart the server for the change to take effect:
+
+```bash
+dorkos
+```
+</Step>
+
+<Step>
+### Open the Mesh tab
+
+The Mesh tab now appears in the sidebar navigation. It shows the agent registry, discovery candidates, and network topology.
+</Step>
+</Steps>
+
+<Callout type="info">
+Mesh requires Relay to be enabled for inter-agent communication. Set both `DORKOS_MESH_ENABLED=true` and `DORKOS_RELAY_ENABLED=true` to get the full experience.
+</Callout>
+
+## Discovering Agents
+
+Discovery scans your filesystem for directories that contain recognized agent markers. Mesh ships with strategies for Claude Code (`.claude/` directory), Cursor (`.cursor/` or `.cursorrc`), and Codex projects.
+
+Trigger a scan from the UI by opening the Mesh tab and clicking the discover button, or use the REST API:
+
+```bash
+curl -X POST http://localhost:4242/api/mesh/discover \
+  -H "Content-Type: application/json" \
+  -d '{ "roots": ["/home/user/projects"], "maxDepth": 3 }'
+```
+
+The response is an array of `DiscoveryCandidate` objects, each containing the directory path, the strategy that matched, and hints about the agent's name and capabilities. In the UI, each candidate appears as a CandidateCard with accept and deny buttons.
+
+<Callout type="info">
+Discovery is non-destructive. It only reads filesystem markers and never modifies your project directories until you explicitly approve a registration.
+</Callout>
+
+Subsequent scans automatically skip directories that are already registered or denied, and silently re-import agents that have a `.dork/agent.json` manifest from a previous session.
+
+## Agent Manifests
+
+Every registered agent has a manifest that describes its identity and configuration. The manifest is stored both in the Mesh SQLite database and as a `.dork/agent.json` file in the agent's project directory.
+
+```json
+{
+  "name": "research-agent",
+  "capabilities": ["web-search", "summarization"],
+  "subjects": ["relay.agent.research.*"],
+  "healthEndpoint": "http://localhost:5000/health",
+  "metadata": { "version": "1.0", "owner": "team-alpha" }
+}
+```
+
+<TypeTable type={{
+  "name": { type: "string", description: "Human-readable agent name (e.g., 'backend-api', 'frontend-ui')" },
+  "capabilities": { type: "string[]", description: "Capability tags that describe what the agent can do (e.g., 'typescript', 'testing')" },
+  "subjects": { type: "string[]", description: "Relay subjects the agent subscribes to for receiving messages" },
+  "healthEndpoint": { type: "string", description: "Optional URL for health checks", default: "None" },
+  "metadata": { type: "Record<string, unknown>", description: "Freeform key-value pairs for custom data", default: "{}" },
+}} />
+
+Discovery strategies automatically populate the manifest with hints extracted from the project (name from `package.json` or directory name, capabilities from detected tooling), but you can override any field during registration.
+
+## Registering Agents
+
+There are three ways to register an agent in Mesh.
+
+### MeshPanel UI
+
+Open the Mesh tab and click "Register Agent". The RegisterAgentDialog form lets you enter the agent name, capabilities, project path, and optional metadata. You can also accept a discovery candidate directly from the CandidateCard.
+
+### REST API
+
+Send a POST request with the agent manifest:
+
+```bash
+curl -X POST http://localhost:4242/api/mesh/agents \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "research-agent",
+    "projectPath": "/home/user/projects/research",
+    "capabilities": ["web-search", "summarization"],
+    "runtime": "claude-code"
+  }'
+```
+
+### MCP Tools
+
+Agents can register other agents (or themselves) using the `mesh_register` MCP tool:
+
+```
+mesh_register({ name: "research-agent", projectPath: "/home/user/projects/research", capabilities: ["web-search"] })
+```
+
+When an agent creates a registration via MCP tools, the manifest is written to `.dork/agent.json` in the project directory and the agent is immediately available in the registry.
+
+<Callout type="info">
+When both Relay and Mesh are enabled, registering an agent automatically creates a Relay endpoint at `relay.agent.{namespace}.{agentId}`, making it immediately reachable through the message bus.
+</Callout>
+
+## Network Topology
+
+The TopologyGraph visualization in the Mesh tab renders your agent network as a force-directed graph. Agents appear as nodes grouped by namespace, and message routes between agents appear as edges.
+
+Live health data is overlaid on the graph:
+
+- **Green nodes** indicate a healthy agent with recent heartbeats
+- **Yellow nodes** indicate a degraded agent that has missed one or two heartbeats
+- **Red nodes** indicate an unreachable agent that has missed three or more heartbeats
+
+Edge weights reflect message volume between agents, giving you a visual sense of which agents communicate most frequently. The MeshStatsHeader above the graph shows aggregate counts: total agents, agents by health state, and agents by runtime type.
+
+## Health Monitoring
+
+Mesh tracks agent health through a heartbeat protocol. Agents send periodic heartbeats to signal they are alive and working.
+
+```bash
+curl -X POST http://localhost:4242/api/mesh/agents/{agentId}/heartbeat \
+  -H "Content-Type: application/json" \
+  -d '{ "event": "processing-task" }'
+```
+
+<TypeTable type={{
+  "healthy": { type: "status", description: "Agent has sent a heartbeat within the expected interval" },
+  "degraded": { type: "status", description: "Agent has missed 1-2 expected heartbeats" },
+  "unreachable": { type: "status", description: "Agent has missed 3+ heartbeats and may be offline" },
+}} />
+
+When an agent's health state changes, Mesh emits a lifecycle event through Relay signals. The AgentHealthDetail component in the UI provides a per-agent drill-down showing the heartbeat timeline, current state, and recent lifecycle events.
+
+Health check intervals are configurable per-agent through the manifest's `healthEndpoint` field. If an agent provides a health endpoint URL, Mesh can also perform active health checks in addition to the passive heartbeat monitoring.
+
+## Access Control
+
+Not every discovered agent should be registered. The denial system lets you exclude directories from future discovery scans.
+
+### Denying Agents
+
+Deny a candidate via the UI (click the deny button on a CandidateCard) or the API:
+
+```bash
+curl -X POST http://localhost:4242/api/mesh/deny \
+  -H "Content-Type: application/json" \
+  -d '{ "path": "/home/user/projects/legacy-bot", "reason": "Deprecated project" }'
+```
+
+Denied paths are stored in the SQLite database and checked during every scan. The candidate will not appear in future discovery results.
+
+### Viewing and Removing Denials
+
+View the denial list and remove entries if you change your mind:
+
+```bash
+# List denied paths
+curl http://localhost:4242/api/mesh/denied
+
+# Remove a denial (re-enables discovery for that path)
+curl -X DELETE http://localhost:4242/api/mesh/denied \
+  -H "Content-Type: application/json" \
+  -d '{ "path": "/home/user/projects/legacy-bot" }'
+```
+
+<Callout type="warn">
+Denials include a reason and denier field for audit purposes. Include a meaningful reason when denying a path so other team members understand why it was excluded.
+</Callout>
+
+## Configuration Reference
+
+<TypeTable type={{
+  "DORKOS_MESH_ENABLED": { type: "boolean", description: "Enable the Mesh agent discovery and registry subsystem", default: "false" },
+  "Discovery roots": { type: "string[]", description: "Directories to scan for agents (passed in the POST /discover request body)" },
+  "Max scan depth": { type: "number", description: "How many directory levels deep to scan", default: "3" },
+  "Health check interval": { type: "number", description: "Milliseconds between heartbeat expectations (configurable per-agent)" },
+}} />
+
+Mesh data is stored in SQLite at `~/.dork/mesh/mesh.db`. Agent manifests are also written to `.dork/agent.json` in each registered agent's project directory as a portable backup that survives database rebuilds.
+
+## Next Steps
+
+<Cards>
+  <Card title="Mesh Concepts" href="/docs/concepts/mesh">
+    Understand the architecture behind agent discovery, namespaces, and topology.
+  </Card>
+  <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
+    Send messages between the agents you have registered.
+  </Card>
+  <Card title="Agent Coordination" href="/docs/guides/agent-coordination">
+    Multi-agent workflow patterns using Relay and Mesh together.
+  </Card>
+</Cards>

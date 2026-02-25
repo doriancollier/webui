@@ -63,6 +63,16 @@ data: {"type":"done"}
   "task_update": { type: "{ tasks: TaskItem[] }", description: "Task list updated" },
 }} />
 
+### Relay Events
+
+When `DORKOS_RELAY_ENABLED` is true, the SSE stream includes additional event types:
+
+<TypeTable type={{
+  "relay_message": { type: "{ streamEvent: StreamEvent, messageId: string }", description: "Relay response chunk containing a nested StreamEvent from the message bus" },
+  "relay_receipt": { type: "{ messageId: string, traceId: string }", description: "Delivery confirmation for a Relay-routed message" },
+  "message_delivered": { type: "{ messageId: string, subject: string }", description: "Message delivery notification from the Relay transport" },
+}} />
+
 ## Responding to Interactive Events
 
 <Tabs items={["Tool Approval", "Question Response"]}>
@@ -116,6 +126,10 @@ GET /api/sessions/:id/stream
 
 <Callout type="info">
   When a `sync_update` is received, clients should re-fetch message history. The `GET /api/sessions/:id/messages` endpoint supports ETag caching (`If-None-Match` / `304`) for efficient polling.
+</Callout>
+
+<Callout type="info">
+  When Relay is enabled, the SSE stream also carries `relay_message`, `relay_receipt`, and `message_delivered` events alongside standard sync events.
 </Callout>
 
 ## Session Locking

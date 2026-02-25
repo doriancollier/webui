@@ -9,9 +9,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Mesh agent discovery with registry, topology graph, health monitoring, and MCP tools
+- Add Relay inter-agent message bus with delivery tracing, dead-letter handling, and MCP tools
+- Add Relay external adapter system for Telegram and webhook channels
+- Add unified adapter system with plugin loading and Claude Code runtime adapter
+- Add Access tab to Mesh panel for managing agent permissions
+- Add standalone roadmap management app with table, kanban, MoSCoW, and Gantt views
+- Add visual cron builder, directory picker integration, and calm tech notifications to Pulse
+- Add interactive clarification to ideation and recommendation discipline
+
 ### Changed
 
+- Comprehensive Relay & Mesh release preparation
+- Redesign Pulse scheduler UI with filtering, accessibility, and navigation improvements
+- Rebrand homepage modules and create DorkOS litepaper
+- Rename Vault module to Wing with updated brand positioning
+- Replace triangles logo with DORK monogram
+
 ### Fixed
+
+- Wire live health data into Mesh topology graph and fix aggregate SQL boundary
+- Support array subjectPrefix in Relay and wire adapter context builder
+- Fix 7 critical wiring bugs in Relay convergence implementation
+- Declare runtime env vars in turbo.json globalPassThroughEnv
 
 ---
 

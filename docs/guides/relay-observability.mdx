@@ -1,0 +1,247 @@
+---
+title: Relay Observability
+description: Track message delivery, inspect traces, monitor metrics, and debug failures in the Relay message bus
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { TypeTable } from 'fumadocs-ui/components/type-table'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
+# Relay Observability
+
+Relay tracks every message from publish to final delivery. The tracing system records timing information, budget consumption, and error details for each delivery attempt. Aggregate metrics provide a bird's-eye view of your message bus health, and the dead letter queue captures messages that could not be delivered.
+
+This guide covers how to use traces, metrics, and debugging tools to understand what is happening inside Relay.
+
+## Message Tracing
+
+Every message published through Relay is assigned a trace ID, and each delivery to an endpoint creates a **span**. A span records the full lifecycle of a single delivery attempt: when it was sent, when it arrived at the endpoint, when processing completed, and whether it succeeded or failed.
+
+### Trace Span Fields
+
+<TypeTable type={{
+  "messageId": { type: "string", description: "ULID of the message being delivered" },
+  "traceId": { type: "string", description: "ULID grouping all spans for a publish operation" },
+  "spanId": { type: "string", description: "Unique identifier for this delivery attempt" },
+  "parentSpanId": { type: "string | null", description: "Parent span for forwarded messages (null for direct publishes)" },
+  "subject": { type: "string", description: "The target subject the message was published to" },
+  "fromEndpoint": { type: "string", description: "Sender's subject identifier" },
+  "toEndpoint": { type: "string", description: "Receiving endpoint's subject" },
+  "status": { type: "string", description: "Delivery status: pending, delivered, processed, failed, or dead_lettered" },
+  "budgetHopsUsed": { type: "number | null", description: "Number of hops consumed at this point in the chain" },
+  "budgetTtlRemainingMs": { type: "number | null", description: "Remaining TTL in milliseconds when this span was created" },
+  "sentAt": { type: "number", description: "Unix timestamp (ms) when the message was published" },
+  "deliveredAt": { type: "number | null", description: "Unix timestamp (ms) when the message reached the endpoint's Maildir" },
+  "processedAt": { type: "number | null", description: "Unix timestamp (ms) when the subscriber handler completed" },
+  "error": { type: "string | null", description: "Error message if the delivery failed" },
+}} />
+
+### Looking Up a Trace
+
+To inspect the full delivery trace for a message, use the trace endpoint with the message ID:
+
+```bash
+curl http://localhost:4242/api/relay/messages/01HX.../trace
+```
+
+The response includes every span in the trace chain, ordered by `sentAt` ascending:
+
+```json
+{
+  "traceId": "01HXABC123",
+  "spans": [
+    {
+      "messageId": "01HXABC123",
+      "traceId": "01HXABC123",
+      "spanId": "span-001",
+      "parentSpanId": null,
+      "subject": "relay.agent.backend",
+      "fromEndpoint": "relay.human.console.client-1",
+      "toEndpoint": "relay.agent.backend",
+      "status": "processed",
+      "budgetHopsUsed": 1,
+      "budgetTtlRemainingMs": 3599500,
+      "sentAt": 1709000000000,
+      "deliveredAt": 1709000000050,
+      "processedAt": 1709000000200,
+      "error": null
+    }
+  ]
+}
+```
+
+For messages that fan out to multiple endpoints, the trace contains one span per endpoint. If an agent forwards a message (consuming a hop), the forwarded message's span links back to the original via `parentSpanId`.
+
+### Trace Statuses
+
+Each span transitions through a lifecycle of statuses:
+
+| Status | Meaning |
+|---|---|
+| `pending` | Message published, delivery in progress |
+| `delivered` | Message written to the endpoint's Maildir `new/` directory |
+| `processed` | Subscription handler completed successfully |
+| `failed` | Subscription handler threw an error |
+| `dead_lettered` | Message rejected (budget exceeded, access denied, no matching endpoints, or circuit breaker open) |
+
+A healthy message moves through `pending` to `delivered` to `processed`. The time between `sentAt` and `deliveredAt` is the delivery latency. The time between `deliveredAt` and `processedAt` is the processing latency, which includes the time the adapter (e.g., Claude Code) takes to handle the message.
+
+### Using MCP Tools
+
+Agents running inside DorkOS can inspect traces using the built-in MCP tools without making HTTP calls:
+
+```
+relay_get_trace     Get the full delivery trace for a message by ID
+relay_get_metrics   Get aggregate delivery metrics for the bus
+```
+
+The `relay_get_trace` tool accepts a `messageId` parameter and returns the same trace data as the REST endpoint. This is useful for agents that need to verify whether a message they sent was successfully delivered before proceeding with the next step.
+
+## Delivery Metrics Dashboard
+
+Relay computes aggregate delivery metrics from the trace store using live SQL aggregates. These metrics provide a summary of bus health without requiring you to inspect individual traces.
+
+### Fetching Metrics
+
+Retrieve the current metrics snapshot from the trace metrics endpoint:
+
+```bash
+curl http://localhost:4242/api/relay/trace/metrics
+```
+
+```json
+{
+  "totalMessages": 1542,
+  "deliveredCount": 1480,
+  "failedCount": 12,
+  "deadLetteredCount": 50,
+  "avgDeliveryLatencyMs": 45.2,
+  "p95DeliveryLatencyMs": 120.0,
+  "activeEndpoints": 8,
+  "budgetRejections": {
+    "hopLimit": 3,
+    "ttlExpired": 7,
+    "cycleDetected": 0,
+    "budgetExhausted": 2
+  }
+}
+```
+
+### Metrics Fields
+
+<TypeTable type={{
+  "totalMessages": { type: "number", description: "Total messages tracked in the trace store" },
+  "deliveredCount": { type: "number", description: "Messages successfully delivered or processed" },
+  "failedCount": { type: "number", description: "Messages where the subscriber handler threw an error" },
+  "deadLetteredCount": { type: "number", description: "Messages rejected to the dead letter queue" },
+  "avgDeliveryLatencyMs": { type: "number | null", description: "Average time from publish to endpoint delivery (milliseconds)" },
+  "p95DeliveryLatencyMs": { type: "number | null", description: "95th percentile delivery latency (milliseconds)" },
+  "activeEndpoints": { type: "number", description: "Number of distinct endpoints that have received messages" },
+  "budgetRejections.hopLimit": { type: "number", description: "Messages rejected for exceeding the maximum hop count" },
+  "budgetRejections.ttlExpired": { type: "number", description: "Messages rejected because their TTL expired before delivery" },
+  "budgetRejections.cycleDetected": { type: "number", description: "Messages rejected because the ancestor chain contained a cycle" },
+  "budgetRejections.budgetExhausted": { type: "number", description: "Messages rejected because the call budget was depleted" },
+}} />
+
+### Interpreting the Numbers
+
+A healthy Relay bus has a high delivered-to-total ratio and low dead letter counts. Here are patterns to watch for:
+
+- **High `deadLetteredCount`** relative to total -- Check the budget rejections breakdown to find the root cause. A spike in `hopLimit` rejections often indicates a message loop between two agents. TTL expirations may mean agents are too slow to process messages within the default 1-hour window.
+
+- **Rising `failedCount`** -- Subscriber handlers are throwing errors. Check the individual traces for the `error` field to identify which adapter or endpoint is failing. The circuit breaker will automatically stop delivering to endpoints with 5 consecutive failures.
+
+- **High `p95DeliveryLatencyMs`** -- Some deliveries are slow. This is often caused by a single slow endpoint pulling up the tail latency. Inspect traces filtered by endpoint to find the bottleneck.
+
+<Callout type="info">
+Relay metrics are computed as live SQL aggregates over the trace store. They reflect the full history of the current Relay database, not just a recent time window. To reset metrics, you would need to clear the `message_traces` table in the SQLite database.
+</Callout>
+
+The DorkOS client UI includes a Delivery Metrics Dashboard in the Relay panel that visualizes these numbers with success/failure breakdowns and latency distribution. Access it from the Relay tab in the sidebar when Relay is enabled.
+
+## Debugging Failed Deliveries
+
+When a message does not reach its destination, Relay provides several tools to diagnose the issue. Start with the dead letter queue, then drill into individual traces, and check the reliability subsystems.
+
+<Steps>
+<Step>
+### Check the dead letter queue
+
+Dead letters are messages that could not be delivered to any endpoint. Fetch them from the dead letters endpoint:
+
+```bash
+curl http://localhost:4242/api/relay/dead-letters
+```
+
+Each dead letter includes the original envelope with its subject, payload, and budget. The reason for rejection is embedded in the envelope metadata. Common reasons include:
+
+- **No matching endpoints** -- The subject has no registered endpoints. Verify the endpoint is registered with `GET /api/relay/endpoints`.
+- **Budget exceeded** -- The message's hop count, TTL, or call budget was exhausted before delivery.
+- **Access denied** -- The sender does not have permission to publish to the target subject. Check `access-rules.json`.
+</Step>
+
+<Step>
+### Inspect the message trace
+
+If the message was delivered but the handler failed, look up the trace:
+
+```bash
+curl http://localhost:4242/api/relay/messages/{messageId}/trace
+```
+
+Check the `status` and `error` fields on each span. A `failed` status with an error message tells you exactly what went wrong in the subscriber handler. For Claude Code adapter failures, the error typically includes the Agent SDK error message.
+</Step>
+
+<Step>
+### Check endpoint health
+
+If deliveries are being rejected, the endpoint's circuit breaker may be open. The Relay metrics endpoint reports system-level metrics, and individual endpoint health can be assessed by looking at consecutive failure patterns in the traces.
+
+The circuit breaker opens after 5 consecutive failures (configurable in `~/.dork/relay/config.json`). After a 30-second cooldown, it allows a single probe message through. If the probe succeeds, normal delivery resumes.
+</Step>
+
+<Step>
+### Check rate limits and backpressure
+
+If a sender is publishing too quickly, their messages are rejected by the rate limiter. The default allows 100 messages per 60-second window per sender. If an endpoint's mailbox has too many unprocessed messages, backpressure kicks in at 80% capacity (warning) and 100% capacity (rejection).
+
+Both settings are tunable in `~/.dork/relay/config.json` and hot-reloaded without a restart.
+</Step>
+</Steps>
+
+### SSE Stream for Real-Time Monitoring
+
+For real-time visibility, subscribe to the Relay SSE stream. The stream emits events for every message delivery and signal:
+
+```bash
+curl -N http://localhost:4242/api/relay/stream?subject=%3E
+```
+
+The `subject` query parameter filters which messages appear in the stream. Use `>` (URL-encoded as `%3E`) to see all messages, or provide a specific pattern like `relay.agent.*` to filter by audience.
+
+The stream emits three event types:
+
+| Event | Description |
+|---|---|
+| `relay_connected` | Initial connection confirmation with the filter pattern |
+| `relay_message` | A message envelope matching the subscription pattern |
+| `relay_backpressure` | A backpressure or dead-letter signal from an endpoint |
+
+<Callout type="warn">
+The SSE stream is primarily intended for debugging and monitoring. In production, use the REST API for polling metrics and the UI dashboard for visual monitoring. Long-lived SSE connections consume server resources and should be closed when no longer needed.
+</Callout>
+
+## Next Steps
+
+<Cards>
+  <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
+    Learn how to enable Relay, send messages, and configure adapters.
+  </Card>
+  <Card title="Relay Concepts" href="/docs/concepts/relay">
+    Understand Relay's architecture, envelope format, and delivery pipeline in depth.
+  </Card>
+  <Card title="Agent Discovery" href="/docs/guides/agent-discovery">
+    Discover and register agents that communicate through Relay using Mesh.
+  </Card>
+</Cards>

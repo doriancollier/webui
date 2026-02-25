@@ -1,0 +1,470 @@
+---
+title: Building Relay Adapters
+description: How to build custom adapters that bridge external platforms into the Relay message bus
+---
+
+import { Steps, Step } from 'fumadocs-ui/components/steps'
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
+# Building Relay Adapters
+
+Relay adapters bridge external communication platforms into the DorkOS message bus. Whether you want to connect Slack, Discord, a custom webhook service, or any other messaging platform, you implement the `RelayAdapter` interface and register it with the adapter system.
+
+This guide walks through the adapter interface, lifecycle, configuration, and a complete working example.
+
+## The RelayAdapter Interface
+
+Every adapter implements four methods and three readonly properties:
+
+```typescript
+interface RelayAdapter {
+  readonly id: string;
+  readonly subjectPrefix: string | readonly string[];
+  readonly displayName: string;
+
+  start(relay: RelayPublisher): Promise<void>;
+  stop(): Promise<void>;
+  deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<DeliveryResult>;
+  getStatus(): AdapterStatus;
+}
+```
+
+The three properties identify the adapter:
+
+- **id** is a unique string that disambiguates this adapter instance from others. If you run two Telegram bots, each gets a different `id` (e.g., `telegram-support`, `telegram-alerts`).
+- **subjectPrefix** tells the adapter registry which Relay subjects this adapter handles. When a message is published to a subject that starts with this prefix, Relay routes the outbound delivery to your adapter. This can be a single string or an array of strings for adapters that handle multiple subject prefixes.
+- **displayName** is what appears in the DorkOS UI when showing adapter status.
+
+The four methods handle the adapter lifecycle:
+
+- **start()** connects to the external service, registers endpoints, and subscribes to signals. It receives a `RelayPublisher` that you use to publish inbound messages into the bus.
+- **stop()** disconnects gracefully and cleans up resources.
+- **deliver()** handles outbound messages. When another agent or user publishes a message to a subject matching your prefix, Relay calls this method with the envelope.
+- **getStatus()** returns a snapshot of your adapter's runtime state for the UI.
+
+## Adapter Lifecycle
+
+Adapters follow a state machine managed by the adapter registry. Understanding this lifecycle is important for writing robust adapters.
+
+<Steps>
+<Step>
+
+### Registration
+
+When the server starts, the `AdapterManager` reads `~/.dork/relay/adapters.json`, creates adapter instances for each enabled entry, and calls `registry.register(adapter)`. This triggers `start()` on your adapter.
+
+</Step>
+<Step>
+
+### Running
+
+Your adapter is now active. Inbound messages from the external platform should be published to Relay via the `RelayPublisher`. Outbound messages arrive through `deliver()`. The adapter status should report `connected`.
+
+</Step>
+<Step>
+
+### Hot-Reload
+
+When the config file changes on disk, the adapter manager reconciles state. If your adapter's config changed, a new instance is created and registered. The new instance's `start()` runs before the old instance's `stop()`, ensuring zero-downtime transitions.
+
+</Step>
+<Step>
+
+### Shutdown
+
+On server shutdown, `stop()` is called on every running adapter. Your adapter should drain in-flight messages, close connections, and release resources.
+
+</Step>
+</Steps>
+
+<Callout type="warn">
+Both `start()` and `stop()` must be idempotent. The registry may call `start()` on an already-running adapter during hot-reload, or `stop()` on an already-stopped adapter during cleanup. Guard against double-initialization by checking your connection state before acting.
+</Callout>
+
+## Inbound Messages
+
+Inbound messages flow from your external platform into Relay. When your adapter receives a message from the external service (a Telegram message, a webhook POST, a Slack event), it normalizes the content and publishes it to a Relay subject.
+
+The publish call uses the `RelayPublisher` passed to `start()`:
+
+```typescript
+await this.relay.publish(
+  'relay.human.slack.U12345',   // subject
+  {                              // payload
+    content: 'Deploy the backend',
+    senderName: 'alice',
+    channelType: 'dm',
+    responseContext: {
+      platform: 'slack',
+      maxLength: 4000,
+      supportedFormats: ['text', 'markdown'],
+      instructions: 'Format responses as Slack markdown.',
+    },
+  },
+  { from: 'relay.human.slack.bot' }  // options
+);
+```
+
+### Subject Conventions
+
+Follow these naming patterns for your subjects:
+
+- Human DMs: `relay.human.{platform}.{userId}` (e.g., `relay.human.slack.U12345`)
+- Human groups: `relay.human.{platform}.group.{groupId}` (e.g., `relay.human.slack.channel.C67890`)
+- Webhooks: `relay.webhook.{adapterId}` (e.g., `relay.webhook.github`)
+
+The subject determines how Relay routes responses back to your adapter. When an agent replies to a message, the reply goes to the `replyTo` subject in the original envelope, which typically matches your adapter's prefix.
+
+### Payload Structure
+
+While you can publish any JSON-serializable payload, the `StandardPayload` structure is recommended for human-facing adapters. It includes `content`, `senderName`, `channelType`, and a `responseContext` block that tells the receiving agent about platform constraints (message length limits, supported formats, formatting instructions).
+
+## Outbound Delivery
+
+Outbound messages flow from Relay to your external platform. When an agent publishes a message to a subject matching your `subjectPrefix`, Relay calls your `deliver()` method with the envelope and an optional `AdapterContext`.
+
+Your `deliver()` method should:
+
+1. Extract the recipient identifier from the subject (e.g., parse the user ID from `relay.human.slack.U12345`)
+2. Format the message content for your platform (respect character limits, convert markdown, etc.)
+3. Send the message through your platform's API
+4. Return a `DeliveryResult` indicating success or failure
+
+```typescript
+async deliver(
+  subject: string,
+  envelope: RelayEnvelope,
+  context?: AdapterContext,
+): Promise<DeliveryResult> {
+  const start = Date.now();
+  const userId = subject.slice(this.subjectPrefix.length + 1);
+
+  if (!userId) {
+    return { success: false, error: 'Cannot extract user ID from subject' };
+  }
+
+  const content = typeof envelope.payload === 'string'
+    ? envelope.payload
+    : (envelope.payload as any)?.content ?? JSON.stringify(envelope.payload);
+
+  try {
+    await this.client.sendMessage(userId, content);
+    this.status.messageCount.outbound++;
+    return { success: true, durationMs: Date.now() - start };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    this.recordError(err);
+    return { success: false, error: message, durationMs: Date.now() - start };
+  }
+}
+```
+
+### Adapter Context
+
+The `AdapterContext` parameter provides optional rich context about the delivery target. When Mesh is enabled, this may include the target agent's working directory, runtime type, and manifest. External platform adapters can also receive platform-specific metadata and trace context for delivery tracking.
+
+## Configuration
+
+Adapter configurations live in `~/.dork/relay/adapters.json`. Each entry specifies an adapter ID, type, enabled flag, and type-specific config:
+
+```json
+{
+  "adapters": [
+    {
+      "id": "my-slack-bot",
+      "type": "plugin",
+      "enabled": true,
+      "plugin": {
+        "package": "dorkos-slack-adapter"
+      },
+      "config": {
+        "token": "xoxb-...",
+        "signingSecret": "abc123..."
+      }
+    }
+  ]
+}
+```
+
+For custom adapters, set `type` to `"plugin"` and provide a `plugin` block with either a `package` name (for npm packages) or a `path` (for local files). The adapter manager loads your module via dynamic import and calls it with the config.
+
+### Plugin Loading
+
+Plugin adapters can be loaded from two sources:
+
+- **npm packages** — Set `plugin.package` to the npm package name. The package must export a default function or class that implements `RelayAdapter`.
+- **Local files** — Set `plugin.path` to an absolute or relative path (relative to `~/.dork/relay/`). The file must export a default function or class.
+
+The adapter manager watches the config file for changes and hot-reloads adapters when the config is modified. You can enable, disable, or reconfigure adapters without restarting the server.
+
+## Complete Example: Slack Adapter
+
+Here is a complete adapter implementation that bridges Slack into Relay. This example covers all four interface methods, proper error handling, status tracking, and idempotent lifecycle management.
+
+```typescript
+import type {
+  RelayAdapter,
+  RelayPublisher,
+  AdapterStatus,
+  AdapterContext,
+  DeliveryResult,
+} from '@dorkos/relay';
+import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
+
+interface SlackConfig {
+  token: string;
+  signingSecret: string;
+  maxMessageLength?: number;
+}
+
+const SUBJECT_PREFIX = 'relay.human.slack';
+const DEFAULT_MAX_LENGTH = 4000;
+
+export class SlackAdapter implements RelayAdapter {
+  readonly id: string;
+  readonly subjectPrefix = SUBJECT_PREFIX;
+  readonly displayName: string;
+
+  private readonly config: SlackConfig;
+  private relay: RelayPublisher | null = null;
+  private client: any = null;
+  private signalUnsub: (() => void) | null = null;
+  private status: AdapterStatus = {
+    state: 'disconnected',
+    messageCount: { inbound: 0, outbound: 0 },
+    errorCount: 0,
+  };
+
+  constructor(id: string, config: SlackConfig) {
+    this.id = id;
+    this.config = config;
+    this.displayName = `Slack (${id})`;
+  }
+
+  // ---- Lifecycle ----
+
+  async start(relay: RelayPublisher): Promise<void> {
+    if (this.client !== null) return; // Already running — idempotent
+
+    this.relay = relay;
+    this.status = { ...this.status, state: 'starting' };
+
+    // Dynamic import keeps Slack SDK optional
+    const { App } = await import('@slack/bolt');
+    this.client = new App({
+      token: this.config.token,
+      signingSecret: this.config.signingSecret,
+    });
+
+    // Handle inbound messages
+    this.client.message(async ({ message }: any) => {
+      if (!message.text || message.subtype) return;
+      await this.handleInbound(message);
+    });
+
+    // Subscribe to Relay signals (typing indicators, etc.)
+    this.signalUnsub = relay.onSignal(
+      `${SUBJECT_PREFIX}.>`,
+      (subject, signal) => {
+        if (signal.type === 'typing') {
+          const userId = subject.slice(SUBJECT_PREFIX.length + 1);
+          // Slack does not support typing indicators via API,
+          // so this is a no-op. Included for pattern completeness.
+        }
+      },
+    );
+
+    await this.client.start();
+
+    this.status = {
+      ...this.status,
+      state: 'connected',
+      startedAt: new Date().toISOString(),
+    };
+  }
+
+  async stop(): Promise<void> {
+    if (this.client === null) return; // Already stopped — idempotent
+
+    this.status = { ...this.status, state: 'stopping' };
+
+    // Unsubscribe from signals first
+    if (this.signalUnsub) {
+      this.signalUnsub();
+      this.signalUnsub = null;
+    }
+
+    try {
+      await this.client.stop();
+    } catch (err) {
+      // Log but do not throw — stop must not fail
+      this.recordError(err);
+    } finally {
+      this.client = null;
+      this.relay = null;
+      this.status = { ...this.status, state: 'disconnected' };
+    }
+  }
+
+  // ---- Outbound delivery ----
+
+  async deliver(
+    subject: string,
+    envelope: RelayEnvelope,
+    _context?: AdapterContext,
+  ): Promise<DeliveryResult> {
+    if (!this.client) {
+      return { success: false, error: 'Adapter not started' };
+    }
+
+    const start = Date.now();
+    const userId = this.extractUserId(subject);
+    if (!userId) {
+      return {
+        success: false,
+        error: `Cannot extract user ID from subject: ${subject}`,
+      };
+    }
+
+    const content = this.extractContent(envelope.payload);
+    const maxLen = this.config.maxMessageLength ?? DEFAULT_MAX_LENGTH;
+    const truncated = content.length > maxLen
+      ? content.slice(0, maxLen - 3) + '...'
+      : content;
+
+    try {
+      await this.client.client.chat.postMessage({
+        channel: userId,
+        text: truncated,
+      });
+      this.status.messageCount.outbound++;
+      return { success: true, durationMs: Date.now() - start };
+    } catch (err) {
+      this.recordError(err);
+      const message = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        error: message,
+        durationMs: Date.now() - start,
+      };
+    }
+  }
+
+  // ---- Status ----
+
+  getStatus(): AdapterStatus {
+    return { ...this.status };
+  }
+
+  // ---- Inbound handling ----
+
+  private async handleInbound(message: any): Promise<void> {
+    if (!this.relay) return;
+
+    const subject = `${SUBJECT_PREFIX}.${message.user}`;
+    const payload = {
+      content: message.text,
+      senderName: message.user,
+      channelType: 'dm' as const,
+      responseContext: {
+        platform: 'slack',
+        maxLength: this.config.maxMessageLength ?? DEFAULT_MAX_LENGTH,
+        supportedFormats: ['text', 'markdown'],
+        instructions: 'Format responses as Slack mrkdwn syntax.',
+      },
+      platformData: {
+        channelId: message.channel,
+        messageTs: message.ts,
+        userId: message.user,
+      },
+    };
+
+    try {
+      await this.relay.publish(subject, payload, {
+        from: `${SUBJECT_PREFIX}.bot`,
+      });
+      this.status.messageCount.inbound++;
+    } catch (err) {
+      this.recordError(err);
+    }
+  }
+
+  // ---- Helpers ----
+
+  private extractUserId(subject: string): string | null {
+    if (!subject.startsWith(SUBJECT_PREFIX)) return null;
+    const rest = subject.slice(SUBJECT_PREFIX.length + 1);
+    return rest || null;
+  }
+
+  private extractContent(payload: unknown): string {
+    if (typeof payload === 'string') return payload;
+    if (payload && typeof payload === 'object' && 'content' in payload) {
+      const content = (payload as Record<string, unknown>).content;
+      if (typeof content === 'string') return content;
+    }
+    return JSON.stringify(payload);
+  }
+
+  private recordError(err: unknown): void {
+    const message = err instanceof Error ? err.message : String(err);
+    this.status = {
+      ...this.status,
+      state: 'error',
+      errorCount: this.status.errorCount + 1,
+      lastError: message,
+      lastErrorAt: new Date().toISOString(),
+    };
+  }
+}
+```
+
+To use this adapter, add it to `~/.dork/relay/adapters.json`:
+
+```json
+{
+  "adapters": [
+    {
+      "id": "slack-team",
+      "type": "plugin",
+      "enabled": true,
+      "plugin": { "package": "dorkos-slack-adapter" },
+      "config": {
+        "token": "xoxb-your-bot-token",
+        "signingSecret": "your-signing-secret"
+      }
+    }
+  ]
+}
+```
+
+## Security Considerations
+
+When building adapters that handle external input, follow these practices:
+
+- **HMAC-SHA256 verification** for webhook-based adapters. Use `crypto.timingSafeEqual()` for signature comparison to prevent timing attacks.
+- **Timestamp windows** on signed requests (typically 5 minutes) to prevent replay attacks.
+- **Nonce tracking** to reject duplicate deliveries within the timestamp window.
+- **Secret rotation** support with a previous-secret fallback so secrets can be updated without downtime.
+- **Never log secrets** in error messages or diagnostic output. Log the token length or a masked prefix at most.
+
+The built-in `WebhookAdapter` implements all of these patterns and can serve as a reference for any adapter that accepts external HTTP requests.
+
+<Callout type="warn">
+Always use `crypto.timingSafeEqual()` instead of string equality (`===`) when comparing signatures. String comparison is vulnerable to timing-based oracle attacks that can recover the secret byte by byte.
+</Callout>
+
+## Next Steps
+
+<Cards>
+  <Card title="Relay Concepts" href="/docs/concepts/relay">
+    Understand the message bus architecture that adapters plug into.
+  </Card>
+  <Card title="Mesh Discovery" href="/docs/concepts/mesh">
+    Learn how agents are discovered and registered in the network.
+  </Card>
+  <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
+    See how streaming events flow from the server to clients.
+  </Card>
+</Cards>

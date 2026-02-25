@@ -19,7 +19,15 @@
     "ai-platform",
     "webui",
     "sse",
-    "rest-api"
+    "rest-api",
+    "relay",
+    "mesh",
+    "agent-mesh",
+    "pub-sub",
+    "agent-discovery",
+    "message-bus",
+    "scheduler",
+    "pulse"
   ],
   "type": "module",
   "bin": {

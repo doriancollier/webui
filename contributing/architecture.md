@@ -352,6 +352,60 @@ SchedulerService → relay.publish('relay.system.pulse.{scheduleId}') → Claude
 
 Every `relay.publish()` records a TraceSpan in SQLite. API: `GET /api/relay/messages/:id/trace`, `GET /api/relay/trace/metrics`.
 
+## Mesh
+
+The Mesh subsystem (`packages/mesh/src/`) provides agent discovery, registration, and lifecycle management. It enables DorkOS to detect and coordinate with other AI coding agents running on the same machine or network.
+
+### Core Components
+
+| Module | Purpose |
+|--------|---------|
+| `mesh-core.ts` | Main entry point composing discovery, registry, denial list, and Relay bridge |
+| `discovery-engine.ts` | Scans directories for agent workspaces using pluggable strategies |
+| `agent-registry.ts` | SQLite-backed persistent registry of known agents |
+| `denial-list.ts` | Tracks explicitly denied agents to prevent re-discovery |
+| `namespace-resolver.ts` | Resolves agent namespaces for subject-based routing |
+| `topology.ts` | Computes network topology views with cross-namespace rules |
+| `budget-mapper.ts` | Maps Relay budget envelopes to mesh agent capabilities |
+| `relay-bridge.ts` | Optional bridge publishing lifecycle events to Relay subjects |
+| `manifest.ts` | Reads/writes `.dorkos-agent.json` manifest files |
+
+### Discovery Strategies
+
+Three pluggable strategies detect different agent types:
+
+| Strategy | Detects | Signal |
+|----------|---------|--------|
+| `ClaudeCodeStrategy` | Claude Code workspaces | `.claude/` directory with `settings.json` |
+| `CursorStrategy` | Cursor editor sessions | `.cursor/` directory |
+| `CodexStrategy` | OpenAI Codex agents | `.codex/` directory |
+
+### Server Integration
+
+The server exposes Mesh via `routes/mesh.ts` (feature-flag guarded by `DORKOS_MESH_ENABLED`). MCP tools in `mcp-tool-server.ts` allow agents to discover, register, and inspect the mesh programmatically.
+
+### Relay Bridge
+
+When both Mesh and Relay are enabled, `RelayBridge` publishes lifecycle events (`agent.registered`, `agent.unregistered`, `agent.health_changed`) to Relay subjects, enabling cross-agent event subscriptions.
+
+## Pulse
+
+The Pulse subsystem provides cron-based agent scheduling. It lives entirely in `apps/server/src/services/pulse/` with state persisted to SQLite (`~/.dork/pulse.db`) and JSON (`~/.dork/schedules.json`).
+
+### Key Components
+
+| Module | Purpose |
+|--------|---------|
+| `pulse-store.ts` | SQLite database + JSON file for schedule and run state |
+| `scheduler-service.ts` | Cron engine using `croner` with overrun protection and concurrency caps |
+
+### Dispatch Modes
+
+- **Direct mode** (default): `SchedulerService` calls `AgentManager.query()` directly to start agent sessions
+- **Relay mode** (`DORKOS_RELAY_ENABLED=true`): Publishes to `relay.system.pulse.{scheduleId}` instead; `ClaudeCodeAdapter` handles dispatch
+
+Agent-created schedules enter `pending_approval` state and require human approval before activation.
+
 ## Testing
 
 All hooks and components use mock `Transport` objects injected via `TransportProvider` in test wrappers:

@@ -6,6 +6,12 @@
     "tool-approval",
     "slash-commands",
     "keyboard-shortcuts",
-    "tunnel-setup"
+    "tunnel-setup",
+    "relay-messaging",
+    "agent-discovery",
+    "pulse-scheduler",
+    "relay-observability",
+    "building-relay-adapters",
+    "agent-coordination"
   ]
 }

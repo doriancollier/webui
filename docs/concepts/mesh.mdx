@@ -1,0 +1,172 @@
+---
+title: Mesh
+description: How DorkOS discovers, registers, and manages AI agents across your filesystem
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Cards, Card } from 'fumadocs-ui/components/card'
+
+# Mesh
+
+Mesh is the agent discovery and registry system in DorkOS. It scans your filesystem for AI agent projects, registers them into a central registry, and connects them to Relay for inter-agent communication. Mesh is an opt-in subsystem controlled by the `DORKOS_MESH_ENABLED` environment variable.
+
+## Why Agent Discovery?
+
+Modern development often involves multiple AI agents running in different project directories. You might have a Claude Code agent working on your backend, a Cursor agent editing your frontend, and an OpenAI Codex agent handling infrastructure scripts. These agents are invisible to each other by default — they each operate in isolation within their own project directory.
+
+Mesh solves this by scanning your filesystem for agent projects, building a registry of known agents, and wiring them into the Relay message bus so they can communicate. The discovery process is human-in-the-loop: Mesh finds candidate agents and presents them for your approval before registering them.
+
+## Discovery
+
+Discovery is the process of scanning directories to find agent projects. Mesh uses pluggable **discovery strategies** to recognize different types of agents by their filesystem markers.
+
+### Built-in Strategies
+
+DorkOS ships with three discovery strategies:
+
+- **Claude Code strategy** — Detects projects with a `.claude/` directory, which indicates a Claude Code workspace. Extracts the project name, description, and capabilities from CLAUDE.md and the commands directory.
+- **Cursor strategy** — Detects projects with a `.cursor/` or `.cursorrc` file, indicating a Cursor AI workspace.
+- **Codex strategy** — Detects projects with markers specific to OpenAI Codex configurations.
+
+Each strategy implements two methods: `detect()` checks whether a directory matches the strategy's markers, and `extractHints()` gathers information about the agent (suggested name, runtime type, inferred capabilities, and description).
+
+### Scan Process
+
+When you trigger a discovery scan, Mesh walks the specified root directories up to a configurable depth (default: 3 levels). For each directory, it runs every strategy's `detect()` method. The scan process has several automatic behaviors:
+
+- **Auto-import** — If a directory already contains a `.dork/agent.json` manifest file (from a previous registration), the agent is silently imported into the registry without appearing as a candidate. This means re-scanning picks up agents that were registered in a previous session.
+- **Skip registered** — Directories that are already in the registry are skipped entirely, avoiding duplicate registrations.
+- **Skip denied** — Directories that have been explicitly denied are also skipped, so you do not see the same unwanted candidates on every scan.
+
+The scan yields `DiscoveryCandidate` objects for directories that match a strategy but are not yet registered or denied. Each candidate includes the directory path, the strategy that matched, the discovered hints, and a timestamp.
+
+<Callout type="info">
+Discovery is non-destructive. It only reads filesystem markers — it never modifies your project directories until you explicitly approve a registration.
+</Callout>
+
+## Registration
+
+When you approve a discovery candidate, Mesh registers it as a full agent in the system. Registration involves several steps:
+
+1. **ID generation** — A ULID is assigned, providing a unique, time-ordered identifier for the agent.
+2. **Manifest creation** — An `AgentManifest` is assembled from the discovery hints merged with any overrides you provide (custom name, description, capabilities, etc.).
+3. **Manifest persistence** — A `.dork/agent.json` file is written to the agent's project directory. This file serves as a portable marker that survives re-scans and can be committed to version control.
+4. **Registry insertion** — The agent is inserted into the SQLite-backed registry with its manifest, project path, namespace, and scan root.
+5. **Relay endpoint** — If Relay is enabled, a Relay endpoint is automatically registered for the agent at `relay.agent.{namespace}.{agentId}`, enabling it to receive messages from other agents.
+
+### Direct Registration
+
+You can also register an agent directly by project path without running a discovery scan. This is useful when you know exactly which directory contains an agent and want to skip the scan overhead. Direct registration requires you to provide at minimum the agent name and runtime type.
+
+### The Agent Manifest
+
+Every registered agent has a manifest that describes its identity and configuration:
+
+- **id** — ULID assigned at registration
+- **name** — Human-readable name (e.g., "backend-api", "frontend-ui")
+- **description** — What the agent does
+- **runtime** — The AI platform powering the agent: `claude-code`, `cursor`, `codex`, or `other`
+- **capabilities** — A list of capability tags (e.g., "typescript", "testing", "deployment") that other agents and the UI can use to understand what this agent can do
+- **behavior** — Response mode configuration that controls when the agent responds to messages: `always`, `direct-only`, `mention-only`, or `silent`
+- **budget** — Per-agent resource limits: maximum hops per message (default: 5) and maximum API calls per hour (default: 100)
+- **namespace** — Derived from the project path relative to the scan root, used for topology grouping and access control
+
+## Denial List
+
+Not every discovered agent should be registered. The denial list lets you permanently skip specific directories so they do not appear as candidates in future scans. When you deny a path, Mesh records the path, the strategy that found it, an optional reason, and who denied it.
+
+Denials persist in the SQLite database and are checked during every scan. You can remove a denial later if you change your mind, which allows the directory to appear as a candidate again on the next scan.
+
+## Namespaces
+
+Mesh groups agents into **namespaces** derived from their filesystem location. The namespace is computed from the project path relative to the scan root directory. For example, if your scan root is `/home/user/projects` and an agent lives at `/home/user/projects/backend/api-service`, its namespace would be `backend`.
+
+Namespaces serve two purposes:
+
+- **Topology grouping** — The UI groups agents by namespace in the topology view, making it easy to see which agents belong to which part of your codebase.
+- **Access control** — By default, agents within the same namespace can communicate freely through Relay. Cross-namespace communication requires explicit allow rules.
+
+### Cross-Namespace Access
+
+Mesh provides methods to manage cross-namespace communication. You can allow agents in namespace A to send messages to agents in namespace B by adding a cross-namespace allow rule. These rules map to Relay access control rules using subject patterns like `relay.agent.{sourceNamespace}.>` to `relay.agent.{targetNamespace}.>`.
+
+Removing a cross-namespace rule reverts to the default-deny behavior, isolating the two namespaces from each other. This gives you fine-grained control over which parts of your agent network can interact.
+
+## Topology
+
+The topology system provides a namespace-scoped view of the agent network. When you request a topology view, you specify a caller namespace (or `*` for an admin view), and Mesh returns:
+
+- **Namespaces** — Each namespace with its agent count and the agents it contains
+- **Access rules** — The cross-namespace allow/deny rules that govern inter-namespace communication
+
+The topology view respects access rules as invisible boundaries. An agent in namespace A only sees agents in namespaces it is allowed to communicate with. This prevents information leakage — agents cannot discover the existence of agents they are not permitted to contact.
+
+<Callout type="info">
+The admin view (`callerNamespace: '*'`) bypasses all access restrictions and shows the complete topology. This is what the DorkOS UI uses to render the full network graph.
+</Callout>
+
+## Health and Observability
+
+Mesh tracks the health of every registered agent through a heartbeat mechanism. Each agent has a `lastSeenAt` timestamp and a `lastSeenEvent` description that are updated whenever the agent sends a heartbeat or performs an action.
+
+### Health States
+
+An agent's health status is computed from its `lastSeenAt` timestamp:
+
+- **active** — The agent has been seen recently (within the active threshold)
+- **inactive** — The agent has not been seen for a while but is still within a reasonable window
+- **stale** — The agent has not been seen for an extended period and may be offline or crashed
+
+### Lifecycle Events
+
+When an agent's health status changes (for example, from stale to active after receiving a heartbeat), Mesh emits a lifecycle event through the Relay signal system. These events include the agent ID, name, previous status, current status, and timestamp. The DorkOS UI subscribes to these events to update the topology graph in real time.
+
+### Mesh Status
+
+The aggregate mesh status provides a bird's-eye view of the entire agent network:
+
+- **Total agent count** with breakdowns by health status (active, inactive, stale)
+- **Agents grouped by runtime** — how many Claude Code agents, Cursor agents, etc.
+- **Agents grouped by project** — how many agents are working in each project directory
+
+### Agent Inspection
+
+You can inspect any individual agent to get a combined view of its manifest, health status, and Relay integration. The inspection includes the agent's Relay subject (the address where it receives messages), which is useful for debugging message routing issues.
+
+## Storage
+
+Mesh uses SQLite for its registry database, stored at `~/.dork/mesh/mesh.db`. The database contains:
+
+- **Agent registry** — All registered agents with their manifests, project paths, namespaces, and health tracking fields
+- **Denial list** — Paths that have been explicitly excluded from discovery
+- **Health tracking** — Last-seen timestamps and event descriptions for each agent
+
+The registry uses the same `better-sqlite3` library with WAL mode that Relay and Pulse use, providing concurrent read/write access and crash resilience.
+
+In addition to the database, each registered agent has a `.dork/agent.json` file in its project directory. This file is the portable representation of the agent's manifest — it survives database rebuilds and can be used to re-import agents via the auto-import mechanism during discovery scans.
+
+## Relay Integration
+
+Mesh and Relay are designed to work together. When both subsystems are enabled, registering an agent in Mesh automatically creates a Relay endpoint for it. The agent's Relay subject follows the pattern `relay.agent.{namespace}.{agentId}`, placing it in the subject hierarchy where the Claude Code adapter and other agents can reach it.
+
+The Relay bridge component inside Mesh handles the bidirectional integration:
+
+- **Registration** — When an agent is registered, a Relay endpoint is created and intra-namespace access rules are set up so agents in the same namespace can communicate immediately.
+- **Unregistration** — When an agent is removed, its Relay endpoint is cleaned up, and if it was the last agent in its namespace, the namespace-specific access rules are also removed.
+- **Lifecycle signals** — Health status changes are broadcast as Relay signals on the `mesh.agent.lifecycle.*` subject pattern.
+
+This tight integration means that once you register an agent in Mesh, it is immediately reachable through Relay without any additional configuration.
+
+## Next Steps
+
+<Cards>
+  <Card title="Relay" href="/docs/concepts/relay">
+    Understand the message bus that Mesh agents use to communicate.
+  </Card>
+  <Card title="Sessions" href="/docs/concepts/sessions">
+    Learn how agent sessions work and how they connect to the Mesh registry.
+  </Card>
+  <Card title="Architecture" href="/docs/concepts/architecture">
+    See how Mesh fits into the overall DorkOS architecture.
+  </Card>
+</Cards>

@@ -33,6 +33,9 @@ The server starts on port 4242 and opens your browser automatically.
 - Slash command discovery from `.claude/commands/`
 - Real-time SSE streaming responses
 - Cross-client session sync (CLI, web, Obsidian)
+- **Pulse** — Cron-based agent scheduler with run history and approval workflows
+- **Relay** — Inter-agent message bus with subject-based routing, delivery tracing, and external adapters (Telegram, Webhook)
+- **Mesh** — Agent discovery and registry with pluggable strategies, network topology, and health monitoring
 - Marketing website and documentation site ([dorkos.ai](https://dorkos.ai))
 - Obsidian plugin with sidebar integration
 - ngrok tunnel support for remote access

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 60,
+  "nextNumber": 61,
   "specs": [
     {
       "number": 1,
@@ -357,7 +357,7 @@
       "slug": "relay-server-client-integration",
       "title": "Relay Server & Client Integration",
       "created": "2026-02-24",
-      "status": "ideation"
+      "status": "implemented"
     },
     {
       "number": 52,
@@ -371,14 +371,14 @@
       "slug": "relay-external-adapters",
       "title": "Relay External Adapters",
       "created": "2026-02-24",
-      "status": "specified"
+      "status": "implemented"
     },
     {
       "number": 54,
       "slug": "mesh-core-library",
       "title": "Mesh Core Library",
       "created": "2026-02-24",
-      "status": "specified"
+      "status": "implemented"
     },
     {
       "number": 55,
@@ -392,7 +392,7 @@
       "slug": "mesh-server-client-integration",
       "title": "Mesh Server & Client Integration",
       "created": "2026-02-25",
-      "status": "specified"
+      "status": "implemented"
     },
     {
       "number": 57,
@@ -406,12 +406,19 @@
       "slug": "mesh-network-topology",
       "title": "Mesh Network Topology",
       "created": "2026-02-25",
-      "status": "specified"
+      "status": "implemented"
     },
     {
       "number": 59,
       "slug": "mesh-observability-lifecycle",
       "title": "Mesh Observability & Lifecycle Events",
+      "created": "2026-02-25",
+      "status": "implemented"
+    },
+    {
+      "number": 60,
+      "slug": "relay-release-preparation",
+      "title": "Relay & Mesh Release Preparation",
       "created": "2026-02-25",
       "status": "specified"
     }

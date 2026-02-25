@@ -34,7 +34,7 @@ export const systemModules: SystemModule[] = [
     label: 'Scheduler',
     description:
       'Autonomous execution loop that works while you sleep. Executes roadmaps, solicits feedback, self-improves.',
-    status: 'coming-soon',
+    status: 'available',
     group: 'engine-capability',
   },
   {
@@ -43,7 +43,7 @@ export const systemModules: SystemModule[] = [
     label: 'Message Bus',
     description:
       'The universal message bus. One format for agent-to-agent, human-to-agent, and external communication — with budget envelopes that prevent runaway loops.',
-    status: 'coming-soon',
+    status: 'available',
     group: 'engine-capability',
   },
   {
@@ -52,7 +52,7 @@ export const systemModules: SystemModule[] = [
     label: 'Agent Network',
     description:
       'Agent discovery and network topology. Every project is an agent — Mesh finds them, builds the registry, and writes the access control rules that Relay enforces.',
-    status: 'coming-soon',
+    status: 'available',
     group: 'engine-capability',
   },
   {

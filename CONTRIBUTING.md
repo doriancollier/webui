@@ -26,7 +26,7 @@ The client will be available at `http://localhost:3000` and the server at `http:
 
 ## Monorepo Structure
 
-This is a Turborepo monorepo with four apps and four shared packages:
+This is a Turborepo monorepo with five apps and four shared packages:
 
 | Directory | Package | Description |
 |---|---|---|
@@ -34,6 +34,7 @@ This is a Turborepo monorepo with four apps and four shared packages:
 | `apps/server` | `@dorkos/server` | Express API server |
 | `apps/obsidian-plugin` | `@dorkos/obsidian-plugin` | Obsidian sidebar plugin |
 | `apps/web` | `@dorkos/web` | Marketing site & docs (Next.js 16, Fumadocs) |
+| `apps/roadmap` | `@dorkos/roadmap` | Standalone roadmap manager (Express + React 19) |
 | `packages/cli` | `dorkos` | Publishable npm CLI |
 | `packages/shared` | `@dorkos/shared` | Zod schemas, shared types |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |
@@ -77,6 +78,18 @@ DorkOS uses a **hexagonal architecture** with a `Transport` interface that decou
 - **`DirectTransport`** — Obsidian plugin (in-process services)
 
 Transport is injected via React Context (`TransportContext`). For deeper details, see [contributing/architecture.md](contributing/architecture.md).
+
+## Subsystems
+
+DorkOS includes three optional subsystems that extend agent capabilities beyond interactive chat:
+
+| Subsystem | Package | Env Flag | Description |
+|---|---|---|---|
+| **Pulse** | `apps/server` (services/pulse/) | `DORKOS_PULSE_ENABLED` | Cron-based agent scheduler with SQLite run history, approval workflows, and configurable concurrency |
+| **Relay** | `packages/relay` + `apps/server` (services/relay/) | `DORKOS_RELAY_ENABLED` | Inter-agent message bus with NATS-style subject matching, Maildir persistence, delivery tracing, and external adapters |
+| **Mesh** | `packages/mesh` + `apps/server` (services/mesh/) | `DORKOS_MESH_ENABLED` | Agent discovery and registry with pluggable strategies (Claude Code, Cursor, Codex), network topology, and health monitoring |
+
+All three are feature-flag guarded and disabled by default. When Relay is enabled, both Console (chat) and Pulse message flows route through the Relay bus for unified tracing. Mesh optionally bridges with Relay for lifecycle event broadcasting.
 
 ## Client Architecture
 

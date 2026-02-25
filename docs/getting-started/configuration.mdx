@@ -83,6 +83,34 @@ DorkOS supports ngrok tunnels for remote access. See the [Tunnel Setup](/docs/gu
 Always set `TUNNEL_AUTH` when exposing DorkOS publicly via a tunnel. Without it, anyone with the tunnel URL can access your sessions.
 </Callout>
 
+## Relay Configuration
+
+DorkOS includes a subject-based pub/sub message bus for inter-agent communication. See the [Relay Messaging guide](/docs/guides/relay-messaging) for setup details.
+
+<TypeTable
+  type={{
+    DORKOS_RELAY_ENABLED: {
+      description: 'Enable the Relay message bus for inter-agent communication. Adapter configuration lives in `~/.dork/config.json` under the `relay` key.',
+      type: 'boolean',
+      default: 'false',
+    },
+  }}
+/>
+
+## Mesh Configuration
+
+Mesh provides agent discovery, health monitoring, and network topology visualization. See the [Agent Discovery guide](/docs/guides/agent-discovery) for setup details.
+
+<TypeTable
+  type={{
+    DORKOS_MESH_ENABLED: {
+      description: 'Enable agent discovery and registry.',
+      type: 'boolean',
+      default: 'false',
+    },
+  }}
+/>
+
 ## Config Directory
 
 DorkOS creates a `~/.dork/` directory on startup for storing configuration. Structured logs are written to `~/.dork/logs/dorkos.log` as NDJSON (newline-delimited JSON).
