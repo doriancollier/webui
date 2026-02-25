@@ -145,6 +145,12 @@ export class MessageReceiver {
         hasStarted: true,
       });
 
+      // Mark as delivered once the agent session accepted it
+      this.traceStore.updateSpan(envelope.id, {
+        status: 'delivered',
+        deliveredAt: Date.now(),
+      });
+
       // Extract message content from payload
       const content = extractPayloadContent(envelope.payload);
 

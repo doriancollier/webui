@@ -260,8 +260,9 @@ describe('useChatSession relay protocol', () => {
     if (esWithRelay) {
       act(() => {
         esWithRelay.emit('relay_message', {
-          type: 'text_delta',
-          data: { text: 'hello from relay' },
+          messageId: 'msg-001',
+          payload: { type: 'text_delta', data: { text: 'hello from relay' } },
+          subject: 'relay.human.console.test-client',
         });
       });
 

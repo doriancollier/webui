@@ -173,9 +173,16 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   // EventSource subscription for real-time sync updates
   useEffect(() => {
-    if (!sessionId || isStreaming) return;
+    // Legacy path closes EventSource during streaming (SSE is embedded in POST).
+    // Relay path must keep EventSource open — response chunks arrive via relay_message.
+    if (!sessionId || (isStreaming && !relayEnabled)) return;
 
-    const url = `/api/sessions/${sessionId}/stream`;
+    const params = new URLSearchParams();
+    if (relayEnabled) {
+      params.set('clientId', clientIdRef.current);
+    }
+    const qs = params.toString();
+    const url = `/api/sessions/${sessionId}/stream${qs ? `?${qs}` : ''}`;
     const eventSource = new EventSource(url);
 
     eventSource.addEventListener('sync_update', () => {
@@ -190,8 +197,8 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     // Relay protocol: response chunks arrive as relay_message events on this EventSource
     if (relayEnabled) {
       eventSource.addEventListener('relay_message', (event: MessageEvent) => {
-        const streamEvent = JSON.parse(event.data);
-        streamEventHandler(streamEvent.type, streamEvent.data, assistantIdRef.current);
+        const envelope = JSON.parse(event.data) as { payload: { type: string; data: unknown } };
+        streamEventHandler(envelope.payload.type, envelope.payload.data, assistantIdRef.current);
       });
 
       eventSource.addEventListener('relay_receipt', () => {

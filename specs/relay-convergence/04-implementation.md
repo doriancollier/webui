@@ -85,7 +85,24 @@
 
 ## Known Issues
 
-None.
+### Deferred (acceptable at current scope)
+- `budgetRejections` in `TraceStore.getMetrics()` returns hardcoded zeroes — requires RelayCore integration to track rejection types (hop limit, TTL expired, cycle detected, budget exhausted). UI conditionally hides the section when all zero.
+- Multi-span traces cannot form — `parentSpanId` is always null. Creating child spans for response hops requires passing traceId/spanId through `publishResponse`. The trace UI is ready for multi-span data.
+- `handlePulseMessage` AbortController does not propagate abort signal to the underlying AgentManager session — the agent continues running after TTL expiry until its own timeout triggers. The run is correctly marked as cancelled.
+
+## Post-Implementation Verification Fixes
+
+### Session 2 — Code Review & Verification (2026-02-25)
+
+| Fix | Description | Files |
+|-----|-------------|-------|
+| F1 | Missing `clientId` in EventSource URL — relay subscription never established | `use-chat-session.ts` |
+| F2 | Missing `sessionBroadcaster.setRelay(relayCore)` — relay fan-in never wired | `index.ts` |
+| F3 | `relay_message` payload mismatch — client read `event.type` but server wraps as `{ payload: { type, data } }` | `use-chat-session.ts` |
+| F4 | EventSource torn down during streaming — `isStreaming` guard killed relay response path | `use-chat-session.ts` |
+| F5 | `deliveredAt` never set for agent messages — latency metrics were always null | `message-receiver.ts` |
+| F6 | `relayCore` not passed to SchedulerService — Pulse Relay dispatch was never wired | `index.ts` |
+| F7 | Test: `relay_message` event data format updated to match actual wire format | `use-chat-session-relay.test.ts` |
 
 ## Implementation Notes
 

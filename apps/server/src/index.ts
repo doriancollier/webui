@@ -131,7 +131,7 @@ async function start() {
       maxConcurrentRuns: schedulerConfig.maxConcurrentRuns,
       retentionCount: schedulerConfig.retentionCount,
       timezone: schedulerConfig.timezone,
-    });
+    }, relayCore);
     app.use('/api/pulse', createPulseRouter(pulseStore, schedulerService));
     setPulseEnabled(true);
     logger.info('[Pulse] Routes mounted and scheduler configured');
@@ -157,6 +157,9 @@ async function start() {
 
   // Initialize SessionBroadcaster and attach to app.locals
   sessionBroadcaster = new SessionBroadcaster(transcriptReader);
+  if (relayCore) {
+    sessionBroadcaster.setRelay(relayCore);
+  }
   app.locals.sessionBroadcaster = sessionBroadcaster;
 
   const host = process.env.TUNNEL_ENABLED === 'true' ? '0.0.0.0' : 'localhost';
