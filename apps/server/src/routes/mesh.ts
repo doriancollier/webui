@@ -93,7 +93,7 @@ export function createMeshRouter(meshCore: MeshCore): Router {
     } else {
       meshCore.denyCrossNamespace(sourceNamespace, targetNamespace);
     }
-    return res.json({ success: true });
+    return res.json({ sourceNamespace, targetNamespace, action });
   });
 
   // GET /status — Aggregate mesh health status
@@ -102,13 +102,13 @@ export function createMeshRouter(meshCore: MeshCore): Router {
     res.json(status);
   });
 
-  // GET /agents — List agents with optional filters
+  // GET /agents — List agents with optional filters (includes health status)
   router.get('/agents', (req, res) => {
     const result = AgentListQuerySchema.safeParse(req.query);
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
-    const agents = meshCore.list(result.data);
+    const agents = meshCore.listWithHealth(result.data ?? {});
     return res.json({ agents });
   });
 

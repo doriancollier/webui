@@ -371,6 +371,22 @@ export class MeshCore {
   }
 
   /**
+   * List agents with computed health status included.
+   *
+   * Returns the same data as `list()` but each entry includes `healthStatus`,
+   * `lastSeenAt`, and `lastSeenEvent` fields for topology visualization.
+   *
+   * @param filters - Optional runtime or capability filters
+   * @returns Array of agent manifests with health fields
+   */
+  listWithHealth(
+    filters?: { runtime?: AgentRuntime; capability?: string },
+  ): (AgentManifest & { healthStatus: AgentHealthStatus; lastSeenAt: string | null; lastSeenEvent: string | null })[] {
+    const entries = this.registry.listWithHealth(filters);
+    return entries.map(({ projectPath: _p, namespace: _n, scanRoot: _s, ...rest }) => rest);
+  }
+
+  /**
    * Get an agent manifest by ULID.
    *
    * @param agentId - The agent's ULID

@@ -14,6 +14,7 @@ function createMockMeshCore() {
     undeny: vi.fn().mockResolvedValue(undefined),
     unregister: vi.fn().mockResolvedValue(undefined),
     list: vi.fn().mockReturnValue([]),
+    listWithHealth: vi.fn().mockReturnValue([]),
     get: vi.fn().mockReturnValue(undefined),
     listDenied: vi.fn().mockReturnValue([]),
     update: vi.fn().mockReturnValue(undefined),
@@ -208,33 +209,33 @@ describe('Mesh routes', () => {
   // --- GET /agents ---
 
   describe('GET /api/mesh/agents', () => {
-    it('returns agent list', async () => {
-      meshCore.list.mockReturnValue([MOCK_MANIFEST]);
+    it('returns agent list with health', async () => {
+      meshCore.listWithHealth.mockReturnValue([MOCK_MANIFEST]);
 
       const res = await request(app).get('/api/mesh/agents');
 
       expect(res.status).toBe(200);
       expect(res.body.agents).toHaveLength(1);
       expect(res.body.agents[0].id).toBe('agent-1');
-      expect(meshCore.list).toHaveBeenCalledWith({});
+      expect(meshCore.listWithHealth).toHaveBeenCalledWith({});
     });
 
     it('passes runtime filter', async () => {
-      meshCore.list.mockReturnValue([]);
+      meshCore.listWithHealth.mockReturnValue([]);
 
       await request(app).get('/api/mesh/agents?runtime=cursor');
 
-      expect(meshCore.list).toHaveBeenCalledWith(
+      expect(meshCore.listWithHealth).toHaveBeenCalledWith(
         expect.objectContaining({ runtime: 'cursor' }),
       );
     });
 
     it('passes capability filter', async () => {
-      meshCore.list.mockReturnValue([]);
+      meshCore.listWithHealth.mockReturnValue([]);
 
       await request(app).get('/api/mesh/agents?capability=code');
 
-      expect(meshCore.list).toHaveBeenCalledWith(
+      expect(meshCore.listWithHealth).toHaveBeenCalledWith(
         expect.objectContaining({ capability: 'code' }),
       );
     });

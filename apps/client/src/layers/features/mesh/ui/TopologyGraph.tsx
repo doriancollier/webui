@@ -61,8 +61,7 @@ export function TopologyGraph({ onSelectAgent }: TopologyGraphProps) {
       data: {
         label: agent.name,
         runtime: agent.runtime,
-        // Health status will be wired to live data in the observability spec.
-        healthStatus: 'stale',
+        healthStatus: (agent as Record<string, unknown>).healthStatus ?? 'stale',
         capabilities: agent.capabilities ?? [],
       },
     }));

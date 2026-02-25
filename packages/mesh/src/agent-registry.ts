@@ -184,7 +184,7 @@ export class AgentRegistry {
         SELECT
           COUNT(*) AS total_agents,
           SUM(CASE WHEN last_seen_at IS NOT NULL AND (julianday('now') - julianday(last_seen_at)) * 86400 < 300 THEN 1 ELSE 0 END) AS active_count,
-          SUM(CASE WHEN last_seen_at IS NOT NULL AND (julianday('now') - julianday(last_seen_at)) * 86400 BETWEEN 300 AND 1800 THEN 1 ELSE 0 END) AS inactive_count,
+          SUM(CASE WHEN last_seen_at IS NOT NULL AND (julianday('now') - julianday(last_seen_at)) * 86400 >= 300 AND (julianday('now') - julianday(last_seen_at)) * 86400 < 1800 THEN 1 ELSE 0 END) AS inactive_count,
           SUM(CASE WHEN last_seen_at IS NULL OR (julianday('now') - julianday(last_seen_at)) * 86400 > 1800 THEN 1 ELSE 0 END) AS stale_count
         FROM agents
       `),
