@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdapterManager } from '../adapter-manager.js';
 import type { AdapterRegistry, RelayAdapter, AdapterConfig, AdapterStatus } from '@dorkos/relay';
+import type { AdapterManagerDeps } from '../adapter-manager.js';
 
 // Mock fs/promises
 vi.mock('node:fs/promises', () => ({
@@ -32,7 +33,7 @@ vi.mock('../../../lib/logger.js', () => ({
   },
 }));
 
-// Mock TelegramAdapter and WebhookAdapter
+// Mock TelegramAdapter, WebhookAdapter, and ClaudeCodeAdapter
 vi.mock('@dorkos/relay', async () => {
   const actual = await vi.importActual<object>('@dorkos/relay');
   return {
@@ -43,7 +44,7 @@ vi.mock('@dorkos/relay', async () => {
       displayName: `Telegram (${id})`,
       start: vi.fn().mockResolvedValue(undefined),
       stop: vi.fn().mockResolvedValue(undefined),
-      deliver: vi.fn().mockResolvedValue(undefined),
+      deliver: vi.fn().mockResolvedValue({ success: true, durationMs: 0 }),
       getStatus: vi.fn().mockReturnValue({
         state: 'connected',
         messageCount: { inbound: 0, outbound: 0 },
@@ -56,7 +57,7 @@ vi.mock('@dorkos/relay', async () => {
       displayName: `Webhook (${id})`,
       start: vi.fn().mockResolvedValue(undefined),
       stop: vi.fn().mockResolvedValue(undefined),
-      deliver: vi.fn().mockResolvedValue(undefined),
+      deliver: vi.fn().mockResolvedValue({ success: true, durationMs: 0 }),
       getStatus: vi.fn().mockReturnValue({
         state: 'connected',
         messageCount: { inbound: 0, outbound: 0 },
@@ -64,6 +65,20 @@ vi.mock('@dorkos/relay', async () => {
       }),
       handleInbound: vi.fn().mockResolvedValue({ ok: true }),
     })),
+    ClaudeCodeAdapter: vi.fn().mockImplementation((id: string) => ({
+      id,
+      subjectPrefix: 'relay.agent.',
+      displayName: 'Claude Code',
+      start: vi.fn().mockResolvedValue(undefined),
+      stop: vi.fn().mockResolvedValue(undefined),
+      deliver: vi.fn().mockResolvedValue({ success: true, durationMs: 0 }),
+      getStatus: vi.fn().mockReturnValue({
+        state: 'connected',
+        messageCount: { inbound: 0, outbound: 0 },
+        errorCount: 0,
+      }),
+    })),
+    loadAdapters: vi.fn().mockResolvedValue([]),
   };
 });
 
@@ -117,6 +132,17 @@ function createMockRegistry(): AdapterRegistry {
   } as unknown as AdapterRegistry;
 }
 
+const mockDeps: AdapterManagerDeps = {
+  agentManager: {
+    ensureSession: vi.fn(),
+    sendMessage: vi.fn(),
+  },
+  traceStore: {
+    insertSpan: vi.fn(),
+    updateSpan: vi.fn(),
+  },
+};
+
 describe('AdapterManager', () => {
   let manager: AdapterManager;
   let registry: ReturnType<typeof createMockRegistry>;
@@ -125,7 +151,7 @@ describe('AdapterManager', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     registry = createMockRegistry();
-    manager = new AdapterManager(registry, configPath);
+    manager = new AdapterManager(registry, configPath, mockDeps);
   });
 
   describe('initialize()', () => {

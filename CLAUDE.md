@@ -86,7 +86,7 @@ Express server on port `DORKOS_PORT` (default 4242). All endpoints that accept `
 - **`routes/tunnel.ts`** - Runtime tunnel control (POST /start and /stop). Resolves auth token from env var or config, delegates to `tunnelManager`, persists enabled state
 - **`routes/pulse.ts`** - Pulse scheduler CRUD (GET/POST/PATCH/DELETE schedules, POST trigger, GET/POST runs). Delegates to SchedulerService and PulseStore
 - **`routes/relay.ts`** - Relay inter-agent messaging (POST/GET messages, GET/POST/DELETE endpoints, GET inbox, GET dead-letters, GET metrics, GET stream SSE). Feature-flag guarded via `relay-state.ts`
-- **`routes/mesh.ts`** - Mesh agent discovery and registry (POST /discover, POST/GET/PATCH/DELETE /agents, POST /deny, GET/DELETE /denied). Feature-flag guarded via `mesh-state.ts`. Factory: `createMeshRouter(meshCore)`
+- **`routes/mesh.ts`** - Mesh agent discovery and registry (POST /discover, POST/GET/PATCH/DELETE /agents, POST /deny, GET/DELETE /denied, GET /status, GET /agents/:id/health, POST /agents/:id/heartbeat). Feature-flag guarded via `mesh-state.ts`. Factory: `createMeshRouter(meshCore)`
 
 Twenty-six services (+ 1 lib utility):
 
@@ -109,14 +109,14 @@ Twenty-six services (+ 1 lib utility):
 - **`services/git-status.ts`** - Provides git status information (branch, changed files).
 - **`services/tunnel-manager.ts`** - Opt-in ngrok tunnel lifecycle. Singleton that wraps `@ngrok/ngrok` SDK with dynamic import (zero cost when disabled). Configured via env vars: `TUNNEL_ENABLED`, `NGROK_AUTHTOKEN`, `TUNNEL_PORT`, `TUNNEL_AUTH`, `TUNNEL_DOMAIN`. Started after Express binds in `index.ts`; tunnel failure is non-blocking. Exposes `status` getter consumed by `health.ts` and `routes/tunnel.ts`. Graceful shutdown via SIGINT/SIGTERM.
 - **`services/config-manager.ts`** - Manages persistent user config at `~/.dork/config.json`. Uses `conf` for atomic JSON I/O with Ajv validation. Singleton initialized via `initConfigManager()` at server startup and in CLI subcommands. Handles first-run detection, corrupt config recovery (backup + recreate), and sensitive field warnings.
-- **`services/mcp-tool-server.ts`** - In-process MCP tool server for Claude Agent SDK. Uses `createSdkMcpServer()` and `tool()` from the SDK to register tools that agents can call. Core tools: `ping`, `get_server_info`, `get_session_count`. Pulse tools: `list_schedules`, `create_schedule`, `update_schedule`, `delete_schedule`, `get_run_history`. Relay tools: `relay_send`, `relay_inbox`, `relay_list_endpoints`, `relay_register_endpoint`. Trace tools: `relay_get_trace`, `relay_get_metrics`. Mesh tools: `mesh_discover`, `mesh_register`, `mesh_deny`, `mesh_list`, `mesh_unregister`. Agent-created schedules enter `pending_approval` state. Factory function `createDorkOsToolServer(deps)` accepts `McpToolDeps` (transcriptReader, defaultCwd, pulseStore, relayCore, meshCore) for dependency injection.
+- **`services/mcp-tool-server.ts`** - In-process MCP tool server for Claude Agent SDK. Uses `createSdkMcpServer()` and `tool()` from the SDK to register tools that agents can call. Core tools: `ping`, `get_server_info`, `get_session_count`. Pulse tools: `list_schedules`, `create_schedule`, `update_schedule`, `delete_schedule`, `get_run_history`. Relay tools: `relay_send`, `relay_inbox`, `relay_list_endpoints`, `relay_register_endpoint`. Trace tools: `relay_get_trace`, `relay_get_metrics`. Mesh tools: `mesh_discover`, `mesh_register`, `mesh_deny`, `mesh_list`, `mesh_unregister`, `mesh_status`, `mesh_inspect`. Agent-created schedules enter `pending_approval` state. Factory function `createDorkOsToolServer(deps)` accepts `McpToolDeps` (transcriptReader, defaultCwd, pulseStore, relayCore, meshCore) for dependency injection.
 - **`services/relay-state.ts`** - Feature flag holder for Relay subsystem. Exports `setRelayEnabled()`/`isRelayEnabled()`. Same pattern as `pulse-state.ts`.
 - **`services/mesh/mesh-state.ts`** - Feature flag holder for Mesh subsystem. Exports `setMeshEnabled()`/`isMeshEnabled()`. Same pattern as `relay-state.ts`. Controlled by `DORKOS_MESH_ENABLED` env var.
 - **`services/update-checker.ts`** - Server-side npm registry check with in-memory cache (1-hour TTL). Fetches latest version from npm for update notifications. Used by config route to populate `latestVersion` in server config.
 - **`services/pulse-store.ts`** - SQLite database (`~/.dork/pulse.db`) + JSON file (`~/.dork/schedules.json`) for Pulse scheduler state. Uses `better-sqlite3` with WAL mode. Manages schedule CRUD, run lifecycle, and retention pruning. Auto-migrates schema via `PRAGMA user_version`.
-- **`services/scheduler-service.ts`** - Cron scheduling engine using `croner` with overrun protection (`protect: true`). Loads schedules on startup, dispatches jobs to AgentManager as isolated sessions. Tracks active runs via `Map<string, AbortController>` for cancellation/timeout. Configurable concurrency cap (`maxConcurrentRuns`). When `DORKOS_RELAY_ENABLED` is true, `executeRun()` publishes to Relay (`relay.system.pulse.{scheduleId}`) instead of calling AgentManager directly; MessageReceiver handles the dispatched message.
+- **`services/scheduler-service.ts`** - Cron scheduling engine using `croner` with overrun protection (`protect: true`). Loads schedules on startup, dispatches jobs to AgentManager as isolated sessions. Tracks active runs via `Map<string, AbortController>` for cancellation/timeout. Configurable concurrency cap (`maxConcurrentRuns`). When `DORKOS_RELAY_ENABLED` is true, `executeRun()` publishes to Relay (`relay.system.pulse.{scheduleId}`) instead of calling AgentManager directly; ClaudeCodeAdapter handles the dispatched message.
 - **`services/relay/trace-store.ts`** - SQLite trace storage for Relay message delivery tracking. Adds `message_traces` table to the existing Relay index database (`~/.dork/relay/index.db`). Provides `insertSpan()`, `updateSpan()`, `getSpanByMessageId()`, `getTrace()`, and `getMetrics()` (live SQL aggregates). Uses same better-sqlite3/WAL patterns as PulseStore.
-- **`services/relay/message-receiver.ts`** - Bridge between Relay message bus and AgentManager. Subscribes to `relay.agent.>` and `relay.system.pulse.>`. Routes incoming messages to `agentManager.sendMessage()` for agent sessions and handles Pulse dispatch with full run lifecycle (PulseStore tracking, timeout, output collection).
+- **`services/relay/adapter-manager.ts`** - Server-side adapter lifecycle management. Creates and manages adapter instances based on config. Accepts `AdapterManagerDeps` (agentManager, traceStore, pulseStore) for dependency injection into adapters like ClaudeCodeAdapter.
 
 ### Session Architecture
 
@@ -129,7 +129,7 @@ Sessions are derived entirely from SDK JSONL files on disk (`~/.claude/projects/
 
 When `DORKOS_RELAY_ENABLED` is true, session messaging uses Relay transport:
 - POST `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}` and returns 202 with `{ messageId, traceId }` receipt
-- MessageReceiver subscribes to the Relay subject and triggers AgentManager
+- ClaudeCodeAdapter (via Relay's adapter system) subscribes to the subject and triggers AgentManager
 - Response chunks are published back to `relay.human.console.{clientId}` and fanned into the SSE stream as `relay_message` events
 - Client-side `useChatSession` branches on `useRelayEnabled()`: Relay path uses receipt+SSE, legacy path is unchanged
 
@@ -148,7 +148,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `entities/command/`      | useCommands                                                        | Command domain hook         |
 | `entities/pulse/`        | usePulseEnabled, useSchedules, useRuns, useActiveRunCount, useCancelRun, useCompletedRunBadge | Pulse scheduler domain hooks|
 | `entities/relay/`        | useRelayEnabled, useRelayMessages, useRelayEndpoints, useRelayMetrics, useSendRelayMessage, useRelayEventStream, useMessageTrace, useDeliveryMetrics | Relay messaging domain hooks|
-| `entities/mesh/`         | useMeshEnabled, useRegisteredAgents, useDiscoverAgents, useRegisterAgent, useDenyAgent, useUnregisterAgent, useUpdateAgent, useDeniedAgents | Mesh discovery domain hooks |
+| `entities/mesh/`         | useMeshEnabled, useRegisteredAgents, useDiscoverAgents, useRegisterAgent, useDenyAgent, useUnregisterAgent, useUpdateAgent, useDeniedAgents, useMeshStatus, useMeshAgentHealth, useMeshHeartbeat | Mesh discovery domain hooks |
 | `features/chat/`         | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession  | Chat interface              |
 | `features/session-list/` | SessionSidebar, SessionItem                                        | Session management          |
 | `features/commands/`     | CommandPalette                                                     | Slash command palette       |
@@ -156,7 +156,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `features/files/`        | FilePalette, useFiles                                              | File browser                |
 | `features/pulse/`        | PulsePanel, ScheduleRow, CreateScheduleDialog, RunHistoryPanel, CronPresets, CronVisualBuilder, TimezoneCombobox | Pulse scheduler UI          |
 | `features/relay/`        | RelayPanel, ActivityFeed, MessageRow, EndpointList, InboxView, MessageTrace, DeliveryMetricsDashboard | Relay messaging UI          |
-| `features/mesh/`         | MeshPanel, CandidateCard, AgentCard, RegisterAgentDialog          | Mesh discovery & registry UI|
+| `features/mesh/`         | MeshPanel, CandidateCard, AgentCard, RegisterAgentDialog, TopologyGraph, AgentNode, MeshStatsHeader, AgentHealthDetail | Mesh discovery, registry & observability UI|
 | `features/status/`       | StatusLine, GitStatusItem, ModelItem, etc.                         | Status bar                  |
 | `widgets/app-layout/`    | PermissionBanner                                                   | App-level layout components |
 
@@ -171,7 +171,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 
 ### Shared (`packages/shared/src/`)
 
-`schemas.ts` defines Zod schemas for all types with OpenAPI metadata. Each schema exports an inferred TypeScript type (e.g., `export type Session = z.infer<typeof SessionSchema>`). `types.ts` re-exports all types from `schemas.ts`, so existing `import { Session } from '@dorkos/shared/types'` imports work unchanged. `config-schema.ts` defines `UserConfigSchema` (Zod) for the persistent config file, exporting the `UserConfig` type, defaults, and sensitive key list. Imported as `@dorkos/shared/config-schema`. `relay-schemas.ts` defines Zod schemas for the Relay message bus (envelopes, budgets, payloads, signals, access control, HTTP request/response shapes). Imported as `@dorkos/shared/relay-schemas`. `mesh-schemas.ts` defines Zod schemas for Mesh agent discovery (AgentManifest, DiscoveryCandidate, DenialRecord, HTTP request/response shapes). Imported as `@dorkos/shared/mesh-schemas`.
+`schemas.ts` defines Zod schemas for all types with OpenAPI metadata. Each schema exports an inferred TypeScript type (e.g., `export type Session = z.infer<typeof SessionSchema>`). `types.ts` re-exports all types from `schemas.ts`, so existing `import { Session } from '@dorkos/shared/types'` imports work unchanged. `config-schema.ts` defines `UserConfigSchema` (Zod) for the persistent config file, exporting the `UserConfig` type, defaults, and sensitive key list. Imported as `@dorkos/shared/config-schema`. `relay-schemas.ts` defines Zod schemas for the Relay message bus (envelopes, budgets, payloads, signals, access control, HTTP request/response shapes). Imported as `@dorkos/shared/relay-schemas`. `mesh-schemas.ts` defines Zod schemas for Mesh agent discovery and observability (AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus, MeshInspect, MeshLifecycleEvent, HTTP request/response shapes). Imported as `@dorkos/shared/mesh-schemas`.
 
 **API docs** are available at `/api/docs` (Scalar UI) and `/api/openapi.json` (raw spec). The OpenAPI spec is auto-generated from the Zod schemas in `apps/server/src/services/openapi-registry.ts`.
 

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 26,
+  "nextNumber": 38,
   "decisions": [
     {
       "number": 1,
@@ -46,7 +46,7 @@
       "number": 6,
       "slug": "adopt-sonner-for-toast-notifications",
       "title": "Adopt Sonner for Toast Notifications",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-21",
       "extractedFrom": "pulse-ui-overhaul",
       "specSlug": "pulse-ui-overhaul"
@@ -55,7 +55,7 @@
       "number": 7,
       "slug": "adopt-cmdk-for-searchable-combobox",
       "title": "Adopt cmdk for Searchable Combobox Patterns",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-21",
       "extractedFrom": "pulse-ui-overhaul",
       "specSlug": "pulse-ui-overhaul"
@@ -64,7 +64,7 @@
       "number": 8,
       "slug": "promote-shared-components-for-cross-feature-reuse",
       "title": "Promote Components to shared/ for Cross-Feature Reuse",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-21",
       "extractedFrom": "pulse-v2-enhancements",
       "specSlug": "pulse-v2-enhancements"
@@ -73,7 +73,7 @@
       "number": 9,
       "slug": "calm-tech-notification-layers",
       "title": "Use Calm Tech Layered Notifications for Background Tasks",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-21",
       "extractedFrom": "pulse-v2-enhancements",
       "specSlug": "pulse-v2-enhancements"
@@ -82,7 +82,7 @@
       "number": 10,
       "slug": "use-maildir-for-relay-message-storage",
       "title": "Use Maildir for Relay Message Storage",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-core-library",
       "specSlug": "relay-core-library"
@@ -91,7 +91,7 @@
       "number": 11,
       "slug": "use-nats-style-subject-matching",
       "title": "Use NATS-Style Hierarchical Subject Matching",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-core-library",
       "specSlug": "relay-core-library"
@@ -100,7 +100,7 @@
       "number": 12,
       "slug": "use-ulid-for-relay-message-ids",
       "title": "Use ULID for Relay Message IDs",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-core-library",
       "specSlug": "relay-core-library"
@@ -109,7 +109,7 @@
       "number": 13,
       "slug": "hybrid-maildir-sqlite-storage",
       "title": "Use Hybrid Maildir + SQLite for Relay Storage",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-core-library",
       "specSlug": "relay-core-library"
@@ -118,7 +118,7 @@
       "number": 14,
       "slug": "use-sliding-window-log-for-rate-limiting",
       "title": "Use Sliding Window Log for Relay Rate Limiting",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-advanced-reliability",
       "specSlug": "relay-advanced-reliability"
@@ -127,7 +127,7 @@
       "number": 15,
       "slug": "in-memory-per-endpoint-circuit-breakers",
       "title": "Use In-Memory Per-Endpoint Circuit Breakers",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-advanced-reliability",
       "specSlug": "relay-advanced-reliability"
@@ -136,7 +136,7 @@
       "number": 16,
       "slug": "structured-publishresult-rejections",
       "title": "Use Structured PublishResult Rejections for Reliability",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-advanced-reliability",
       "specSlug": "relay-advanced-reliability"
@@ -145,7 +145,7 @@
       "number": 17,
       "slug": "standardize-subsystem-integration-pattern",
       "title": "Standardize Subsystem Integration Pattern Following Pulse",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-server-client-integration",
       "specSlug": "relay-server-client-integration"
@@ -154,7 +154,7 @@
       "number": 18,
       "slug": "server-side-sse-subject-filtering",
       "title": "Use Server-Side Subject Filtering for Relay SSE Streams",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-server-client-integration",
       "specSlug": "relay-server-client-integration"
@@ -163,7 +163,7 @@
       "number": 19,
       "slug": "use-grammy-for-telegram-adapter",
       "title": "Use grammY for Telegram Bot Integration",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-external-adapters",
       "specSlug": "relay-external-adapters"
@@ -172,7 +172,7 @@
       "number": 20,
       "slug": "adapter-registry-with-promise-allsettled",
       "title": "Use Adapter Registry Pattern with Promise.allSettled for Error Isolation",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-external-adapters",
       "specSlug": "relay-external-adapters"
@@ -181,7 +181,7 @@
       "number": 21,
       "slug": "restructure-server-services-into-domain-folders",
       "title": "Restructure Server Services into Domain Folders",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-external-adapters",
       "specSlug": "relay-external-adapters"
@@ -190,7 +190,7 @@
       "number": 22,
       "slug": "stripe-style-hmac-webhook-security",
       "title": "Use Stripe-Style HMAC-SHA256 for Webhook Security",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "relay-external-adapters",
       "specSlug": "relay-external-adapters"
@@ -199,7 +199,7 @@
       "number": 23,
       "slug": "custom-async-bfs-for-agent-discovery",
       "title": "Use Custom Async BFS for Agent Discovery",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "mesh-core-library",
       "specSlug": "mesh-core-library"
@@ -208,7 +208,7 @@
       "number": 24,
       "slug": "dorkos-native-agent-manifest-format",
       "title": "Use DorkOS-Native Agent Manifest at .dork/agent.json",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "mesh-core-library",
       "specSlug": "mesh-core-library"
@@ -217,10 +217,118 @@
       "number": 25,
       "slug": "simple-json-columns-for-agent-registry",
       "title": "Use Simple JSON Columns for Agent Registry SQLite Schema",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-24",
       "extractedFrom": "mesh-core-library",
       "specSlug": "mesh-core-library"
+    },
+    {
+      "number": 26,
+      "slug": "receipt-plus-sse-console-protocol",
+      "title": "Use Receipt+SSE Protocol for Console-via-Relay",
+      "status": "proposed",
+      "created": "2026-02-25",
+      "extractedFrom": "relay-convergence",
+      "specSlug": "relay-convergence"
+    },
+    {
+      "number": 27,
+      "slug": "message-receiver-bridge-pattern",
+      "title": "Use MessageReceiver as Relay-to-AgentManager Bridge",
+      "status": "proposed",
+      "created": "2026-02-25",
+      "extractedFrom": "relay-convergence",
+      "specSlug": "relay-convergence"
+    },
+    {
+      "number": 28,
+      "slug": "sqlite-trace-storage-in-relay-index",
+      "title": "Store Message Traces in Existing Relay SQLite Index",
+      "status": "proposed",
+      "created": "2026-02-25",
+      "extractedFrom": "relay-convergence",
+      "specSlug": "relay-convergence"
+    },
+    {
+      "number": 29,
+      "slug": "replace-message-receiver-with-claude-code-adapter",
+      "title": "Replace MessageReceiver with ClaudeCodeAdapter",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "relay-runtime-adapters",
+      "specSlug": "relay-runtime-adapters"
+    },
+    {
+      "number": 30,
+      "slug": "dynamic-import-for-adapter-plugins",
+      "title": "Use Native Dynamic import() for Adapter Plugin Loading",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "relay-runtime-adapters",
+      "specSlug": "relay-runtime-adapters"
+    },
+    {
+      "number": 31,
+      "slug": "default-export-factory-for-adapter-plugins",
+      "title": "Use Default Export Factory Function for Adapter Plugins",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "relay-runtime-adapters",
+      "specSlug": "relay-runtime-adapters"
+    },
+    {
+      "number": 32,
+      "slug": "hybrid-filesystem-namespace-derivation",
+      "title": "Use Hybrid Filesystem + Manifest Namespace Derivation",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-network-topology",
+      "specSlug": "mesh-network-topology"
+    },
+    {
+      "number": 33,
+      "slug": "default-deny-cross-namespace-with-subject-pattern-acls",
+      "title": "Use Default-Deny Cross-Namespace with Subject-Pattern ACLs",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-network-topology",
+      "specSlug": "mesh-network-topology"
+    },
+    {
+      "number": 34,
+      "slug": "open-acl-authorship-any-principal",
+      "title": "Allow Any Principal to Author ACL Rules",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-network-topology",
+      "specSlug": "mesh-network-topology"
+    },
+    {
+      "number": 35,
+      "slug": "use-xyflow-react-for-mesh-topology",
+      "title": "Use @xyflow/react (React Flow v12) for Mesh Topology Visualization",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-observability-lifecycle",
+      "specSlug": "mesh-observability-lifecycle"
+    },
+    {
+      "number": 36,
+      "slug": "computed-query-time-health-status",
+      "title": "Compute Agent Health Status at Query Time via SQL",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-observability-lifecycle",
+      "specSlug": "mesh-observability-lifecycle"
+    },
+    {
+      "number": 37,
+      "slug": "relay-signals-for-mesh-lifecycle-events",
+      "title": "Use Relay Signals for Mesh Agent Lifecycle Events",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-observability-lifecycle",
+      "specSlug": "mesh-observability-lifecycle"
     }
   ]
 }

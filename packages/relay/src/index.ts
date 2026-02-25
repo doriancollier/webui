@@ -87,6 +87,8 @@ export type {
   RelayAdapter,
   AdapterStatus,
   AdapterConfig,
+  AdapterContext,
+  DeliveryResult,
   TelegramAdapterConfig,
   WebhookAdapterConfig,
   AdapterRegistryLike,
@@ -99,3 +101,20 @@ export { AdapterRegistry } from './adapter-registry.js';
 // Adapter implementations
 export { TelegramAdapter } from './adapters/telegram-adapter.js';
 export { WebhookAdapter, verifySignature } from './adapters/webhook-adapter.js';
+
+// Built-in adapters
+export { ClaudeCodeAdapter } from './adapters/claude-code-adapter.js';
+export type {
+  ClaudeCodeAdapterConfig,
+  ClaudeCodeAdapterDeps,
+  AgentManagerLike as ClaudeCodeAgentManagerLike,
+  TraceStoreLike,
+  PulseStoreLike,
+} from './adapters/claude-code-adapter.js';
+
+// Plugin loader
+export { loadAdapters, validateAdapterShape } from './adapter-plugin-loader.js';
+export type {
+  PluginAdapterConfig,
+  AdapterPluginModule,
+} from './adapter-plugin-loader.js';

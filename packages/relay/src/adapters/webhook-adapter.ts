@@ -16,7 +16,7 @@
  */
 import crypto from 'node:crypto';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
-import type { RelayAdapter, AdapterStatus, WebhookAdapterConfig, RelayPublisher } from '../types.js';
+import type { RelayAdapter, AdapterStatus, AdapterContext, DeliveryResult, WebhookAdapterConfig, RelayPublisher } from '../types.js';
 
 /** Stripe-standard timestamp window for replay attack prevention (±5 minutes). */
 const TIMESTAMP_WINDOW_SECS = 300;
@@ -204,11 +204,16 @@ export class WebhookAdapter implements RelayAdapter {
    * Signs the request with HMAC-SHA256 using the outbound secret.
    * Message format: `{timestamp}.{JSON.stringify(envelope.payload)}`
    *
-   * @param subject - The target subject (informational; URL is from config)
+   * @param _subject - The target subject (informational; URL is from config)
    * @param envelope - The relay envelope to deliver
-   * @throws If the HTTP response status is not 2xx
+   * @param _context - Optional adapter context (unused by this adapter)
    */
-  async deliver(_subject: string, envelope: RelayEnvelope): Promise<void> {
+  async deliver(
+    _subject: string,
+    envelope: RelayEnvelope,
+    _context?: AdapterContext,
+  ): Promise<DeliveryResult> {
+    const startTime = Date.now();
     const body = JSON.stringify(envelope.payload);
     const timestamp = String(Math.floor(Date.now() / 1000));
     const nonce = crypto.randomUUID();
@@ -219,26 +224,36 @@ export class WebhookAdapter implements RelayAdapter {
       .update(message)
       .digest('hex');
 
-    const response = await fetch(this.config.outbound.url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Signature': signature,
-        'X-Timestamp': timestamp,
-        'X-Nonce': nonce,
-        ...this.config.outbound.headers,
-      },
-      body,
-    });
+    try {
+      const response = await fetch(this.config.outbound.url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Signature': signature,
+          'X-Timestamp': timestamp,
+          'X-Nonce': nonce,
+          ...this.config.outbound.headers,
+        },
+        body,
+      });
 
-    if (!response.ok) {
+      if (!response.ok) {
+        const error = `Outbound delivery failed: HTTP ${response.status}`;
+        this.status.errorCount++;
+        this.status.lastError = error;
+        this.status.lastErrorAt = new Date().toISOString();
+        return { success: false, error, durationMs: Date.now() - startTime };
+      }
+
+      this.status.messageCount.outbound++;
+      return { success: true, durationMs: Date.now() - startTime };
+    } catch (err) {
+      const error = err instanceof Error ? err.message : String(err);
       this.status.errorCount++;
-      this.status.lastError = `Outbound delivery failed: HTTP ${response.status}`;
+      this.status.lastError = error;
       this.status.lastErrorAt = new Date().toISOString();
-      throw new Error(`WebhookAdapter: outbound delivery failed with HTTP ${response.status}`);
+      return { success: false, error, durationMs: Date.now() - startTime };
     }
-
-    this.status.messageCount.outbound++;
   }
 
   /**

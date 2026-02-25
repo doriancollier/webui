@@ -339,13 +339,13 @@ When the Relay feature flag is enabled, both Console (chat) and Pulse (scheduled
 ### Console Message Flow
 
 ```
-Client POST → relay.publish('relay.agent.{sessionId}') → MessageReceiver → agentManager.sendMessage() → Claude SDK → response → relay.publish('relay.human.console.{clientId}') → SSE fan-in → client EventSource
+Client POST → relay.publish('relay.agent.{sessionId}') → ClaudeCodeAdapter → agentManager.query() → Claude SDK → response → relay.publish(replyTo) → SSE fan-in → client EventSource
 ```
 
 ### Pulse Dispatch Flow
 
 ```
-SchedulerService → relay.publish('relay.system.pulse.{scheduleId}') → MessageReceiver.handlePulseMessage() → agentManager.sendMessage() → Claude SDK
+SchedulerService → relay.publish('relay.system.pulse.{scheduleId}') → ClaudeCodeAdapter.handlePulseDispatch() → agentManager.query() → Claude SDK
 ```
 
 ### Message Tracing

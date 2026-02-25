@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 56,
+  "nextNumber": 60,
   "specs": [
     {
       "number": 1,
@@ -386,6 +386,34 @@
       "title": "Relay Convergence — Migrate Pulse & Console to Relay Transport",
       "created": "2026-02-25",
       "status": "ideation"
+    },
+    {
+      "number": 56,
+      "slug": "mesh-server-client-integration",
+      "title": "Mesh Server & Client Integration",
+      "created": "2026-02-25",
+      "status": "specified"
+    },
+    {
+      "number": 57,
+      "slug": "relay-runtime-adapters",
+      "title": "Unified Adapter System & Claude Code Runtime Adapter",
+      "created": "2026-02-25",
+      "status": "implemented"
+    },
+    {
+      "number": 58,
+      "slug": "mesh-network-topology",
+      "title": "Mesh Network Topology",
+      "created": "2026-02-25",
+      "status": "specified"
+    },
+    {
+      "number": 59,
+      "slug": "mesh-observability-lifecycle",
+      "title": "Mesh Observability & Lifecycle Events",
+      "created": "2026-02-25",
+      "status": "specified"
     }
   ]
 }

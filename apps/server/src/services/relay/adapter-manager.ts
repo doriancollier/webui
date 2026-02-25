@@ -5,14 +5,35 @@
  * instantiates the appropriate adapter implementation for each entry, and
  * watches the config file for hot-reload via chokidar.
  *
+ * Supports built-in adapters (telegram, webhook, claude-code), npm plugin
+ * packages, and local file plugins. Generates default config with claude-code
+ * adapter when none exists. Optionally enriches AdapterContext with Mesh
+ * agent info when meshCore is provided.
+ *
  * @module services/relay/adapter-manager
  */
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import chokidar, { type FSWatcher } from 'chokidar';
-import type { AdapterRegistry, RelayAdapter, AdapterConfig, TelegramAdapterConfig, WebhookAdapterConfig } from '@dorkos/relay';
-import { TelegramAdapter } from '@dorkos/relay';
-import { WebhookAdapter } from '@dorkos/relay';
+import type {
+  AdapterRegistry,
+  RelayAdapter,
+  AdapterConfig,
+  TelegramAdapterConfig,
+  WebhookAdapterConfig,
+  AdapterContext,
+} from '@dorkos/relay';
+import {
+  TelegramAdapter,
+  WebhookAdapter,
+  ClaudeCodeAdapter,
+  loadAdapters,
+} from '@dorkos/relay';
+import type {
+  ClaudeCodeAgentManagerLike,
+  TraceStoreLike,
+  PulseStoreLike,
+} from '@dorkos/relay';
 import { AdaptersConfigFileSchema } from '@dorkos/shared/relay-schemas';
 import type { AdapterStatus } from '@dorkos/relay';
 import { logger } from '../../lib/logger.js';
@@ -22,6 +43,17 @@ const CONFIG_STABILITY_THRESHOLD_MS = 150;
 
 /** Chokidar poll interval for write-finish detection (ms). */
 const CONFIG_POLL_INTERVAL_MS = 50;
+
+/** Dependencies for constructing runtime adapters. */
+export interface AdapterManagerDeps {
+  agentManager: ClaudeCodeAgentManagerLike;
+  traceStore: TraceStoreLike;
+  pulseStore?: PulseStoreLike;
+  /** Optional MeshCore for enriching AdapterContext with agent info */
+  meshCore?: {
+    getAgent(id: string): { manifest: Record<string, unknown> } | undefined;
+  };
+}
 
 /**
  * Server-side adapter lifecycle manager.
@@ -35,25 +67,31 @@ export class AdapterManager {
   private configWatcher: FSWatcher | null = null;
   private readonly configPath: string;
   private configs: AdapterConfig[] = [];
+  private readonly deps: AdapterManagerDeps;
 
   /**
    * @param registry - The adapter registry managing adapter lifecycle
    * @param configPath - Absolute path to the adapters config JSON file
+   * @param deps - Dependencies for constructing runtime adapters
    */
   constructor(
     registry: AdapterRegistry,
     configPath: string,
+    deps: AdapterManagerDeps,
   ) {
     this.registry = registry;
     this.configPath = configPath;
+    this.deps = deps;
   }
 
   /**
    * Load config from disk, start all enabled adapters, and begin watching for changes.
    *
+   * Generates a default adapters.json with claude-code enabled when no config exists.
    * Should be called once during server startup.
    */
   async initialize(): Promise<void> {
+    await this.ensureDefaultConfig();
     await this.loadConfig();
     await this.startEnabledAdapters();
     this.startConfigWatcher();
@@ -97,7 +135,7 @@ export class AdapterManager {
     config.enabled = true;
     await this.saveConfig();
 
-    const adapter = this.createAdapter(config);
+    const adapter = await this.createAdapter(config);
     if (adapter) {
       await this.registry.register(adapter);
     }
@@ -162,6 +200,36 @@ export class AdapterManager {
   }
 
   /**
+   * Enrich AdapterContext with Mesh agent info if meshCore is available.
+   *
+   * Extracts the agent ID from the subject (e.g., relay.agent.{agentId})
+   * and looks up the agent manifest in the Mesh registry.
+   *
+   * @param subject - The relay subject to extract agent ID from
+   * @returns Enriched AdapterContext, or undefined if no mesh info available
+   */
+  buildContext(subject: string): AdapterContext | undefined {
+    if (!this.deps.meshCore) return undefined;
+    if (!subject.startsWith('relay.agent.')) return undefined;
+
+    const segments = subject.split('.');
+    const agentId = segments[2];
+    if (!agentId) return undefined;
+
+    const agentInfo = this.deps.meshCore.getAgent(agentId);
+    if (!agentInfo) return undefined;
+
+    const manifest = agentInfo.manifest;
+    return {
+      agent: {
+        directory: (manifest.directory as string) ?? process.cwd(),
+        runtime: (manifest.runtime as string) ?? 'claude-code',
+        manifest,
+      },
+    };
+  }
+
+  /**
    * Stop all adapters and the config file watcher.
    *
    * Should be called during server shutdown, before RelayCore shutdown.
@@ -219,18 +287,58 @@ export class AdapterManager {
   }
 
   /**
+   * Generate a default adapters.json with claude-code enabled when no config exists.
+   *
+   * Called during initialize() if no config file exists and Relay is enabled.
+   * Never throws — failures are logged as warnings.
+   */
+  private async ensureDefaultConfig(): Promise<void> {
+    try {
+      await readFile(this.configPath, 'utf-8');
+      // Config exists — nothing to do
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
+        const defaultConfig = {
+          adapters: [
+            {
+              id: 'claude-code',
+              type: 'claude-code',
+              builtin: true,
+              enabled: true,
+              config: {
+                maxConcurrent: 3,
+                defaultTimeoutMs: 300_000,
+              },
+            },
+          ],
+        };
+        try {
+          await mkdir(dirname(this.configPath), { recursive: true });
+          await writeFile(
+            this.configPath,
+            JSON.stringify(defaultConfig, null, 2),
+            'utf-8',
+          );
+          logger.info('[AdapterManager] Generated default adapters.json with claude-code adapter');
+        } catch (writeErr) {
+          logger.warn('[AdapterManager] Failed to write default config:', writeErr);
+        }
+      }
+    }
+  }
+
+  /**
    * Start all enabled adapters that are not already running.
    *
-   * Uses `Promise.allSettled` internally via the registry's `register` method.
-   * Individual adapter startup failures are logged but do not prevent other
-   * adapters from starting.
+   * Individual adapter startup failures are logged but do not prevent
+   * other adapters from starting.
    */
   private async startEnabledAdapters(): Promise<void> {
     for (const config of this.configs) {
       if (!config.enabled) continue;
       if (this.registry.get(config.id)) continue; // Already running
 
-      const adapter = this.createAdapter(config);
+      const adapter = await this.createAdapter(config);
       if (adapter) {
         try {
           await this.registry.register(adapter);
@@ -244,10 +352,12 @@ export class AdapterManager {
   /**
    * Create an adapter instance from its config.
    *
+   * Async to support plugin loading via dynamic import.
+   *
    * @param config - The adapter configuration entry
-   * @returns The adapter instance, or null for unknown types
+   * @returns The adapter instance, or null for unknown/unloadable types
    */
-  private createAdapter(config: AdapterConfig): RelayAdapter | null {
+  private async createAdapter(config: AdapterConfig): Promise<RelayAdapter | null> {
     switch (config.type) {
       case 'telegram':
         return new TelegramAdapter(
@@ -259,10 +369,53 @@ export class AdapterManager {
           config.id,
           config.config as WebhookAdapterConfig,
         );
+      case 'claude-code':
+        return new ClaudeCodeAdapter(
+          config.id,
+          config.config as Record<string, unknown>,
+          {
+            agentManager: this.deps.agentManager,
+            traceStore: this.deps.traceStore,
+            pulseStore: this.deps.pulseStore,
+          },
+        );
+      case 'plugin':
+        return this.loadPlugin(config);
       default:
         logger.warn(`[AdapterManager] Unknown adapter type: ${(config as AdapterConfig).type}`);
         return null;
     }
+  }
+
+  /**
+   * Load a plugin adapter via dynamic import.
+   *
+   * @param config - The adapter config with plugin source info
+   * @returns The loaded adapter instance, or null on failure
+   */
+  private async loadPlugin(config: AdapterConfig): Promise<RelayAdapter | null> {
+    if (!config.plugin) {
+      logger.warn(`[AdapterManager] Plugin adapter '${config.id}' missing plugin source config`);
+      return null;
+    }
+
+    const builtinMap = new Map<string, (c: Record<string, unknown>) => RelayAdapter>();
+    const configDir = dirname(this.configPath);
+    const results = await loadAdapters(
+      [
+        {
+          id: config.id,
+          type: config.type,
+          enabled: config.enabled,
+          plugin: config.plugin,
+          config: config.config as Record<string, unknown>,
+        },
+      ],
+      builtinMap,
+      configDir,
+    );
+
+    return results[0] ?? null;
   }
 
   /**

@@ -416,31 +416,31 @@ describe('TelegramAdapter', () => {
     expect(sentText.endsWith('...')).toBe(true);
   });
 
-  it('deliver() throws for invalid subject (non-telegram prefix)', async () => {
+  it('deliver() returns failure for invalid subject (non-telegram prefix)', async () => {
     await adapter.start(mockRelay);
 
     const envelope = createEnvelope('relay.agent.backend', { content: 'hi' });
-    await expect(adapter.deliver('relay.agent.backend', envelope)).rejects.toThrow(
-      "cannot extract chat ID",
-    );
+    const result = await adapter.deliver('relay.agent.backend', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/cannot extract chat ID/);
   });
 
-  it('deliver() throws if not started', async () => {
+  it('deliver() returns failure if not started', async () => {
     const envelope = createEnvelope('relay.human.telegram.1', { content: 'hi' });
-    await expect(adapter.deliver('relay.human.telegram.1', envelope)).rejects.toThrow(
-      'not started',
-    );
+    const result = await adapter.deliver('relay.human.telegram.1', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/not started/);
   });
 
-  it('deliver() records error and re-throws when sendMessage fails', async () => {
+  it('deliver() records error and returns failure when sendMessage fails', async () => {
     mockSendMessage.mockRejectedValueOnce(new Error('Telegram API error'));
 
     await adapter.start(mockRelay);
 
     const envelope = createEnvelope('relay.human.telegram.1', { content: 'hi' });
-    await expect(adapter.deliver('relay.human.telegram.1', envelope)).rejects.toThrow(
-      'Telegram API error',
-    );
+    const result = await adapter.deliver('relay.human.telegram.1', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/Telegram API error/);
 
     expect(adapter.getStatus().errorCount).toBe(1);
   });

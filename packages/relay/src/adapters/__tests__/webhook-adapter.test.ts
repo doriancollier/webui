@@ -421,7 +421,7 @@ describe('WebhookAdapter', () => {
       vi.unstubAllGlobals();
     });
 
-    it('throws and sets error status on non-2xx HTTP response', async () => {
+    it('returns failure result and sets error status on non-2xx HTTP response', async () => {
       const fetchMock = vi.fn().mockResolvedValue({ ok: false, status: 503 });
       vi.stubGlobal('fetch', fetchMock);
 
@@ -431,7 +431,9 @@ describe('WebhookAdapter', () => {
         createdAt: new Date().toISOString(), payload: {},
       };
 
-      await expect(adapter.deliver('relay.webhook.test', envelope)).rejects.toThrow('HTTP 503');
+      const result = await adapter.deliver('relay.webhook.test', envelope);
+      expect(result.success).toBe(false);
+      expect(result.error).toContain('503');
 
       const status = adapter.getStatus();
       expect(status.errorCount).toBe(1);

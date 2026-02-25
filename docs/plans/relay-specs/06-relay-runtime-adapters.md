@@ -2,7 +2,7 @@
 title: "Unified Adapter System & Claude Code Runtime Adapter"
 spec: 6
 order: 4
-status: not-started
+status: in-progress
 blockedBy: [4]
 blocks: [5]
 parallelWith: [3]

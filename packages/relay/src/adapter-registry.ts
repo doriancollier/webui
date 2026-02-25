@@ -7,7 +7,7 @@
  * @module relay/adapter-registry
  */
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
-import type { RelayAdapter, RelayPublisher, AdapterRegistryLike } from './types.js';
+import type { RelayAdapter, RelayPublisher, AdapterRegistryLike, AdapterContext } from './types.js';
 
 /**
  * Registry that manages the lifecycle of external channel adapters and routes
@@ -119,12 +119,13 @@ export class AdapterRegistry implements AdapterRegistryLike {
    *
    * @param subject - The target subject
    * @param envelope - The relay envelope to deliver
+   * @param context - Optional rich context passed through to the matched adapter
    * @returns true if an adapter matched and delivery was attempted, false otherwise
    */
-  async deliver(subject: string, envelope: RelayEnvelope): Promise<boolean> {
+  async deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<boolean> {
     const adapter = this.getBySubject(subject);
     if (!adapter) return false;
-    await adapter.deliver(subject, envelope);
+    await adapter.deliver(subject, envelope, context);
     return true;
   }
 

@@ -28,6 +28,8 @@ import type {
   RelayAdapter,
   RelayPublisher,
   AdapterStatus,
+  AdapterContext,
+  DeliveryResult,
   TelegramAdapterConfig,
   Unsubscribe,
 } from '../types.js';
@@ -283,17 +285,26 @@ export class TelegramAdapter implements RelayAdapter {
    *
    * @param subject - The Relay subject (e.g. relay.human.telegram.123456)
    * @param envelope - The relay envelope to deliver
+   * @param _context - Optional adapter context (unused by this adapter)
    */
-  async deliver(subject: string, envelope: RelayEnvelope): Promise<void> {
+  async deliver(subject: string, envelope: RelayEnvelope, _context?: AdapterContext): Promise<DeliveryResult> {
+    const startTime = Date.now();
+
     if (!this.bot) {
-      throw new Error(`TelegramAdapter(${this.id}): not started`);
+      return {
+        success: false,
+        error: `TelegramAdapter(${this.id}): not started`,
+        durationMs: Date.now() - startTime,
+      };
     }
 
     const chatId = extractChatId(subject);
     if (chatId === null) {
-      throw new Error(
-        `TelegramAdapter(${this.id}): cannot extract chat ID from subject '${subject}'`,
-      );
+      return {
+        success: false,
+        error: `TelegramAdapter(${this.id}): cannot extract chat ID from subject '${subject}'`,
+        durationMs: Date.now() - startTime,
+      };
     }
 
     const content = extractOutboundContent(envelope.payload);
@@ -308,9 +319,17 @@ export class TelegramAdapter implements RelayAdapter {
           outbound: this.status.messageCount.outbound + 1,
         },
       };
+      return {
+        success: true,
+        durationMs: Date.now() - startTime,
+      };
     } catch (err) {
       this.recordError(err);
-      throw err;
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - startTime,
+      };
     }
   }
 

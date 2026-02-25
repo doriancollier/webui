@@ -229,9 +229,26 @@ export type EndpointRegistration = z.infer<typeof EndpointRegistrationSchema>;
 
 // === Adapter Configuration Schemas ===
 
-export const AdapterTypeSchema = z.enum(['telegram', 'webhook']).openapi('AdapterType');
+export const AdapterTypeSchema = z
+  .enum(['telegram', 'webhook', 'claude-code', 'plugin'])
+  .openapi('AdapterType');
 
 export type AdapterType = z.infer<typeof AdapterTypeSchema>;
+
+export const PluginSourceSchema = z
+  .object({
+    /** npm package name (e.g., 'dorkos-relay-slack') */
+    package: z.string().optional(),
+    /** Local file path (absolute or relative to config dir) */
+    path: z.string().optional(),
+  })
+  .refine(
+    (data) => data.package || data.path,
+    { message: 'Plugin source must specify either package or path' },
+  )
+  .openapi('PluginSource');
+
+export type PluginSource = z.infer<typeof PluginSourceSchema>;
 
 export const TelegramAdapterConfigSchema = z
   .object({
@@ -281,7 +298,16 @@ export const AdapterConfigSchema = z
       .regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
     type: AdapterTypeSchema,
     enabled: z.boolean().default(true),
-    config: z.union([TelegramAdapterConfigSchema, WebhookAdapterConfigSchema]),
+    /** Built-in adapter flag — when true, adapter is loaded from @dorkos/relay */
+    builtin: z.boolean().optional(),
+    /** Plugin source — required when type is 'plugin' */
+    plugin: PluginSourceSchema.optional(),
+    /** Adapter-specific configuration (passed to adapter constructor/factory) */
+    config: z.union([
+      TelegramAdapterConfigSchema,
+      WebhookAdapterConfigSchema,
+      z.record(z.string(), z.unknown()),
+    ]),
   })
   .openapi('AdapterConfig');
 
