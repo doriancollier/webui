@@ -156,6 +156,11 @@ export interface RelayOptions {
    * Typed as unknown to avoid circular dependency; cast to AdapterRegistry at call sites.
    */
   adapterRegistry?: AdapterRegistryLike;
+  /**
+   * Optional callback to build AdapterContext before adapter delivery.
+   * Called with the subject; returns enriched context (e.g., Mesh agent info) or undefined.
+   */
+  adapterContextBuilder?: (subject: string) => AdapterContext | undefined;
 }
 
 export interface PublishOptions {
@@ -213,8 +218,8 @@ export interface RelayAdapter {
   /** Unique identifier (e.g., 'telegram', 'webhook-github') */
   readonly id: string;
 
-  /** Subject prefix this adapter handles (e.g., 'relay.human.telegram') */
-  readonly subjectPrefix: string;
+  /** Subject prefix(es) this adapter handles (e.g., 'relay.human.telegram' or ['relay.agent.', 'relay.system.pulse.']) */
+  readonly subjectPrefix: string | readonly string[];
 
   /** Human-readable display name */
   readonly displayName: string;

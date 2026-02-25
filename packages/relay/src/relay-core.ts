@@ -43,6 +43,7 @@ import type {
   EndpointInfo,
   RelayMetrics,
   AdapterRegistryLike,
+  AdapterContext,
 } from './types.js';
 import type { DeadLetterEntry, ListDeadOptions } from './dead-letter-queue.js';
 
@@ -144,6 +145,7 @@ export class RelayCore {
   private configWatcher: FSWatcher | null = null;
   private closed = false;
   private readonly adapterRegistry?: AdapterRegistryLike;
+  private adapterContextBuilder?: (subject: string) => AdapterContext | undefined;
 
   constructor(options?: RelayOptions) {
     const dataDir = options?.dataDir ?? DEFAULT_DATA_DIR;
@@ -188,6 +190,21 @@ export class RelayCore {
       this.adapterRegistry = options.adapterRegistry;
       this.adapterRegistry.setRelay(this);
     }
+    if (options?.adapterContextBuilder) {
+      this.adapterContextBuilder = options.adapterContextBuilder;
+    }
+  }
+
+  /**
+   * Set the adapter context builder callback.
+   *
+   * Called after construction when the builder depends on services
+   * initialized after RelayCore (e.g., AdapterManager with Mesh integration).
+   *
+   * @param builder - Callback that enriches AdapterContext for a given subject
+   */
+  setAdapterContextBuilder(builder: (subject: string) => AdapterContext | undefined): void {
+    this.adapterContextBuilder = builder;
   }
 
   // --- Publish ---
@@ -306,7 +323,8 @@ export class RelayCore {
     // 7. Deliver to matching external adapter (after Maildir endpoints)
     if (this.adapterRegistry) {
       try {
-        const adapterDelivered = await this.adapterRegistry.deliver(subject, envelope);
+        const context = this.adapterContextBuilder?.(subject);
+        const adapterDelivered = await this.adapterRegistry.deliver(subject, envelope, context);
         if (adapterDelivered) {
           deliveredTo++;
         }

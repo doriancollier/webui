@@ -87,6 +87,7 @@ async function start() {
       pulseStore,
     });
     await adapterManager.initialize();
+    relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
     logger.info('[Relay] AdapterManager initialized');
   }
 

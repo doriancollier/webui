@@ -98,7 +98,10 @@ export class AdapterRegistry implements AdapterRegistryLike {
    */
   getBySubject(subject: string): RelayAdapter | undefined {
     for (const adapter of this.adapters.values()) {
-      if (subject.startsWith(adapter.subjectPrefix)) {
+      const prefixes = Array.isArray(adapter.subjectPrefix)
+        ? adapter.subjectPrefix
+        : [adapter.subjectPrefix];
+      if (prefixes.some((p) => subject.startsWith(p))) {
         return adapter;
       }
     }

@@ -100,7 +100,7 @@ interface ResolvedConfig {
  */
 export class ClaudeCodeAdapter implements RelayAdapter {
   readonly id: string;
-  readonly subjectPrefix = AGENT_SUBJECT_PREFIX;
+  readonly subjectPrefix = [AGENT_SUBJECT_PREFIX, PULSE_SUBJECT_PREFIX] as const;
   readonly displayName = 'Claude Code';
 
   private readonly config: ResolvedConfig;

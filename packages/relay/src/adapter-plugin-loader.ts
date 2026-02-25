@@ -127,7 +127,7 @@ export function validateAdapterShape(
   const a = obj as Record<string, unknown>;
   if (typeof a.id !== 'string')
     throw new Error(`Adapter '${id}': missing 'id' property`);
-  if (typeof a.subjectPrefix !== 'string')
+  if (typeof a.subjectPrefix !== 'string' && !Array.isArray(a.subjectPrefix))
     throw new Error(`Adapter '${id}': missing 'subjectPrefix'`);
   if (typeof a.displayName !== 'string')
     throw new Error(`Adapter '${id}': missing 'displayName'`);
