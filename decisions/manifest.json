@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 23,
+  "nextNumber": 26,
   "decisions": [
     {
       "number": 1,
@@ -194,6 +194,33 @@
       "created": "2026-02-24",
       "extractedFrom": "relay-external-adapters",
       "specSlug": "relay-external-adapters"
+    },
+    {
+      "number": 23,
+      "slug": "custom-async-bfs-for-agent-discovery",
+      "title": "Use Custom Async BFS for Agent Discovery",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "mesh-core-library",
+      "specSlug": "mesh-core-library"
+    },
+    {
+      "number": 24,
+      "slug": "dorkos-native-agent-manifest-format",
+      "title": "Use DorkOS-Native Agent Manifest at .dork/agent.json",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "mesh-core-library",
+      "specSlug": "mesh-core-library"
+    },
+    {
+      "number": 25,
+      "slug": "simple-json-columns-for-agent-registry",
+      "title": "Use Simple JSON Columns for Agent Registry SQLite Schema",
+      "status": "draft",
+      "created": "2026-02-24",
+      "extractedFrom": "mesh-core-library",
+      "specSlug": "mesh-core-library"
     }
   ]
 }

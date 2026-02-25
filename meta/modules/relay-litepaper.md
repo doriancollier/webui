@@ -97,15 +97,21 @@ Rejected messages go to the dead letter queue with the reason. Always auditable.
 
 ---
 
-## External Channels: The Adapter Model
+## Adapters: Bridging Relay to Everything
 
-Relay's subject hierarchy doesn't stop at the process boundary. Any external channel — Telegram, Slack, email, webhooks, voice — becomes a set of endpoints via a plugin adapter.
+Relay's subject hierarchy doesn't stop at the process boundary. Adapters bridge Relay to the systems that actually process or produce messages — agent runtimes, external platforms, and services.
 
-An adapter does two things. It listens for incoming messages on the external platform and publishes them into Relay's subject hierarchy. And it receives outbound messages from Relay and delivers them via the platform's API. A Telegram adapter maps `relay.human.telegram.dorian` to your Telegram chat. A Slack adapter maps `relay.human.slack.channel.deploys` to your #deploys channel.
+**All adapters implement one interface.** Whether an adapter bridges to Claude Code, Telegram, Slack, or a custom service, it implements the same `RelayAdapter` contract: subscribe to a subject pattern, deliver messages, publish responses. The interface doesn't care what's on the other end — an LLM runtime, a chat platform, or a webhook URL. It just moves envelopes.
 
-**Adapters normalize.** A Telegram message, a Slack DM, and an email all arrive as the same envelope with the same payload schema. The agent processing the message doesn't need to know which platform it came from. It reads the content, the sender name, and the response context — which tells it the platform's constraints (message length limits, supported formats, reply instructions).
+A **runtime adapter** bridges Relay to an agent runtime. When a message arrives for `relay.agent.finance.budget-bot`, the Claude Code adapter starts an Agent SDK session in the correct project directory, passes the message as a prompt, captures the response, and publishes it back through Relay. The agent itself never knows about Relay. It receives a prompt and produces a response. The adapter handles everything else. A Codex adapter would spawn the Codex CLI. An OpenCode adapter would use its SDK. Same interface, different execution mechanics.
 
-Phase 1 ships with internal-only messaging — agent-to-agent and system-to-agent. External adapters follow. The architecture supports them from day one; the implementation is additive.
+An **external adapter** bridges Relay to a messaging platform. A Telegram adapter maps `relay.human.telegram.dorian` to your Telegram chat. A Slack adapter maps `relay.human.slack.channel.deploys` to your #deploys channel. The adapter listens for inbound messages and publishes them into Relay, and receives outbound messages from Relay and delivers them via the platform's API.
+
+**Both kinds normalize.** A Telegram message, a Codex response, and an email all arrive as the same envelope with the same payload schema. The system processing the message doesn't need to know which platform or runtime it came from.
+
+**Adapters are pluggable.** The `RelayAdapter` interface and all related types are exported from `@dorkos/relay` for third-party use. Adapters are loaded from npm packages or local files via configuration — install `dorkos-relay-slack`, add it to `adapters.json`, and Relay loads it at startup. Built-in adapters ship in the box. Third-party adapters install via npm. Local adapters point to a file. All loaded the same way.
+
+Phase 1 ships with internal-only messaging. The Claude Code runtime adapter ships next — it's how Relay actually delivers messages to agents. External adapters follow. The architecture supports both from day one; the implementations are additive. And anyone can build an adapter for any platform or runtime.
 
 ---
 
@@ -119,7 +125,7 @@ Relay is foundation infrastructure. It doesn't do flashy things on its own. It m
 
 **Activity feeds are native.** Relay's SSE event stream — message delivered, message failed, budget exceeded, endpoint registered — is a real-time view of everything happening in the system. The marketing site's simulated activity feed becomes a live one.
 
-**Agent execution is a subscription.** The Engine subscribes to `relay.agent.>` — all agent messages. When a message arrives, it creates an Agent SDK session in the target project directory, passes the message content as the prompt, and publishes the response back through Relay. The agent doesn't know about Relay. It just receives a prompt and produces a response. Relay handles everything else.
+**Agent execution is a runtime adapter.** The Claude Code runtime adapter subscribes to `relay.agent.>` — all agent messages. When a message arrives, it creates an Agent SDK session in the target project directory, passes the message content as the prompt, captures the response, and publishes it back through Relay. The agent doesn't know about Relay. It just receives a prompt and produces a response. The adapter handles everything else. Different runtimes (Codex, OpenCode) get their own adapters — same pattern, different execution mechanics.
 
 ---
 
@@ -143,9 +149,11 @@ See the [DorkOS Litepaper](../dorkos-litepaper.md) for the full system vision. S
 
 **Phase 2 — Advanced Reliability.** Rate limiting per sender. Circuit breakers per endpoint pair. Backpressure handling.
 
-**Phase 3 — External Adapters.** Plugin adapter interface. Telegram adapter with message and signal support. Webhook adapter for inbound and outbound. Console activity feed via SSE subscription.
+**Phase 3 — External Adapters.** Telegram adapter with message and signal support. Webhook adapter for inbound and outbound. Console activity feed via SSE subscription.
 
-**Phase 4 — Convergence.** Delivery metrics and message tracing. Agent runtime adapter interface. Pulse migration to Relay dispatch. Console migration to Relay endpoint.
+**Phase 4 — Unified Adapter System and Claude Code Adapter.** Unified `RelayAdapter` interface for all adapters (runtime and external). Plugin loading from npm packages and local files. Adapter types exported from `@dorkos/relay` for third-party use. Claude Code runtime adapter (Agent SDK) as the first runtime adapter. Refactor Phase 3 adapters to the unified interface.
+
+**Phase 5 — Convergence.** Delivery metrics and message tracing. Pulse migration to Relay dispatch. Console migration to Relay endpoint.
 
 ---
 
