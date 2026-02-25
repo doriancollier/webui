@@ -14,7 +14,8 @@
     "TUNNEL_PORT",
     "TUNNEL_AUTH",
     "TUNNEL_DOMAIN",
-    "NGROK_AUTHTOKEN"
+    "NGROK_AUTHTOKEN",
+    "VITE_PORT"
   ],
   "tasks": {
     "build": {
@@ -51,6 +52,21 @@
       "dependsOn": ["^build"],
       "outputs": ["dist/**"],
       "cache": false
+    },
+    "e2e": {
+      "dependsOn": ["^build"],
+      "cache": false,
+      "passThroughEnv": [
+        "PLAYWRIGHT_BROWSERS_PATH",
+        "PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD",
+        "CI",
+        "PWDEBUG",
+        "ANTHROPIC_API_KEY"
+      ]
+    },
+    "e2e:ui": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

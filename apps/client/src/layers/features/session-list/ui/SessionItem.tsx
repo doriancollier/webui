@@ -80,6 +80,7 @@ export function SessionItem({ session, isActive, onClick, isNew = false }: Sessi
   return (
     <Wrapper
       {...(animationProps as Record<string, unknown>)}
+      data-testid="session-item"
       className={cn(
         'group rounded-lg transition-colors duration-150',
         isActive

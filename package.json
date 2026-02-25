@@ -17,7 +17,9 @@
     "lint:fix": "turbo lint -- --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "docs:export-api": "dotenv -- tsx scripts/export-openapi.ts"
+    "docs:export-api": "dotenv -- tsx scripts/export-openapi.ts",
+    "test:browser": "dotenv -- turbo run e2e --filter=@dorkos/e2e --only",
+    "test:browser:ui": "dotenv -- turbo run e2e:ui --filter=@dorkos/e2e --only"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",

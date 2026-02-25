@@ -215,7 +215,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   );
 
   return (
-    <div ref={parentRef} className="chat-scroll-area h-full overflow-y-auto pt-12">
+    <div ref={parentRef} data-testid="message-list" className="chat-scroll-area h-full overflow-y-auto pt-12">
       <div
         ref={contentRef}
         style={{

@@ -150,7 +150,7 @@ export function SessionSidebar() {
   const groupedSessions = useMemo(() => groupSessionsByTime(sessions), [sessions]);
 
   return (
-    <div className="sidebar-container flex h-full flex-col p-3">
+    <div data-testid="session-sidebar" className="sidebar-container flex h-full flex-col p-3">
       {/* Header: New Chat + Collapse */}
       <div className="mb-3 space-y-1.5">
         {/* Working directory breadcrumb */}
@@ -185,7 +185,7 @@ export function SessionSidebar() {
       </div>
 
       {/* Session List */}
-      <div className="-mx-1 flex-1 overflow-y-auto px-1">
+      <div data-testid="session-list" className="-mx-1 flex-1 overflow-y-auto px-1">
         {groupedSessions.length > 0 ? (
           <div className="space-y-5">
             {groupedSessions.map((group) => {

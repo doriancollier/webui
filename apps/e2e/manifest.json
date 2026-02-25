@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "tests": {
+    "app-loads": {
+      "specFile": "tests/smoke/app-loads.spec.ts",
+      "feature": "smoke",
+      "description": "Smoke tests for app loading and core layout",
+      "lastRun": "",
+      "lastStatus": "",
+      "runCount": 0,
+      "passCount": 0,
+      "failCount": 0,
+      "relatedCode": [
+        "apps/client/src/App.tsx"
+      ],
+      "lastModified": ""
+    },
+    "send-message": {
+      "specFile": "tests/chat/send-message.spec.ts",
+      "feature": "chat",
+      "description": "Send message and receive streaming response",
+      "lastRun": "",
+      "lastStatus": "",
+      "runCount": 0,
+      "passCount": 0,
+      "failCount": 0,
+      "relatedCode": [
+        "apps/client/src/layers/features/chat/ui/ChatPanel.tsx",
+        "apps/client/src/layers/features/chat/ui/MessageList.tsx",
+        "apps/client/src/layers/features/chat/ui/MessageItem.tsx",
+        "apps/client/src/layers/features/chat/ui/InferenceIndicator.tsx"
+      ],
+      "lastModified": ""
+    },
+    "session-management": {
+      "specFile": "tests/session-list/session-management.spec.ts",
+      "feature": "session-list",
+      "description": "Session creation and management",
+      "lastRun": "",
+      "lastStatus": "",
+      "runCount": 0,
+      "passCount": 0,
+      "failCount": 0,
+      "relatedCode": [
+        "apps/client/src/layers/features/session-list/ui/SessionSidebar.tsx",
+        "apps/client/src/layers/features/session-list/ui/SessionItem.tsx"
+      ],
+      "lastModified": ""
+    },
+    "settings-dialog": {
+      "specFile": "tests/settings/settings-dialog.spec.ts",
+      "feature": "settings",
+      "description": "Settings dialog open/close and tab switching",
+      "lastRun": "",
+      "lastStatus": "",
+      "runCount": 0,
+      "passCount": 0,
+      "failCount": 0,
+      "relatedCode": [
+        "apps/client/src/layers/features/settings/ui/SettingsDialog.tsx"
+      ],
+      "lastModified": ""
+    }
+  },
+  "runHistory": []
+}

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 61,
+  "nextNumber": 62,
   "specs": [
     {
       "number": 1,
@@ -421,6 +421,13 @@
       "title": "Relay & Mesh Release Preparation",
       "created": "2026-02-25",
       "status": "specified"
+    },
+    {
+      "number": 61,
+      "slug": "browser-testing-system",
+      "title": "Browser Testing System",
+      "created": "2026-02-25",
+      "status": "ideation"
     }
   ]
 }

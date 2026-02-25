@@ -145,6 +145,8 @@ export function MessageItem({
       initial={isNew ? { opacity: 0, y: 8 } : false}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+      data-testid="message-item"
+      data-role={message.role}
       className={cn(
         'group relative flex gap-3 px-4 transition-colors duration-150',
         isGroupStart ? 'pt-4' : 'pt-0.5',

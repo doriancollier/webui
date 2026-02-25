@@ -121,6 +121,7 @@ export function StatusLine({ sessionId, sessionStatus, isStreaming }: StatusLine
           role="toolbar"
           aria-label="Session status"
           aria-live="polite"
+          data-testid="status-line"
           initial={{ height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
           exit={{ height: 0, opacity: 0 }}

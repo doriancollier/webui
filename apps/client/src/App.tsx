@@ -55,6 +55,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
         <MotionConfig reducedMotion="user">
           <div
             ref={containerRef}
+            data-testid="app-shell"
             className="bg-background text-foreground relative flex h-full flex-col"
           >
             <PermissionBanner sessionId={activeSessionId} />
@@ -131,7 +132,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   return (
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
-        <div ref={containerRef} className="bg-background text-foreground flex h-dvh flex-col">
+        <div ref={containerRef} data-testid="app-shell" className="bg-background text-foreground flex h-dvh flex-col">
           <PermissionBanner sessionId={activeSessionId} />
           <div className="relative flex flex-1 overflow-hidden">
             {/* Floating toggle — visible when sidebar is closed */}
