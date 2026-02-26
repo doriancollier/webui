@@ -103,16 +103,24 @@ async function start() {
     // broadcast lifecycle signals. When Relay is absent, signalEmitter stays
     // undefined and MeshCore silently skips signal emission.
     const meshSignalEmitter = relayCore ? new SignalEmitter() : undefined;
+    const meshDataDir = path.join(dorkHome, 'mesh');
 
-    meshCore = new MeshCore({
-      dataDir: path.join(dorkHome, 'mesh'),
-      relayCore,
-      signalEmitter: meshSignalEmitter,
-    });
-    logger.info('[Mesh] MeshCore initialized');
+    try {
+      meshCore = new MeshCore({
+        dataDir: meshDataDir,
+        relayCore,
+        signalEmitter: meshSignalEmitter,
+      });
+      logger.info(`[Mesh] MeshCore initialized (dataDir: ${meshDataDir})`);
+    } catch (err) {
+      logger.error(`[Mesh] Failed to initialize MeshCore at ${meshDataDir}`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      // Mesh failure is non-fatal: server continues without mesh routes.
+    }
 
     // Subscribe to lifecycle signals for diagnostic logging
-    if (meshSignalEmitter) {
+    if (meshSignalEmitter && meshCore) {
       meshSignalEmitter.subscribe('mesh.agent.lifecycle.>', (subject, signal) => {
         logger.info(`[mesh] lifecycle: ${signal.state}`, { subject, data: signal.data });
       });

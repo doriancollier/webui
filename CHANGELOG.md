@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Route Pulse jobs and console output through Relay transport for unified message delivery and tracing
 - Comprehensive Relay & Mesh release preparation
 - Redesign Pulse scheduler UI with filtering, accessibility, and navigation improvements
 - Rebrand homepage modules and create DorkOS litepaper
@@ -31,10 +32,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Surface API errors in MeshPanel and harden MeshCore init
 - Aggregate manifest reporter counts per spec file, not per test case
 - Wire live health data into Mesh topology graph and fix aggregate SQL boundary
 - Support array subjectPrefix in Relay and wire adapter context builder
 - Fix 7 critical wiring bugs in Relay convergence implementation
+- Resolve four completion gaps in Pulse scheduler — runs now correctly persist state, handle timeouts, and clean up on cancellation
 - Declare runtime env vars in turbo.json globalPassThroughEnv
 
 ---
