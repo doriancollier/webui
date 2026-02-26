@@ -35,29 +35,29 @@ export const UserConfigSchema = z.object({
   logging: LoggingConfigSchema.default(() => ({ level: 'info' as const })),
   relay: z
     .object({
-      enabled: z.boolean().default(false),
+      enabled: z.boolean().default(true),
       dataDir: z.string().nullable().default(null),
     })
-    .default(() => ({ enabled: false, dataDir: null })),
+    .default(() => ({ enabled: true, dataDir: null })),
   scheduler: z
     .object({
-      enabled: z.boolean().default(false),
+      enabled: z.boolean().default(true),
       maxConcurrentRuns: z.number().int().min(1).max(10).default(1),
       timezone: z.string().nullable().default(null),
       retentionCount: z.number().int().min(1).default(100),
     })
     .default(() => ({
-      enabled: false,
+      enabled: true,
       maxConcurrentRuns: 1,
       timezone: null,
       retentionCount: 100,
     })),
   mesh: z
     .object({
-      enabled: z.boolean().default(false),
+      enabled: z.boolean().default(true),
       scanRoots: z.array(z.string()).default(() => []),
     })
-    .default(() => ({ enabled: false, scanRoots: [] })),
+    .default(() => ({ enabled: true, scanRoots: [] })),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;

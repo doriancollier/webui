@@ -16,9 +16,9 @@ describe('UserConfigSchema', () => {
       tunnel: { enabled: false, domain: null, authtoken: null, auth: null },
       ui: { theme: 'system' },
       logging: { level: 'info' },
-      relay: { enabled: false, dataDir: null },
-      scheduler: { enabled: false, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
-      mesh: { enabled: false },
+      relay: { enabled: true, dataDir: null },
+      scheduler: { enabled: true, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
+      mesh: { enabled: true, scanRoots: [] },
     });
   });
 
@@ -148,6 +148,9 @@ describe('UserConfigSchema', () => {
     expect(result.server.port).toBe(4242);
     expect(result.server.cwd).toBeNull();
     expect(result.tunnel.enabled).toBe(false);
+    expect(result.relay.enabled).toBe(true);
+    expect(result.scheduler.enabled).toBe(true);
+    expect(result.mesh.enabled).toBe(true);
     expect(result.ui.theme).toBe('system');
   });
 
@@ -197,9 +200,9 @@ describe('USER_CONFIG_DEFAULTS', () => {
       tunnel: { enabled: false, domain: null, authtoken: null, auth: null },
       ui: { theme: 'system' },
       logging: { level: 'info' },
-      relay: { enabled: false, dataDir: null },
-      scheduler: { enabled: false, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
-      mesh: { enabled: false },
+      relay: { enabled: true, dataDir: null },
+      scheduler: { enabled: true, maxConcurrentRuns: 1, timezone: null, retentionCount: 100 },
+      mesh: { enabled: true, scanRoots: [] },
     });
   });
 

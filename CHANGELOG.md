@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Enable Relay, Mesh, and Pulse by default
 - Env-aware data dir, mesh panel UX overhaul, web lint fixes
 - Enhance browser testing methodology and documentation
 - Add AI-driven browser testing system with Playwright

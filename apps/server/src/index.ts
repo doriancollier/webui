@@ -20,11 +20,11 @@ import { TraceStore } from './services/relay/trace-store.js';
 import { MeshCore } from '@dorkos/mesh';
 import { createMeshRouter } from './routes/mesh.js';
 import { setMeshEnabled } from './services/mesh/mesh-state.js';
-import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
 import { resolveDorkHome } from './lib/dork-home.js';
+import { env } from './env.js';
 
-const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
+const PORT = env.DORKOS_PORT;
 
 // Global references for graceful shutdown
 let sessionBroadcaster: SessionBroadcaster | null = null;
@@ -38,16 +38,15 @@ async function start() {
   // Resolve data directory once and make it available to all downstream services.
   // Priority: DORK_HOME env var > .temp/.dork (dev) > ~/.dork (production)
   const dorkHome = resolveDorkHome();
+  // eslint-disable-next-line no-restricted-syntax -- write (not read): broadcasts resolved dorkHome to services loaded after this point
   process.env.DORK_HOME = dorkHome;
 
-  const logLevel = process.env.DORKOS_LOG_LEVEL
-    ? parseInt(process.env.DORKOS_LOG_LEVEL, 10)
-    : undefined;
+  const logLevel = env.DORKOS_LOG_LEVEL;
   initLogger({ level: logLevel });
   initConfigManager();
 
   // Initialize directory boundary (must happen before app creation)
-  const boundaryConfig = process.env.DORKOS_BOUNDARY || undefined;
+  const boundaryConfig = env.DORKOS_BOUNDARY;
   const resolvedBoundary = await initBoundary(boundaryConfig);
   logger.info(`[Boundary] Directory boundary: ${resolvedBoundary}`);
 
@@ -58,45 +57,62 @@ async function start() {
     timezone: string | null;
     retentionCount: number;
   };
-  const pulseEnabled = process.env.DORKOS_PULSE_ENABLED === 'true' || schedulerConfig.enabled;
+  const pulseEnabled = env.DORKOS_PULSE_ENABLED || schedulerConfig.enabled;
 
   let pulseStore: PulseStore | undefined;
   if (pulseEnabled) {
-    pulseStore = new PulseStore(dorkHome);
-    logger.info('[Pulse] PulseStore initialized');
+    try {
+      pulseStore = new PulseStore(dorkHome);
+      logger.info('[Pulse] PulseStore initialized');
+    } catch (err) {
+      logger.error(`[Pulse] Failed to initialize PulseStore at ${dorkHome}`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      // Pulse failure is non-fatal: server continues without scheduler routes.
+    }
   }
 
   // Initialize Relay if enabled
   const relayConfig = configManager.get('relay') as { enabled: boolean; dataDir?: string | null };
-  const relayEnabled = process.env.DORKOS_RELAY_ENABLED === 'true' || relayConfig?.enabled;
+  const relayEnabled = env.DORKOS_RELAY_ENABLED || relayConfig?.enabled;
 
   if (relayEnabled) {
-    const dataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
-    const adapterRegistry = new AdapterRegistry();
-    relayCore = new RelayCore({ dataDir, adapterRegistry });
-    await relayCore.registerEndpoint('relay.system.console');
-    logger.info('[Relay] RelayCore initialized');
+    const relayDataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
+    try {
+      const adapterRegistry = new AdapterRegistry();
+      relayCore = new RelayCore({ dataDir: relayDataDir, adapterRegistry });
+      await relayCore.registerEndpoint('relay.system.console');
+      logger.info(`[Relay] RelayCore initialized (dataDir: ${relayDataDir})`);
 
-    // Initialize trace store (shares the Relay SQLite database)
-    const dbPath = path.join(dataDir, 'index.db');
-    traceStore = new TraceStore({ dbPath });
-    logger.info('[Relay] TraceStore initialized');
+      // Initialize trace store (shares the Relay SQLite database)
+      const dbPath = path.join(relayDataDir, 'index.db');
+      traceStore = new TraceStore({ dbPath });
+      logger.info('[Relay] TraceStore initialized');
 
-    // Initialize adapter lifecycle manager (includes ClaudeCodeAdapter for agent dispatch)
-    const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');
-    adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
-      agentManager,
-      traceStore,
-      pulseStore,
-    });
-    await adapterManager.initialize();
-    relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
-    logger.info('[Relay] AdapterManager initialized');
+      // Initialize adapter lifecycle manager (includes ClaudeCodeAdapter for agent dispatch)
+      const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');
+      adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
+        agentManager,
+        traceStore,
+        pulseStore,
+      });
+      await adapterManager.initialize();
+      relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
+      logger.info('[Relay] AdapterManager initialized');
+    } catch (err) {
+      logger.error(`[Relay] Failed to initialize at ${relayDataDir}`, {
+        error: err instanceof Error ? err.message : String(err),
+      });
+      // Relay failure is non-fatal: server continues without relay routes.
+      relayCore = undefined;
+      traceStore = undefined;
+      adapterManager = undefined;
+    }
   }
 
   // Initialize Mesh if enabled
   const meshConfig = configManager.get('mesh') as { enabled: boolean } | undefined;
-  const meshEnabled = process.env.DORKOS_MESH_ENABLED === 'true' || meshConfig?.enabled;
+  const meshEnabled = env.DORKOS_MESH_ENABLED || meshConfig?.enabled;
 
   if (meshEnabled) {
     // Wire SignalEmitter when both Mesh and Relay are enabled so MeshCore can
@@ -130,7 +146,7 @@ async function start() {
   // Create MCP tool server and inject into AgentManager
   const mcpToolServer = createDorkOsToolServer({
     transcriptReader,
-    defaultCwd: process.env.DORKOS_DEFAULT_CWD ?? process.cwd(),
+    defaultCwd: env.DORKOS_DEFAULT_CWD ?? process.cwd(),
     ...(pulseStore && { pulseStore }),
     ...(relayCore && { relayCore }),
     ...(adapterManager && { adapterManager }),
@@ -178,7 +194,7 @@ async function start() {
   }
   app.locals.sessionBroadcaster = sessionBroadcaster;
 
-  const host = process.env.TUNNEL_ENABLED === 'true' ? '0.0.0.0' : 'localhost';
+  const host = env.TUNNEL_ENABLED ? '0.0.0.0' : 'localhost';
   app.listen(PORT, host, () => {
     logger.info(`DorkOS server running on http://localhost:${PORT}`);
   });
@@ -198,18 +214,18 @@ async function start() {
   );
 
   // Start ngrok tunnel if enabled
-  if (process.env.TUNNEL_ENABLED === 'true') {
-    const tunnelPort = parseInt(process.env.TUNNEL_PORT || String(PORT), 10);
+  if (env.TUNNEL_ENABLED) {
+    const tunnelPort = env.TUNNEL_PORT ?? PORT;
 
     try {
       const url = await tunnelManager.start({
         port: tunnelPort,
-        authtoken: process.env.NGROK_AUTHTOKEN,
-        basicAuth: process.env.TUNNEL_AUTH,
-        domain: process.env.TUNNEL_DOMAIN,
+        authtoken: env.NGROK_AUTHTOKEN,
+        basicAuth: env.TUNNEL_AUTH,
+        domain: env.TUNNEL_DOMAIN,
       });
 
-      const hasAuth = !!process.env.TUNNEL_AUTH;
+      const hasAuth = !!env.TUNNEL_AUTH;
       const isDevPort = tunnelPort !== PORT;
 
       logger.info('[Tunnel] ngrok tunnel active', {
