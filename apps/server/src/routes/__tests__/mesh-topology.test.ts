@@ -35,6 +35,7 @@ function createMockMeshCore() {
     undeny: vi.fn().mockResolvedValue(undefined),
     unregister: vi.fn().mockResolvedValue(undefined),
     list: vi.fn().mockReturnValue([]),
+    listWithHealth: vi.fn().mockReturnValue([]),
     get: vi.fn().mockReturnValue(undefined),
     listDenied: vi.fn().mockReturnValue([]),
     update: vi.fn().mockReturnValue(undefined),
@@ -216,13 +217,13 @@ describe('Mesh topology routes', () => {
   // --- GET /agents with callerNamespace ---
 
   describe('GET /api/mesh/agents with callerNamespace', () => {
-    it('passes callerNamespace to meshCore.list', async () => {
-      meshCore.list.mockReturnValue([MOCK_MANIFEST]);
+    it('passes callerNamespace to meshCore.listWithHealth', async () => {
+      meshCore.listWithHealth.mockReturnValue([MOCK_MANIFEST]);
 
       const res = await request(app).get('/api/mesh/agents?callerNamespace=ns-a');
 
       expect(res.status).toBe(200);
-      expect(meshCore.list).toHaveBeenCalledWith(
+      expect(meshCore.listWithHealth).toHaveBeenCalledWith(
         expect.objectContaining({ callerNamespace: 'ns-a' }),
       );
     });

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Loader2, Plus, Trash2, Shield } from 'lucide
 import { Badge } from '@/layers/shared/ui/badge';
 import { useTopology, useUpdateAccessRule } from '@/layers/entities/mesh';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
+import { MeshEmptyState } from './MeshEmptyState';
 
 // -- Namespace Group --
 
@@ -147,11 +148,16 @@ function AddRuleForm({ namespaces, onAdd, isPending }: AddRuleFormProps) {
 
 // -- Main TopologyPanel --
 
+interface TopologyPanelProps {
+  /** Called when the user clicks the "Go to Discovery" CTA in the empty state. */
+  onGoToDiscovery?: () => void;
+}
+
 /**
  * Topology panel — namespace groups with agent details, cross-project access rules,
  * and add rule form for managing namespace isolation policies.
  */
-export function TopologyPanel() {
+export function TopologyPanel({ onGoToDiscovery }: TopologyPanelProps = {}) {
   const { data: topology, isLoading } = useTopology();
   const { mutate: updateRule, isPending } = useUpdateAccessRule();
 
@@ -169,12 +175,12 @@ export function TopologyPanel() {
 
   if (namespaces.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <Shield className="size-8 text-muted-foreground/50" />
-        <p className="text-sm text-muted-foreground">
-          No namespaces found. Register agents to see the topology.
-        </p>
-      </div>
+      <MeshEmptyState
+        icon={Shield}
+        headline="Cross-project access requires multiple namespaces"
+        description="Register agents from different directories to create namespaces, then configure cross-namespace access rules."
+        action={onGoToDiscovery ? { label: 'Go to Discovery', onClick: onGoToDiscovery } : undefined}
+      />
     );
   }
 

@@ -1,4 +1,3 @@
-import os from 'os';
 import path from 'path';
 import { createApp } from './app.js';
 import { agentManager } from './services/core/agent-manager.js';
@@ -23,6 +22,7 @@ import { createMeshRouter } from './routes/mesh.js';
 import { setMeshEnabled } from './services/mesh/mesh-state.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { INTERVALS } from './config/constants.js';
+import { resolveDorkHome } from './lib/dork-home.js';
 
 const PORT = parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10);
 
@@ -35,6 +35,11 @@ let traceStore: TraceStore | undefined;
 let meshCore: MeshCore | undefined;
 
 async function start() {
+  // Resolve data directory once and make it available to all downstream services.
+  // Priority: DORK_HOME env var > .temp/.dork (dev) > ~/.dork (production)
+  const dorkHome = resolveDorkHome();
+  process.env.DORK_HOME = dorkHome;
+
   const logLevel = process.env.DORKOS_LOG_LEVEL
     ? parseInt(process.env.DORKOS_LOG_LEVEL, 10)
     : undefined;
@@ -57,7 +62,6 @@ async function start() {
 
   let pulseStore: PulseStore | undefined;
   if (pulseEnabled) {
-    const dorkHome = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
     pulseStore = new PulseStore(dorkHome);
     logger.info('[Pulse] PulseStore initialized');
   }
@@ -67,7 +71,6 @@ async function start() {
   const relayEnabled = process.env.DORKOS_RELAY_ENABLED === 'true' || relayConfig?.enabled;
 
   if (relayEnabled) {
-    const dorkHome = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
     const dataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
     const adapterRegistry = new AdapterRegistry();
     relayCore = new RelayCore({ dataDir, adapterRegistry });
@@ -96,8 +99,6 @@ async function start() {
   const meshEnabled = process.env.DORKOS_MESH_ENABLED === 'true' || meshConfig?.enabled;
 
   if (meshEnabled) {
-    const dorkHome = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
-
     // Wire SignalEmitter when both Mesh and Relay are enabled so MeshCore can
     // broadcast lifecycle signals. When Relay is absent, signalEmitter stays
     // undefined and MeshCore silently skips signal emission.

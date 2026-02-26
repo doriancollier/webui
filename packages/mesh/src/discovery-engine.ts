@@ -26,6 +26,8 @@ export const EXCLUDED_DIRS = new Set([
   'venv',
   '.tox',
   '.DS_Store',
+  // IDE extension/plugin directories — contain vendored packages, not agent projects
+  'extensions',
 ]);
 
 /**
@@ -107,35 +109,36 @@ export async function* scanDirectory(
     if (visited.has(realDir)) continue;
     visited.add(realDir);
 
-    // Check for existing .dork/agent.json — auto-import instead of running strategies
+    // Check for existing .dork/agent.json — auto-import but continue BFS into children
     const manifest = await readManifest(dir);
-    if (manifest) {
-      yield { type: 'auto-import', manifest, path: dir };
-      // Don't descend further into a manifested directory
-      continue;
+    const isManifested = !!manifest;
+    if (isManifested) {
+      yield { type: 'auto-import', manifest: manifest!, path: dir };
     }
 
-    // Filter denied paths
+    // Denied paths are fully excluded — skip candidate and do not descend
     if (denialList.isDenied(realDir)) continue;
 
-    // Filter already-registered paths
-    if (registry.getByPath(realDir)) continue;
+    // Already-registered paths are skipped as candidates but BFS still descends
+    const isRegistered = !!registry.getByPath(realDir);
 
-    // Run strategies — first match wins
-    for (const strategy of strategies) {
-      try {
-        if (await strategy.detect(dir)) {
-          const hints = await strategy.extractHints(dir);
-          yield {
-            path: dir,
-            strategy: strategy.name,
-            hints,
-            discoveredAt: new Date().toISOString(),
-          };
-          break;
+    // Run strategies only for unmanifested, unregistered directories
+    if (!isManifested && !isRegistered) {
+      for (const strategy of strategies) {
+        try {
+          if (await strategy.detect(dir)) {
+            const hints = await strategy.extractHints(dir);
+            yield {
+              path: dir,
+              strategy: strategy.name,
+              hints,
+              discoveredAt: new Date().toISOString(),
+            };
+            break;
+          }
+        } catch {
+          // Strategy errors are non-fatal — continue to next strategy
         }
-      } catch {
-        // Strategy errors are non-fatal — continue to next strategy
       }
     }
 

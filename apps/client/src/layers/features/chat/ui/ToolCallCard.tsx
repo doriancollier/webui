@@ -20,10 +20,16 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
   }[toolCall.status];
 
   return (
-    <div className="bg-muted/50 hover:border-border mt-px rounded border text-sm transition-all duration-150 first:mt-1 hover:shadow-sm">
+    <div
+      className="bg-muted/50 hover:border-border mt-px rounded border text-sm transition-all duration-150 first:mt-1 hover:shadow-sm"
+      data-testid="tool-call-card"
+      data-tool-name={toolCall.toolName}
+      data-status={toolCall.status}
+    >
       <button
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-3 py-1"
+        aria-expanded={expanded}
       >
         {statusIcon}
         <span className="text-3xs font-mono">

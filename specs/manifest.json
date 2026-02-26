@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 62,
+  "nextNumber": 65,
   "specs": [
     {
       "number": 1,
@@ -426,6 +426,27 @@
       "number": 61,
       "slug": "browser-testing-system",
       "title": "Browser Testing System",
+      "created": "2026-02-25",
+      "status": "ideation"
+    },
+    {
+      "number": 62,
+      "slug": "mesh-panel-ux-overhaul",
+      "title": "Mesh Panel UI/UX Overhaul",
+      "created": "2026-02-25",
+      "status": "specified"
+    },
+    {
+      "number": 63,
+      "slug": "db-drizzle-consolidation",
+      "title": "Database Consolidation — Single DB, packages/db, Drizzle ORM",
+      "created": "2026-02-25",
+      "status": "specified"
+    },
+    {
+      "number": 64,
+      "slug": "env-var-discipline",
+      "title": "Disciplined Environment Variable Handling",
       "created": "2026-02-25",
       "status": "ideation"
     }

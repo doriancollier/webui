@@ -93,8 +93,8 @@ describe('BFS traversal', () => {
   it('finds agents in nested directories up to maxDepth', async () => {
     const root = await makeTempDir();
     const projectA = path.join(root, 'project-a');
-    await fs.mkdir(path.join(projectA, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(projectA, '.claude', 'CLAUDE.md'), '# A', 'utf-8');
+    await fs.mkdir(projectA, { recursive: true });
+    await fs.writeFile(path.join(projectA, 'CLAUDE.md'), '# A', 'utf-8');
 
     const projectB = path.join(root, 'nested', 'project-b');
     await fs.mkdir(path.join(projectB, '.cursor'), { recursive: true });
@@ -111,8 +111,8 @@ describe('BFS traversal', () => {
 
     // depth 1 project (should be found)
     const shallow = path.join(root, 'shallow');
-    await fs.mkdir(path.join(shallow, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(shallow, '.claude', 'CLAUDE.md'), '# Shallow', 'utf-8');
+    await fs.mkdir(shallow, { recursive: true });
+    await fs.writeFile(path.join(shallow, 'CLAUDE.md'), '# Shallow', 'utf-8');
 
     // depth 2 project (should be skipped at maxDepth=1)
     const deep = path.join(root, 'level1', 'deep');
@@ -127,8 +127,8 @@ describe('BFS traversal', () => {
   it('skips node_modules directories', async () => {
     const root = await makeTempDir();
     const hidden = path.join(root, 'node_modules', 'hidden-project');
-    await fs.mkdir(path.join(hidden, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(hidden, '.claude', 'CLAUDE.md'), '# Hidden', 'utf-8');
+    await fs.mkdir(hidden, { recursive: true });
+    await fs.writeFile(path.join(hidden, 'CLAUDE.md'), '# Hidden', 'utf-8');
 
     const results = await collectAll(root);
     const candidates = results.filter(isCandidate);
@@ -137,10 +137,10 @@ describe('BFS traversal', () => {
 
   it('uses first matching strategy (first match wins)', async () => {
     const root = await makeTempDir();
-    // Create both .claude/CLAUDE.md and .cursor — ClaudeCode should win
+    // Create both root CLAUDE.md and .cursor — ClaudeCode should win
     const project = path.join(root, 'multi');
-    await fs.mkdir(path.join(project, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(project, '.claude', 'CLAUDE.md'), '# Multi', 'utf-8');
+    await fs.mkdir(project, { recursive: true });
+    await fs.writeFile(path.join(project, 'CLAUDE.md'), '# Multi', 'utf-8');
     await fs.mkdir(path.join(project, '.cursor'), { recursive: true });
 
     const results = await collectAll(root);
@@ -158,8 +158,8 @@ describe('registry and denial filtering', () => {
   it('skips already-registered project paths', async () => {
     const root = await makeTempDir();
     const project = path.join(root, 'registered');
-    await fs.mkdir(path.join(project, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(project, '.claude', 'CLAUDE.md'), '# Registered', 'utf-8');
+    await fs.mkdir(project, { recursive: true });
+    await fs.writeFile(path.join(project, 'CLAUDE.md'), '# Registered', 'utf-8');
 
     const registryWithAgent: RegistryLike = {
       getByPath: vi.fn().mockReturnValue({ id: '01JKABC00001' }),
@@ -173,8 +173,8 @@ describe('registry and denial filtering', () => {
   it('skips denied project paths', async () => {
     const root = await makeTempDir();
     const project = path.join(root, 'denied');
-    await fs.mkdir(path.join(project, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(project, '.claude', 'CLAUDE.md'), '# Denied', 'utf-8');
+    await fs.mkdir(project, { recursive: true });
+    await fs.writeFile(path.join(project, 'CLAUDE.md'), '# Denied', 'utf-8');
 
     const denialListWithDenied: DenialListLike = {
       isDenied: vi.fn().mockReturnValue(true),
@@ -210,8 +210,8 @@ describe('auto-import', () => {
   it('does not yield auto-imported directory as a candidate', async () => {
     const root = await makeTempDir();
     const preRegistered = path.join(root, 'pre-registered');
-    await fs.mkdir(path.join(preRegistered, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(preRegistered, '.claude', 'CLAUDE.md'), '# Pre', 'utf-8');
+    await fs.mkdir(preRegistered, { recursive: true });
+    await fs.writeFile(path.join(preRegistered, 'CLAUDE.md'), '# Pre', 'utf-8');
     await writeManifest(preRegistered, makeManifest());
 
     const results = await collectAll(root);
@@ -228,8 +228,8 @@ describe('symlinks', () => {
   it('ignores symlinks when followSymlinks is false (default)', async () => {
     const root = await makeTempDir();
     const realProject = path.join(root, 'real-project');
-    await fs.mkdir(path.join(realProject, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(realProject, '.claude', 'CLAUDE.md'), '# Real', 'utf-8');
+    await fs.mkdir(realProject, { recursive: true });
+    await fs.writeFile(path.join(realProject, 'CLAUDE.md'), '# Real', 'utf-8');
 
     const linkDir = path.join(root, 'link-to-real');
     symlinkSync(realProject, linkDir);
@@ -246,8 +246,8 @@ describe('symlinks', () => {
   it('detects symlink cycle and skips duplicate via realpath tracking', async () => {
     const root = await makeTempDir();
     const projectDir = path.join(root, 'project');
-    await fs.mkdir(path.join(projectDir, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(projectDir, '.claude', 'CLAUDE.md'), '# Project', 'utf-8');
+    await fs.mkdir(projectDir, { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'CLAUDE.md'), '# Project', 'utf-8');
 
     // Create a symlink that points back to root (cycle)
     const cycleLink = path.join(projectDir, 'loop');

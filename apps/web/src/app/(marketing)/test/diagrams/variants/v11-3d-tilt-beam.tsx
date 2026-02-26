@@ -515,13 +515,10 @@ export function DiagramV11({ modules }: { modules: SystemModule[] }) {
   const containerRef = useRef<HTMLDivElement>(null)
   const isInView     = useInView(containerRef, VIEWPORT)
 
-  // One ref per card for beam anchor measurement
-  const cardRefs = useRef<Record<string, RefObject<HTMLDivElement | null>>>({})
-  for (const m of modules) {
-    if (!cardRefs.current[m.id]) {
-      cardRefs.current[m.id] = { current: null }
-    }
-  }
+  // One ref per card for beam anchor measurement — created once from initial modules
+  const [cardRefsMap] = useState<Record<string, RefObject<HTMLDivElement | null>>>(() =>
+    Object.fromEntries(modules.map(m => [m.id, { current: null }]))
+  )
 
   const handleToggle = useCallback((id: string) => {
     setExpandedId((prev) => (prev === id ? null : id))
@@ -579,7 +576,7 @@ export function DiagramV11({ modules }: { modules: SystemModule[] }) {
                   onHoverStart={() => setHoveredId(module.id)}
                   onHoverEnd={() => setHoveredId(null)}
                   onToggle={() => handleToggle(module.id)}
-                  cardRef={cardRefs.current[module.id]}
+                  cardRef={cardRefsMap[module.id]}
                   entryVariant={staggeredReveal}
                 />
               </div>
@@ -591,7 +588,7 @@ export function DiagramV11({ modules }: { modules: SystemModule[] }) {
         <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
           <BeamOverlay
             containerRef={containerRef}
-            cardRefs={cardRefs.current}
+            cardRefs={cardRefsMap}
             activeId={hoveredId}
             isVisible={isInView}
           />

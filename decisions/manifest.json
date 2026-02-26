@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 38,
+  "nextNumber": 42,
   "decisions": [
     {
       "number": 1,
@@ -329,6 +329,42 @@
       "created": "2026-02-25",
       "extractedFrom": "mesh-observability-lifecycle",
       "specSlug": "mesh-observability-lifecycle"
+    },
+    {
+      "number": 38,
+      "slug": "progressive-disclosure-mode-ab-for-feature-panels",
+      "title": "Use Progressive Disclosure Mode A/B for Feature Panels",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "mesh-panel-ux-overhaul",
+      "specSlug": "mesh-panel-ux-overhaul"
+    },
+    {
+      "number": 39,
+      "slug": "use-drizzle-orm-for-database-layer",
+      "title": "Use Drizzle ORM for Database Layer",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "db-drizzle-consolidation",
+      "specSlug": "db-drizzle-consolidation"
+    },
+    {
+      "number": 40,
+      "slug": "consolidate-to-single-dork-db",
+      "title": "Consolidate All DorkOS Databases to Single dork.db",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "db-drizzle-consolidation",
+      "specSlug": "db-drizzle-consolidation"
+    },
+    {
+      "number": 41,
+      "slug": "lefthook-pre-commit-for-migration-enforcement",
+      "title": "Use Lefthook Pre-Commit Hook for Migration Enforcement",
+      "status": "draft",
+      "created": "2026-02-25",
+      "extractedFrom": "db-drizzle-consolidation",
+      "specSlug": "db-drizzle-consolidation"
     }
   ]
 }

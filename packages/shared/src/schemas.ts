@@ -521,11 +521,18 @@ export const ServerConfigSchema = z
       })
       .optional()
       .openapi({ description: 'Relay message bus feature state' }),
+    boundary: z
+      .string()
+      .openapi({ description: 'Server boundary path (home directory or configured boundary)' }),
     mesh: z
       .object({
         enabled: z
           .boolean()
           .openapi({ description: 'Whether the Mesh agent discovery subsystem is enabled' }),
+        scanRoots: z
+          .array(z.string())
+          .optional()
+          .openapi({ description: 'User-configured scan roots for agent discovery' }),
       })
       .optional()
       .openapi({ description: 'Mesh agent discovery feature state' }),

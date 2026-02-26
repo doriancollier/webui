@@ -12,3 +12,6 @@ export type { AgentNodeData } from './ui/AgentNode';
 export { TopologyGraph } from './ui/TopologyGraph';
 export { MeshStatsHeader } from './ui/MeshStatsHeader';
 export { AgentHealthDetail } from './ui/AgentHealthDetail';
+export { MeshEmptyState } from './ui/MeshEmptyState';
+export { ScanRootInput } from './ui/ScanRootInput';
+export { DiscoveryView } from './ui/DiscoveryView';

@@ -1,6 +1,6 @@
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
 import type { TraceSpan, DeliveryMetrics } from '@dorkos/shared/relay-schemas';
-import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus } from '@dorkos/shared/mesh-schemas';
+import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus, TopologyView, CrossNamespaceRule, UpdateAccessRuleRequest } from '@dorkos/shared/mesh-schemas';
 import type {
   StreamEvent,
   Session,
@@ -227,6 +227,7 @@ export class DirectTransport implements Transport {
         authEnabled: false,
         tokenConfigured: false,
       },
+      boundary: this.services.vaultRoot,
     };
   }
 
@@ -377,6 +378,18 @@ export class DirectTransport implements Transport {
   }
 
   async sendMeshHeartbeat(_id: string, _event?: string): Promise<{ success: boolean }> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async getMeshTopology(_namespace?: string): Promise<TopologyView> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async updateMeshAccessRule(_body: UpdateAccessRuleRequest): Promise<CrossNamespaceRule> {
+    throw new Error('Mesh is not supported in embedded mode');
+  }
+
+  async getMeshAgentAccess(_agentId: string): Promise<{ agents: AgentManifest[] }> {
     throw new Error('Mesh is not supported in embedded mode');
   }
 }

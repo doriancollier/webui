@@ -20,6 +20,10 @@ vi.mock('../../services/core/agent-manager.js', () => ({
   agentManager: {},
 }));
 
+vi.mock('../../lib/boundary.js', () => ({
+  getBoundary: () => '/Users/test-user',
+}));
+
 function createTempDir(): string {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'dorkos-config-route-test-'));
 }
@@ -160,5 +164,49 @@ describe('PATCH /api/config', () => {
       .expect(400);
 
     expect(response.body.error).toBe('Validation failed');
+  });
+});
+
+describe('GET /api/config', () => {
+  let app: express.Express;
+  let tmpDir: string;
+
+  beforeEach(async () => {
+    tmpDir = createTempDir();
+    process.env.DORK_HOME = tmpDir;
+
+    const { initConfigManager } = await import('../../services/core/config-manager.js');
+    initConfigManager(tmpDir);
+
+    const configRouter = (await import('../config.js')).default;
+    app = express();
+    app.use(express.json());
+    app.use('/api/config', configRouter);
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    vi.resetModules();
+  });
+
+  it('includes boundary field in response', async () => {
+    const res = await request(app).get('/api/config');
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveProperty('boundary');
+    expect(typeof res.body.boundary).toBe('string');
+    expect(res.body.boundary).toBe('/Users/test-user');
+  });
+
+  it('includes existing config fields alongside boundary', async () => {
+    const res = await request(app).get('/api/config').expect(200);
+
+    expect(res.body).toHaveProperty('version');
+    expect(res.body).toHaveProperty('workingDirectory');
+    expect(res.body).toHaveProperty('boundary');
+    expect(res.body).toHaveProperty('tunnel');
+    expect(res.body).toHaveProperty('pulse');
+    expect(res.body).toHaveProperty('relay');
+    expect(res.body).toHaveProperty('mesh');
   });
 });

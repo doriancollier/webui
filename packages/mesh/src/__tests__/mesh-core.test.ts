@@ -45,8 +45,8 @@ function makeManifest(overrides: Partial<AgentManifest> = {}): AgentManifest {
 
 async function setupProjects(rootDir: string) {
   const projectA = path.join(rootDir, 'project-a');
-  await fs.mkdir(path.join(projectA, '.claude'), { recursive: true });
-  await fs.writeFile(path.join(projectA, '.claude', 'CLAUDE.md'), '# Project A', 'utf-8');
+  await fs.mkdir(projectA, { recursive: true });
+  await fs.writeFile(path.join(projectA, 'CLAUDE.md'), '# Project A', 'utf-8');
 
   const projectB = path.join(rootDir, 'project-b');
   await fs.mkdir(path.join(projectB, '.cursor'), { recursive: true });
@@ -365,8 +365,8 @@ describe('namespace wiring', () => {
     const scanRoot = path.join(base, 'scan');
     const projectDir = path.join(scanRoot, 'team-alpha', 'agent-one');
     await fs.mkdir(projectDir, { recursive: true });
-    await fs.mkdir(path.join(projectDir, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(projectDir, '.claude', 'CLAUDE.md'), '# Agent', 'utf-8');
+    await fs.mkdir(projectDir, { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'CLAUDE.md'), '# Agent', 'utf-8');
     await fs.mkdir(dataDir, { recursive: true });
 
     const mesh = new MeshCore({ dataDir, defaultScanRoot: scanRoot });
@@ -391,8 +391,8 @@ describe('namespace wiring', () => {
     const scanRoot = path.join(base, 'scan');
     const projectDir = path.join(scanRoot, 'team-alpha', 'agent-one');
     await fs.mkdir(projectDir, { recursive: true });
-    await fs.mkdir(path.join(projectDir, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(projectDir, '.claude', 'CLAUDE.md'), '# Agent', 'utf-8');
+    await fs.mkdir(projectDir, { recursive: true });
+    await fs.writeFile(path.join(projectDir, 'CLAUDE.md'), '# Agent', 'utf-8');
     await fs.mkdir(dataDir, { recursive: true });
 
     const mesh = new MeshCore({ dataDir, defaultScanRoot: scanRoot });

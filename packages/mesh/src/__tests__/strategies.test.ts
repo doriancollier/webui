@@ -31,15 +31,22 @@ afterEach(async () => {
 describe('ClaudeCodeStrategy', () => {
   const strategy = new ClaudeCodeStrategy();
 
-  it('returns true for a directory with .claude/CLAUDE.md', async () => {
+  it('returns true for a directory with CLAUDE.md at the root', async () => {
     const dir = await makeTempDir();
-    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(dir, '.claude', 'CLAUDE.md'), '# Test project', 'utf-8');
+    await fs.writeFile(path.join(dir, 'CLAUDE.md'), '# My Project', 'utf-8');
 
     expect(await strategy.detect(dir)).toBe(true);
   });
 
-  it('returns false when .claude/ exists but CLAUDE.md is missing', async () => {
+  it('returns true when both CLAUDE.md and .claude/ exist (typical project layout)', async () => {
+    const dir = await makeTempDir();
+    await fs.writeFile(path.join(dir, 'CLAUDE.md'), '# My Project', 'utf-8');
+    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
+
+    expect(await strategy.detect(dir)).toBe(true);
+  });
+
+  it('returns false when only .claude/ exists without root CLAUDE.md (global config dir pattern)', async () => {
     const dir = await makeTempDir();
     await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
 
@@ -59,8 +66,8 @@ describe('ClaudeCodeStrategy', () => {
   it('extractHints returns suggestedName = basename(dir) and detectedRuntime = claude-code', async () => {
     const parent = await makeTempDir();
     const dir = path.join(parent, 'claude-project');
-    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(dir, '.claude', 'CLAUDE.md'), '# My Project', 'utf-8');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'CLAUDE.md'), '# My Project', 'utf-8');
 
     const hints = await strategy.extractHints(dir);
 

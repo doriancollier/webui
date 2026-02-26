@@ -1,9 +1,11 @@
 /**
  * Discovery strategy for Claude Code agent projects.
  *
- * Detects directories containing a `.claude/` folder with a `CLAUDE.md` file.
- * Extracts the project name from the directory basename and attempts to
- * read a description from the CLAUDE.md contents.
+ * Detects directories containing a `CLAUDE.md` file at the project root.
+ * This is the canonical Claude Code convention — `CLAUDE.md` lives at the
+ * root of the project, while `.claude/` holds configuration (commands, rules).
+ * Checking for root-level `CLAUDE.md` avoids false positives from the global
+ * `~/.claude/` config directory which is present on any machine running Claude.
  *
  * @module mesh/strategies/claude-code-strategy
  */
@@ -16,8 +18,13 @@ import type { DiscoveryStrategy } from '../types.js';
 const MAX_CLAUDEMD_BYTES = 4096;
 
 /**
- * Detects Claude Code agent projects by the presence of `.claude/` directory
- * containing a `CLAUDE.md` file.
+ * Detects Claude Code agent projects by the presence of `CLAUDE.md` at the
+ * project root.
+ *
+ * Using root-level `CLAUDE.md` as the detection signal prevents false positives
+ * from the global `~/.claude/` directory that exists on every developer machine
+ * running Claude Code. Projects following the Claude Code convention always have
+ * `CLAUDE.md` at the project root alongside their `.claude/` config directory.
  */
 export class ClaudeCodeStrategy implements DiscoveryStrategy {
   readonly name = 'claude-code';
@@ -25,8 +32,8 @@ export class ClaudeCodeStrategy implements DiscoveryStrategy {
 
   async detect(dir: string): Promise<boolean> {
     try {
-      await fs.access(path.join(dir, '.claude', 'CLAUDE.md'));
-      return true;
+      const stat = await fs.stat(path.join(dir, 'CLAUDE.md'));
+      return stat.isFile();
     } catch {
       return false;
     }
@@ -45,13 +52,13 @@ export class ClaudeCodeStrategy implements DiscoveryStrategy {
   }
 
   /**
-   * Extract a description from the CLAUDE.md file.
+   * Extract a description from the CLAUDE.md file at the project root.
    *
    * Reads the first chunk and returns the first non-heading paragraph.
    */
   private async extractDescription(dir: string): Promise<string | undefined> {
     try {
-      const claudeMdPath = path.join(dir, '.claude', 'CLAUDE.md');
+      const claudeMdPath = path.join(dir, 'CLAUDE.md');
       const fd = await fs.open(claudeMdPath, 'r');
       try {
         const buf = Buffer.alloc(MAX_CLAUDEMD_BYTES);

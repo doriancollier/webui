@@ -55,8 +55,9 @@ export const UserConfigSchema = z.object({
   mesh: z
     .object({
       enabled: z.boolean().default(false),
+      scanRoots: z.array(z.string()).default(() => []),
     })
-    .default(() => ({ enabled: false })),
+    .default(() => ({ enabled: false, scanRoots: [] })),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;

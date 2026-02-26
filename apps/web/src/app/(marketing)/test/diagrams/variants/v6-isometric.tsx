@@ -458,13 +458,13 @@ export function DiagramV6({ modules }: { modules: SystemModule[] }) {
 
       {/* Blocks — sorted by render order (back to front for correct z-order) */}
       {BLOCK_CONFIGS.sort((a, b) => a.order - b.order).map((config) => {
-        const module = moduleMap.get(config.id)
-        if (!module) return null
+        const mod = moduleMap.get(config.id)
+        if (!mod) return null
         return (
           <IsoBlock
             key={config.id}
             config={config}
-            module={module}
+            module={mod}
             ox={OX}
             oy={OY}
             animDelay={config.order * 0.1}

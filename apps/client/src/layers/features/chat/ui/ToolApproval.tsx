@@ -73,6 +73,8 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
             ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
             : 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400'
         }`}
+        data-testid="tool-approval-decided"
+        data-decision={decided}
       >
         <span className="font-mono">{toolName}</span>
         <span className="ml-2 text-xs">{decided === 'approved' ? 'Approved' : 'Denied'}</span>
@@ -86,6 +88,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
         'my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-all duration-200',
         isActive && 'ring-2 ring-amber-500/30'
       )}
+      data-testid="tool-approval"
     >
       <div className="mb-2 flex items-center gap-2">
         <Shield className="size-(--size-icon-md) text-amber-500" />

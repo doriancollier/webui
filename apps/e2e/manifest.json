@@ -5,10 +5,10 @@
       "specFile": "tests/smoke/app-loads.spec.ts",
       "feature": "smoke",
       "description": "Smoke tests for app loading and core layout",
-      "lastRun": "",
-      "lastStatus": "",
-      "runCount": 0,
-      "passCount": 0,
+      "lastRun": "2026-02-25T23:21:56.066Z",
+      "lastStatus": "passed",
+      "runCount": 3,
+      "passCount": 3,
       "failCount": 0,
       "relatedCode": [
         "apps/client/src/App.tsx"
@@ -19,11 +19,11 @@
       "specFile": "tests/chat/send-message.spec.ts",
       "feature": "chat",
       "description": "Send message and receive streaming response",
-      "lastRun": "",
-      "lastStatus": "",
-      "runCount": 0,
+      "lastRun": "2026-02-25T21:44:28.740Z",
+      "lastStatus": "failed",
+      "runCount": 3,
       "passCount": 0,
-      "failCount": 0,
+      "failCount": 1,
       "relatedCode": [
         "apps/client/src/layers/features/chat/ui/ChatPanel.tsx",
         "apps/client/src/layers/features/chat/ui/MessageList.tsx",
@@ -36,10 +36,10 @@
       "specFile": "tests/session-list/session-management.spec.ts",
       "feature": "session-list",
       "description": "Session creation and management",
-      "lastRun": "",
-      "lastStatus": "",
-      "runCount": 0,
-      "passCount": 0,
+      "lastRun": "2026-02-25T23:21:56.066Z",
+      "lastStatus": "passed",
+      "runCount": 3,
+      "passCount": 3,
       "failCount": 0,
       "relatedCode": [
         "apps/client/src/layers/features/session-list/ui/SessionSidebar.tsx",
@@ -51,16 +51,197 @@
       "specFile": "tests/settings/settings-dialog.spec.ts",
       "feature": "settings",
       "description": "Settings dialog open/close and tab switching",
-      "lastRun": "",
-      "lastStatus": "",
-      "runCount": 0,
-      "passCount": 0,
+      "lastRun": "2026-02-25T23:21:56.066Z",
+      "lastStatus": "passed",
+      "runCount": 5,
+      "passCount": 5,
       "failCount": 0,
       "relatedCode": [
         "apps/client/src/layers/features/settings/ui/SettingsDialog.tsx"
       ],
       "lastModified": ""
+    },
+    "pulse-scheduler": {
+      "specFile": "tests/pulse/pulse-scheduler.spec.ts",
+      "feature": "pulse",
+      "description": "schedule toggle switch is interactive, opens and closes the Pulse Scheduler dialog, preset populates schedule field, displays existing schedules, shows cron preset buttons in create dialog, opens and closes the New Schedule dialog, enables create button when required fields are filled",
+      "lastRun": "2026-02-25T23:21:56.066Z",
+      "lastStatus": "passed",
+      "runCount": 4,
+      "passCount": 4,
+      "failCount": 0,
+      "relatedCode": [],
+      "lastModified": ""
+    },
+    "mesh-panel": {
+      "specFile": "tests/mesh/mesh-panel.spec.ts",
+      "feature": "mesh",
+      "description": "shows not-enabled state when mesh is disabled, opens and closes the Mesh dialog",
+      "lastRun": "2026-02-25T23:21:56.066Z",
+      "lastStatus": "passed",
+      "runCount": 8,
+      "passCount": 7,
+      "failCount": 1,
+      "relatedCode": [],
+      "lastModified": ""
+    },
+    "relay-panel": {
+      "specFile": "tests/relay/relay-panel.spec.ts",
+      "feature": "relay",
+      "description": "shows not-enabled state when relay is disabled, opens and closes the Relay dialog",
+      "lastRun": "2026-02-25T23:21:56.066Z",
+      "lastStatus": "passed",
+      "runCount": 8,
+      "passCount": 6,
+      "failCount": 2,
+      "relatedCode": [],
+      "lastModified": ""
     }
   },
-  "runHistory": []
+  "runHistory": [
+    {
+      "id": "2026-02-25T21-40-30",
+      "timestamp": "2026-02-25T21:40:30.882Z",
+      "total": 6,
+      "passed": 6,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 3684
+    },
+    {
+      "id": "2026-02-25T21-41-08",
+      "timestamp": "2026-02-25T21:41:08.823Z",
+      "total": 2,
+      "passed": 0,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 31595
+    },
+    {
+      "id": "2026-02-25T21-43-06",
+      "timestamp": "2026-02-25T21:43:06.465Z",
+      "total": 2,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 31384
+    },
+    {
+      "id": "2026-02-25T21-44-28",
+      "timestamp": "2026-02-25T21:44:28.740Z",
+      "total": 2,
+      "passed": 1,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 64788
+    },
+    {
+      "id": "2026-02-25T23-03-45",
+      "timestamp": "2026-02-25T23:03:45.347Z",
+      "total": 7,
+      "passed": 7,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 4843
+    },
+    {
+      "id": "2026-02-25T23-04-00",
+      "timestamp": "2026-02-25T23:04:00.423Z",
+      "total": 21,
+      "passed": 21,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 9592
+    },
+    {
+      "id": "2026-02-25T23-06-05",
+      "timestamp": "2026-02-25T23:06:05.117Z",
+      "total": 4,
+      "passed": 2,
+      "failed": 2,
+      "skipped": 0,
+      "duration": 2987
+    },
+    {
+      "id": "2026-02-25T23-06-26",
+      "timestamp": "2026-02-25T23:06:26.239Z",
+      "total": 4,
+      "passed": 4,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 2645
+    },
+    {
+      "id": "2026-02-25T23-06-36",
+      "timestamp": "2026-02-25T23:06:36.607Z",
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 5364
+    },
+    {
+      "id": "2026-02-25T23-07-47",
+      "timestamp": "2026-02-25T23:07:47.583Z",
+      "total": 8,
+      "passed": 8,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 4456
+    },
+    {
+      "id": "2026-02-25T23-08-03",
+      "timestamp": "2026-02-25T23:08:03.809Z",
+      "total": 24,
+      "passed": 24,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 9666
+    },
+    {
+      "id": "2026-02-25T23-08-21",
+      "timestamp": "2026-02-25T23:08:21.908Z",
+      "total": 23,
+      "passed": 23,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 7191
+    },
+    {
+      "id": "2026-02-25T23-20-51",
+      "timestamp": "2026-02-25T23:20:51.823Z",
+      "total": 13,
+      "passed": 12,
+      "failed": 1,
+      "skipped": 0,
+      "duration": 6067
+    },
+    {
+      "id": "2026-02-25T23-21-16",
+      "timestamp": "2026-02-25T23:21:16.273Z",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 6197
+    },
+    {
+      "id": "2026-02-25T23-21-38",
+      "timestamp": "2026-02-25T23:21:38.125Z",
+      "total": 39,
+      "passed": 39,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 15490
+    },
+    {
+      "id": "2026-02-25T23-21-56",
+      "timestamp": "2026-02-25T23:21:56.066Z",
+      "total": 32,
+      "passed": 32,
+      "failed": 0,
+      "skipped": 0,
+      "duration": 9983
+    }
+  ]
 }

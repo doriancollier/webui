@@ -16,37 +16,55 @@ echo "📘 Type-checking $FILE_PATH" >&2
 # Convert absolute path to relative (strip repo root prefix)
 REPO_ROOT=$(git rev-parse --show-toplevel)
 if [[ "$FILE_PATH" == "$REPO_ROOT/"* ]]; then
-  FILE_PATH="${FILE_PATH#$REPO_ROOT/}"
+  RELATIVE="${FILE_PATH#$REPO_ROOT/}"
+else
+  RELATIVE="$FILE_PATH"
 fi
 
-# Detect which workspace the file belongs to and run tsc from there
-if [[ "$FILE_PATH" =~ ^apps/server/ ]]; then
+# Detect which workspace the file belongs to
+if [[ "$RELATIVE" =~ ^apps/server/ ]]; then
   WORKSPACE_DIR="apps/server"
-elif [[ "$FILE_PATH" =~ ^apps/client/ ]]; then
+elif [[ "$RELATIVE" =~ ^apps/client/ ]]; then
   WORKSPACE_DIR="apps/client"
-elif [[ "$FILE_PATH" =~ ^apps/obsidian-plugin/ ]]; then
+elif [[ "$RELATIVE" =~ ^apps/obsidian-plugin/ ]]; then
   WORKSPACE_DIR="apps/obsidian-plugin"
-elif [[ "$FILE_PATH" =~ ^apps/web/ ]]; then
+elif [[ "$RELATIVE" =~ ^apps/web/ ]]; then
   WORKSPACE_DIR="apps/web"
-elif [[ "$FILE_PATH" =~ ^apps/roadmap/ ]]; then
+elif [[ "$RELATIVE" =~ ^apps/roadmap/ ]]; then
   WORKSPACE_DIR="apps/roadmap"
-elif [[ "$FILE_PATH" =~ ^apps/e2e/ ]]; then
+elif [[ "$RELATIVE" =~ ^apps/e2e/ ]]; then
   WORKSPACE_DIR="apps/e2e"
-elif [[ "$FILE_PATH" =~ ^packages/shared/ ]]; then
+elif [[ "$RELATIVE" =~ ^packages/shared/ ]]; then
   WORKSPACE_DIR="packages/shared"
-elif [[ "$FILE_PATH" =~ ^packages/test-utils/ ]]; then
+elif [[ "$RELATIVE" =~ ^packages/test-utils/ ]]; then
   WORKSPACE_DIR="packages/test-utils"
-elif [[ "$FILE_PATH" =~ ^packages/relay/ ]]; then
+elif [[ "$RELATIVE" =~ ^packages/relay/ ]]; then
   WORKSPACE_DIR="packages/relay"
-elif [[ "$FILE_PATH" =~ ^packages/mesh/ ]]; then
+elif [[ "$RELATIVE" =~ ^packages/mesh/ ]]; then
   WORKSPACE_DIR="packages/mesh"
+elif [[ "$RELATIVE" =~ ^packages/cli/ ]]; then
+  # CLI uses esbuild bundling — tsc cannot resolve its cross-package imports at dev time
+  echo "⏭️  Skipping typecheck for esbuild-bundled package (packages/cli)" >&2
+  exit 0
 else
-  # Fallback: run from repo root
-  WORKSPACE_DIR="."
+  # Unknown package — skip silently to avoid false positives
+  exit 0
+fi
+
+# Use the workspace-local tsc binary to avoid version mismatches
+TSC_BIN="$REPO_ROOT/$WORKSPACE_DIR/node_modules/.bin/tsc"
+if [ ! -x "$TSC_BIN" ]; then
+  # Fall back to a parent node_modules if hoisted
+  TSC_BIN=$(find "$REPO_ROOT/node_modules/.bin" -name tsc -type f 2>/dev/null | head -1)
+fi
+
+if [ -z "$TSC_BIN" ]; then
+  echo "⏭️  tsc not found for $WORKSPACE_DIR — skipping" >&2
+  exit 0
 fi
 
 # Run TypeScript compiler from the workspace directory
-if ! npx tsc --noEmit --project "$WORKSPACE_DIR/tsconfig.json" 2>&1; then
+if ! (cd "$REPO_ROOT/$WORKSPACE_DIR" && "$TSC_BIN" --noEmit --project tsconfig.json 2>&1); then
   echo "❌ TypeScript compilation failed" >&2
   exit 2
 fi

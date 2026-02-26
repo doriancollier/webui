@@ -79,8 +79,8 @@ if (values.version) {
   process.exit(0);
 }
 
-// Ensure ~/.dork config directory exists
-const DORK_HOME = path.join(os.homedir(), '.dork');
+// Resolve data directory: explicit env var > ~/.dork (CLI always runs in production mode)
+const DORK_HOME = process.env.DORK_HOME || path.join(os.homedir(), '.dork');
 fs.mkdirSync(DORK_HOME, { recursive: true });
 fs.mkdirSync(path.join(DORK_HOME, 'logs'), { recursive: true });
 process.env.DORK_HOME = DORK_HOME;

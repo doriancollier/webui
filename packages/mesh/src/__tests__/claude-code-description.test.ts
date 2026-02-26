@@ -102,12 +102,12 @@ Should not appear.
 describe('ClaudeCodeStrategy description extraction', () => {
   const strategy = new ClaudeCodeStrategy();
 
-  it('extracts description from CLAUDE.md', async () => {
+  it('extracts description from root CLAUDE.md', async () => {
     const parent = await makeTempDir();
     const dir = path.join(parent, 'my-project');
-    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
+    await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(
-      path.join(dir, '.claude', 'CLAUDE.md'),
+      path.join(dir, 'CLAUDE.md'),
       `# CLAUDE.md
 
 This project is a backend API for managing widgets.
@@ -128,12 +128,12 @@ Some commands here.
     );
   });
 
-  it('returns no description when CLAUDE.md has only headings', async () => {
+  it('returns no description when root CLAUDE.md has only headings', async () => {
     const parent = await makeTempDir();
     const dir = path.join(parent, 'headings-only');
-    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
+    await fs.mkdir(dir, { recursive: true });
     await fs.writeFile(
-      path.join(dir, '.claude', 'CLAUDE.md'),
+      path.join(dir, 'CLAUDE.md'),
       `# Title\n## Subtitle\n### Section\n`,
       'utf-8',
     );
@@ -142,11 +142,11 @@ Some commands here.
     expect(hints.description).toBeUndefined();
   });
 
-  it('returns no description when CLAUDE.md is empty', async () => {
+  it('returns no description when root CLAUDE.md is empty', async () => {
     const parent = await makeTempDir();
     const dir = path.join(parent, 'empty-md');
-    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
-    await fs.writeFile(path.join(dir, '.claude', 'CLAUDE.md'), '', 'utf-8');
+    await fs.mkdir(dir, { recursive: true });
+    await fs.writeFile(path.join(dir, 'CLAUDE.md'), '', 'utf-8');
 
     const hints = await strategy.extractHints(dir);
     expect(hints.description).toBeUndefined();
@@ -155,7 +155,7 @@ Some commands here.
   it('returns no description when CLAUDE.md does not exist (extractHints still works)', async () => {
     const parent = await makeTempDir();
     const dir = path.join(parent, 'no-claude-md');
-    await fs.mkdir(path.join(dir, '.claude'), { recursive: true });
+    await fs.mkdir(dir, { recursive: true });
     // No CLAUDE.md file — extractDescription should return undefined gracefully
 
     const hints = await strategy.extractHints(dir);

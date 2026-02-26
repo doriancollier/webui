@@ -16,3 +16,4 @@ export { useMeshAgentHealth } from './model/use-mesh-agent-health';
 export { useMeshHeartbeat } from './model/use-mesh-heartbeat';
 export { useTopology } from './model/use-mesh-topology';
 export { useUpdateAccessRule, useAgentAccess } from './model/use-mesh-access';
+export { useMeshScanRoots } from './model/use-mesh-scan-roots';

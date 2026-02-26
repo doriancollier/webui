@@ -9,6 +9,7 @@ import { getLatestVersion } from '../services/core/update-checker.js';
 import { isPulseEnabled } from '../services/pulse/pulse-state.js';
 import { isRelayEnabled } from '../services/relay/relay-state.js';
 import { isMeshEnabled } from '../services/mesh/mesh-state.js';
+import { getBoundary } from '../lib/boundary.js';
 
 declare const __CLI_VERSION__: string | undefined;
 
@@ -93,6 +94,7 @@ router.get('/', async (_req, res) => {
     port: parseInt(process.env.DORKOS_PORT || String(DEFAULT_PORT), 10),
     uptime: process.uptime(),
     workingDirectory: process.cwd(),
+    boundary: getBoundary(),
     nodeVersion: process.version,
     claudeCliPath,
     tunnel: {
@@ -110,6 +112,7 @@ router.get('/', async (_req, res) => {
     },
     mesh: {
       enabled: isMeshEnabled(),
+      scanRoots: configManager.get('mesh')?.scanRoots ?? [],
     },
   });
 });

@@ -1,6 +1,7 @@
 import type { Page, Locator } from '@playwright/test';
 import { BasePage } from './BasePage';
 
+/** Page Object Model for the main chat interface. */
 export class ChatPage {
   readonly page: Page;
   readonly basePage: BasePage;
@@ -8,14 +9,18 @@ export class ChatPage {
   readonly sendButton: Locator;
   readonly messageList: Locator;
   readonly panel: Locator;
+  readonly inferenceStreaming: Locator;
+  readonly inferenceComplete: Locator;
 
   constructor(page: Page) {
     this.page = page;
     this.basePage = new BasePage(page);
-    this.input = page.getByRole('textbox', { name: /message/i });
-    this.sendButton = page.getByRole('button', { name: /send/i });
+    this.input = page.getByRole('combobox', { name: /message claude/i });
+    this.sendButton = page.getByRole('button', { name: /send message/i });
     this.messageList = page.locator('[data-testid="message-list"]');
     this.panel = page.locator('[data-testid="chat-panel"]');
+    this.inferenceStreaming = page.locator('[data-testid="inference-indicator-streaming"]');
+    this.inferenceComplete = page.locator('[data-testid="inference-indicator-complete"]');
   }
 
   /** Navigate to the app and ensure a chat session is active. */
@@ -42,23 +47,59 @@ export class ChatPage {
     await this.sendButton.click();
   }
 
+  /** Wait for a full streaming response cycle to complete. */
   async waitForResponse(timeoutMs = 60_000) {
-    await this.page
-      .locator('[data-testid="inference-indicator-streaming"]')
+    await this.inferenceStreaming
       .waitFor({ state: 'visible', timeout: 10_000 })
       .catch(() => {});
-    await this.page
-      .locator('[data-testid="inference-indicator-streaming"]')
-      .waitFor({ state: 'hidden', timeout: timeoutMs });
+    await this.inferenceStreaming.waitFor({ state: 'hidden', timeout: timeoutMs });
   }
 
+  /** Wait for the streaming indicator to become visible (mid-stream). */
+  async waitForStreamingStart(timeoutMs = 10_000) {
+    await this.inferenceStreaming.waitFor({ state: 'visible', timeout: timeoutMs });
+  }
+
+  /** Wait for the complete indicator to appear after streaming ends. */
+  async waitForCompleteIndicator(timeoutMs = 60_000) {
+    await this.inferenceComplete.waitFor({ state: 'visible', timeout: timeoutMs });
+  }
+
+  /** Get all message items in the message list. */
   async getMessages() {
     return this.messageList.locator('[data-testid="message-item"]');
   }
 
+  /** Get the last assistant message element. */
   async lastAssistantMessage() {
     return this.messageList
       .locator('[data-testid="message-item"][data-role="assistant"]')
       .last();
+  }
+
+  /** Get all tool call cards within the message list. */
+  get toolCallCards() {
+    return this.messageList.locator('[data-testid="tool-call-card"]');
+  }
+
+  /** Get the active tool approval prompt (if any). */
+  get toolApproval() {
+    return this.messageList.locator('[data-testid="tool-approval"]');
+  }
+
+  /** Get the Approve button inside an active tool approval. */
+  get approveButton() {
+    return this.toolApproval.getByRole('button', { name: /approve/i });
+  }
+
+  /** Get the Deny button inside an active tool approval. */
+  get denyButton() {
+    return this.toolApproval.getByRole('button', { name: /deny/i });
+  }
+
+  /** Get the current session ID from the URL. */
+  async getSessionId(): Promise<string | null> {
+    const url = new URL(this.page.url());
+    return url.searchParams.get('session');
   }
 }

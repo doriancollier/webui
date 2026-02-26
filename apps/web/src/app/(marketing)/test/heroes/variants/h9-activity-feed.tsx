@@ -109,7 +109,8 @@ const INITIAL_SECONDS = [31, 28, 25, 22, 18, 15]
  * indefinitely. Only keeps the most recent MAX_VISIBLE entries.
  */
 function useActivityFeed(): FeedEntry[] {
-  const counterRef = useRef(0)
+  // Start at MAX_VISIBLE so new entries get unique ids after the initial 0..MAX_VISIBLE-1
+  const counterRef = useRef(MAX_VISIBLE)
   const poolIndexRef = useRef(0)
 
   // Build the initial snapshot — start mid-pool so the first "live" entry
@@ -121,14 +122,12 @@ function useActivityFeed(): FeedEntry[] {
     for (let i = 0; i < MAX_VISIBLE; i++) {
       const poolItem = ACTIVITY_POOL[(startIndex + i) % ACTIVITY_POOL.length]
       snapshot.push({
-        id: counterRef.current++,
+        id: i, // sequential 0..MAX_VISIBLE-1; counterRef continues from MAX_VISIBLE
         module: poolItem.module,
         text: poolItem.text,
         secondsAgo: INITIAL_SECONDS[MAX_VISIBLE - 1 - i] ?? (i + 1) * 5,
       })
     }
-    // Next live entry continues from here
-    poolIndexRef.current = 0
     return snapshot
   })
 
