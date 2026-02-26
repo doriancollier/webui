@@ -37,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Correct Pulse documentation to match implementation
 - Replace julianday() with strftime() in TraceStore latency metric
 - Correct access rule directionality, endpoint, and add priority scheme
 - Resolve React Flow zero-height error in topology tab

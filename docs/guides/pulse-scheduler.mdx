@@ -45,10 +45,12 @@ There are three ways to create a Pulse schedule.
 Open the Pulse tab and click "Create Schedule". The dialog lets you configure:
 
 - **Name** -- A human-readable label for the schedule (e.g., "Daily code review")
-- **Cron expression** -- When the job should run (see [Cron Syntax](#cron-syntax) below)
+- **Cron expression** -- When the job should run (see [Cron Syntax](#cron-syntax) below). Choose from preset buttons or build a custom expression with the visual builder.
 - **Prompt** -- The instruction sent to the agent when the job triggers
 - **Working directory** -- The directory the agent operates in
 - **Timezone** -- The timezone for the cron expression (defaults to your system timezone)
+- **Permission mode** (Advanced) -- "Allow file edits" (`acceptEdits`, default) requires the agent to request approval for file changes. "Full autonomy" (`bypassPermissions`) lets the agent execute any tool without approval.
+- **Max runtime** (Advanced) -- Maximum execution time in minutes (default: 10, max: 720). The run is cancelled if it exceeds this limit.
 
 ### REST API
 
@@ -102,12 +104,15 @@ Pulse uses standard five-field cron expressions. The PulsePanel includes a CronV
 ### Common Presets
 
 <TypeTable type={{
+  "*/5 * * * *": { type: "preset", description: "Every 5 minutes" },
   "*/15 * * * *": { type: "preset", description: "Every 15 minutes" },
   "0 * * * *": { type: "preset", description: "Every hour on the hour" },
-  "0 9 * * *": { type: "preset", description: "Daily at 9:00 AM" },
+  "0 */6 * * *": { type: "preset", description: "Every 6 hours" },
   "0 0 * * *": { type: "preset", description: "Daily at midnight" },
+  "0 9 * * *": { type: "preset", description: "Daily at 9:00 AM" },
+  "0 9 * * 1-5": { type: "preset", description: "Weekdays at 9:00 AM" },
   "0 9 * * 1": { type: "preset", description: "Every Monday at 9:00 AM" },
-  "0 0 1 * *": { type: "preset", description: "First day of every month at midnight" },
+  "0 9 1 * *": { type: "preset", description: "First day of every month at 9:00 AM" },
 }} />
 
 The TimezoneCombobox in the create dialog lets you pick a timezone for the schedule. All cron expressions are evaluated in the selected timezone.
@@ -118,19 +123,18 @@ For help building cron expressions, the visual builder in the UI is the easiest 
 
 ## Run History
 
-Every schedule execution creates a run record stored in SQLite at `~/.dork/pulse.db`. The RunHistoryPanel in the Pulse tab shows past runs with their status and timing.
+Every schedule execution creates a run record stored in the consolidated SQLite database at `~/.dork/dork.db`. The RunHistoryPanel in the Pulse tab shows past runs with their status and timing.
 
 ### Run States
 
 <TypeTable type={{
   "running": { type: "status", description: "The agent session is currently executing" },
-  "success": { type: "status", description: "The agent completed the task without errors" },
-  "failure": { type: "status", description: "The agent encountered an error during execution" },
+  "completed": { type: "status", description: "The agent completed the task without errors" },
+  "failed": { type: "status", description: "The agent encountered an error during execution" },
   "cancelled": { type: "status", description: "The run was manually cancelled by a user" },
-  "timeout": { type: "status", description: "The run exceeded the configured timeout" },
 }} />
 
-Click any run in the history to see its details, including the prompt that was sent, the working directory, timestamps, and any output the agent produced.
+Click any run in the history to open the full agent conversation in the chat UI. This navigates to the session transcript, where you can see every tool call, response, and output the agent produced during the run.
 
 ### Managing Runs
 
@@ -148,7 +152,7 @@ You can also manually trigger a schedule outside its cron timing:
 curl -X POST http://localhost:4242/api/pulse/schedules/{scheduleId}/trigger
 ```
 
-Pulse enforces a configurable concurrency cap on simultaneous runs. If the cap is reached, new triggers are queued until a running job completes. Overrun protection ensures a schedule cannot start a new run if its previous run is still active.
+Pulse enforces a configurable concurrency cap on simultaneous runs. If the cap is reached, new triggers are skipped with a warning log. Overrun protection (via croner's `protect` option) ensures a schedule cannot start a new run if its previous run is still active.
 
 ## Pulse + Relay
 
@@ -187,15 +191,15 @@ Pause and resume schedules from the PulsePanel UI or via PATCH requests:
 # Pause a schedule
 curl -X PATCH http://localhost:4242/api/pulse/schedules/{scheduleId} \
   -H "Content-Type: application/json" \
-  -d '{ "state": "paused" }'
+  -d '{ "status": "paused" }'
 
 # Resume a schedule
 curl -X PATCH http://localhost:4242/api/pulse/schedules/{scheduleId} \
   -H "Content-Type: application/json" \
-  -d '{ "state": "active" }'
+  -d '{ "status": "active" }'
 ```
 
-Pulse data is stored in SQLite at `~/.dork/pulse.db` with WAL mode for concurrent read/write access. Schedule definitions are also persisted in `~/.dork/schedules.json` as a backup.
+Pulse data (both schedule definitions and run history) is stored in the consolidated SQLite database at `~/.dork/dork.db` with WAL mode for concurrent read/write access.
 
 ## Next Steps
 
