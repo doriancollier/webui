@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdapterManager } from '../adapter-manager.js';
-import type { AdapterRegistry, RelayAdapter, AdapterConfig, AdapterStatus } from '@dorkos/relay';
+import type { AdapterRegistry, RelayAdapter } from '@dorkos/relay';
 import type { AdapterManagerDeps } from '../adapter-manager.js';
 
 // Mock fs/promises
@@ -411,7 +411,7 @@ describe('AdapterManager', () => {
 
       // First register call fails, second succeeds
       let callCount = 0;
-      vi.mocked(registry.register).mockImplementation(async (adapter: RelayAdapter) => {
+      vi.mocked(registry.register).mockImplementation(async (_adapter: RelayAdapter) => {
         callCount++;
         if (callCount === 1) throw new Error('Start failed');
       });

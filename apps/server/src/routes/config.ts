@@ -159,7 +159,7 @@ router.patch('/', (req, res) => {
       config: configManager.getAll(),
       ...(warnings.length > 0 && { warnings }),
     });
-  } catch (error) {
+  } catch (_error) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

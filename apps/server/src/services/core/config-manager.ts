@@ -55,7 +55,7 @@ class ConfigManager {
           },
         },
       });
-    } catch (error) {
+    } catch (_error) {
       if (fs.existsSync(configPath)) {
         const backupPath = configPath + '.bak';
         fs.copyFileSync(configPath, backupPath);

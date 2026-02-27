@@ -161,7 +161,7 @@ describe('Adapter MCP Tools', () => {
   describe('tool registration', () => {
     it('adapter tools are not registered when adapterManager is undefined', async () => {
       // Import the factory to verify conditional registration
-      const { createDorkOsToolServer } = await import('../mcp-tool-server.js');
+      const { createDorkOsToolServer: _createDorkOsToolServer } = await import('../mcp-tool-server.js');
 
       // The tool server with no adapterManager should not include adapter tools
       // We verify by checking the deps flow — the handler guards will block calls
