@@ -7,26 +7,6 @@ import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { SettingsDialog } from '../ui/SettingsDialog';
 
-// Mock motion/react to render plain elements
-vi.mock('motion/react', () => ({
-  motion: new Proxy(
-    {},
-    {
-      get: (_target: unknown, prop: string) => {
-        return ({
-          children,
-          ...props
-        }: Record<string, unknown> & { children?: React.ReactNode }) => {
-          const Tag = prop as keyof React.JSX.IntrinsicElements;
-          return <Tag {...props}>{children}</Tag>;
-        };
-      },
-    }
-  ),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  MotionConfig: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock useIsMobile to always return false (desktop dialog)
 vi.mock('../../../hooks/use-is-mobile', () => ({
   useIsMobile: () => false,

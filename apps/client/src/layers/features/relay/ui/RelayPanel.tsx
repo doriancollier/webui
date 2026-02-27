@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Loader2, Route } from 'lucide-react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/layers/shared/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, FeatureDisabledState } from '@/layers/shared/ui';
 import { useRelayEnabled, useRelayEventStream, useRelayAdapters, useToggleAdapter } from '@/layers/entities/relay';
 import type { AdapterListItem } from '@dorkos/shared/transport';
 import { ActivityFeed } from './ActivityFeed';
@@ -56,18 +56,12 @@ export function RelayPanel() {
 
   if (!relayEnabled) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <Route className="size-8 text-muted-foreground/50" />
-        <div>
-          <p className="font-medium">Relay is not enabled</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Relay provides inter-agent messaging. Start DorkOS with relay enabled.
-          </p>
-        </div>
-        <code className="mt-2 rounded-md bg-muted px-3 py-1.5 font-mono text-sm">
-          DORKOS_RELAY_ENABLED=true dorkos
-        </code>
-      </div>
+      <FeatureDisabledState
+        icon={Route}
+        name="Relay"
+        description="Relay provides inter-agent messaging. Start DorkOS with relay enabled."
+        command="DORKOS_RELAY_ENABLED=true dorkos"
+      />
     );
   }
 

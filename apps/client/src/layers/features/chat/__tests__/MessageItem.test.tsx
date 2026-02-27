@@ -14,30 +14,6 @@ beforeEach(() => {
   useAppStore.getState().setAutoHideToolCalls(false);
 });
 
-// Mock motion/react to render plain elements (no animation delays)
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      const { className, style, ...rest } = props as Record<string, unknown>;
-      return (
-        <div
-          className={className as string}
-          style={style as React.CSSProperties}
-          data-initial={JSON.stringify(initial)}
-          {...rest}
-        >
-          {children as React.ReactNode}
-        </div>
-      );
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock Streamdown to avoid complex rendering in unit tests
 vi.mock('streamdown', () => ({
   Streamdown: ({ children }: { children: string }) => (

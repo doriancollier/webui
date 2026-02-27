@@ -3,33 +3,6 @@ import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vite
 import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { STORAGE_KEYS } from '@/layers/shared/lib/constants';
 
-// Mock motion/react with Proxy pattern
-vi.mock('motion/react', () => ({
-  motion: new Proxy(
-    {},
-    {
-      get: (_target: unknown, prop: string) => {
-        return ({
-          children,
-          initial: _i,
-          animate: _a,
-          exit: _e,
-          transition: _t,
-          drag: _d,
-          dragConstraints: _dc,
-          dragElastic: _de,
-          onDragEnd: _ode,
-          ...props
-        }: Record<string, unknown> & { children?: React.ReactNode }) => {
-          const Tag = prop as keyof React.JSX.IntrinsicElements;
-          return <Tag {...props}>{children}</Tag>;
-        };
-      },
-    }
-  ),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock useIsMobile — default to mobile
 const mockUseIsMobile = vi.fn(() => true);
 vi.mock('@/layers/shared/model/use-is-mobile', () => ({

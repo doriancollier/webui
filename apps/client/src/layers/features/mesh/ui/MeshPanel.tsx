@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from 'react';
 import { Loader2, Network, ShieldCheck, TriangleAlert, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/layers/shared/ui';
+import { Tabs, TabsList, TabsTrigger, TabsContent, FeatureDisabledState } from '@/layers/shared/ui';
 import { Badge } from '@/layers/shared/ui/badge';
 import {
   useMeshEnabled,
@@ -155,18 +155,12 @@ export function MeshPanel() {
 
   if (!meshEnabled) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <Network className="size-8 text-muted-foreground/50" />
-        <div>
-          <p className="font-medium">Mesh is not enabled</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Mesh provides agent discovery and registry. Start DorkOS with mesh enabled.
-          </p>
-        </div>
-        <code className="mt-2 rounded-md bg-muted px-3 py-1.5 font-mono text-sm">
-          DORKOS_MESH_ENABLED=true dorkos
-        </code>
-      </div>
+      <FeatureDisabledState
+        icon={Network}
+        name="Mesh"
+        description="Mesh provides agent discovery and registry. Start DorkOS with mesh enabled."
+        command="DORKOS_MESH_ENABLED=true dorkos"
+      />
     );
   }
 
@@ -237,15 +231,31 @@ export function MeshPanel() {
                     </div>
                   }
                 >
-                  <LazyTopologyGraph onSelectAgent={setSelectedAgentId} />
+                  <LazyTopologyGraph
+                    onSelectAgent={setSelectedAgentId}
+                    // onOpenSettings omitted — requires agent projectPath which isn't
+                    // exposed in the topology data yet. Settings button in NodeToolbar
+                    // hides itself when this callback is absent.
+                  />
                 </Suspense>
               </div>
-              {selectedAgentId && (
-                <AgentHealthDetail
-                  agentId={selectedAgentId}
-                  onClose={() => setSelectedAgentId(null)}
-                />
-              )}
+              <AnimatePresence>
+                {selectedAgentId && (
+                  <motion.div
+                    key={selectedAgentId}
+                    initial={{ x: 64, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    exit={{ x: 64, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="absolute right-0 top-0 bottom-0"
+                  >
+                    <AgentHealthDetail
+                      agentId={selectedAgentId}
+                      onClose={() => setSelectedAgentId(null)}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </TabsContent>
 
             <TabsContent value="discovery" className="min-h-0 flex-1 overflow-y-auto">

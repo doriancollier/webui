@@ -1,4 +1,4 @@
-import { X } from 'lucide-react';
+import { Settings, X } from 'lucide-react';
 import { Badge } from '@/layers/shared/ui/badge';
 import { useMeshAgentHealth } from '@/layers/entities/mesh';
 
@@ -60,6 +60,8 @@ interface AgentHealthDetailProps {
   agentId: string;
   /** Callback invoked when the user closes the detail panel. */
   onClose: () => void;
+  /** Optional callback to open the agent settings dialog. */
+  onOpenSettings?: () => void;
 }
 
 /**
@@ -68,7 +70,7 @@ interface AgentHealthDetailProps {
  * Renders a loading state while the query is in flight and a "not found"
  * message when no health data is available for the given `agentId`.
  */
-export function AgentHealthDetail({ agentId, onClose }: AgentHealthDetailProps) {
+export function AgentHealthDetail({ agentId, onClose, onOpenSettings }: AgentHealthDetailProps) {
   const { data: health, isLoading } = useMeshAgentHealth(agentId);
 
   if (isLoading) {
@@ -143,6 +145,19 @@ export function AgentHealthDetail({ agentId, onClose }: AgentHealthDetailProps) 
           </div>
         )}
       </div>
+
+      {onOpenSettings && (
+        <div className="mt-4 border-t pt-3">
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            className="inline-flex w-full items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+          >
+            <Settings className="size-3.5" />
+            Open Settings
+          </button>
+        </div>
+      )}
     </div>
   );
 }

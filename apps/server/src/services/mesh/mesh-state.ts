@@ -7,26 +7,12 @@
  *
  * @module services/mesh/mesh-state
  */
+import { createFeatureFlag } from '../../lib/feature-flag.js';
 
-/** Mutable Mesh runtime state shared across the server process. */
-const state = {
-  enabled: false,
-};
+const meshFlag = createFeatureFlag();
 
-/**
- * Mark the Mesh subsystem as enabled.
- *
- * Called once from `index.ts` after `MeshCore` is successfully created.
- */
-export function setMeshEnabled(enabled: boolean): void {
-  state.enabled = enabled;
-}
+/** Mark the Mesh subsystem as enabled or disabled. */
+export const setMeshEnabled = meshFlag.setEnabled;
 
-/**
- * Return whether the Mesh subsystem is currently enabled.
- *
- * Consumed by the config route to populate `mesh.enabled` in the GET response.
- */
-export function isMeshEnabled(): boolean {
-  return state.enabled;
-}
+/** Return whether the Mesh subsystem is currently enabled. */
+export const isMeshEnabled = meshFlag.isEnabled;

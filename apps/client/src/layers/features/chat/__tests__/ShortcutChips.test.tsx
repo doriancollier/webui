@@ -2,29 +2,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 
-// Mock motion/react to render plain elements
-vi.mock('motion/react', () => ({
-  motion: new Proxy(
-    {},
-    {
-      get: (_target: unknown, prop: string) => {
-        return ({
-          children,
-          initial: _i,
-          animate: _a,
-          exit: _e,
-          transition: _t,
-          ...props
-        }: Record<string, unknown> & { children?: React.ReactNode }) => {
-          const Tag = prop as keyof React.JSX.IntrinsicElements;
-          return <Tag {...props}>{children}</Tag>;
-        };
-      },
-    }
-  ),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 import { ShortcutChips } from '../ui/ShortcutChips';
 
 afterEach(() => {

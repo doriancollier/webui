@@ -12,7 +12,7 @@ import {
   SubmitAnswersRequestSchema,
   ListSessionsQuerySchema,
 } from '@dorkos/shared/schemas';
-import { validateBoundary, BoundaryError } from '../lib/boundary.js';
+import { assertBoundary } from '../lib/route-utils.js';
 import { isRelayEnabled } from '../services/relay/relay-state.js';
 import type { RelayCore } from '@dorkos/relay';
 
@@ -31,17 +31,7 @@ router.post('/', async (req, res) => {
   }
   const { permissionMode = 'default', cwd } = parsed.data;
 
-  // Validate cwd against boundary if provided
-  if (cwd) {
-    try {
-      await validateBoundary(cwd);
-    } catch (err: unknown) {
-      if (err instanceof BoundaryError) {
-        return res.status(403).json({ error: err.message, code: err.code });
-      }
-      throw err;
-    }
-  }
+  if (!(await assertBoundary(cwd, res))) return;
 
   // Use SDK's query() with a no-op prompt to establish the session.
   // The SDK will create the JSONL file and assign a session ID.
@@ -67,17 +57,7 @@ router.get('/', async (req, res) => {
     return res.status(400).json({ error: 'Invalid query', details: parsed.error.format() });
   }
   const { limit, cwd } = parsed.data;
-
-  if (cwd) {
-    try {
-      await validateBoundary(cwd);
-    } catch (err: unknown) {
-      if (err instanceof BoundaryError) {
-        return res.status(403).json({ error: err.message, code: err.code });
-      }
-      throw err;
-    }
-  }
+  if (!(await assertBoundary(cwd, res))) return;
 
   const projectDir = cwd || vaultRoot;
   const sessions = await transcriptReader.listSessions(projectDir);
@@ -87,17 +67,7 @@ router.get('/', async (req, res) => {
 // GET /api/sessions/:id - Get session details
 router.get('/:id', async (req, res) => {
   const cwd = (req.query.cwd as string) || undefined;
-
-  if (cwd) {
-    try {
-      await validateBoundary(cwd);
-    } catch (err: unknown) {
-      if (err instanceof BoundaryError) {
-        return res.status(403).json({ error: err.message, code: err.code });
-      }
-      throw err;
-    }
-  }
+  if (!(await assertBoundary(cwd, res))) return;
 
   const projectDir = cwd || vaultRoot;
   const session = await transcriptReader.getSession(projectDir, req.params.id);
@@ -109,16 +79,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/tasks', async (req, res) => {
   const cwdParam = (req.query.cwd as string) || undefined;
 
-  if (cwdParam) {
-    try {
-      await validateBoundary(cwdParam);
-    } catch (err: unknown) {
-      if (err instanceof BoundaryError) {
-        return res.status(403).json({ error: err.message, code: err.code });
-      }
-      throw err;
-    }
-  }
+  if (!(await assertBoundary(cwdParam, res))) return;
 
   const cwd = cwdParam || vaultRoot;
 
@@ -142,16 +103,7 @@ router.get('/:id/tasks', async (req, res) => {
 router.get('/:id/messages', async (req, res) => {
   const cwdParam = (req.query.cwd as string) || undefined;
 
-  if (cwdParam) {
-    try {
-      await validateBoundary(cwdParam);
-    } catch (err: unknown) {
-      if (err instanceof BoundaryError) {
-        return res.status(403).json({ error: err.message, code: err.code });
-      }
-      throw err;
-    }
-  }
+  if (!(await assertBoundary(cwdParam, res))) return;
 
   const cwd = cwdParam || vaultRoot;
 

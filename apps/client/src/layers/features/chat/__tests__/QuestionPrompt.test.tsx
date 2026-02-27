@@ -65,25 +65,6 @@ vi.mock('@radix-ui/react-tabs', () => {
   return { Root, List, Trigger, Content };
 });
 
-// Mock motion/react to render plain elements (no animation delays)
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      const { className, style, ...rest } = props as Record<string, unknown>;
-      return (
-        <div className={className as string} style={style as React.CSSProperties} {...rest}>
-          {children as React.ReactNode}
-        </div>
-      );
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 const mockSubmitAnswers = vi.fn().mockResolvedValue({ ok: true });
 vi.mock('@/layers/shared/model/TransportContext', () => ({
   useTransport: () => ({

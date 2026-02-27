@@ -8,16 +8,6 @@ import type { Session } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
 import { TooltipProvider } from '@/layers/shared/ui';
 
-// Mock motion/react
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => (
-      <div {...props}>{children}</div>
-    ),
-  },
-  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock useSessionId (nuqs-backed)
 const mockSetSessionId = vi.fn();
 vi.mock('@/layers/entities/session/model/use-session-id', () => ({

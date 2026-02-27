@@ -6,6 +6,7 @@
  */
 import { Router } from 'express';
 import type { MeshCore } from '@dorkos/mesh';
+import type { AgentManifest, AgentHealthStatus, TopologyView } from '@dorkos/shared/mesh-schemas';
 import {
   DiscoverRequestSchema,
   RegisterAgentRequestSchema,
@@ -16,12 +17,169 @@ import {
   UpdateAccessRuleRequestSchema,
 } from '@dorkos/shared/mesh-schemas';
 
+/** Optional cross-subsystem dependencies for topology enrichment. */
+export interface MeshRouterDeps {
+  meshCore: MeshCore;
+  pulseStore?: { getSchedules(): Array<{ cwd: string | null }> };
+  relayCore?: { listEndpoints(): Array<{ subject: string }> };
+}
+
+/**
+ * Enrich a topology view with health, Relay, and Pulse data for each agent.
+ *
+ * Each enrichment step is individually wrapped in try/catch so a failure
+ * in one subsystem never breaks the topology response.
+ */
+function enrichTopology(
+  topology: TopologyView,
+  deps: MeshRouterDeps,
+): TopologyView {
+  // Pre-compute Pulse schedule counts by CWD for O(1) lookups per agent
+  const scheduleCounts = new Map<string, number>();
+  if (deps.pulseStore) {
+    try {
+      for (const schedule of deps.pulseStore.getSchedules()) {
+        if (schedule.cwd) {
+          scheduleCounts.set(schedule.cwd, (scheduleCounts.get(schedule.cwd) ?? 0) + 1);
+        }
+      }
+    } catch {
+      // Pulse unavailable — scheduleCounts stays empty, all agents get 0
+    }
+  }
+
+  // Pre-fetch Relay endpoints once
+  let relayEndpoints: Array<{ subject: string }> = [];
+  if (deps.relayCore) {
+    try {
+      relayEndpoints = deps.relayCore.listEndpoints();
+    } catch {
+      // Relay unavailable — relayEndpoints stays empty
+    }
+  }
+
+  return {
+    ...topology,
+    namespaces: topology.namespaces.map((ns) => ({
+      ...ns,
+      agents: ns.agents.map((agent) =>
+        enrichAgent(agent, ns.namespace, deps, scheduleCounts, relayEndpoints),
+      ),
+    })),
+  };
+}
+
+/**
+ * Enrich a single agent with cross-subsystem data.
+ *
+ * @param agent - The base agent manifest from the topology
+ * @param namespace - The namespace this agent belongs to
+ * @param deps - Router dependencies for cross-subsystem lookups
+ * @param scheduleCounts - Pre-computed CWD-to-schedule-count map
+ * @param relayEndpoints - Pre-fetched Relay endpoints
+ */
+function enrichAgent(
+  agent: AgentManifest,
+  namespace: string,
+  deps: MeshRouterDeps,
+  scheduleCounts: Map<string, number>,
+  relayEndpoints: Array<{ subject: string }>,
+): AgentManifest & {
+  healthStatus: AgentHealthStatus;
+  lastSeenAt: string | null;
+  lastSeenEvent: string | null;
+  relayAdapters: string[];
+  relaySubject: string | null;
+  pulseScheduleCount: number;
+} {
+  // Safe defaults
+  let healthStatus: AgentHealthStatus = 'stale';
+  let lastSeenAt: string | null = null;
+  let lastSeenEvent: string | null = null;
+  let relayAdapters: string[] = [];
+  let relaySubject: string | null = null;
+  let pulseScheduleCount = 0;
+
+  // Health enrichment
+  try {
+    const health = deps.meshCore.getAgentHealth(agent.id);
+    if (health) {
+      healthStatus = health.status;
+      lastSeenAt = health.lastSeenAt;
+      lastSeenEvent = health.lastSeenEvent;
+    }
+  } catch {
+    // Health unavailable — defaults apply
+  }
+
+  // Relay enrichment via inspect (provides relaySubject)
+  try {
+    const inspection = deps.meshCore.inspect(agent.id);
+    if (inspection) {
+      relaySubject = inspection.relaySubject;
+    }
+  } catch {
+    // Inspect unavailable — relaySubject stays null
+  }
+
+  // Relay adapter matching — find endpoints whose subject starts with
+  // the agent's relay namespace prefix (e.g., "relay.agent.<namespace>.")
+  if (relaySubject && relayEndpoints.length > 0) {
+    try {
+      const nsPrefix = `relay.agent.${namespace}.`;
+      const matchingEndpoints = relayEndpoints.filter((ep) =>
+        ep.subject.startsWith(nsPrefix),
+      );
+      // Extract adapter names from subject segments after the namespace prefix
+      relayAdapters = matchingEndpoints
+        .map((ep) => ep.subject.slice(nsPrefix.length))
+        .filter(Boolean);
+    } catch {
+      // Relay matching failed — defaults apply
+    }
+  }
+
+  // Pulse schedule count — use inspect to get projectPath via relaySubject derivation
+  // Since we can't access projectPath directly, match schedules using inspect data
+  if (scheduleCounts.size > 0) {
+    try {
+      // Try to find matching schedules by iterating all CWDs
+      // The inspect method doesn't expose projectPath directly, so we
+      // check if any schedule CWD is associated with this agent's namespace
+      for (const [cwd, count] of scheduleCounts) {
+        // Match CWD basename against agent namespace or check direct path match
+        if (cwd.endsWith(`/${namespace}`) || cwd.endsWith(`\\${namespace}`)) {
+          pulseScheduleCount += count;
+        }
+      }
+    } catch {
+      // Pulse matching failed — defaults apply
+    }
+  }
+
+  return {
+    ...agent,
+    healthStatus,
+    lastSeenAt,
+    lastSeenEvent,
+    relayAdapters,
+    relaySubject,
+    pulseScheduleCount,
+  };
+}
+
 /**
  * Create the Mesh router with discovery, registration, and denial endpoints.
  *
- * @param meshCore - The MeshCore instance for agent lifecycle operations
+ * @param deps - MeshCore instance and optional cross-subsystem dependencies
  */
-export function createMeshRouter(meshCore: MeshCore): Router {
+export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
+  // Support both the new deps object and the legacy single-arg signature.
+  // If the argument has a `meshCore` property, treat it as MeshRouterDeps;
+  // otherwise it's a bare MeshCore instance.
+  const resolvedDeps: MeshRouterDeps =
+    'meshCore' in deps ? (deps as MeshRouterDeps) : { meshCore: deps as MeshCore };
+  const meshCore = resolvedDeps.meshCore;
   const router = Router();
 
   // POST /discover — Scan directories for agent candidates
@@ -75,10 +233,13 @@ export function createMeshRouter(meshCore: MeshCore): Router {
   });
 
   // GET /topology — Query the mesh network topology with optional namespace filtering
+  // meshCore.getTopology() returns base AgentManifest agents; enrichTopology()
+  // adds healthStatus, relayAdapters, pulseScheduleCount, etc. from other subsystems.
   router.get('/topology', (req, res) => {
     const namespace = (req.query.namespace as string) ?? '*';
     const topology = meshCore.getTopology(namespace);
-    return res.json(topology);
+    const enriched = enrichTopology(topology as TopologyView, resolvedDeps);
+    return res.json(enriched);
   });
 
   // PUT /topology/access — Create or remove cross-namespace access rules

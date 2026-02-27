@@ -9,26 +9,6 @@ import { TransportProvider } from '@/layers/shared/model';
 import { TunnelItem } from '../ui/TunnelItem';
 import type { ServerConfig } from '@dorkos/shared/types';
 
-// Mock motion/react to render plain elements
-vi.mock('motion/react', () => ({
-  motion: new Proxy(
-    {},
-    {
-      get: (_target: unknown, prop: string) => {
-        return ({
-          children,
-          ...props
-        }: Record<string, unknown> & { children?: React.ReactNode }) => {
-          const Tag = prop as keyof React.JSX.IntrinsicElements;
-          return <Tag {...props}>{children}</Tag>;
-        };
-      },
-    }
-  ),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  MotionConfig: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock useIsMobile to always return false (desktop dialog)
 vi.mock('@/layers/shared/model/use-is-mobile', () => ({
   useIsMobile: () => false,

@@ -8,26 +8,12 @@
  *
  * @module services/pulse-state
  */
+import { createFeatureFlag } from '../../lib/feature-flag.js';
 
-/** Mutable Pulse runtime state shared across the server process. */
-const state = {
-  enabled: false,
-};
+const pulseFlag = createFeatureFlag();
 
-/**
- * Mark the Pulse scheduler as enabled.
- *
- * Called once from `index.ts` after `SchedulerService` is successfully created.
- */
-export function setPulseEnabled(enabled: boolean): void {
-  state.enabled = enabled;
-}
+/** Mark the Pulse scheduler as enabled or disabled. */
+export const setPulseEnabled = pulseFlag.setEnabled;
 
-/**
- * Return whether the Pulse scheduler is currently enabled.
- *
- * Consumed by the config route to populate `pulse.enabled` in the GET response.
- */
-export function isPulseEnabled(): boolean {
-  return state.enabled;
-}
+/** Return whether the Pulse scheduler is currently enabled. */
+export const isPulseEnabled = pulseFlag.isEnabled;

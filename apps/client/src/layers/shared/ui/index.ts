@@ -89,3 +89,4 @@ export { DirectoryPicker } from './DirectoryPicker';
 export { Skeleton } from './skeleton';
 export { Toaster } from './sonner';
 export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip';
+export { FeatureDisabledState } from './FeatureDisabledState';

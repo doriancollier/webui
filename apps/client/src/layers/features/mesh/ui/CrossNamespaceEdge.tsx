@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   BaseEdge,
   EdgeLabelRenderer,
@@ -5,6 +6,7 @@ import {
   MarkerType,
   type EdgeProps,
 } from '@xyflow/react';
+import { usePrefersReducedMotion } from '../lib/use-reduced-motion';
 
 /** Data carried by cross-namespace edges. */
 interface CrossNamespaceEdgeData extends Record<string, unknown> {
@@ -13,6 +15,9 @@ interface CrossNamespaceEdgeData extends Record<string, unknown> {
 
 /** Hub-to-hub dashed edge representing a cross-namespace allow rule. */
 export function CrossNamespaceEdge(props: EdgeProps) {
+  const [hovered, setHovered] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX: props.sourceX,
     sourceY: props.sourceY,
@@ -23,19 +28,41 @@ export function CrossNamespaceEdge(props: EdgeProps) {
   });
 
   const label = (props.data as CrossNamespaceEdgeData | undefined)?.label;
+  const showLabel = hovered || props.selected;
 
   return (
     <>
+      {/* Invisible wider hit area for hover detection */}
+      <path
+        d={edgePath}
+        fill="none"
+        stroke="transparent"
+        strokeWidth={12}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+      />
       <BaseEdge
         id={props.id}
         path={edgePath}
         markerEnd={MarkerType.ArrowClosed}
-        style={{ stroke: '#3b82f6', strokeWidth: 1.5, strokeDasharray: '6 3' }}
+        style={{
+          stroke: 'var(--color-primary)',
+          strokeWidth: 1.5,
+          strokeDasharray: '6 3',
+        }}
       />
-      {label && (
+      {/* Flow particle travelling along the edge */}
+      {!prefersReducedMotion && (
+        <circle r={3} fill="var(--color-primary)" opacity={0.8}>
+          <animateMotion dur="3s" repeatCount="indefinite">
+            <mpath xlinkHref={`#${props.id}`} />
+          </animateMotion>
+        </circle>
+      )}
+      {showLabel && label && (
         <EdgeLabelRenderer>
           <div
-            className="nodrag nopan rounded border border-blue-300 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-300"
+            className="nodrag nopan rounded border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,

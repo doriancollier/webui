@@ -21,15 +21,6 @@ vi.mock('cronstrue', () => ({
   },
 }));
 
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => (
-      <div {...props}>{children}</div>
-    ),
-  },
-  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-}));
-
 function createWrapper(transport: Transport) {
   const queryClient = new QueryClient({
     defaultOptions: {

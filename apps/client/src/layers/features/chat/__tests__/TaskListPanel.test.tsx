@@ -8,50 +8,6 @@ afterEach(() => {
   cleanup();
 });
 
-// Mock motion to render plain elements
-vi.mock('motion/react', () => ({
-  motion: {
-    div: React.forwardRef(
-      (
-        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
-        ref: React.Ref<HTMLDivElement>
-      ) => React.createElement('div', { ...props, ref }, children)
-    ),
-    ul: React.forwardRef(
-      (
-        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
-        ref: React.Ref<HTMLUListElement>
-      ) => React.createElement('ul', { ...props, ref }, children)
-    ),
-    li: React.forwardRef(
-      (
-        {
-          children,
-          onAnimationComplete,
-          ...props
-        }: React.PropsWithChildren<Record<string, unknown>>,
-        ref: React.Ref<HTMLLIElement>
-      ) => {
-        // Call onAnimationComplete immediately in tests to simulate animation end
-        React.useEffect(() => {
-          if (typeof onAnimationComplete === 'function') {
-            onAnimationComplete();
-          }
-        }, [onAnimationComplete]);
-        return React.createElement('li', { ...props, ref }, children); // eslint-disable-line react-hooks/refs -- Test mock
-      }
-    ),
-    span: React.forwardRef(
-      (
-        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
-        ref: React.Ref<HTMLSpanElement>
-      ) => React.createElement('span', { ...props, ref }, children)
-    ),
-  },
-  AnimatePresence: ({ children }: React.PropsWithChildren) =>
-    React.createElement(React.Fragment, null, children),
-}));
-
 const baseTasks: TaskItem[] = [
   { id: '1', subject: 'Completed task', status: 'completed' },
   { id: '2', subject: 'In progress task', status: 'in_progress', activeForm: 'Working on it' },

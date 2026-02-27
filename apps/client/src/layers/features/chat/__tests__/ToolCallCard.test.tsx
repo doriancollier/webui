@@ -4,25 +4,6 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { ToolCallCard } from '../ui/ToolCallCard';
 import type { ToolCallState } from '../model/use-chat-session';
 
-// Mock motion/react to render plain elements (no animation delays)
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      const { className, style, ...rest } = props as Record<string, unknown>;
-      return (
-        <div className={className as string} style={style as React.CSSProperties} {...rest}>
-          {children as React.ReactNode}
-        </div>
-      );
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 afterEach(() => {
   cleanup();
 });

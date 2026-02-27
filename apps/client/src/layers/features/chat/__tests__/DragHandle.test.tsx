@@ -2,28 +2,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
-vi.mock('motion/react', () => ({
-  motion: new Proxy(
-    {},
-    {
-      get: (_target: unknown, prop: string) => {
-        return ({
-          children,
-          initial: _i,
-          animate: _a,
-          exit: _e,
-          transition: _t,
-          ...props
-        }: Record<string, unknown> & { children?: React.ReactNode }) => {
-          const Tag = prop as keyof React.JSX.IntrinsicElements;
-          return <Tag {...props}>{children}</Tag>;
-        };
-      },
-    }
-  ),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 import { DragHandle } from '../ui/DragHandle';
 
 describe('DragHandle', () => {

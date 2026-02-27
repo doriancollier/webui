@@ -12,6 +12,7 @@ import {
 import type { PulseStore } from '../services/pulse/pulse-store.js';
 import type { SchedulerService } from '../services/pulse/scheduler-service.js';
 import { isWithinBoundary } from '../lib/boundary.js';
+import { parseBody } from '../lib/route-utils.js';
 
 /**
  * Create the Pulse router with schedule and run management endpoints.
@@ -33,19 +34,17 @@ export function createPulseRouter(store: PulseStore, scheduler: SchedulerService
   });
 
   router.post('/schedules', async (req, res) => {
-    const result = CreateScheduleRequestSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
-    }
+    const data = parseBody(CreateScheduleRequestSchema, req.body, res);
+    if (!data) return;
 
-    if (result.data.cwd) {
-      const withinBoundary = await isWithinBoundary(result.data.cwd);
+    if (data.cwd) {
+      const withinBoundary = await isWithinBoundary(data.cwd);
       if (!withinBoundary) {
         return res.status(403).json({ error: 'CWD outside directory boundary' });
       }
     }
 
-    const schedule = store.createSchedule(result.data);
+    const schedule = store.createSchedule(data);
     if (schedule.enabled && schedule.status === 'active') {
       scheduler.registerSchedule(schedule);
     }
@@ -54,19 +53,17 @@ export function createPulseRouter(store: PulseStore, scheduler: SchedulerService
   });
 
   router.patch('/schedules/:id', async (req, res) => {
-    const result = UpdateScheduleRequestSchema.safeParse(req.body);
-    if (!result.success) {
-      return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
-    }
+    const data = parseBody(UpdateScheduleRequestSchema, req.body, res);
+    if (!data) return;
 
-    if (result.data.cwd) {
-      const withinBoundary = await isWithinBoundary(result.data.cwd);
+    if (data.cwd) {
+      const withinBoundary = await isWithinBoundary(data.cwd);
       if (!withinBoundary) {
         return res.status(403).json({ error: 'CWD outside directory boundary' });
       }
     }
 
-    const updated = store.updateSchedule(req.params.id, result.data);
+    const updated = store.updateSchedule(req.params.id, data);
     if (!updated) {
       return res.status(404).json({ error: 'Schedule not found' });
     }
@@ -102,16 +99,14 @@ export function createPulseRouter(store: PulseStore, scheduler: SchedulerService
   // === Run endpoints ===
 
   router.get('/runs', (req, res) => {
-    const result = ListRunsQuerySchema.safeParse(req.query);
-    if (!result.success) {
-      return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
-    }
+    const data = parseBody(ListRunsQuerySchema, req.query, res);
+    if (!data) return;
 
     const runs = store.listRuns({
-      scheduleId: result.data.scheduleId,
-      status: result.data.status,
-      limit: result.data.limit,
-      offset: result.data.offset,
+      scheduleId: data.scheduleId,
+      status: data.status,
+      limit: data.limit,
+      offset: data.offset,
     });
     return res.json(runs);
   });

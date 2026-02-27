@@ -10,27 +10,6 @@ import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import type { PulseSchedule } from '@dorkos/shared/types';
 
-// Mocks must be declared before component import so Vitest can hoist them
-vi.mock('motion/react', () => ({
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-  motion: {
-    div: ({
-      children,
-      initial,
-      animate,
-      exit,
-      transition,
-      ...props
-    }: Record<string, unknown> & { children?: React.ReactNode }) => {
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      return <div {...props}>{children}</div>;
-    },
-  },
-}));
-
 vi.mock('cronstrue', () => ({
   default: { toString: (cron: string) => `Every: ${cron}` },
 }));

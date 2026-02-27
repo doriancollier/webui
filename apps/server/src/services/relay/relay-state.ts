@@ -8,26 +8,12 @@
  *
  * @module services/relay-state
  */
+import { createFeatureFlag } from '../../lib/feature-flag.js';
 
-/** Mutable Relay runtime state shared across the server process. */
-const state = {
-  enabled: false,
-};
+const relayFlag = createFeatureFlag();
 
-/**
- * Mark the Relay message bus as enabled.
- *
- * Called once from `index.ts` after `RelayCore` is successfully created.
- */
-export function setRelayEnabled(enabled: boolean): void {
-  state.enabled = enabled;
-}
+/** Mark the Relay message bus as enabled or disabled. */
+export const setRelayEnabled = relayFlag.setEnabled;
 
-/**
- * Return whether the Relay message bus is currently enabled.
- *
- * Consumed by the config route to populate `relay.enabled` in the GET response.
- */
-export function isRelayEnabled(): boolean {
-  return state.enabled;
-}
+/** Return whether the Relay message bus is currently enabled. */
+export const isRelayEnabled = relayFlag.isEnabled;

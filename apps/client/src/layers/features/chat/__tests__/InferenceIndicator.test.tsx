@@ -7,37 +7,6 @@ afterEach(() => {
   cleanup();
 });
 
-// Mock motion/react to render plain elements
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      const { className, style, ...rest } = props as Record<string, unknown>;
-      return (
-        <div className={className as string} style={style as React.CSSProperties} {...rest}>
-          {children as React.ReactNode}
-        </div>
-      );
-    },
-    span: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown>) => {
-      void initial;
-      void animate;
-      void exit;
-      void transition;
-      const { className, style, ...rest } = props as Record<string, unknown>;
-      return (
-        <span className={className as string} style={style as React.CSSProperties} {...rest}>
-          {children as React.ReactNode}
-        </span>
-      );
-    },
-  },
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock the hooks to control their output
 vi.mock('@/layers/shared/model/use-elapsed-time', () => ({
   useElapsedTime: vi.fn(() => ({ formatted: '2m 14s', ms: 134000 })),

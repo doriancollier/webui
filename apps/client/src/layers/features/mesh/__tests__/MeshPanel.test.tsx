@@ -40,21 +40,6 @@ vi.mock('@/layers/entities/mesh', () => ({
 }));
 
 // ---------------------------------------------------------------------------
-// Mock motion/react to render plain elements
-// ---------------------------------------------------------------------------
-
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, ...props }: Record<string, unknown> & { children?: ReactNode }) => {
-      // Filter out motion-specific props
-      const { initial, animate, exit, transition, ...rest } = props;
-      return <div {...rest}>{children}</div>;
-    },
-  },
-  AnimatePresence: ({ children }: { children?: ReactNode }) => <>{children}</>,
-}));
-
-// ---------------------------------------------------------------------------
 // Mock @radix-ui/react-tabs to render all tab panels simultaneously.
 // ---------------------------------------------------------------------------
 

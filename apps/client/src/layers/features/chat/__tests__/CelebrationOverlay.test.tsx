@@ -6,19 +6,6 @@ import { render, cleanup } from '@testing-library/react';
 import React from 'react';
 import type { CelebrationEvent } from '@/layers/shared/lib';
 
-vi.mock('motion/react', () => ({
-  motion: {
-    div: React.forwardRef(
-      (
-        { children, ...props }: React.PropsWithChildren<Record<string, unknown>>,
-        ref: React.Ref<HTMLDivElement>
-      ) => React.createElement('div', { ...props, ref }, children)
-    ),
-  },
-  AnimatePresence: ({ children }: React.PropsWithChildren) =>
-    React.createElement(React.Fragment, null, children),
-}));
-
 vi.mock('@/layers/shared/lib', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@/layers/shared/lib');
   return {

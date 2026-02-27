@@ -20,6 +20,13 @@ export const AgentRuntimeSchema = z
 
 export type AgentRuntime = z.infer<typeof AgentRuntimeSchema>;
 
+/** Health status enum — computed from last_seen_at timestamp. */
+export const AgentHealthStatusSchema = z
+  .enum(['active', 'inactive', 'stale'])
+  .openapi('AgentHealthStatus');
+
+export type AgentHealthStatus = z.infer<typeof AgentHealthStatusSchema>;
+
 // === Agent Configuration ===
 
 export const AgentBehaviorSchema = z
@@ -114,11 +121,23 @@ export type DenialRecord = z.infer<typeof DenialRecordSchema>;
 
 // === Topology ===
 
+/** Agent manifest enriched with runtime health and relay context for topology views. */
+export const TopologyAgentSchema = AgentManifestSchema.extend({
+  healthStatus: AgentHealthStatusSchema.default('stale'),
+  relayAdapters: z.array(z.string()).default([]),
+  relaySubject: z.string().nullable().default(null),
+  pulseScheduleCount: z.number().int().default(0),
+  lastSeenAt: z.string().nullable().default(null),
+  lastSeenEvent: z.string().nullable().default(null),
+}).openapi('TopologyAgent');
+
+export type TopologyAgent = z.infer<typeof TopologyAgentSchema>;
+
 export const NamespaceInfoSchema = z
   .object({
     namespace: z.string(),
     agentCount: z.number().int(),
-    agents: z.array(AgentManifestSchema),
+    agents: z.array(TopologyAgentSchema),
   })
   .openapi('NamespaceInfo');
 
@@ -246,13 +265,6 @@ export const AgentListQuerySchema = z
 export type AgentListQuery = z.infer<typeof AgentListQuerySchema>;
 
 // === Health & Observability Schemas ===
-
-/** Health status enum — computed from last_seen_at timestamp. */
-export const AgentHealthStatusSchema = z
-  .enum(['active', 'inactive', 'stale'])
-  .openapi('AgentHealthStatus');
-
-export type AgentHealthStatus = z.infer<typeof AgentHealthStatusSchema>;
 
 /** Agent health detail — extends manifest with health tracking fields. */
 export const AgentHealthSchema = z

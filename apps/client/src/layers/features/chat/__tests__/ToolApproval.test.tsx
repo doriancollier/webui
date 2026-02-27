@@ -4,11 +4,6 @@ import { render, screen, cleanup, waitFor } from '@testing-library/react';
 import { createRef } from 'react';
 import { ToolApproval, type ToolApprovalHandle } from '../ui/ToolApproval';
 
-vi.mock('motion/react', () => ({
-  motion: new Proxy({}, { get: (_, tag) => tag }),
-  AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
-}));
-
 const mockApproveTool = vi.fn().mockResolvedValue(undefined);
 const mockDenyTool = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/layers/shared/model/TransportContext', () => ({

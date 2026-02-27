@@ -192,6 +192,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       activeCount: 0,
       inactiveCount: 0,
       staleCount: 0,
+      unreachableCount: 0,
       byRuntime: {},
       byProject: {},
     }),

@@ -10,17 +10,6 @@ import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { createMockSchedule } from '@dorkos/test-utils';
 
-// Mock motion/react so AnimatePresence exits synchronously in tests
-vi.mock('motion/react', () => ({
-  motion: {
-    div: ({ children, initial, animate, exit, transition, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
-      void initial; void animate; void exit; void transition;
-      return <div {...props}>{children}</div>;
-    },
-  },
-  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
-}));
-
 // Mock cronstrue to avoid parsing issues in tests
 vi.mock('cronstrue', () => ({
   default: { toString: (cron: string) => `Every: ${cron}` },
