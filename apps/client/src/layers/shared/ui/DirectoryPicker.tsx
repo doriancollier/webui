@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTransport, useAppStore, type RecentCwd } from '@/layers/shared/model';
-import { formatRelativeTime, shortenHomePath, STORAGE_KEYS } from '@/layers/shared/lib';
+import { formatRelativeTime, shortenHomePath, STORAGE_KEYS, hashToHslColor, hashToEmoji } from '@/layers/shared/lib';
 import { PathBreadcrumb } from './path-breadcrumb';
 import {
   ResponsiveDialog,
@@ -10,6 +10,7 @@ import {
   ResponsiveDialogTitle,
 } from './responsive-dialog';
 import { Folder, FolderOpen, Eye, EyeOff, Clock, Loader2 } from 'lucide-react';
+import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 
 type PickerView = 'browse' | 'recent';
 
@@ -34,9 +35,11 @@ interface DirectoryPickerProps {
   onSelect: (path: string) => void;
   /** Initial path to browse from. Falls back to home directory when omitted. */
   initialPath?: string | null;
+  /** Map of directory path -> agent manifest for rendering agent identity in recents. */
+  resolvedAgents?: Record<string, AgentManifest | null>;
 }
 
-export function DirectoryPicker({ open, onOpenChange, onSelect, initialPath }: DirectoryPickerProps) {
+export function DirectoryPicker({ open, onOpenChange, onSelect, initialPath, resolvedAgents }: DirectoryPickerProps) {
   const transport = useTransport();
   const { recentCwds } = useAppStore();
   const [currentPath, setCurrentPath] = useState(initialPath || '');
@@ -189,21 +192,43 @@ export function DirectoryPicker({ open, onOpenChange, onSelect, initialPath }: D
             </>
           ) : (
             <div className="py-1">
-              {recentCwds.slice(0, 10).map((recent) => (
-                <button
-                  key={recent.path}
-                  onClick={() => handleRecentSelect(recent.path)}
-                  className="hover:bg-accent flex w-full items-center gap-2 px-4 py-1.5 text-left transition-colors"
-                >
-                  <Folder className="text-muted-foreground size-(--size-icon-md) flex-shrink-0" />
-                  <span className="text-muted-foreground truncate text-sm">
-                    {shortenHomePath(recent.path)}
-                  </span>
-                  <span className="text-muted-foreground/50 ml-auto flex-shrink-0 text-[11px]">
-                    {formatRelativeTime(recent.accessedAt)}
-                  </span>
-                </button>
-              ))}
+              {recentCwds.slice(0, 10).map((recent) => {
+                const agent = resolvedAgents?.[recent.path] ?? null;
+                const color = agent?.color ?? hashToHslColor(agent?.id ?? recent.path);
+                const emoji = agent?.icon ?? hashToEmoji(agent?.id ?? recent.path);
+
+                return (
+                  <button
+                    key={recent.path}
+                    onClick={() => handleRecentSelect(recent.path)}
+                    className="hover:bg-accent flex w-full items-center gap-2 px-4 py-1.5 text-left transition-colors"
+                  >
+                    {agent ? (
+                      <>
+                        <span
+                          className="size-2 flex-shrink-0 rounded-full"
+                          style={{ backgroundColor: color }}
+                        />
+                        <span className="text-sm">{emoji}</span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{agent.name}</span>
+                        <span className="text-muted-foreground truncate text-xs">
+                          {shortenHomePath(recent.path)}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Folder className="text-muted-foreground size-(--size-icon-md) flex-shrink-0" />
+                        <span className="text-muted-foreground min-w-0 flex-1 truncate text-sm">
+                          {shortenHomePath(recent.path)}
+                        </span>
+                      </>
+                    )}
+                    <span className="text-muted-foreground/50 ml-auto flex-shrink-0 text-[11px]">
+                      {formatRelativeTime(recent.accessedAt)}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           )}
         </div>

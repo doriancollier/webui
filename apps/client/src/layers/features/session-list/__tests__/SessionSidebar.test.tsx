@@ -63,9 +63,11 @@ vi.mock('sonner', () => ({
   toast: Object.assign(vi.fn(), { error: vi.fn() }),
 }));
 
-// Mock updateTabBadge
+// Mock favicon-utils
 vi.mock('@/layers/shared/lib/favicon-utils', () => ({
   updateTabBadge: vi.fn(),
+  hashToHslColor: (_s: string) => 'hsl(0, 70%, 55%)',
+  hashToEmoji: (_s: string) => '🤖',
 }));
 
 // Mock session-utils to avoid time-dependent behavior

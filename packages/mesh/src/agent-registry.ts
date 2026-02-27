@@ -98,6 +98,10 @@ export class AgentRegistry {
       behaviorJson: JSON.stringify(agent.behavior),
       budgetJson: JSON.stringify(agent.budget),
       approver: agent.registeredBy,
+      persona: agent.persona ?? null,
+      personaEnabled: agent.personaEnabled ?? true,
+      color: agent.color ?? null,
+      icon: agent.icon ?? null,
       registeredAt: agent.registeredAt,
       updatedAt: now,
     }).onConflictDoUpdate({
@@ -112,6 +116,10 @@ export class AgentRegistry {
         scanRoot: agent.scanRoot ?? '',
         behaviorJson: JSON.stringify(agent.behavior),
         budgetJson: JSON.stringify(agent.budget),
+        persona: agent.persona ?? null,
+        personaEnabled: agent.personaEnabled ?? true,
+        color: agent.color ?? null,
+        icon: agent.icon ?? null,
         updatedAt: now,
         status: 'active', // Re-registration clears unreachable
       },
@@ -183,6 +191,10 @@ export class AgentRegistry {
       scanRoot: merged.scanRoot,
       behaviorJson: JSON.stringify(merged.behavior),
       budgetJson: JSON.stringify(merged.budget),
+      persona: merged.persona ?? null,
+      personaEnabled: merged.personaEnabled ?? true,
+      color: merged.color ?? null,
+      icon: merged.icon ?? null,
       updatedAt: now,
     }).where(eq(agents.id, id)).run();
     return result.changes > 0;
@@ -348,6 +360,10 @@ export class AgentRegistry {
       registeredBy: row.approver ?? 'mesh',
       projectPath: row.projectPath,
       scanRoot: row.scanRoot,
+      persona: row.persona ?? undefined,
+      personaEnabled: row.personaEnabled,
+      color: row.color ?? undefined,
+      icon: row.icon ?? undefined,
     };
   }
 

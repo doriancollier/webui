@@ -4,6 +4,7 @@ import {
   handlePing,
   handleGetServerInfo,
   createGetSessionCountHandler,
+  createGetCurrentAgentHandler,
   createDorkOsToolServer,
   createListSchedulesHandler,
   createCreateScheduleHandler,
@@ -11,6 +12,10 @@ import {
   createDeleteScheduleHandler,
   createGetRunHistoryHandler,
 } from '../mcp-tool-server.js';
+
+vi.mock('@dorkos/shared/manifest', () => ({
+  readManifest: vi.fn(),
+}));
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   createSdkMcpServer: vi.fn((config: Record<string, unknown>) => config),
@@ -377,6 +382,64 @@ describe('MCP Tool Handlers', () => {
     });
   });
 
+  describe('createGetCurrentAgentHandler', () => {
+    it('returns null with message when no manifest exists', async () => {
+      const { readManifest } = await import('@dorkos/shared/manifest');
+      vi.mocked(readManifest).mockResolvedValue(null);
+      const handler = createGetCurrentAgentHandler(makeMockDeps());
+      const result = await handler();
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.agent).toBeNull();
+      expect(parsed.message).toContain('No agent registered');
+    });
+
+    it('returns full manifest when agent exists', async () => {
+      const { readManifest } = await import('@dorkos/shared/manifest');
+      const mockManifest = {
+        id: 'test-agent-id',
+        name: 'Test Agent',
+        description: 'A test agent',
+        runtime: 'claude-code',
+        capabilities: ['testing'],
+      };
+      vi.mocked(readManifest).mockResolvedValue(mockManifest as never);
+      const handler = createGetCurrentAgentHandler(makeMockDeps());
+      const result = await handler();
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.agent).toEqual(mockManifest);
+      expect(parsed.agent.id).toBe('test-agent-id');
+      expect(parsed.agent.name).toBe('Test Agent');
+    });
+
+    it('uses deps.defaultCwd as the working directory', async () => {
+      const { readManifest } = await import('@dorkos/shared/manifest');
+      vi.mocked(readManifest).mockResolvedValue(null);
+      const handler = createGetCurrentAgentHandler(makeMockDeps());
+      await handler();
+      expect(readManifest).toHaveBeenCalledWith('/test/cwd');
+    });
+
+    it('returns isError when readManifest throws', async () => {
+      const { readManifest } = await import('@dorkos/shared/manifest');
+      vi.mocked(readManifest).mockRejectedValue(new Error('Permission denied'));
+      const handler = createGetCurrentAgentHandler(makeMockDeps());
+      const result = await handler();
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toContain('Permission denied');
+    });
+
+    it('handles non-Error exceptions gracefully', async () => {
+      const { readManifest } = await import('@dorkos/shared/manifest');
+      vi.mocked(readManifest).mockRejectedValue('string error');
+      const handler = createGetCurrentAgentHandler(makeMockDeps());
+      const result = await handler();
+      expect(result.isError).toBe(true);
+      const parsed = JSON.parse(result.content[0].text);
+      expect(parsed.error).toBe('Failed to read agent manifest');
+    });
+  });
+
   describe('createDorkOsToolServer', () => {
     it('creates server with name dorkos and version 1.0.0', () => {
       const server = createDorkOsToolServer(makeMockDeps()) as unknown as MockServer;
@@ -385,9 +448,9 @@ describe('MCP Tool Handlers', () => {
       expect(server.version).toBe('1.0.0');
     });
 
-    it('registers 12 tools (3 core + 5 pulse + 4 relay)', () => {
+    it('registers 13 tools (4 core + 5 pulse + 4 relay)', () => {
       const server = createDorkOsToolServer(makeMockDeps()) as unknown as MockServer;
-      expect(server.tools).toHaveLength(12);
+      expect(server.tools).toHaveLength(13);
     });
 
     it('registers tools with correct names', () => {
@@ -396,6 +459,7 @@ describe('MCP Tool Handlers', () => {
       expect(toolNames).toContain('ping');
       expect(toolNames).toContain('get_server_info');
       expect(toolNames).toContain('get_session_count');
+      expect(toolNames).toContain('agent_get_current');
       expect(toolNames).toContain('list_schedules');
       expect(toolNames).toContain('create_schedule');
       expect(toolNames).toContain('update_schedule');

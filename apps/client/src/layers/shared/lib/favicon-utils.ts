@@ -1,4 +1,4 @@
-const EMOJI_SET = [
+export const EMOJI_SET = [
   '\u{1F600}',
   '\u{1F60E}',
   '\u{1F916}',

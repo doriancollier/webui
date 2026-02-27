@@ -9,12 +9,14 @@ import {
 interface UseFaviconOptions {
   cwd: string | null;
   isStreaming: boolean;
+  /** Optional color override — when provided, skips hashToHslColor(cwd) */
+  color?: string;
 }
 
 /** ms per frame — 20 frames × 100ms = 2s per full breathing cycle */
 const FRAME_INTERVAL = 100;
 
-export function useFavicon({ cwd, isStreaming }: UseFaviconOptions) {
+export function useFavicon({ cwd, isStreaming, color: colorOverride }: UseFaviconOptions) {
   const solidRef = useRef<string>('');
   const framesRef = useRef<string[]>([]);
   const intervalRef = useRef<number | null>(null);
@@ -50,11 +52,11 @@ export function useFavicon({ cwd, isStreaming }: UseFaviconOptions) {
     }
   }, []);
 
-  // Generate favicon when cwd changes
+  // Generate favicon when cwd or color override changes
   useEffect(() => {
     if (!cwd) return;
 
-    const color = hashToHslColor(cwd);
+    const color = colorOverride ?? hashToHslColor(cwd);
     const solid = generateCircleFavicon(color);
     solidRef.current = solid;
     framesRef.current = [];
@@ -73,7 +75,7 @@ export function useFavicon({ cwd, isStreaming }: UseFaviconOptions) {
     return () => {
       cancelled = true;
     };
-  }, [cwd, startPulsing]);
+  }, [cwd, colorOverride, startPulsing]);
 
   // React to streaming state changes
   useEffect(() => {

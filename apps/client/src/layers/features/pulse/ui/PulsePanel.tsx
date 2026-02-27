@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { HeartPulse, Clock } from 'lucide-react';
 import { usePulseEnabled, useSchedules } from '@/layers/entities/pulse';
+import { useResolvedAgents } from '@/layers/entities/agent';
 import type { PulseSchedule } from '@dorkos/shared/types';
 import { CreateScheduleDialog } from './CreateScheduleDialog';
 import { ScheduleRow } from './ScheduleRow';
@@ -13,6 +14,10 @@ export function PulsePanel() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editSchedule, setEditSchedule] = useState<PulseSchedule | undefined>();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Batch-resolve agents for all schedule CWDs
+  const uniquePaths = [...new Set(schedules.map((s) => s.cwd).filter(Boolean) as string[])];
+  const { data: resolvedAgents } = useResolvedAgents(uniquePaths);
 
   if (!pulseEnabled) {
     return (
@@ -104,6 +109,7 @@ export function PulsePanel() {
           >
             <ScheduleRow
               schedule={schedule}
+              agent={resolvedAgents?.[schedule.cwd ?? ''] ?? null}
               expanded={expandedId === schedule.id}
               onToggleExpand={() =>
                 setExpandedId(expandedId === schedule.id ? null : schedule.id)

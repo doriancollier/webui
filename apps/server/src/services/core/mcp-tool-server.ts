@@ -6,6 +6,7 @@ import type { RelayCore } from '@dorkos/relay';
 import type { AdapterManager } from '../relay/adapter-manager.js';
 import type { TraceStore } from '../relay/trace-store.js';
 import type { MeshCore } from '@dorkos/mesh';
+import { readManifest } from '@dorkos/shared/manifest';
 import { env } from '../../env.js';
 
 /**
@@ -101,6 +102,27 @@ export function createGetSessionCountHandler(deps: McpToolDeps) {
         ],
         isError: true,
       };
+    }
+  };
+}
+
+/**
+ * Get the agent manifest for the current working directory.
+ * Always available — not guarded by any feature flag.
+ */
+export function createGetCurrentAgentHandler(deps: McpToolDeps) {
+  return async () => {
+    try {
+      const manifest = await readManifest(deps.defaultCwd);
+      if (!manifest) {
+        return jsonContent({ agent: null, message: 'No agent registered for current directory' });
+      }
+      return jsonContent({ agent: manifest });
+    } catch (err) {
+      return jsonContent(
+        { error: err instanceof Error ? err.message : 'Failed to read agent manifest' },
+        true
+      );
     }
   };
 }
@@ -555,6 +577,7 @@ export function createMeshQueryTopologyHandler(deps: McpToolDeps) {
  */
 export function createDorkOsToolServer(deps: McpToolDeps) {
   const handleGetSessionCount = createGetSessionCountHandler(deps);
+  const handleGetCurrentAgent = createGetCurrentAgentHandler(deps);
 
   const pulseTools = [
     tool(
@@ -801,6 +824,12 @@ export function createDorkOsToolServer(deps: McpToolDeps) {
         'Returns the number of sessions visible in the SDK transcript directory.',
         {},
         handleGetSessionCount
+      ),
+      tool(
+        'agent_get_current',
+        'Get the agent identity for the current working directory. Returns the agent manifest from .dork/agent.json if one exists, or null if no agent is registered.',
+        {},
+        handleGetCurrentAgent
       ),
       ...pulseTools,
       ...relayTools,

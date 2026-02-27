@@ -35,6 +35,10 @@
     "./mesh-schemas": {
       "types": "./src/mesh-schemas.ts",
       "default": "./dist/mesh-schemas.js"
+    },
+    "./manifest": {
+      "types": "./src/manifest.ts",
+      "default": "./dist/manifest.js"
     }
   },
   "scripts": {
@@ -48,6 +52,7 @@
   },
   "devDependencies": {
     "@dorkos/typescript-config": "workspace:*",
+    "@types/node": "^25.3.2",
     "vitest": "^4.0.18"
   }
 }

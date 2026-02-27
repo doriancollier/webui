@@ -9,7 +9,7 @@ The DorkOS uses a hexagonal (ports & adapters) architecture centered on a **Tran
 
 ## Core Abstraction: Transport Interface
 
-The `Transport` interface (`packages/shared/src/transport.ts`) defines 9 methods that cover all client-server communication:
+The `Transport` interface (`packages/shared/src/transport.ts`) defines 13 methods that cover all client-server communication:
 
 ```
 Transport
@@ -22,6 +22,10 @@ Transport
   denyTool(sessionId, toolCallId)           -> { ok: boolean }
   getCommands(refresh?)      -> CommandRegistry
   health()                   -> { status, version, uptime }
+  getAgentByPath(cwd)        -> AgentManifest | null
+  createAgent(cwd, name?, description?, runtime?) -> AgentManifest
+  updateAgent(cwd, updates)  -> AgentManifest
+  resolveAgents(paths)       -> Record<string, AgentManifest | null>
 ```
 
 ### Key Design Decision: Callback-Based Streaming

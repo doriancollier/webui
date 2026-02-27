@@ -42,6 +42,7 @@ function makeManifest(overrides: Partial<AgentManifest> = {}): AgentManifest {
     budget: { maxHopsPerMessage: 5, maxCallsPerHour: 100 },
     registeredAt: new Date().toISOString(),
     registeredBy: 'user',
+    personaEnabled: true,
     ...overrides,
   };
 }

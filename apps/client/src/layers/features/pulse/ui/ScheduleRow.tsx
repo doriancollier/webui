@@ -23,7 +23,9 @@ import {
   DialogFooter,
 } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
+import { hashToHslColor, hashToEmoji } from '@/layers/shared/lib/favicon-utils';
 import type { PulseSchedule } from '@dorkos/shared/types';
+import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import { RunHistoryPanel } from './RunHistoryPanel';
 
 /** Formats a cron expression into a human-readable string. */
@@ -49,6 +51,8 @@ function StatusDot({ schedule }: { schedule: PulseSchedule }) {
 
 interface ScheduleRowProps {
   schedule: PulseSchedule;
+  /** Resolved agent for the schedule's CWD, or null if no agent is registered. */
+  agent?: AgentManifest | null;
   expanded: boolean;
   onToggleExpand: () => void;
   onEdit: () => void;
@@ -58,7 +62,7 @@ interface ScheduleRowProps {
  * A single schedule row with status dot, cron description, action controls,
  * and an animated run history panel that expands on click.
  */
-export function ScheduleRow({ schedule, expanded, onToggleExpand, onEdit }: ScheduleRowProps) {
+export function ScheduleRow({ schedule, agent, expanded, onToggleExpand, onEdit }: ScheduleRowProps) {
   const updateSchedule = useUpdateSchedule();
   const triggerSchedule = useTriggerSchedule();
   const deleteSchedule = useDeleteSchedule();
@@ -109,7 +113,22 @@ export function ScheduleRow({ schedule, expanded, onToggleExpand, onEdit }: Sche
         >
           <StatusDot schedule={schedule} />
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium">{schedule.name}</div>
+            <div className="flex items-center gap-1.5">
+              {agent ? (
+                <>
+                  <span
+                    className="inline-block size-2 shrink-0 rounded-full"
+                    style={{ backgroundColor: agent.color ?? hashToHslColor(agent.id) }}
+                  />
+                  <span className="text-xs leading-none">{agent.icon ?? hashToEmoji(agent.id)}</span>
+                  <span className="text-sm font-medium">{agent.name}</span>
+                  <span className="text-muted-foreground text-xs">&middot;</span>
+                </>
+              ) : null}
+              <span className={agent ? 'text-muted-foreground text-xs' : 'text-sm font-medium'}>
+                {agent ? schedule.name : schedule.name}
+              </span>
+            </div>
             <div className="text-xs text-muted-foreground">
               {formatCron(schedule.cron)}
               {schedule.nextRun && (

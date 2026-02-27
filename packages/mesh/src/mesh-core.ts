@@ -185,6 +185,10 @@ export class MeshCore {
       namespace,
       registeredAt: overrides?.registeredAt ?? now,
       registeredBy: overrides?.registeredBy ?? approver,
+      persona: overrides?.persona,
+      personaEnabled: overrides?.personaEnabled ?? true,
+      color: overrides?.color,
+      icon: overrides?.icon,
     };
 
     // Step 1: Write manifest to disk (atomic tmp+rename)
@@ -248,6 +252,10 @@ export class MeshCore {
       namespace,
       registeredAt: partial.registeredAt ?? now,
       registeredBy: partial.registeredBy ?? approver,
+      persona: partial.persona,
+      personaEnabled: partial.personaEnabled ?? true,
+      color: partial.color,
+      icon: partial.icon,
     };
 
     await writeManifest(projectPath, manifest);

@@ -485,3 +485,150 @@ describe('listUnreachableBefore()', () => {
     expect(expired).toHaveLength(0);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Agent Identity Fields (persona, personaEnabled, color, icon)
+// ---------------------------------------------------------------------------
+
+describe('agent identity fields', () => {
+  it('upsert stores persona, personaEnabled, color, icon from manifest', () => {
+    registry.upsert(makeEntry({
+      id: 'identity-agent',
+      projectPath: '/p/identity',
+      persona: 'You are backend-bot.',
+      personaEnabled: true,
+      color: '#6366f1',
+      icon: '🤖',
+    }));
+
+    const result = registry.get('identity-agent');
+    expect(result).toBeDefined();
+    expect(result!.persona).toBe('You are backend-bot.');
+    expect(result!.personaEnabled).toBe(true);
+    expect(result!.color).toBe('#6366f1');
+    expect(result!.icon).toBe('🤖');
+  });
+
+  it('defaults personaEnabled to true when not provided', () => {
+    registry.upsert(makeEntry({ id: 'default-agent', projectPath: '/p/default' }));
+    const result = registry.get('default-agent');
+    expect(result!.personaEnabled).toBe(true);
+  });
+
+  it('stores personaEnabled: false correctly', () => {
+    registry.upsert(makeEntry({
+      id: 'disabled-agent',
+      projectPath: '/p/disabled',
+      personaEnabled: false,
+    }));
+    const result = registry.get('disabled-agent');
+    expect(result!.personaEnabled).toBe(false);
+  });
+
+  it('returns undefined for optional fields when not set', () => {
+    registry.upsert(makeEntry({ id: 'minimal-agent', projectPath: '/p/minimal' }));
+    const result = registry.get('minimal-agent');
+    expect(result!.persona).toBeUndefined();
+    expect(result!.color).toBeUndefined();
+    expect(result!.icon).toBeUndefined();
+  });
+
+  it('update persists identity field changes', () => {
+    registry.upsert(makeEntry({ id: 'update-agent', projectPath: '/p/update' }));
+    registry.update('update-agent', {
+      persona: 'New persona text',
+      personaEnabled: false,
+      color: '#ef4444',
+      icon: '🎯',
+    });
+    const result = registry.get('update-agent');
+    expect(result!.persona).toBe('New persona text');
+    expect(result!.personaEnabled).toBe(false);
+    expect(result!.color).toBe('#ef4444');
+    expect(result!.icon).toBe('🎯');
+  });
+
+  it('update clears identity fields when set to undefined/null', () => {
+    registry.upsert(makeEntry({
+      id: 'clear-agent',
+      projectPath: '/p/clear',
+      persona: 'old persona',
+      color: '#000',
+      icon: '🎉',
+    }));
+    registry.update('clear-agent', {
+      persona: undefined,
+      color: undefined,
+      icon: undefined,
+    });
+    const result = registry.get('clear-agent');
+    expect(result!.persona).toBeUndefined();
+    expect(result!.color).toBeUndefined();
+    expect(result!.icon).toBeUndefined();
+  });
+
+  it('upsert on conflict updates identity fields', () => {
+    registry.upsert(makeEntry({
+      id: 'conflict-agent',
+      projectPath: '/p/conflict',
+      persona: 'V1 persona',
+      color: '#000',
+    }));
+    registry.upsert(makeEntry({
+      id: 'conflict-agent',
+      projectPath: '/p/conflict',
+      persona: 'V2 persona',
+      color: '#fff',
+      icon: '🚀',
+    }));
+    const result = registry.get('conflict-agent');
+    expect(result!.persona).toBe('V2 persona');
+    expect(result!.color).toBe('#fff');
+    expect(result!.icon).toBe('🚀');
+  });
+
+  it('list returns identity fields for all agents', () => {
+    registry.upsert(makeEntry({
+      id: 'agent-a',
+      projectPath: '/p/a',
+      color: '#red',
+      icon: '🔴',
+    }));
+    registry.upsert(makeEntry({
+      id: 'agent-b',
+      projectPath: '/p/b',
+      persona: 'Test persona',
+      personaEnabled: false,
+    }));
+
+    const all = registry.list();
+    expect(all).toHaveLength(2);
+    const agentA = all.find((a) => a.id === 'agent-a');
+    const agentB = all.find((a) => a.id === 'agent-b');
+    expect(agentA!.color).toBe('#red');
+    expect(agentA!.icon).toBe('🔴');
+    expect(agentB!.persona).toBe('Test persona');
+    expect(agentB!.personaEnabled).toBe(false);
+  });
+
+  it('getByPath returns identity fields', () => {
+    registry.upsert(makeEntry({
+      id: 'path-agent',
+      projectPath: '/p/path-lookup',
+      persona: 'Lookup persona',
+      color: '#abc',
+    }));
+    const result = registry.getByPath('/p/path-lookup');
+    expect(result!.persona).toBe('Lookup persona');
+    expect(result!.color).toBe('#abc');
+  });
+
+  it('DB columns exist for identity fields', () => {
+    const columns = db.$client.pragma('table_info(agents)') as Array<{ name: string }>;
+    const columnNames = columns.map((c) => c.name);
+    expect(columnNames).toContain('persona');
+    expect(columnNames).toContain('persona_enabled');
+    expect(columnNames).toContain('color');
+    expect(columnNames).toContain('icon');
+  });
+});

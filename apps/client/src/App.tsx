@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useAppStore, useIsMobile, useFavicon, useDocumentTitle } from '@/layers/shared/model';
 import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entities/session';
+import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { PanelLeft } from 'lucide-react';
 import { PermissionBanner } from '@/layers/widgets/app-layout';
@@ -27,12 +28,20 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   const isStreaming = useAppStore((s) => s.isStreaming);
   const activeForm = useAppStore((s) => s.activeForm);
   const isWaitingForUser = useAppStore((s) => s.isWaitingForUser);
-  useFavicon({ cwd: embedded ? null : selectedCwd, isStreaming });
+  const { data: currentAgent } = useCurrentAgent(embedded ? null : selectedCwd);
+  const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
+  useFavicon({
+    cwd: embedded ? null : selectedCwd,
+    isStreaming,
+    color: currentAgent ? agentVisual.color : undefined,
+  });
   useDocumentTitle({
     cwd: embedded ? null : selectedCwd,
     activeForm,
     isStreaming,
     isWaitingForUser,
+    agentName: currentAgent?.name,
+    agentEmoji: currentAgent ? agentVisual.emoji : undefined,
   });
 
   // Escape key closes overlay sidebar

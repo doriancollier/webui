@@ -11,6 +11,7 @@ export { DirectTransport, type DirectTransportServices } from './direct-transpor
 export { getToolLabel } from './tool-labels';
 export { ToolArgumentsDisplay } from './tool-arguments-formatter';
 export {
+  EMOJI_SET,
   fnv1aHash,
   hashToHslColor,
   hashToEmoji,

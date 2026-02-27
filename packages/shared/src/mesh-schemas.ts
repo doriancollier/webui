@@ -54,6 +54,21 @@ export const AgentManifestSchema = z
     namespace: z.string().max(64).optional(),
     registeredAt: z.string().datetime(),
     registeredBy: z.string().min(1),
+    persona: z.string().max(4000).optional().openapi({
+      description: 'System prompt persona text injected into Claude sessions',
+      example: 'You are backend-bot, an expert in REST API design...',
+    }),
+    personaEnabled: z.boolean().default(true).openapi({
+      description: 'Whether persona text is injected into system prompt',
+    }),
+    color: z.string().optional().openapi({
+      description: 'CSS color override for visual identity (e.g., "#6366f1")',
+      example: '#6366f1',
+    }),
+    icon: z.string().optional().openapi({
+      description: 'Emoji override for visual identity',
+      example: '🤖',
+    }),
   })
   .openapi('AgentManifest');
 
@@ -169,6 +184,10 @@ export const UpdateAgentRequestSchema = z
     name: z.string().min(1).optional(),
     description: z.string().optional(),
     capabilities: z.array(z.string()).optional(),
+    persona: z.string().max(4000).optional(),
+    personaEnabled: z.boolean().optional(),
+    color: z.string().optional(),
+    icon: z.string().optional(),
   })
   .openapi('UpdateAgentRequest');
 
@@ -184,6 +203,36 @@ export const UpdateAccessRuleRequestSchema = z
   .openapi('UpdateAccessRuleRequest');
 
 export type UpdateAccessRuleRequest = z.infer<typeof UpdateAccessRuleRequestSchema>;
+
+/** Request body for POST /api/mesh/agents/resolve */
+export const ResolveAgentsRequestSchema = z
+  .object({
+    paths: z.array(z.string().min(1)).min(1).max(20),
+  })
+  .openapi('ResolveAgentsRequest');
+
+export type ResolveAgentsRequest = z.infer<typeof ResolveAgentsRequestSchema>;
+
+/** Response body for POST /api/mesh/agents/resolve */
+export const ResolveAgentsResponseSchema = z
+  .object({
+    agents: z.record(z.string(), AgentManifestSchema.nullable()),
+  })
+  .openapi('ResolveAgentsResponse');
+
+export type ResolveAgentsResponse = z.infer<typeof ResolveAgentsResponseSchema>;
+
+/** Request body for POST /api/mesh/agents/create */
+export const CreateAgentRequestSchema = z
+  .object({
+    path: z.string().min(1),
+    name: z.string().min(1).optional(),
+    description: z.string().optional(),
+    runtime: AgentRuntimeSchema.optional().default('claude-code'),
+  })
+  .openapi('CreateAgentRequest');
+
+export type CreateAgentRequest = z.infer<typeof CreateAgentRequestSchema>;
 
 /** Query params for GET /api/mesh/agents */
 export const AgentListQuerySchema = z

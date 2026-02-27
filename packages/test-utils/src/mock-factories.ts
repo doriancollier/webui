@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { vi } from 'vitest';
 import type { Session, StreamEvent, CommandEntry, PulseSchedule, PulseRun } from '@dorkos/shared/types';
 import type { Transport } from '@dorkos/shared/transport';
+import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import type { RoadmapItem, RoadmapMeta } from '@dorkos/shared/roadmap-schemas';
 import type { RelayAdapter, AdapterStatus } from '@dorkos/relay';
 
@@ -87,6 +88,20 @@ export function createMockRun(overrides: Partial<PulseRun> = {}): PulseRun {
     ...overrides,
   };
 }
+
+/** A minimal AgentManifest fixture for use in transport mocks. */
+const mockAgent: AgentManifest = {
+  id: '01HZ0000000000000000000001',
+  name: 'test-agent',
+  description: 'A mock agent for testing',
+  runtime: 'claude-code',
+  capabilities: [],
+  behavior: { responseMode: 'always' },
+  budget: { maxHopsPerMessage: 5, maxCallsPerHour: 100 },
+  registeredAt: '2025-01-01T00:00:00.000Z',
+  registeredBy: 'test',
+  personaEnabled: true,
+};
 
 /** Create a mock Transport with all methods stubbed via `vi.fn()`. */
 export function createMockTransport(overrides: Partial<Transport> = {}): Transport {
@@ -186,6 +201,11 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     getMeshTopology: vi.fn().mockResolvedValue({ callerNamespace: '*', namespaces: [], accessRules: [] }),
     updateMeshAccessRule: vi.fn().mockResolvedValue({ sourceNamespace: '', targetNamespace: '', action: 'allow' }),
     getMeshAgentAccess: vi.fn().mockResolvedValue({ agents: [] }),
+    // Agent Identity
+    getAgentByPath: vi.fn().mockResolvedValue(null),
+    resolveAgents: vi.fn().mockResolvedValue({}),
+    createAgent: vi.fn().mockResolvedValue(mockAgent),
+    updateAgentByPath: vi.fn().mockResolvedValue(mockAgent),
     ...overrides,
   };
 }

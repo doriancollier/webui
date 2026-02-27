@@ -9,7 +9,6 @@ import {
 } from '@/layers/shared/model';
 import { cn, groupSessionsByTime, TIMING, updateTabBadge } from '@/layers/shared/lib';
 import {
-  PathBreadcrumb,
   ResponsiveDialog,
   ResponsiveDialogContent,
   ResponsiveDialogHeader,
@@ -26,11 +25,12 @@ import { useRelayEnabled } from '@/layers/entities/relay';
 import { useMeshEnabled } from '@/layers/entities/mesh';
 import { toast } from 'sonner';
 import { useSessionId, useDirectoryState } from '@/layers/entities/session';
+import { useResolvedAgents } from '@/layers/entities/agent';
 import { SessionItem } from './SessionItem';
+import { AgentHeader } from './AgentHeader';
 import {
   Plus,
   PanelLeftClose,
-  FolderOpen,
   Sun,
   Moon,
   Monitor,
@@ -44,6 +44,7 @@ import { SettingsDialog } from '@/layers/features/settings';
 import { PulsePanel } from '@/layers/features/pulse';
 import { RelayPanel } from '@/layers/features/relay';
 import { MeshPanel } from '@/layers/features/mesh';
+import { AgentDialog } from '@/layers/features/agent-settings';
 import type { Session } from '@dorkos/shared/types';
 
 const themeOrder: Theme[] = ['light', 'dark', 'system'];
@@ -69,6 +70,7 @@ export function SessionSidebar() {
   } = useAppStore();
   const isMobile = useIsMobile();
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+  const [agentDialogOpen, setAgentDialogOpen] = useState(false);
   const relayEnabled = useRelayEnabled();
   const meshEnabled = useMeshEnabled();
   const [selectedCwd, setSelectedCwd] = useDirectoryState();
@@ -159,22 +161,25 @@ export function SessionSidebar() {
 
   const groupedSessions = useMemo(() => groupSessionsByTime(sessions), [sessions]);
 
+  // Resolve agents for recent CWDs so DirectoryPicker can show agent identity in recents
+  const { recentCwds } = useAppStore();
+  const recentPaths = useMemo(() => recentCwds.map((r) => r.path), [recentCwds]);
+  const { data: resolvedAgents } = useResolvedAgents(recentPaths);
+
   return (
     <div data-testid="session-sidebar" className="sidebar-container flex h-full flex-col p-3">
       {/* Header: New Chat + Collapse */}
       <div className="mb-3 space-y-1.5">
-        {/* Working directory breadcrumb */}
+        {/* Agent header / working directory breadcrumb */}
         <div className="flex items-center gap-1.5">
           {selectedCwd && (
-            <button
-              onClick={() => setPickerOpen(true)}
-              className="hover:bg-accent flex min-w-0 flex-1 items-center gap-1 rounded-md px-2 py-1.5 transition-colors duration-150"
-              aria-label="Change working directory"
-              title={selectedCwd}
-            >
-              <FolderOpen className="text-muted-foreground size-(--size-icon-sm) flex-shrink-0" />
-              <PathBreadcrumb path={selectedCwd} maxSegments={3} size="sm" />
-            </button>
+            <div className="min-w-0 flex-1">
+              <AgentHeader
+                cwd={selectedCwd}
+                onOpenPicker={() => setPickerOpen(true)}
+                onOpenAgentDialog={() => setAgentDialogOpen(true)}
+              />
+            </div>
           )}
           <button
             onClick={() => setSidebarOpen(false)}
@@ -336,6 +341,7 @@ export function SessionSidebar() {
         onOpenChange={setPickerOpen}
         onSelect={(path) => setSelectedCwd(path)}
         initialPath={selectedCwd}
+        resolvedAgents={resolvedAgents}
       />
       <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <ResponsiveDialog open={pulseOpen} onOpenChange={setPulseOpen}>
@@ -384,6 +390,13 @@ export function SessionSidebar() {
           </div>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
+      {selectedCwd && (
+        <AgentDialog
+          agentPath={selectedCwd}
+          open={agentDialogOpen}
+          onOpenChange={setAgentDialogOpen}
+        />
+      )}
     </div>
   );
 }

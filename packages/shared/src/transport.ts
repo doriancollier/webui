@@ -213,4 +213,15 @@ export interface Transport {
   updateMeshAccessRule(body: UpdateAccessRuleRequest): Promise<CrossNamespaceRule>;
   /** Get reachable agents for a specific agent. */
   getMeshAgentAccess(agentId: string): Promise<{ agents: AgentManifest[] }>;
+
+  // --- Agent Identity (always available, no feature flag) ---
+
+  /** Get the agent manifest for a working directory. Returns null if no agent registered. */
+  getAgentByPath(path: string): Promise<AgentManifest | null>;
+  /** Batch resolve agents for multiple paths. Returns a map of path -> manifest|null. */
+  resolveAgents(paths: string[]): Promise<Record<string, AgentManifest | null>>;
+  /** Create a new agent at the given path. Returns the created manifest. */
+  createAgent(path: string, name?: string, description?: string, runtime?: string): Promise<AgentManifest>;
+  /** Update an agent's fields by path. Returns the updated manifest. */
+  updateAgentByPath(path: string, updates: Partial<AgentManifest>): Promise<AgentManifest>;
 }

@@ -1,6 +1,7 @@
 import os from 'node:os';
 import { getGitStatus } from './git-status.js';
 import type { GitStatusResponse } from '@dorkos/shared/types';
+import { readManifest } from '@dorkos/shared/manifest';
 import { logger } from '../../lib/logger.js';
 import { env } from '../../env.js';
 
@@ -12,14 +13,16 @@ import { env } from '../../env.js';
  * `Is git repo: false`).
  */
 export async function buildSystemPromptAppend(cwd: string): Promise<string> {
-  const [envResult, gitResult] = await Promise.allSettled([
+  const [envResult, gitResult, agentResult] = await Promise.allSettled([
     buildEnvBlock(cwd),
     buildGitBlock(cwd),
+    buildAgentBlock(cwd),
   ]);
 
   return [
     envResult.status === 'fulfilled' ? envResult.value : '',
     gitResult.status === 'fulfilled' ? gitResult.value : '',
+    agentResult.status === 'fulfilled' ? agentResult.value : '',
   ]
     .filter(Boolean)
     .join('\n\n');
@@ -91,3 +94,42 @@ async function buildGitBlock(cwd: string): Promise<string> {
     return '<git_status>\nIs git repo: false\n</git_status>';
   }
 }
+
+/**
+ * Build agent identity and persona blocks from `.dork/agent.json`.
+ *
+ * When a manifest exists, always includes `<agent_identity>` (informational).
+ * Includes `<agent_persona>` only when `personaEnabled` is true and `persona`
+ * text is non-empty.
+ *
+ * @param cwd - Working directory to check for agent manifest
+ * @returns XML block string, or empty string if no manifest
+ */
+async function buildAgentBlock(cwd: string): Promise<string> {
+  const manifest = await readManifest(cwd);
+  if (!manifest) return '';
+
+  // Zod v4 + openapi extension drops persona fields from inferred type
+  const { persona, personaEnabled } = manifest as {
+    persona?: string;
+    personaEnabled?: boolean;
+  };
+
+  const identityLines = [
+    `Name: ${manifest.name}`,
+    `ID: ${manifest.id}`,
+    manifest.description && `Description: ${manifest.description}`,
+    manifest.capabilities.length > 0 && `Capabilities: ${manifest.capabilities.join(', ')}`,
+  ].filter(Boolean);
+
+  const blocks = [`<agent_identity>\n${identityLines.join('\n')}\n</agent_identity>`];
+
+  if (personaEnabled !== false && persona) {
+    blocks.push(`<agent_persona>\n${persona}\n</agent_persona>`);
+  }
+
+  return blocks.join('\n\n');
+}
+
+/** @internal Exported for testing only. */
+export { buildAgentBlock as _buildAgentBlock };

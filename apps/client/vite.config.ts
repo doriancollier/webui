@@ -8,6 +8,15 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   test: {
     environment: 'jsdom',
+    setupFiles: ['./src/test-setup.ts'],
+    server: {
+      // Inline jest-dom so Vitest resolves its transitive deps (redent,
+      // @adobe/css-tools, dom-accessibility-api) from the pnpm store
+      // rather than requiring them to be hoisted into apps/client/node_modules.
+      deps: {
+        inline: ['@testing-library/jest-dom'],
+      },
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
@@ -40,6 +49,10 @@ export default defineConfig({
     outDir: 'dist',
     rollupOptions: {
       input: 'index.html',
+      // @dorkos/shared/manifest uses Node.js built-ins (fs, path, crypto) and
+      // is only consumed by DirectTransport in Electron/Obsidian. Externalize
+      // it from the browser bundle to prevent Vite from inlining Node modules.
+      external: ['@dorkos/shared/manifest'],
     },
   },
 });

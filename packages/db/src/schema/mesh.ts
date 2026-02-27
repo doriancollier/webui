@@ -24,6 +24,10 @@ export const agents = sqliteTable('agents', {
     .default('{"maxHopsPerMessage":5,"maxCallsPerHour":100}'),
   lastSeenAt: text('last_seen_at'), // ISO 8601 TEXT
   lastSeenEvent: text('last_seen_event'),
+  persona: text('persona'),
+  personaEnabled: integer('persona_enabled', { mode: 'boolean' }).notNull().default(true),
+  color: text('color'),
+  icon: text('icon'),
   registeredAt: text('registered_at').notNull(),
   updatedAt: text('updated_at').notNull(),
   // manifest_json DROPPED — redundant with individual structured columns

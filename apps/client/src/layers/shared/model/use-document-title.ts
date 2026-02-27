@@ -6,12 +6,22 @@ interface UseDocumentTitleOptions {
   activeForm: string | null;
   isStreaming: boolean;
   isWaitingForUser: boolean;
+  /** Agent name override — when provided, replaces directory name in the title */
+  agentName?: string;
+  /** Agent emoji override — when provided, replaces CWD-hashed emoji */
+  agentEmoji?: string;
 }
 
-function buildTitle(cwd: string, activeForm: string | null, prefix: string): string {
-  const emoji = hashToEmoji(cwd);
-  const dirName = cwd.split('/').filter(Boolean).pop() ?? cwd;
-  let title = `${prefix}${emoji} ${dirName}`;
+function buildTitle(
+  cwd: string,
+  activeForm: string | null,
+  prefix: string,
+  agentName?: string,
+  agentEmoji?: string
+): string {
+  const emoji = agentEmoji ?? hashToEmoji(cwd);
+  const label = agentName ?? (cwd.split('/').filter(Boolean).pop() ?? cwd);
+  let title = `${prefix}${emoji} ${label}`;
   if (activeForm) {
     const truncated = activeForm.length > 40 ? activeForm.slice(0, 40) + '\u2026' : activeForm;
     title += ` \u2014 ${truncated}`;
@@ -25,6 +35,8 @@ export function useDocumentTitle({
   activeForm,
   isStreaming,
   isWaitingForUser,
+  agentName,
+  agentEmoji,
 }: UseDocumentTitleOptions) {
   const isTabHiddenRef = useRef(document.hidden);
   const hasUnseenResponseRef = useRef(false);
@@ -34,11 +46,15 @@ export function useDocumentTitle({
   const cwdRef = useRef(cwd);
   const activeFormRef = useRef(activeForm);
   const isWaitingForUserRef = useRef(isWaitingForUser);
+  const agentNameRef = useRef(agentName);
+  const agentEmojiRef = useRef(agentEmoji);
   useEffect(() => {
     cwdRef.current = cwd;
     activeFormRef.current = activeForm;
     isWaitingForUserRef.current = isWaitingForUser;
-  }, [cwd, activeForm, isWaitingForUser]);
+    agentNameRef.current = agentName;
+    agentEmojiRef.current = agentEmoji;
+  }, [cwd, activeForm, isWaitingForUser, agentName, agentEmoji]);
 
   // Track tab visibility and clear 🏁 on return
   useEffect(() => {
@@ -49,7 +65,13 @@ export function useDocumentTitle({
         // Rebuild title — preserve 🔔 if still waiting
         if (cwdRef.current) {
           const prefix = isWaitingForUserRef.current ? '🔔 ' : '';
-          document.title = buildTitle(cwdRef.current, activeFormRef.current, prefix);
+          document.title = buildTitle(
+            cwdRef.current,
+            activeFormRef.current,
+            prefix,
+            agentNameRef.current,
+            agentEmojiRef.current
+          );
         }
       }
     };
@@ -80,6 +102,6 @@ export function useDocumentTitle({
       prefix = '🏁 ';
     }
 
-    document.title = buildTitle(cwd, activeForm, prefix);
-  }, [cwd, activeForm, isStreaming, isWaitingForUser]);
+    document.title = buildTitle(cwd, activeForm, prefix, agentName, agentEmoji);
+  }, [cwd, activeForm, isStreaming, isWaitingForUser, agentName, agentEmoji]);
 }

@@ -522,4 +522,50 @@ export class HttpTransport implements Transport {
   getMeshAgentAccess(agentId: string): Promise<{ agents: AgentManifest[] }> {
     return fetchJSON(this.baseUrl, `/mesh/agents/${encodeURIComponent(agentId)}/access`);
   }
+
+  // --- Agent Identity ---
+
+  async getAgentByPath(path: string): Promise<AgentManifest | null> {
+    const res = await fetch(
+      `${this.baseUrl}/agents/current?path=${encodeURIComponent(path)}`
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) throw new Error(`Failed to get agent: ${res.statusText}`);
+    return res.json();
+  }
+
+  async resolveAgents(paths: string[]): Promise<Record<string, AgentManifest | null>> {
+    const data = await fetchJSON<{ agents: Record<string, AgentManifest | null> }>(
+      this.baseUrl,
+      '/agents/resolve',
+      {
+        method: 'POST',
+        body: JSON.stringify({ paths }),
+      }
+    );
+    return data.agents;
+  }
+
+  createAgent(
+    path: string,
+    name?: string,
+    description?: string,
+    runtime?: string
+  ): Promise<AgentManifest> {
+    return fetchJSON<AgentManifest>(this.baseUrl, '/agents', {
+      method: 'POST',
+      body: JSON.stringify({ path, ...(name && { name }), ...(description && { description }), ...(runtime && { runtime }) }),
+    });
+  }
+
+  updateAgentByPath(path: string, updates: Partial<AgentManifest>): Promise<AgentManifest> {
+    return fetchJSON<AgentManifest>(
+      this.baseUrl,
+      `/agents/current?path=${encodeURIComponent(path)}`,
+      {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }
+    );
+  }
 }
