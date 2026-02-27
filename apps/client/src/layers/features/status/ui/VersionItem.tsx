@@ -1,64 +1,168 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ArrowUp, Clipboard, Check, ExternalLink } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
+import { TIMING } from '@/layers/shared/lib/constants';
+import { Popover, PopoverTrigger, PopoverContent } from '@/layers/shared/ui';
 
 interface VersionItemProps {
   version: string;
   latestVersion: string | null;
 }
 
+const UPDATE_COMMAND = 'npm update -g dorkos';
+const RELEASES_URL_BASE = 'https://github.com/dork-labs/dorkos/releases/tag/v';
+
 /**
- * Status bar version badge with optional update indicator.
+ * Status bar version badge with two-tier update indicator and popover card.
  *
- * Shows `v{version}` in muted text when up to date.
- * Shows `↑ v{latestVersion}` with accent color when update available.
- * Click opens a tooltip with update instructions.
+ * Shows `v{version}` when up to date. For patches, shows `v{latest} available`
+ * with a subtle amber dot. For feature updates, shows `Upgrade available` with
+ * an animated amber dot and accent color text.
  */
 export function VersionItem({ version, latestVersion }: VersionItemProps) {
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [copied, setCopied] = useState(false);
   const hasUpdate = latestVersion !== null && isNewer(latestVersion, version);
+  const isFeature = hasUpdate && isFeatureUpdate(latestVersion!, version);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(UPDATE_COMMAND);
+    setCopied(true);
+    setTimeout(() => setCopied(false), TIMING.COPY_FEEDBACK_MS);
+  }, []);
+
+  if (!hasUpdate) {
+    return (
+      <span
+        className="cursor-default text-xs text-muted-foreground"
+        aria-label={`Version ${version}`}
+      >
+        v{version}
+      </span>
+    );
+  }
 
   return (
-    <span className="relative inline-flex items-center">
-      <button
-        type="button"
-        className={cn(
-          'cursor-default text-xs',
-          hasUpdate
-            ? 'cursor-pointer text-amber-600 hover:underline dark:text-amber-400'
-            : 'text-muted-foreground'
-        )}
-        onClick={() => hasUpdate && setShowTooltip(!showTooltip)}
-        aria-label={hasUpdate ? `Update available: v${latestVersion}` : `Version ${version}`}
-      >
-        {hasUpdate ? `↑ v${latestVersion}` : `v${version}`}
-      </button>
-
-      {showTooltip && hasUpdate && (
-        <div
-          className="bg-popover text-popover-foreground border-border absolute bottom-full right-0 z-50 mb-2 w-64 rounded-md border p-3 text-xs shadow-md"
-          role="tooltip"
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className={cn(
+            'inline-flex cursor-pointer items-center gap-1.5 text-xs',
+            isFeature
+              ? 'text-amber-600 dark:text-amber-400'
+              : 'text-muted-foreground'
+          )}
+          aria-label={
+            isFeature
+              ? `Feature update available: v${latestVersion}`
+              : `Patch update available: v${latestVersion}`
+          }
         >
-          <p className="font-medium">
-            Update available: v{version} → v{latestVersion}
-          </p>
-          <p className="text-muted-foreground mt-1">
-            Run{' '}
-            <code className="bg-muted rounded px-1 py-0.5 font-mono text-[10px]">
-              npm update -g dorkos
-            </code>{' '}
-            to update
-          </p>
+          <AmberDot pulse={isFeature} />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={isFeature ? 'feature' : 'patch'}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {isFeature ? 'Upgrade available' : `v${latestVersion} available`}
+            </motion.span>
+          </AnimatePresence>
+        </button>
+      </PopoverTrigger>
+      <PopoverContent side="top" align="end" sideOffset={8} className="w-64 p-0">
+        <div className="space-y-3 p-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <ArrowUp className="size-4" />
+            Update Available
+          </div>
+
+          <div className="text-muted-foreground text-xs">
+            v{version}
+            <span className="mx-1.5">&rarr;</span>
+            v{latestVersion}
+          </div>
+
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="bg-muted hover:bg-muted/80 flex w-full items-center justify-between rounded-md px-2.5 py-2 text-left font-mono text-[11px] transition-colors"
+            aria-label="Copy update command"
+          >
+            <span>{UPDATE_COMMAND}</span>
+            <AnimatePresence mode="wait" initial={false}>
+              {copied ? (
+                <motion.span
+                  key="check"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Check className="size-3.5 text-emerald-500" />
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="clipboard"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Clipboard className="size-3.5 text-muted-foreground" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </button>
+
+          {isFeature && (
+            <a
+              href={`${RELEASES_URL_BASE}${latestVersion}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-muted-foreground transition-colors hover:text-foreground"
+            >
+              What&apos;s new
+              <ExternalLink className="size-3" />
+            </a>
+          )}
         </div>
-      )}
-    </span>
+      </PopoverContent>
+    </Popover>
   );
 }
 
-/** Simple semver comparison: returns true if a > b */
+function AmberDot({ pulse }: { pulse: boolean }) {
+  return (
+    <motion.span
+      className="inline-block size-1 rounded-full bg-amber-500"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1, scale: pulse ? [1, 1.4, 1] : 1 }}
+      transition={
+        pulse
+          ? { opacity: { duration: 0.2 }, scale: { duration: 0.6, ease: 'easeOut' } }
+          : { duration: 0.2 }
+      }
+      aria-hidden="true"
+    />
+  );
+}
+
+/** Simple semver comparison: returns true if a > b. */
 function isNewer(a: string, b: string): boolean {
   const [aMaj, aMin, aPat] = a.split('.').map(Number);
   const [bMaj, bMin, bPat] = b.split('.').map(Number);
   if (aMaj !== bMaj) return aMaj > bMaj;
   if (aMin !== bMin) return aMin > bMin;
   return aPat > bPat;
+}
+
+/** Returns true if major or minor version changed (not just patch). */
+function isFeatureUpdate(latest: string, current: string): boolean {
+  const [latMaj, latMin] = latest.split('.').map(Number);
+  const [curMaj, curMin] = current.split('.').map(Number);
+  return latMaj !== curMaj || latMin !== curMin;
 }

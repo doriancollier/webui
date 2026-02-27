@@ -69,6 +69,15 @@ export { Kbd } from './kbd';
 export { Label } from './label';
 export { PathBreadcrumb } from './path-breadcrumb';
 export {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverAnchor,
+  PopoverHeader,
+  PopoverTitle,
+  PopoverDescription,
+} from './popover';
+export {
   ResponsiveDialog,
   ResponsiveDialogTrigger,
   ResponsiveDialogContent,
