@@ -162,8 +162,12 @@ async function publishViaRelay(
   // Register the console endpoint (idempotent — catch duplicate registration)
   try {
     await relayCore.registerEndpoint(consoleEndpoint);
-  } catch {
-    // Endpoint already registered — ignore
+  } catch (err) {
+    // Only ignore "already registered" — log real failures
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.includes('already registered')) {
+      console.error('publishViaRelay: failed to register console endpoint:', message);
+    }
   }
 
   const publishResult = await relayCore.publish(
@@ -182,7 +186,7 @@ async function publishViaRelay(
 
   return {
     messageId: publishResult.messageId,
-    traceId: 'no-trace',
+    traceId: publishResult.messageId,
   };
 }
 

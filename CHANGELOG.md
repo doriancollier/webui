@@ -20,6 +20,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix publish pipeline skipping adapter delivery and improve adapter system
+- Fix critical Relay publish pipeline bug where adapter delivery was skipped when no Maildir endpoints matched — this blocked all Relay-routed chat messages and Pulse scheduled dispatches
+- Propagate rich `DeliveryResult` from adapters through the publish pipeline instead of discarding as boolean
+- Add 30-second timeout protection for adapter delivery
+- Index adapter-delivered messages in SQLite with `adapter:` prefix for audit trail completeness
+- Return real trace ID (message ULID) instead of hardcoded `'no-trace'` from `publishViaRelay()`
+- Improve console endpoint registration error handling — only ignore expected 'already registered' errors
+
 ---
 
 ## [0.4.0] - 2026-02-26

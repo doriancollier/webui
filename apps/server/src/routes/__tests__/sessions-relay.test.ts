@@ -121,7 +121,7 @@ describe('Sessions Routes — Relay Integration', () => {
       expect(res.status).toBe(202);
       expect(res.body).toEqual({
         messageId: 'msg-001',
-        traceId: 'no-trace',
+        traceId: 'msg-001',
       });
     });
 
@@ -245,6 +245,66 @@ describe('Sessions Routes — Relay Integration', () => {
       // Should still succeed despite endpoint registration error
       expect(res.status).toBe(202);
       expect(mockRelayCore.publish).toHaveBeenCalled();
+    });
+
+    it('returns message ID as trace ID instead of no-trace', async () => {
+      vi.mocked(isRelayEnabled).mockReturnValue(true);
+      app.locals.relayCore = mockRelayCore;
+      const mockMessageId = 'test-msg-01ABCDEF';
+      mockRelayCore.publish.mockResolvedValue({
+        messageId: mockMessageId,
+        deliveredTo: 1,
+      });
+
+      const res = await request(app)
+        .post('/api/sessions/s1/messages')
+        .set('X-Client-Id', 'client-1')
+        .send({ content: 'hello' });
+
+      expect(res.status).toBe(202);
+      expect(res.body.traceId).toBe(mockMessageId);
+      expect(res.body.traceId).not.toBe('no-trace');
+    });
+
+    it('logs error when endpoint registration fails for non-duplicate reason', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      vi.mocked(isRelayEnabled).mockReturnValue(true);
+      app.locals.relayCore = mockRelayCore;
+      mockRelayCore.registerEndpoint.mockRejectedValue(new Error('disk full'));
+
+      const res = await request(app)
+        .post('/api/sessions/s1/messages')
+        .set('X-Client-Id', 'client-1')
+        .send({ content: 'hello' });
+
+      // Publish should still proceed
+      expect(res.status).toBe(202);
+      // Error should be logged
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('publishViaRelay'),
+        expect.stringContaining('disk full'),
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('silently ignores already-registered endpoint errors without logging', async () => {
+      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+      vi.mocked(isRelayEnabled).mockReturnValue(true);
+      app.locals.relayCore = mockRelayCore;
+      mockRelayCore.registerEndpoint.mockRejectedValue(new Error('endpoint already registered'));
+
+      const res = await request(app)
+        .post('/api/sessions/s1/messages')
+        .set('X-Client-Id', 'client-1')
+        .send({ content: 'hello' });
+
+      expect(res.status).toBe(202);
+      expect(consoleSpy).not.toHaveBeenCalled();
+
+      consoleSpy.mockRestore();
     });
   });
 

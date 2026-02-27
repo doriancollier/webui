@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as fsSync from 'node:fs';
 import * as path from 'node:path';
@@ -7,6 +7,7 @@ import { RelayCore } from '../relay-core.js';
 import { MaildirStore } from '../maildir-store.js';
 import { SqliteIndex } from '../sqlite-index.js';
 import type { RelayEnvelope, Signal } from '@dorkos/shared/relay-schemas';
+import type { AdapterRegistryLike, AdapterContext } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -147,14 +148,17 @@ describe('publish - basic', () => {
     expect(result.deliveredTo).toBe(1);
   });
 
-  it('returns deliveredTo=0 when no endpoints match', async () => {
+  it('dead-letters when no endpoints or adapters match', async () => {
     const result = await relay.publish(
-      'relay.agent.unknown',
+      'relay.nobody.here',
       { msg: 'hello' },
       { from: 'relay.sender' },
     );
 
     expect(result.deliveredTo).toBe(0);
+    // Verify DLQ was called
+    const deadLetters = await relay.getDeadLetters();
+    expect(deadLetters.some((d) => d.envelope?.subject === 'relay.nobody.here')).toBe(true);
   });
 
   it('rejects invalid subjects', async () => {
@@ -1404,5 +1408,150 @@ describe('reliability pipeline integration', () => {
     expect(resultB.deliveredTo).toBe(1);
     expect(received.length).toBe(1);
     expect(received[0].payload).toEqual({ target: 'b' });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Adapter delivery
+  // ---------------------------------------------------------------------------
+
+  describe('adapter delivery', () => {
+    it('delivers to adapter when no Maildir endpoints match', async () => {
+      const mockAdapter: AdapterRegistryLike = {
+        setRelay: vi.fn(),
+        deliver: vi.fn().mockResolvedValue({ success: true, durationMs: 5 }),
+        shutdown: vi.fn(),
+      };
+      const relayWithAdapter = new RelayCore({
+        dataDir: tmpDir,
+        adapterRegistry: mockAdapter,
+      });
+
+      const result = await relayWithAdapter.publish(
+        'relay.agent.test-session',
+        { content: 'hello' },
+        { from: 'relay.test.sender' },
+      );
+
+      expect(result.deliveredTo).toBe(1);
+      expect(result.adapterResult).toEqual({ success: true, durationMs: 5 });
+      expect(mockAdapter.deliver).toHaveBeenCalledWith(
+        'relay.agent.test-session',
+        expect.objectContaining({ subject: 'relay.agent.test-session' }),
+        undefined,
+      );
+
+      await relayWithAdapter.close();
+    });
+
+    it('delivers to both Maildir endpoints and adapter', async () => {
+      const mockAdapter: AdapterRegistryLike = {
+        setRelay: vi.fn(),
+        deliver: vi.fn().mockResolvedValue({ success: true, durationMs: 3 }),
+        shutdown: vi.fn(),
+      };
+      const relayMixed = new RelayCore({
+        dataDir: tmpDir,
+        adapterRegistry: mockAdapter,
+      });
+      await relayMixed.registerEndpoint('relay.agent.test-session');
+
+      const result = await relayMixed.publish(
+        'relay.agent.test-session',
+        { content: 'hello' },
+        { from: 'relay.test.sender' },
+      );
+
+      expect(result.deliveredTo).toBe(2); // Maildir + adapter
+
+      await relayMixed.close();
+    });
+
+    it('dead-letters when adapter is sole target and fails', async () => {
+      const failingAdapter: AdapterRegistryLike = {
+        setRelay: vi.fn(),
+        deliver: vi.fn().mockResolvedValue({
+          success: false,
+          error: 'connection refused',
+        }),
+        shutdown: vi.fn(),
+      };
+      const relayFailing = new RelayCore({
+        dataDir: tmpDir,
+        adapterRegistry: failingAdapter,
+      });
+
+      const result = await relayFailing.publish(
+        'relay.agent.fail-session',
+        { content: 'hello' },
+        { from: 'relay.test.sender' },
+      );
+
+      expect(result.deliveredTo).toBe(0);
+      const dead = await relayFailing.getDeadLetters();
+      expect(dead.some((d) => d.reason.includes('adapter delivery failed'))).toBe(true);
+
+      await relayFailing.close();
+    });
+
+    it('does NOT dead-letter when Maildir delivered but adapter failed', async () => {
+      const failingAdapter: AdapterRegistryLike = {
+        setRelay: vi.fn(),
+        deliver: vi.fn().mockResolvedValue({ success: false, error: 'down' }),
+        shutdown: vi.fn(),
+      };
+      const relayPartial = new RelayCore({
+        dataDir: tmpDir,
+        adapterRegistry: failingAdapter,
+      });
+      await relayPartial.registerEndpoint('relay.agent.partial');
+
+      const result = await relayPartial.publish(
+        'relay.agent.partial',
+        { content: 'hello' },
+        { from: 'relay.test.sender' },
+      );
+
+      expect(result.deliveredTo).toBe(1); // Maildir succeeded
+      const dead = await relayPartial.getDeadLetters();
+      expect(dead.filter((d) => d.envelope?.subject === 'relay.agent.partial')).toHaveLength(0);
+
+      await relayPartial.close();
+    });
+
+    it('passes adapter context through to adapter delivery', async () => {
+      const mockAdapter: AdapterRegistryLike = {
+        setRelay: vi.fn(),
+        deliver: vi.fn().mockResolvedValue({ success: true }),
+        shutdown: vi.fn(),
+      };
+      const mockContext: AdapterContext = {
+        agent: { directory: '/tmp/test', runtime: 'claude-code' },
+      };
+      const relayWithContext = new RelayCore({
+        dataDir: tmpDir,
+        adapterRegistry: mockAdapter,
+        adapterContextBuilder: () => mockContext,
+      });
+
+      await relayWithContext.publish('relay.agent.ctx', { content: 'hi' }, { from: 'relay.test.sender' });
+
+      expect(mockAdapter.deliver).toHaveBeenCalledWith(
+        'relay.agent.ctx',
+        expect.any(Object),
+        mockContext,
+      );
+
+      await relayWithContext.close();
+    });
+
+    it('returns no adapterResult when no adapter registry configured', async () => {
+      const result = await relay.publish(
+        'relay.test.no-adapter',
+        { content: 'hello' },
+        { from: 'relay.test.sender' },
+      );
+
+      expect(result.adapterResult).toBeUndefined();
+    });
   });
 });

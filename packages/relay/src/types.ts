@@ -186,6 +186,8 @@ export interface PublishResultLike {
     reason: 'backpressure' | 'circuit_open' | 'rate_limited' | 'budget_exceeded';
   }>;
   mailboxPressure?: Record<string, number>;
+  /** Result from adapter delivery, if attempted. */
+  adapterResult?: DeliveryResult;
 }
 
 /**
@@ -206,7 +208,7 @@ export interface RelayPublisher {
  */
 export interface AdapterRegistryLike {
   setRelay(relay: RelayPublisher): void;
-  deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<boolean>;
+  deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<DeliveryResult | null>;
   shutdown(): Promise<void>;
 }
 

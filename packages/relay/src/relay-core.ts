@@ -45,6 +45,7 @@ import type {
   RelayMetrics,
   AdapterRegistryLike,
   AdapterContext,
+  DeliveryResult,
 } from './types.js';
 import type { DeadLetterEntry, ListDeadOptions } from './dead-letter-queue.js';
 
@@ -88,6 +89,9 @@ export interface PublishResult {
 
   /** Per-endpoint pressure ratios for proactive signaling (0.0-1.0). */
   mailboxPressure?: Record<string, number>;
+
+  /** Result from adapter delivery, if attempted. */
+  adapterResult?: DeliveryResult;
 }
 
 /** Internal result from delivering to a single endpoint. */
@@ -301,50 +305,39 @@ export class RelayCore {
       payload,
     };
 
-    // 5. Find matching endpoints
+    // 5. Find matching Maildir endpoints
     const matchingEndpoints = this.findMatchingEndpoints(subject);
 
-    // 6. Deliver to each matching endpoint
-    if (matchingEndpoints.length === 0) {
-      // No matching endpoints — send to DLQ for the sender's information
-      // We still create a hash for DLQ storage based on subject
-      const { hashSubject } = await import('./endpoint-registry.js');
-      const subjectHash = hashSubject(subject);
-      await this.maildirStore.ensureMaildir(subjectHash);
-      await this.deadLetterQueue.reject(subjectHash, envelope, 'no matching endpoints');
-      return { messageId, deliveredTo: 0 };
-    }
-
+    // 6. Deliver to Maildir endpoints (may be empty — that's OK)
     let deliveredTo = 0;
     const rejected: PublishResult['rejected'] = [];
     const mailboxPressure: Record<string, number> = {};
 
     for (const endpoint of matchingEndpoints) {
       const result = await this.deliverToEndpoint(endpoint, envelope);
-
-      if (result.delivered) {
-        deliveredTo++;
-      }
-      if (result.rejected) {
-        rejected.push(result.rejected);
-      }
-      if (result.pressure !== undefined) {
-        mailboxPressure[endpoint.hash] = result.pressure;
-      }
+      if (result.delivered) deliveredTo++;
+      if (result.rejected) rejected.push(result.rejected);
+      if (result.pressure !== undefined) mailboxPressure[endpoint.hash] = result.pressure;
     }
 
-    // 7. Deliver to matching external adapter (after Maildir endpoints)
+    // 7. Deliver to matching adapter (unified fan-out — always attempted)
+    let adapterResult: DeliveryResult | null = null;
     if (this.adapterRegistry) {
-      try {
-        const context = this.adapterContextBuilder?.(subject);
-        const adapterDelivered = await this.adapterRegistry.deliver(subject, envelope, context);
-        if (adapterDelivered) {
-          deliveredTo++;
-        }
-      } catch (err) {
-        // Adapter delivery failure is non-fatal — log but don't fail the overall publish
-        console.warn('RelayCore: adapter delivery failed:', err instanceof Error ? err.message : err);
-      }
+      adapterResult = await this.deliverToAdapter(subject, envelope);
+      if (adapterResult?.success) deliveredTo++;
+    }
+
+    // 8. Dead-letter only when NO delivery targets matched at all
+    // Reliability rejections (backpressure, circuit_open) are NOT dead-lettered
+    if (deliveredTo === 0 && matchingEndpoints.length === 0) {
+      const { hashSubject } = await import('./endpoint-registry.js');
+      const subjectHash = hashSubject(subject);
+      await this.maildirStore.ensureMaildir(subjectHash);
+
+      const reason = adapterResult?.error
+        ? `adapter delivery failed: ${adapterResult.error}`
+        : 'no matching endpoints or adapters';
+      await this.deadLetterQueue.reject(subjectHash, envelope, reason);
     }
 
     return {
@@ -352,6 +345,7 @@ export class RelayCore {
       deliveredTo,
       ...(rejected.length > 0 && { rejected }),
       ...(Object.keys(mailboxPressure).length > 0 && { mailboxPressure }),
+      ...(adapterResult && { adapterResult }),
     };
   }
 
@@ -748,6 +742,65 @@ export class RelayCore {
     await this.dispatchToSubscribers(endpoint, deliverResult.messageId, deliveryEnvelope);
 
     return { delivered: true, pressure: bpResult.pressure };
+  }
+
+  /** Adapter delivery timeout in milliseconds. */
+  private static readonly ADAPTER_TIMEOUT_MS = 30_000;
+
+  /**
+   * Deliver a message to a matching adapter with timeout protection,
+   * SQLite indexing, and error handling.
+   *
+   * @param subject - The target subject
+   * @param envelope - The relay envelope to deliver
+   * @returns DeliveryResult or null if no adapter matched
+   */
+  private async deliverToAdapter(
+    subject: string,
+    envelope: RelayEnvelope,
+  ): Promise<DeliveryResult | null> {
+    if (!this.adapterRegistry) return null;
+
+    const context = this.adapterContextBuilder?.(subject);
+
+    try {
+      const deliveryPromise = this.adapterRegistry.deliver(subject, envelope, context);
+
+      const result = await Promise.race([
+        deliveryPromise,
+        new Promise<DeliveryResult>((_, reject) =>
+          setTimeout(
+            () => reject(new Error('adapter delivery timeout (30s)')),
+            RelayCore.ADAPTER_TIMEOUT_MS,
+          ),
+        ),
+      ]);
+
+      // Index adapter-delivered messages in SQLite for audit trail
+      if (result && result.success) {
+        const { hashSubject } = await import('./endpoint-registry.js');
+        const subjectHash = hashSubject(subject);
+        this.sqliteIndex.insertMessage({
+          id: envelope.id,
+          subject,
+          endpointHash: `adapter:${subjectHash}`,
+          status: 'delivered',
+          createdAt: envelope.createdAt,
+          expiresAt: null,
+        });
+      }
+
+      return result;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      console.warn('RelayCore: adapter delivery failed:', errorMessage);
+      return {
+        success: false,
+        error: errorMessage,
+        deadLettered: false,
+        durationMs: undefined,
+      };
+    }
   }
 
   /**

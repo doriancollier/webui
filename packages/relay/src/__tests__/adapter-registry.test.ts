@@ -134,15 +134,73 @@ describe('AdapterRegistry', () => {
     const subject = 'relay.human.telegram.999';
     const delivered = await registry.deliver(subject, { ...envelope, subject });
 
-    expect(delivered).toBe(true);
+    expect(delivered).toEqual({ success: true, durationMs: 0 });
     expect(adapter.deliver).toHaveBeenCalledWith(subject, expect.objectContaining({ subject }), undefined);
   });
 
-  it('deliver() returns false when no adapter matches', async () => {
+  it('deliver() returns null when no adapter matches', async () => {
     const envelope = createMockEnvelope();
     const result = await registry.deliver('relay.agent.backend', envelope);
 
-    expect(result).toBe(false);
+    expect(result).toBeNull();
+  });
+
+  it('deliver() propagates full DeliveryResult from adapter', async () => {
+    const richResult = {
+      success: true,
+      durationMs: 42,
+      responseMessageId: 'resp-123',
+    };
+    const adapter = createMockAdapter({
+      subjectPrefix: 'relay.human.telegram',
+      deliver: vi.fn().mockResolvedValue(richResult),
+    });
+    await registry.register(adapter);
+
+    const envelope = createMockEnvelope();
+    const result = await registry.deliver('relay.human.telegram.999', {
+      ...envelope,
+      subject: 'relay.human.telegram.999',
+    });
+
+    expect(result).toEqual(richResult);
+  });
+
+  it('deliver() propagates failure DeliveryResult from adapter', async () => {
+    const failResult = {
+      success: false,
+      error: 'rate limited by Telegram',
+      deadLettered: false,
+    };
+    const adapter = createMockAdapter({
+      subjectPrefix: 'relay.human.telegram',
+      deliver: vi.fn().mockResolvedValue(failResult),
+    });
+    await registry.register(adapter);
+
+    const envelope = createMockEnvelope();
+    const result = await registry.deliver('relay.human.telegram.999', {
+      ...envelope,
+      subject: 'relay.human.telegram.999',
+    });
+
+    expect(result).toEqual(failResult);
+    expect(result?.success).toBe(false);
+  });
+
+  it('deliver() passes context to matched adapter', async () => {
+    const adapter = createMockAdapter({ subjectPrefix: 'relay.test.ctx' });
+    await registry.register(adapter);
+
+    const envelope = createMockEnvelope();
+    const context = { agent: { directory: '/tmp/test', runtime: 'claude-code' as const } };
+    await registry.deliver(
+      'relay.test.ctx.event',
+      { ...envelope, subject: 'relay.test.ctx.event' },
+      context,
+    );
+
+    expect(adapter.deliver).toHaveBeenCalledWith('relay.test.ctx.event', expect.any(Object), context);
   });
 
   // --- Hot-reload ---

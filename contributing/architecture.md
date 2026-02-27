@@ -317,6 +317,23 @@ The `AdapterRegistry` (in `packages/relay/src/adapter-registry.ts`) manages exte
 
 The `AdapterManager` (in `apps/server/src/services/relay/adapter-manager.ts`) handles server-side lifecycle: config loading from `~/.dork/relay/adapters.json`, chokidar hot-reload with `awaitWriteFinish`, and Express route integration for adapter management endpoints.
 
+### Relay Publish Pipeline — Unified Fan-Out
+
+The `RelayCore.publish()` method uses a unified fan-out model: both Maildir endpoints and adapter delivery are attempted before any dead-letter decision is made. This ensures adapter-only subjects (like `relay.agent.*` handled by `ClaudeCodeAdapter`) receive messages even when no Maildir endpoints are registered.
+
+Pipeline steps:
+1. Validate subject format
+2. Access control check
+3. Rate limit check (per-sender)
+4. Build envelope with budget
+5. Deliver to matching Maildir endpoints (may be zero)
+6. Deliver to matching adapter via `deliverToAdapter()` (timeout-protected, 30s)
+7. Dead-letter only when `deliveredTo === 0` and no matching endpoints exist
+
+Adapter delivery includes SQLite indexing (with `adapter:` prefixed endpoint hash) for audit trail completeness.
+
+**Known edge case — POST/SSE race:** When a client sends a message via POST and simultaneously establishes an SSE subscription, there is a window where the subscription may not yet be active when the response arrives. The subscription dispatch in `publish()` mitigates this for most cases, but it is not guaranteed for the very first message. This is a known limitation, not a bug.
+
 **Adapter data flow:**
 
 ```
