@@ -154,7 +154,7 @@ The `warnings` field is only present when the patch includes keys listed in `SEN
 
 ## Relay Endpoints
 
-All relay endpoints are under `/api/relay/` and require `DORKOS_RELAY_ENABLED=true`. Returns 503 when relay is disabled.
+All relay endpoints are under `/api/relay/` and require `DORKOS_RELAY_ENABLED=true`. When disabled, the relay router is not mounted and requests return 404.
 
 ### POST /api/relay/messages
 

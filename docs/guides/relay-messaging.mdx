@@ -103,10 +103,16 @@ The response includes the message ID and delivery results:
 When interacting with Claude Code through DorkOS, the agent has access to built-in MCP tools for Relay operations. These tools allow agents to send messages, read inboxes, and manage endpoints without making HTTP calls:
 
 ```
-relay_send        Send a message to a Relay subject
-relay_inbox       Read inbox messages for an endpoint
-relay_list_endpoints   List all registered endpoints
-relay_register_endpoint  Register a new endpoint
+relay_send                Send a message to a Relay subject
+relay_inbox               Read inbox messages for an endpoint
+relay_list_endpoints      List all registered endpoints
+relay_register_endpoint   Register a new endpoint
+relay_get_trace           Get the full delivery trace for a message
+relay_get_metrics         Get aggregate delivery metrics
+relay_list_adapters       List all adapters with status
+relay_enable_adapter      Enable a disabled adapter
+relay_disable_adapter     Disable a running adapter
+relay_reload_adapters     Hot-reload adapter configuration from disk
 ```
 
 An agent can send a message by calling the `relay_send` tool with a subject, payload, and sender identifier. The tool handles envelope construction and delivery internally.
@@ -187,7 +193,7 @@ To enable it, add a Telegram adapter entry to `adapters.json` with your bot toke
   "builtin": true,
   "enabled": true,
   "config": {
-    "botToken": "123456:ABC-DEF..."
+    "token": "123456:ABC-DEF..."
   }
 }
 ```
@@ -234,26 +240,25 @@ curl http://localhost:4242/api/relay/messages/{messageId}/trace
 
 ```json
 {
-  "traceId": "01HX...",
+  "traceId": "01HXABC123",
   "spans": [
     {
-      "messageId": "01HX...",
-      "traceId": "01HX...",
-      "spanId": "span-abc",
+      "id": "01HXDEF456",
+      "messageId": "01HXABC123",
+      "traceId": "01HXABC123",
       "subject": "relay.agent.backend",
-      "fromEndpoint": "relay.human.console.client-1",
-      "toEndpoint": "relay.agent.backend",
       "status": "delivered",
-      "budgetHopsUsed": 1,
-      "sentAt": 1709000000000,
-      "deliveredAt": 1709000000050,
-      "processedAt": 1709000000200
+      "sentAt": "2025-02-26T12:00:00.000Z",
+      "deliveredAt": "2025-02-26T12:00:00.050Z",
+      "processedAt": "2025-02-26T12:00:00.200Z",
+      "errorMessage": null,
+      "metadata": null
     }
   ]
 }
 ```
 
-The trace span statuses are: `pending` (in flight), `delivered` (written to endpoint), `processed` (handler completed), `failed` (handler errored), and `dead_lettered` (rejected by budget or access control).
+The trace span statuses are: `sent` (published, delivery in progress), `delivered` (endpoint received and processed successfully), `failed` (handler errored), and `timeout` (rejected by budget, access control, or TTL expiry).
 
 For more detailed observability, see the [Relay Observability](/docs/guides/relay-observability) guide.
 
@@ -285,7 +290,7 @@ Relay stores its configuration and data in the `~/.dork/relay/` directory.
 
 | Path | Purpose |
 |---|---|
-| `~/.dork/relay/index.db` | SQLite index database (messages, traces, WAL mode) |
+| `~/.dork/dork.db` | Consolidated SQLite database (relay index, traces, and other DorkOS tables; WAL mode via Drizzle ORM) |
 | `~/.dork/relay/endpoints/` | Maildir message store, one directory per endpoint |
 | `~/.dork/relay/adapters.json` | Adapter configuration (hot-reloaded) |
 | `~/.dork/relay/config.json` | Reliability settings (rate limits, circuit breakers, backpressure) |
@@ -321,6 +326,7 @@ The `config.json` file controls rate limiting, circuit breakers, and backpressur
 | `GET` | `/api/relay/trace/metrics` | Aggregate delivery metrics |
 | `GET` | `/api/relay/stream` | SSE event stream (supports `?subject=` filter) |
 | `GET` | `/api/relay/adapters` | List adapters with status |
+| `GET` | `/api/relay/adapters/:id` | Get a single adapter's status |
 | `POST` | `/api/relay/adapters/reload` | Hot-reload adapter configuration |
 | `POST` | `/api/relay/adapters/:id/enable` | Enable an adapter |
 | `POST` | `/api/relay/adapters/:id/disable` | Disable an adapter |

@@ -148,7 +148,7 @@ You can extend Relay with custom adapters loaded from npm packages or local file
 Relay uses two storage systems working together:
 
 - **Maildir** — A filesystem-based message store inspired by the traditional Maildir email format. Each endpoint gets a directory with `new/`, `cur/`, and `failed/` subdirectories. Messages are delivered as atomic file writes, making the store resilient to crashes. The Maildir is the authoritative source of message data.
-- **SQLite** — An index database (`index.db`) that provides fast querying by subject, sender, status, and time range. SQLite uses WAL mode for concurrent read/write access. If the index becomes corrupted, it can be rebuilt from the Maildir files using the `rebuildIndex()` method.
+- **SQLite** — The consolidated DorkOS database (`~/.dork/dork.db`) managed by Drizzle ORM provides fast querying by subject, sender, status, and time range. SQLite uses WAL mode for concurrent read/write access. The `relay_index` and `relay_traces` tables live alongside other DorkOS tables. If the index becomes corrupted, it can be rebuilt from the Maildir files.
 
 This dual-storage design means you get both durability (Maildir survives crashes) and performance (SQLite enables efficient queries and cursor-based pagination).
 
@@ -156,7 +156,7 @@ This dual-storage design means you get both durability (Maildir survives crashes
 
 Relay includes a tracing system for tracking message delivery end-to-end. Each published message gets a trace ID, and each delivery to an endpoint creates a span. Spans record timing information (sent, delivered, processed timestamps), budget consumption, and error details.
 
-The trace store lives in the same SQLite database as the message index and provides:
+The trace store lives in the consolidated DorkOS database (`~/.dork/dork.db`) alongside the message index and provides:
 
 - Per-message trace lookup (see every delivery attempt for a given message)
 - Aggregate delivery metrics (total messages, success/failure counts, latency percentiles)

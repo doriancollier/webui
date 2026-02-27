@@ -24,12 +24,12 @@ The core contract that all adapters must implement:
 ```typescript
 interface RelayAdapter {
   readonly id: string;                                          // Unique identifier
-  readonly subjectPrefix: string;                               // Subject prefix (e.g. 'relay.human.telegram')
+  readonly subjectPrefix: string | readonly string[];           // Subject prefix(es) (e.g. 'relay.human.telegram')
   readonly displayName: string;                                 // Human-readable name
 
   start(relay: RelayPublisher): Promise<void>;                  // Connect and register
   stop(): Promise<void>;                                        // Disconnect gracefully
-  deliver(subject: string, envelope: RelayEnvelope): Promise<void>;  // Send outbound message
+  deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<DeliveryResult>;  // Send outbound message
   getStatus(): AdapterStatus;                                   // Current runtime status
 }
 ```
@@ -39,7 +39,7 @@ interface RelayAdapter {
 | Property         | Type    | Purpose                                                   |
 | ---------------- | ------- | --------------------------------------------------------- |
 | `id`             | string  | Unique adapter ID (e.g., `'telegram'`, `'webhook-github'`) used for storage and lifecycle management. Multiple adapter instances can exist; the ID disambiguates them. |
-| `subjectPrefix`  | string  | The Relay subject prefix this adapter handles (e.g., `'relay.human.telegram'`). Used by AdapterRegistry to route outbound messages to the correct adapter. |
+| `subjectPrefix`  | string \| readonly string[]  | The Relay subject prefix(es) this adapter handles (e.g., `'relay.human.telegram'`). Can be an array for adapters that handle multiple prefixes. Used by AdapterRegistry to route outbound messages to the correct adapter. |
 | `displayName`    | string  | Human-readable name shown in adapter status UI (e.g., `'Telegram'`, `'Webhook (GitHub)'`). Useful when multiple Telegram adapters exist. |
 
 ### Methods
@@ -113,29 +113,32 @@ async stop(): Promise<void> {
 }
 ```
 
-#### `deliver(subject: string, envelope: RelayEnvelope): Promise<void>`
+#### `deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<DeliveryResult>`
 
-Called by RelayCore when a published message matches this adapter's `subjectPrefix`. Extracts the message content from the envelope and sends it via the external channel.
+Called by RelayCore when a published message matches this adapter's `subjectPrefix`. Extracts the message content from the envelope and sends it via the external channel. The optional `AdapterContext` provides rich context about the delivery target (e.g., Mesh agent manifest, trace context).
 
 **Requirements:**
 
 - Should extract the chat/channel identifier from the subject
 - Should handle outbound message formatting and size limits
-- Should throw on delivery failure; the error is recorded in status
+- Should return `{ success: true, durationMs }` on success or `{ success: false, error, durationMs }` on failure
 
 **Typical implementation:**
 
 ```typescript
-async deliver(subject: string, envelope: RelayEnvelope): Promise<void> {
+async deliver(subject: string, envelope: RelayEnvelope, _context?: AdapterContext): Promise<DeliveryResult> {
+  const start = Date.now();
   const chatId = extractChatIdFromSubject(subject);
   const content = extractContent(envelope.payload);
 
   try {
     await this.externalService.send(chatId, content);
     this.status.messageCount.outbound++;
+    return { success: true, durationMs: Date.now() - start };
   } catch (err) {
     this.recordError(err);
-    throw err;
+    const message = err instanceof Error ? err.message : String(err);
+    return { success: false, error: message, durationMs: Date.now() - start };
   }
 }
 ```
@@ -280,9 +283,10 @@ Adapter configurations are persisted in `~/.dork/relay/adapters.json`:
 ```typescript
 interface AdapterConfig {
   id: string;                           // Unique adapter ID
-  type: 'telegram' | 'webhook';         // Adapter type (extensible)
+  type: 'telegram' | 'webhook' | 'claude-code' | 'plugin';  // Adapter type
   enabled: boolean;                     // Whether this adapter should be running
-  config: TelegramAdapterConfig | WebhookAdapterConfig;  // Type-specific config
+  plugin?: PluginSource;                // Required when type is 'plugin'
+  config: TelegramAdapterConfig | WebhookAdapterConfig | Record<string, unknown>;  // Type-specific config
 }
 
 interface TelegramAdapterConfig {
@@ -607,7 +611,7 @@ console.error(`Authentication failed (token length: ${this.config.token.length})
 Here's a minimal example implementing a hypothetical Slack adapter:
 
 ```typescript
-import type { RelayAdapter, RelayPublisher, AdapterStatus } from '@dorkos/relay';
+import type { RelayAdapter, RelayPublisher, AdapterStatus, AdapterContext, DeliveryResult } from '@dorkos/relay';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 
 interface SlackAdapterConfig {
@@ -674,11 +678,12 @@ export class SlackAdapter implements RelayAdapter {
     }
   }
 
-  async deliver(subject: string, envelope: RelayEnvelope): Promise<void> {
-    if (!this.client) throw new Error('SlackAdapter: not started');
+  async deliver(subject: string, envelope: RelayEnvelope, _context?: AdapterContext): Promise<DeliveryResult> {
+    if (!this.client) return { success: false, error: 'SlackAdapter: not started' };
 
+    const start = Date.now();
     const userId = this.extractUserIdFromSubject(subject);
-    if (!userId) throw new Error(`Cannot extract user ID from subject: ${subject}`);
+    if (!userId) return { success: false, error: `Cannot extract user ID from subject: ${subject}` };
 
     const content = this.extractContent(envelope.payload);
 
@@ -688,9 +693,11 @@ export class SlackAdapter implements RelayAdapter {
         text: content,
       });
       this.status.messageCount.outbound++;
+      return { success: true, durationMs: Date.now() - start };
     } catch (err) {
       this.recordError(err);
-      throw err;
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, error: message, durationMs: Date.now() - start };
     }
   }
 
@@ -750,7 +757,7 @@ export class SlackAdapter implements RelayAdapter {
 1. **Constructor**: Store config, initialize ID and subject prefix
 2. **start()**: Connect to external service, set status to 'connected', return early if already started
 3. **stop()**: Gracefully shut down, set status to 'disconnected', catch errors locally
-4. **deliver()**: Extract recipient from subject, send message, update status
+4. **deliver()**: Extract recipient from subject, send message, return DeliveryResult
 5. **getStatus()**: Return a shallow copy of status
 6. **Error handling**: Always use `recordError()` to update status, never throw during stop
 

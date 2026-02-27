@@ -343,27 +343,32 @@ export type AdaptersConfigFile = z.infer<typeof AdaptersConfigFileSchema>;
 // === Trace & Metrics ===
 
 export const TraceSpanStatusSchema = z
-  .enum(['pending', 'delivered', 'processed', 'failed', 'dead_lettered'])
+  .enum(['sent', 'delivered', 'failed', 'timeout'])
   .openapi('TraceSpanStatus');
 
 export type TraceSpanStatus = z.infer<typeof TraceSpanStatusSchema>;
 
+/**
+ * Legacy status values accepted by TraceStore.insertSpan() for backwards compatibility
+ * with adapters that haven't migrated yet. Mapped internally:
+ * pending → sent, processed → delivered, dead_lettered → timeout.
+ */
+export const LegacyTraceSpanStatusSchema = z
+  .enum(['pending', 'delivered', 'processed', 'failed', 'dead_lettered'])
+  .openapi('LegacyTraceSpanStatus');
+
 export const TraceSpanSchema = z
   .object({
+    id: z.string(),
     messageId: z.string(),
     traceId: z.string(),
-    spanId: z.string(),
-    parentSpanId: z.string().nullable(),
     subject: z.string(),
-    fromEndpoint: z.string(),
-    toEndpoint: z.string(),
     status: TraceSpanStatusSchema,
-    budgetHopsUsed: z.number().int().nullable(),
-    budgetTtlRemainingMs: z.number().int().nullable(),
-    sentAt: z.number().int(),
-    deliveredAt: z.number().int().nullable(),
-    processedAt: z.number().int().nullable(),
-    error: z.string().nullable(),
+    sentAt: z.string(),
+    deliveredAt: z.string().nullable(),
+    processedAt: z.string().nullable(),
+    errorMessage: z.string().nullable(),
+    metadata: z.string().nullable(),
   })
   .openapi('TraceSpan');
 

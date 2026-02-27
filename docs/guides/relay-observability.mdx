@@ -21,20 +21,16 @@ Every message published through Relay is assigned a trace ID, and each delivery 
 ### Trace Span Fields
 
 <TypeTable type={{
+  "id": { type: "string", description: "ULID uniquely identifying this trace span" },
   "messageId": { type: "string", description: "ULID of the message being delivered" },
   "traceId": { type: "string", description: "ULID grouping all spans for a publish operation" },
-  "spanId": { type: "string", description: "Unique identifier for this delivery attempt" },
-  "parentSpanId": { type: "string | null", description: "Parent span for forwarded messages (null for direct publishes)" },
   "subject": { type: "string", description: "The target subject the message was published to" },
-  "fromEndpoint": { type: "string", description: "Sender's subject identifier" },
-  "toEndpoint": { type: "string", description: "Receiving endpoint's subject" },
-  "status": { type: "string", description: "Delivery status: pending, delivered, processed, failed, or dead_lettered" },
-  "budgetHopsUsed": { type: "number | null", description: "Number of hops consumed at this point in the chain" },
-  "budgetTtlRemainingMs": { type: "number | null", description: "Remaining TTL in milliseconds when this span was created" },
-  "sentAt": { type: "number", description: "Unix timestamp (ms) when the message was published" },
-  "deliveredAt": { type: "number | null", description: "Unix timestamp (ms) when the message reached the endpoint's Maildir" },
-  "processedAt": { type: "number | null", description: "Unix timestamp (ms) when the subscriber handler completed" },
-  "error": { type: "string | null", description: "Error message if the delivery failed" },
+  "status": { type: "string", description: "Delivery status: sent, delivered, failed, or timeout" },
+  "sentAt": { type: "string", description: "ISO 8601 timestamp when the message was published" },
+  "deliveredAt": { type: "string | null", description: "ISO 8601 timestamp when the message reached the endpoint" },
+  "processedAt": { type: "string | null", description: "ISO 8601 timestamp when the subscriber handler completed" },
+  "errorMessage": { type: "string | null", description: "Error message if the delivery failed" },
+  "metadata": { type: "string | null", description: "JSON-encoded additional metadata about the delivery" },
 }} />
 
 ### Looking Up a Trace
@@ -52,26 +48,22 @@ The response includes every span in the trace chain, ordered by `sentAt` ascendi
   "traceId": "01HXABC123",
   "spans": [
     {
+      "id": "01HXDEF456",
       "messageId": "01HXABC123",
       "traceId": "01HXABC123",
-      "spanId": "span-001",
-      "parentSpanId": null,
       "subject": "relay.agent.backend",
-      "fromEndpoint": "relay.human.console.client-1",
-      "toEndpoint": "relay.agent.backend",
-      "status": "processed",
-      "budgetHopsUsed": 1,
-      "budgetTtlRemainingMs": 3599500,
-      "sentAt": 1709000000000,
-      "deliveredAt": 1709000000050,
-      "processedAt": 1709000000200,
-      "error": null
+      "status": "delivered",
+      "sentAt": "2025-02-26T12:00:00.000Z",
+      "deliveredAt": "2025-02-26T12:00:00.050Z",
+      "processedAt": "2025-02-26T12:00:00.200Z",
+      "errorMessage": null,
+      "metadata": null
     }
   ]
 }
 ```
 
-For messages that fan out to multiple endpoints, the trace contains one span per endpoint. If an agent forwards a message (consuming a hop), the forwarded message's span links back to the original via `parentSpanId`.
+For messages that fan out to multiple endpoints, the trace contains one span per endpoint.
 
 ### Trace Statuses
 
@@ -79,13 +71,12 @@ Each span transitions through a lifecycle of statuses:
 
 | Status | Meaning |
 |---|---|
-| `pending` | Message published, delivery in progress |
-| `delivered` | Message written to the endpoint's Maildir `new/` directory |
-| `processed` | Subscription handler completed successfully |
+| `sent` | Message published, delivery in progress |
+| `delivered` | Message delivered and processed successfully |
 | `failed` | Subscription handler threw an error |
-| `dead_lettered` | Message rejected (budget exceeded, access denied, no matching endpoints, or circuit breaker open) |
+| `timeout` | Message rejected (budget exceeded, access denied, TTL expired, no matching endpoints, or circuit breaker open) |
 
-A healthy message moves through `pending` to `delivered` to `processed`. The time between `sentAt` and `deliveredAt` is the delivery latency. The time between `deliveredAt` and `processedAt` is the processing latency, which includes the time the adapter (e.g., Claude Code) takes to handle the message.
+A healthy message moves from `sent` to `delivered`. The time between `sentAt` and `deliveredAt` is the delivery latency. The time between `deliveredAt` and `processedAt` is the processing latency, which includes the time the adapter (e.g., Claude Code) takes to handle the message.
 
 ### Using MCP Tools
 
@@ -117,13 +108,13 @@ curl http://localhost:4242/api/relay/trace/metrics
   "failedCount": 12,
   "deadLetteredCount": 50,
   "avgDeliveryLatencyMs": 45.2,
-  "p95DeliveryLatencyMs": 120.0,
+  "p95DeliveryLatencyMs": null,
   "activeEndpoints": 8,
   "budgetRejections": {
-    "hopLimit": 3,
-    "ttlExpired": 7,
+    "hopLimit": 0,
+    "ttlExpired": 0,
     "cycleDetected": 0,
-    "budgetExhausted": 2
+    "budgetExhausted": 0
   }
 }
 ```
@@ -136,7 +127,7 @@ curl http://localhost:4242/api/relay/trace/metrics
   "failedCount": { type: "number", description: "Messages where the subscriber handler threw an error" },
   "deadLetteredCount": { type: "number", description: "Messages rejected to the dead letter queue" },
   "avgDeliveryLatencyMs": { type: "number | null", description: "Average time from publish to endpoint delivery (milliseconds)" },
-  "p95DeliveryLatencyMs": { type: "number | null", description: "95th percentile delivery latency (milliseconds)" },
+  "p95DeliveryLatencyMs": { type: "number | null", description: "95th percentile delivery latency (milliseconds). Currently returns null — not yet implemented." },
   "activeEndpoints": { type: "number", description: "Number of distinct endpoints that have received messages" },
   "budgetRejections.hopLimit": { type: "number", description: "Messages rejected for exceeding the maximum hop count" },
   "budgetRejections.ttlExpired": { type: "number", description: "Messages rejected because their TTL expired before delivery" },
@@ -152,10 +143,10 @@ A healthy Relay bus has a high delivered-to-total ratio and low dead letter coun
 
 - **Rising `failedCount`** -- Subscriber handlers are throwing errors. Check the individual traces for the `error` field to identify which adapter or endpoint is failing. The circuit breaker will automatically stop delivering to endpoints with 5 consecutive failures.
 
-- **High `p95DeliveryLatencyMs`** -- Some deliveries are slow. This is often caused by a single slow endpoint pulling up the tail latency. Inspect traces filtered by endpoint to find the bottleneck.
+- **High `avgDeliveryLatencyMs`** -- Deliveries are slow on average. This is often caused by a single slow endpoint pulling up the mean. Inspect traces filtered by endpoint to find the bottleneck.
 
 <Callout type="info">
-Relay metrics are computed as live SQL aggregates over the trace store. They reflect the full history of the current Relay database, not just a recent time window. To reset metrics, you would need to clear the `message_traces` table in the SQLite database.
+Relay metrics are computed as live SQL aggregates over the trace store. They reflect the full history of the current Relay database, not just a recent time window. To reset metrics, you would need to clear the `relay_traces` table in the database. Note: `p95DeliveryLatencyMs` currently returns `null` and `budgetRejections` counters return `0` — these are tracked at the RelayCore level but not yet aggregated into the trace store metrics.
 </Callout>
 
 The DorkOS client UI includes a Delivery Metrics Dashboard in the Relay panel that visualizes these numbers with success/failure breakdowns and latency distribution. Access it from the Relay tab in the sidebar when Relay is enabled.
@@ -190,7 +181,7 @@ If the message was delivered but the handler failed, look up the trace:
 curl http://localhost:4242/api/relay/messages/{messageId}/trace
 ```
 
-Check the `status` and `error` fields on each span. A `failed` status with an error message tells you exactly what went wrong in the subscriber handler. For Claude Code adapter failures, the error typically includes the Agent SDK error message.
+Check the `status` and `errorMessage` fields on each span. A `failed` status with an error message tells you exactly what went wrong in the subscriber handler. For Claude Code adapter failures, the error typically includes the Agent SDK error message.
 </Step>
 
 <Step>
@@ -220,13 +211,14 @@ curl -N http://localhost:4242/api/relay/stream?subject=%3E
 
 The `subject` query parameter filters which messages appear in the stream. Use `>` (URL-encoded as `%3E`) to see all messages, or provide a specific pattern like `relay.agent.*` to filter by audience.
 
-The stream emits three event types:
+The stream emits four event types:
 
 | Event | Description |
 |---|---|
 | `relay_connected` | Initial connection confirmation with the filter pattern |
 | `relay_message` | A message envelope matching the subscription pattern |
-| `relay_backpressure` | A backpressure or dead-letter signal from an endpoint |
+| `relay_backpressure` | A backpressure signal from an endpoint approaching or exceeding mailbox capacity |
+| `relay_signal` | Other signals (dead letters, typing indicators, delivery receipts, etc.) |
 
 <Callout type="warn">
 The SSE stream is primarily intended for debugging and monitoring. In production, use the REST API for polling metrics and the UI dashboard for visual monitoring. Long-lived SSE connections consume server resources and should be closed when no longer needed.

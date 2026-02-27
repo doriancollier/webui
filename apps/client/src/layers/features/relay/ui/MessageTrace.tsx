@@ -10,28 +10,27 @@ interface MessageTraceProps {
 function statusColor(status: TraceSpan['status']): string {
   switch (status) {
     case 'delivered':
-    case 'processed':
       return 'bg-green-500';
     case 'failed':
       return 'bg-red-500';
-    case 'pending':
+    case 'sent':
       return 'bg-yellow-500';
-    case 'dead_lettered':
+    case 'timeout':
       return 'bg-gray-500';
     default:
       return 'bg-gray-400';
   }
 }
 
-/** Format millisecond timestamp to readable time. */
-function formatTime(ms: number): string {
-  return new Date(ms).toLocaleTimeString();
+/** Format ISO 8601 timestamp to readable time. */
+function formatTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString();
 }
 
-/** Calculate latency between two timestamps. */
-function latencyLabel(from: number | null, to: number | null): string | null {
+/** Calculate latency between two ISO timestamps. */
+function latencyLabel(from: string | null, to: string | null): string | null {
   if (from == null || to == null) return null;
-  const delta = to - from;
+  const delta = new Date(to).getTime() - new Date(from).getTime();
   return delta < 1000 ? `${delta}ms` : `${(delta / 1000).toFixed(1)}s`;
 }
 
@@ -78,7 +77,7 @@ export function MessageTrace({ messageId, onClose }: MessageTraceProps) {
           );
 
           return (
-            <div key={span.spanId} className="relative pb-4 last:pb-0">
+            <div key={span.id} className="relative pb-4 last:pb-0">
               {/* Timeline dot */}
               <div
                 className={`absolute -left-[calc(1.5rem+0.3125rem)] top-1 h-2.5 w-2.5 rounded-full ${statusColor(span.status)}`}
@@ -93,10 +92,6 @@ export function MessageTrace({ messageId, onClose }: MessageTraceProps) {
                   </span>
                 </div>
 
-                <div className="text-xs text-muted-foreground">
-                  {span.fromEndpoint} → {span.toEndpoint}
-                </div>
-
                 <div className="flex gap-3 text-xs text-muted-foreground">
                   <span>Sent: {formatTime(span.sentAt)}</span>
                   {deliveryLatency && (
@@ -107,18 +102,9 @@ export function MessageTrace({ messageId, onClose }: MessageTraceProps) {
                   )}
                 </div>
 
-                {span.budgetHopsUsed != null && (
-                  <div className="text-xs text-muted-foreground">
-                    Hops: {span.budgetHopsUsed}
-                    {span.budgetTtlRemainingMs != null && (
-                      <> · TTL remaining: {span.budgetTtlRemainingMs}ms</>
-                    )}
-                  </div>
-                )}
-
-                {span.error && (
+                {span.errorMessage && (
                   <div className="mt-1 rounded bg-destructive/10 px-2 py-1 text-xs text-destructive">
-                    {span.error}
+                    {span.errorMessage}
                   </div>
                 )}
               </div>

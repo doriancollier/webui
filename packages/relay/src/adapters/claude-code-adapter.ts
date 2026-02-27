@@ -11,7 +11,7 @@
  * @module relay/adapters/claude-code-adapter
  */
 import { randomUUID } from 'node:crypto';
-import type { RelayEnvelope, TraceSpan } from '@dorkos/shared/relay-schemas';
+import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import { PulseDispatchPayloadSchema } from '@dorkos/shared/relay-schemas';
 import type { StreamEvent } from '@dorkos/shared/types';
 import type {
@@ -63,10 +63,23 @@ export interface AgentManagerLike {
   ): AsyncGenerator<StreamEvent>;
 }
 
-/** Minimal TraceStore interface for dependency injection. */
+/** Minimal TraceStore interface for dependency injection. Accepts loose span shapes. */
 export interface TraceStoreLike {
-  insertSpan(span: TraceSpan): void;
-  updateSpan(messageId: string, update: Partial<TraceSpan>): void;
+  insertSpan(span: {
+    messageId: string;
+    traceId: string;
+    subject: string;
+    status?: string;
+    metadata?: Record<string, unknown>;
+    [key: string]: unknown;
+  }): void;
+  updateSpan(messageId: string, update: {
+    status?: string;
+    deliveredAt?: string | number | null;
+    processedAt?: string | number | null;
+    error?: string | null;
+    [key: string]: unknown;
+  }): void;
 }
 
 /** Minimal PulseStore interface for Pulse run lifecycle updates. */
@@ -235,7 +248,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     const now = Date.now();
 
     // Record trace span as pending
-    const span: TraceSpan = {
+    const span = {
       messageId: envelope.id,
       traceId,
       spanId,
@@ -336,7 +349,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     // Validate pulse payload
     const parsed = PulseDispatchPayloadSchema.safeParse(envelope.payload);
     if (!parsed.success) {
-      const failSpan: TraceSpan = {
+      const failSpan = {
         messageId: envelope.id,
         traceId,
         spanId,
@@ -365,7 +378,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     const effectiveCwd = cwd ?? context?.agent?.directory ?? this.config.defaultCwd;
 
     // Record trace span as delivered
-    const span: TraceSpan = {
+    const span = {
       messageId: envelope.id,
       traceId,
       spanId,
