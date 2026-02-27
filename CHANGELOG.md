@@ -41,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Resolve @dorkos/shared subpath imports in esbuild bundle
 - Correct Relay documentation to match implementation
 - Correct Mesh documentation to match implementation
 - Correct Pulse documentation to match implementation

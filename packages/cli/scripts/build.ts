@@ -75,14 +75,20 @@ async function buildCLI() {
     outfile: path.join(OUT, 'bin/cli.js'),
     external: ['dotenv', '../server/index.js', 'conf', '@inquirer/prompts'],
     plugins: [{
-      name: 'resolve-server-imports',
+      name: 'resolve-monorepo-imports',
       setup(build) {
+        // Resolve ../server/services/* to the actual server source tree
         build.onResolve({ filter: /\.\.\/server\/services\// }, (args) => {
-          // Extract the relative path after ../server/services/ (e.g., "core/config-manager.js")
           const match = args.path.match(/\.\.\/server\/services\/(.+)/);
           if (!match) return undefined;
           const relativePath = match[1].replace(/\.js$/, '.ts');
           return { path: path.join(ROOT, 'apps/server/src/services', relativePath) };
+        });
+
+        // Resolve @dorkos/shared/* subpath imports to source .ts files
+        build.onResolve({ filter: /^@dorkos\/shared\// }, (args) => {
+          const subpath = args.path.replace('@dorkos/shared/', '');
+          return { path: path.join(ROOT, 'packages/shared/src', `${subpath}.ts`) };
         });
       },
     }],
