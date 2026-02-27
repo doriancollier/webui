@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Rename tunnel to remote in status bar settings
 - Fix publish pipeline skipping adapter delivery and improve adapter system
 - Fix critical Relay publish pipeline bug where adapter delivery was skipped when no Maildir endpoints matched — this blocked all Relay-routed chat messages and Pulse scheduled dispatches
 - Propagate rich `DeliveryResult` from adapters through the publish pipeline instead of discarding as boolean

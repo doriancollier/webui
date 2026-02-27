@@ -282,7 +282,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <SettingRow label="Show sound toggle" description="Display notification sound toggle">
                 <Switch checked={showStatusBarSound} onCheckedChange={setShowStatusBarSound} />
               </SettingRow>
-              <SettingRow label="Show tunnel" description="Display tunnel status and control">
+              <SettingRow label="Show remote" description="Display remote control">
                 <Switch checked={showStatusBarTunnel} onCheckedChange={setShowStatusBarTunnel} />
               </SettingRow>
             </TabsContent>
