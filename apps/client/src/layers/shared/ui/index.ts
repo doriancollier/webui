@@ -4,6 +4,8 @@
  * @module shared/ui
  */
 export { Badge, badgeVariants } from './badge';
+export { Button, buttonVariants } from './button';
+export { Input } from './input';
 export {
   Command,
   CommandInput,

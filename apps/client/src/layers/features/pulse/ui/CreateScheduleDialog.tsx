@@ -12,6 +12,8 @@ import {
   ResponsiveDialogFooter,
   DirectoryPicker,
   Label,
+  Input,
+  Button,
 } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
 import type { PulseSchedule } from '@dorkos/shared/types';
@@ -138,9 +140,8 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
             {/* ── Essential fields ── */}
             <div className="space-y-1.5">
               <Label htmlFor="schedule-name">Name *</Label>
-              <input
+              <Input
                 id="schedule-name"
-                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                 value={form.name}
                 onChange={(e) => updateField('name', e.target.value)}
                 maxLength={MAX_NAME_LENGTH}
@@ -166,17 +167,19 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
               <Label htmlFor="schedule-cron">Schedule *</Label>
               <CronPresets value={form.cron} onChange={(cron) => updateField('cron', cron)} />
 
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="xs"
                 onClick={() => setCustomBuilderOpen((o) => !o)}
-                className="mt-1 flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="mt-1 text-muted-foreground hover:text-foreground"
               >
                 <ChevronRight className={cn(
                   'size-3 transition-transform',
                   customBuilderOpen && 'rotate-90'
                 )} />
                 Custom schedule
-              </button>
+              </Button>
 
               <AnimatePresence initial={false}>
                 {customBuilderOpen && (
@@ -197,9 +200,9 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
                 )}
               </AnimatePresence>
 
-              <input
+              <Input
                 id="schedule-cron"
-                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 font-mono text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                className="font-mono"
                 value={form.cron}
                 onChange={(e) => updateField('cron', e.target.value)}
                 placeholder="0 9 * * 1-5"
@@ -233,14 +236,15 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
                     >
                       {form.cwd || 'Default (server working directory)'}
                     </div>
-                    <button
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="icon-sm"
                       onClick={() => setCwdPickerOpen(true)}
-                      className="rounded-md border px-2 py-2 text-sm hover:bg-accent transition-colors"
                       aria-label="Browse directories"
                     >
                       <FolderOpen className="size-4" />
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
@@ -291,10 +295,10 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
 
                 <div className="space-y-1.5">
                   <Label htmlFor="schedule-max-runtime">Max Runtime (minutes)</Label>
-                  <input
+                  <Input
                     id="schedule-max-runtime"
                     type="number"
-                    className="border-input focus-visible:ring-ring w-24 rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
+                    className="w-24"
                     value={form.maxRuntimeMin}
                     onChange={(e) => updateField('maxRuntimeMin', Number(e.target.value))}
                     min={1}
@@ -307,21 +311,17 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule }: Props
         </form>
 
         <ResponsiveDialogFooter className="border-t px-4 py-3">
-          <button
-            type="button"
-            className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            size="sm"
             form="schedule-form"
             disabled={!isValid || isPending}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium shadow-sm transition-colors disabled:pointer-events-none disabled:opacity-50"
           >
             {isPending ? 'Saving...' : editSchedule ? 'Save' : 'Create'}
-          </button>
+          </Button>
         </ResponsiveDialogFooter>
       </ResponsiveDialogContent>
       <DirectoryPicker

@@ -8,6 +8,8 @@ import {
   ResponsiveDialogFooter,
   DirectoryPicker,
   Label,
+  Input,
+  Button,
   Select,
   SelectTrigger,
   SelectValue,
@@ -97,30 +99,29 @@ export function RegisterAgentDialog({ open, onOpenChange }: Props) {
             <div className="space-y-1.5">
               <Label htmlFor="agent-path">Agent Path *</Label>
               <div className="flex gap-2">
-                <input
+                <Input
                   id="agent-path"
-                  className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                   value={agentPath}
                   onChange={(e) => setAgentPath(e.target.value)}
                   placeholder="/path/to/agent/workspace"
                   required
                 />
-                <button
+                <Button
                   type="button"
-                  className="hover:bg-accent hover:text-accent-foreground inline-flex shrink-0 items-center rounded-md border px-2.5 text-sm transition-colors"
+                  variant="outline"
+                  size="sm"
                   onClick={() => setCwdPickerOpen(true)}
                 >
                   Browse
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Name */}
             <div className="space-y-1.5">
               <Label htmlFor="agent-name">Name *</Label>
-              <input
+              <Input
                 id="agent-name"
-                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 maxLength={MAX_NAME_LENGTH}
@@ -132,9 +133,8 @@ export function RegisterAgentDialog({ open, onOpenChange }: Props) {
             {/* Description */}
             <div className="space-y-1.5">
               <Label htmlFor="agent-description">Description</Label>
-              <input
+              <Input
                 id="agent-description"
-                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Handles code reviews and testing"
@@ -161,9 +161,8 @@ export function RegisterAgentDialog({ open, onOpenChange }: Props) {
             {/* Capabilities */}
             <div className="space-y-1.5">
               <Label htmlFor="agent-capabilities">Capabilities</Label>
-              <input
+              <Input
                 id="agent-capabilities"
-                className="border-input focus-visible:ring-ring w-full rounded-md border bg-transparent px-3 py-2 text-sm shadow-sm focus-visible:ring-1 focus-visible:outline-none"
                 value={capabilities}
                 onChange={(e) => setCapabilities(e.target.value)}
                 placeholder="code-review, testing, refactoring"
@@ -174,21 +173,17 @@ export function RegisterAgentDialog({ open, onOpenChange }: Props) {
         </form>
 
         <ResponsiveDialogFooter className="border-t px-4 py-3">
-          <button
-            type="button"
-            className="hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
-            onClick={() => onOpenChange(false)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)}>
             Cancel
-          </button>
-          <button
+          </Button>
+          <Button
             type="submit"
+            size="sm"
             form="register-agent-form"
             disabled={!isValid || isPending}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center rounded-md px-3 py-1.5 text-sm font-medium shadow-sm transition-colors disabled:pointer-events-none disabled:opacity-50"
           >
             {isPending ? 'Registering...' : 'Register'}
-          </button>
+          </Button>
         </ResponsiveDialogFooter>
       </ResponsiveDialogContent>
       <DirectoryPicker

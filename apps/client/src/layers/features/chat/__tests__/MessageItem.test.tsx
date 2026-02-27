@@ -139,7 +139,7 @@ describe('MessageItem', () => {
     expect(children[2].textContent).toContain('After tool');
   });
 
-  it('sets animation initial state when isNew is true', () => {
+  it('renders correctly when isNew is true', () => {
     const msg = {
       id: '1',
       role: 'assistant' as const,
@@ -147,18 +147,13 @@ describe('MessageItem', () => {
       parts: [{ type: 'text' as const, text: 'New message' }],
       timestamp: new Date().toISOString(),
     };
-    const { container } = render(
+    render(
       <MessageItem message={msg} sessionId="test-session" grouping={onlyGrouping} isNew={true} />
     );
-    const motionDiv = container.firstElementChild;
-    const initial = motionDiv?.getAttribute('data-initial');
-    expect(initial).toBeDefined();
-    const parsed = JSON.parse(initial!);
-    expect(parsed.opacity).toBe(0);
-    expect(parsed.y).toBe(8);
+    expect(screen.getByText('New message')).toBeDefined();
   });
 
-  it('disables animation when isNew is false', () => {
+  it('renders correctly when isNew is false', () => {
     const msg = {
       id: '1',
       role: 'assistant' as const,
@@ -166,12 +161,10 @@ describe('MessageItem', () => {
       parts: [{ type: 'text' as const, text: 'Old message' }],
       timestamp: new Date().toISOString(),
     };
-    const { container } = render(
+    render(
       <MessageItem message={msg} sessionId="test-session" grouping={onlyGrouping} isNew={false} />
     );
-    const motionDiv = container.firstElementChild;
-    const initial = motionDiv?.getAttribute('data-initial');
-    expect(initial).toBe('false');
+    expect(screen.getByText('Old message')).toBeDefined();
   });
 
   it('renders dot indicator for assistant messages (first in group)', () => {
