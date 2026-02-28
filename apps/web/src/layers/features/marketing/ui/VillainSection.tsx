@@ -29,12 +29,12 @@ function DeadTerminalArt() {
   }, [isInView, reducedMotion])
 
   return (
-    <div ref={ref} className="font-mono text-[10px] leading-[1.6] text-warm-gray-light/50 mb-3 select-none" aria-hidden="true">
-      <span className="text-brand-green/40">$</span> claude &mdash;session refactor-auth
+    <div ref={ref} className="font-mono text-[10px] leading-[1.6] text-warm-gray-light/50 mb-4 select-none" aria-hidden="true">
+      <span className="text-warm-gray-light/40">$</span> claude &mdash;session refactor-auth
       <br />
-      <span className="text-brand-green/40">&check;</span> 47 files changed, tests passing
+      <span className="text-warm-gray-light/40">&check;</span> 47 files changed, tests passing
       <br />
-      <span className="text-red-400/50">{reducedMotion ? text : (displayText || '\u00A0')}</span>
+      <span style={{ color: 'rgba(232, 93, 4, 0.5)' }}>{reducedMotion ? text : (displayText || '\u00A0')}</span>
       {!reducedMotion && displayText.length > 0 && displayText.length < text.length && (
         <span className="cursor-blink" />
       )}
@@ -78,7 +78,7 @@ function GoldfishArt() {
   }, [isInView, reducedMotion])
 
   return (
-    <div ref={ref} className="font-mono text-[10px] leading-[1.6] text-warm-gray-light/40 mb-3 select-none" aria-hidden="true">
+    <div ref={ref} className="font-mono text-[10px] leading-[1.6] text-warm-gray-light/50 mb-4 select-none" aria-hidden="true">
       <span className="text-warm-gray-light/30">&gt;</span> {displayText}
       <span className="cursor-blink" />
     </div>
@@ -88,14 +88,14 @@ function GoldfishArt() {
 /** Bars randomly pulse opacity, one orange bar pulses urgently. */
 function TabGraveyardArt() {
   return (
-    <div className="flex gap-1.5 mb-3 select-none" aria-hidden="true">
+    <div className="flex gap-1.5 mb-4 select-none" aria-hidden="true">
       {Array.from({ length: 6 }, (_, i) => (
         <div
           key={i}
-          className="h-1.5 rounded-full"
+          className="h-2 rounded-full"
           style={{
-            width: i < 3 ? '24px' : '16px',
-            background: i === 2 ? 'rgba(232, 93, 4, 0.4)' : 'rgba(122, 117, 106, 0.15)',
+            width: i < 3 ? '32px' : '20px',
+            background: i === 2 ? 'rgba(232, 93, 4, 0.45)' : 'rgba(122, 117, 106, 0.22)',
             animation: i === 2
               ? 'tab-pulse-urgent 1.2s ease-in-out infinite'
               : `tab-pulse-idle ${2 + i * 0.7}s ease-in-out infinite`,
@@ -109,21 +109,21 @@ function TabGraveyardArt() {
 /** Small clock SVG with rotating hands. */
 function ThreeAmBuildArt() {
   return (
-    <div className="flex items-center gap-2 mb-3 select-none" aria-hidden="true">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="shrink-0">
-        <circle cx="9" cy="9" r="7.5" stroke="rgba(122, 117, 106, 0.3)" strokeWidth="1" />
+    <div className="flex items-center gap-2.5 mb-4 select-none" aria-hidden="true">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" className="shrink-0">
+        <circle cx="11" cy="11" r="9.5" stroke="rgba(122, 117, 106, 0.3)" strokeWidth="1" />
         {/* Hour hand */}
-        <line x1="9" y1="9" x2="9" y2="5" stroke="rgba(122, 117, 106, 0.5)" strokeWidth="1.2" strokeLinecap="round"
-          style={{ transformOrigin: '9px 9px', animation: 'clock-hour 12s linear infinite' }}
+        <line x1="11" y1="11" x2="11" y2="6" stroke="rgba(122, 117, 106, 0.5)" strokeWidth="1.2" strokeLinecap="round"
+          style={{ transformOrigin: '11px 11px', animation: 'clock-hour 12s linear infinite' }}
         />
         {/* Minute hand */}
-        <line x1="9" y1="9" x2="9" y2="3.5" stroke="rgba(122, 117, 106, 0.35)" strokeWidth="0.8" strokeLinecap="round"
-          style={{ transformOrigin: '9px 9px', animation: 'clock-minute 2s linear infinite' }}
+        <line x1="11" y1="11" x2="11" y2="4" stroke="rgba(122, 117, 106, 0.35)" strokeWidth="0.8" strokeLinecap="round"
+          style={{ transformOrigin: '11px 11px', animation: 'clock-minute 6s linear infinite' }}
         />
-        <circle cx="9" cy="9" r="1" fill="rgba(232, 93, 4, 0.4)" />
+        <circle cx="11" cy="11" r="1.2" fill="rgba(232, 93, 4, 0.4)" />
       </svg>
       <div className="font-mono text-[10px] leading-[1.6] text-warm-gray-light/50">
-        <span className="text-red-400/50">&cross;</span> Tests failed &mdash; 2:47am
+        <span style={{ color: 'rgba(232, 93, 4, 0.5)' }}>&cross;</span> Tests failed &mdash; 2:47am
         <br />
         <span className="text-warm-gray-light/30">fix: 3 lines &middot; agent: ready &middot; terminal: closed</span>
       </div>
@@ -158,14 +158,10 @@ function SpotlightCard({ children }: { children: React.ReactNode }) {
     <article
       ref={cardRef}
       onMouseMove={handleMouseMove}
-      className="group relative rounded-lg px-6 py-5 overflow-hidden"
+      className="group relative rounded-lg px-6 py-6 overflow-hidden"
       style={{
         background: '#FFFEFB',
-        borderLeft: '3px solid rgba(232, 93, 4, 0.3)',
-        border: '1px solid rgba(139, 90, 43, 0.1)',
-        borderLeftWidth: '3px',
-        borderLeftColor: 'rgba(232, 93, 4, 0.3)',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(139,90,43,0.06)',
+        boxShadow: '0 1px 2px rgba(139, 90, 43, 0.04), 0 2px 8px rgba(139, 90, 43, 0.06)',
       }}
     >
       {/* Cursor-following radial gradient spotlight */}
@@ -200,14 +196,14 @@ export function VillainSection() {
           <p className="text-lg text-warm-gray">Nothing.</p>
         </motion.div>
 
-        <motion.div variants={STAGGER} className="space-y-5">
+        <motion.div variants={STAGGER} className="space-y-10">
           {villainCards.map((card) => {
             const ArtComponent = CARD_ART_COMPONENTS[card.id]
             return (
               <motion.div key={card.id} variants={REVEAL}>
                 <SpotlightCard>
                   {ArtComponent && <ArtComponent />}
-                  <span className="mb-3 block font-mono text-2xs uppercase tracking-[0.12em] text-warm-gray-light">
+                  <span className="mb-2 block font-mono text-xs uppercase tracking-[0.12em] text-warm-gray">
                     {card.label}
                   </span>
                   {card.body.split('\n\n').map((paragraph, i) => (
@@ -227,10 +223,10 @@ export function VillainSection() {
         <motion.div variants={REVEAL} className="mt-14 text-center">
           <div className="max-w-xl mx-auto" style={{ borderTop: '1px solid rgba(139, 90, 43, 0.1)' }}>
             <p className="text-xl md:text-2xl leading-[1.5] text-charcoal font-medium pt-10">
-              You pay for the most powerful AI coding agent ever built.
+              You pay for the most powerful coding agent ever built.
             </p>
             <p className="text-xl md:text-2xl leading-[1.5] text-warm-gray font-medium">
-              It stops the moment you stop watching it.
+              It stops the moment you look away.
             </p>
           </div>
         </motion.div>

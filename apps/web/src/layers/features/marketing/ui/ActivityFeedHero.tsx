@@ -413,16 +413,6 @@ export function ActivityFeedHero({ ctaText, ctaHref, githubHref }: ActivityFeedH
           </p>
         </motion.div>
 
-        {/* Console mockup — desktop only, shows what DorkOS looks like */}
-        <motion.div
-          className="w-full max-w-md mx-auto mb-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        >
-          <ConsoleMockup />
-        </motion.div>
-
         {/* CTA group */}
         <motion.div
           variants={REVEAL}

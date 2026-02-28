@@ -1,15 +1,8 @@
 'use client'
 
-import dynamic from 'next/dynamic'
 import { motion } from 'motion/react'
 import { subsystems } from '../lib/subsystems'
 import { REVEAL, SPRING, STAGGER, VIEWPORT } from '../lib/motion-variants'
-
-// Lazy-load topology graph — only loads when section enters viewport (~150kB)
-const SubsystemTopology = dynamic(() => import('./SubsystemTopology').then((m) => ({ default: m.SubsystemTopology })), {
-  ssr: false,
-  loading: () => <div className="h-[300px]" />,
-})
 
 // ─── Animated SVG Icons ──────────────────────────────────────────────────────
 
@@ -110,12 +103,12 @@ const SUBSYSTEM_ICONS: Record<string, React.ReactNode> = {
 
 // ─── Main export ─────────────────────────────────────────────────────────────
 
-/** Compact subsystems reference — benefit on the left, module fix on the right. */
+/** Compact subsystems reference — benefit pill above, module details below. */
 export function SubsystemsSection() {
   return (
     <section className="bg-cream-primary px-8 py-20">
       <motion.div
-        className="mx-auto max-w-[720px]"
+        className="mx-auto max-w-[540px]"
         initial="hidden"
         whileInView="visible"
         viewport={VIEWPORT}
@@ -132,7 +125,7 @@ export function SubsystemsSection() {
           variants={REVEAL}
           className="text-[24px] md:text-[28px] font-medium text-charcoal tracking-[-0.02em] leading-[1.3] text-center mb-12"
         >
-          Six reasons they run while you sleep.
+          The anatomy of a teammate who doesn&apos;t need managing.
         </motion.p>
 
         <motion.div variants={STAGGER} className="space-y-0">
@@ -140,54 +133,24 @@ export function SubsystemsSection() {
             <motion.div
               key={sub.id}
               variants={REVEAL}
-              className="flex items-center gap-5 py-4"
+              className="py-4"
               style={{ borderBottom: '1px solid rgba(139, 90, 43, 0.08)' }}
             >
-              <span className="text-2xs text-warm-gray-light w-auto md:w-[120px] shrink-0 md:text-right font-mono tracking-[0.06em] hidden md:block">
-                {sub.benefit}
-              </span>
-              <div className="shrink-0 w-7 h-7 flex items-center justify-center">
-                {SUBSYSTEM_ICONS[sub.id]}
-              </div>
-              <div className="flex-1">
-                <span className="block text-2xs text-warm-gray-light font-mono tracking-[0.06em] mb-0.5 md:hidden">
-                  {sub.benefit}
-                </span>
-                <span className="text-brand-orange font-mono text-sm">{sub.name}</span>
-                {sub.status === 'coming-soon' && (
-                  <span className="text-2xs text-warm-gray-light ml-2 font-mono">In development</span>
-                )}
-                <span className="text-warm-gray text-sm"> &mdash; {sub.description}</span>
+              <div className="flex items-start gap-3">
+                <div className="shrink-0 w-7 h-7 flex items-center justify-center mt-0.5">
+                  {SUBSYSTEM_ICONS[sub.id]}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <span className="text-brand-orange font-mono text-sm">{sub.name}</span>
+                  <span className="text-charcoal text-sm"> &mdash; {sub.benefit}</span>
+                  {sub.status === 'coming-soon' && (
+                    <span className="text-2xs text-warm-gray-light ml-2 font-mono">In development</span>
+                  )}
+                  <p className="text-warm-gray text-sm mt-1">{sub.description}</p>
+                </div>
               </div>
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* Topology visualization — shows how modules connect */}
-        <motion.div variants={REVEAL} className="mt-16">
-          <div
-            className="rounded-lg overflow-hidden hidden md:block"
-            style={{
-              border: '1px solid rgba(139, 90, 43, 0.1)',
-              background: '#FFFEFB',
-            }}
-          >
-            {/* Browser frame chrome */}
-            <div
-              className="flex items-center gap-1.5 px-3 py-2"
-              style={{ background: '#F5F0E6', borderBottom: '1px solid rgba(139, 90, 43, 0.08)' }}
-            >
-              <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(122, 117, 106, 0.2)' }} />
-              <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(122, 117, 106, 0.2)' }} />
-              <div className="w-2 h-2 rounded-full" style={{ background: 'rgba(122, 117, 106, 0.2)' }} />
-              <span className="ml-2 font-mono text-[9px] tracking-[0.08em] uppercase text-warm-gray-light">
-                How they connect
-              </span>
-            </div>
-            <div className="h-[300px]">
-              <SubsystemTopology />
-            </div>
-          </div>
         </motion.div>
       </motion.div>
     </section>
