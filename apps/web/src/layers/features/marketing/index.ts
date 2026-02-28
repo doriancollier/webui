@@ -1,6 +1,23 @@
-// UI components
-export { Hero } from './ui/Hero'
+// UI components — homepage (new narrative arc)
+export { Prelude } from './ui/Prelude'
 export { ActivityFeedHero } from './ui/ActivityFeedHero'
+export { VillainSection } from './ui/VillainSection'
+export { PivotSection } from './ui/PivotSection'
+export { TimelineSection } from './ui/TimelineSection'
+export { SubsystemsSection } from './ui/SubsystemsSection'
+export { HonestySection } from './ui/HonestySection'
+export { InstallMoment } from './ui/InstallMoment'
+export { IdentityClose } from './ui/IdentityClose'
+export { TheClose } from './ui/TheClose'
+
+// UI components — chrome
+export { MarketingNav } from './ui/MarketingNav'
+export { MarketingHeader } from './ui/MarketingHeader'
+export { MarketingFooter } from './ui/MarketingFooter'
+export { PulseAnimation } from './ui/PulseAnimation'
+
+// UI components — legacy (kept for potential reuse on other pages)
+export { Hero } from './ui/Hero'
 export { CredibilityBar } from './ui/CredibilityBar'
 export { ProblemSection } from './ui/ProblemSection'
 export { HowItWorksSection } from './ui/HowItWorksSection'
@@ -11,19 +28,17 @@ export { PhilosophyCard } from './ui/PhilosophyCard'
 export { PhilosophyGrid } from './ui/PhilosophyGrid'
 export { AboutSection } from './ui/AboutSection'
 export { ContactSection } from './ui/ContactSection'
-export { MarketingNav } from './ui/MarketingNav'
-export { MarketingHeader } from './ui/MarketingHeader'
-export { MarketingFooter } from './ui/MarketingFooter'
 export { SystemArchitecture } from './ui/SystemArchitecture'
 export { UseCasesGrid } from './ui/UseCasesGrid'
-export { HonestySection } from './ui/HonestySection'
-export { PulseAnimation } from './ui/PulseAnimation'
 
 // Data
 export { projects } from './lib/projects'
 export { philosophyItems } from './lib/philosophy'
 export { systemModules } from './lib/modules'
 export { useCases } from './lib/use-cases'
+export { villainCards } from './lib/villain-cards'
+export { subsystems } from './lib/subsystems'
+export { timelineEntries } from './lib/timeline-entries'
 
 // Motion
 export { SPRING, VIEWPORT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH } from './lib/motion-variants'
@@ -32,3 +47,6 @@ export { SPRING, VIEWPORT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH } from './lib/mo
 export type { Project, PhilosophyItem, NavLink } from './lib/types'
 export type { SystemModule } from './lib/modules'
 export type { UseCase } from './lib/use-cases'
+export type { VillainCard } from './lib/villain-cards'
+export type { Subsystem } from './lib/subsystems'
+export type { TimelineEntry } from './lib/timeline-entries'

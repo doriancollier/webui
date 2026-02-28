@@ -6,7 +6,8 @@
  */
 export const siteConfig = {
   name: 'DorkOS',
-  description: 'Remote access to Claude Code. On your machine.',
+  description:
+    'The operating system for autonomous AI agents. Scheduling, communication, memory, and a command center. Open source. Self-hosted.',
   url: 'https://dorkos.ai',
   contactEmail: 'hey@dorkos.ai',
   github: 'https://github.com/dork-labs/dorkos',

@@ -2,12 +2,15 @@ import type { Metadata } from 'next'
 import { siteConfig } from '@/config/site'
 import { MarketingShell } from './marketing-shell'
 
+const metaDescription =
+  'Your AI agents are brilliant. They just can\'t do anything when you leave. DorkOS gives them scheduling, communication, memory, and a command center. Open source. Self-hosted. You slept. They shipped.'
+
 export const metadata: Metadata = {
   title: `${siteConfig.name} - ${siteConfig.description}`,
-  description: siteConfig.description,
+  description: metaDescription,
   openGraph: {
     title: `${siteConfig.name} - ${siteConfig.description}`,
-    description: siteConfig.description,
+    description: metaDescription,
     url: '/',
     type: 'website',
   },

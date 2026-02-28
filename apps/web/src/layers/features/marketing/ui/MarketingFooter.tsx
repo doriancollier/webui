@@ -59,6 +59,11 @@ export function MarketingFooter({
           {bylineText}
         </a>
 
+        {/* Tagline - mission */}
+        <p className="font-mono text-2xs tracking-[0.12em] uppercase text-cream-tertiary/60 mb-8">
+          You slept. They shipped.
+        </p>
+
         {/* Social icons */}
         {socialLinks.length > 0 && (
           <div className="flex justify-center gap-5 mb-5">
@@ -87,7 +92,7 @@ export function MarketingFooter({
 
         {/* System status - retro tech detail */}
         <p className="font-mono text-3xs tracking-[0.2em] uppercase text-cream-tertiary/40 mt-12">
-          v0.2.0 · System Online
+          v0.4.0
         </p>
       </footer>
     </>

@@ -1,26 +1,22 @@
 import { siteConfig } from '@/config/site'
 import {
+  Prelude,
   ActivityFeedHero,
-  CredibilityBar,
-  SystemArchitecture,
-  HowItWorksSection,
-  UseCasesGrid,
+  VillainSection,
+  PivotSection,
+  TimelineSection,
+  SubsystemsSection,
   HonestySection,
-  AboutSection,
-  ContactSection,
+  InstallMoment,
+  IdentityClose,
+  TheClose,
   MarketingNav,
   MarketingHeader,
   MarketingFooter,
-  systemModules,
-  useCases,
-  philosophyItems,
 } from '@/layers/features/marketing'
 
 const navLinks = [
-  { label: 'system', href: '#system' },
-  { label: 'features', href: '#features' },
   { label: 'about', href: '#about' },
-  { label: 'contact', href: '#contact' },
   { label: 'blog', href: '/blog' },
   { label: 'docs', href: '/docs' },
 ]
@@ -49,33 +45,31 @@ const socialLinks = [
 export default function HomePage() {
   return (
     <>
+      <Prelude />
       <MarketingHeader />
 
       <main>
         <ActivityFeedHero
-          headline="Your AI Never Sleeps."
-          subhead="DorkOS is an open-source operating system for autonomous AI agents. Powered by an engine that never stops. Connected through an agent mesh."
           ctaText="npm install -g dorkos"
           ctaHref={siteConfig.npm}
           githubHref={siteConfig.github}
         />
 
-        <CredibilityBar />
+        <VillainSection />
 
-        <SystemArchitecture modules={systemModules} />
+        <PivotSection />
 
-        <UseCasesGrid useCases={useCases} />
+        <TimelineSection />
 
-        <HowItWorksSection />
+        <SubsystemsSection />
 
         <HonestySection />
 
-        <AboutSection
-          description="DorkOS is an autonomous agent operating system. It makes your AI agents more capable — giving them a heartbeat, a memory, a communication layer, and the ability to coordinate. The intelligence comes from the agents. Everything else — engine, console, pulse, wing, relay, mesh — is yours."
-          philosophyItems={philosophyItems}
-        />
+        <IdentityClose email={siteConfig.contactEmail} />
 
-        <ContactSection email={siteConfig.contactEmail} />
+        <InstallMoment />
+
+        <TheClose />
       </main>
 
       <MarketingFooter

@@ -8,11 +8,9 @@ import { REVEAL, STAGGER } from '../lib/motion-variants'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ActivityFeedHeroProps {
-  headline: string
-  subhead: string
   ctaText: string
   ctaHref: string
-  /** GitHub repo URL — used as primary mobile CTA. */
+  /** GitHub repo URL — used as secondary mobile CTA. */
   githubHref?: string
 }
 
@@ -84,15 +82,11 @@ const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
   { module: 'wing', text: 'Wing organized 2,847 photos by date, location, and who\u2019s in them' },
   { module: 'agent', text: 'Agent meal-prepped grocery list for the week — ordered via Instacart' },
   { module: 'pulse', text: 'Pulse filed your quarterly taxes 3 days before the deadline' },
-  // Ambitious / funny
+  // Coordination & connectivity
   { module: 'mesh', text: 'Mesh assembled 7 agents for Operation Birthday Surprise' },
-  { module: 'agent', text: 'Agent wrote a passive income bot — estimated $300/mo on autopilot' },
   { module: 'pulse', text: 'Pulse started next iteration cycle' },
   { module: 'relay', text: 'Adapter telegram-main connected — polling active' },
   { module: 'wing', text: 'Wing has your full context — ask me anything' },
-  { module: 'mesh', text: 'Mesh coordinating world domination — ETA 47 minutes' },
-  { module: 'agent', text: 'Agent applied to 30 jobs on your behalf — 4 interviews booked' },
-  { module: 'pulse', text: 'Pulse optimized your portfolio — up 12% since last rebalance' },
   // Improvement loop
   { module: 'loop', text: 'Loop triaged 8 signals — 3 became hypotheses' },
   { module: 'loop', text: 'Loop validated hypothesis — conversion up 2.1% after fix' },
@@ -325,7 +319,7 @@ function ActivityFeedPanel() {
           className="font-mono text-[9px] tracking-[0.06em] text-center"
           style={{ color: '#7A756A' }}
         >
-          While you read this, your agents could be doing all of this.
+          With DorkOS running, this is your overnight log.
         </p>
       </div>
     </div>
@@ -335,15 +329,14 @@ function ActivityFeedPanel() {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 /**
- * Activity Feed hero — split-panel layout with a live-updating agent feed.
+ * Activity Feed hero — stacked layout with a live-updating agent feed.
  *
- * Headline and CTA on the left, a simulated real-time activity feed on
- * the right showing agents committing code, managing tasks, automating
- * life, and occasionally plotting world domination.
+ * Full-width headline and tagline on top, a subordinate simulated
+ * real-time activity feed in the center, and CTA buttons at the bottom.
  */
-export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref, githubHref }: ActivityFeedHeroProps) {
+export function ActivityFeedHero({ ctaText, ctaHref, githubHref }: ActivityFeedHeroProps) {
   return (
-    <section className="relative min-h-[85vh] bg-cream-primary flex flex-col items-center justify-center px-6 py-16 overflow-hidden">
+    <section className="relative min-h-0 md:min-h-[85vh] bg-cream-primary flex flex-col items-center justify-center px-6 py-16 overflow-hidden">
       {/* Subtle graph-paper background */}
       <div
         className="absolute inset-0 pointer-events-none"
@@ -360,148 +353,120 @@ export function ActivityFeedHero({ headline, subhead, ctaText, ctaHref, githubHr
 
       {/* Content wrapper */}
       <motion.div
-        className="relative z-10 w-full max-w-6xl mx-auto"
+        className="relative z-10 w-full max-w-6xl mx-auto text-center"
         initial="hidden"
         animate="visible"
         variants={STAGGER}
       >
-        {/* Eyebrow label */}
+        {/* Eyebrow */}
         <motion.div variants={REVEAL} className="mb-6">
           <p className="font-mono text-2xs tracking-[0.2em] uppercase text-brand-orange">
-            Autonomous by default
+            the operating system for autonomous AI agents
           </p>
         </motion.div>
 
-        {/*
-          Grid layout — 3 logical sections, interleaved on mobile.
-          Mobile (single column): prose → feed → CTA (natural document order).
-          Desktop (2-col): left column = prose + CTA, right column = feed spanning both rows.
-        */}
-        <div className="grid grid-cols-1 lg:grid-cols-[55%_1fr] gap-y-8 lg:gap-x-16 items-start">
-
-          {/* ── Prose (headline + subhead) ── */}
-          <div className="flex flex-col gap-8">
-            {/* Headline */}
-            <motion.div variants={REVEAL}>
-              <h1
-                className="font-bold text-charcoal tracking-[-0.04em] text-balance"
-                style={{ fontSize: 'clamp(32px, 5.5vw, 64px)', lineHeight: 1.06 }}
-              >
-                {headline}
-              </h1>
-            </motion.div>
-
-            {/* Subhead */}
-            <motion.p
-              variants={REVEAL}
-              className="text-warm-gray font-light leading-[1.75] max-w-[480px]"
-              style={{ fontSize: 'clamp(15px, 1.5vw, 18px)' }}
-            >
-              {subhead}
-            </motion.p>
-          </div>
-
-          {/* ── Activity feed — between prose and CTA on mobile, right column on desktop ── */}
-          <motion.div
-            className="w-full lg:row-span-2 lg:col-start-2 lg:row-start-1"
-            initial={{ opacity: 0, x: 32 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.55, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        {/* Headline — full width */}
+        <motion.div variants={REVEAL} className="mb-6">
+          <h1
+            className="font-bold text-charcoal tracking-[-0.04em] text-balance"
+            style={{ fontSize: 'clamp(32px, 5.5vw, 64px)', lineHeight: 1.06 }}
           >
-            <div className="flex items-center gap-2 mb-3">
-              <span
-                className="font-mono text-2xs tracking-[0.12em] uppercase"
-                style={{ color: '#7A756A' }}
-              >
-                Right now, somewhere
-              </span>
-              <div className="h-px flex-1" style={{ background: 'rgba(139,90,43,0.15)' }} />
-            </div>
+            Your agents are brilliant.
+            <br />
+            They just can&apos;t do anything when you leave.
+          </h1>
+        </motion.div>
 
-            <ActivityFeedPanel />
+        {/* Tagline */}
+        <motion.p
+          variants={REVEAL}
+          className="text-charcoal font-medium text-lg md:text-xl tracking-[-0.01em] mb-12"
+        >
+          You slept. They shipped.
+        </motion.p>
 
-            <p
-              className="font-mono text-[10px] tracking-[0.04em] text-center mt-3 leading-[1.6]"
+        {/* Activity feed — full width, subordinate */}
+        <motion.div
+          className="w-full max-w-lg mx-auto mb-10"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="flex items-center gap-2 mb-3">
+            <span
+              className="font-mono text-2xs tracking-[0.12em] uppercase"
               style={{ color: '#7A756A' }}
             >
-              Simulated. Real agents log every action, in real time.
-            </p>
-          </motion.div>
-
-          {/* ── CTA group — below feed on mobile, continues in left column on desktop ── */}
-          <div className="flex flex-col gap-5">
-            <motion.div
-              variants={REVEAL}
-              className="flex flex-col sm:flex-row items-start sm:items-center gap-5 pt-2"
-            >
-              {/* Desktop: npm install button */}
-              <Link
-                href={ctaHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="marketing-btn hidden lg:inline-flex items-center gap-2"
-                style={{
-                  background: '#E85D04',
-                  color: '#FFFEFB',
-                }}
-              >
-                {ctaText}
-                <span className="cursor-blink" aria-hidden="true" />
-              </Link>
-
-              {/* Mobile: docs as primary action */}
-              <Link
-                href="/docs/getting-started/quickstart"
-                className="marketing-btn inline-flex lg:hidden items-center gap-2"
-                style={{
-                  background: '#E85D04',
-                  color: '#FFFEFB',
-                }}
-              >
-                Get started
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-
-              {/* Desktop: docs as secondary */}
-              <Link
-                href="/docs/getting-started/quickstart"
-                className="hidden lg:inline-flex items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
-              >
-                Read the docs
-                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                  <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
-
-              {/* Mobile: GitHub as secondary */}
-              {githubHref && (
-                <Link
-                  href={githubHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex lg:hidden items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
-                >
-                  View on GitHub
-                  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                    <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </Link>
-              )}
-            </motion.div>
-
-            {/* Install hint — desktop: actionable, mobile: informational */}
-            <motion.p
-              variants={REVEAL}
-              className="font-mono text-2xs tracking-[0.06em]"
-              style={{ color: '#7A756A' }}
-            >
-              <span className="hidden lg:inline">npm install -g dorkos &mdash; free to start, no card required</span>
-              <span className="lg:hidden">Install on desktop: <code className="text-charcoal">npm install -g dorkos</code></span>
-            </motion.p>
+              Right now, somewhere
+            </span>
+            <div className="h-px flex-1" style={{ background: 'rgba(139,90,43,0.15)' }} />
           </div>
-        </div>
+
+          <ActivityFeedPanel />
+
+          <p
+            className="font-mono text-[10px] tracking-[0.04em] text-center mt-3 leading-[1.6]"
+            style={{ color: '#7A756A' }}
+          >
+            Simulated. Real agents log every action, in real time.
+          </p>
+        </motion.div>
+
+        {/* CTA group */}
+        <motion.div
+          variants={REVEAL}
+          className="flex flex-col sm:flex-row items-center justify-center gap-5"
+        >
+          {/* Desktop: npm install button */}
+          <Link
+            href={ctaHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="marketing-btn hidden lg:inline-flex items-center gap-2"
+            style={{ background: '#E85D04', color: '#FFFEFB' }}
+          >
+            {ctaText}
+            <span className="cursor-blink" aria-hidden="true" />
+          </Link>
+
+          {/* Mobile: docs as primary action */}
+          <Link
+            href="/docs/getting-started/quickstart"
+            className="marketing-btn inline-flex lg:hidden items-center gap-2"
+            style={{ background: '#E85D04', color: '#FFFEFB' }}
+          >
+            Get started
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+
+          {/* Desktop: docs as secondary */}
+          <Link
+            href="/docs/getting-started/quickstart"
+            className="hidden lg:inline-flex items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
+          >
+            Read the docs
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+              <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </Link>
+
+          {/* Mobile: GitHub as secondary */}
+          {githubHref && (
+            <Link
+              href={githubHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex lg:hidden items-center gap-1.5 font-mono text-button tracking-[0.08em] text-warm-gray-light hover:text-brand-orange transition-smooth"
+            >
+              View on GitHub
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </Link>
+          )}
+        </motion.div>
       </motion.div>
     </section>
   )
