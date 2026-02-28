@@ -78,19 +78,6 @@ export function createRelayRouter(
       const messages = relayCore.listMessages({});
       const deadLetters = await relayCore.getDeadLetters();
 
-      // Collect unique subjects and resolve labels
-      const allSubjects = messages.messages.map((m) => m.subject);
-      const vaultRoot = path.resolve(
-        path.dirname(fileURLToPath(import.meta.url)),
-        '../../../../',
-      );
-      const resolverDeps = {
-        getSession: async (id: string) =>
-          transcriptReader.getSession(vaultRoot, id),
-        readManifest: async (cwd: string) => readManifest(cwd),
-      };
-      const labelMap = await resolveSubjectLabels(allSubjects, resolverDeps);
-
       // Separate requests from response chunks
       type Msg = (typeof messages.messages)[number];
       const requests: Msg[] = [];
@@ -110,6 +97,35 @@ export function createRelayRouter(
         }
       }
 
+      // Build per-request from subjects (dead letter envelope or inferred from pattern)
+      const fromSubjects = new Map<string, string>();
+      for (const req of requests) {
+        const dl = deadLetters.find((d) => d.messageId === req.id);
+        let from = dl?.envelope?.from ?? '';
+        if (!from) {
+          if (req.subject.startsWith('relay.agent.')) {
+            from = 'relay.human.console.inferred';
+          } else if (req.subject.startsWith('relay.system.pulse.')) {
+            from = 'relay.system.console';
+          }
+        }
+        fromSubjects.set(req.id, from);
+      }
+
+      // Collect all unique subjects (to + from) and resolve labels
+      const toSubjects = messages.messages.map((m) => m.subject);
+      const allSubjects = [...toSubjects, ...fromSubjects.values()];
+      const vaultRoot = path.resolve(
+        path.dirname(fileURLToPath(import.meta.url)),
+        '../../../../',
+      );
+      const resolverDeps = {
+        getSession: async (id: string) =>
+          transcriptReader.getSession(vaultRoot, id),
+        readManifest: async (cwd: string) => readManifest(cwd),
+      };
+      const labelMap = await resolveSubjectLabels(allSubjects, resolverDeps);
+
       // Build conversations from requests
       const conversations = requests.map((req) => {
         const subject = req.subject;
@@ -121,13 +137,11 @@ export function createRelayRouter(
           ? subject.slice('relay.agent.'.length)
           : undefined;
 
-        // Check dead letter info
         const deadLetter = deadLetters.find(
           (dl) => dl.messageId === messageId,
         );
 
-        // Extract from subject from dead letter envelope (IndexedMessage doesn't store it)
-        const fromSubject = deadLetter?.envelope?.from ?? '';
+        const fromSubject = fromSubjects.get(messageId) ?? '';
 
         // Find response chunks by matching the request's replyTo/from
         const responseChunks =

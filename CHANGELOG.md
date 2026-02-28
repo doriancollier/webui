@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Infer sender label for delivered conversations
 - Wire trace store into publish pipeline for delivery tracking
 - Rename tunnel to remote in status bar settings
 - Fix publish pipeline skipping adapter delivery and improve adapter system
