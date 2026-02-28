@@ -1,3 +1,7 @@
+---
+title: Telegram Adapter Investigation
+---
+
 # Telegram Adapter Investigation
 
 **Date:** 2026-02-28
