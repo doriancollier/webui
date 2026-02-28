@@ -21,7 +21,7 @@ import type {
   ListRunsQuery,
 } from '@dorkos/shared/types';
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
-import type { TraceSpan, DeliveryMetrics, CatalogEntry } from '@dorkos/shared/relay-schemas';
+import type { TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation } from '@dorkos/shared/relay-schemas';
 import type {
   AgentManifest,
   DiscoveryCandidate,
@@ -402,6 +402,10 @@ export class HttpTransport implements Transport {
     if (filters?.endpointHash) params.set('endpointHash', filters.endpointHash);
     const qs = params.toString();
     return fetchJSON(this.baseUrl, `/relay/dead-letters${qs ? `?${qs}` : ''}`);
+  }
+
+  listRelayConversations(): Promise<{ conversations: RelayConversation[] }> {
+    return fetchJSON(this.baseUrl, '/relay/conversations');
   }
 
   // --- Relay Convergence ---

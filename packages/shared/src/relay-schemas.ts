@@ -522,3 +522,37 @@ export const CatalogEntrySchema = z
   .openapi('CatalogEntry');
 
 export type CatalogEntry = z.infer<typeof CatalogEntrySchema>;
+
+// === Conversation View ===
+
+export const SubjectLabelSchema = z
+  .object({
+    label: z.string(),
+    raw: z.string(),
+  })
+  .openapi('SubjectLabel');
+
+export type SubjectLabel = z.infer<typeof SubjectLabelSchema>;
+
+export const RelayConversationSchema = z
+  .object({
+    id: z.string(),
+    direction: z.enum(['outbound', 'inbound']),
+    status: z.enum(['delivered', 'failed', 'pending']),
+    from: SubjectLabelSchema,
+    to: SubjectLabelSchema,
+    preview: z.string(),
+    payload: z.unknown().optional(),
+    responseCount: z.number(),
+    sentAt: z.string(),
+    completedAt: z.string().optional(),
+    durationMs: z.number().optional(),
+    subject: z.string(),
+    sessionId: z.string().optional(),
+    clientId: z.string().optional(),
+    traceId: z.string().optional(),
+    failureReason: z.string().optional(),
+  })
+  .openapi('RelayConversation');
+
+export type RelayConversation = z.infer<typeof RelayConversationSchema>;

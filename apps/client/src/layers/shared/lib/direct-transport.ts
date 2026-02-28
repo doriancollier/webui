@@ -318,6 +318,10 @@ export class DirectTransport implements Transport {
     return [];
   }
 
+  async listRelayConversations(): Promise<{ conversations: never[] }> {
+    return { conversations: [] };
+  }
+
   // Relay convergence is not supported in embedded mode
   async sendMessageRelay(
     _sessionId: string,

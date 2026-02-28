@@ -28,7 +28,7 @@ import type {
   UpdateScheduleRequest,
   ListRunsQuery,
 } from './types.js';
-import type { AdapterConfigZ, AdapterStatusZ, TraceSpan, DeliveryMetrics, CatalogEntry } from './relay-schemas.js';
+import type { AdapterConfigZ, AdapterStatusZ, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation } from './relay-schemas.js';
 import type {
   AgentManifest,
   DiscoveryCandidate,
@@ -159,6 +159,8 @@ export interface Transport {
   getRelayMetrics(): Promise<unknown>;
   /** List dead-letter messages with optional filters. */
   listRelayDeadLetters(filters?: { endpointHash?: string }): Promise<unknown[]>;
+  /** List relay conversations (grouped request/response exchanges with human labels). */
+  listRelayConversations(): Promise<{ conversations: RelayConversation[] }>;
 
   // --- Relay Convergence ---
 

@@ -13,6 +13,8 @@ import {
   InboxQuerySchema,
   EndpointRegistrationSchema,
 } from '@dorkos/shared/relay-schemas';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { initSSEStream } from '../services/core/stream-adapter.js';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
@@ -60,6 +62,133 @@ export function createRelayRouter(
     }
     const messages = relayCore.listMessages(result.data);
     return res.json(messages);
+  });
+
+  // GET /conversations — Grouped request/response exchanges with human labels
+  router.get('/conversations', async (_req, res) => {
+    try {
+      const { resolveSubjectLabels } = await import(
+        '../services/relay/subject-resolver.js'
+      );
+      const { transcriptReader } = await import(
+        '../services/session/transcript-reader.js'
+      );
+      const { readManifest } = await import('@dorkos/shared/manifest');
+
+      const messages = relayCore.listMessages({});
+      const deadLetters = await relayCore.getDeadLetters();
+
+      // Collect unique subjects and resolve labels
+      const allSubjects = messages.messages.map((m) => m.subject);
+      const vaultRoot = path.resolve(
+        path.dirname(fileURLToPath(import.meta.url)),
+        '../../../../',
+      );
+      const resolverDeps = {
+        getSession: async (id: string) =>
+          transcriptReader.getSession(vaultRoot, id),
+        readManifest: async (cwd: string) => readManifest(cwd),
+      };
+      const labelMap = await resolveSubjectLabels(allSubjects, resolverDeps);
+
+      // Separate requests from response chunks
+      type Msg = (typeof messages.messages)[number];
+      const requests: Msg[] = [];
+      const responseChunksBySubject = new Map<string, Msg[]>();
+
+      for (const msg of messages.messages) {
+        const subject = msg.subject;
+        if (
+          subject.startsWith('relay.agent.') ||
+          subject.startsWith('relay.system.')
+        ) {
+          requests.push(msg);
+        } else if (subject.startsWith('relay.human.console.')) {
+          const existing = responseChunksBySubject.get(subject) ?? [];
+          existing.push(msg);
+          responseChunksBySubject.set(subject, existing);
+        }
+      }
+
+      // Build conversations from requests
+      const conversations = requests.map((req) => {
+        const subject = req.subject;
+        const messageId = req.id;
+        const status = req.status;
+        const createdAt = req.createdAt;
+
+        const sessionId = subject.startsWith('relay.agent.')
+          ? subject.slice('relay.agent.'.length)
+          : undefined;
+
+        // Check dead letter info
+        const deadLetter = deadLetters.find(
+          (dl) => dl.messageId === messageId,
+        );
+
+        // Extract from subject from dead letter envelope (IndexedMessage doesn't store it)
+        const fromSubject = deadLetter?.envelope?.from ?? '';
+
+        // Find response chunks by matching the request's replyTo/from
+        const responseChunks =
+          responseChunksBySubject.get(fromSubject) ?? [];
+        const lastChunk = responseChunks[0]; // messages are sorted newest-first
+
+        // Build preview from dead letter envelope (has full payload)
+        let preview = '';
+        let payload: unknown = undefined;
+        if (deadLetter?.envelope?.payload) {
+          payload = deadLetter.envelope.payload;
+          const p = payload as Record<string, unknown>;
+          const text = p?.content ?? p?.text ?? p?.message;
+          preview =
+            typeof text === 'string'
+              ? text.slice(0, 120)
+              : JSON.stringify(payload).slice(0, 120);
+        }
+
+        const fromLabel = labelMap.get(fromSubject) ?? {
+          label: 'Unknown',
+          raw: fromSubject,
+        };
+        const toLabel = labelMap.get(subject) ?? {
+          label: subject,
+          raw: subject,
+        };
+
+        return {
+          id: messageId,
+          direction: 'outbound' as const,
+          status:
+            status === 'delivered'
+              ? ('delivered' as const)
+              : status === 'failed'
+                ? ('failed' as const)
+                : ('pending' as const),
+          from: fromLabel,
+          to: toLabel,
+          preview,
+          payload,
+          responseCount: responseChunks.length,
+          sentAt: createdAt,
+          completedAt: lastChunk?.createdAt as string | undefined,
+          durationMs: lastChunk
+            ? new Date(lastChunk.createdAt as string).getTime() -
+              new Date(createdAt).getTime()
+            : undefined,
+          subject,
+          sessionId,
+          traceId: messageId,
+          failureReason: deadLetter?.reason as string | undefined,
+        };
+      });
+
+      return res.json({ conversations });
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Failed to build conversations';
+      return res.status(500).json({ error: message });
+    }
   });
 
   // GET /messages/:id — Get single message
