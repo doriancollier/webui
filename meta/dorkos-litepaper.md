@@ -106,7 +106,7 @@ When integrated with Loop (see below), Pulse polls for the next priority task an
 - Configurable concurrency limits
 - API for schedule CRUD and manual triggering
 
-**Status: Coming Soon**
+**Status: Available**
 
 ### Relay — The Universal Message Bus
 
@@ -122,7 +122,7 @@ Without Relay, agents are trapped inside your terminal. They can write code and 
 
 See the [Relay Litepaper](./modules/relay-litepaper.md) for the full vision.
 
-**Status: Coming Soon**
+**Status: Available**
 
 ### Mesh — Agent Discovery and Network Topology
 
@@ -144,7 +144,7 @@ A concrete example: your scheduling agent detects a birthday next week. It queri
 
 See the [Mesh Litepaper](./modules/mesh-litepaper.md) for the full vision.
 
-**Status: Coming Soon**
+**Status: Available**
 
 ### Wing — Life Layer (Extension)
 
