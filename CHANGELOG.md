@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Wire trace store into publish pipeline for delivery tracking
 - Rename tunnel to remote in status bar settings
 - Fix publish pipeline skipping adapter delivery and improve adapter system
 - Fix critical Relay publish pipeline bug where adapter delivery was skipped when no Maildir endpoints matched — this blocked all Relay-routed chat messages and Pulse scheduled dispatches

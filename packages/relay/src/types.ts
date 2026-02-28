@@ -154,6 +154,11 @@ export interface RelayOptions {
   /** Optional reliability configuration. Omit to use built-in defaults for all subsystems. */
   reliability?: ReliabilityConfig;
   /**
+   * Optional trace store for recording delivery spans in the publish pipeline.
+   * When provided, each publish() records a span with delivery status and metadata.
+   */
+  traceStore?: TraceStoreLike;
+  /**
    * Optional adapter registry for external channel adapters.
    * Typed as unknown to avoid circular dependency; cast to AdapterRegistry at call sites.
    */
@@ -199,6 +204,17 @@ export interface PublishResultLike {
 export interface RelayPublisher {
   publish(subject: string, payload: unknown, options: PublishOptions): Promise<PublishResultLike>;
   onSignal(pattern: string, handler: SignalHandler): Unsubscribe;
+}
+
+/** Minimal trace store contract for RelayCore to record delivery spans. */
+export interface TraceStoreLike {
+  insertSpan(span: {
+    messageId: string;
+    traceId: string;
+    subject: string;
+    status?: string;
+    metadata?: Record<string, unknown>;
+  }): void;
 }
 
 /**

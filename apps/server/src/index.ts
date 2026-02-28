@@ -89,13 +89,14 @@ async function start() {
     const relayDataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
     try {
       const adapterRegistry = new AdapterRegistry();
-      relayCore = new RelayCore({ dataDir: relayDataDir, adapterRegistry, db });
-      await relayCore.registerEndpoint('relay.system.console');
-      logger.info(`[Relay] RelayCore initialized (dataDir: ${relayDataDir})`);
 
-      // Initialize trace store (uses the consolidated Drizzle database)
+      // Initialize trace store before RelayCore so it can be injected for delivery tracking
       traceStore = new TraceStore(db);
       logger.info('[Relay] TraceStore initialized');
+
+      relayCore = new RelayCore({ dataDir: relayDataDir, adapterRegistry, db, traceStore });
+      await relayCore.registerEndpoint('relay.system.console');
+      logger.info(`[Relay] RelayCore initialized (dataDir: ${relayDataDir})`);
 
       // Initialize adapter lifecycle manager (includes ClaudeCodeAdapter for agent dispatch)
       const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');

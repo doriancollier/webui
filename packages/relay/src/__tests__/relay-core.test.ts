@@ -7,7 +7,7 @@ import { RelayCore } from '../relay-core.js';
 import { MaildirStore } from '../maildir-store.js';
 import { SqliteIndex } from '../sqlite-index.js';
 import type { RelayEnvelope, Signal } from '@dorkos/shared/relay-schemas';
-import type { AdapterRegistryLike, AdapterContext } from '../types.js';
+import type { AdapterRegistryLike, AdapterContext, TraceStoreLike } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -1553,5 +1553,123 @@ describe('reliability pipeline integration', () => {
 
       expect(result.adapterResult).toBeUndefined();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Trace store integration
+// ---------------------------------------------------------------------------
+
+describe('trace store integration', () => {
+  let traceTmpDir: string;
+  let traceRelay: RelayCore;
+  let mockTraceStore: TraceStoreLike;
+
+  beforeEach(async () => {
+    traceTmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'relay-trace-test-'));
+    mockTraceStore = { insertSpan: vi.fn() };
+    traceRelay = new RelayCore({
+      dataDir: traceTmpDir,
+      traceStore: mockTraceStore,
+    });
+  });
+
+  afterEach(async () => {
+    await traceRelay.close();
+    await fs.rm(traceTmpDir, { recursive: true, force: true });
+  });
+
+  it('records trace span when traceStore is provided', async () => {
+    await traceRelay.registerEndpoint('relay.test.subject');
+    await traceRelay.publish(
+      'relay.test.subject',
+      { content: 'hello' },
+      { from: 'relay.test.sender', replyTo: 'relay.test.sender' },
+    );
+
+    expect(mockTraceStore.insertSpan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        subject: 'relay.test.subject',
+        status: 'delivered',
+      }),
+    );
+  });
+
+  it('records failed trace span for dead-lettered messages', async () => {
+    await traceRelay.publish(
+      'relay.nowhere.subject',
+      { content: 'lost' },
+      { from: 'relay.test.sender', replyTo: 'relay.test.sender' },
+    );
+
+    expect(mockTraceStore.insertSpan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'failed',
+      }),
+    );
+  });
+
+  it('sets traceId equal to messageId for single-message traces', async () => {
+    await traceRelay.registerEndpoint('relay.test.traceid');
+    const result = await traceRelay.publish(
+      'relay.test.traceid',
+      { content: 'trace' },
+      { from: 'relay.test.sender' },
+    );
+
+    expect(mockTraceStore.insertSpan).toHaveBeenCalledWith(
+      expect.objectContaining({
+        messageId: result.messageId,
+        traceId: result.messageId,
+      }),
+    );
+  });
+
+  it('includes delivery metadata in trace span', async () => {
+    await traceRelay.registerEndpoint('relay.test.meta');
+    await traceRelay.publish(
+      'relay.test.meta',
+      { content: 'meta' },
+      { from: 'relay.test.sender' },
+    );
+
+    const call = (mockTraceStore.insertSpan as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(call.metadata).toEqual(
+      expect.objectContaining({
+        deliveredTo: 1,
+        rejectedCount: 0,
+        hasAdapterResult: false,
+      }),
+    );
+    expect(typeof call.metadata.durationMs).toBe('number');
+  });
+
+  it('does not fail publish when traceStore.insertSpan throws', async () => {
+    (mockTraceStore.insertSpan as ReturnType<typeof vi.fn>).mockImplementation(() => {
+      throw new Error('trace DB down');
+    });
+
+    await traceRelay.registerEndpoint('relay.test.trace-error');
+    const result = await traceRelay.publish(
+      'relay.test.trace-error',
+      { content: 'ok' },
+      { from: 'relay.test.sender' },
+    );
+
+    expect(result.deliveredTo).toBe(1);
+    expect(mockTraceStore.insertSpan).toHaveBeenCalled();
+  });
+
+  it('does not record trace span when traceStore is not provided', async () => {
+    // Use the default relay (no traceStore)
+    await relay.registerEndpoint('relay.test.no-trace');
+    await relay.publish(
+      'relay.test.no-trace',
+      { content: 'hello' },
+      { from: 'relay.test.sender' },
+    );
+
+    // The mockTraceStore should not have been called since it belongs to traceRelay, not relay
+    expect(mockTraceStore.insertSpan).not.toHaveBeenCalled();
   });
 });

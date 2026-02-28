@@ -46,6 +46,7 @@ import type {
   AdapterRegistryLike,
   AdapterContext,
   DeliveryResult,
+  TraceStoreLike,
 } from './types.js';
 import type { DeadLetterEntry, ListDeadOptions } from './dead-letter-queue.js';
 
@@ -150,6 +151,7 @@ export class RelayCore {
   private configWatcher: FSWatcher | null = null;
   private closed = false;
   private readonly adapterRegistry?: AdapterRegistryLike;
+  private readonly traceStore?: TraceStoreLike;
   private adapterContextBuilder?: (subject: string) => AdapterContext | undefined;
 
   constructor(options?: RelayOptions) {
@@ -201,6 +203,11 @@ export class RelayCore {
     this.configPath = path.join(dataDir, 'config.json');
     this.loadReliabilityConfig();
     this.startConfigWatcher();
+
+    // Wire optional trace store for delivery span recording
+    if (options?.traceStore) {
+      this.traceStore = options.traceStore;
+    }
 
     // Wire adapter registry — set this as the RelayPublisher for inbound messages
     if (options?.adapterRegistry) {
@@ -338,6 +345,26 @@ export class RelayCore {
         ? `adapter delivery failed: ${adapterResult.error}`
         : 'no matching endpoints or adapters';
       await this.deadLetterQueue.reject(subjectHash, envelope, reason);
+    }
+
+    // 9. Record trace span for delivery tracking
+    if (this.traceStore) {
+      try {
+        this.traceStore.insertSpan({
+          messageId,
+          traceId: messageId,
+          subject,
+          status: deliveredTo > 0 ? 'delivered' : 'failed',
+          metadata: {
+            deliveredTo,
+            rejectedCount: rejected.length,
+            hasAdapterResult: !!adapterResult,
+            durationMs: Date.now() - new Date(envelope.createdAt).getTime(),
+          },
+        });
+      } catch {
+        // Trace insertion is best-effort — never fail a publish for tracing
+      }
     }
 
     return {
