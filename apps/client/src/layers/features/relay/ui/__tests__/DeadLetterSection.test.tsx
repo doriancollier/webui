@@ -112,25 +112,27 @@ describe('DeadLetterSection', () => {
       mockUseDeadLetters.mockReturnValue({ data: [deadLetter1, deadLetter2], isLoading: false });
     });
 
-    it('starts collapsed — does not show message IDs', () => {
+    it('starts collapsed — does not show row content', () => {
       render(<DeadLetterSection />);
-      expect(screen.queryByText('msg-abc-123')).not.toBeInTheDocument();
-      expect(screen.queryByText('msg-def-456')).not.toBeInTheDocument();
+      expect(screen.queryByText(/Agent \(test\)/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Agent \(other\)/)).not.toBeInTheDocument();
     });
 
     it('expands to show rows when header is clicked', () => {
       render(<DeadLetterSection />);
       fireEvent.click(screen.getByText('Dead Letters'));
-      expect(screen.getByText('msg-abc-123')).toBeInTheDocument();
-      expect(screen.getByText('msg-def-456')).toBeInTheDocument();
+      // deadLetter1 has subject relay.agent.test → "Agent (test)"
+      expect(screen.getByText('Agent (test)')).toBeInTheDocument();
+      // deadLetter2 has subject relay.agent.other → "Agent (other)"
+      expect(screen.getByText('Agent (other)')).toBeInTheDocument();
     });
 
     it('collapses again when header is clicked a second time', () => {
       render(<DeadLetterSection />);
       fireEvent.click(screen.getByText('Dead Letters'));
-      expect(screen.getByText('msg-abc-123')).toBeInTheDocument();
+      expect(screen.getByText('Agent (test)')).toBeInTheDocument();
       fireEvent.click(screen.getByText('Dead Letters'));
-      expect(screen.queryByText('msg-abc-123')).not.toBeInTheDocument();
+      expect(screen.queryByText('Agent (test)')).not.toBeInTheDocument();
     });
 
     it('header button has aria-expanded=false when collapsed', () => {
@@ -152,10 +154,29 @@ describe('DeadLetterSection', () => {
       mockUseDeadLetters.mockReturnValue({ data: [deadLetter1], isLoading: false });
     });
 
-    it('shows message ID in the row', () => {
+    it('shows human-readable summary instead of raw message ID', () => {
       render(<DeadLetterSection />);
       fireEvent.click(screen.getByText('Dead Letters'));
-      expect(screen.getByText('msg-abc-123')).toBeInTheDocument();
+      // deadLetter1: subject relay.agent.test → "Agent (test)"
+      expect(screen.getByText('Agent (test)')).toBeInTheDocument();
+    });
+
+    it('falls back to message ID when envelope has no subject', () => {
+      mockUseDeadLetters.mockReturnValue({ data: [deadLetterUnknown], isLoading: false });
+      render(<DeadLetterSection />);
+      fireEvent.click(screen.getByText('Dead Letters'));
+      expect(screen.getByText('msg-jkl-000')).toBeInTheDocument();
+    });
+
+    it('shows preview text with target when payload has content', () => {
+      const withContent = {
+        ...deadLetter1,
+        envelope: { subject: 'relay.agent.a6010b99', payload: { content: 'hello' } },
+      };
+      mockUseDeadLetters.mockReturnValue({ data: [withContent], isLoading: false });
+      render(<DeadLetterSection />);
+      fireEvent.click(screen.getByText('Dead Letters'));
+      expect(screen.getByText('"hello" → Agent (a6010b9)')).toBeInTheDocument();
     });
 
     it('shows a relative time for failedAt', () => {
@@ -168,8 +189,8 @@ describe('DeadLetterSection', () => {
     it('expands a row to reveal envelope and endpoint hash', () => {
       render(<DeadLetterSection />);
       fireEvent.click(screen.getByText('Dead Letters'));
-      // Row button = the message ID row
-      fireEvent.click(screen.getByText('msg-abc-123'));
+      // Row button = the summary row
+      fireEvent.click(screen.getByText('Agent (test)'));
       expect(screen.getByText('Envelope')).toBeInTheDocument();
       expect(screen.getByText('endpoint-hash-1')).toBeInTheDocument();
     });
@@ -177,9 +198,9 @@ describe('DeadLetterSection', () => {
     it('collapses a row when clicked again', () => {
       render(<DeadLetterSection />);
       fireEvent.click(screen.getByText('Dead Letters'));
-      fireEvent.click(screen.getByText('msg-abc-123'));
+      fireEvent.click(screen.getByText('Agent (test)'));
       expect(screen.getByText('Envelope')).toBeInTheDocument();
-      fireEvent.click(screen.getByText('msg-abc-123'));
+      fireEvent.click(screen.getByText('Agent (test)'));
       expect(screen.queryByText('Envelope')).not.toBeInTheDocument();
     });
   });

@@ -19,6 +19,38 @@ const DEFAULT_REASON_CONFIG = {
   className: 'bg-muted text-muted-foreground',
 };
 
+/** Resolve a relay subject string to a human-readable label. */
+function resolveLabel(subject: string): string {
+  if (subject === 'relay.system.console') return 'System Console';
+  if (subject.startsWith('relay.system.pulse.')) return 'Pulse Scheduler';
+  if (subject.startsWith('relay.human.console.')) return 'Your Browser Session';
+  if (subject.startsWith('relay.agent.')) {
+    const id = subject.slice('relay.agent.'.length);
+    return `Agent (${id.slice(0, 7)})`;
+  }
+  return subject;
+}
+
+/** Extract a short preview string from an envelope payload. */
+function extractPreview(payload: unknown): string {
+  if (!payload || typeof payload !== 'object') return '';
+  const p = payload as Record<string, unknown>;
+  const text = p?.content ?? p?.text ?? p?.message;
+  return typeof text === 'string' ? text.slice(0, 80) : '';
+}
+
+/** Build a human-readable summary line for a dead letter envelope. */
+function buildSummary(envelope: Record<string, unknown>): string {
+  const subject = typeof envelope.subject === 'string' ? envelope.subject : '';
+  const label = subject ? resolveLabel(subject) : '';
+  const preview = extractPreview(envelope.payload);
+
+  if (preview && label) return `"${preview}" → ${label}`;
+  if (preview) return `"${preview}"`;
+  if (label) return label;
+  return '';
+}
+
 /** Format an ISO timestamp as a relative time string. */
 function formatTimeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -39,6 +71,7 @@ interface DeadLetterRowProps {
 function DeadLetterRow({ item }: DeadLetterRowProps) {
   const [expanded, setExpanded] = useState(false);
   const reasonConfig = REASON_CONFIG[item.reason] ?? DEFAULT_REASON_CONFIG;
+  const summary = buildSummary(item.envelope);
 
   return (
     <div className="border-l-2 border-red-500 pl-3">
@@ -47,8 +80,8 @@ function DeadLetterRow({ item }: DeadLetterRowProps) {
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 rounded py-1.5 text-left transition-colors hover:bg-muted/50"
       >
-        <span className="min-w-0 flex-1 truncate font-mono text-xs text-muted-foreground">
-          {item.messageId}
+        <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+          {summary || <span className="font-mono">{item.messageId}</span>}
         </span>
         <Badge
           className={cn('shrink-0 text-xs font-normal border-0', reasonConfig.className)}
