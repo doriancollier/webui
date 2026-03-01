@@ -104,6 +104,14 @@ export class BindingRouter {
 
   private async handleInbound(envelope: RelayEnvelope): Promise<void> {
     try {
+      // Skip response events from agents — only route inbound human messages.
+      // Agent responses are published to relay.human.* subjects for adapter delivery
+      // (step 7 in relay-core), but BindingRouter (step 7b) must not re-route them
+      // back to relay.agent.* as that creates a feedback loop.
+      if (envelope.from.startsWith('agent:')) {
+        return;
+      }
+
       const { adapterId, chatId, channelType } = this.parseSubject(envelope.subject);
       if (!adapterId) {
         logger.warn(`BindingRouter: could not parse subject '${envelope.subject}'`);
@@ -127,7 +135,8 @@ export class BindingRouter {
       });
 
       logger.info(
-        `BindingRouter: routed ${envelope.subject} → relay.agent.${sessionId} (binding=${binding.id})`,
+        `BindingRouter: routed ${envelope.subject} → relay.agent.${sessionId} ` +
+        `(binding=${binding.id}, projectPath=${binding.projectPath || '(empty)'})`,
       );
     } catch (err) {
       logger.error(
@@ -214,6 +223,12 @@ export class BindingRouter {
   }
 
   private async createNewSession(binding: AdapterBinding): Promise<string> {
+    logger.debug('[BindingRouter] createNewSession', {
+      bindingId: binding.id,
+      adapterId: binding.adapterId,
+      agentId: binding.agentId,
+      projectPath: binding.projectPath || '(empty)',
+    });
     const session = await this.deps.agentManager.createSession(binding.projectPath);
     return session.id;
   }

@@ -253,16 +253,23 @@ describe('ClaudeCodeAdapter', () => {
     );
   });
 
-  it('uses defaultCwd when no context is provided', async () => {
+  it('does not pass cwd when no context is provided (lets session.cwd take precedence)', async () => {
     await adapter.start(relay);
     const envelope = createTestEnvelope();
 
     await adapter.deliver(envelope.subject, envelope);
 
-    expect(agentManager.ensureSession).toHaveBeenCalledWith(
-      'session-abc',
-      expect.objectContaining({ cwd: '/default/cwd' }),
-    );
+    // When no Mesh context is available, CCA should NOT override with defaultCwd.
+    // The session's stored CWD (set by BindingRouter from binding.projectPath)
+    // takes precedence via AgentManager's fallback chain.
+    const ensureCall = vi.mocked(agentManager.ensureSession).mock.calls[0];
+    expect(ensureCall[0]).toBe('session-abc');
+    expect(ensureCall[1]).toEqual({ permissionMode: 'default', hasStarted: true });
+    expect(ensureCall[1]).not.toHaveProperty('cwd');
+
+    const sendCall = vi.mocked(agentManager.sendMessage).mock.calls[0];
+    expect(sendCall[2]).toEqual({});
+    expect(sendCall[2]).not.toHaveProperty('cwd');
   });
 
   it('uses context.agent.directory when Mesh context is provided', async () => {

@@ -14,6 +14,21 @@ import { DEFAULT_CWD } from '../../lib/resolve-root.js';
 
 export { buildTaskEvent } from '../session/build-task-event.js';
 
+const RESUME_FAILURE_PATTERNS = [
+  'query closed before response',
+  'session not found',
+  'no such file',
+  'enoent',
+  'process exited with code',
+];
+
+/** Detect whether an error indicates a failed SDK session resume. */
+function isResumeFailure(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const msg = err.message.toLowerCase();
+  return RESUME_FAILURE_PATTERNS.some((p) => msg.includes(p));
+}
+
 const DEFAULT_MODELS: ModelOption[] = [
   { value: 'claude-sonnet-4-5-20250929', displayName: 'Sonnet 4.5', description: 'Fast, intelligent model for everyday tasks' },
   { value: 'claude-haiku-4-5-20251001', displayName: 'Haiku 4.5', description: 'Fastest, most compact model' },
@@ -33,7 +48,7 @@ export class AgentManager {
   private readonly SESSION_TIMEOUT_MS = SESSIONS.TIMEOUT_MS;
   private readonly cwd: string;
   private readonly claudeCliPath: string | undefined;
-  private mcpServers: Record<string, McpServerConfig> = {};
+  private mcpServerFactory: (() => Record<string, McpServerConfig>) | null = null;
   private cachedModels: ModelOption[] | null = null;
 
   constructor(cwd?: string) {
@@ -42,11 +57,17 @@ export class AgentManager {
   }
 
   /**
-   * Register MCP tool servers to be injected into every SDK query() call.
-   * Called once at server startup after singleton services are initialized.
+   * Register a factory that creates fresh MCP tool server configs per query() call.
+   *
+   * Each SDK query() call needs its own McpServer instance because the SDK's
+   * internal Protocol can only be connected to one transport at a time. Reusing
+   * the same instance across concurrent queries causes "Already connected to a
+   * transport" errors.
+   *
+   * @param factory - A function that returns a fresh McpServerConfig record
    */
-  setMcpServers(servers: Record<string, McpServerConfig>): void {
-    this.mcpServers = servers;
+  setMcpServerFactory(factory: () => Record<string, McpServerConfig>): void {
+    this.mcpServerFactory = factory;
   }
 
   /**
@@ -69,6 +90,12 @@ export class AgentManager {
           'Wait for existing sessions to expire or restart the server.'
         );
       }
+      logger.debug('[ensureSession] creating new session', {
+        session: sessionId,
+        cwd: opts.cwd || '(empty)',
+        permissionMode: opts.permissionMode,
+        hasStarted: opts.hasStarted ?? false,
+      });
       this.sessions.set(sessionId, {
         sdkSessionId: sessionId,
         lastActivity: Date.now(),
@@ -101,7 +128,9 @@ export class AgentManager {
     session.lastActivity = Date.now();
     session.eventQueue = [];
 
-    const effectiveCwd = session.cwd ?? this.cwd;
+    // Use opts.cwd if explicitly provided (e.g., CCA passes Mesh context dir),
+    // fall through empty strings from stale bindings, then fall back to default.
+    const effectiveCwd = opts?.cwd || session.cwd || this.cwd;
     try {
       await validateBoundary(effectiveCwd);
     } catch {
@@ -131,11 +160,17 @@ export class AgentManager {
       sdkOptions.resume = session.sdkSessionId;
     }
 
+    // CWD resolution chain: opts.cwd (from caller) → session.cwd (from creation) → this.cwd (default)
+    const cwdSource = opts?.cwd ? 'opts.cwd' : session.cwd ? 'session.cwd' : 'default';
     logger.debug('[sendMessage]', {
       session: sessionId,
       permissionMode: session.permissionMode,
       hasStarted: session.hasStarted,
       resume: session.hasStarted ? session.sdkSessionId : 'N/A',
+      effectiveCwd,
+      cwdSource,
+      'opts.cwd': opts?.cwd || '(empty)',
+      'session.cwd': session.cwd || '(empty)',
     });
 
     sdkOptions.permissionMode = session.permissionMode === 'bypassPermissions'
@@ -150,9 +185,10 @@ export class AgentManager {
       sdkOptions.model = session.model;
     }
 
-    // Inject MCP tool servers (if any registered)
-    if (Object.keys(this.mcpServers).length > 0) {
-      sdkOptions.mcpServers = this.mcpServers;
+    // Inject MCP tool servers — create fresh instances per query to avoid
+    // "Already connected to a transport" errors from reused Protocol objects.
+    if (this.mcpServerFactory) {
+      sdkOptions.mcpServers = this.mcpServerFactory();
     }
 
     sdkOptions.canUseTool = createCanUseTool(session, logger.debug.bind(logger));
@@ -219,6 +255,15 @@ export class AgentManager {
         }
       }
     } catch (err) {
+      if (session.hasStarted && isResumeFailure(err)) {
+        logger.warn('[sendMessage] resume failed for stale session, retrying as new', {
+          session: sessionId,
+          error: err instanceof Error ? err.message : String(err),
+        });
+        session.hasStarted = false;
+        yield* this.sendMessage(sessionId, content, opts);
+        return;
+      }
       yield {
         type: 'error',
         data: {

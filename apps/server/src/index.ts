@@ -173,8 +173,9 @@ async function start() {
     }
   }
 
-  // Create MCP tool server and inject into AgentManager
-  const mcpToolServer = createDorkOsToolServer({
+  // Register MCP tool server factory — creates fresh instances per query() call
+  // to avoid "Already connected to a transport" errors from reused Protocol objects.
+  const mcpToolDeps = {
     transcriptReader,
     defaultCwd: env.DORKOS_DEFAULT_CWD ?? process.cwd(),
     ...(pulseStore && { pulseStore }),
@@ -183,8 +184,8 @@ async function start() {
     ...(adapterManager && { bindingStore: adapterManager.getBindingStore() }),
     ...(traceStore && { traceStore }),
     ...(meshCore && { meshCore }),
-  });
-  agentManager.setMcpServers({ dorkos: mcpToolServer });
+  };
+  agentManager.setMcpServerFactory(() => ({ dorkos: createDorkOsToolServer(mcpToolDeps) }));
 
   const app = createApp();
 

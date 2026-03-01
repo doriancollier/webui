@@ -89,6 +89,62 @@ describe('BindingRouter', () => {
     expect(mockRelayCore.publish).not.toHaveBeenCalled();
   });
 
+  it('skips envelopes originating from agents to prevent feedback loop', async () => {
+    vi.mocked(mockBindingStore.resolve!).mockReturnValue({
+      id: 'bind-1',
+      adapterId: 'telegram',
+      agentId: 'agent-a',
+      projectPath: '/agents/a',
+      sessionStrategy: 'per-chat',
+      label: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    await capturedHandler!({
+      subject: 'relay.human.telegram.12345',
+      from: 'agent:session-abc',
+      replyTo: undefined,
+      payload: { type: 'text_delta', data: { text: 'hello' } },
+      budget: { hopCount: 1, maxHops: 10, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
+      id: 'msg-response',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    // Should NOT have published — this is an agent response, not a human message
+    expect(mockRelayCore.publish).not.toHaveBeenCalled();
+    expect(mockBindingStore.resolve).not.toHaveBeenCalled();
+  });
+
+  it('routes human-originated messages normally', async () => {
+    vi.mocked(mockBindingStore.resolve!).mockReturnValue({
+      id: 'bind-1',
+      adapterId: 'telegram',
+      agentId: 'agent-a',
+      projectPath: '/agents/a',
+      sessionStrategy: 'per-chat',
+      label: '',
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    await capturedHandler!({
+      subject: 'relay.human.telegram.12345',
+      from: 'relay.human.telegram.bot',
+      replyTo: 'relay.human.telegram.12345',
+      payload: { content: 'Hello from Telegram' },
+      budget: { hopCount: 0, maxHops: 10, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
+      id: 'msg-inbound',
+      createdAt: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(mockRelayCore.publish).toHaveBeenCalledWith(
+      'relay.agent.session-abc',
+      expect.anything(),
+      expect.objectContaining({ from: 'relay.human.telegram.bot' }),
+    );
+  });
+
   it('routes to relay.agent.{sessionId} when binding matches', async () => {
     vi.mocked(mockBindingStore.resolve!).mockReturnValue({
       id: 'bind-1',

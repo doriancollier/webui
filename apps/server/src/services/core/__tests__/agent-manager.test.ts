@@ -355,8 +355,192 @@ describe('AgentManager', () => {
       );
     });
 
-    it('handles SDK errors gracefully', async () => {
+    it('retries without resume when SDK throws a resume failure', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
+      (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
+
+      let callCount = 0;
+      (mockedQuery as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          // First call: simulate a stale session resume failure
+          return mockQueryResult((async function* () {
+            throw new Error('Query closed before response received');
+          })());
+        }
+        // Second call: succeed normally
+        return mockQueryResult((async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'new-session',
+            tools: [],
+            mcp_servers: [],
+            model: 'test',
+            permissionMode: 'default',
+            slash_commands: [],
+            output_style: 'text',
+            skills: [],
+            plugins: [],
+            cwd: '/test',
+            apiKeySource: 'user',
+            uuid: 'uuid-1',
+          };
+          yield {
+            type: 'result',
+            subtype: 'success',
+            duration_ms: 100,
+            duration_api_ms: 80,
+            is_error: false,
+            num_turns: 1,
+            result: '',
+            stop_reason: 'end_turn',
+            total_cost_usd: 0.001,
+            usage: { input_tokens: 10, output_tokens: 5 },
+            modelUsage: {},
+            permission_denials: [],
+            uuid: 'uuid-2',
+            session_id: 'new-session',
+          };
+        })());
+      });
+
+      // Start with hasStarted: true so the first call uses resume
+      agentManager.ensureSession('stale', { permissionMode: 'default', hasStarted: true });
+      const events = [];
+      for await (const event of agentManager.sendMessage('stale', 'hello')) {
+        events.push(event);
+      }
+
+      // Should NOT have an error event — retry succeeded
+      expect(events.find((e) => e.type === 'error')).toBeUndefined();
+      // Should have a done event from the successful retry
+      expect(events.find((e) => e.type === 'done')).toBeDefined();
+      // SDK query should have been called twice (first with resume, second without)
+      expect(mockedQuery).toHaveBeenCalledTimes(2);
+    });
+
+    it('retries when Claude Code process exits with code 1 (stale resume)', async () => {
+      const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
+      (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
+
+      let callCount = 0;
+      (mockedQuery as ReturnType<typeof vi.fn>).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return mockQueryResult((async function* () {
+            throw new Error('Claude Code process exited with code 1');
+          })());
+        }
+        return mockQueryResult((async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'new-session-2',
+            tools: [],
+            mcp_servers: [],
+            model: 'test',
+            permissionMode: 'default',
+            slash_commands: [],
+            output_style: 'text',
+            skills: [],
+            plugins: [],
+            cwd: '/test',
+            apiKeySource: 'user',
+            uuid: 'uuid-1',
+          };
+          yield {
+            type: 'result',
+            subtype: 'success',
+            duration_ms: 100,
+            duration_api_ms: 80,
+            is_error: false,
+            num_turns: 1,
+            result: '',
+            stop_reason: 'end_turn',
+            total_cost_usd: 0.001,
+            usage: { input_tokens: 10, output_tokens: 5 },
+            modelUsage: {},
+            permission_denials: [],
+            uuid: 'uuid-2',
+            session_id: 'new-session-2',
+          };
+        })());
+      });
+
+      agentManager.ensureSession('stale-exit', { permissionMode: 'default', hasStarted: true });
+      const events = [];
+      for await (const event of agentManager.sendMessage('stale-exit', 'hello')) {
+        events.push(event);
+      }
+
+      expect(events.find((e) => e.type === 'error')).toBeUndefined();
+      expect(events.find((e) => e.type === 'done')).toBeDefined();
+      expect(mockedQuery).toHaveBeenCalledTimes(2);
+    });
+
+    it('uses opts.cwd over empty session.cwd', async () => {
+      const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
+      (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
+
+      (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
+        mockQueryResult((async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'cwd-test',
+            tools: [],
+            mcp_servers: [],
+            model: 'test',
+            permissionMode: 'default',
+            slash_commands: [],
+            output_style: 'text',
+            skills: [],
+            plugins: [],
+            cwd: '/correct/path',
+            apiKeySource: 'user',
+            uuid: 'uuid-1',
+          };
+          yield {
+            type: 'result',
+            subtype: 'success',
+            duration_ms: 100,
+            duration_api_ms: 80,
+            is_error: false,
+            num_turns: 1,
+            result: '',
+            stop_reason: 'end_turn',
+            total_cost_usd: 0.001,
+            usage: { input_tokens: 10, output_tokens: 5 },
+            modelUsage: {},
+            permission_denials: [],
+            uuid: 'uuid-2',
+            session_id: 'cwd-test',
+          };
+        })())
+      );
+
+      // Session created with empty cwd (simulating stale binding)
+      agentManager.ensureSession('cwd-empty', { permissionMode: 'default', cwd: '' });
+
+      const events = [];
+      for await (const event of agentManager.sendMessage('cwd-empty', 'hello', { cwd: '/correct/path' })) {
+        events.push(event);
+      }
+
+      // Should use opts.cwd, not the empty session.cwd
+      expect(mockedQuery).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.objectContaining({
+            cwd: '/correct/path',
+          }),
+        })
+      );
+    });
+
+    it('does not retry for non-resume SDK errors', async () => {
+      const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
+      (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
         mockQueryResult((async function* () {
@@ -364,7 +548,8 @@ describe('AgentManager', () => {
         })())
       );
 
-      agentManager.ensureSession('s1', { permissionMode: 'default' });
+      // Use hasStarted: true so the retry path is reachable — but non-resume errors should not retry
+      agentManager.ensureSession('s1', { permissionMode: 'default', hasStarted: true });
       const events = [];
       for await (const event of agentManager.sendMessage('s1', 'hello')) {
         events.push(event);
@@ -377,6 +562,8 @@ describe('AgentManager', () => {
       // Should still emit done
       const doneEvent = events.find((e) => e.type === 'done');
       expect(doneEvent).toBeDefined();
+      // Should only have been called once — no retry
+      expect(mockedQuery).toHaveBeenCalledTimes(1);
     });
   });
 

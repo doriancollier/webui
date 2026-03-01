@@ -294,13 +294,22 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     };
     this.deps.traceStore.insertSpan(span);
 
-    // Resolve agent working directory from context or default
-    const agentCwd = context?.agent?.directory ?? this.config.defaultCwd;
+    // Resolve agent working directory from authoritative context only.
+    // When context is undefined (no Mesh agent), do NOT override with
+    // process.cwd() — let the session's stored CWD (set by BindingRouter
+    // from binding.projectPath) take precedence via AgentManager fallback.
+    const agentCwd = context?.agent?.directory;
+    const log = this.deps.logger ?? console;
+    log.debug?.(
+      `[CCA] handleAgentMessage session=${sessionId}, ` +
+      `context.agent.directory=${context?.agent?.directory ?? '(none)'}, ` +
+      `resolvedCwd=${agentCwd ?? '(deferred to session)'}`,
+    );
 
     this.deps.agentManager.ensureSession(sessionId, {
       permissionMode: 'default',
-      cwd: agentCwd,
       hasStarted: true,
+      ...(agentCwd ? { cwd: agentCwd } : {}),
     });
 
     this.deps.traceStore.updateSpan(envelope.id, {
@@ -326,7 +335,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
 
     try {
       const eventStream = this.deps.agentManager.sendMessage(sessionId, prompt, {
-        cwd: agentCwd,
+        ...(agentCwd ? { cwd: agentCwd } : {}),
       });
 
       let eventCount = 0;

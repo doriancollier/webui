@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Break Telegram feedback loop, fix CWD resolution and MCP transport reuse
 - Buffer StreamEvent chunks in TelegramAdapter instead of sending raw JSON
 - Address 36 code review findings — round 3 remediation
 - Address 18 code review findings — round 3 remediation
