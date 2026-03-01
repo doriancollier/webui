@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SessionStatusEvent, MessagePart, HistoryMessage } from '@dorkos/shared/types';
+import type { SessionStatusEvent, MessagePart, HistoryMessage, TaskUpdateEvent } from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import { useRelayEnabled } from '@/layers/entities/relay';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
@@ -103,6 +103,17 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   const isStreaming = status === 'streaming';
 
+  // Ref-stabilize callbacks to prevent streamEventHandler identity churn.
+  // Synced on every render (refs are synchronous — no useEffect needed).
+  const onTaskEventRef = useRef(options.onTaskEvent);
+  const onSessionIdChangeRef = useRef(options.onSessionIdChange);
+  const onStreamingDoneRef = useRef(options.onStreamingDone);
+  const transformContentRef = useRef(options.transformContent);
+  onTaskEventRef.current = options.onTaskEvent;
+  onSessionIdChangeRef.current = options.onSessionIdChange;
+  onStreamingDoneRef.current = options.onStreamingDone;
+  transformContentRef.current = options.transformContent;
+
   // Create stream event handler at hook level so it can be shared between
   // handleSubmit (legacy SSE path) and EventSource relay_message listener
   const streamEventHandler = useMemo(
@@ -123,10 +134,12 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         setStreamStartTime,
         setIsTextStreaming,
         sessionId,
-        options,
+        onTaskEventRef,
+        onSessionIdChangeRef,
+        onStreamingDoneRef,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Refs are stable; options/sessionId drive recreation
-    [sessionId, options]
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Refs are stable; only sessionId drives recreation
+    [sessionId]
   );
 
   // Load message history from SDK transcript via TanStack Query with adaptive polling

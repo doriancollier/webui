@@ -1,6 +1,7 @@
 import { Settings, X } from 'lucide-react';
 import { Badge } from '@/layers/shared/ui/badge';
 import { useMeshAgentHealth } from '@/layers/entities/mesh';
+import { relativeTime } from '../lib/relative-time';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -13,18 +14,6 @@ const STATUS_INFO = {
 } as const;
 
 type AgentStatus = keyof typeof STATUS_INFO;
-
-/** Format an ISO timestamp as a human-readable relative string. */
-function relativeTime(iso: string | null): string {
-  if (!iso) return 'Never';
-  const diff = Date.now() - new Date(iso).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'Just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 function isAgentStatus(value: string): value is AgentStatus {
   return value in STATUS_INFO;

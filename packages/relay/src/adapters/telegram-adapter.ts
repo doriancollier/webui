@@ -87,12 +87,12 @@ function extractChatId(subject: string): number | null {
   if (remainder.startsWith(`${GROUP_SEGMENT}.`)) {
     const idStr = remainder.slice(GROUP_SEGMENT.length + 1);
     const id = Number(idStr);
-    return Number.isFinite(id) ? id : null;
+    return Number.isInteger(id) ? id : null;
   }
 
   // DM format: {chatId}
   const id = Number(remainder);
-  return Number.isFinite(id) ? id : null;
+  return Number.isInteger(id) ? id : null;
 }
 
 /**
@@ -257,6 +257,8 @@ export class TelegramAdapter implements RelayAdapter {
   private relay: RelayPublisher | null = null;
   private signalUnsub: Unsubscribe | null = null;
   private reconnectAttempts = 0;
+  /** Pending reconnection timer — cleared in stop(). */
+  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
   private status: AdapterStatus = {
     state: 'disconnected',
@@ -346,6 +348,12 @@ export class TelegramAdapter implements RelayAdapter {
     if (this.bot === null) return; // Already stopped
 
     this.status = { ...this.status, state: 'stopping' };
+
+    // Cancel any pending reconnection timer
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer);
+      this.reconnectTimer = null;
+    }
 
     // Unsubscribe from relay signals before stopping the bot
     if (this.signalUnsub) {
@@ -509,9 +517,16 @@ export class TelegramAdapter implements RelayAdapter {
     const delay = TelegramAdapter.RECONNECT_DELAYS[this.reconnectAttempts]!;
     this.reconnectAttempts++;
 
-    setTimeout(() => {
-      // If the adapter was stopped externally, do not reconnect
-      if (this.status.state === 'disconnected') return;
+    this.reconnectTimer = setTimeout(async () => {
+      // If the adapter was stopped externally or is stopping, do not reconnect
+      if (this.status.state === 'disconnected' || this.status.state === 'stopping') return;
+
+      // Stop the old bot before creating a replacement
+      try {
+        await this.bot?.stop();
+      } catch {
+        // Swallow — old bot is likely already dead
+      }
 
       // Create a fresh bot instance for the reconnection attempt
       const newBot = new Bot(this.config.token);
@@ -562,17 +577,27 @@ export class TelegramAdapter implements RelayAdapter {
 
     await new Promise<void>((resolve, reject) => {
       server.listen(port, resolve);
-      server.on('error', reject);
+      // Use once() so the error handler is automatically removed after the
+      // promise settles — prevents a stale reject reference from leaking as
+      // a persistent listener on later server errors.
+      server.once('error', reject);
     });
   }
 
   /**
    * Shut down the webhook HTTP server if one is running.
+   *
+   * Calls `closeAllConnections()` before `close()` to forcibly terminate any
+   * keep-alive connections that would otherwise prevent the server from
+   * closing promptly.
    */
   private async stopWebhookServer(): Promise<void> {
     if (!this.webhookServer) return;
     const server = this.webhookServer;
     this.webhookServer = null;
+    // Forcibly close keep-alive connections so server.close() resolves
+    // immediately rather than waiting for clients to disconnect on their own.
+    server.closeAllConnections();
     await new Promise<void>((resolve, reject) => {
       server.close((err) => (err ? reject(err) : resolve()));
     });

@@ -569,6 +569,39 @@ export const BindingResponseSchema = z
   })
   .openapi('BindingResponse');
 
+// === Adapter HTTP Request Schemas ===
+
+export const AdapterTestRequestSchema = z
+  .object({
+    type: z.string().min(1),
+    config: z.record(z.string(), z.unknown()),
+  })
+  .openapi('AdapterTestRequest');
+
+export type AdapterTestRequest = z.infer<typeof AdapterTestRequestSchema>;
+
+export const AdapterCreateRequestSchema = z
+  .object({
+    type: z.string().min(1),
+    id: z
+      .string()
+      .min(1)
+      .regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
+    config: z.record(z.string(), z.unknown()),
+    enabled: z.boolean().optional(),
+  })
+  .openapi('AdapterCreateRequest');
+
+export type AdapterCreateRequest = z.infer<typeof AdapterCreateRequestSchema>;
+
+export const AdapterConfigUpdateSchema = z
+  .object({
+    config: z.record(z.string(), z.unknown()),
+  })
+  .openapi('AdapterConfigUpdate');
+
+export type AdapterConfigUpdate = z.infer<typeof AdapterConfigUpdateSchema>;
+
 // === Conversation View ===
 
 export const SubjectLabelSchema = z

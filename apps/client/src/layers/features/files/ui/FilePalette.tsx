@@ -1,13 +1,7 @@
 import { useEffect } from 'react';
 import { motion } from 'motion/react';
 import { File, Folder } from 'lucide-react';
-
-export interface FileEntry {
-  path: string;
-  filename: string;
-  directory: string;
-  isDirectory: boolean;
-}
+import type { FileEntry } from '@/layers/shared/lib';
 
 interface FilePaletteProps {
   filteredFiles: Array<FileEntry & { indices: number[] }>;

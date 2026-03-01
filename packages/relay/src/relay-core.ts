@@ -218,6 +218,10 @@ export class RelayCore {
       this.circuitBreaker,
     );
 
+    // Wire dedup guard: WatcherManager skips messages that the synchronous
+    // delivery fast-path in DeliveryPipeline already dispatched to handlers.
+    this.watcherManager.setWasDispatched((id) => this.deliveryPipeline.wasDispatched(id));
+
     // Config hot-reload: load from disk then watch for changes
     this.configPath = path.join(dataDir, 'config.json');
     this.loadReliabilityConfig();

@@ -212,6 +212,10 @@ export class DirectTransport implements Transport {
     return { error: 'not_git_repo' as const };
   }
 
+  async updateConfig(_patch: Record<string, unknown>): Promise<void> {
+    // No-op in embedded mode — config is not persisted via DirectTransport.
+  }
+
   async getConfig(): Promise<ServerConfig> {
     return {
       version: '0.1.0',

@@ -658,6 +658,36 @@ describe('register() compensation', () => {
     mesh.close();
   });
 
+  it('removes manifest file when Relay registration fails', async () => {
+    const base = await makeTempDir();
+    const projects = path.join(base, 'projects');
+    const { projectA } = await setupProjects(projects);
+
+    const mockRelayCore = {
+      registerEndpoint: vi.fn().mockRejectedValue(new Error('Relay error')),
+      unregisterEndpoint: vi.fn().mockResolvedValue(true),
+      addAccessRule: vi.fn(),
+      removeAccessRule: vi.fn(),
+      listAccessRules: vi.fn().mockReturnValue([]),
+    };
+
+    const mesh = new MeshCore({ db, relayCore: mockRelayCore as never, defaultScanRoot: base });
+
+    const candidates = [];
+    for await (const c of mesh.discover([projects])) {
+      candidates.push(c);
+    }
+    const candidate = candidates.find((c) => c.path === projectA);
+    expect(candidate).toBeDefined();
+
+    const removeManifestSpy = vi.spyOn(manifestModule, 'removeManifest').mockResolvedValue(undefined);
+
+    await expect(mesh.register(candidate!)).rejects.toThrow('Relay error');
+    expect(removeManifestSpy).toHaveBeenCalledWith(candidate!.path);
+
+    mesh.close();
+  });
+
   it('succeeds on re-registration at same path', async () => {
     const base = await makeTempDir();
     const projects = path.join(base, 'projects');
@@ -675,6 +705,70 @@ describe('register() compensation', () => {
     await mesh.register(candidate!);
     // Second registration at same path should not crash
     await expect(mesh.register(candidate!)).resolves.toBeDefined();
+
+    mesh.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// registerByPath() compensation
+// ---------------------------------------------------------------------------
+
+describe('registerByPath() compensation', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('removes manifest file when Relay registration fails', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'my-project');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mockRelayCore = {
+      registerEndpoint: vi.fn().mockRejectedValue(new Error('Relay error')),
+      unregisterEndpoint: vi.fn().mockResolvedValue(true),
+      addAccessRule: vi.fn(),
+      removeAccessRule: vi.fn(),
+      listAccessRules: vi.fn().mockReturnValue([]),
+    };
+
+    const mesh = new MeshCore({ db, relayCore: mockRelayCore as never, defaultScanRoot: base });
+
+    const removeManifestSpy = vi.spyOn(manifestModule, 'removeManifest').mockResolvedValue(undefined);
+
+    await expect(
+      mesh.registerByPath(projectDir, { name: 'failing-agent', runtime: 'claude-code' }),
+    ).rejects.toThrow('Relay error');
+
+    expect(removeManifestSpy).toHaveBeenCalledWith(projectDir);
+
+    mesh.close();
+  });
+
+  it('removes DB entry and re-throws when Relay registration fails', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'my-project');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mockRelayCore = {
+      registerEndpoint: vi.fn().mockRejectedValue(new Error('Relay error')),
+      unregisterEndpoint: vi.fn().mockResolvedValue(true),
+      addAccessRule: vi.fn(),
+      removeAccessRule: vi.fn(),
+      listAccessRules: vi.fn().mockReturnValue([]),
+    };
+
+    const mesh = new MeshCore({ db, relayCore: mockRelayCore as never, defaultScanRoot: base });
+
+    vi.spyOn(manifestModule, 'removeManifest').mockResolvedValue(undefined);
+    const registryRemoveSpy = vi.spyOn(AgentRegistry.prototype, 'remove');
+
+    await expect(
+      mesh.registerByPath(projectDir, { name: 'failing-agent', runtime: 'claude-code' }),
+    ).rejects.toThrow('Relay error');
+
+    expect(registryRemoveSpy).toHaveBeenCalled();
+    expect(mesh.list()).toHaveLength(0);
 
     mesh.close();
   });

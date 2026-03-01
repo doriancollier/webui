@@ -9,7 +9,7 @@ import type {
   MessagePart,
 } from '@dorkos/shared/types';
 import { TIMING } from '@/layers/shared/lib';
-import type { ChatMessage, ToolCallState, ChatSessionOptions } from './chat-types';
+import type { ChatMessage, ToolCallState } from './chat-types';
 
 interface StreamEventDeps {
   currentPartsRef: React.MutableRefObject<MessagePart[]>;
@@ -27,7 +27,9 @@ interface StreamEventDeps {
   setStreamStartTime: (time: number | null) => void;
   setIsTextStreaming: (streaming: boolean) => void;
   sessionId: string;
-  options: ChatSessionOptions;
+  onTaskEventRef: React.MutableRefObject<((event: TaskUpdateEvent) => void) | undefined>;
+  onSessionIdChangeRef: React.MutableRefObject<((newSessionId: string) => void) | undefined>;
+  onStreamingDoneRef: React.MutableRefObject<(() => void) | undefined>;
 }
 
 /** Derive flat content and toolCalls from parts for backward compat. */
@@ -71,7 +73,9 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
     setStreamStartTime,
     setIsTextStreaming,
     sessionId,
-    options,
+    onTaskEventRef,
+    onSessionIdChangeRef,
+    onStreamingDoneRef,
   } = deps;
 
   function findToolCallPart(toolCallId: string) {
@@ -251,18 +255,18 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       }
       case 'task_update': {
         const taskEvent = data as TaskUpdateEvent;
-        options.onTaskEvent?.(taskEvent);
+        onTaskEventRef.current?.(taskEvent);
         break;
       }
       case 'done': {
         const doneData = data as { sessionId?: string };
         if (doneData.sessionId && doneData.sessionId !== sessionId) {
-          options.onSessionIdChange?.(doneData.sessionId);
+          onSessionIdChangeRef.current?.(doneData.sessionId);
         }
         if (streamStartTimeRef.current) {
           const elapsed = Date.now() - streamStartTimeRef.current;
           if (elapsed >= TIMING.MIN_STREAM_DURATION_MS) {
-            options.onStreamingDone?.();
+            onStreamingDoneRef.current?.();
           }
         }
         streamStartTimeRef.current = null;

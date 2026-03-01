@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   useTransport,
   useAppStore,
@@ -24,7 +24,7 @@ import { usePulseEnabled, useActiveRunCount, useCompletedRunBadge } from '@/laye
 import { useRelayEnabled } from '@/layers/entities/relay';
 import { useMeshEnabled } from '@/layers/entities/mesh';
 import { toast } from 'sonner';
-import { useSessionId, useDirectoryState } from '@/layers/entities/session';
+import { useSessions, useDirectoryState } from '@/layers/entities/session';
 import { useResolvedAgents } from '@/layers/entities/agent';
 import { SessionItem } from './SessionItem';
 import { AgentHeader } from './AgentHeader';
@@ -52,7 +52,7 @@ const themeOrder: Theme[] = ['light', 'dark', 'system'];
 export function SessionSidebar() {
   const transport = useTransport();
   const queryClient = useQueryClient();
-  const [activeSessionId, setActiveSession] = useSessionId();
+  const { sessions, activeSessionId, setActiveSession } = useSessions();
   const {
     setSidebarOpen,
     devtoolsOpen,
@@ -84,12 +84,6 @@ export function SessionSidebar() {
     const idx = themeOrder.indexOf(theme);
     setTheme(themeOrder[(idx + 1) % themeOrder.length]);
   }, [theme, setTheme]);
-
-  const { data: sessions = [] } = useQuery({
-    queryKey: ['sessions', selectedCwd],
-    queryFn: () => transport.listSessions(selectedCwd ?? undefined),
-    enabled: selectedCwd !== null,
-  });
 
   // Auto-select most recent session when directory changes and no session is active
   useEffect(() => {

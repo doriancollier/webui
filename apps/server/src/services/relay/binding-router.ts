@@ -247,10 +247,32 @@ export class BindingRouter {
   private async loadSessionMap(): Promise<void> {
     try {
       const raw = await readFile(this.sessionMapPath, 'utf-8');
-      const entries: [string, string][] = JSON.parse(raw);
-      this.sessionMap = new Map(entries);
+      const parsed: unknown = JSON.parse(raw);
+
+      // Validate shape: must be an array of [string, string] tuples
+      if (!Array.isArray(parsed)) {
+        logger.warn('BindingRouter: sessionMap is not an array, starting fresh');
+        this.sessionMap = new Map();
+        return;
+      }
+
+      const valid = parsed.filter(
+        (entry): entry is [string, string] =>
+          Array.isArray(entry) &&
+          entry.length === 2 &&
+          typeof entry[0] === 'string' &&
+          typeof entry[1] === 'string',
+      );
+
+      if (valid.length < parsed.length) {
+        logger.warn(
+          `BindingRouter: discarded ${parsed.length - valid.length} malformed sessionMap entries`,
+        );
+      }
+
+      this.sessionMap = new Map(valid);
     } catch {
-      // File doesn't exist yet or is invalid — start fresh
+      // File doesn't exist yet or JSON parse error — start fresh
       this.sessionMap = new Map();
     }
   }

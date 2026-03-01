@@ -8,6 +8,7 @@ import {
 import { Zap, Clock, Settings, Heart, Copy, MessageCircle } from 'lucide-react';
 import { usePrefersReducedMotion } from '../lib/use-reduced-motion';
 import { useLodBand } from '../lib/use-lod-band';
+import { relativeTime } from '../lib/relative-time';
 import { toast } from 'sonner';
 import { cn } from '@/layers/shared/lib';
 import { Badge } from '@/layers/shared/ui/badge';
@@ -45,27 +46,6 @@ const STATUS_COLORS: Record<AgentNodeData['healthStatus'], string> = {
   inactive: 'bg-amber-500',
   stale: 'bg-zinc-400',
 };
-
-/** Convert an ISO timestamp to a relative time string like "2m ago" or "3d ago". */
-function relativeTime(isoString: string): string {
-  const now = Date.now();
-  const then = new Date(isoString).getTime();
-  const diffMs = now - then;
-
-  if (Number.isNaN(diffMs) || diffMs < 0) return 'just now';
-
-  const seconds = Math.floor(diffMs / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-
-  const days = Math.floor(hours / 24);
-  return `${days}d ago`;
-}
 
 /** Resolve the left-border color: agent color overrides namespace color. */
 function resolveBorderColor(d: AgentNodeData): string | undefined {

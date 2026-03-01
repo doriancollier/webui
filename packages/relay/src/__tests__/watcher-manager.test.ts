@@ -158,16 +158,88 @@ describe('WatcherManager', () => {
     });
   });
 
-  describe('handleNewMessage (via watcher)', () => {
-    it('dispatches to subscription handlers when a file appears in new/', async () => {
+  describe('setWasDispatched', () => {
+    it('skips dispatch when wasDispatched returns true for the message ID', async () => {
       const handler = vi.fn();
       vi.mocked(subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+
+      // Register a dedup guard that always reports "already dispatched"
+      manager.setWasDispatched(() => true);
 
       const maildirPath = path.join(tmpDir, 'hash-test');
       fsSync.mkdirSync(path.join(maildirPath, 'new'), { recursive: true });
       const endpoint = createEndpoint(maildirPath);
 
       await manager.startWatcher(endpoint);
+
+      // Write a JSON file — the dedup guard should prevent claim
+      fsSync.writeFileSync(
+        path.join(maildirPath, 'new', 'msg-dup-001.json'),
+        JSON.stringify({ subject: 'test' }),
+      );
+
+      // Write a second file WITHOUT dedup to confirm the watcher is still active
+      manager.setWasDispatched((id) => id === 'msg-dup-001');
+      const sentinelPath = path.join(maildirPath, 'new', 'sentinel.json');
+      fsSync.writeFileSync(sentinelPath, JSON.stringify({ subject: 'test' }));
+
+      await waitForCall(vi.mocked(maildirStore.claim));
+
+      // Only sentinel was claimed — the deduped message was skipped
+      const calls = vi.mocked(maildirStore.claim).mock.calls;
+      expect(calls.every(([, id]) => id !== 'msg-dup-001')).toBe(true);
+      expect(calls.some(([, id]) => id === 'sentinel')).toBe(true);
+    });
+
+    it('dispatches normally when wasDispatched returns false', async () => {
+      const handler = vi.fn();
+      vi.mocked(subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+
+      // Guard that never blocks
+      manager.setWasDispatched(() => false);
+
+      const maildirPath = path.join(tmpDir, 'hash-dispatch');
+      fsSync.mkdirSync(path.join(maildirPath, 'new'), { recursive: true });
+      const endpoint: EndpointInfo = {
+        subject: 'relay.agent.test',
+        hash: 'hash-dispatch',
+        maildirPath,
+      };
+
+      await manager.startWatcher(endpoint);
+
+      // Small delay to let chokidar stabilise before writing
+      await wait(200);
+
+      fsSync.writeFileSync(
+        path.join(maildirPath, 'new', 'msg-new-001.json'),
+        JSON.stringify({ subject: 'test' }),
+      );
+
+      await waitForCall(vi.mocked(maildirStore.claim));
+
+      expect(maildirStore.claim).toHaveBeenCalledWith('hash-dispatch', 'msg-new-001');
+      expect(handler).toHaveBeenCalled();
+    });
+  });
+
+  describe('handleNewMessage (via watcher)', () => {
+    it('dispatches to subscription handlers when a file appears in new/', async () => {
+      const handler = vi.fn();
+      vi.mocked(subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+
+      const maildirPath = path.join(tmpDir, 'hash-handle');
+      fsSync.mkdirSync(path.join(maildirPath, 'new'), { recursive: true });
+      const endpoint: EndpointInfo = {
+        subject: 'relay.agent.test',
+        hash: 'hash-handle',
+        maildirPath,
+      };
+
+      await manager.startWatcher(endpoint);
+
+      // Small delay to let chokidar stabilise before writing
+      await wait(200);
 
       // Write a .json file to trigger the watcher
       const msgPath = path.join(maildirPath, 'new', 'msg-001.json');
@@ -176,9 +248,9 @@ describe('WatcherManager', () => {
       // Poll until chokidar detects the file and handler is invoked
       await waitForCall(vi.mocked(maildirStore.claim));
 
-      expect(maildirStore.claim).toHaveBeenCalledWith('hash-test', 'msg-001');
+      expect(maildirStore.claim).toHaveBeenCalledWith('hash-handle', 'msg-001');
       expect(handler).toHaveBeenCalled();
-      expect(maildirStore.complete).toHaveBeenCalledWith('hash-test', 'msg-001');
+      expect(maildirStore.complete).toHaveBeenCalledWith('hash-handle', 'msg-001');
       expect(sqliteIndex.updateStatus).toHaveBeenCalledWith('msg-001', 'delivered');
     });
 
@@ -186,11 +258,16 @@ describe('WatcherManager', () => {
       const handler = vi.fn();
       vi.mocked(subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
 
-      const maildirPath = path.join(tmpDir, 'hash-test');
+      const maildirPath = path.join(tmpDir, 'hash-nonjson');
       fsSync.mkdirSync(path.join(maildirPath, 'new'), { recursive: true });
-      const endpoint = createEndpoint(maildirPath);
+      const endpoint: EndpointInfo = {
+        subject: 'relay.agent.test',
+        hash: 'hash-nonjson',
+        maildirPath,
+      };
 
       await manager.startWatcher(endpoint);
+      await wait(200);
 
       // Write a non-json file, then a json file to confirm watcher is active
       fsSync.writeFileSync(path.join(maildirPath, 'new', 'readme.txt'), 'hi');
@@ -211,11 +288,16 @@ describe('WatcherManager', () => {
       const handler = vi.fn().mockRejectedValue(new Error('handler error'));
       vi.mocked(subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
 
-      const maildirPath = path.join(tmpDir, 'hash-test');
+      const maildirPath = path.join(tmpDir, 'hash-fail');
       fsSync.mkdirSync(path.join(maildirPath, 'new'), { recursive: true });
-      const endpoint = createEndpoint(maildirPath);
+      const endpoint: EndpointInfo = {
+        subject: 'relay.agent.test',
+        hash: 'hash-fail',
+        maildirPath,
+      };
 
       await manager.startWatcher(endpoint);
+      await wait(200);
 
       fsSync.writeFileSync(
         path.join(maildirPath, 'new', 'msg-002.json'),
@@ -225,9 +307,9 @@ describe('WatcherManager', () => {
       // Poll until the fail mock is called (handler rejection settles)
       await waitForCall(vi.mocked(maildirStore.fail));
 
-      expect(maildirStore.fail).toHaveBeenCalledWith('hash-test', 'msg-002', 'handler error');
+      expect(maildirStore.fail).toHaveBeenCalledWith('hash-fail', 'msg-002', 'handler error');
       expect(sqliteIndex.updateStatus).toHaveBeenCalledWith('msg-002', 'failed');
-      expect(circuitBreaker.recordFailure).toHaveBeenCalledWith('hash-test');
+      expect(circuitBreaker.recordFailure).toHaveBeenCalledWith('hash-fail');
     });
   });
 });

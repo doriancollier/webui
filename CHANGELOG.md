@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Address 16 code review issues — round 2 remediation
 - Address 18 code review issues across relay, mesh, and telegram adapter
 - Remove creepy eyebrow text and fix header overlap in hero
 - Resolve Vercel deployment failures

@@ -24,13 +24,7 @@ export function useMeshScanRoots() {
 
   const { mutate: saveScanRoots, isPending: isSaving } = useMutation({
     mutationFn: async (newRoots: string[]) => {
-      const res = await fetch('/api/config', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mesh: { scanRoots: newRoots } }),
-      });
-      if (!res.ok) throw new Error('Failed to save scan roots');
-      return res.json();
+      await transport.updateConfig({ mesh: { scanRoots: newRoots } });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['config'] });

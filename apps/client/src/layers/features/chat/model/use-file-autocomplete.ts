@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { fuzzyMatch } from '@/layers/shared/lib';
-import type { FileEntry } from '@/layers/features/files';
+import type { FileEntry } from '@/layers/shared/lib';
 
 interface UseFileAutocompleteOptions {
   fileEntries: FileEntry[];

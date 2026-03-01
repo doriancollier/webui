@@ -3,14 +3,25 @@ import { BindingStore } from '../binding-store.js';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 
 vi.mock('node:fs/promises');
+/** Captured chokidar 'change' handler so tests can fire it manually. */
+let chokidarChangeHandler: (() => Promise<void>) | undefined;
+
 vi.mock('chokidar', () => ({
-  default: { watch: () => ({ on: vi.fn(), close: vi.fn() }) },
+  default: {
+    watch: () => ({
+      on: vi.fn((event: string, handler: () => Promise<void>) => {
+        if (event === 'change') chokidarChangeHandler = handler;
+      }),
+      close: vi.fn(),
+    }),
+  },
 }));
 
 describe('BindingStore', () => {
   let store: BindingStore;
 
   beforeEach(async () => {
+    chokidarChangeHandler = undefined;
     vi.mocked(readFile).mockRejectedValue(
       Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
     );
@@ -295,6 +306,72 @@ describe('BindingStore', () => {
       expect(store.getAll()).toHaveLength(1);
       await store.shutdown();
       expect(store.getAll()).toEqual([]);
+    });
+  });
+
+  describe('writeGeneration — self-write suppression', () => {
+    it('suppresses one chokidar change event per save call', async () => {
+      await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+
+      // Simulate the chokidar 'change' event that our own write triggered.
+      // readFile will be called only on a genuine external reload; it should
+      // NOT be called here because the event must be absorbed.
+      const readFileSpy = vi.mocked(readFile);
+      readFileSpy.mockClear();
+
+      await chokidarChangeHandler?.();
+
+      expect(readFileSpy).not.toHaveBeenCalled();
+    });
+
+    it('suppresses N events for N concurrent saves without triggering reload', async () => {
+      // Two rapid saves before any chokidar event fires → writeGeneration = 2
+      const saveOne = store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      const saveTwo = store.create({ adapterId: 'tg', agentId: 'b', agentDir: '/b' });
+      await Promise.all([saveOne, saveTwo]);
+
+      const readFileSpy = vi.mocked(readFile);
+      readFileSpy.mockClear();
+
+      // Two chokidar events arrive — both should be absorbed (writeGeneration 2 → 1 → 0)
+      await chokidarChangeHandler?.();
+      await chokidarChangeHandler?.();
+
+      expect(readFileSpy).not.toHaveBeenCalled();
+    });
+
+    it('triggers reload for an external change after all self-writes are absorbed', async () => {
+      await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+
+      const readFileSpy = vi.mocked(readFile);
+      readFileSpy.mockClear();
+
+      // Absorb the event produced by our own save.
+      await chokidarChangeHandler?.();
+
+      // Now an external editor modifies the file — this event should reload.
+      vi.mocked(readFile).mockResolvedValue(
+        JSON.stringify({
+          bindings: [
+            {
+              id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+              adapterId: 'external',
+              agentId: 'ext-agent',
+              agentDir: '/ext',
+              sessionStrategy: 'per-chat',
+              label: '',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      );
+
+      await chokidarChangeHandler?.();
+
+      expect(readFileSpy).toHaveBeenCalledTimes(1);
+      expect(store.getAll()).toHaveLength(1);
+      expect(store.getAll()[0].adapterId).toBe('external');
     });
   });
 });

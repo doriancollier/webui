@@ -21,9 +21,20 @@ import type { EndpointInfo } from './types.js';
  * When a new file is created in an endpoint's `new/` directory,
  * the watcher reads the envelope, dispatches to matching subscription
  * handlers, and manages claim/complete/fail lifecycle.
+ *
+ * An optional `wasDispatched` callback can be provided to suppress
+ * duplicate handler invocations when the synchronous fast-path in
+ * `DeliveryPipeline.dispatchToSubscribers` has already handled the
+ * same message ID.
  */
 export class WatcherManager {
   private readonly watchers = new Map<string, FSWatcher>();
+
+  /**
+   * Optional dedup guard supplied by DeliveryPipeline.
+   * Returns `true` when the pipeline already dispatched this message ID.
+   */
+  private wasDispatched?: (messageId: string) => boolean;
 
   constructor(
     private readonly maildirStore: MaildirStore,
@@ -31,6 +42,16 @@ export class WatcherManager {
     private readonly sqliteIndex: SqliteIndex,
     private readonly circuitBreaker: CircuitBreakerManager,
   ) {}
+
+  /**
+   * Register a callback used to detect messages already dispatched by the
+   * synchronous delivery fast-path, preventing double invocation of handlers.
+   *
+   * @param callback - Returns `true` if the given message ID was already dispatched
+   */
+  setWasDispatched(callback: (messageId: string) => boolean): void {
+    this.wasDispatched = callback;
+  }
 
   /**
    * Start a chokidar watcher on an endpoint's `new/` directory.
@@ -102,6 +123,11 @@ export class WatcherManager {
     const filename = path.basename(filePath);
     if (!filename.endsWith('.json')) return;
     const messageId = filename.slice(0, -5);
+
+    // Skip if DeliveryPipeline already dispatched this message synchronously.
+    // This prevents double-invocation of subscription handlers when the
+    // chokidar `add` event fires after the fast-path claim has run.
+    if (this.wasDispatched?.(messageId)) return;
 
     // Find matching subscription handlers
     const handlers = this.subscriptionRegistry.getSubscribers(endpoint.subject);

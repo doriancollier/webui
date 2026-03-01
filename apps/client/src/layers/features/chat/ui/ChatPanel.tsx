@@ -18,7 +18,7 @@ import { TaskListPanel } from './TaskListPanel';
 import { CelebrationOverlay } from './CelebrationOverlay';
 import { CommandPalette } from '@/layers/features/commands';
 import { FilePalette } from '@/layers/features/files';
-import type { FileEntry } from '@/layers/features/files';
+import type { FileEntry } from '@/layers/shared/lib';
 import { ShortcutChips } from './ShortcutChips';
 import { DragHandle } from './DragHandle';
 import { StatusLine } from '@/layers/features/status';

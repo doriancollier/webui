@@ -240,6 +240,10 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
 
   const [layoutedNodes, setLayoutedNodes] = useState<Node[]>([]);
   const [layoutedEdges, setLayoutedEdges] = useState<Edge[]>([]);
+  // Ref mirror of layoutedNodes — used in handleNodeClick to avoid stale closure
+  // without adding layoutedNodes to the useCallback dependency array (which
+  // would recreate the callback on every ELK layout pass and drag).
+  const layoutedNodesRef = useRef<Node[]>([]);
   const [isLayouting, setIsLayouting] = useState(true);
   const [pendingConnection, setPendingConnection] = useState<PendingConnection | null>(null);
   // Track drag-to-connect state for visual feedback
@@ -494,6 +498,14 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
     return { rawNodes: nodes, rawEdges: edges, legendEntries: legend, useGroups: multiNamespace };
   }, [namespaces, accessRules, relayEnabled, adapters, bindings, bindingCountByAdapter, handleDeleteBinding]);
 
+  // Stable fingerprint of topology data so ELK only re-runs when the structure
+  // actually changes, not just because useTopology refetch created new object refs.
+  const topologyFingerprint = useMemo(() => {
+    const nodeIds = rawNodes.map((n) => `${n.id}:${n.type}:${n.parentId ?? ''}`).sort().join('|');
+    const edgeIds = rawEdges.map((e) => `${e.source}->${e.target}:${e.type}`).sort().join('|');
+    return `${nodeIds}::${edgeIds}`;
+  }, [rawNodes, rawEdges]);
+
   useEffect(() => {
     let cancelled = false;
     setIsLayouting(true);
@@ -518,8 +530,18 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
     return () => {
       cancelled = true;
     };
-    // layoutVersion triggers re-layout when "Reset Layout" is clicked
-  }, [rawNodes, rawEdges, useGroups, layoutVersion]);
+    // topologyFingerprint replaces rawNodes/rawEdges as the trigger — ELK only
+    // re-runs when the structural identity of the graph changes, not on every
+    // refetch that returns new object references with identical data.
+    // layoutVersion triggers re-layout when "Reset Layout" is clicked.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topologyFingerprint, useGroups, layoutVersion]);
+
+  // Keep ref in sync so handleNodeClick always sees current node positions
+  // without closing over layoutedNodes (which changes on every layout pass).
+  useEffect(() => {
+    layoutedNodesRef.current = layoutedNodes;
+  }, [layoutedNodes]);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
@@ -531,7 +553,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
       let centerY = node.position.y + AGENT_NODE_HEIGHT / 2;
 
       if (node.parentId) {
-        const parentNode = layoutedNodes.find((n) => n.id === node.parentId);
+        const parentNode = layoutedNodesRef.current.find((n) => n.id === node.parentId);
         if (parentNode) {
           centerX += parentNode.position.x;
           centerY += parentNode.position.y;
@@ -541,7 +563,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
       const targetZoom = Math.max(getZoom(), 1.0);
       setCenter(centerX, centerY, { zoom: targetZoom, duration: 350 });
     },
-    [setCenter, getZoom, layoutedNodes],
+    [setCenter, getZoom],
   );
 
   /** Only allow connections from adapter nodes to agent nodes. */

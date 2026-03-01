@@ -18,17 +18,20 @@ function LinkSafetyModal({ url, isOpen, onClose, onConfirm }: LinkSafetyModalPro
       className="fixed inset-0 z-50 flex items-center justify-center"
       data-streamdown="link-safety-modal"
       onClick={onClose}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose();
-      }}
-      role="button"
-      tabIndex={0}
+      aria-hidden="true"
     >
+      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- WAI-ARIA dialog pattern requires Escape key handling on the dialog container */}
       <div
         className="bg-background relative mx-4 flex w-full max-w-md flex-col gap-4 rounded-xl border p-6 shadow-lg"
         onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        role="presentation"
+        onKeyDown={(e) => {
+          e.stopPropagation();
+          if (e.key === 'Escape') onClose();
+        }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Open external link confirmation"
+        tabIndex={-1}
       >
         <button
           className="text-muted-foreground hover:bg-muted hover:text-foreground absolute top-4 right-4 rounded-md p-1 transition-all"

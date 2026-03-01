@@ -265,6 +265,13 @@ export class HttpTransport implements Transport {
     return fetchJSON<ServerConfig>(this.baseUrl, '/config');
   }
 
+  async updateConfig(patch: Record<string, unknown>): Promise<void> {
+    await fetchJSON<void>(this.baseUrl, '/config', {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  }
+
   getModels(): Promise<ModelOption[]> {
     return fetchJSON<{ models: ModelOption[] }>(this.baseUrl, '/models').then((r) => r.models);
   }

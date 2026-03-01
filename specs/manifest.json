@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 74,
+  "nextNumber": 76,
   "specs": [
     {
       "number": 1,
@@ -510,6 +510,20 @@
       "number": 73,
       "slug": "relay-mesh-telegram-review-fixes",
       "title": "Relay, Mesh & Telegram Adapter — Code Review Remediation",
+      "created": "2026-02-28",
+      "status": "specified"
+    },
+    {
+      "number": 74,
+      "slug": "relay-mesh-telegram-review-fixes-r2",
+      "title": "Relay, Mesh & Telegram Adapter — Code Review Remediation Round 2",
+      "created": "2026-02-28",
+      "status": "implemented"
+    },
+    {
+      "number": 75,
+      "slug": "server-client-code-review-fixes",
+      "title": "Server & Client Code Review Fixes",
       "created": "2026-02-28",
       "status": "specified"
     }

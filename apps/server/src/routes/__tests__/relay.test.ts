@@ -606,7 +606,8 @@ describe('Adapter routes', () => {
         .send({ type: 'webhook' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Missing required fields');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     it('returns 409 when ID already exists (DUPLICATE_ID)', async () => {
@@ -714,7 +715,8 @@ describe('Adapter routes', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Missing required field: config');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
   });
 
@@ -752,7 +754,8 @@ describe('Adapter routes', () => {
         .send({ type: 'telegram' });
 
       expect(res.status).toBe(400);
-      expect(res.body.error).toContain('Missing required fields');
+      expect(res.body.error).toBe('Validation failed');
+      expect(res.body.details).toBeDefined();
     });
 
     it('returns 500 when testConnection throws', async () => {

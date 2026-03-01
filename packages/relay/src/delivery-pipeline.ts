@@ -39,6 +39,15 @@ export interface DeliveryPipelineDeps {
 }
 
 /**
+ * How long (ms) to retain a dispatched message ID in the dedup set.
+ *
+ * Chokidar fires `add` events within a few hundred milliseconds of the
+ * Maildir write. 5 seconds is comfortably larger than any realistic delay
+ * while keeping memory usage negligible.
+ */
+const DISPATCH_DEDUP_TTL_MS = 5_000;
+
+/**
  * Delivers envelopes to individual Maildir endpoints with reliability checks.
  *
  * Pipeline order per endpoint:
@@ -49,6 +58,15 @@ export interface DeliveryPipelineDeps {
  * 5. SQLite indexing + synchronous handler dispatch
  */
 export class DeliveryPipeline {
+  /**
+   * Set of message IDs that have already been dispatched to subscription
+   * handlers via the synchronous fast-path in `dispatchToSubscribers`.
+   *
+   * Used by `WatcherManager` to skip re-dispatch when chokidar fires an
+   * `add` event for the same Maildir file shortly after delivery.
+   */
+  private readonly recentlyDispatched = new Set<string>();
+
   constructor(
     private readonly deps: DeliveryPipelineDeps,
     private backpressureConfig: BackpressureConfig,
@@ -57,6 +75,16 @@ export class DeliveryPipeline {
   /** Update the backpressure config (called on hot-reload). */
   setBackpressureConfig(config: BackpressureConfig): void {
     this.backpressureConfig = config;
+  }
+
+  /**
+   * Returns `true` if this message ID was already dispatched synchronously
+   * during `deliverToEndpoint`. Called by `WatcherManager` before claiming.
+   *
+   * @param messageId - The Maildir-assigned message ID to check
+   */
+  wasDispatched(messageId: string): boolean {
+    return this.recentlyDispatched.has(messageId);
   }
 
   /**
@@ -178,6 +206,11 @@ export class DeliveryPipeline {
     // Claim the message (move from new/ to cur/)
     const claimResult = await this.deps.maildirStore.claim(endpoint.hash, messageId);
     if (!claimResult.ok) return;
+
+    // Mark as dispatched before invoking handlers so WatcherManager can skip
+    // the duplicate chokidar-triggered dispatch even if a handler is slow.
+    this.recentlyDispatched.add(messageId);
+    setTimeout(() => this.recentlyDispatched.delete(messageId), DISPATCH_DEDUP_TTL_MS);
 
     try {
       await Promise.all(handlers.map((handler) => handler(claimResult.envelope)));

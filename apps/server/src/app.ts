@@ -20,10 +20,46 @@ import { env } from './env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/** Build the CORS origin allowlist from env vars and common DorkOS ports. */
+function buildCorsOrigin(): cors.CorsOptions['origin'] {
+  const envOrigin = process.env.DORKOS_CORS_ORIGIN;
+
+  // Explicit wildcard opt-in
+  if (envOrigin === '*') return '*';
+
+  // User-specified origins (comma-separated)
+  if (envOrigin) {
+    return envOrigin.split(',').map((o) => o.trim());
+  }
+
+  // Default: localhost on common DorkOS ports
+  const port = process.env.DORKOS_PORT || '4242';
+  const vitePort = process.env.VITE_PORT || '4241';
+  return [
+    `http://localhost:${port}`,
+    `http://localhost:${vitePort}`,
+    `http://127.0.0.1:${port}`,
+    `http://127.0.0.1:${vitePort}`,
+  ];
+}
+
 export function createApp() {
   const app = express();
 
-  app.use(cors());
+  app.use(cors({ origin: buildCorsOrigin() }));
+
+  // Dynamically allow the tunnel origin when a tunnel is active
+  app.use((req, res, next) => {
+    const tunnelUrl = req.app.locals.tunnelUrl as string | undefined;
+    if (tunnelUrl) {
+      const origin = req.headers.origin;
+      if (origin && tunnelUrl.startsWith(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+      }
+    }
+    next();
+  });
+
   app.use(express.json());
   app.use(requestLogger);
 

@@ -6,7 +6,6 @@ import {
   MarkerType,
   type EdgeProps,
 } from '@xyflow/react';
-import { usePrefersReducedMotion } from '../lib/use-reduced-motion';
 
 /** Data carried by cross-namespace edges. */
 interface CrossNamespaceEdgeData extends Record<string, unknown> {
@@ -16,7 +15,6 @@ interface CrossNamespaceEdgeData extends Record<string, unknown> {
 /** Hub-to-hub dashed edge representing a cross-namespace allow rule. */
 export function CrossNamespaceEdge(props: EdgeProps) {
   const [hovered, setHovered] = useState(false);
-  const prefersReducedMotion = usePrefersReducedMotion();
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX: props.sourceX,
@@ -51,14 +49,6 @@ export function CrossNamespaceEdge(props: EdgeProps) {
           strokeDasharray: '6 3',
         }}
       />
-      {/* Flow particle travelling along the edge */}
-      {!prefersReducedMotion && (
-        <circle r={3} fill="var(--color-primary)" opacity={0.8}>
-          <animateMotion dur="3s" repeatCount="indefinite">
-            <mpath xlinkHref={`#${props.id}`} />
-          </animateMotion>
-        </circle>
-      )}
       {showLabel && label && (
         <EdgeLabelRenderer>
           <div

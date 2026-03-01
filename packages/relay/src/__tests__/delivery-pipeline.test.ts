@@ -224,6 +224,48 @@ describe('DeliveryPipeline', () => {
     });
   });
 
+  describe('wasDispatched', () => {
+    it('returns false for a message that has never been dispatched', () => {
+      expect(pipeline.wasDispatched('unknown-id')).toBe(false);
+    });
+
+    it('returns true for a message ID after dispatchToSubscribers runs', async () => {
+      const handler = vi.fn();
+      vi.mocked(deps.subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+      vi.mocked(deps.maildirStore.claim).mockResolvedValue({
+        ok: true,
+        envelope: createEnvelope() as unknown as Parameters<typeof deps.maildirStore.claim>[1],
+      });
+
+      await pipeline.dispatchToSubscribers(createEndpoint(), 'msg-dedup-1', createEnvelope());
+
+      expect(pipeline.wasDispatched('msg-dedup-1')).toBe(true);
+    });
+
+    it('does not mark a message when claim fails', async () => {
+      vi.mocked(deps.subscriptionRegistry.getSubscribers).mockReturnValue([vi.fn()]);
+      vi.mocked(deps.maildirStore.claim).mockResolvedValue({ ok: false });
+
+      await pipeline.dispatchToSubscribers(createEndpoint(), 'msg-claim-fail', createEnvelope());
+
+      expect(pipeline.wasDispatched('msg-claim-fail')).toBe(false);
+    });
+
+    it('marks the message even when a handler throws', async () => {
+      const handler = vi.fn().mockRejectedValue(new Error('boom'));
+      vi.mocked(deps.subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+      vi.mocked(deps.maildirStore.claim).mockResolvedValue({
+        ok: true,
+        envelope: createEnvelope() as unknown as Parameters<typeof deps.maildirStore.claim>[1],
+      });
+
+      await pipeline.dispatchToSubscribers(createEndpoint(), 'msg-handler-err', createEnvelope());
+
+      // Message was claimed and attempted — should still be deduped
+      expect(pipeline.wasDispatched('msg-handler-err')).toBe(true);
+    });
+  });
+
   describe('setBackpressureConfig', () => {
     it('updates the backpressure config', async () => {
       // Lower the threshold so 5 messages trigger rejection

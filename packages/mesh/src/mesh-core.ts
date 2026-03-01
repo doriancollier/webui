@@ -213,8 +213,9 @@ export class MeshCore {
     try {
       await this.relayBridge.registerAgent(manifest, candidate.path, namespace, effectiveScanRoot);
     } catch (err) {
-      // Compensate: remove DB entry
+      // Compensate: remove DB entry and manifest file
       this.registry.remove(manifest.id);
+      await removeManifest(candidate.path);
       throw err;
     }
 
@@ -276,7 +277,9 @@ export class MeshCore {
     try {
       await this.relayBridge.registerAgent(manifest, projectPath, namespace, effectiveScanRoot);
     } catch (err) {
+      // Compensate: remove DB entry and manifest file
       this.registry.remove(manifest.id);
+      await removeManifest(projectPath);
       throw err;
     }
 

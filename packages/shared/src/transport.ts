@@ -99,6 +99,8 @@ export interface Transport {
   health(): Promise<HealthResponse>;
   /** Get server configuration (version, tunnel status, paths). */
   getConfig(): Promise<ServerConfig>;
+  /** Partially update the persisted user config. */
+  updateConfig(patch: Record<string, unknown>): Promise<void>;
   /** List available Claude models (dynamic from SDK, with defaults). */
   getModels(): Promise<ModelOption[]>;
   /** Start the ngrok tunnel and return the public URL. */

@@ -232,6 +232,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       updatedAt: new Date().toISOString(),
     }),
     deleteBinding: vi.fn().mockResolvedValue(undefined),
+    updateConfig: vi.fn().mockResolvedValue(undefined),
     ...overrides,
   };
 }

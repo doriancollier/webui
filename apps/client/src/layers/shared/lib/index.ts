@@ -59,3 +59,4 @@ export {
   CELEBRATIONS,
   TIME_UNITS,
 } from './constants';
+export type { FileEntry } from './file-types';

@@ -40,8 +40,19 @@ export class BindingStore {
   private bindings: Map<string, AdapterBinding> = new Map();
   private readonly filePath: string;
   private watcher?: FSWatcher;
-  /** Guard to skip reload when we just wrote the file ourselves. */
-  private skipNextReload = false;
+  /**
+   * Generation counter tracking in-flight self-writes.
+   *
+   * Incremented once per `save()` call before the atomic write begins.
+   * Decremented once per chokidar change event that we absorb as our own.
+   * When > 0 the next change event is our own write and must be suppressed;
+   * when 0 the event originated externally and triggers a hot-reload.
+   *
+   * Using a counter rather than a boolean correctly handles rapid successive
+   * saves: two saves increment to 2, and the two resulting chokidar events
+   * each decrement back toward 0 without triggering a spurious reload.
+   */
+  private writeGeneration = 0;
 
   constructor(relayDir: string) {
     this.filePath = pathJoin(relayDir, 'bindings.json');
@@ -179,7 +190,9 @@ export class BindingStore {
   }
 
   private async save(): Promise<void> {
-    this.skipNextReload = true;
+    // Claim one generation slot before the write so the resulting chokidar
+    // change event knows it belongs to us and doesn't trigger a hot-reload.
+    this.writeGeneration += 1;
     const data = { bindings: this.getAll() };
     await mkdir(dirname(this.filePath), { recursive: true });
     // Atomic write: temp file + rename
@@ -196,8 +209,9 @@ export class BindingStore {
       },
     });
     this.watcher.on('change', async () => {
-      if (this.skipNextReload) {
-        this.skipNextReload = false;
+      if (this.writeGeneration > 0) {
+        // This change event is the result of our own atomic write — absorb it.
+        this.writeGeneration -= 1;
         return;
       }
       logger.info('bindings.json changed on disk, reloading');

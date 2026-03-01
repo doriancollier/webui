@@ -13,12 +13,31 @@ import {
   InboxQuerySchema,
   EndpointRegistrationSchema,
   CreateBindingRequestSchema,
+  AdapterTestRequestSchema,
+  AdapterCreateRequestSchema,
+  AdapterConfigUpdateSchema,
 } from '@dorkos/shared/relay-schemas';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { initSSEStream } from '../services/core/stream-adapter.js';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
+
+/** Allowed subject prefixes for SSE subscription patterns. */
+const ALLOWED_PREFIXES = [
+  'relay.human.console.',
+  'relay.system.',
+  'relay.signal.',
+];
+
+/** Validate that a subscription pattern starts with an allowed prefix. */
+function validateSubscriptionPattern(pattern: string): boolean {
+  // Block the global wildcard
+  if (pattern === '>') return false;
+
+  // Allow any pattern that starts with an allowed prefix
+  return ALLOWED_PREFIXES.some((prefix) => pattern.startsWith(prefix));
+}
 
 /**
  * Create the Relay router with message, endpoint, and adapter management endpoints.
@@ -301,7 +320,14 @@ export function createRelayRouter(
 
   // GET /stream — SSE event stream with server-side subject filtering
   router.get('/stream', (req, res) => {
-    const pattern = (req.query.subject as string) || '>';
+    const pattern = (req.query.subject as string) || 'relay.human.console.>';
+
+    if (!validateSubscriptionPattern(pattern)) {
+      return res.status(400).json({
+        error: 'Invalid subscription pattern',
+        allowedPrefixes: ALLOWED_PREFIXES,
+      });
+    }
 
     initSSEStream(res);
 
@@ -311,6 +337,7 @@ export function createRelayRouter(
 
     // Subscribe to messages matching pattern
     const unsubMessages = relayCore.subscribe(pattern, (envelope) => {
+      if (res.writableEnded) return;
       res.write(`id: ${envelope.id}\n`);
       res.write(`event: relay_message\n`);
       res.write(`data: ${JSON.stringify(envelope)}\n\n`);
@@ -318,6 +345,7 @@ export function createRelayRouter(
 
     // Subscribe to signals (dead letters, backpressure)
     const unsubSignals = relayCore.onSignal(pattern, (_subject, signal) => {
+      if (res.writableEnded) return;
       const eventType = signal.type === 'backpressure' ? 'relay_backpressure' : 'relay_signal';
       res.write(`event: ${eventType}\n`);
       res.write(`data: ${JSON.stringify(signal)}\n\n`);
@@ -325,6 +353,10 @@ export function createRelayRouter(
 
     // Keepalive every 15 seconds
     const keepalive = setInterval(() => {
+      if (res.writableEnded) {
+        clearInterval(keepalive);
+        return;
+      }
       res.write(`: keepalive\n\n`);
     }, 15_000);
 
@@ -375,13 +407,13 @@ export function createRelayRouter(
 
     // POST /adapters/test — Test adapter connection (must be before /:id routes)
     router.post('/adapters/test', async (req, res) => {
-      const { type, config } = req.body as { type?: string; config?: Record<string, unknown> };
-      if (!type || !config) {
-        return res.status(400).json({ error: 'Missing required fields: type, config' });
+      const result = AdapterTestRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
       }
       try {
-        const result = await adapterManager.testConnection(type, config);
-        return res.json(result);
+        const testResult = await adapterManager.testConnection(result.data.type, result.data.config);
+        return res.json(testResult);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Test failed';
         return res.status(500).json({ error: message });
@@ -390,15 +422,11 @@ export function createRelayRouter(
 
     // POST /adapters — Create a new adapter
     router.post('/adapters', async (req, res) => {
-      const { type, id, config, enabled } = req.body as {
-        type?: string;
-        id?: string;
-        config?: Record<string, unknown>;
-        enabled?: boolean;
-      };
-      if (!type || !id || !config) {
-        return res.status(400).json({ error: 'Missing required fields: type, id, config' });
+      const result = AdapterCreateRequestSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
       }
+      const { type, id, config, enabled } = result.data;
       try {
         await adapterManager.addAdapter(type, id, config, enabled);
         return res.status(201).json({ ok: true, id });
@@ -438,12 +466,12 @@ export function createRelayRouter(
 
     // PATCH /adapters/:id/config — Update adapter config
     router.patch('/adapters/:id/config', async (req, res) => {
-      const { config } = req.body as { config?: Record<string, unknown> };
-      if (!config) {
-        return res.status(400).json({ error: 'Missing required field: config' });
+      const result = AdapterConfigUpdateSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
       }
       try {
-        await adapterManager.updateConfig(req.params.id, config);
+        await adapterManager.updateConfig(req.params.id, result.data.config);
         return res.json({ ok: true });
       } catch (err) {
         if (err instanceof AdapterError) {

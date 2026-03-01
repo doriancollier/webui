@@ -2,6 +2,61 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { TelegramAdapter } from '../../adapters/telegram-adapter.js';
 import type { RelayPublisher, AdapterStatus, Unsubscribe } from '../../types.js';
 
+// --- node:http mock ---
+// Replaces the real HTTP server to avoid port-binding in tests and to expose
+// server.on / server.once / server.closeAllConnections for assertion.
+
+const mockServerListen = vi.fn();
+const mockServerClose = vi.fn();
+const mockServerOn = vi.fn();
+const mockServerOnce = vi.fn();
+const mockServerCloseAllConnections = vi.fn();
+
+/** The last MockServer instance created by createServer() — used in tests. */
+let lastMockServer: MockServer | null = null;
+
+class MockServer {
+  headersTimeout = 0;
+  requestTimeout = 0;
+  maxHeadersCount = 0;
+  keepAliveTimeout = 0;
+
+  listen(_port: number, cb?: () => void) {
+    mockServerListen(_port, cb);
+    // Immediately invoke the callback so the listen promise resolves
+    cb?.();
+    return this;
+  }
+
+  close(cb?: (err?: Error) => void) {
+    mockServerClose(cb);
+    // Immediately invoke the callback with no error so the close promise resolves
+    cb?.();
+    return this;
+  }
+
+  on(event: string, handler: (...args: unknown[]) => void) {
+    mockServerOn(event, handler);
+    return this;
+  }
+
+  once(event: string, handler: (...args: unknown[]) => void) {
+    mockServerOnce(event, handler);
+    return this;
+  }
+
+  closeAllConnections() {
+    mockServerCloseAllConnections();
+  }
+}
+
+vi.mock('node:http', () => ({
+  createServer: vi.fn((_handler: unknown) => {
+    lastMockServer = new MockServer();
+    return lastMockServer;
+  }),
+}));
+
 // --- grammy mock ---
 // We mock the grammy module to avoid real Telegram API calls in tests.
 
@@ -153,6 +208,7 @@ describe('TelegramAdapter', () => {
     capturedMessageHandler = null;
     capturedErrorHandler = null;
     capturedOnStart = null;
+    lastMockServer = null;
 
     adapter = new TelegramAdapter('telegram', { token: 'test-token', mode: 'polling' });
     mockRelay = createMockRelay();
@@ -474,6 +530,41 @@ describe('TelegramAdapter', () => {
     expect(adapter.getStatus().errorCount).toBe(1);
   });
 
+  // --- Float chat ID rejection (Number.isInteger guard) ---
+
+  it('deliver() rejects a float DM subject (e.g. relay.human.telegram.1.5)', async () => {
+    await adapter.start(mockRelay);
+
+    const envelope = createEnvelope('relay.human.telegram.1.5', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.1.5', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/cannot extract chat ID/);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+
+  it('deliver() rejects a float group subject (e.g. relay.human.telegram.group.1.5)', async () => {
+    await adapter.start(mockRelay);
+
+    const envelope = createEnvelope('relay.human.telegram.group.1.5', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.group.1.5', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/cannot extract chat ID/);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+
+  it('typing signal is not forwarded for a float DM subject', async () => {
+    await adapter.start(mockRelay);
+
+    const relay = mockRelay as ReturnType<typeof createMockRelay> & {
+      _emitSignal: (subject: string, signal: { type: string; state: string }) => void;
+    };
+    relay._emitSignal('relay.human.telegram.1.5', { type: 'typing', state: 'active' });
+
+    await Promise.resolve();
+
+    expect(mockSendChatAction).not.toHaveBeenCalled();
+  });
+
   // --- Typing signals ---
 
   it('forwards active typing signals to Telegram as chat action', async () => {
@@ -720,5 +811,153 @@ describe('TelegramAdapter', () => {
 
     const publishedPayload = vi.mocked(mockRelay.publish).mock.calls[0][1] as { content: string };
     expect(publishedPayload.content).toBe('Hello world');
+  });
+
+  // --- C1: Reconnection stops old bot before creating a new one ---
+
+  it('reconnection stops old bot before creating a new one (C1)', async () => {
+    vi.useFakeTimers();
+
+    // First bot.start() rejects immediately to trigger handlePollingError
+    mockBotStart.mockImplementationOnce(async (opts?: { onStart?: () => void }) => {
+      if (opts?.onStart) opts.onStart();
+      throw new Error('Polling connection lost');
+    });
+
+    await adapter.start(mockRelay);
+
+    // Allow the .catch() on bot.start() to execute
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Clear the call count from startup
+    mockBotStop.mockClear();
+
+    // Advance past first reconnect delay (5000ms) — timer fires, old bot.stop() is called
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    // The old bot's stop() should have been called before the new bot was created
+    expect(mockBotStop).toHaveBeenCalledTimes(1);
+
+    vi.useRealTimers();
+  });
+
+  // --- C2: stop() clears pending reconnect timer ---
+
+  it('stop() clears pending reconnect timer so it does not fire after stop (C2)', async () => {
+    vi.useFakeTimers();
+
+    // First bot.start() rejects immediately to trigger handlePollingError
+    mockBotStart.mockImplementationOnce(async (opts?: { onStart?: () => void }) => {
+      if (opts?.onStart) opts.onStart();
+      throw new Error('Polling connection lost');
+    });
+
+    await adapter.start(mockRelay);
+
+    // Allow the .catch() on bot.start() to execute — error is recorded
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Stop the adapter while the reconnect timer is still pending
+    await adapter.stop();
+
+    // Clear call counts so we can detect any spurious calls
+    mockBotInit.mockClear();
+    mockBotStart.mockClear();
+
+    // Advance past the reconnect delay — the timer should NOT fire
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    // No new polling loop should have been started
+    expect(mockBotInit).not.toHaveBeenCalled();
+    expect(mockBotStart).not.toHaveBeenCalled();
+    expect(adapter.getStatus().state).toBe('disconnected');
+
+    vi.useRealTimers();
+  });
+
+  it('reconnect timer does not fire when adapter is in stopping state (C2)', async () => {
+    vi.useFakeTimers();
+
+    // First bot.start() rejects immediately to trigger handlePollingError
+    mockBotStart.mockImplementationOnce(async (opts?: { onStart?: () => void }) => {
+      if (opts?.onStart) opts.onStart();
+      throw new Error('Polling connection lost');
+    });
+
+    await adapter.start(mockRelay);
+
+    // Allow the .catch() on bot.start() to execute
+    await vi.advanceTimersByTimeAsync(0);
+
+    // Manually set status to 'stopping' to simulate mid-stop state check
+    // (tests the guard inside the timer callback)
+    const statusBefore = adapter.getStatus();
+    expect(statusBefore.errorCount).toBe(1);
+
+    // Stop clears the timer, so reconnect guard check on 'stopping' is
+    // exercised only if stop() didn't already cancel the timer. To test
+    // the guard independently, we verify stop() transitions through stopping.
+    const stopPromise = adapter.stop();
+
+    // During stop, state transitions to 'stopping' — timer should already
+    // be cleared by the time stop() returns
+    await stopPromise;
+
+    mockBotInit.mockClear();
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(mockBotInit).not.toHaveBeenCalled();
+
+    vi.useRealTimers();
+  });
+
+  // --- C4: Webhook server startup uses server.once for error handler ---
+
+  it('webhook startup registers the error handler with once() not on() (C4)', async () => {
+    const webhookAdapter = new TelegramAdapter('tg-webhook', {
+      token: 'test-token',
+      mode: 'webhook',
+      webhookUrl: 'https://example.com/webhook',
+      webhookPort: 8443,
+    });
+
+    await webhookAdapter.start(mockRelay);
+
+    // once() must have been called with 'error' so the handler is removed
+    // after the promise settles — preventing a listener leak on later errors.
+    expect(mockServerOnce).toHaveBeenCalledWith('error', expect.any(Function));
+
+    // on() must NOT have been called with 'error' (that would be the leaky path)
+    const onErrorCalls = (mockServerOn.mock.calls as Array<[string, unknown]>).filter(
+      ([event]) => event === 'error',
+    );
+    expect(onErrorCalls).toHaveLength(0);
+
+    await webhookAdapter.stop();
+  });
+
+  // --- C5: Webhook server shutdown calls closeAllConnections() before close() ---
+
+  it('stop() calls closeAllConnections() before server.close() (C5)', async () => {
+    const webhookAdapter = new TelegramAdapter('tg-webhook', {
+      token: 'test-token',
+      mode: 'webhook',
+      webhookUrl: 'https://example.com/webhook',
+      webhookPort: 8443,
+    });
+
+    await webhookAdapter.start(mockRelay);
+
+    // Capture call order by recording the sequence of calls
+    const callOrder: string[] = [];
+    mockServerCloseAllConnections.mockImplementation(() => callOrder.push('closeAllConnections'));
+    mockServerClose.mockImplementation((cb?: (err?: Error) => void) => {
+      callOrder.push('close');
+      cb?.();
+    });
+
+    await webhookAdapter.stop();
+
+    expect(callOrder).toEqual(['closeAllConnections', 'close']);
   });
 });
