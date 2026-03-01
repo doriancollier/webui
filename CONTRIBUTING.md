@@ -34,7 +34,6 @@ This is a Turborepo monorepo with five apps and four shared packages:
 | `apps/server` | `@dorkos/server` | Express API server |
 | `apps/obsidian-plugin` | `@dorkos/obsidian-plugin` | Obsidian sidebar plugin |
 | `apps/web` | `@dorkos/web` | Marketing site & docs (Next.js 16, Fumadocs) |
-| `apps/roadmap` | `@dorkos/roadmap` | Standalone roadmap manager (Express + React 19) |
 | `packages/cli` | `dorkos` | Publishable npm CLI |
 | `packages/shared` | `@dorkos/shared` | Zod schemas, shared types |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |

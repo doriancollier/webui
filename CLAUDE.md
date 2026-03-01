@@ -22,8 +22,7 @@ dorkos/
 │   ├── client/           # @dorkos/client - React 19 SPA (Vite 6, Tailwind 4, shadcn/ui)
 │   ├── server/           # @dorkos/server - Express API (tsc, NodeNext)
 │   ├── web/              # @dorkos/web - Marketing site & docs (Next.js 16, Fumadocs)
-│   ├── obsidian-plugin/  # @dorkos/obsidian-plugin - Obsidian plugin (Vite lib, CJS)
-│   └── roadmap/          # @dorkos/roadmap - Roadmap manager (Express + React 19 SPA)
+│   └── obsidian-plugin/  # @dorkos/obsidian-plugin - Obsidian plugin (Vite lib, CJS)
 ├── packages/
 │   ├── cli/              # dorkos - Publishable npm CLI (esbuild bundle)
 │   ├── shared/           # @dorkos/shared - Zod schemas, types (JIT .ts exports)
@@ -45,7 +44,6 @@ dorkos/
 pnpm dev               # Start both Express server and Vite dev server (loads .env)
 dotenv -- turbo dev --filter=@dorkos/server   # Express server only (loads .env)
 dotenv -- turbo dev --filter=@dorkos/client   # Vite dev server only (loads .env)
-dotenv -- turbo dev --filter=@dorkos/roadmap  # Roadmap app (Express :4243 + Vite)
 pnpm test              # Vitest across client + server (loads .env)
 pnpm test -- --run     # Vitest single run
 pnpm build             # Build all apps (client Vite + server tsc + web Next.js + obsidian plugin)
@@ -240,20 +238,6 @@ The `dorkos` npm package bundles the server + client into a standalone CLI tool.
 
 CLI subcommands: `dorkos config` (manage config), `dorkos init` (interactive setup wizard). CLI flags include `--port`/`-p`, `--dir`/`-d`, `--boundary`/`-b`, `--tunnel`/`-t`, and `--pulse`/`--no-pulse`. Config precedence: CLI flags > environment variables > `~/.dork/config.json` > built-in defaults.
 
-### Roadmap App (`apps/roadmap/`)
-
-Standalone roadmap management tool. Express server on port `ROADMAP_PORT` (default 4243) + React 19 SPA with FSD architecture. Does NOT use the Transport interface — it is an independent app with its own API. Uses lowdb for JSON file persistence (`roadmap.json` is the source of truth). Environment variables: `ROADMAP_PORT` (default 4243), `ROADMAP_PROJECT_ROOT` (default `process.cwd()`).
-
-API endpoints (all under `/api/roadmap/`):
-
-- **`GET/POST /items`** - List all items, create new item
-- **`GET/PATCH/DELETE /items/:id`** - Get, update, delete single item
-- **`POST /items/reorder`** - Reorder items
-- **`GET /meta`** - Project metadata with health stats
-- **`GET /files/*`** - Serve spec files (restricted to `specs/` directory)
-
-Client views: Table (TanStack Table), Kanban (@hello-pangea/dnd), MoSCoW Grid, Gantt (custom). No auth, single-user tool. Python utility scripts in `roadmap/scripts/` still work alongside the API.
-
 ## Guides
 
 Detailed documentation lives in `contributing/`:
@@ -272,7 +256,6 @@ Detailed documentation lives in `contributing/`:
 | [`contributing/animations.md`](contributing/animations.md)                                           | Motion library patterns                                                                                                                                             |
 | [`contributing/styling-theming.md`](contributing/styling-theming.md)                                 | Tailwind v4, dark mode, Shadcn                                                                                                                                      |
 | [`contributing/parallel-execution.md`](contributing/parallel-execution.md)                           | Parallel agent execution patterns, batching, context savings                                                                                                        |
-| [`contributing/autonomous-roadmap-execution.md`](contributing/autonomous-roadmap-execution.md)       | Autonomous workflow, `/roadmap:work`                                                                                                                                |
 
 ## Documentation
 

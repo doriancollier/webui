@@ -25,7 +25,6 @@ Maps source code patterns to the guides that document them. Patterns use `grep -
 | `animations.md` | Motion library patterns | `animation\|motion\|apps/client/src/index.css` |
 | `styling-theming.md` | Tailwind v4, dark mode, Shadcn | `index.css\|apps/client/src/layers/shared/ui/\|tailwind` |
 | `parallel-execution.md` | Parallel agent execution patterns, batching | `.claude/agents/\|\.claude/commands/` |
-| `autonomous-roadmap-execution.md` | Autonomous workflow, `/roadmap:work` | `.claude/commands/roadmap/` |
 | `relay-adapters.md` | Adapter interface, lifecycle, testing | `packages/relay/src/adapters/\|adapter-registry\|adapter-manager` |
 | `adapter-catalog.md` | AdapterManifest, ConfigField, plugin manifests, catalog API | `AdapterManifest\|ConfigField\|adapter-plugin-loader\|adapters/catalog` |
 
@@ -54,7 +53,6 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 | `animations.md` | 2026-02-17 | Claude | Fixed path references |
 | `styling-theming.md` | 2026-02-17 | Claude | Fixed path references |
 | `parallel-execution.md` | 2026-02-17 | Claude | Current |
-| `autonomous-roadmap-execution.md` | 2026-02-17 | Claude | Current |
 
 ## External Docs Coverage
 

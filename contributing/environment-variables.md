@@ -14,7 +14,6 @@ Each app and package now exports a typed, validated `env` object from a local `e
 | ---------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `apps/server`    | `apps/server/src/env.ts`                 | DORKOS_PORT, NODE_ENV, DORKOS_DEFAULT_CWD, DORKOS_BOUNDARY, DORKOS_LOG_LEVEL, DORK_HOME, DORKOS_VERSION, CLIENT_DIST_PATH, DORKOS_PULSE_ENABLED, DORKOS_RELAY_ENABLED, DORKOS_MESH_ENABLED, TUNNEL_ENABLED, TUNNEL_PORT, TUNNEL_AUTH, TUNNEL_DOMAIN, NGROK_AUTHTOKEN |
 | `apps/client`    | `apps/client/src/env.ts`                 | MODE, DEV (Vite built-ins)                                                                                                                                       |
-| `apps/roadmap`   | `apps/roadmap/src/server/env.ts`         | ROADMAP_PORT, ROADMAP_PROJECT_ROOT, NODE_ENV                                                                                                                     |
 | `apps/web`       | `apps/web/src/env.ts`                    | NODE_ENV, NEXT_PUBLIC_POSTHOG_KEY, NEXT_PUBLIC_POSTHOG_HOST                                                                                                      |
 | `packages/cli`   | `packages/cli/src/env.ts`                | NODE_ENV, DORK_HOME, LOG_LEVEL                                                                                                                                   |
 
@@ -107,9 +106,6 @@ To add a new `VITE_*` var:
 | NGROK_AUTHTOKEN           | server         | string \| undefined | —                       | ngrok authentication token                                                  |
 | MODE                      | client         | string enum       | `development`             | Vite build mode                                                             |
 | DEV                       | client         | boolean           | `false`                   | True when running in Vite dev server                                        |
-| ROADMAP_PORT              | roadmap        | number            | `4243`                    | Roadmap app Express server port                                             |
-| ROADMAP_PROJECT_ROOT      | roadmap        | string            | `process.cwd()`           | Root directory for roadmap project files                                    |
-| NODE_ENV                  | roadmap        | string enum       | `development`             | Runtime environment mode                                                    |
 | NODE_ENV                  | web            | string enum       | `development`             | Runtime environment mode                                                    |
 | NEXT_PUBLIC_POSTHOG_KEY   | web            | string \| undefined | —                       | PostHog analytics project API key                                           |
 | NEXT_PUBLIC_POSTHOG_HOST  | web            | string            | `https://app.posthog.com` | PostHog analytics ingestion host                                            |
