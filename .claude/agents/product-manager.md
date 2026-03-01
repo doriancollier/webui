@@ -28,9 +28,9 @@ Read the feature specifications in `specs/` and the CLAUDE.md for project contex
 
 ### 2. Analyze the Request
 
-- Is this about adding new items?
-- Is this about reprioritizing existing items?
-- Is this about roadmap health/analysis?
+- Is this about adding new items to `specs/`?
+- Is this about reprioritizing existing work?
+- Is this about scope reduction or deferral?
 - Is this about stakeholder communication?
 
 ### 3. Apply MoSCoW Framework
