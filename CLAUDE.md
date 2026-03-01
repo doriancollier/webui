@@ -31,6 +31,7 @@ dorkos/
 │   └── test-utils/       # @dorkos/test-utils - Mock factories, test helpers
 ├── decisions/            # Architecture Decision Records (ADRs)
 ├── docs/                 # External user-facing docs (MDX for Fumadocs, consumed by marketing site)
+├── plans/                # Implementation plans, design reviews, multi-step work breakdowns
 ├── research/             # Research artifacts (persisted by research-expert agent)
 ├── specs/                # Feature specs with manifest.json for chronological ordering
 ├── turbo.json
@@ -309,6 +310,10 @@ Key architectural decisions are documented in `decisions/` as lightweight ADRs (
 - **Index**: `decisions/manifest.json` tracks all ADRs with `nextNumber` for sequential assignment
 - **Commands**: `/adr:create` (new ADR), `/adr:list` (display table), `/adr:from-spec` (extract from spec)
 - **Statuses**: `proposed` | `accepted` | `deprecated` | `superseded`
+
+## Plans
+
+Implementation plans, design reviews, and multi-step work breakdowns live in `plans/` at the repo root. This is the canonical location — do not use `docs/plans/` (legacy, being migrated) or `.plan` (ad-hoc holdover).
 
 ## Specifications
 
