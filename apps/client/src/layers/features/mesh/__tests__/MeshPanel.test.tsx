@@ -93,8 +93,8 @@ vi.mock('../ui/DiscoveryView', () => ({
 // ---------------------------------------------------------------------------
 
 vi.mock('../ui/TopologyGraph', () => ({
-  TopologyGraph: ({ onSelectAgent }: { onSelectAgent?: (id: string) => void }) => (
-    <div data-testid="topology-graph" onClick={() => onSelectAgent?.('agent-1')} />
+  TopologyGraph: ({ onSelectAgent }: { onSelectAgent?: (id: string, projectPath: string) => void }) => (
+    <div data-testid="topology-graph" onClick={() => onSelectAgent?.('agent-1', '/projects/agent-1')} />
   ),
 }));
 

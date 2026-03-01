@@ -34,11 +34,11 @@ export interface AgentNodeData extends Record<string, unknown> {
   behavior?: { responseMode: string };
   color?: string | null;
   emoji?: string | null;
-  /** Working directory path for the agent, used when creating bindings. */
-  agentDir?: string;
+  /** Absolute filesystem path for the agent's project directory. */
+  projectPath?: string;
   onOpenSettings?: (agentId: string) => void;
   onViewHealth?: (agentId: string) => void;
-  onOpenChat?: (agentId: string, agentDir: string) => void;
+  onOpenChat?: (agentId: string, projectPath: string) => void;
 }
 
 const STATUS_COLORS: Record<AgentNodeData['healthStatus'], string> = {
@@ -313,8 +313,8 @@ function AgentNodeComponent({ data, selected, id }: NodeProps) {
           <ToolbarButton icon={Heart} label="Health" onClick={() => d.onViewHealth?.(id)} />
         )}
         <ToolbarButton icon={Copy} label="Copy ID" onClick={handleCopyId} />
-        {d.onOpenChat && d.agentDir && (
-          <ToolbarButton icon={MessageCircle} label="Chat" onClick={() => d.onOpenChat?.(id, d.agentDir ?? '')} />
+        {d.onOpenChat && d.projectPath && (
+          <ToolbarButton icon={MessageCircle} label="Chat" onClick={() => d.onOpenChat?.(id, d.projectPath ?? '')} />
         )}
       </div>
     </NodeToolbar>

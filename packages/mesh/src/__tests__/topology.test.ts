@@ -151,7 +151,7 @@ describe('TopologyManager', () => {
       expect(view.namespaces[0]!.namespace).toBe('ns-a');
     });
 
-    it('strips projectPath and scanRoot from agent manifests', () => {
+    it('keeps projectPath but strips scanRoot from agent manifests', () => {
       const registry = makeMockRegistry([agentA1]);
       const relay = makeMockRelayCore();
       const tm = new TopologyManager(registry as never, makeMockRelayBridge() as never, relay as never);
@@ -159,7 +159,7 @@ describe('TopologyManager', () => {
       const view = tm.getTopology('ns-a');
       const agent = view.namespaces[0]!.agents[0]!;
 
-      expect(agent).not.toHaveProperty('projectPath');
+      expect(agent).toHaveProperty('projectPath', '/p/a1');
       expect(agent).not.toHaveProperty('scanRoot');
       expect(agent.id).toBe('A1');
       expect(agent.name).toBe('agent-a1');

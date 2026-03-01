@@ -76,7 +76,7 @@ describe('AgentDialog', () => {
 
     render(
       <Wrapper>
-        <AgentDialog agentPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
+        <AgentDialog projectPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
       </Wrapper>
     );
 
@@ -93,7 +93,7 @@ describe('AgentDialog', () => {
 
     render(
       <Wrapper>
-        <AgentDialog agentPath="/projects/no-agent" open={true} onOpenChange={vi.fn()} />
+        <AgentDialog projectPath="/projects/no-agent" open={true} onOpenChange={vi.fn()} />
       </Wrapper>
     );
 
@@ -110,7 +110,7 @@ describe('AgentDialog', () => {
 
     render(
       <Wrapper>
-        <AgentDialog agentPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
+        <AgentDialog projectPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
       </Wrapper>
     );
 
@@ -130,7 +130,7 @@ describe('AgentDialog', () => {
 
     render(
       <Wrapper>
-        <AgentDialog agentPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
+        <AgentDialog projectPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
       </Wrapper>
     );
 
@@ -148,7 +148,7 @@ describe('AgentDialog', () => {
 
     render(
       <Wrapper>
-        <AgentDialog agentPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
+        <AgentDialog projectPath="/projects/myapp" open={true} onOpenChange={vi.fn()} />
       </Wrapper>
     );
 

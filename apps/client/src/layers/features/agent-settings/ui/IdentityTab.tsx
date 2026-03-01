@@ -27,14 +27,14 @@ const DEBOUNCE_MS = 500;
 
 interface IdentityTabProps {
   agent: AgentManifest;
-  agentPath: string;
+  projectPath: string;
   onUpdate: (updates: Partial<AgentManifest>) => void;
 }
 
 /**
  * Identity form with name, description, color picker, emoji picker, and runtime dropdown.
  */
-export function IdentityTab({ agent, agentPath, onUpdate }: IdentityTabProps) {
+export function IdentityTab({ agent, projectPath, onUpdate }: IdentityTabProps) {
   // Debounced name input
   const [nameValue, setNameValue] = useState(agent.name);
   const nameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

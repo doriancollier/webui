@@ -166,14 +166,14 @@ async function applyElkLayout(
 }
 
 interface TopologyGraphProps {
-  /** Called with the agent ID when a node is clicked. */
-  onSelectAgent?: (agentId: string) => void;
+  /** Called with the agent ID and project path when a node is clicked. */
+  onSelectAgent?: (agentId: string, projectPath: string) => void;
   /** Called when the Settings action is triggered from the NodeToolbar. */
-  onOpenSettings?: (agentId: string) => void;
+  onOpenSettings?: (agentId: string, projectPath: string) => void;
   /** Called to switch to the Discovery tab from the empty state. */
   onGoToDiscovery?: () => void;
   /** Called when the Chat action is triggered from the NodeToolbar. */
-  onOpenChat?: (agentDir: string) => void;
+  onOpenChat?: (projectPath: string) => void;
 }
 
 /**
@@ -221,7 +221,7 @@ interface PendingConnection {
   sourceAdapterName: string;
   targetAgentId: string;
   targetAgentName: string;
-  targetAgentDir: string;
+  targetProjectPath: string;
 }
 
 function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, onOpenChat }: TopologyGraphProps) {
@@ -402,7 +402,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
       }
 
       for (const agent of ns.agents) {
-        const typedAgent = agent as TopologyAgent & { dir?: string; agentDir?: string };
+        const typedAgent = agent as TopologyAgent;
         const agentNode: Node = {
           id: agent.id,
           type: 'agent',
@@ -431,11 +431,10 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
               : undefined,
             color: typedAgent.color ?? null,
             emoji: typedAgent.icon ?? null,
-            // Store agentDir for binding creation
-            agentDir: typedAgent.dir ?? typedAgent.agentDir ?? '',
-            onOpenSettings: (id: string) => onOpenSettingsRef.current?.(id),
-            onViewHealth: (id: string) => onSelectAgentRef.current?.(id),
-            onOpenChat: (_id: string, dir: string) => onOpenChatRef.current?.(dir),
+            projectPath: typedAgent.projectPath ?? '',
+            onOpenSettings: (id: string) => onOpenSettingsRef.current?.(id, typedAgent.projectPath ?? ''),
+            onViewHealth: (id: string) => onSelectAgentRef.current?.(id, typedAgent.projectPath ?? ''),
+            onOpenChat: (_id: string, path: string) => onOpenChatRef.current?.(path),
           } satisfies AgentNodeData,
         };
 
@@ -546,7 +545,8 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       if (node.type !== 'agent') return;
-      onSelectAgentRef.current?.(node.id);
+      const nodeData = node.data as unknown as AgentNodeData;
+      onSelectAgentRef.current?.(node.id, nodeData.projectPath ?? '');
 
       // Compute absolute center for fly-to (handles grouped child nodes)
       let centerX = node.position.x + AGENT_NODE_WIDTH / 2;
@@ -591,7 +591,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
         sourceAdapterName: adapterData.adapterName,
         targetAgentId: targetNode.id,
         targetAgentName: agentData.label,
-        targetAgentDir: agentData.agentDir ?? '',
+        targetProjectPath: agentData.projectPath ?? '',
       });
     },
     [rawNodes],
@@ -604,7 +604,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
       createBindingMutate({
         adapterId: pendingConnection.sourceAdapterId,
         agentId: pendingConnection.targetAgentId,
-        agentDir: pendingConnection.targetAgentDir,
+        agentDir: pendingConnection.targetProjectPath,
         sessionStrategy: opts.sessionStrategy,
         label: opts.label,
       });

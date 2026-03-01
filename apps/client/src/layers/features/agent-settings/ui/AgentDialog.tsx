@@ -19,7 +19,7 @@ import { CapabilitiesTab } from './CapabilitiesTab';
 import { ConnectionsTab } from './ConnectionsTab';
 
 interface AgentDialogProps {
-  agentPath: string;
+  projectPath: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -28,16 +28,16 @@ interface AgentDialogProps {
  * Dialog shell for agent configuration with tabbed navigation.
  * Four tabs: Identity, Persona, Capabilities, and Connections.
  */
-export function AgentDialog({ agentPath, open, onOpenChange }: AgentDialogProps) {
+export function AgentDialog({ projectPath, open, onOpenChange }: AgentDialogProps) {
   const [activeTab, setActiveTab] = useState('identity');
-  const { data: agent } = useCurrentAgent(agentPath);
+  const { data: agent } = useCurrentAgent(projectPath);
   const updateAgent = useUpdateAgent();
 
   const handleUpdate = useCallback(
     (updates: Partial<AgentManifest>) => {
-      updateAgent.mutate({ path: agentPath, updates });
+      updateAgent.mutate({ path: projectPath, updates });
     },
-    [agentPath, updateAgent]
+    [projectPath, updateAgent]
   );
 
   if (!agent) {
@@ -95,7 +95,7 @@ export function AgentDialog({ agentPath, open, onOpenChange }: AgentDialogProps)
             <TabsContent value="identity" className="mt-0">
               <IdentityTab
                 agent={agent}
-                agentPath={agentPath}
+                projectPath={projectPath}
                 onUpdate={handleUpdate}
               />
             </TabsContent>

@@ -11,6 +11,7 @@ import {
 } from '@/layers/entities/mesh';
 import type { AgentManifest, DenialRecord } from '@dorkos/shared/mesh-schemas';
 import { useDirectoryState } from '@/layers/entities/session';
+import { AgentDialog } from '@/layers/features/agent-settings';
 import { MeshStatsHeader } from './MeshStatsHeader';
 import { AgentHealthDetail } from './AgentHealthDetail';
 import { TopologyPanel } from './TopologyPanel';
@@ -146,16 +147,39 @@ export function MeshPanel() {
   const { data: deniedResult, isLoading: deniedLoading } = useDeniedAgents(meshEnabled);
   const denied = deniedResult?.denied ?? [];
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+  const [selectedProjectPath, setSelectedProjectPath] = useState<string>('');
   const [activeTab, setActiveTab] = useState('topology');
+
+  // Agent settings dialog state
+  const [settingsProjectPath, setSettingsProjectPath] = useState<string>('');
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const [, setDir] = useDirectoryState();
 
   /** Navigate to agent's working directory to start a chat session. */
   const handleOpenChat = useCallback(
-    (agentDir: string) => {
-      setDir(agentDir);
+    (projectPath: string) => {
+      setDir(projectPath);
     },
     [setDir],
+  );
+
+  /** Track selected agent and its project path from topology clicks. */
+  const handleSelectAgent = useCallback(
+    (agentId: string, projectPath: string) => {
+      setSelectedAgentId(agentId);
+      setSelectedProjectPath(projectPath);
+    },
+    [],
+  );
+
+  /** Open agent settings dialog from topology toolbar. */
+  const handleOpenSettings = useCallback(
+    (_agentId: string, projectPath: string) => {
+      setSettingsProjectPath(projectPath);
+      setSettingsOpen(true);
+    },
+    [],
   );
 
   const hasAgents = agents.length > 0;
@@ -202,6 +226,7 @@ export function MeshPanel() {
   const switchToDiscovery = () => setActiveTab('discovery');
 
   return (
+    <>
     <AnimatePresence mode="wait" initial={false}>
       {isModeA ? (
         <motion.div
@@ -243,11 +268,9 @@ export function MeshPanel() {
                   }
                 >
                   <LazyTopologyGraph
-                    onSelectAgent={setSelectedAgentId}
+                    onSelectAgent={handleSelectAgent}
+                    onOpenSettings={handleOpenSettings}
                     onOpenChat={handleOpenChat}
-                    // onOpenSettings omitted — requires agent projectPath which isn't
-                    // exposed in the topology data yet. Settings button in NodeToolbar
-                    // hides itself when this callback is absent.
                   />
                 </Suspense>
               </div>
@@ -264,6 +287,7 @@ export function MeshPanel() {
                     <AgentHealthDetail
                       agentId={selectedAgentId}
                       onClose={() => setSelectedAgentId(null)}
+                      onOpenSettings={selectedProjectPath ? () => handleOpenSettings(selectedAgentId, selectedProjectPath) : undefined}
                     />
                   </motion.div>
                 )}
@@ -289,5 +313,13 @@ export function MeshPanel() {
         </motion.div>
       )}
     </AnimatePresence>
+    {settingsProjectPath && (
+      <AgentDialog
+        projectPath={settingsProjectPath}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
+    )}
+    </>
   );
 }

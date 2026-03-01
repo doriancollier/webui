@@ -386,7 +386,7 @@ export function SessionSidebar() {
       </ResponsiveDialog>
       {selectedCwd && (
         <AgentDialog
-          agentPath={selectedCwd}
+          projectPath={selectedCwd}
           open={agentDialogOpen}
           onOpenChange={setAgentDialogOpen}
         />

@@ -16,7 +16,7 @@ import type { RelayBridge } from './relay-bridge.js';
 export interface NamespaceInfo {
   namespace: string;
   agentCount: number;
-  agents: AgentManifest[];
+  agents: (AgentManifest & { projectPath: string })[];
 }
 
 /** A cross-namespace access rule. */
@@ -219,11 +219,11 @@ export class TopologyManager {
   }
 
   /**
-   * Strip registry-only fields (projectPath, namespace, scanRoot) from an entry
-   * to produce a clean AgentManifest.
+   * Strip registry-only fields (scanRoot) from an entry, keeping projectPath
+   * for client topology views.
    */
-  private stripRegistryFields(entry: AgentRegistryEntry): AgentManifest {
-    const { projectPath: _p, scanRoot: _s, ...manifest } = entry;
+  private stripRegistryFields(entry: AgentRegistryEntry): AgentManifest & { projectPath: string } {
+    const { scanRoot: _s, ...manifest } = entry;
     return manifest;
   }
 }
