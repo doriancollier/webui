@@ -53,7 +53,6 @@ MAPPINGS=(
   "animations.md:animation|motion|apps/client/src/index.css"
   "styling-theming.md:index.css|apps/client/src/layers/shared/ui/|tailwind"
   "parallel-execution.md:.claude/agents/|\.claude/commands/"
-  "autonomous-roadmap-execution.md:.claude/commands/roadmap/"
 )
 
 # External docs (MDX) mappings
