@@ -264,14 +264,6 @@ Next steps:
 ═══════════════════════════════════════════════════
 ```
 
-### 4.3 Roadmap Integration
-
-If spec has `roadmapId` in frontmatter:
-```
-python3 roadmap/scripts/update_status.py <ROADMAP_ID> completed
-python3 roadmap/scripts/link_spec.py <ROADMAP_ID> <SLUG>
-```
-
 ---
 
 ## Execution Modes

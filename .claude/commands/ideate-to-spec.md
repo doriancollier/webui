@@ -159,42 +159,6 @@ Acceptance criteria:
 
 3. **Verify the spec file was created at:** `specs/{slug}/02-specification.md`
 
-### Step 5.5: Roadmap Context Preservation
-
-When transforming ideation to specification:
-
-1. **Extract `roadmapId` from ideation frontmatter** using this approach:
-   - Read the first 10 lines of `specs/{slug}/01-ideation.md`
-   - Check if it starts with `---` (YAML frontmatter delimiter)
-   - If yes, extract `roadmapId` value using regex: `^roadmapId:\s*([a-f0-9-]+)$`
-   - **Fallback for legacy format:** Also check for `**roadmapId:**` or `**Roadmap ID:**` in markdown body
-
-2. If `roadmapId` found, include the same in `02-specification.md` **YAML frontmatter at the very top**:
-
-   ```markdown
-   ---
-   roadmapId: { ROADMAP_ITEM_ID }
-   slug: { SLUG }
-   ---
-
-   # Specification: {Feature Title}
-
-   ...
-   ```
-
-3. After creating the spec, **always run `link_spec.py`** to update linkedArtifacts:
-
-   ```bash
-   python3 roadmap/scripts/link_spec.py $ROADMAP_ID $SLUG
-   ```
-
-   This script will populate `specSlug`, `ideationPath`, `specPath`, etc. in the roadmap item.
-
-4. This ensures the roadmap link is preserved through:
-   `01-ideation.md` → `02-specification.md` → `03-tasks.json` + `03-tasks.md` → `04-implementation.md`
-
-**Note:** The `link_spec.py` script is idempotent and can be run multiple times safely. It detects which spec files exist and updates the linkedArtifacts accordingly.
-
 ### Step 6: Validate the Specification
 
 1. **Execute `/spec:validate specs/{slug}/02-specification.md`**
