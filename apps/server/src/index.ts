@@ -34,6 +34,7 @@ let relayCore: RelayCore | undefined;
 let adapterManager: AdapterManager | undefined;
 let traceStore: TraceStore | undefined;
 let meshCore: MeshCore | undefined;
+let healthCheckInterval: ReturnType<typeof setInterval> | undefined;
 
 async function start() {
   // Resolve data directory once and make it available to all downstream services.
@@ -229,7 +230,7 @@ async function start() {
   }
 
   // Run session health check periodically
-  setInterval(
+  healthCheckInterval = setInterval(
     () => {
       agentManager.checkSessionHealth();
     },
@@ -268,6 +269,9 @@ async function start() {
 // Graceful shutdown
 async function shutdown() {
   logger.info('Shutting down...');
+  if (healthCheckInterval) {
+    clearInterval(healthCheckInterval);
+  }
   if (sessionBroadcaster) {
     sessionBroadcaster.shutdown();
   }

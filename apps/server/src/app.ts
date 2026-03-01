@@ -48,19 +48,7 @@ export function createApp() {
 
   app.use(cors({ origin: buildCorsOrigin() }));
 
-  // Dynamically allow the tunnel origin when a tunnel is active
-  app.use((req, res, next) => {
-    const tunnelUrl = req.app.locals.tunnelUrl as string | undefined;
-    if (tunnelUrl) {
-      const origin = req.headers.origin;
-      if (origin && tunnelUrl.startsWith(origin)) {
-        res.setHeader('Access-Control-Allow-Origin', origin);
-      }
-    }
-    next();
-  });
-
-  app.use(express.json());
+  app.use(express.json({ limit: '1mb' }));
   app.use(requestLogger);
 
   // API routes

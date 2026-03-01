@@ -16,7 +16,7 @@ export function createTestQueryClient(): QueryClient {
 }
 
 export function TestProviders({ children }: { children: React.ReactNode }) {
-  const queryClient = createTestQueryClient();
+  const [queryClient] = React.useState(() => createTestQueryClient());
   return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
 }
 

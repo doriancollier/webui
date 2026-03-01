@@ -189,12 +189,14 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
     try {
+      const MAX_CANDIDATES = 1000;
       const candidates = [];
       const options = result.data.maxDepth ? { maxDepth: result.data.maxDepth } : undefined;
       for await (const candidate of meshCore.discover(result.data.roots, options)) {
         candidates.push(candidate);
+        if (candidates.length >= MAX_CANDIDATES) break;
       }
-      return res.json({ candidates });
+      return res.json({ candidates, truncated: candidates.length >= MAX_CANDIDATES });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Discovery failed';
       return res.status(500).json({ error: message });
@@ -355,6 +357,10 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
   // DELETE /denied/:encodedPath — Clear a denial by URL-encoded path
   router.delete('/denied/:encodedPath', async (req, res) => {
     const filePath = decodeURIComponent(req.params.encodedPath);
+    // Reject paths with traversal segments
+    if (filePath.includes('..') || filePath.includes('\0')) {
+      return res.status(400).json({ error: 'Invalid path' });
+    }
     await meshCore.undeny(filePath);
     return res.json({ success: true });
   });

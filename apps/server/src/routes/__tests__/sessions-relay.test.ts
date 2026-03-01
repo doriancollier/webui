@@ -23,6 +23,18 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
+// Mock logger — use vi.hoisted so the variable is available inside the hoisted vi.mock factory
+const mockLogger = vi.hoisted(() => ({
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  debug: vi.fn(),
+}));
+vi.mock('../../lib/logger.js', () => ({
+  logger: mockLogger,
+  initLogger: vi.fn(),
+}));
+
 // Mock services before importing app
 vi.mock('../../services/session/transcript-reader.js', () => ({
   transcriptReader: {
@@ -267,7 +279,7 @@ describe('Sessions Routes — Relay Integration', () => {
     });
 
     it('logs error when endpoint registration fails for non-duplicate reason', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockLogger.error.mockClear();
 
       vi.mocked(isRelayEnabled).mockReturnValue(true);
       app.locals.relayCore = mockRelayCore;
@@ -280,17 +292,15 @@ describe('Sessions Routes — Relay Integration', () => {
 
       // Publish should still proceed
       expect(res.status).toBe(202);
-      // Error should be logged
-      expect(consoleSpy).toHaveBeenCalledWith(
+      // Error should be logged via logger
+      expect(mockLogger.error).toHaveBeenCalledWith(
         expect.stringContaining('publishViaRelay'),
         expect.stringContaining('disk full'),
       );
-
-      consoleSpy.mockRestore();
     });
 
     it('silently ignores already-registered endpoint errors without logging', async () => {
-      const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      mockLogger.error.mockClear();
 
       vi.mocked(isRelayEnabled).mockReturnValue(true);
       app.locals.relayCore = mockRelayCore;
@@ -302,9 +312,7 @@ describe('Sessions Routes — Relay Integration', () => {
         .send({ content: 'hello' });
 
       expect(res.status).toBe(202);
-      expect(consoleSpy).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
+      expect(mockLogger.error).not.toHaveBeenCalled();
     });
   });
 

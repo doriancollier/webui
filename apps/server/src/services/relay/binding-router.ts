@@ -162,7 +162,12 @@ export class BindingRouter {
 
   private async getOrCreateSession(key: string, binding: AdapterBinding): Promise<string> {
     const existing = this.sessionMap.get(key);
-    if (existing) return existing;
+    if (existing) {
+      // Refresh LRU position so active sessions are not evicted
+      this.sessionMap.delete(key);
+      this.sessionMap.set(key, existing);
+      return existing;
+    }
 
     // Deduplicate concurrent session creation for the same key
     const pending = this.inFlight.get(key);

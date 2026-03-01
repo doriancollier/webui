@@ -32,6 +32,8 @@ function parseFrontmatterFallback(content: string): Record<string, string> {
  */
 class CommandRegistryService {
   private cache: CommandRegistry | null = null;
+  private cacheTime = 0;
+  private static readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
   private readonly commandsDir: string;
 
   /** @param vaultRoot - Must be pre-validated against directory boundary by caller */
@@ -40,7 +42,8 @@ class CommandRegistryService {
   }
 
   async getCommands(forceRefresh = false): Promise<CommandRegistry> {
-    if (this.cache && !forceRefresh) return this.cache;
+    const cacheExpired = Date.now() - this.cacheTime > CommandRegistryService.CACHE_TTL_MS;
+    if (this.cache && !forceRefresh && !cacheExpired) return this.cache;
 
     const commands: CommandEntry[] = [];
 
@@ -99,11 +102,13 @@ class CommandRegistryService {
     commands.sort((a, b) => a.fullCommand.localeCompare(b.fullCommand));
 
     this.cache = { commands, lastScanned: new Date().toISOString() };
+    this.cacheTime = Date.now();
     return this.cache;
   }
 
   invalidateCache(): void {
     this.cache = null;
+    this.cacheTime = 0;
   }
 }
 

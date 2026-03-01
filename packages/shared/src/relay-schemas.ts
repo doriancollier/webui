@@ -178,7 +178,7 @@ export type ReliabilityConfig = z.infer<typeof ReliabilityConfigSchema>;
 
 // === HTTP API Request/Query Schemas ===
 
-export const SendMessageRequestSchema = z
+export const RelaySendMessageRequestSchema = z
   .object({
     subject: z.string().min(1),
     payload: z.unknown(),
@@ -192,9 +192,14 @@ export const SendMessageRequestSchema = z
       })
       .optional(),
   })
-  .openapi('SendMessageRequest');
+  .openapi('RelaySendMessageRequest');
 
-export type SendMessageRequest = z.infer<typeof SendMessageRequestSchema>;
+export type RelaySendMessageRequest = z.infer<typeof RelaySendMessageRequestSchema>;
+
+/** @deprecated Use `RelaySendMessageRequestSchema` — renamed to avoid collision with schemas.ts */
+export const SendMessageRequestSchema = RelaySendMessageRequestSchema;
+/** @deprecated Use `RelaySendMessageRequest` — renamed to avoid collision with schemas.ts */
+export type SendMessageRequest = RelaySendMessageRequest;
 
 export const MessageListQuerySchema = z
   .object({

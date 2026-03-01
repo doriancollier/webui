@@ -22,6 +22,9 @@ import { fileURLToPath } from 'node:url';
 import { initSSEStream } from '../services/core/stream-adapter.js';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
+import { resolveSubjectLabels } from '../services/relay/subject-resolver.js';
+import { transcriptReader } from '../services/session/transcript-reader.js';
+import { readManifest } from '@dorkos/shared/manifest';
 
 /** Allowed subject prefixes for SSE subscription patterns. */
 const ALLOWED_PREFIXES = [
@@ -87,14 +90,6 @@ export function createRelayRouter(
   // GET /conversations — Grouped request/response exchanges with human labels
   router.get('/conversations', async (_req, res) => {
     try {
-      const { resolveSubjectLabels } = await import(
-        '../services/relay/subject-resolver.js'
-      );
-      const { transcriptReader } = await import(
-        '../services/session/transcript-reader.js'
-      );
-      const { readManifest } = await import('@dorkos/shared/manifest');
-
       const messages = relayCore.listMessages({});
       const deadLetters = await relayCore.getDeadLetters();
 
@@ -338,17 +333,25 @@ export function createRelayRouter(
     // Subscribe to messages matching pattern
     const unsubMessages = relayCore.subscribe(pattern, (envelope) => {
       if (res.writableEnded) return;
-      res.write(`id: ${envelope.id}\n`);
-      res.write(`event: relay_message\n`);
-      res.write(`data: ${JSON.stringify(envelope)}\n\n`);
+      try {
+        res.write(`id: ${envelope.id}\n`);
+        res.write(`event: relay_message\n`);
+        res.write(`data: ${JSON.stringify(envelope)}\n\n`);
+      } catch {
+        // Serialization or write failure — connection will be cleaned up on close
+      }
     });
 
     // Subscribe to signals (dead letters, backpressure)
     const unsubSignals = relayCore.onSignal(pattern, (_subject, signal) => {
       if (res.writableEnded) return;
-      const eventType = signal.type === 'backpressure' ? 'relay_backpressure' : 'relay_signal';
-      res.write(`event: ${eventType}\n`);
-      res.write(`data: ${JSON.stringify(signal)}\n\n`);
+      try {
+        const eventType = signal.type === 'backpressure' ? 'relay_backpressure' : 'relay_signal';
+        res.write(`event: ${eventType}\n`);
+        res.write(`data: ${JSON.stringify(signal)}\n\n`);
+      } catch {
+        // Serialization or write failure — connection will be cleaned up on close
+      }
     });
 
     // Keepalive every 15 seconds
@@ -584,6 +587,9 @@ export function createRelayRouter(
         return res.status(404).json({ error: 'Adapter not running' });
       }
 
+      if (!('handleInbound' in adapter) || typeof (adapter as Record<string, unknown>).handleInbound !== 'function') {
+        return res.status(500).json({ error: 'Adapter does not support webhook ingestion' });
+      }
       const webhookAdapter = adapter as WebhookAdapter;
       const result = await webhookAdapter.handleInbound(
         req.body as Buffer,

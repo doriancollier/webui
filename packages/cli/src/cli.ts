@@ -205,12 +205,13 @@ const logLevelName = values['log-level']
   || (env.NODE_ENV === 'production' ? 'info' : 'debug');
 process.env.DORKOS_LOG_LEVEL = String(LOG_LEVEL_MAP[logLevelName] ?? 3);
 
-// Load .env from user's cwd (project-local, optional)
-// Re-read env var in case CWD was overridden by boundary fallback above
+// Load .env from user's cwd (project-local, optional).
+// override:false (the default) ensures CLI flags and config values set above
+// are never overwritten by .env file values — preserving the precedence chain.
 const envPath = path.join(process.env.DORKOS_DEFAULT_CWD!, '.env');
 if (fs.existsSync(envPath)) {
   const dotenv = await import('dotenv');
-  dotenv.config({ path: envPath });
+  dotenv.config({ path: envPath, override: false });
 }
 
 // Start the server

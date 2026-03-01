@@ -8,12 +8,18 @@ import { env } from '../env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const defaultRoot = env.DORKOS_DEFAULT_CWD ?? path.resolve(__dirname, '../../../../');
+const MAX_REGISTRY_CACHE_SIZE = 50;
 const registryCache = new Map<string, CommandRegistryService>();
 
 function getRegistry(cwd?: string): CommandRegistryService {
   const root = cwd || defaultRoot;
   let registry = registryCache.get(root);
   if (!registry) {
+    // Evict oldest entry if cache is full
+    if (registryCache.size >= MAX_REGISTRY_CACHE_SIZE) {
+      const oldest = registryCache.keys().next().value!;
+      registryCache.delete(oldest);
+    }
     registry = new CommandRegistryService(root);
     registryCache.set(root, registry);
   }

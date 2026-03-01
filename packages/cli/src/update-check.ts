@@ -62,8 +62,10 @@ export async function checkForUpdate(currentVersion: string): Promise<string | n
  * @internal Exported for testing only.
  */
 export function isNewer(a: string, b: string): boolean {
-  const [aMaj, aMin, aPat] = a.split('.').map(Number);
-  const [bMaj, bMin, bPat] = b.split('.').map(Number);
+  // Strip pre-release suffixes (e.g. "1.0.0-beta.1" -> "1.0.0")
+  const [aMaj, aMin, aPat] = a.split('-')[0].split('.').map(Number);
+  const [bMaj, bMin, bPat] = b.split('-')[0].split('.').map(Number);
+  if ([aMaj, aMin, aPat, bMaj, bMin, bPat].some(isNaN)) return false;
   if (aMaj !== bMaj) return aMaj > bMaj;
   if (aMin !== bMin) return aMin > bMin;
   return aPat > bPat;

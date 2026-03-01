@@ -5,7 +5,6 @@ interface SessionLock {
   clientId: string;
   acquiredAt: number;
   ttl: number;
-  response: Response;
 }
 
 /**
@@ -35,9 +34,9 @@ export class SessionLockManager {
       clientId,
       acquiredAt: Date.now(),
       ttl: this.LOCK_TTL_MS,
-      response: res,
     };
     this.locks.set(sessionId, lock);
+    // Attach close handler immediately — no need to store the Response reference
     res.on('close', () => {
       const current = this.locks.get(sessionId);
       if (current === lock) {

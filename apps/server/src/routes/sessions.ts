@@ -14,6 +14,7 @@ import {
 } from '@dorkos/shared/schemas';
 import { assertBoundary } from '../lib/route-utils.js';
 import { isRelayEnabled } from '../services/relay/relay-state.js';
+import { logger } from '../lib/logger.js';
 import type { RelayCore } from '@dorkos/relay';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -166,7 +167,7 @@ async function publishViaRelay(
     // Only ignore "already registered" — log real failures
     const message = err instanceof Error ? err.message : String(err);
     if (!message.includes('already registered')) {
-      console.error('publishViaRelay: failed to register console endpoint:', message);
+      logger.error('publishViaRelay: failed to register console endpoint:', message);
     }
   }
 

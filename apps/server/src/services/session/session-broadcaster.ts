@@ -33,6 +33,7 @@ export class SessionBroadcaster {
   private clients = new Map<string, Set<Response>>();
   private watchers = new Map<string, FSWatcher>();
   private offsets = new Map<string, number>();
+  private offsetInitializing = new Set<string>();
   private debounceTimers = new Map<string, NodeJS.Timeout>();
   private relaySubscriptions = new Map<Response, Unsubscribe>();
   private relay: RelayCore | null = null;
@@ -124,6 +125,7 @@ export class SessionBroadcaster {
 
       // Clean up state
       this.offsets.delete(sessionId);
+      this.offsetInitializing.delete(sessionId);
 
       const timer = this.debounceTimers.get(sessionId);
       if (timer) {
@@ -186,8 +188,12 @@ export class SessionBroadcaster {
     const transcriptsDir = this.transcriptReader.getTranscriptsDir(vaultRoot);
     const filePath = join(transcriptsDir, `${sessionId}.jsonl`);
 
-    // Initialize offset to current file size (only new content)
-    this.initializeOffset(vaultRoot, sessionId);
+    // Initialize offset to current file size (only new content).
+    // Mark as initializing so broadcastUpdate skips events until the offset is resolved.
+    this.offsetInitializing.add(sessionId);
+    this.initializeOffset(vaultRoot, sessionId).finally(() => {
+      this.offsetInitializing.delete(sessionId);
+    });
 
     // Create watcher
     const watcher = chokidar.watch(filePath, {
@@ -249,6 +255,10 @@ export class SessionBroadcaster {
    * @param vaultRoot - Vault root path
    */
   private async broadcastUpdate(sessionId: string, vaultRoot: string): Promise<void> {
+    // Skip broadcast while offset initialization is in progress to avoid
+    // replaying the entire file as a "new" update on first connection.
+    if (this.offsetInitializing.has(sessionId)) return;
+
     const currentOffset = this.offsets.get(sessionId) ?? 0;
 
     try {
@@ -332,5 +342,6 @@ export class SessionBroadcaster {
 
     // Clear offsets
     this.offsets.clear();
+    this.offsetInitializing.clear();
   }
 }
