@@ -39,6 +39,10 @@
     "./manifest": {
       "types": "./src/manifest.ts",
       "default": "./dist/manifest.js"
+    },
+    "./logger": {
+      "types": "./src/logger.ts",
+      "default": "./dist/logger.js"
     }
   },
   "scripts": {

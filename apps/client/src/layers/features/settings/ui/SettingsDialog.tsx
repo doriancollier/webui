@@ -40,8 +40,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setAutoHideToolCalls,
     devtoolsOpen,
     toggleDevtools,
-    verboseLogging,
-    setVerboseLogging,
     fontSize,
     setFontSize,
     fontFamily,
@@ -242,9 +240,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
                 </SettingRow>
 
-                <SettingRow label="Verbose logging" description="Show detailed logs in the console">
-                  <Switch checked={verboseLogging} onCheckedChange={setVerboseLogging} />
-                </SettingRow>
               </div>
             </TabsContent>
 

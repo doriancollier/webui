@@ -151,16 +151,32 @@ Equivalent env var: `TUNNEL_AUTH`
 
 ### logging.level
 
-The log verbosity level for the server. Controls both console output and NDJSON file logging to `~/.dork/logs/dorkos.log`.
+The log verbosity level for the server. Controls both console output and NDJSON file logging to `{DORK_HOME}/logs/dorkos.log`.
 
 ```bash
 dorkos config set logging.level debug
 ```
 
 Equivalent CLI flag: `--log-level` / `-l`
-Equivalent env var: `LOG_LEVEL`
+Equivalent env var: `DORKOS_LOG_LEVEL`
 
-Log files are written as NDJSON (newline-delimited JSON) and rotated at startup when they exceed 10MB. The last 7 rotated files are retained.
+Log files are written as NDJSON (newline-delimited JSON) with daily rotation. When a log file is from a previous day, it's renamed to `dorkos.YYYY-MM-DD.log`. Within the same day, files exceeding the size threshold are rotated to `dorkos.YYYY-MM-DD.N.log`. Default: 500KB max size, 14 rotated files retained.
+
+### logging.maxLogSizeKb
+
+Maximum log file size in kilobytes before size-based rotation triggers. Range: 100–10240. Default: `500`.
+
+```bash
+dorkos config set logging.maxLogSizeKb 1024
+```
+
+### logging.maxLogFiles
+
+Maximum number of rotated log files to retain. Range: 1–30. Default: `14`.
+
+```bash
+dorkos config set logging.maxLogFiles 7
+```
 
 ### ui.theme
 

@@ -56,6 +56,8 @@ export interface MeshOptions {
   defaultScanRoot?: string;
   /** Optional SignalEmitter for lifecycle event broadcasting (graceful no-op when absent). */
   signalEmitter?: SignalEmitter;
+  /** Optional logger for structured output (defaults to console). */
+  logger?: import('@dorkos/shared/logger').Logger;
 }
 
 // === MeshCore ===
@@ -90,6 +92,7 @@ export class MeshCore {
   private readonly strategies: DiscoveryStrategy[];
   private readonly defaultScanRoot: string;
   private readonly signalEmitter: SignalEmitter | undefined;
+  private readonly logger: import('@dorkos/shared/logger').Logger;
   private readonly generateUlid = monotonicFactory();
   private reconcileTimer: ReturnType<typeof setInterval> | null = null;
 
@@ -105,6 +108,7 @@ export class MeshCore {
     this.topology = new TopologyManager(this.registry, this.relayBridge, options.relayCore);
     this.defaultScanRoot = options.defaultScanRoot ?? os.homedir();
     this.signalEmitter = options.signalEmitter;
+    this.logger = options.logger ?? console;
     this.strategies = options.strategies ?? [
       new ClaudeCodeStrategy(),
       new CursorStrategy(),
@@ -579,7 +583,7 @@ export class MeshCore {
       try {
         await reconcile(this.registry, this.relayBridge, this.defaultScanRoot);
       } catch (err) {
-        console.error('[Mesh] Periodic reconciliation failed:', err);
+        this.logger.error('[Mesh] Periodic reconciliation failed:', err);
       }
     }, intervalMs);
     this.reconcileTimer.unref();

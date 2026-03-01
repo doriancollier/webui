@@ -7,6 +7,7 @@
  * @module relay/adapter-registry
  */
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
+import type { Logger } from '@dorkos/shared/logger';
 import type {
   RelayAdapter,
   RelayPublisher,
@@ -25,6 +26,12 @@ import type {
 export class AdapterRegistry implements AdapterRegistryLike {
   private readonly adapters = new Map<string, RelayAdapter>();
   private relay: RelayPublisher | null = null;
+  private logger: Logger = console;
+
+  /** Inject a structured logger to replace default console output. */
+  setLogger(logger: Logger): void {
+    this.logger = logger;
+  }
 
   /**
    * Set the RelayPublisher instance.
@@ -69,7 +76,7 @@ export class AdapterRegistry implements AdapterRegistryLike {
         await existing.stop();
       } catch (err) {
         // Log but don't throw — new adapter is already active
-        console.warn(`AdapterRegistry: failed to stop old adapter '${adapter.id}':`, err);
+        this.logger.warn(`AdapterRegistry: failed to stop old adapter '${adapter.id}':`, err);
       }
     }
   }
@@ -156,7 +163,7 @@ export class AdapterRegistry implements AdapterRegistryLike {
     // Log individual failures but don't throw
     for (const result of results) {
       if (result.status === 'rejected') {
-        console.warn('AdapterRegistry: adapter shutdown failed:', result.reason);
+        this.logger.warn('AdapterRegistry: adapter shutdown failed:', result.reason);
       }
     }
 

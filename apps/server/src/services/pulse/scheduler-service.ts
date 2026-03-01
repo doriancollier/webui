@@ -4,7 +4,9 @@ import type { PulseSchedule, PulseRun, PermissionMode, StreamEvent } from '@dork
 import type { PulseDispatchPayload } from '@dorkos/shared/relay-schemas';
 import type { PulseStore } from './pulse-store.js';
 import { isRelayEnabled } from '../relay/relay-state.js';
-import { logger } from '../../lib/logger.js';
+import { createTaggedLogger } from '../../lib/logger.js';
+
+const logger = createTaggedLogger('Pulse');
 
 /** Narrow interface for the AgentManager methods used by the scheduler. */
 export interface SchedulerAgentManager {
@@ -98,7 +100,7 @@ export class SchedulerService {
   async start(): Promise<void> {
     const failed = this.store.markRunningAsFailed();
     if (failed > 0) {
-      logger.info(`Pulse: marked ${failed} interrupted run(s) as failed`);
+      logger.info(`marked ${failed} interrupted run(s) as failed`);
     }
 
     const schedules = this.store.getSchedules();
@@ -109,7 +111,7 @@ export class SchedulerService {
       this.store.pruneRuns(schedule.id, this.config.retentionCount);
     }
 
-    logger.info(`Pulse: started with ${this.cronJobs.size} active schedule(s)`);
+    logger.info(`started with ${this.cronJobs.size} active schedule(s)`);
   }
 
   /** Stop the scheduler: cancel all jobs and abort active runs. */
@@ -130,7 +132,7 @@ export class SchedulerService {
     }
 
     this.store.close();
-    logger.info('Pulse: scheduler stopped');
+    logger.info('scheduler stopped');
   }
 
   /** Register a cron job for a schedule. */
@@ -142,12 +144,12 @@ export class SchedulerService {
     const tz = schedule.timezone ?? this.config.timezone ?? undefined;
     const job = new Cron(schedule.cron, { protect: true, timezone: tz }, () => {
       this.dispatch(schedule).catch((err) => {
-        logger.error(`Pulse: dispatch error for ${schedule.name}:`, err);
+        logger.error(`dispatch error for ${schedule.name}:`, err);
       });
     });
 
     this.cronJobs.set(schedule.id, job);
-    logger.debug(`Pulse: registered schedule "${schedule.name}" (${schedule.cron})`);
+    logger.debug(`registered schedule "${schedule.name}" (${schedule.cron})`);
   }
 
   /** Unregister and stop a cron job. */
@@ -167,7 +169,7 @@ export class SchedulerService {
     const run = this.store.createRun(scheduleId, 'manual');
     // Fire and forget — executeRun handles its own error handling
     this.executeRun(schedule, run).catch((err) => {
-      logger.error(`Pulse: manual run error for ${schedule.name}:`, err);
+      logger.error(`manual run error for ${schedule.name}:`, err);
     });
     return run;
   }
@@ -200,14 +202,14 @@ export class SchedulerService {
   /** Dispatch a scheduled run — checks concurrency and schedule state. */
   private async dispatch(schedule: PulseSchedule): Promise<void> {
     if (this.activeRuns.size >= this.config.maxConcurrentRuns) {
-      logger.debug(`Pulse: skipping "${schedule.name}" — at concurrency cap`);
+      logger.debug(`skipping "${schedule.name}" — at concurrency cap`);
       return;
     }
 
     // Re-read schedule to check current state
     const current = this.store.getSchedule(schedule.id);
     if (!current || !current.enabled || current.status !== 'active') {
-      logger.debug(`Pulse: skipping "${schedule.name}" — disabled or not active`);
+      logger.debug(`skipping "${schedule.name}" — disabled or not active`);
       return;
     }
 
@@ -263,12 +265,12 @@ export class SchedulerService {
         durationMs: 0,
         error: 'No receiver for pulse dispatch',
       });
-      logger.warn(`Pulse: no receiver for relay dispatch of run ${run.id}`);
+      logger.warn(`no receiver for relay dispatch of run ${run.id}`);
     } else {
       this.store.updateRun(run.id, {
         status: 'running',
       });
-      logger.info(`Pulse: relay dispatch for run ${run.id} delivered to ${result.deliveredTo} endpoint(s)`);
+      logger.info(`relay dispatch for run ${run.id} delivered to ${result.deliveredTo} endpoint(s)`);
     }
   }
 
@@ -346,7 +348,7 @@ export class SchedulerService {
         outputSummary: outputSummary.slice(0, 500),
         error: errorMsg,
       });
-      logger.error(`Pulse: run ${run.id} failed:`, err);
+      logger.error(`run ${run.id} failed:`, err);
     } finally {
       this.activeRuns.delete(run.id);
     }

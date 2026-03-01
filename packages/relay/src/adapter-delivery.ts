@@ -11,10 +11,7 @@ import { hashSubject } from './endpoint-registry.js';
 import type { SqliteIndex } from './sqlite-index.js';
 import type { AdapterRegistryLike, AdapterContext, DeliveryResult } from './types.js';
 
-/** Logger interface for adapter delivery warnings. */
-interface Logger {
-  warn: (...args: unknown[]) => void;
-}
+import type { Logger } from '@dorkos/shared/logger';
 
 /**
  * Delivers messages to matching adapters with timeout protection

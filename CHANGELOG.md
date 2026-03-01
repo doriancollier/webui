@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Overhaul logging system
 - Rename agentDir → projectPath in binding subsystem
 - Sharpen villain section visuals and copy per design review
 - Rename Tunnel to Remote and use icon color for state

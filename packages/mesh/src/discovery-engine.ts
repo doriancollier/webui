@@ -44,6 +44,8 @@ export interface DiscoveryOptions {
   excludedDirs?: Set<string>;
   /** Whether to follow symbolic links (default: false). */
   followSymlinks?: boolean;
+  /** Optional logger for warnings during scan. */
+  logger?: import('@dorkos/shared/logger').Logger;
 }
 
 /** Emitted when an existing .dork/agent.json manifest is found during scan. */
@@ -165,7 +167,7 @@ export async function* scanDirectory(
       // EACCES/EPERM: silently skip inaccessible directories
       const code = (err as NodeJS.ErrnoException).code;
       if (code !== 'EACCES' && code !== 'EPERM') {
-        console.warn(`[mesh] discovery: error reading ${dir}: ${(err as Error).message}`);
+        options?.logger?.warn(`[mesh] discovery: error reading ${dir}: ${(err as Error).message}`);
       }
     }
   }

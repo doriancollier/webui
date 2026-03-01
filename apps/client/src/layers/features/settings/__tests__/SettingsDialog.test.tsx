@@ -118,7 +118,6 @@ describe('SettingsDialog', () => {
     expect(screen.getByText('Show timestamps')).toBeDefined();
     expect(screen.getByText('Expand tool calls')).toBeDefined();
     expect(screen.getByText('Show dev tools')).toBeDefined();
-    expect(screen.getByText('Verbose logging')).toBeDefined();
   });
 
   // Verifies server config section appears with fetched data

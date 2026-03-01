@@ -6,7 +6,7 @@ import { SessionBroadcaster } from './services/session/session-broadcaster.js';
 import { transcriptReader } from './services/session/transcript-reader.js';
 import { initConfigManager, configManager } from './services/core/config-manager.js';
 import { initBoundary } from './lib/boundary.js';
-import { initLogger, logger } from './lib/logger.js';
+import { initLogger, logger, logError } from './lib/logger.js';
 import { createDorkOsToolServer } from './services/core/mcp-tools/index.js';
 import { PulseStore } from './services/pulse/pulse-store.js';
 import { SchedulerService } from './services/pulse/scheduler-service.js';
@@ -44,8 +44,20 @@ async function start() {
   process.env.DORK_HOME = dorkHome;
 
   const logLevel = env.DORKOS_LOG_LEVEL;
-  initLogger({ level: logLevel });
+  initLogger({ level: logLevel, logDir: path.join(dorkHome, 'logs') });
   initConfigManager();
+
+  // Apply logging config (maxLogSize/maxLogFiles) from user config.
+  // initLogger was already called above with defaults — re-init with config values.
+  const loggingConfig = configManager.get('logging');
+  if (loggingConfig?.maxLogSizeKb || loggingConfig?.maxLogFiles) {
+    initLogger({
+      level: logLevel,
+      logDir: path.join(dorkHome, 'logs'),
+      maxLogSize: (loggingConfig.maxLogSizeKb ?? 500) * 1024,
+      maxLogFiles: loggingConfig.maxLogFiles ?? 14,
+    });
+  }
 
   // Create consolidated Drizzle database and run migrations before any service init.
   // Individual services still manage their own legacy databases for now — they will
@@ -70,9 +82,9 @@ async function start() {
       pulseStore = new PulseStore(db);
       logger.info('[Pulse] PulseStore initialized');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      logger.error(`[Pulse] Failed to initialize PulseStore at ${dorkHome}`, { error: msg });
-      setPulseInitError(msg);
+      const errInfo = logError(err);
+      logger.error(`[Pulse] Failed to initialize PulseStore at ${dorkHome}`, errInfo);
+      setPulseInitError(errInfo.error);
       // Pulse failure is non-fatal: server continues without scheduler routes.
     }
   }
@@ -85,6 +97,7 @@ async function start() {
     const relayDataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
     try {
       const adapterRegistry = new AdapterRegistry();
+      adapterRegistry.setLogger(logger);
 
       // Initialize trace store before RelayCore so it can be injected for delivery tracking
       traceStore = new TraceStore(db);
@@ -106,9 +119,9 @@ async function start() {
       relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
       logger.info('[Relay] AdapterManager initialized');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err);
-      logger.error(`[Relay] Failed to initialize at ${relayDataDir}`, { error: msg });
-      setRelayInitError(msg);
+      const errInfo = logError(err);
+      logger.error(`[Relay] Failed to initialize at ${relayDataDir}`, errInfo);
+      setRelayInitError(errInfo.error);
       // Relay failure is non-fatal: server continues without relay routes.
       relayCore = undefined;
       traceStore = undefined;
@@ -131,6 +144,7 @@ async function start() {
         db,
         relayCore,
         signalEmitter: meshSignalEmitter,
+        logger,
       });
       logger.info('[Mesh] MeshCore initialized (using consolidated DB)');
 
@@ -139,17 +153,15 @@ async function start() {
         const result = await meshCore.reconcileOnStartup();
         logger.info('[Mesh] Startup reconciliation complete', result);
       } catch (err) {
-        logger.error('[Mesh] Startup reconciliation failed', {
-          error: err instanceof Error ? err.message : String(err),
-        });
+        logger.error('[Mesh] Startup reconciliation failed', logError(err));
       }
 
       // Start periodic reconciliation (every 5 minutes)
       meshCore.startPeriodicReconciliation(300_000);
     } catch (err) {
-      const meshMsg = err instanceof Error ? err.message : String(err);
-      logger.error('[Mesh] Failed to initialize MeshCore', { error: meshMsg });
-      setMeshInitError(meshMsg);
+      const errInfo = logError(err);
+      logger.error('[Mesh] Failed to initialize MeshCore', errInfo);
+      setMeshInitError(errInfo.error);
       // Mesh failure is non-fatal: server continues without mesh routes.
     }
 
@@ -257,9 +269,7 @@ async function start() {
         ...(isDevPort && { mode: `dev (Vite on :${tunnelPort})` }),
       });
     } catch (err) {
-      logger.warn('[Tunnel] Failed to start ngrok tunnel — server continues without tunnel.', {
-        error: err instanceof Error ? err.message : String(err),
-      });
+      logger.warn('[Tunnel] Failed to start ngrok tunnel — server continues without tunnel.', logError(err));
     }
   }
 }

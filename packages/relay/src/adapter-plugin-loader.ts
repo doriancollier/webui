@@ -14,6 +14,7 @@ import { pathToFileURL } from 'node:url';
 import { resolve, isAbsolute } from 'node:path';
 import type { AdapterManifest } from '@dorkos/shared/relay-schemas';
 import { AdapterManifestSchema } from '@dorkos/shared/relay-schemas';
+import type { Logger } from '@dorkos/shared/logger';
 import type { RelayAdapter } from './types.js';
 
 /** Configuration entry for a single adapter to load. */
@@ -57,6 +58,7 @@ export async function loadAdapters(
   configs: PluginAdapterConfig[],
   builtinMap: Map<string, (config: Record<string, unknown>) => RelayAdapter>,
   configDir: string,
+  logger: Logger = console,
 ): Promise<LoadedAdapter[]> {
   const results: LoadedAdapter[] = [];
 
@@ -76,7 +78,7 @@ export async function loadAdapters(
         // npm package via dynamic import
         const mod = (await import(entry.plugin.package)) as AdapterPluginModule;
         adapter = validateAndCreate(mod, entry);
-        manifest = extractManifest(mod, entry);
+        manifest = extractManifest(mod, entry, logger);
       } else if (entry.plugin?.path) {
         // Local file via dynamic import with pathToFileURL
         const absPath = isAbsolute(entry.plugin.path)
@@ -84,7 +86,7 @@ export async function loadAdapters(
           : resolve(configDir, entry.plugin.path);
         const mod = (await import(pathToFileURL(absPath).href)) as AdapterPluginModule;
         adapter = validateAndCreate(mod, entry);
-        manifest = extractManifest(mod, entry);
+        manifest = extractManifest(mod, entry, logger);
       }
 
       if (adapter) {
@@ -92,7 +94,7 @@ export async function loadAdapters(
       }
     } catch (err) {
       // Non-fatal: log warning and continue loading remaining adapters
-      console.warn(`[PluginLoader] Failed to load adapter '${entry.id}':`, err);
+      logger.warn(`[PluginLoader] Failed to load adapter '${entry.id}':`, err);
     }
   }
 
@@ -136,6 +138,7 @@ function validateAndCreate(
 function extractManifest(
   mod: unknown,
   entry: PluginAdapterConfig,
+  logger: Logger = console,
 ): AdapterManifest | undefined {
   const m = mod as Record<string, unknown>;
   if (typeof m.getManifest === 'function') {
@@ -145,12 +148,12 @@ function extractManifest(
       if (parsed.success) {
         return parsed.data;
       }
-      console.warn(
+      logger.warn(
         `[PluginLoader] Manifest from '${entry.id}' failed validation:`,
         parsed.error.flatten(),
       );
     } catch (err) {
-      console.warn(`[PluginLoader] Failed to get manifest from '${entry.id}':`, err);
+      logger.warn(`[PluginLoader] Failed to get manifest from '${entry.id}':`, err);
     }
   }
 

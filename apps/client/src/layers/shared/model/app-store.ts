@@ -103,8 +103,6 @@ interface AppState {
   setShowStatusBarVersion: (v: boolean) => void;
   showStatusBarTunnel: boolean;
   setShowStatusBarTunnel: (v: boolean) => void;
-  verboseLogging: boolean;
-  setVerboseLogging: (v: boolean) => void;
   fontSize: 'small' | 'medium' | 'large';
   setFontSize: (v: 'small' | 'medium' | 'large') => void;
   fontFamily: FontFamilyKey;
@@ -143,7 +141,6 @@ const BOOL_KEYS = {
   showStatusBarSound: 'dorkos-show-status-bar-sound',
   showStatusBarVersion: 'dorkos-show-status-bar-version',
   showStatusBarTunnel: 'dorkos-show-status-bar-tunnel',
-  verboseLogging: 'dorkos-verbose-logging',
 } as const;
 
 // Default values for each persisted boolean
@@ -165,7 +162,6 @@ const BOOL_DEFAULTS: Record<keyof typeof BOOL_KEYS, boolean> = {
   showStatusBarSound: true,
   showStatusBarVersion: true,
   showStatusBarTunnel: true,
-  verboseLogging: false,
 };
 
 export const useAppStore = create<AppState>()(
@@ -312,12 +308,6 @@ export const useAppStore = create<AppState>()(
         writeBool(BOOL_KEYS.showStatusBarTunnel, v);
         set({ showStatusBarTunnel: v });
       },
-      verboseLogging: readBool(BOOL_KEYS.verboseLogging, false),
-      setVerboseLogging: (v) => {
-        writeBool(BOOL_KEYS.verboseLogging, v);
-        set({ verboseLogging: v });
-      },
-
       fontSize: (() => {
         try {
           const stored = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);

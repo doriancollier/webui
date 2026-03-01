@@ -93,7 +93,7 @@ To add a new `VITE_*` var:
 | DORKOS_PORT               | server         | number            | `4242`                    | Express server port                                                         |
 | DORKOS_DEFAULT_CWD        | server         | string \| undefined | —                       | Default working directory for new sessions                                  |
 | DORKOS_BOUNDARY           | server         | string \| undefined | —                       | Directory access boundary for file browsing security                        |
-| DORKOS_LOG_LEVEL          | server         | number \| undefined | —                       | Log verbosity: 0=Error 1=Warn 2=Info 3=Debug 4=Trace                       |
+| DORKOS_LOG_LEVEL          | server         | number \| undefined | —                       | Log verbosity: 0=Fatal 1=Error 2=Warn 3=Info 4=Debug 5=Trace               |
 | DORK_HOME                 | server         | string \| undefined | —                       | Config/storage directory (defaults to `~/.dork` in production)             |
 | DORKOS_VERSION            | server         | string \| undefined | —                       | Server version injected at build time by CLI package                        |
 | CLIENT_DIST_PATH          | server         | string \| undefined | —                       | Path to built React client assets (set by CLI package)                      |

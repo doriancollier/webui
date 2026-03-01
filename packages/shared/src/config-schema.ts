@@ -8,6 +8,8 @@ export const SENSITIVE_CONFIG_KEYS = [
 
 const LoggingConfigSchema = z.object({
   level: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  maxLogSizeKb: z.number().int().min(100).max(10240).default(500),
+  maxLogFiles: z.number().int().min(1).max(30).default(14),
 });
 
 export const UserConfigSchema = z.object({
@@ -32,7 +34,7 @@ export const UserConfigSchema = z.object({
       theme: z.enum(['light', 'dark', 'system']).default('system'),
     })
     .default(() => ({ theme: 'system' as const })),
-  logging: LoggingConfigSchema.default(() => ({ level: 'info' as const })),
+  logging: LoggingConfigSchema.default(() => ({ level: 'info' as const, maxLogSizeKb: 500, maxLogFiles: 14 })),
   relay: z
     .object({
       enabled: z.boolean().default(true),

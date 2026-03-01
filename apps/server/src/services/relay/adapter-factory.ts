@@ -81,6 +81,7 @@ export async function createAdapter(
           agentManager: deps.agentManager,
           traceStore: deps.traceStore,
           pulseStore: deps.pulseStore,
+          logger,
         },
       );
     case 'plugin':

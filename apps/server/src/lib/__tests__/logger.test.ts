@@ -5,9 +5,6 @@ import os from 'os';
 // Mock the synchronous fs module so tests don't touch the real filesystem
 vi.mock('fs');
 
-const LOG_DIR = path.join(os.homedir(), '.dork', 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'dorkos.log');
-
 describe('logger module', () => {
   let fs: typeof import('fs');
   let loggerModule: typeof import('../logger.js');
@@ -31,7 +28,6 @@ describe('logger module', () => {
   describe('default logger', () => {
     it('exports a logger that works without initLogger() being called', () => {
       const { logger } = loggerModule;
-      // Should be a valid consola instance with log methods
       expect(typeof logger.info).toBe('function');
       expect(typeof logger.warn).toBe('function');
       expect(typeof logger.error).toBe('function');
@@ -45,42 +41,75 @@ describe('logger module', () => {
   });
 
   // ---------------------------------------------------------------------------
-  // initLogger
+  // initLogger — logDir resolution
   // ---------------------------------------------------------------------------
-  describe('initLogger', () => {
-    it('creates log directory if it does not exist', () => {
+  describe('initLogger logDir resolution', () => {
+    it('uses explicit logDir when provided', () => {
+      vi.mocked(fs.statSync).mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      });
+
+      loggerModule.initLogger({ logDir: '/custom/logs' });
+
+      expect(vi.mocked(fs.mkdirSync)).toHaveBeenCalledWith('/custom/logs', { recursive: true });
+      expect(loggerModule.getLogDir()).toBe('/custom/logs');
+    });
+
+    it('falls back to DORK_HOME env var when no logDir passed', () => {
+      const originalDorkHome = process.env.DORK_HOME;
+      process.env.DORK_HOME = '/tmp/test-dork-home';
+
       vi.mocked(fs.statSync).mockImplementation(() => {
         throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       });
 
       loggerModule.initLogger();
 
-      expect(vi.mocked(fs.mkdirSync)).toHaveBeenCalledWith(LOG_DIR, { recursive: true });
+      expect(vi.mocked(fs.mkdirSync)).toHaveBeenCalledWith('/tmp/test-dork-home/logs', { recursive: true });
+      expect(loggerModule.getLogDir()).toBe('/tmp/test-dork-home/logs');
+
+      process.env.DORK_HOME = originalDorkHome;
     });
 
-    it('sets log level from options', () => {
+    it('falls back to ~/.dork/logs when neither logDir nor DORK_HOME is set', () => {
+      const originalDorkHome = process.env.DORK_HOME;
+      delete process.env.DORK_HOME;
+
       vi.mocked(fs.statSync).mockImplementation(() => {
         throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       });
 
-      loggerModule.initLogger({ level: 5 });
+      loggerModule.initLogger();
 
-      const { logger } = loggerModule;
-      expect(logger.level).toBe(5);
+      const expected = path.join(os.homedir(), '.dork', 'logs');
+      expect(vi.mocked(fs.mkdirSync)).toHaveBeenCalledWith(expected, { recursive: true });
+      expect(loggerModule.getLogDir()).toBe(expected);
+
+      process.env.DORK_HOME = originalDorkHome;
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // initLogger — log level
+  // ---------------------------------------------------------------------------
+  describe('initLogger log level', () => {
+    beforeEach(() => {
+      vi.mocked(fs.statSync).mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      });
+    });
+
+    it('sets log level from options', () => {
+      loggerModule.initLogger({ level: 5 });
+      expect(loggerModule.logger.level).toBe(5);
     });
 
     it('defaults to level 4 (debug) in non-production environment', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      vi.mocked(fs.statSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-      });
-
       loggerModule.initLogger();
-
-      const { logger } = loggerModule;
-      expect(logger.level).toBe(4);
+      expect(loggerModule.logger.level).toBe(4);
 
       process.env.NODE_ENV = originalEnv;
     });
@@ -89,29 +118,15 @@ describe('logger module', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
-      vi.mocked(fs.statSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-      });
-
       loggerModule.initLogger();
-
-      const { logger } = loggerModule;
-      expect(logger.level).toBe(3);
+      expect(loggerModule.logger.level).toBe(3);
 
       process.env.NODE_ENV = originalEnv;
     });
 
     it('adds a file reporter after initialization', () => {
-      vi.mocked(fs.statSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-      });
-
       loggerModule.initLogger();
-
-      // The file reporter should write to LOG_FILE on log calls
-      const { logger } = loggerModule;
-      logger.info('test log entry');
-
+      loggerModule.logger.info('test log entry');
       expect(vi.mocked(fs.appendFileSync)).toHaveBeenCalled();
     });
   });
@@ -127,16 +142,14 @@ describe('logger module', () => {
     });
 
     it('writes NDJSON lines to the log file', () => {
-      loggerModule.initLogger({ level: 5 });
-
-      const { logger } = loggerModule;
-      logger.info('hello world');
+      loggerModule.initLogger({ level: 5, logDir: '/test/logs' });
+      loggerModule.logger.info('hello world');
 
       const calls = vi.mocked(fs.appendFileSync).mock.calls;
       expect(calls.length).toBeGreaterThan(0);
 
       const [filePath, content] = calls[0] as [string, string];
-      expect(filePath).toBe(LOG_FILE);
+      expect(filePath).toBe('/test/logs/dorkos.log');
 
       const parsed = JSON.parse(content.trim());
       expect(parsed).toMatchObject({
@@ -148,15 +161,12 @@ describe('logger module', () => {
 
     it('writes each log entry on its own line', () => {
       loggerModule.initLogger({ level: 5 });
-
-      const { logger } = loggerModule;
-      logger.info('first');
-      logger.info('second');
+      loggerModule.logger.info('first');
+      loggerModule.logger.info('second');
 
       const calls = vi.mocked(fs.appendFileSync).mock.calls;
       expect(calls.length).toBeGreaterThanOrEqual(2);
 
-      // Each call should end with a newline
       for (const [, content] of calls) {
         expect(String(content)).toMatch(/\n$/);
       }
@@ -164,9 +174,7 @@ describe('logger module', () => {
 
     it('includes a valid ISO timestamp in log entries', () => {
       loggerModule.initLogger({ level: 5 });
-
-      const { logger } = loggerModule;
-      logger.warn('timestamp test');
+      loggerModule.logger.warn('timestamp test');
 
       const calls = vi.mocked(fs.appendFileSync).mock.calls;
       expect(calls.length).toBeGreaterThan(0);
@@ -182,60 +190,146 @@ describe('logger module', () => {
   // Log rotation
   // ---------------------------------------------------------------------------
   describe('log rotation', () => {
-    it('rotates the log file when it exceeds 10MB', () => {
-      const tenMbPlusOne = 10 * 1024 * 1024 + 1;
-      vi.mocked(fs.statSync).mockReturnValue({ size: tenMbPlusOne } as ReturnType<typeof fs.statSync>);
+    it('rotates when file is from a previous day', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const expectedDate = yesterday.toISOString().slice(0, 10);
+
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 100,
+        mtime: yesterday,
+      } as unknown as ReturnType<typeof fs.statSync>);
+      vi.mocked(fs.existsSync).mockReturnValue(false);
       vi.mocked(fs.readdirSync).mockReturnValue([] as unknown as ReturnType<typeof fs.readdirSync>);
 
-      loggerModule.initLogger();
+      loggerModule.initLogger({ logDir: '/test/logs' });
 
       expect(vi.mocked(fs.renameSync)).toHaveBeenCalledWith(
-        LOG_FILE,
-        expect.stringMatching(/dorkos-\d{4}-\d{2}-\d{2}-\d+\.log$/)
+        '/test/logs/dorkos.log',
+        `/test/logs/dorkos.${expectedDate}.log`,
       );
     });
 
-    it('does NOT rotate when file is under 10MB', () => {
-      const underTenMb = 10 * 1024 * 1024 - 1;
-      vi.mocked(fs.statSync).mockReturnValue({ size: underTenMb } as ReturnType<typeof fs.statSync>);
+    it('uses sequence number when date file already exists', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const expectedDate = yesterday.toISOString().slice(0, 10);
 
-      loggerModule.initLogger();
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 100,
+        mtime: yesterday,
+      } as unknown as ReturnType<typeof fs.statSync>);
+      vi.mocked(fs.existsSync).mockReturnValue(true);
+      vi.mocked(fs.readdirSync).mockReturnValue(
+        [`dorkos.${expectedDate}.log`] as unknown as ReturnType<typeof fs.readdirSync>,
+      );
+
+      loggerModule.initLogger({ logDir: '/test/logs' });
+
+      expect(vi.mocked(fs.renameSync)).toHaveBeenCalledWith(
+        '/test/logs/dorkos.log',
+        `/test/logs/dorkos.${expectedDate}.1.log`,
+      );
+    });
+
+    it('rotates when file exceeds maxLogSize within same day', () => {
+      const today = new Date();
+      const todayStr = today.toISOString().slice(0, 10);
+
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 600 * 1024, // 600KB, exceeds 500KB default
+        mtime: today,
+      } as unknown as ReturnType<typeof fs.statSync>);
+      vi.mocked(fs.readdirSync).mockReturnValue([] as unknown as ReturnType<typeof fs.readdirSync>);
+
+      loggerModule.initLogger({ logDir: '/test/logs' });
+
+      expect(vi.mocked(fs.renameSync)).toHaveBeenCalledWith(
+        '/test/logs/dorkos.log',
+        `/test/logs/dorkos.${todayStr}.1.log`,
+      );
+    });
+
+    it('respects custom maxLogSize parameter', () => {
+      const today = new Date();
+
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 200 * 1024, // 200KB
+        mtime: today,
+      } as unknown as ReturnType<typeof fs.statSync>);
+      vi.mocked(fs.readdirSync).mockReturnValue([] as unknown as ReturnType<typeof fs.readdirSync>);
+
+      // 100KB threshold — should trigger rotation
+      loggerModule.initLogger({ logDir: '/test/logs', maxLogSize: 100 * 1024 });
+
+      expect(vi.mocked(fs.renameSync)).toHaveBeenCalled();
+    });
+
+    it('does NOT rotate when file is under maxLogSize and from today', () => {
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 100 * 1024, // 100KB, under 500KB default
+        mtime: new Date(),
+      } as unknown as ReturnType<typeof fs.statSync>);
+
+      loggerModule.initLogger({ logDir: '/test/logs' });
 
       expect(vi.mocked(fs.renameSync)).not.toHaveBeenCalled();
     });
 
-    it('cleans up old rotated files beyond MAX_LOG_FILES (7)', () => {
-      const tenMbPlusOne = 10 * 1024 * 1024 + 1;
-      vi.mocked(fs.statSync).mockReturnValue({ size: tenMbPlusOne } as ReturnType<typeof fs.statSync>);
+    it('cleans up old rotated files beyond maxLogFiles', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
 
-      // Simulate 9 existing rotated files (beyond the limit of 7)
-      const rotatedFiles = [
-        'dorkos-2026-01-01-001.log',
-        'dorkos-2026-01-02-002.log',
-        'dorkos-2026-01-03-003.log',
-        'dorkos-2026-01-04-004.log',
-        'dorkos-2026-01-05-005.log',
-        'dorkos-2026-01-06-006.log',
-        'dorkos-2026-01-07-007.log',
-        'dorkos-2026-01-08-008.log',
-        'dorkos-2026-01-09-009.log',
-      ];
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 100,
+        mtime: yesterday,
+      } as unknown as ReturnType<typeof fs.statSync>);
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+
+      // 16 rotated files, maxLogFiles defaults to 14 — should delete 2
+      const rotatedFiles = Array.from({ length: 16 }, (_, i) => {
+        const d = String(i + 1).padStart(2, '0');
+        return `dorkos.2026-01-${d}.log`;
+      });
       vi.mocked(fs.readdirSync).mockReturnValue(
-        rotatedFiles as unknown as ReturnType<typeof fs.readdirSync>
+        rotatedFiles as unknown as ReturnType<typeof fs.readdirSync>,
       );
 
-      loggerModule.initLogger();
+      loggerModule.initLogger({ logDir: '/test/logs' });
 
-      // Should delete the 2 oldest files (sorted reverse, slice beyond 7)
       const unlinkCalls = vi.mocked(fs.unlinkSync).mock.calls;
       expect(unlinkCalls).toHaveLength(2);
     });
 
-    it('continues without crashing if log file does not exist (ENOENT on statSync)', () => {
+    it('respects custom maxLogFiles parameter', () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      vi.mocked(fs.statSync).mockReturnValue({
+        size: 100,
+        mtime: yesterday,
+      } as unknown as ReturnType<typeof fs.statSync>);
+      vi.mocked(fs.existsSync).mockReturnValue(false);
+
+      // 5 rotated files, maxLogFiles=3 — should delete 2
+      const rotatedFiles = Array.from({ length: 5 }, (_, i) => {
+        const d = String(i + 1).padStart(2, '0');
+        return `dorkos.2026-01-${d}.log`;
+      });
+      vi.mocked(fs.readdirSync).mockReturnValue(
+        rotatedFiles as unknown as ReturnType<typeof fs.readdirSync>,
+      );
+
+      loggerModule.initLogger({ logDir: '/test/logs', maxLogFiles: 3 });
+
+      const unlinkCalls = vi.mocked(fs.unlinkSync).mock.calls;
+      expect(unlinkCalls).toHaveLength(2);
+    });
+
+    it('continues without crashing if log file does not exist (ENOENT)', () => {
       vi.mocked(fs.statSync).mockImplementation(() => {
         throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       });
-
       expect(() => loggerModule.initLogger()).not.toThrow();
     });
 
@@ -243,8 +337,64 @@ describe('logger module', () => {
       vi.mocked(fs.statSync).mockImplementation(() => {
         throw new Error('Unexpected IO error');
       });
-
       expect(() => loggerModule.initLogger()).not.toThrow();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // getLogDir
+  // ---------------------------------------------------------------------------
+  describe('getLogDir', () => {
+    it('returns undefined before initLogger is called', () => {
+      expect(loggerModule.getLogDir()).toBeUndefined();
+    });
+
+    it('returns the resolved log directory after initLogger', () => {
+      vi.mocked(fs.statSync).mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      });
+      loggerModule.initLogger({ logDir: '/my/logs' });
+      expect(loggerModule.getLogDir()).toBe('/my/logs');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // createTaggedLogger
+  // ---------------------------------------------------------------------------
+  describe('createTaggedLogger', () => {
+    it('returns a logger with the specified tag', () => {
+      vi.mocked(fs.statSync).mockImplementation(() => {
+        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
+      });
+      loggerModule.initLogger({ level: 5, logDir: '/test/logs' });
+
+      const tagged = loggerModule.createTaggedLogger('Pulse');
+      tagged.info('scheduler started');
+
+      const calls = vi.mocked(fs.appendFileSync).mock.calls;
+      expect(calls.length).toBeGreaterThan(0);
+
+      const [, content] = calls[0] as [string, string];
+      const parsed = JSON.parse(content.trim());
+      expect(parsed.tag).toBe('Pulse');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // logError
+  // ---------------------------------------------------------------------------
+  describe('logError', () => {
+    it('extracts message and stack from Error instances', () => {
+      const err = new Error('test error');
+      const result = loggerModule.logError(err);
+      expect(result.error).toBe('test error');
+      expect(result.stack).toBeDefined();
+    });
+
+    it('converts non-Error values to string', () => {
+      expect(loggerModule.logError('string error')).toEqual({ error: 'string error' });
+      expect(loggerModule.logError(42)).toEqual({ error: '42' });
+      expect(loggerModule.logError(null)).toEqual({ error: 'null' });
     });
   });
 
@@ -253,13 +403,15 @@ describe('logger module', () => {
   // ---------------------------------------------------------------------------
   describe('mock pattern verification', () => {
     it('can be mocked with standard vi.mock pattern', async () => {
-      // Verify the module exports match what other tests would mock
-      const { logger, initLogger } = loggerModule;
+      const { logger, initLogger, getLogDir, createTaggedLogger, logError } = loggerModule;
       expect(typeof logger.info).toBe('function');
       expect(typeof logger.warn).toBe('function');
       expect(typeof logger.error).toBe('function');
       expect(typeof logger.debug).toBe('function');
       expect(typeof initLogger).toBe('function');
+      expect(typeof getLogDir).toBe('function');
+      expect(typeof createTaggedLogger).toBe('function');
+      expect(typeof logError).toBe('function');
     });
   });
 });
