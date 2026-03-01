@@ -17,6 +17,6 @@ export function useTopology(namespace?: string, enabled = true) {
     queryFn: () => transport.getMeshTopology(namespace),
     enabled,
     staleTime: 30_000,
-    refetchInterval: 15_000,
+    refetchInterval: 30_000,
   });
 }

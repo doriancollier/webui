@@ -34,6 +34,7 @@ import type {
   TelegramAdapterConfig,
   Unsubscribe,
 } from '../types.js';
+import { extractPayloadContent } from '../lib/payload-utils.js';
 
 // === Constants ===
 
@@ -86,6 +87,7 @@ function extractChatId(subject: string): number | null {
   // Group format: group.{chatId}
   if (remainder.startsWith(`${GROUP_SEGMENT}.`)) {
     const idStr = remainder.slice(GROUP_SEGMENT.length + 1);
+    if (!idStr) return null; // Guard: Number("") === 0, which is invalid
     const id = Number(idStr);
     return Number.isInteger(id) ? id : null;
   }
@@ -102,29 +104,6 @@ function extractChatId(subject: string): number | null {
  */
 function isGroupChat(chatType: string): boolean {
   return chatType === 'group' || chatType === 'supergroup' || chatType === 'channel';
-}
-
-/**
- * Extract text content from a Relay envelope payload.
- *
- * Attempts to read `content` from a StandardPayload-shaped object.
- * Falls back to JSON serialising the entire payload.
- *
- * @param payload - The unknown payload from the Relay envelope
- */
-function extractOutboundContent(payload: unknown): string {
-  if (typeof payload === 'string') return payload;
-
-  if (payload !== null && typeof payload === 'object') {
-    const obj = payload as Record<string, unknown>;
-    if (typeof obj.content === 'string') return obj.content;
-  }
-
-  try {
-    return JSON.stringify(payload);
-  } catch {
-    return '[unserializable payload]';
-  }
 }
 
 /**
@@ -340,7 +319,8 @@ export class TelegramAdapter implements RelayAdapter {
 
   /**
    * Stop the adapter: disconnect the bot, shut down the webhook server if
-   * running, and unregister signal handlers.
+   * running, and unregister signal handlers. When running in webhook mode,
+   * also deletes the webhook from Telegram to prevent stale updates.
    *
    * Idempotent — if the adapter is already stopped, returns immediately.
    */
@@ -359,6 +339,15 @@ export class TelegramAdapter implements RelayAdapter {
     if (this.signalUnsub) {
       this.signalUnsub();
       this.signalUnsub = null;
+    }
+
+    // Delete webhook from Telegram's side to prevent stale updates
+    if (this.config.mode === 'webhook') {
+      try {
+        await this.bot.api.deleteWebhook();
+      } catch {
+        // Best-effort — bot may already be unreachable
+      }
     }
 
     try {
@@ -420,7 +409,7 @@ export class TelegramAdapter implements RelayAdapter {
       };
     }
 
-    const content = extractOutboundContent(envelope.payload);
+    const content = extractPayloadContent(envelope.payload);
     const text = truncateText(content, MAX_MESSAGE_LENGTH);
 
     try {
@@ -511,6 +500,10 @@ export class TelegramAdapter implements RelayAdapter {
     this.recordError(err);
 
     if (this.reconnectAttempts >= TelegramAdapter.RECONNECT_DELAYS.length) {
+      this.status = {
+        ...this.status,
+        lastError: 'Max reconnection attempts exhausted — adapter will not retry',
+      };
       return;
     }
 

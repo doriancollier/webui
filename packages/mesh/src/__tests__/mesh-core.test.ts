@@ -9,7 +9,7 @@ import { AgentRegistry } from '../agent-registry.js';
 import { writeManifest } from '../manifest.js';
 import * as manifestModule from '../manifest.js';
 import * as reconcilerModule from '../reconciler.js';
-import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
+import type { AgentManifest, DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -769,6 +769,104 @@ describe('registerByPath() compensation', () => {
 
     expect(registryRemoveSpy).toHaveBeenCalled();
     expect(mesh.list()).toHaveLength(0);
+
+    mesh.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Shared registration logic (toManifest / registerInternal)
+// ---------------------------------------------------------------------------
+
+describe('shared registration logic', () => {
+  it('register() and registerByPath() both strip internal fields from returned manifest', async () => {
+    const base = await makeTempDir();
+    const projectA = path.join(base, 'agent-a');
+    const projectB = path.join(base, 'agent-b');
+    await fs.mkdir(projectA, { recursive: true });
+    await fs.mkdir(projectB, { recursive: true });
+
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+
+    const candidate: DiscoveryCandidate = {
+      path: projectA,
+      hints: {
+        suggestedName: 'Agent A',
+        detectedRuntime: 'claude-code',
+        description: 'Test agent',
+        inferredCapabilities: ['code'],
+      },
+      detectedBy: 'test',
+    };
+    const fromDiscover = await mesh.register(candidate);
+
+    expect(fromDiscover).not.toHaveProperty('projectPath');
+    expect(fromDiscover).not.toHaveProperty('scanRoot');
+    expect(fromDiscover.name).toBe('Agent A');
+
+    const fromPath = await mesh.registerByPath(projectB, {
+      name: 'Agent B',
+      runtime: 'claude-code',
+    });
+
+    expect(fromPath).not.toHaveProperty('projectPath');
+    expect(fromPath).not.toHaveProperty('scanRoot');
+    expect(fromPath.name).toBe('Agent B');
+
+    mesh.close();
+  });
+
+  it('get(), getByPath(), list(), and update() all strip internal fields', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'strip-test');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+
+    const manifest = await mesh.registerByPath(projectDir, {
+      name: 'Strip Test',
+      runtime: 'claude-code',
+    });
+
+    const got = mesh.get(manifest.id);
+    expect(got).not.toHaveProperty('projectPath');
+    expect(got).not.toHaveProperty('scanRoot');
+
+    const gotByPath = mesh.getByPath(projectDir);
+    expect(gotByPath).not.toHaveProperty('projectPath');
+    expect(gotByPath).not.toHaveProperty('scanRoot');
+
+    const listed = mesh.list();
+    for (const agent of listed) {
+      expect(agent).not.toHaveProperty('projectPath');
+      expect(agent).not.toHaveProperty('scanRoot');
+    }
+
+    const updated = mesh.update(manifest.id, { description: 'updated' });
+    expect(updated).not.toHaveProperty('projectPath');
+    expect(updated).not.toHaveProperty('scanRoot');
+    expect(updated?.description).toBe('updated');
+
+    mesh.close();
+  });
+
+  it('inspect() strips internal fields from agent manifest', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'inspect-test');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+
+    const manifest = await mesh.registerByPath(projectDir, {
+      name: 'Inspect Test',
+      runtime: 'claude-code',
+    });
+
+    const inspected = mesh.inspect(manifest.id);
+    expect(inspected).toBeDefined();
+    expect(inspected!.agent).not.toHaveProperty('projectPath');
+    expect(inspected!.agent).not.toHaveProperty('scanRoot');
+    expect(inspected!.relaySubject).toContain(manifest.id);
 
     mesh.close();
   });

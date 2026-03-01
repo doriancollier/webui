@@ -149,6 +149,16 @@ export class SubscriptionRegistry {
     return this.subscriptions.size;
   }
 
+  /**
+   * Remove all subscriptions and persist the empty state.
+   *
+   * Called during RelayCore shutdown to prevent leaked handlers.
+   */
+  clear(): void {
+    this.subscriptions.clear();
+    this.persistSubscriptions();
+  }
+
   // ---------------------------------------------------------------------------
   // Persistence
   // ---------------------------------------------------------------------------

@@ -191,35 +191,7 @@ export class MeshCore {
       icon: overrides?.icon,
     };
 
-    // Step 1: Write manifest to disk (atomic tmp+rename)
-    await writeManifest(candidate.path, manifest);
-
-    // Step 2: Upsert into DB (idempotent)
-    const entry: AgentRegistryEntry = {
-      ...manifest,
-      projectPath: candidate.path,
-      namespace,
-      scanRoot: effectiveScanRoot,
-    };
-    try {
-      this.registry.upsert(entry);
-    } catch (err) {
-      // Compensate: remove manifest file
-      await removeManifest(candidate.path);
-      throw err;
-    }
-
-    // Step 3: Register with Relay
-    try {
-      await this.relayBridge.registerAgent(manifest, candidate.path, namespace, effectiveScanRoot);
-    } catch (err) {
-      // Compensate: remove DB entry and manifest file
-      this.registry.remove(manifest.id);
-      await removeManifest(candidate.path);
-      throw err;
-    }
-
-    return manifest;
+    return this.registerInternal(candidate.path, manifest, namespace, effectiveScanRoot);
   }
 
   /**
@@ -259,31 +231,7 @@ export class MeshCore {
       icon: partial.icon,
     };
 
-    await writeManifest(projectPath, manifest);
-
-    const entry: AgentRegistryEntry = {
-      ...manifest,
-      projectPath,
-      namespace,
-      scanRoot: effectiveScanRoot,
-    };
-    try {
-      this.registry.upsert(entry);
-    } catch (err) {
-      await removeManifest(projectPath);
-      throw err;
-    }
-
-    try {
-      await this.relayBridge.registerAgent(manifest, projectPath, namespace, effectiveScanRoot);
-    } catch (err) {
-      // Compensate: remove DB entry and manifest file
-      this.registry.remove(manifest.id);
-      await removeManifest(projectPath);
-      throw err;
-    }
-
-    return manifest;
+    return this.registerInternal(projectPath, manifest, namespace, effectiveScanRoot);
   }
 
   // --- Denial ---
@@ -335,8 +283,7 @@ export class MeshCore {
     if (!updated) return undefined;
     const entry = this.registry.get(agentId);
     if (!entry) return undefined;
-    const { projectPath: _p, namespace: _n, scanRoot: _s, ...manifest } = entry;
-    return manifest;
+    return this.toManifest(entry);
   }
 
   // --- Unregistration ---
@@ -397,7 +344,7 @@ export class MeshCore {
     }
 
     const entries = this.registry.list(filters);
-    return entries.map(({ projectPath: _p, namespace: _n, scanRoot: _s, ...manifest }) => manifest);
+    return entries.map((entry) => this.toManifest(entry));
   }
 
   /**
@@ -413,7 +360,7 @@ export class MeshCore {
     filters?: { runtime?: AgentRuntime; capability?: string },
   ): (AgentManifest & { healthStatus: AgentHealthStatus; lastSeenAt: string | null; lastSeenEvent: string | null })[] {
     const entries = this.registry.listWithHealth(filters);
-    return entries.map(({ projectPath: _p, namespace: _n, scanRoot: _s, ...rest }) => rest);
+    return entries.map((entry) => this.toManifest(entry));
   }
 
   /**
@@ -425,8 +372,7 @@ export class MeshCore {
   get(agentId: string): AgentManifest | undefined {
     const entry = this.registry.get(agentId);
     if (!entry) return undefined;
-    const { projectPath: _p, namespace: _n, scanRoot: _s, ...manifest } = entry;
-    return manifest;
+    return this.toManifest(entry);
   }
 
   /**
@@ -438,8 +384,18 @@ export class MeshCore {
   getByPath(projectPath: string): AgentManifest | undefined {
     const entry = this.registry.getByPath(projectPath);
     if (!entry) return undefined;
-    const { projectPath: _p, namespace: _n, scanRoot: _s, ...manifest } = entry;
-    return manifest;
+    return this.toManifest(entry);
+  }
+
+  /**
+   * Get the project path for a registered agent.
+   *
+   * @param agentId - The agent's ULID
+   * @returns The absolute project path, or undefined if not found
+   */
+  getProjectPath(agentId: string): string | undefined {
+    const entry = this.registry.get(agentId);
+    return entry?.projectPath;
   }
 
   // --- Topology ---
@@ -562,26 +518,17 @@ export class MeshCore {
    * @returns MeshStatus snapshot with live counts and groupings
    */
   getStatus(): MeshStatus {
+    // Single DB query — getAggregateStats() now computes health counts,
+    // runtime groupings, and project groupings in one pass.
     const stats = this.registry.getAggregateStats();
-    const agents = this.registry.listWithHealth();
-
-    const byRuntime: Record<string, number> = {};
-    const byProject: Record<string, number> = {};
-
-    for (const agent of agents) {
-      byRuntime[agent.runtime] = (byRuntime[agent.runtime] ?? 0) + 1;
-      const project = agent.projectPath || 'unknown';
-      byProject[project] = (byProject[project] ?? 0) + 1;
-    }
-
     return {
       totalAgents: stats.totalAgents,
       activeCount: stats.activeCount,
       inactiveCount: stats.inactiveCount,
       staleCount: stats.staleCount,
       unreachableCount: stats.unreachableCount,
-      byRuntime,
-      byProject,
+      byRuntime: stats.byRuntime,
+      byProject: stats.byProject,
     };
   }
 
@@ -598,10 +545,10 @@ export class MeshCore {
     const health = this.getAgentHealth(agentId);
     if (!health) return undefined;
 
-    const { projectPath, namespace, scanRoot: _s, ...manifest } = entry;
+    const manifest = this.toManifest(entry);
 
     // Derive relay subject using the same pattern as registration
-    const ns = namespace || path.basename(projectPath);
+    const ns = entry.namespace || path.basename(entry.projectPath);
     const relaySubject = `relay.agent.${ns}.${agentId}`;
 
     return { agent: manifest, health, relaySubject };
@@ -658,6 +605,70 @@ export class MeshCore {
   }
 
   // --- Private helpers ---
+
+  /**
+   * Strip internal registry fields (projectPath, namespace, scanRoot) from an entry.
+   *
+   * Works with both plain AgentRegistryEntry and health-enriched entries,
+   * preserving any additional fields (healthStatus, lastSeenAt, etc.).
+   *
+   * @param entry - Registry entry with internal fields
+   * @returns Clean object with internal fields removed
+   */
+  private toManifest<T extends AgentRegistryEntry>(entry: T): Omit<T, 'projectPath' | 'namespace' | 'scanRoot'> {
+    const { projectPath: _p, namespace: _n, scanRoot: _s, ...rest } = entry;
+    return rest;
+  }
+
+  /**
+   * Shared registration pipeline: write manifest, upsert DB, register Relay.
+   *
+   * Steps are ordered for safe rollback: if DB upsert fails the manifest file
+   * is removed; if Relay registration fails both the DB entry and manifest are
+   * removed (compensation pattern).
+   *
+   * @param projectPath - Absolute path to the agent's project directory
+   * @param manifest - The agent manifest to persist
+   * @param namespace - Resolved namespace string
+   * @param scanRoot - Root directory used for namespace derivation
+   * @returns The manifest (unchanged, for caller convenience)
+   */
+  private async registerInternal(
+    projectPath: string,
+    manifest: AgentManifest,
+    namespace: string,
+    scanRoot: string,
+  ): Promise<AgentManifest> {
+    // Step 1: Write manifest to disk (atomic tmp+rename)
+    await writeManifest(projectPath, manifest);
+
+    // Step 2: Upsert into DB (idempotent)
+    const entry: AgentRegistryEntry = {
+      ...manifest,
+      projectPath,
+      namespace,
+      scanRoot,
+    };
+    try {
+      this.registry.upsert(entry);
+    } catch (err) {
+      // Compensate: remove manifest file
+      await removeManifest(projectPath);
+      throw err;
+    }
+
+    // Step 3: Register with Relay
+    try {
+      await this.relayBridge.registerAgent(manifest, projectPath, namespace, scanRoot);
+    } catch (err) {
+      // Compensate: remove DB entry and manifest file
+      this.registry.remove(manifest.id);
+      await removeManifest(projectPath);
+      throw err;
+    }
+
+    return manifest;
+  }
 
   /**
    * Upsert an auto-imported agent manifest into the registry.

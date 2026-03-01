@@ -16,6 +16,7 @@ import {
   HeartbeatRequestSchema,
   UpdateAccessRuleRequestSchema,
 } from '@dorkos/shared/mesh-schemas';
+import { validateBoundary } from '../lib/boundary.js';
 
 /** Optional cross-subsystem dependencies for topology enrichment. */
 export interface MeshRouterDeps {
@@ -139,18 +140,12 @@ function enrichAgent(
     }
   }
 
-  // Pulse schedule count — use inspect to get projectPath via relaySubject derivation
-  // Since we can't access projectPath directly, match schedules using inspect data
+  // Pulse schedule count — match against the agent's exact projectPath
   if (scheduleCounts.size > 0) {
     try {
-      // Try to find matching schedules by iterating all CWDs
-      // The inspect method doesn't expose projectPath directly, so we
-      // check if any schedule CWD is associated with this agent's namespace
-      for (const [cwd, count] of scheduleCounts) {
-        // Match CWD basename against agent namespace or check direct path match
-        if (cwd.endsWith(`/${namespace}`) || cwd.endsWith(`\\${namespace}`)) {
-          pulseScheduleCount += count;
-        }
+      const projectPath = deps.meshCore.getProjectPath(agent.id);
+      if (projectPath && scheduleCounts.has(projectPath)) {
+        pulseScheduleCount = scheduleCounts.get(projectPath)!;
       }
     } catch {
       // Pulse matching failed — defaults apply
@@ -188,11 +183,22 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
+
+    // Validate each discovery root against boundary
+    const validatedRoots: string[] = [];
+    for (const root of result.data.roots) {
+      try {
+        validatedRoots.push(await validateBoundary(root));
+      } catch {
+        return res.status(403).json({ error: `Path outside boundary: ${root}` });
+      }
+    }
+
     try {
       const MAX_CANDIDATES = 1000;
       const candidates = [];
       const options = result.data.maxDepth ? { maxDepth: result.data.maxDepth } : undefined;
-      for await (const candidate of meshCore.discover(result.data.roots, options)) {
+      for await (const candidate of meshCore.discover(validatedRoots, options)) {
         candidates.push(candidate);
         if (candidates.length >= MAX_CANDIDATES) break;
       }
@@ -212,6 +218,14 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
 
     const { path: projectPath, overrides, approver } = result.data;
 
+    // Validate projectPath against boundary
+    let validatedPath: string;
+    try {
+      validatedPath = await validateBoundary(projectPath);
+    } catch {
+      return res.status(403).json({ error: `Path outside boundary: ${projectPath}` });
+    }
+
     // registerByPath requires name and runtime
     const name = overrides?.name;
     const runtime = overrides?.runtime;
@@ -223,7 +237,7 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
 
     try {
       const manifest = await meshCore.registerByPath(
-        projectPath,
+        validatedPath,
         { ...overrides, name, runtime },
         approver,
       );
@@ -271,7 +285,12 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
-    const agents = meshCore.listWithHealth(result.data ?? {});
+    const { callerNamespace, ...filters } = result.data ?? {};
+    // When callerNamespace is provided, use list() which applies
+    // topology-based namespace-scoped visibility filtering
+    const agents = callerNamespace
+      ? meshCore.list({ ...filters, callerNamespace })
+      : meshCore.listWithHealth(filters);
     return res.json({ agents });
   });
 
@@ -316,7 +335,12 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
-    const updated = meshCore.update(req.params.id, result.data);
+    // Strip keys that were absent from the request body (defaults filled in by Zod).
+    // PATCH semantics: only update fields explicitly provided by the caller.
+    const explicitFields = Object.fromEntries(
+      Object.entries(result.data).filter(([k]) => k in req.body),
+    ) as typeof result.data;
+    const updated = meshCore.update(req.params.id, explicitFields);
     if (!updated) {
       return res.status(404).json({ error: 'Agent not found' });
     }
@@ -339,6 +363,13 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
+
+    try {
+      await validateBoundary(result.data.path);
+    } catch {
+      return res.status(403).json({ error: `Path outside boundary: ${result.data.path}` });
+    }
+
     try {
       await meshCore.deny(result.data.path, result.data.reason, result.data.denier);
       return res.status(201).json({ success: true });
@@ -361,6 +392,13 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     if (filePath.includes('..') || filePath.includes('\0')) {
       return res.status(400).json({ error: 'Invalid path' });
     }
+
+    try {
+      await validateBoundary(filePath);
+    } catch {
+      return res.status(403).json({ error: `Path outside boundary: ${filePath}` });
+    }
+
     await meshCore.undeny(filePath);
     return res.json({ success: true });
   });

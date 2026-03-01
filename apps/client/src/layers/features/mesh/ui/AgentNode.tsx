@@ -20,7 +20,7 @@ import { Badge } from '@/layers/shared/ui/badge';
 export interface AgentNodeData extends Record<string, unknown> {
   label: string;
   runtime: string;
-  healthStatus: 'active' | 'inactive' | 'stale';
+  healthStatus: 'active' | 'inactive' | 'stale' | 'unreachable';
   capabilities: string[];
   namespace?: string;
   namespaceColor?: string;
@@ -45,6 +45,7 @@ const STATUS_COLORS: Record<AgentNodeData['healthStatus'], string> = {
   active: 'bg-green-500',
   inactive: 'bg-amber-500',
   stale: 'bg-zinc-400',
+  unreachable: 'bg-red-500',
 };
 
 /** Resolve the left-border color: agent color overrides namespace color. */
@@ -54,6 +55,61 @@ function resolveBorderColor(d: AgentNodeData): string | undefined {
 
 /** CSS transition classes for smooth LOD crossfades. */
 const LOD_TRANSITION = 'transition-[opacity,transform] duration-200 ease-out';
+
+/**
+ * Shared card header used by both DefaultCard and ExpandedCard.
+ * Renders the health status dot, agent name (with optional emoji), the "Agent"
+ * badge, and the runtime + capability badge row.
+ */
+function CardHeader({
+  d,
+  dotColor,
+  prefersReducedMotion,
+}: {
+  d: AgentNodeData;
+  dotColor: string;
+  prefersReducedMotion: boolean;
+}) {
+  const overflowCount = Math.max(0, d.capabilities.length - 3);
+
+  return (
+    <>
+      {/* Header row: health dot + name + type badge */}
+      <div className="flex items-center gap-2">
+        <span className="relative flex shrink-0">
+          <span className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
+          {d.healthStatus === 'active' && !prefersReducedMotion && (
+            <span className="absolute inset-0 animate-ping rounded-full bg-green-500 opacity-30" />
+          )}
+        </span>
+        <span className="truncate text-sm font-medium">
+          {d.emoji ? `${d.emoji} ` : ''}
+          {d.label}
+        </span>
+        <Badge variant="outline" className="ml-auto shrink-0 text-[10px] text-muted-foreground">
+          Agent
+        </Badge>
+      </div>
+
+      {/* Runtime + capability badges */}
+      <div className="mt-1 flex flex-wrap gap-1">
+        <Badge variant="secondary" className="text-[10px]">
+          {d.runtime}
+        </Badge>
+        {d.capabilities.slice(0, 3).map((cap) => (
+          <Badge key={cap} variant="outline" className="text-[10px]">
+            {cap}
+          </Badge>
+        ))}
+        {overflowCount > 0 && (
+          <Badge variant="outline" className="text-[10px] text-muted-foreground">
+            +{overflowCount}
+          </Badge>
+        )}
+      </div>
+    </>
+  );
+}
 
 /** Compact pill rendered when zoom < 0.6 (~120x28px). */
 function CompactPill({ d, dotColor, selected }: { d: AgentNodeData; dotColor: string; selected?: boolean }) {
@@ -94,7 +150,6 @@ function DefaultCard({
   const borderColor = resolveBorderColor(d);
   const hasRelay = d.relayAdapters && d.relayAdapters.length > 0;
   const hasPulse = d.pulseScheduleCount != null && d.pulseScheduleCount > 0;
-  const overflowCount = Math.max(0, d.capabilities.length - 3);
 
   return (
     <div
@@ -107,39 +162,7 @@ function DefaultCard({
     >
       <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
 
-      {/* Header row: health dot + name + type badge */}
-      <div className="flex items-center gap-2">
-        <span className="relative flex shrink-0">
-          <span className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
-          {d.healthStatus === 'active' && !prefersReducedMotion && (
-            <span className="absolute inset-0 animate-ping rounded-full bg-green-500 opacity-30" />
-          )}
-        </span>
-        <span className="truncate text-sm font-medium">
-          {d.emoji ? `${d.emoji} ` : ''}
-          {d.label}
-        </span>
-        <Badge variant="outline" className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-          Agent
-        </Badge>
-      </div>
-
-      {/* Runtime + capability badges */}
-      <div className="mt-1 flex flex-wrap gap-1">
-        <Badge variant="secondary" className="text-[10px]">
-          {d.runtime}
-        </Badge>
-        {d.capabilities.slice(0, 3).map((cap) => (
-          <Badge key={cap} variant="outline" className="text-[10px]">
-            {cap}
-          </Badge>
-        ))}
-        {overflowCount > 0 && (
-          <Badge variant="outline" className="text-[10px] text-muted-foreground">
-            +{overflowCount}
-          </Badge>
-        )}
-      </div>
+      <CardHeader d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} />
 
       {/* Bottom indicator row */}
       {(hasRelay || hasPulse) && (
@@ -174,7 +197,6 @@ function ExpandedCard({
   const borderColor = resolveBorderColor(d);
   const hasRelay = d.relayAdapters && d.relayAdapters.length > 0;
   const hasPulse = d.pulseScheduleCount != null && d.pulseScheduleCount > 0;
-  const overflowCount = Math.max(0, d.capabilities.length - 3);
 
   return (
     <div
@@ -187,39 +209,7 @@ function ExpandedCard({
     >
       <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
 
-      {/* Header row */}
-      <div className="flex items-center gap-2">
-        <span className="relative flex shrink-0">
-          <span className={`h-2.5 w-2.5 rounded-full ${dotColor}`} />
-          {d.healthStatus === 'active' && !prefersReducedMotion && (
-            <span className="absolute inset-0 animate-ping rounded-full bg-green-500 opacity-30" />
-          )}
-        </span>
-        <span className="truncate text-sm font-medium">
-          {d.emoji ? `${d.emoji} ` : ''}
-          {d.label}
-        </span>
-        <Badge variant="outline" className="ml-auto shrink-0 text-[10px] text-muted-foreground">
-          Agent
-        </Badge>
-      </div>
-
-      {/* Runtime + capability badges */}
-      <div className="mt-1 flex flex-wrap gap-1">
-        <Badge variant="secondary" className="text-[10px]">
-          {d.runtime}
-        </Badge>
-        {d.capabilities.slice(0, 3).map((cap) => (
-          <Badge key={cap} variant="outline" className="text-[10px]">
-            {cap}
-          </Badge>
-        ))}
-        {overflowCount > 0 && (
-          <Badge variant="outline" className="text-[10px] text-muted-foreground">
-            +{overflowCount}
-          </Badge>
-        )}
-      </div>
+      <CardHeader d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} />
 
       {/* Description */}
       {d.description && (

@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 77,
+  "nextNumber": 78,
   "specs": [
     {
       "number": 1,
@@ -532,6 +532,13 @@
       "slug": "server-review-remediation-r3",
       "title": "Server Code Review Remediation — Round 3",
       "created": "2026-02-28",
+      "status": "implemented"
+    },
+    {
+      "number": 77,
+      "slug": "relay-mesh-review-remediation-r3",
+      "title": "Relay, Mesh & Telegram Adapter — Code Review Remediation Round 3",
+      "created": "2026-03-01",
       "status": "implemented"
     }
   ]

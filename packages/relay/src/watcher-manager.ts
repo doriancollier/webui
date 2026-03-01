@@ -83,15 +83,15 @@ export class WatcherManager {
   }
 
   /**
-   * Stop the chokidar watcher for an endpoint.
+   * Stop and remove a watcher for the given endpoint hash.
    *
-   * @param endpointHash - The hash of the endpoint whose watcher to stop
+   * @param endpointHash - Hash of the endpoint to stop watching
    */
-  stopWatcher(endpointHash: string): void {
+  async stopWatcher(endpointHash: string): Promise<void> {
     const watcher = this.watchers.get(endpointHash);
     if (watcher) {
-      void watcher.close();
       this.watchers.delete(endpointHash);
+      await watcher.close();
     }
   }
 

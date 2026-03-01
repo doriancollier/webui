@@ -494,7 +494,7 @@ export class RelayCore {
     this.assertOpen();
     const endpoint = this.endpointRegistry.getEndpoint(subject);
     if (endpoint) {
-      this.watcherManager.stopWatcher(endpoint.hash);
+      await this.watcherManager.stopWatcher(endpoint.hash);
     }
     return this.endpointRegistry.unregisterEndpoint(subject);
   }
@@ -665,6 +665,12 @@ export class RelayCore {
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
+
+    // Clear all subscriptions to prevent leaked handlers
+    this.subscriptionRegistry.clear();
+
+    // Clean up dedup timers to allow clean process exit
+    this.deliveryPipeline.close();
 
     // Stop all endpoint watchers
     await this.watcherManager.closeAll();

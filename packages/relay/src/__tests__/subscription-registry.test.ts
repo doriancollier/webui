@@ -421,6 +421,63 @@ describe('SubscriptionRegistry', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // clear
+  // ---------------------------------------------------------------------------
+
+  describe('clear', () => {
+    it('removes all subscriptions', () => {
+      const handler1: MessageHandler = vi.fn();
+      const handler2: MessageHandler = vi.fn();
+      registry.subscribe('relay.agent.alpha', handler1);
+      registry.subscribe('relay.system.>', handler2);
+      expect(registry.size).toBe(2);
+
+      registry.clear();
+      expect(registry.size).toBe(0);
+      expect(registry.listSubscriptions()).toEqual([]);
+    });
+
+    it('removes all matching handlers after clear', () => {
+      const handler: MessageHandler = vi.fn();
+      registry.subscribe('relay.agent.test', handler);
+
+      registry.clear();
+
+      const subscribers = registry.getSubscribers('relay.agent.test');
+      expect(subscribers).toHaveLength(0);
+    });
+
+    it('persists empty state to disk', () => {
+      const handler: MessageHandler = vi.fn();
+      registry.subscribe('relay.agent.alpha', handler);
+      registry.subscribe('relay.system.>', handler);
+
+      registry.clear();
+
+      // Create a new registry from the same directory — should have 0 subscriptions
+      const registry2 = new SubscriptionRegistry(tempDir);
+      expect(registry2.size).toBe(0);
+      expect(registry2.listSubscriptions()).toEqual([]);
+    });
+
+    it('is safe to call when already empty', () => {
+      expect(registry.size).toBe(0);
+      registry.clear();
+      expect(registry.size).toBe(0);
+    });
+
+    it('allows new subscriptions after clear', () => {
+      const handler: MessageHandler = vi.fn();
+      registry.subscribe('relay.agent.alpha', handler);
+      registry.clear();
+
+      registry.subscribe('relay.agent.beta', handler);
+      expect(registry.size).toBe(1);
+      expect(registry.listSubscriptions()[0].pattern).toBe('relay.agent.beta');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // size
   // ---------------------------------------------------------------------------
 

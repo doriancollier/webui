@@ -168,6 +168,29 @@ describe('AdapterDelivery', () => {
       vi.useRealTimers();
     });
 
+    it('handles synchronous throw before timer initialization (M7 fix)', async () => {
+      // If adapterRegistry.deliver throws synchronously before setTimeout runs,
+      // the timer variable remains undefined. The finally block must guard
+      // against calling clearTimeout(undefined).
+      vi.mocked(adapterRegistry.deliver).mockImplementation(() => {
+        throw new Error('synchronous throw before timer init');
+      });
+      const logger = { warn: vi.fn() };
+      const delivery = new AdapterDelivery(adapterRegistry, sqliteIndex, logger);
+      const clearTimeoutSpy = vi.spyOn(globalThis, 'clearTimeout');
+
+      const result = await delivery.deliver('relay.agent.test', createEnvelope());
+
+      expect(result).toEqual(
+        expect.objectContaining({
+          success: false,
+          error: 'synchronous throw before timer init',
+        }),
+      );
+      // The finally block should not throw even when timer is undefined
+      clearTimeoutSpy.mockRestore();
+    });
+
     it('passes context from contextBuilder', async () => {
       const delivery = new AdapterDelivery(adapterRegistry, sqliteIndex);
       const contextBuilder = vi.fn().mockReturnValue({ agentCwd: '/test' });

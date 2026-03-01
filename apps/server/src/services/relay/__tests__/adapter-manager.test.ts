@@ -342,6 +342,41 @@ describe('AdapterManager', () => {
 
       expect(manager.getAdapter('nonexistent')).toBeUndefined();
     });
+
+    it('masks sensitive config fields', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      const result = manager.getAdapter('tg-main');
+      expect(result).toBeDefined();
+      const config = result!.config.config as Record<string, unknown>;
+      expect(config.token).toBe('***');
+      expect(config.mode).toBe('polling');
+    });
+
+    it('returns same masked format as listAdapters()', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      const single = manager.getAdapter('tg-main');
+      const list = manager.listAdapters();
+      const fromList = list.find((a) => a.config.id === 'tg-main');
+
+      expect(single!.config.config).toEqual(fromList!.config.config);
+    });
+
+    it('masks nested sensitive fields', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      const result = manager.getAdapter('wh-github');
+      expect(result).toBeDefined();
+      const config = result!.config.config as Record<string, Record<string, unknown>>;
+      expect(config.inbound.secret).toBe('***');
+      expect(config.outbound.secret).toBe('***');
+      expect(config.inbound.subject).toBe('relay.webhook.github');
+      expect(config.outbound.url).toBe('https://example.com/hook');
+    });
   });
 
   describe('shutdown()', () => {
@@ -916,10 +951,18 @@ describe('AdapterManager', () => {
       // Update with empty token (password field) — should preserve original
       await manager.updateConfig('tg-main', { token: '', mode: 'webhook' });
 
+      // getAdapter() masks sensitive fields, so verify via persisted config
       const adapter = manager.getAdapter('tg-main');
       const config = adapter!.config.config as Record<string, unknown>;
-      expect(config.token).toBe('bot-token-123');
+      // Token is masked in output (sensitive field)
+      expect(config.token).toBe('***');
       expect(config.mode).toBe('webhook');
+
+      // Verify preservation by checking the persisted config still has original token
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const savedTg = savedAdapters.find((a: { id: string }) => a.id === 'tg-main');
+      expect(savedTg.config.token).toBe('bot-token-123');
     });
 
     it('preserves password fields when *** submitted', async () => {
@@ -928,9 +971,16 @@ describe('AdapterManager', () => {
 
       await manager.updateConfig('tg-main', { token: '***', mode: 'webhook' });
 
+      // getAdapter() masks sensitive fields
       const adapter = manager.getAdapter('tg-main');
       const config = adapter!.config.config as Record<string, unknown>;
-      expect(config.token).toBe('bot-token-123');
+      expect(config.token).toBe('***');
+
+      // Verify preservation by checking persisted config
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const savedTg = savedAdapters.find((a: { id: string }) => a.id === 'tg-main');
+      expect(savedTg.config.token).toBe('bot-token-123');
     });
 
     it('preserves nested password fields (e.g., inbound.secret)', async () => {
@@ -943,12 +993,20 @@ describe('AdapterManager', () => {
         outbound: { url: 'https://new.com', secret: '***' },
       });
 
+      // getAdapter() masks sensitive fields
       const adapter = manager.getAdapter('wh-github');
       const config = adapter!.config.config as Record<string, Record<string, unknown>>;
-      expect(config.inbound.secret).toBe('a-very-long-secret-16');
-      expect(config.outbound.secret).toBe('another-long-secret-16');
+      expect(config.inbound.secret).toBe('***');
+      expect(config.outbound.secret).toBe('***');
       expect(config.inbound.subject).toBe('relay.webhook.new');
       expect(config.outbound.url).toBe('https://new.com');
+
+      // Verify preservation by checking persisted config
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const savedWh = savedAdapters.find((a: { id: string }) => a.id === 'wh-github');
+      expect(savedWh.config.inbound.secret).toBe('a-very-long-secret-16');
+      expect(savedWh.config.outbound.secret).toBe('another-long-secret-16');
     });
 
     it('restarts adapter after config change', async () => {

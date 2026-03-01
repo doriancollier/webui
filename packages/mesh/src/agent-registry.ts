@@ -35,16 +35,20 @@ export interface AgentListFilters {
 export interface AgentHealthEntry extends AgentRegistryEntry {
   lastSeenAt: string | null;
   lastSeenEvent: string | null;
-  healthStatus: 'active' | 'inactive' | 'stale';
+  healthStatus: 'active' | 'inactive' | 'stale' | 'unreachable';
 }
 
-/** Aggregate counts by health status. */
+/** Aggregate counts by health status with runtime/project groupings. */
 export interface AggregateStats {
   totalAgents: number;
   activeCount: number;
   inactiveCount: number;
   staleCount: number;
   unreachableCount: number;
+  /** Agent counts grouped by runtime. */
+  byRuntime: Record<string, number>;
+  /** Agent counts grouped by project path. */
+  byProject: Record<string, number>;
 }
 
 // === AgentRegistry ===
@@ -259,7 +263,10 @@ export class AgentRegistry {
   /**
    * Get aggregate health statistics across all agents.
    *
-   * @returns Counts of total, active, inactive, and stale agents
+   * Computes health counts, runtime groupings, and project groupings in a
+   * single pass over all rows, eliminating the need for a separate query.
+   *
+   * @returns Counts of total, active, inactive, stale agents with runtime/project groupings
    */
   getAggregateStats(): AggregateStats {
     const rows = this.db.select().from(agents).all();
@@ -267,16 +274,26 @@ export class AgentRegistry {
     let inactiveCount = 0;
     let staleCount = 0;
     let unreachableCount = 0;
+    const byRuntime: Record<string, number> = {};
+    const byProject: Record<string, number> = {};
 
     for (const row of rows) {
+      // Health status
       if (row.status === 'unreachable') {
         unreachableCount++;
-        continue;
+      } else {
+        const status = computeHealthStatus(row.lastSeenAt);
+        if (status === 'active') activeCount++;
+        else if (status === 'inactive') inactiveCount++;
+        else staleCount++;
       }
-      const status = computeHealthStatus(row.lastSeenAt);
-      if (status === 'active') activeCount++;
-      else if (status === 'inactive') inactiveCount++;
-      else staleCount++;
+
+      // Runtime grouping
+      byRuntime[row.runtime] = (byRuntime[row.runtime] ?? 0) + 1;
+
+      // Project grouping
+      const project = row.projectPath || 'unknown';
+      byProject[project] = (byProject[project] ?? 0) + 1;
     }
 
     return {
@@ -285,6 +302,8 @@ export class AgentRegistry {
       inactiveCount,
       staleCount,
       unreachableCount,
+      byRuntime,
+      byProject,
     };
   }
 

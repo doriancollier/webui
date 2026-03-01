@@ -278,4 +278,51 @@ describe('DeliveryPipeline', () => {
       expect(result.rejected?.reason).toBe('backpressure');
     });
   });
+
+  describe('close', () => {
+    it('clears all pending dedup timers and dedup set', async () => {
+      vi.useFakeTimers();
+      try {
+        const handler = vi.fn();
+        vi.mocked(deps.subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+        vi.mocked(deps.maildirStore.claim).mockResolvedValue({
+          ok: true,
+          envelope: createEnvelope() as never,
+        });
+
+        await pipeline.dispatchToSubscribers(createEndpoint(), 'msg-timer-1', createEnvelope());
+        expect(pipeline.wasDispatched('msg-timer-1')).toBe(true);
+
+        pipeline.close();
+
+        expect(pipeline.wasDispatched('msg-timer-1')).toBe(false);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('prevents timers from firing after close', async () => {
+      vi.useFakeTimers();
+      try {
+        const handler = vi.fn();
+        vi.mocked(deps.subscriptionRegistry.getSubscribers).mockReturnValue([handler]);
+        vi.mocked(deps.maildirStore.claim).mockResolvedValue({
+          ok: true,
+          envelope: createEnvelope() as never,
+        });
+
+        await pipeline.dispatchToSubscribers(createEndpoint(), 'msg-timer-2', createEnvelope());
+        pipeline.close();
+
+        vi.advanceTimersByTime(10_000);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('is safe to call multiple times', () => {
+      pipeline.close();
+      pipeline.close();
+    });
+  });
 });

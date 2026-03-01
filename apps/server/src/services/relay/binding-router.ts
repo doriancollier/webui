@@ -92,7 +92,11 @@ export class BindingRouter {
       }
     }
     if (removed > 0) {
-      await this.saveSessionMap();
+      try {
+        await this.saveSessionMap();
+      } catch (err) {
+        logger.warn('BindingRouter: failed to persist session map after cleanup, will retry on next write', err);
+      }
       logger.info(`Cleaned up ${removed} orphaned session mapping(s)`);
     }
     return removed;
@@ -178,7 +182,11 @@ export class BindingRouter {
         const sessionId = await this.createNewSession(binding);
         this.sessionMap.set(key, sessionId);
         this.evictOldestSessions();
-        await this.saveSessionMap();
+        try {
+          await this.saveSessionMap();
+        } catch (err) {
+          logger.warn('BindingRouter: failed to persist session map, will retry on next write', err);
+        }
         return sessionId;
       } finally {
         this.inFlight.delete(key);
@@ -296,7 +304,11 @@ export class BindingRouter {
   /** Save session map, unsubscribe, and clear state. */
   async shutdown(): Promise<void> {
     this.unsubscribe?.();
-    await this.saveSessionMap();
+    try {
+      await this.saveSessionMap();
+    } catch (err) {
+      logger.warn('BindingRouter: failed to persist session map on shutdown', err);
+    }
     this.sessionMap.clear();
   }
 }

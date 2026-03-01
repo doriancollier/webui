@@ -67,6 +67,9 @@ export class DeliveryPipeline {
    */
   private readonly recentlyDispatched = new Set<string>();
 
+  /** Active dedup cleanup timers, tracked for graceful shutdown. */
+  private readonly dedupTimers = new Set<NodeJS.Timeout>();
+
   constructor(
     private readonly deps: DeliveryPipelineDeps,
     private backpressureConfig: BackpressureConfig,
@@ -75,6 +78,18 @@ export class DeliveryPipeline {
   /** Update the backpressure config (called on hot-reload). */
   setBackpressureConfig(config: BackpressureConfig): void {
     this.backpressureConfig = config;
+  }
+
+  /**
+   * Clean up all pending dedup timers and clear the dedup set.
+   *
+   * Call during RelayCore shutdown to prevent leaked timers that would
+   * keep the Node process alive.
+   */
+  close(): void {
+    for (const timer of this.dedupTimers) clearTimeout(timer);
+    this.dedupTimers.clear();
+    this.recentlyDispatched.clear();
   }
 
   /**
@@ -210,7 +225,11 @@ export class DeliveryPipeline {
     // Mark as dispatched before invoking handlers so WatcherManager can skip
     // the duplicate chokidar-triggered dispatch even if a handler is slow.
     this.recentlyDispatched.add(messageId);
-    setTimeout(() => this.recentlyDispatched.delete(messageId), DISPATCH_DEDUP_TTL_MS);
+    const timer = setTimeout(() => {
+      this.recentlyDispatched.delete(messageId);
+      this.dedupTimers.delete(timer);
+    }, DISPATCH_DEDUP_TTL_MS);
+    this.dedupTimers.add(timer);
 
     try {
       await Promise.all(handlers.map((handler) => handler(claimResult.envelope)));

@@ -154,8 +154,11 @@ export class WebhookAdapter implements RelayAdapter {
     if (this.status.state === 'connected') return;
 
     this.relay = relay;
-    this.status.state = 'connected';
-    this.status.startedAt = new Date().toISOString();
+    this.status = {
+      ...this.status,
+      state: 'connected',
+      startedAt: new Date().toISOString(),
+    };
 
     // Prune expired nonces on a fixed interval to prevent memory growth
     this.nonceInterval = setInterval(() => {
@@ -178,7 +181,7 @@ export class WebhookAdapter implements RelayAdapter {
 
     this.nonceMap.clear();
     this.relay = null;
-    this.status.state = 'disconnected';
+    this.status = { ...this.status, state: 'disconnected' };
   }
 
   /**
@@ -246,12 +249,21 @@ export class WebhookAdapter implements RelayAdapter {
         from: `relay.webhook.${this.id}`,
       });
 
-      this.status.messageCount.inbound++;
+      this.status = {
+        ...this.status,
+        messageCount: {
+          ...this.status.messageCount,
+          inbound: this.status.messageCount.inbound + 1,
+        },
+      };
       return { ok: true };
     } catch (err) {
-      this.status.errorCount++;
-      this.status.lastError = err instanceof Error ? err.message : String(err);
-      this.status.lastErrorAt = new Date().toISOString();
+      this.status = {
+        ...this.status,
+        errorCount: this.status.errorCount + 1,
+        lastError: err instanceof Error ? err.message : String(err),
+        lastErrorAt: new Date().toISOString(),
+      };
       return { ok: false, error: 'Publish failed' };
     }
   }
@@ -297,19 +309,31 @@ export class WebhookAdapter implements RelayAdapter {
 
       if (!response.ok) {
         const error = `Outbound delivery failed: HTTP ${response.status}`;
-        this.status.errorCount++;
-        this.status.lastError = error;
-        this.status.lastErrorAt = new Date().toISOString();
+        this.status = {
+          ...this.status,
+          errorCount: this.status.errorCount + 1,
+          lastError: error,
+          lastErrorAt: new Date().toISOString(),
+        };
         return { success: false, error, durationMs: Date.now() - startTime };
       }
 
-      this.status.messageCount.outbound++;
+      this.status = {
+        ...this.status,
+        messageCount: {
+          ...this.status.messageCount,
+          outbound: this.status.messageCount.outbound + 1,
+        },
+      };
       return { success: true, durationMs: Date.now() - startTime };
     } catch (err) {
       const error = err instanceof Error ? err.message : String(err);
-      this.status.errorCount++;
-      this.status.lastError = error;
-      this.status.lastErrorAt = new Date().toISOString();
+      this.status = {
+        ...this.status,
+        errorCount: this.status.errorCount + 1,
+        lastError: error,
+        lastErrorAt: new Date().toISOString(),
+      };
       return { success: false, error, durationMs: Date.now() - startTime };
     }
   }

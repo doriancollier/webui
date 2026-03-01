@@ -4,9 +4,57 @@
  * All types used across relay modules are defined here to avoid
  * circular imports and provide a single source of truth.
  *
+ * Config types (RateLimitConfig, CircuitBreakerConfig, BackpressureConfig,
+ * ReliabilityConfig, TelegramAdapterConfig, WebhookAdapterConfig, AdapterConfig,
+ * AdapterStatus) are imported from @dorkos/shared/relay-schemas and re-exported
+ * to avoid drift.
+ *
  * @module relay/types
  */
-import type { RelayEnvelope, RelayBudget, Signal, RelayAccessRule } from '@dorkos/shared/relay-schemas';
+import type {
+  RelayEnvelope,
+  RelayBudget,
+  Signal,
+  RelayAccessRule,
+  RateLimitConfig,
+  CircuitBreakerConfig,
+  BackpressureConfig,
+  ReliabilityConfig,
+  TelegramAdapterConfig,
+  WebhookAdapterConfig,
+  AdapterConfig,
+  AdapterStatus as SharedAdapterStatus,
+} from '@dorkos/shared/relay-schemas';
+
+// --- Re-exported config types — @dorkos/shared is the single source of truth ---
+
+/** Configuration for per-sender sliding window rate limiting. */
+export type { RateLimitConfig };
+
+/** Configuration for the per-endpoint circuit breaker. */
+export type { CircuitBreakerConfig };
+
+/** Configuration for reactive backpressure load-shedding. */
+export type { BackpressureConfig };
+
+/**
+ * Composite reliability configuration for the relay pipeline.
+ *
+ * All three subsystems (rate limiting, circuit breakers, backpressure) are
+ * independently configurable. Omitting a subsystem keeps its built-in defaults.
+ */
+export type { ReliabilityConfig };
+
+/** Configuration for the Telegram Bot API adapter. */
+export type { TelegramAdapterConfig };
+
+/** Configuration for the generic webhook adapter. */
+export type { WebhookAdapterConfig };
+
+/** Persisted configuration for a single adapter instance. */
+export type { AdapterConfig };
+
+// --- Core handler and utility types ---
 
 export type MessageHandler = (envelope: RelayEnvelope) => void | Promise<void>;
 export type SignalHandler = (subject: string, signal: Signal) => void;
@@ -61,17 +109,6 @@ export interface RateLimitResult {
   limit?: number;
 }
 
-/** Configuration for per-sender sliding window rate limiting. */
-export interface RateLimitConfig {
-  enabled: boolean;
-  /** Sliding window duration in seconds. Default: 60 */
-  windowSecs: number;
-  /** Maximum messages per sender per window. Default: 100 */
-  maxPerWindow: number;
-  /** Subject prefix to limit override for specific senders. */
-  perSenderOverrides?: Record<string, number>;
-}
-
 // --- Circuit Breaker ---
 
 /** The three possible states of a per-endpoint circuit breaker. */
@@ -96,19 +133,6 @@ export interface CircuitBreakerResult {
   state: CircuitState;
 }
 
-/** Configuration for the per-endpoint circuit breaker. */
-export interface CircuitBreakerConfig {
-  enabled: boolean;
-  /** Consecutive failures to trip the breaker. Default: 5 */
-  failureThreshold: number;
-  /** Milliseconds before OPEN to HALF_OPEN transition. Default: 30000 */
-  cooldownMs: number;
-  /** Probe messages allowed in HALF_OPEN before re-evaluating. Default: 1 */
-  halfOpenProbeCount: number;
-  /** Consecutive successes required to close from HALF_OPEN. Default: 2 */
-  successToClose: number;
-}
-
 // --- Backpressure ---
 
 /** Result of an endpoint backpressure check. */
@@ -119,29 +143,6 @@ export interface BackpressureResult {
   currentSize: number;
   /** Pressure ratio 0.0–1.0 (currentSize / maxMailboxSize). */
   pressure: number;
-}
-
-/** Configuration for reactive backpressure load-shedding. */
-export interface BackpressureConfig {
-  enabled: boolean;
-  /** Maximum unprocessed messages before hard rejection. Default: 1000 */
-  maxMailboxSize: number;
-  /** Pressure ratio (0–1) at which to emit a warning signal. Default: 0.8 */
-  pressureWarningAt: number;
-}
-
-// --- Composite Reliability Config ---
-
-/**
- * Composite reliability configuration for the relay pipeline.
- *
- * All three subsystems (rate limiting, circuit breakers, backpressure) are
- * independently configurable. Omitting a subsystem keeps its built-in defaults.
- */
-export interface ReliabilityConfig {
-  rateLimit?: Partial<RateLimitConfig>;
-  circuitBreaker?: Partial<CircuitBreakerConfig>;
-  backpressure?: Partial<BackpressureConfig>;
 }
 
 export interface RelayOptions {
@@ -206,7 +207,12 @@ export interface RelayPublisher {
   onSignal(pattern: string, handler: SignalHandler): Unsubscribe;
 }
 
-/** Minimal trace store contract for RelayCore to record delivery spans. */
+/**
+ * Minimal trace store contract for delivery span recording.
+ *
+ * Used by RelayCore (insertSpan only) and ClaudeCodeAdapter (both methods).
+ * Accepts loose span shapes via index signatures to allow adapter-specific fields.
+ */
 export interface TraceStoreLike {
   insertSpan(span: {
     messageId: string;
@@ -214,6 +220,14 @@ export interface TraceStoreLike {
     subject: string;
     status?: string;
     metadata?: Record<string, unknown>;
+    [key: string]: unknown;
+  }): void;
+  updateSpan(messageId: string, update: {
+    status?: string;
+    deliveredAt?: string | number | null;
+    processedAt?: string | number | null;
+    error?: string | null;
+    [key: string]: unknown;
   }): void;
 }
 
@@ -287,15 +301,17 @@ export interface RelayAdapter {
   testConnection?(): Promise<{ ok: boolean; error?: string }>;
 }
 
-/** Current status of an external channel adapter. */
-export interface AdapterStatus {
-  state: 'connected' | 'disconnected' | 'error' | 'starting' | 'stopping';
-  messageCount: { inbound: number; outbound: number };
-  errorCount: number;
-  lastError?: string;
-  lastErrorAt?: string;
-  startedAt?: string;
-}
+/**
+ * Current status of an external channel adapter.
+ *
+ * A subset of the full {@link SharedAdapterStatus} from `@dorkos/shared/relay-schemas`.
+ * Omits server-enriched fields (`id`, `type`, `displayName`) that are added by the
+ * adapter manager when building catalog entries — relay adapters only track runtime state.
+ */
+export type AdapterStatus = Pick<
+  SharedAdapterStatus,
+  'state' | 'messageCount' | 'errorCount' | 'lastError' | 'lastErrorAt' | 'startedAt'
+>;
 
 /**
  * Rich context passed to adapter deliver() for informed dispatch decisions.
@@ -344,48 +360,4 @@ export interface DeliveryResult {
   responseMessageId?: string;
   /** Delivery duration in milliseconds */
   durationMs?: number;
-}
-
-/** Persisted configuration for a single adapter instance. */
-export interface AdapterConfig {
-  id: string;
-  type: 'telegram' | 'webhook' | 'claude-code' | 'plugin';
-  enabled: boolean;
-  /** Built-in adapter flag — when true, adapter is loaded from @dorkos/relay */
-  builtin?: boolean;
-  /** Plugin source — required when type is 'plugin' */
-  plugin?: { package?: string; path?: string };
-  config: TelegramAdapterConfig | WebhookAdapterConfig | Record<string, unknown>;
-}
-
-/** Configuration for the Telegram Bot API adapter. */
-export interface TelegramAdapterConfig {
-  token: string;
-  mode: 'polling' | 'webhook';
-  webhookUrl?: string;
-  webhookPort?: number;
-  /** Secret token for validating incoming webhook requests from Telegram. Auto-generated if omitted. */
-  webhookSecret?: string;
-}
-
-/** Configuration for the generic webhook adapter. */
-export interface WebhookAdapterConfig {
-  /** Inbound webhook configuration */
-  inbound: {
-    /** Subject to publish inbound messages to */
-    subject: string;
-    /** HMAC-SHA256 secret for signature verification */
-    secret: string;
-    /** Previous secret for rotation (optional, 24h transition window) */
-    previousSecret?: string;
-  };
-  /** Outbound delivery configuration */
-  outbound: {
-    /** URL to POST messages to */
-    url: string;
-    /** HMAC-SHA256 secret for signing outbound requests */
-    secret: string;
-    /** Custom headers to include */
-    headers?: Record<string, string>;
-  };
 }

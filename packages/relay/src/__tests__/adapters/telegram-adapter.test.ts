@@ -63,6 +63,7 @@ vi.mock('node:http', () => ({
 const mockSendMessage = vi.fn().mockResolvedValue({ message_id: 1 });
 const mockSendChatAction = vi.fn().mockResolvedValue(true);
 const mockSetWebhook = vi.fn().mockResolvedValue(true);
+const mockDeleteWebhook = vi.fn().mockResolvedValue(true);
 const mockBotInit = vi.fn().mockResolvedValue(undefined);
 const mockBotStart = vi.fn().mockResolvedValue(undefined);
 const mockBotStop = vi.fn().mockResolvedValue(undefined);
@@ -84,6 +85,7 @@ vi.mock('grammy', () => {
       sendMessage: mockSendMessage,
       sendChatAction: mockSendChatAction,
       setWebhook: mockSetWebhook,
+      deleteWebhook: mockDeleteWebhook,
     };
 
     on(_event: string, handler: (ctx: unknown) => Promise<void>) {
@@ -530,6 +532,71 @@ describe('TelegramAdapter', () => {
     expect(adapter.getStatus().errorCount).toBe(1);
   });
 
+  // --- Outbound message payload extraction ---
+
+  describe('outbound message payload extraction', () => {
+    it('handles string payload', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', 'plain text message');
+      await adapter.deliver('relay.human.telegram.12345', envelope);
+
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'plain text message');
+    });
+
+    it('handles object payload with content field', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', {
+        content: 'structured message',
+        metadata: {},
+      });
+      await adapter.deliver('relay.human.telegram.12345', envelope);
+
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'structured message');
+    });
+
+    it('handles object payload with text field', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', {
+        text: 'text field message',
+        metadata: {},
+      });
+      await adapter.deliver('relay.human.telegram.12345', envelope);
+
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'text field message');
+    });
+
+    it('handles object payload without content or text — falls back to JSON', async () => {
+      await adapter.start(mockRelay);
+
+      const payload = { data: 'raw data', count: 5 };
+      const envelope = createEnvelope('relay.human.telegram.12345', payload);
+      await adapter.deliver('relay.human.telegram.12345', envelope);
+
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, JSON.stringify(payload));
+    });
+
+    it('handles null payload', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', null);
+      await adapter.deliver('relay.human.telegram.12345', envelope);
+
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'null');
+    });
+
+    it('handles numeric payload', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', 42);
+      await adapter.deliver('relay.human.telegram.12345', envelope);
+
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, '42');
+    });
+  });
+
   // --- Float chat ID rejection (Number.isInteger guard) ---
 
   it('deliver() rejects a float DM subject (e.g. relay.human.telegram.1.5)', async () => {
@@ -959,5 +1026,128 @@ describe('TelegramAdapter', () => {
     await webhookAdapter.stop();
 
     expect(callOrder).toEqual(['closeAllConnections', 'close']);
+  });
+
+  // --- M8: Webhook cleanup on stop ---
+
+  it('stop() calls deleteWebhook() in webhook mode (M8)', async () => {
+    const webhookAdapter = new TelegramAdapter('tg-webhook', {
+      token: 'test-token',
+      mode: 'webhook',
+      webhookUrl: 'https://example.com/webhook',
+      webhookPort: 8443,
+    });
+
+    await webhookAdapter.start(mockRelay);
+    await webhookAdapter.stop();
+
+    expect(mockDeleteWebhook).toHaveBeenCalledOnce();
+  });
+
+  it('stop() does not call deleteWebhook() in polling mode', async () => {
+    await adapter.start(mockRelay);
+    await adapter.stop();
+
+    expect(mockDeleteWebhook).not.toHaveBeenCalled();
+  });
+
+  it('stop() succeeds even when deleteWebhook() throws', async () => {
+    const webhookAdapter = new TelegramAdapter('tg-webhook', {
+      token: 'test-token',
+      mode: 'webhook',
+      webhookUrl: 'https://example.com/webhook',
+      webhookPort: 8443,
+    });
+
+    await webhookAdapter.start(mockRelay);
+    mockDeleteWebhook.mockRejectedValueOnce(new Error('Network error'));
+
+    await expect(webhookAdapter.stop()).resolves.toBeUndefined();
+  });
+
+  // --- M15: Max reconnect exhaustion message ---
+
+  it('sets lastError when max reconnect attempts exhausted (M15)', async () => {
+    await adapter.start(mockRelay);
+
+    // Directly invoke the private handlePollingError method to simulate
+    // repeated polling failures without needing timer orchestration.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const adapterAny = adapter as any;
+
+    // Call handlePollingError 5 times to exhaust RECONNECT_DELAYS (length=5)
+    for (let i = 0; i < 5; i++) {
+      adapterAny.handlePollingError(new Error(`poll error ${i}`));
+    }
+    // 6th call: reconnectAttempts is now 5, which >= RECONNECT_DELAYS.length
+    adapterAny.handlePollingError(new Error('final error'));
+
+    const status = adapter.getStatus();
+    expect(status.lastError).toBe(
+      'Max reconnection attempts exhausted \u2014 adapter will not retry',
+    );
+  });
+
+  // --- C2: extractChatId rejects invalid chat ID 0 ---
+
+  it('deliver() rejects empty group suffix that would produce chat ID 0 (C2)', async () => {
+    await adapter.start(mockRelay);
+
+    // Subject "relay.human.telegram.group." has no ID after the final dot.
+    // Without the guard, Number("") === 0 would be treated as valid.
+    const envelope = createEnvelope('relay.human.telegram.group.', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.group.', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/cannot extract chat ID/);
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+
+  it('deliver() accepts valid group chat IDs', async () => {
+    await adapter.start(mockRelay);
+
+    const envelope = createEnvelope('relay.human.telegram.group.12345', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.group.12345', envelope);
+    expect(result.success).toBe(true);
+    expect(mockSendMessage).toHaveBeenCalledWith(12345, 'hi');
+  });
+
+  it('deliver() accepts valid DM chat IDs', async () => {
+    await adapter.start(mockRelay);
+
+    const envelope = createEnvelope('relay.human.telegram.67890', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.67890', envelope);
+    expect(result.success).toBe(true);
+    expect(mockSendMessage).toHaveBeenCalledWith(67890, 'hi');
+  });
+
+  it('deliver() rejects non-integer chat IDs', async () => {
+    await adapter.start(mockRelay);
+
+    const envelope = createEnvelope('relay.human.telegram.abc', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.abc', envelope);
+    expect(result.success).toBe(false);
+    expect(result.error).toMatch(/cannot extract chat ID/);
+  });
+
+  // --- M20: Caption-only message ---
+
+  it('publishes caption-only messages when text is undefined (M20)', async () => {
+    await adapter.start(mockRelay);
+
+    const ctx = createInboundCtx({ chatId: 12345, chatType: 'private' });
+    // Override message to have caption but no text
+    (ctx.message as Record<string, unknown>).text = undefined;
+    (ctx.message as Record<string, unknown>).caption = 'Photo description';
+
+    await capturedMessageHandler!(ctx);
+
+    expect(mockRelay.publish).toHaveBeenCalledWith(
+      'relay.human.telegram.12345',
+      expect.objectContaining({
+        content: 'Photo description',
+        channelType: 'dm',
+      }),
+      { from: 'relay.human.telegram.bot' },
+    );
   });
 });

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BindingStore } from '../binding-store.js';
-import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, rename, stat } from 'node:fs/promises';
 
 vi.mock('node:fs/promises');
 /** Captured chokidar 'change' handler so tests can fire it manually. */
@@ -19,15 +19,22 @@ vi.mock('chokidar', () => ({
 
 describe('BindingStore', () => {
   let store: BindingStore;
+  /** Auto-incrementing mtime so each save() gets a unique value. */
+  let nextMtime: number;
 
   beforeEach(async () => {
     chokidarChangeHandler = undefined;
+    nextMtime = 1000;
     vi.mocked(readFile).mockRejectedValue(
       Object.assign(new Error('ENOENT'), { code: 'ENOENT' }),
     );
     vi.mocked(mkdir).mockResolvedValue(undefined);
     vi.mocked(writeFile).mockResolvedValue();
     vi.mocked(rename).mockResolvedValue();
+    vi.mocked(stat).mockImplementation(async () => {
+      const mtime = nextMtime++;
+      return { mtimeMs: mtime } as Awaited<ReturnType<typeof stat>>;
+    });
     store = new BindingStore('/tmp/relay');
     await store.init();
   });
@@ -309,47 +316,78 @@ describe('BindingStore', () => {
     });
   });
 
-  describe('writeGeneration — self-write suppression', () => {
-    it('suppresses one chokidar change event per save call', async () => {
+  describe('mtime-based self-write suppression', () => {
+    it('suppresses chokidar change when mtime matches our last write', async () => {
+      // save() calls stat() after writing — returns mtime 1000.
+      // When chokidar fires, stat() in the handler returns the same mtime → suppressed.
+      const writeMtime = nextMtime; // will be used by save()
       await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
 
-      // Simulate the chokidar 'change' event that our own write triggered.
-      // readFile will be called only on a genuine external reload; it should
-      // NOT be called here because the event must be absorbed.
       const readFileSpy = vi.mocked(readFile);
       readFileSpy.mockClear();
+
+      // Simulate chokidar returning the same mtime as our write
+      vi.mocked(stat).mockResolvedValueOnce({
+        mtimeMs: writeMtime,
+      } as Awaited<ReturnType<typeof stat>>);
 
       await chokidarChangeHandler?.();
 
       expect(readFileSpy).not.toHaveBeenCalled();
     });
 
-    it('suppresses N events for N concurrent saves without triggering reload', async () => {
-      // Two rapid saves before any chokidar event fires → writeGeneration = 2
-      const saveOne = store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
-      const saveTwo = store.create({ adapterId: 'tg', agentId: 'b', projectPath: '/b' });
-      await Promise.all([saveOne, saveTwo]);
-
-      const readFileSpy = vi.mocked(readFile);
-      readFileSpy.mockClear();
-
-      // Two chokidar events arrive — both should be absorbed (writeGeneration 2 → 1 → 0)
-      await chokidarChangeHandler?.();
-      await chokidarChangeHandler?.();
-
-      expect(readFileSpy).not.toHaveBeenCalled();
-    });
-
-    it('triggers reload for an external change after all self-writes are absorbed', async () => {
+    it('suppresses only once — second event with same mtime triggers reload', async () => {
+      const writeMtime = nextMtime;
       await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
 
       const readFileSpy = vi.mocked(readFile);
       readFileSpy.mockClear();
 
-      // Absorb the event produced by our own save.
+      // First chokidar event: same mtime as our write → absorbed, clears lastWriteMtime
+      vi.mocked(stat).mockResolvedValueOnce({
+        mtimeMs: writeMtime,
+      } as Awaited<ReturnType<typeof stat>>);
+      await chokidarChangeHandler?.();
+      expect(readFileSpy).not.toHaveBeenCalled();
+
+      // Second event: same mtime but lastWriteMtime is now null → external change
+      vi.mocked(stat).mockResolvedValueOnce({
+        mtimeMs: writeMtime,
+      } as Awaited<ReturnType<typeof stat>>);
+      vi.mocked(readFile).mockResolvedValue(
+        JSON.stringify({
+          bindings: [
+            {
+              id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+              adapterId: 'external',
+              agentId: 'ext-agent',
+              projectPath: '/ext',
+              sessionStrategy: 'per-chat',
+              label: '',
+              createdAt: '2026-01-01T00:00:00.000Z',
+              updatedAt: '2026-01-01T00:00:00.000Z',
+            },
+          ],
+        }),
+      );
+
       await chokidarChangeHandler?.();
 
-      // Now an external editor modifies the file — this event should reload.
+      expect(readFileSpy).toHaveBeenCalledTimes(1);
+      expect(store.getAll()).toHaveLength(1);
+      expect(store.getAll()[0].adapterId).toBe('external');
+    });
+
+    it('triggers reload when mtime differs from our last write', async () => {
+      await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
+
+      const readFileSpy = vi.mocked(readFile);
+      readFileSpy.mockClear();
+
+      // Chokidar fires with a different mtime (external editor changed the file)
+      vi.mocked(stat).mockResolvedValueOnce({
+        mtimeMs: 99999,
+      } as Awaited<ReturnType<typeof stat>>);
       vi.mocked(readFile).mockResolvedValue(
         JSON.stringify({
           bindings: [

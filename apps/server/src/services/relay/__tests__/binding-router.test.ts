@@ -67,7 +67,7 @@ describe('BindingRouter', () => {
       subject: 'relay.agent.xxx',
       payload: 'hi',
       from: 'tg',
-      budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+      budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
       createdAt: '2026-01-01T00:00:00.000Z',
     };
     await capturedHandler!(envelope);
@@ -82,7 +82,7 @@ describe('BindingRouter', () => {
       subject: 'relay.human.telegram.123',
       payload: 'hi',
       from: 'tg',
-      budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+      budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
       createdAt: '2026-01-01T00:00:00.000Z',
     };
     await capturedHandler!(envelope);
@@ -105,7 +105,7 @@ describe('BindingRouter', () => {
       subject: 'relay.human.telegram.123',
       payload: { text: 'hello' },
       from: 'tg',
-      budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+      budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
       createdAt: '2026-01-01T00:00:00.000Z',
     };
     await capturedHandler!(envelope);
@@ -124,7 +124,7 @@ describe('BindingRouter', () => {
       subject: 'relay.human.telegram.12345',
       payload: 'hi',
       from: 'tg',
-      budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+      budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
       createdAt: '2026-01-01T00:00:00.000Z',
     };
     await capturedHandler!(envelope);
@@ -148,7 +148,7 @@ describe('BindingRouter', () => {
       subject: `relay.human.telegram.${chatId}`,
       payload: 'hi',
       from: 'tg',
-      budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+      budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
       createdAt: '2026-01-01T00:00:00.000Z',
     });
 
@@ -203,7 +203,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.123',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
       expect(writeFile).toHaveBeenCalled();
@@ -244,7 +244,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.123',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
 
@@ -279,7 +279,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.123',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
 
@@ -295,7 +295,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.123',
         payload: 'hi again',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
 
@@ -319,7 +319,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.123',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
 
@@ -354,7 +354,7 @@ describe('BindingRouter', () => {
           subject: 'relay.human.telegram.123',
           payload: 'hi',
           from: 'tg',
-          budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+          budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
           createdAt: '2026-01-01T00:00:00.000Z',
         }),
       ).resolves.toBeUndefined();
@@ -381,7 +381,7 @@ describe('BindingRouter', () => {
           subject: 'relay.human.telegram.123',
           payload: 'hi',
           from: 'tg',
-          budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+          budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
           createdAt: '2026-01-01T00:00:00.000Z',
         }),
       ).resolves.toBeUndefined();
@@ -415,7 +415,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.123',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       };
 
@@ -478,7 +478,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.new-chat',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
 
@@ -502,7 +502,7 @@ describe('BindingRouter', () => {
         subject: 'relay.human.telegram.0',
         payload: 'hi',
         from: 'tg',
-        budget: { ttlMs: 60000, maxHops: 5, callBudget: 10 },
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
         createdAt: '2026-01-01T00:00:00.000Z',
       });
 
@@ -510,6 +510,83 @@ describe('BindingRouter', () => {
       expect(mockAgentManager.createSession).toHaveBeenCalledTimes(1);
 
       await evictionRouter.shutdown();
+    });
+  });
+
+  describe('saveSessionMap error handling', () => {
+    it('does not throw when saveSessionMap fails during session creation', async () => {
+      vi.mocked(mockBindingStore.resolve!).mockReturnValue({
+        id: 'bind-1',
+        adapterId: 'telegram',
+        agentId: 'agent-a',
+        projectPath: '/agents/a',
+        sessionStrategy: 'per-chat',
+        label: '',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      });
+
+      // Mock writeFile to reject — simulates disk full or permission error
+      vi.mocked(writeFile).mockRejectedValueOnce(new Error('ENOSPC: no space left'));
+
+      // Should not throw — the session should still be created in memory
+      await expect(
+        capturedHandler!({
+          id: 'msg-1',
+          subject: 'relay.human.telegram.123',
+          payload: 'hi',
+          from: 'tg',
+          budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
+          createdAt: '2026-01-01T00:00:00.000Z',
+        }),
+      ).resolves.toBeUndefined();
+
+      // Session was still created and routed successfully
+      expect(mockAgentManager.createSession).toHaveBeenCalledTimes(1);
+      expect(mockRelayCore.publish).toHaveBeenCalledWith(
+        'relay.agent.session-abc',
+        'hi',
+        expect.any(Object),
+      );
+    });
+
+    it('does not throw when saveSessionMap fails during cleanup', async () => {
+      vi.mocked(mockBindingStore.resolve!).mockReturnValue({
+        id: 'bind-1',
+        adapterId: 'telegram',
+        agentId: 'agent-a',
+        projectPath: '/agents/a',
+        sessionStrategy: 'per-chat',
+        label: '',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      });
+
+      // Create a session first
+      await capturedHandler!({
+        id: 'msg-1',
+        subject: 'relay.human.telegram.123',
+        payload: 'hi',
+        from: 'tg',
+        budget: { hopCount: 0, maxHops: 5, ttl: Date.now() + 60000, callBudgetRemaining: 10, ancestorChain: [] },
+        createdAt: '2026-01-01T00:00:00.000Z',
+      });
+
+      // Mock writeFile to reject for the cleanup save
+      vi.mocked(writeFile).mockRejectedValueOnce(new Error('ENOSPC: no space left'));
+
+      // Should not throw — cleanup should succeed even when persist fails
+      await expect(
+        router.cleanupOrphanedSessions(new Set()),
+      ).resolves.toBe(1);
+    });
+
+    it('does not throw when saveSessionMap fails during shutdown', async () => {
+      // Mock writeFile to reject
+      vi.mocked(writeFile).mockRejectedValueOnce(new Error('ENOSPC: no space left'));
+
+      // Should not throw
+      await expect(router.shutdown()).resolves.toBeUndefined();
     });
   });
 

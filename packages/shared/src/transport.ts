@@ -28,7 +28,7 @@ import type {
   UpdateScheduleRequest,
   ListRunsQuery,
 } from './types.js';
-import type { AdapterConfigZ, AdapterStatusZ, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from './relay-schemas.js';
+import type { AdapterConfig, AdapterStatus, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from './relay-schemas.js';
 import type {
   AgentManifest,
   DiscoveryCandidate,
@@ -42,8 +42,8 @@ import type {
 
 /** A single entry in the adapter list — config plus live status. */
 export interface AdapterListItem {
-  config: AdapterConfigZ;
-  status: AdapterStatusZ;
+  config: AdapterConfig;
+  status: AdapterStatus;
 }
 
 export interface Transport {

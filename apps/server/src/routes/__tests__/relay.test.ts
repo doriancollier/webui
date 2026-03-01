@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
-import { createRelayRouter } from '../relay.js';
-import type { RelayCore, AdapterRegistry, WebhookAdapter } from '@dorkos/relay';
+import { createRelayRouter, buildConversations } from '../relay.js';
+import type { RelayCore, AdapterRegistry, WebhookAdapter, DeadLetterEntry } from '@dorkos/relay';
 import { AdapterError, type AdapterManager } from '../../services/relay/adapter-manager.js';
 
 function createMockRelayCore(): RelayCore {
@@ -249,6 +249,52 @@ describe('Relay routes', () => {
     });
   });
 
+  describe('DELETE /api/relay/endpoints/:subject (dotted subjects)', () => {
+    it('handles subjects containing dots', async () => {
+      const res = await request(app).delete('/api/relay/endpoints/relay.agent.myns.chat');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(vi.mocked(relayCore.unregisterEndpoint)).toHaveBeenCalledWith('relay.agent.myns.chat');
+    });
+
+    it('returns 404 for dotted subject not found', async () => {
+      vi.mocked(relayCore.unregisterEndpoint).mockResolvedValue(false);
+
+      const res = await request(app).delete('/api/relay/endpoints/relay.agent.deep.nested.subject');
+
+      expect(res.status).toBe(404);
+      expect(res.body.error).toBe('Endpoint not found');
+    });
+  });
+
+  describe('GET /api/relay/endpoints/:subject/inbox (dotted subjects)', () => {
+    it('reads inbox for subjects containing dots', async () => {
+      vi.mocked(relayCore.readInbox).mockReturnValue({
+        messages: [
+          {
+            id: 'msg-dot',
+            subject: 'relay.agent.myns.chat',
+            sender: 'agent-a',
+            endpointHash: 'h1',
+            status: 'new',
+            createdAt: '2026-02-24T00:00:00Z',
+            ttl: Date.now() + 60000,
+          },
+        ],
+      });
+
+      const res = await request(app).get('/api/relay/endpoints/relay.agent.myns.chat/inbox');
+
+      expect(res.status).toBe(200);
+      expect(res.body.messages).toHaveLength(1);
+      expect(vi.mocked(relayCore.readInbox)).toHaveBeenCalledWith(
+        'relay.agent.myns.chat',
+        expect.any(Object),
+      );
+    });
+  });
+
   describe('GET /api/relay/dead-letters', () => {
     it('returns dead letters', async () => {
       vi.mocked(relayCore.getDeadLetters).mockResolvedValue([
@@ -287,6 +333,30 @@ describe('Relay routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.totalMessages).toBe(42);
       expect(res.body.byStatus.new).toBe(10);
+    });
+  });
+
+  describe('GET /api/relay/stream', () => {
+    it('rejects global wildcard pattern', async () => {
+      const res = await request(app).get('/api/relay/stream?subject=>');
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid subscription pattern');
+      expect(res.body.allowedPrefixes).toEqual(expect.arrayContaining(['relay.human.console.']));
+    });
+
+    it('rejects patterns without allowed prefix', async () => {
+      const res = await request(app).get('/api/relay/stream?subject=relay.agent.foo');
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid subscription pattern');
+    });
+
+    it('rejects arbitrary prefix pattern', async () => {
+      const res = await request(app).get('/api/relay/stream?subject=custom.prefix.test');
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Invalid subscription pattern');
     });
   });
 });
@@ -882,5 +952,80 @@ describe('Adapter routes', () => {
         expect(res.body.ok).toBe(true);
       });
     });
+  });
+});
+
+describe('buildConversations', () => {
+  it('uses Map for O(1) dead-letter lookup and builds conversations', () => {
+    const messages = [
+      { id: 'msg-1', subject: 'relay.agent.session-abc', status: 'failed', createdAt: '2026-01-01T00:00:00Z' },
+      { id: 'msg-2', subject: 'relay.human.console.client-1', status: 'delivered', createdAt: '2026-01-01T00:01:00Z' },
+    ];
+
+    const deadLetters: DeadLetterEntry[] = [
+      {
+        messageId: 'msg-1',
+        endpointHash: 'hash-1',
+        reason: 'Handler timeout',
+        failedAt: '2026-01-01T00:00:05Z',
+        envelope: {
+          id: 'msg-1',
+          subject: 'relay.agent.session-abc',
+          payload: { content: 'Hello agent' },
+          from: 'relay.human.console.client-1',
+          replyTo: 'relay.human.console.client-1',
+          createdAt: '2026-01-01T00:00:00Z',
+          budget: { hopCount: 1, maxHops: 5, ttl: 300000, callBudgetRemaining: 10 },
+        },
+      },
+    ];
+
+    const labelMap = new Map([
+      ['relay.agent.session-abc', { label: 'Agent session-abc', raw: 'relay.agent.session-abc' }],
+      ['relay.human.console.client-1', { label: 'Console client-1', raw: 'relay.human.console.client-1' }],
+    ]);
+
+    const conversations = buildConversations(messages, deadLetters, labelMap);
+
+    expect(conversations).toHaveLength(1);
+    const conv = conversations[0];
+    expect(conv.id).toBe('msg-1');
+    expect(conv.status).toBe('failed');
+    expect(conv.direction).toBe('outbound');
+    expect(conv.sessionId).toBe('session-abc');
+    expect(conv.failureReason).toBe('Handler timeout');
+    expect(conv.preview).toBe('Hello agent');
+    expect(conv.from.label).toBe('Console client-1');
+    expect(conv.to.label).toBe('Agent session-abc');
+    expect(conv.responseCount).toBe(1); // msg-2 matches the from subject
+    expect(conv.traceId).toBe('msg-1');
+  });
+
+  it('returns empty array when no request messages exist', () => {
+    const messages = [
+      { id: 'msg-1', subject: 'relay.human.console.client-1', status: 'delivered', createdAt: '2026-01-01T00:00:00Z' },
+    ];
+    const conversations = buildConversations(messages, [], new Map());
+    expect(conversations).toHaveLength(0);
+  });
+
+  it('handles messages without dead letters gracefully', () => {
+    const messages = [
+      { id: 'msg-1', subject: 'relay.agent.session-1', status: 'delivered', createdAt: '2026-01-01T00:00:00Z' },
+    ];
+    const conversations = buildConversations(messages, [], new Map());
+    expect(conversations).toHaveLength(1);
+    expect(conversations[0].preview).toBe('');
+    expect(conversations[0].failureReason).toBeUndefined();
+    expect(conversations[0].from.label).toBe('Unknown');
+  });
+
+  it('infers from subject for system pulse messages', () => {
+    const messages = [
+      { id: 'msg-1', subject: 'relay.system.pulse.sched-1', status: 'delivered', createdAt: '2026-01-01T00:00:00Z' },
+    ];
+    const conversations = buildConversations(messages, [], new Map());
+    expect(conversations).toHaveLength(1);
+    expect(conversations[0].from.raw).toBe('relay.system.console');
   });
 });

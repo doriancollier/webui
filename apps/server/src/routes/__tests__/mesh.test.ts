@@ -1,8 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
+
+// Mock boundary validation — default to passthrough (returns path as-is)
+vi.mock('../../lib/boundary.js', () => ({
+  validateBoundary: vi.fn(async (p: string) => p),
+  getBoundary: vi.fn(() => '/mock/home'),
+  initBoundary: vi.fn().mockResolvedValue('/mock/home'),
+  isWithinBoundary: vi.fn().mockResolvedValue(true),
+  BoundaryError: class BoundaryError extends Error {
+    code: string;
+    constructor(message: string, code: string) {
+      super(message);
+      this.name = 'BoundaryError';
+      this.code = code;
+    }
+  },
+}));
+
 import { createMeshRouter } from '../mesh.js';
 import type { MeshCore } from '@dorkos/mesh';
+import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
 
 /** Create a mock MeshCore with vi.fn() stubs for all methods. */
 function createMockMeshCore() {
@@ -49,6 +67,10 @@ describe('Mesh routes', () => {
   let meshCore: ReturnType<typeof createMockMeshCore>;
 
   beforeEach(() => {
+    vi.clearAllMocks();
+    // Reset validateBoundary to default passthrough
+    vi.mocked(validateBoundary).mockImplementation(async (p: string) => p);
+
     meshCore = createMockMeshCore();
     app = express();
     app.use(express.json());
@@ -124,6 +146,37 @@ describe('Mesh routes', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.error).toBe('Permission denied');
+    });
+
+    it('returns 403 when any root path is outside the boundary', async () => {
+      vi.mocked(validateBoundary).mockRejectedValueOnce(
+        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
+      );
+
+      const res = await request(app)
+        .post('/api/mesh/discover')
+        .send({ roots: ['/etc/passwd'] });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('Path outside boundary');
+      expect(meshCore.discover).not.toHaveBeenCalled();
+    });
+
+    it('validates all roots and rejects if any fails', async () => {
+      // First root passes, second fails
+      vi.mocked(validateBoundary)
+        .mockResolvedValueOnce('/home/user/good')
+        .mockRejectedValueOnce(
+          new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
+        );
+
+      const res = await request(app)
+        .post('/api/mesh/discover')
+        .send({ roots: ['/home/user/good', '/outside/boundary'] });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('/outside/boundary');
+      expect(meshCore.discover).not.toHaveBeenCalled();
     });
   });
 
@@ -203,6 +256,21 @@ describe('Mesh routes', () => {
 
       expect(res.status).toBe(422);
       expect(res.body.error).toBe('Duplicate agent');
+    });
+
+    it('returns 403 when projectPath is outside the boundary', async () => {
+      vi.mocked(validateBoundary).mockRejectedValueOnce(
+        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
+      );
+
+      const res = await request(app).post('/api/mesh/agents').send({
+        path: '/etc/shadow',
+        overrides: { name: 'Evil Agent', runtime: 'claude-code' },
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('Path outside boundary');
+      expect(meshCore.registerByPath).not.toHaveBeenCalled();
     });
   });
 
@@ -364,6 +432,20 @@ describe('Mesh routes', () => {
       expect(res.status).toBe(422);
       expect(res.body.error).toBe('Already denied');
     });
+
+    it('returns 403 for out-of-boundary paths', async () => {
+      vi.mocked(validateBoundary).mockRejectedValueOnce(
+        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
+      );
+
+      const res = await request(app).post('/api/mesh/deny').send({
+        path: '/etc/passwd',
+      });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('Path outside boundary');
+      expect(meshCore.deny).not.toHaveBeenCalled();
+    });
   });
 
   // --- GET /denied ---
@@ -413,6 +495,19 @@ describe('Mesh routes', () => {
 
       expect(res.status).toBe(200);
       expect(meshCore.undeny).toHaveBeenCalledWith(path);
+    });
+
+    it('returns 403 for out-of-boundary paths', async () => {
+      vi.mocked(validateBoundary).mockRejectedValueOnce(
+        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
+      );
+
+      const encodedPath = encodeURIComponent('/etc/shadow');
+      const res = await request(app).delete(`/api/mesh/denied/${encodedPath}`);
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain('Path outside boundary');
+      expect(meshCore.undeny).not.toHaveBeenCalled();
     });
   });
 

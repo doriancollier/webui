@@ -196,14 +196,22 @@ export class AdapterManager {
     });
   }
 
-  /** Get a single adapter's config and status. */
+  /** Get a single adapter's config and status. Sensitive fields are masked. */
   getAdapter(id: string): { config: AdapterConfig; status: AdapterStatus } | undefined {
     const config = this.configs.find((c) => c.id === id);
     if (!config) return undefined;
 
     const adapter = this.registry.get(id);
     const status: AdapterStatus = adapter?.getStatus() ?? defaultAdapterStatus();
-    return { config, status };
+    const manifest = this.manifests.get(config.type);
+    const maskedConfig = {
+      ...config,
+      config: maskSensitiveFields(
+        config.config as Record<string, unknown>,
+        manifest,
+      ),
+    };
+    return { config: maskedConfig, status };
   }
 
   /** Get the underlying AdapterRegistry. */

@@ -39,7 +39,7 @@ export const RelayBudgetSchema = z
     hopCount: z.number().int().min(0),
     maxHops: z.number().int().min(1).default(5),
     ancestorChain: z.array(z.string()),
-    ttl: z.number().int().describe('Unix timestamp (ms) expiry'),
+    ttl: z.number().int().min(0).openapi({ description: 'Absolute expiry timestamp (ms since epoch)' }),
     callBudgetRemaining: z.number().int().min(0),
   })
   .openapi('RelayBudget');
@@ -265,7 +265,9 @@ export const TelegramAdapterConfigSchema = z
   })
   .openapi('TelegramAdapterConfig');
 
-export type TelegramAdapterConfigZ = z.infer<typeof TelegramAdapterConfigSchema>;
+export type TelegramAdapterConfig = z.infer<typeof TelegramAdapterConfigSchema>;
+/** @deprecated Use {@link TelegramAdapterConfig} */
+export type TelegramAdapterConfigZ = TelegramAdapterConfig;
 
 export const WebhookInboundConfigSchema = z
   .object({
@@ -294,7 +296,9 @@ export const WebhookAdapterConfigSchema = z
   })
   .openapi('WebhookAdapterConfig');
 
-export type WebhookAdapterConfigZ = z.infer<typeof WebhookAdapterConfigSchema>;
+export type WebhookAdapterConfig = z.infer<typeof WebhookAdapterConfigSchema>;
+/** @deprecated Use {@link WebhookAdapterConfig} */
+export type WebhookAdapterConfigZ = WebhookAdapterConfig;
 
 export const AdapterConfigSchema = z
   .object({
@@ -317,7 +321,9 @@ export const AdapterConfigSchema = z
   })
   .openapi('AdapterConfig');
 
-export type AdapterConfigZ = z.infer<typeof AdapterConfigSchema>;
+export type AdapterConfig = z.infer<typeof AdapterConfigSchema>;
+/** @deprecated Use {@link AdapterConfig} */
+export type AdapterConfigZ = AdapterConfig;
 
 export const AdapterStatusSchema = z
   .object({
@@ -336,7 +342,9 @@ export const AdapterStatusSchema = z
   })
   .openapi('AdapterStatus');
 
-export type AdapterStatusZ = z.infer<typeof AdapterStatusSchema>;
+export type AdapterStatus = z.infer<typeof AdapterStatusSchema>;
+/** @deprecated Use {@link AdapterStatus} */
+export type AdapterStatusZ = AdapterStatus;
 
 export const AdaptersConfigFileSchema = z
   .object({

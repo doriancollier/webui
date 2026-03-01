@@ -47,7 +47,7 @@ export class AdapterDelivery {
 
     const context = contextBuilder?.(subject);
 
-    let timer: NodeJS.Timeout;
+    let timer: NodeJS.Timeout | undefined;
     try {
       const deliveryPromise = this.adapterRegistry.deliver(subject, envelope, context);
 
@@ -85,7 +85,7 @@ export class AdapterDelivery {
         durationMs: undefined,
       };
     } finally {
-      clearTimeout(timer!);
+      if (timer) clearTimeout(timer);
     }
   }
 }

@@ -21,7 +21,12 @@ import type {
   AdapterContext,
   DeliveryResult,
   PublishOptions,
+  TraceStoreLike,
 } from '../types.js';
+import { extractPayloadContent } from '../lib/payload-utils.js';
+
+// Re-export TraceStoreLike for backward compatibility
+export type { TraceStoreLike } from '../types.js';
 
 // === Manifest ===
 
@@ -94,24 +99,6 @@ export interface AgentManagerLike {
   ): AsyncGenerator<StreamEvent>;
 }
 
-/** Minimal TraceStore interface for dependency injection. Accepts loose span shapes. */
-export interface TraceStoreLike {
-  insertSpan(span: {
-    messageId: string;
-    traceId: string;
-    subject: string;
-    status?: string;
-    metadata?: Record<string, unknown>;
-    [key: string]: unknown;
-  }): void;
-  updateSpan(messageId: string, update: {
-    status?: string;
-    deliveredAt?: string | number | null;
-    processedAt?: string | number | null;
-    error?: string | null;
-    [key: string]: unknown;
-  }): void;
-}
 
 /** Minimal PulseStore interface for Pulse run lifecycle updates. */
 export interface PulseStoreLike {
@@ -192,7 +179,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
    */
   async stop(): Promise<void> {
     this.relay = null;
-    this.status.state = 'disconnected';
+    this.status = { ...this.status, state: 'disconnected' };
   }
 
   /**
@@ -218,7 +205,13 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     context?: AdapterContext,
   ): Promise<DeliveryResult> {
     const startTime = Date.now();
-    this.status.messageCount.inbound++;
+    this.status = {
+      ...this.status,
+      messageCount: {
+        ...this.status.messageCount,
+        inbound: this.status.messageCount.inbound + 1,
+      },
+    };
 
     // Semaphore: reject when at capacity
     if (this.activeCount >= this.config.maxConcurrent) {
@@ -238,9 +231,12 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       return await this.handleAgentMessage(subject, envelope, context, startTime);
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
-      this.status.errorCount++;
-      this.status.lastError = errorMsg;
-      this.status.lastErrorAt = new Date().toISOString();
+      this.status = {
+        ...this.status,
+        errorCount: this.status.errorCount + 1,
+        lastError: errorMsg,
+        lastErrorAt: new Date().toISOString(),
+      };
       return {
         success: false,
         error: errorMsg,
@@ -312,7 +308,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     });
 
     // Format prompt with relay context metadata
-    const content = this.extractPayloadContent(envelope.payload);
+    const content = extractPayloadContent(envelope.payload);
     const prompt = this.formatPromptWithContext(content, envelope);
 
     // Set up timeout from TTL budget
@@ -585,23 +581,6 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     return segments[2] || null;
   }
 
-  /**
-   * Extract message content from an envelope payload.
-   *
-   * Attempts to read `content` or `text` from an object payload.
-   * Falls back to JSON serialization.
-   *
-   * @param payload - The unknown payload from the relay envelope
-   */
-  private extractPayloadContent(payload: unknown): string {
-    if (typeof payload === 'string') return payload;
-    if (payload && typeof payload === 'object') {
-      const obj = payload as Record<string, unknown>;
-      if (typeof obj.content === 'string') return obj.content;
-      if (typeof obj.text === 'string') return obj.text;
-    }
-    return JSON.stringify(payload);
-  }
 
   /**
    * Publish a response event to the envelope's replyTo subject.

@@ -20,9 +20,9 @@ export const AgentRuntimeSchema = z
 
 export type AgentRuntime = z.infer<typeof AgentRuntimeSchema>;
 
-/** Health status enum — computed from last_seen_at timestamp. */
+/** Health status enum — computed from last_seen_at timestamp, or explicitly set to 'unreachable'. */
 export const AgentHealthStatusSchema = z
-  .enum(['active', 'inactive', 'stale'])
+  .enum(['active', 'inactive', 'stale', 'unreachable'])
   .openapi('AgentHealthStatus');
 
 export type AgentHealthStatus = z.infer<typeof AgentHealthStatusSchema>;
@@ -198,18 +198,16 @@ export const DenyRequestSchema = z
 
 export type DenyRequest = z.infer<typeof DenyRequestSchema>;
 
-/** Request body for PATCH /api/mesh/agents/:id */
-export const UpdateAgentRequestSchema = z
-  .object({
-    name: z.string().min(1).optional(),
-    description: z.string().optional(),
-    capabilities: z.array(z.string()).optional(),
-    persona: z.string().max(4000).optional(),
-    personaEnabled: z.boolean().optional(),
-    color: z.string().optional(),
-    icon: z.string().optional(),
-  })
-  .openapi('UpdateAgentRequest');
+/** Request body for PATCH /api/mesh/agents/:id — derived from AgentManifestSchema for single source of truth. */
+export const UpdateAgentRequestSchema = AgentManifestSchema.pick({
+  name: true,
+  description: true,
+  capabilities: true,
+  persona: true,
+  personaEnabled: true,
+  color: true,
+  icon: true,
+}).partial().openapi('UpdateAgentRequest');
 
 export type UpdateAgentRequest = z.infer<typeof UpdateAgentRequestSchema>;
 
