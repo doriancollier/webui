@@ -19,7 +19,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 | Component    | Count | Location                                                                   |
 | ------------ | ----- | -------------------------------------------------------------------------- |
-| Commands     | 56    | `.claude/commands/`                                                        |
+| Commands     | 47    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
 | Skills       | 11    | `.claude/skills/`                                                          |
 | Rules        | 8     | `.claude/rules/`                                                           |
@@ -49,6 +49,8 @@ Slash commands are triggered explicitly by typing `/command`. They're expanded p
 | `template/`  | check, update                                                             | Upstream template updates                                                               |
 | `worktree/`  | create, list, remove                                                      | Git worktree management                                                                 |
 | `browsertest/` | (root), maintain                                                        | Browser test execution, maintenance, health audit                                       |
+| `changelog/` | backfill                                                                  | Changelog backfill from git commits                                                     |
+| `research/`  | curate                                                                    | Research file curation and status management                                            |
 | root         | ideate, ideate-to-spec, review-recent-work                                | Feature development                                                                     |
 
 ### Agents (Tool-Invoked)
