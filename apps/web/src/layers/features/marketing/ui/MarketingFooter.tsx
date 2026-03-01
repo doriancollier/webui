@@ -90,10 +90,6 @@ export function MarketingFooter({
           {email}
         </a>
 
-        {/* System status - retro tech detail */}
-        <p className="font-mono text-3xs tracking-[0.2em] uppercase text-cream-tertiary/40 mt-12">
-          v0.4.0
-        </p>
       </footer>
     </>
   )

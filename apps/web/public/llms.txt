@@ -21,6 +21,17 @@ DorkOS is an OS-layer for AI agents that provides the scheduling, memory, commun
 - [Mesh Discovery](https://dorkos.ai/docs/concepts/mesh): Agent registry and topology
 - [API Reference](https://dorkos.ai/docs/api): REST API documentation
 
+## Blog
+
+Release notes and updates from the DorkOS team:
+
+- [DorkOS 0.5.0](https://dorkos.ai/blog/dorkos-0-5-0): Human-readable Relay messaging, marketing site overhaul, and 125+ code quality fixes. (2026-03-01)
+- [DorkOS 0.4.0](https://dorkos.ai/blog/dorkos-0-4-0): Multi-agent infrastructure — Relay message bus, Mesh discovery, Agent Identity, and unified database. (2026-02-26)
+- [DorkOS 0.3.0](https://dorkos.ai/blog/dorkos-0-3-0): Pulse scheduler brings autonomous agent jobs, plus tunnel sharing, blog infrastructure, and a documentation overhaul. (2026-02-18)
+- [DorkOS 0.2.0](https://dorkos.ai/blog/dorkos-0-2-0): Marketing site, tunnels, and FSD migration. (2026-02-17)
+
+RSS feed: https://dorkos.ai/blog/feed.xml
+
 ## Links
 
 - Website: https://dorkos.ai

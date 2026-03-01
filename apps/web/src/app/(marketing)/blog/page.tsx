@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { Rss } from 'lucide-react'
 import { blog } from '@/lib/source'
 import { siteConfig } from '@/config/site'
 
@@ -33,8 +34,18 @@ export default function BlogIndex() {
     .sort((a, b) => new Date(b.data.date).getTime() - new Date(a.data.date).getTime())
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-24">
-      <h1 className="mb-2 font-mono text-3xl font-bold tracking-tight text-charcoal">Blog</h1>
+    <div className="mx-auto max-w-3xl px-6 pt-32 pb-24">
+      <div className="mb-2 flex items-center justify-between">
+        <h1 className="font-mono text-3xl font-bold tracking-tight text-charcoal">Blog</h1>
+        <Link
+          href="/blog/feed.xml"
+          className="inline-flex items-center gap-1.5 font-mono text-2xs tracking-[0.04em] text-warm-gray-light hover:text-brand-orange transition-smooth"
+          aria-label="RSS feed"
+        >
+          <Rss size={14} />
+          RSS
+        </Link>
+      </div>
       <p className="mb-12 text-warm-gray">
         Release notes, tutorials, and updates from the {siteConfig.name} team.
       </p>

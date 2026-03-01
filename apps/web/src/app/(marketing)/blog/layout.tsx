@@ -1,7 +1,7 @@
 import { RootProvider } from 'fumadocs-ui/provider/next'
 import type { ReactNode } from 'react'
 import { siteConfig } from '@/config/site'
-import { MarketingFooter } from '@/layers/features/marketing'
+import { MarketingFooter, MarketingHeader } from '@/layers/features/marketing'
 import 'fumadocs-ui/style.css'
 
 const socialLinks = [
@@ -35,6 +35,7 @@ const socialLinks = [
 export default function BlogLayout({ children }: { children: ReactNode }) {
   return (
     <RootProvider theme={{ forcedTheme: 'light' }}>
+      <MarketingHeader />
       <div
         className="blog-layout not-fumadocs-codeblock"
         style={{
