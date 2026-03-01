@@ -1,6 +1,6 @@
 ---
 description: Curate research files — inventory by type, identify stale/superseded candidates, update frontmatter status
-allowed-tools: Read, Write, Edit, Grep, Glob, Bash(date:*)
+allowed-tools: Read, Write, Edit, Grep, Glob, Bash(date:*), Bash(rm:*), Bash(du:*)
 category: documentation
 ---
 
@@ -165,10 +165,152 @@ Research Curation Complete
 
 ---
 
+### Transition: File Reduction
+
+After displaying the Step 6 summary, ask the user:
+
+```
+Would you like to continue with file reduction? This will:
+  - Prune:    Delete N archived/superseded files (~X KB freed)
+  - Merge:    Review M redundant file pairs
+  - Condense: Shorten P verbose files (>400 lines)
+
+[Yes, run all] [Prune only] [Merge only] [Condense only] [Skip]
+```
+
+If the user selects any reduction option, remind them to commit any uncommitted changes first, then proceed with the selected phases sequentially.
+
+---
+
+### Step 7: Prune (Delete Archived/Superseded Files)
+
+**Goal**: Physically remove files that are no longer useful and have already been marked for removal.
+
+**Input**: Files with `status: archived` or `status: superseded` (identified during Steps 1–4).
+
+**Process**:
+1. Build the deletion candidate list: all files where `status: archived` OR `status: superseded`. Use `Bash(du:*)` to get file sizes.
+2. Display the list and ask for confirmation:
+   ```
+   Prune: Delete N archived/superseded files?
+   ────────────────────────────────────────────
+   archived (N files):
+     - 20260218_agent-sdk-context-injection.md (14 KB)
+     - pulse-scheduler-design.md (38 KB)
+     ...
+   superseded (N files):
+     - 20260222_relay_core_library_typescript.md → superseded_by: 20260224_... (27 KB)
+     ...
+
+   Total: ~X KB freed
+   [Delete all] [Review individually] [Skip]
+   ```
+3. For **"Delete all"**: run `rm research/<filename>` for each file in the list.
+4. For **"Review individually"**: show each file's title + first 5 lines of content, then ask [Delete] [Keep].
+5. Track deleted count and total KB freed for the Step 10 summary.
+
+---
+
+### Step 8: Merge Redundant Files
+
+**Goal**: Consolidate pairs of files that cover the same topic into one canonical file.
+
+**Redundancy detection** — a pair is a merge candidate if ALL of the following are true:
+- Same `type`
+- ≥2 matching tags
+- Created within 14 days of each other
+- Both have `status: active`
+
+**Process**:
+1. Compare frontmatter across all active files to build candidate pairs.
+2. Display merge candidates:
+   ```
+   Merge Candidates (N pairs)
+   ────────────────────────────────────────────
+   Pair 1: relay runtime adapters (overlap: relay, adapter, runtime)
+     A: 20260224_relay_runtime_adapters.md (285 lines, Feb 24)
+     B: 20260225_relay_runtime_adapters.md (320 lines, Feb 25)
+     → Suggested: Keep B (more recent, more content). Absorb unique content from A.
+
+   Pair 2: drizzle + sqlite (overlap: drizzle, sqlite, driver)
+     A: 20260225_drizzle_sqlite_drivers.md (155 lines)
+     B: drizzle-db-migrations.md (201 lines)
+     → Suggested: Keep B (more comprehensive). Absorb unique content from A.
+   ...
+   ```
+3. For each pair, ask: [Merge (keep B)] [Merge (keep A)] [Skip this pair]
+4. For approved merges:
+   a. Read both files.
+   b. Identify content in the "source" file not present in the "canonical" file.
+   c. Append unique sections to the canonical file under a `## Additional Notes (merged from [source-filename])` heading.
+   d. Update the canonical file's frontmatter: add `merged_from: [source-filename]` field.
+   e. Delete the source file: `rm research/<source-filename>`.
+5. Track merged pair count for the Step 10 summary.
+
+---
+
+### Step 9: Condense Verbose Files
+
+**Goal**: Rewrite overly long files as tighter summaries, preserving key conclusions and removing elaboration.
+
+**Threshold**: Files with `status: active` and >400 lines.
+
+**Process**:
+1. List verbose files sorted by line count descending:
+   ```
+   Verbose Files (N files over 400 lines)
+   ────────────────────────────────────────────
+   1. loop-mvp.md                           1,195 lines  (exploratory)
+   2. scheduling-approaches-analysis.md     1,041 lines  (implementation)
+   3. torq-litepaper-v2.md                  1,037 lines  (strategic)
+   4. relay_core_library_typescript.md        777 lines  (internal-architecture)
+   ...
+   ```
+2. For each file, ask: [Condense] [Skip]
+3. For approved condensations:
+   a. Read the full file.
+   b. Rewrite it, **preserving**:
+      - YAML frontmatter (unchanged, add `condensed: true` field)
+      - Key findings and conclusions
+      - Specific recommendations with rationale
+      - Important code examples
+      - Decision outcomes
+   c. **Remove**:
+      - Long elaborations of obvious points
+      - Repetitive bullet lists covering the same idea
+      - Sections marked "background" that restate public knowledge
+      - Verbose prose where bullet points suffice
+   d. Target: 40–60% of original line count.
+   e. Overwrite the original file using `Write`.
+4. Track original and final line counts for each condensed file for the Step 10 summary.
+
+---
+
+### Step 10: Reduction Summary
+
+After all selected phases complete:
+
+```
+Research Reduction Complete
+────────────────────────────────────────────
+  Pruned:    N files deleted (~X KB freed)
+  Merged:    M pairs consolidated → M files deleted
+  Condensed: P files rewritten (avg N% reduction)
+
+  Before: 86 files, ~42,000 lines
+  After:  N files, ~N lines
+
+  Tip: Run `git diff --stat` to review all changes before committing.
+────────────────────────────────────────────
+```
+
+---
+
 ## Notes
 
-- This command is safe to run at any time — it only edits frontmatter, never deletes files
-- Files in `research/README.md` and `research/plan.md` are documentation/meta files, skip them
+- Steps 1–6 (curation) only edit frontmatter — they never delete or restructure files
+- Steps 7–9 (reduction) are destructive — always confirm before deleting or overwriting; `git` makes changes reversible
+- Files `research/README.md` and `research/plan.md` are meta files — skip them in all steps
 - When checking for related ADRs, search `decisions/` by topic keywords, not just filename
 - `feature_slug` values should match entries in `specs/manifest.json`
 - Run `/research:curate` periodically (e.g. monthly) to keep the research library curated

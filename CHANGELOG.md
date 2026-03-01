@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add file reduction phases to /research:curate
 - Replace static llms.txt with dynamic route handler
 - Add research library curation system
 - Add header, breadcrumb, prev/next nav, tags, RSS link, and SEO improvements
