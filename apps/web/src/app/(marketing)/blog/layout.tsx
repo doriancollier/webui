@@ -36,10 +36,12 @@ export default function BlogLayout({ children }: { children: ReactNode }) {
   return (
     <RootProvider theme={{ forcedTheme: 'light' }}>
       <div
+        className="blog-layout not-fumadocs-codeblock"
         style={{
           // Override fumadocs CSS variables to match marketing palette
           '--color-fd-foreground': 'var(--charcoal)',
           '--color-fd-muted-foreground': 'var(--warm-gray)',
+          '--color-fd-muted': 'var(--cream-secondary)',
           '--color-fd-primary': 'var(--charcoal)',
           '--color-fd-background': 'var(--cream-primary)',
           '--color-fd-card': 'var(--cream-primary)',
