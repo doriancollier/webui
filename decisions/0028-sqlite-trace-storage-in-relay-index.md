@@ -11,7 +11,9 @@ superseded-by: null
 
 ## Status
 
-Proposed (auto-extracted from spec: relay-convergence)
+Proposed
+
+> **Note (ADR-0040):** The specific database path (`~/.dork/relay/index.db`) described here was superseded by ADR-0040, which consolidates all DorkOS databases into a single `~/.dork/dork.db`. The core decision — storing message traces in the same database as Relay's message index — remains valid. The implementation now targets `dork.db` with Drizzle ORM (ADR-0039) instead of the separate relay index.
 
 ## Context
 

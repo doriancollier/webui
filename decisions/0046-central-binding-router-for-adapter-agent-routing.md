@@ -1,7 +1,7 @@
 ---
 number: 46
 title: Use Central BindingRouter for Adapter-Agent Routing
-status: draft
+status: accepted
 created: 2026-02-28
 spec: adapter-agent-routing
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: adapter-agent-routing)
+Accepted
 
 ## Context
 

@@ -1,17 +1,17 @@
 ---
 number: 27
 title: Use MessageReceiver as Relay-to-AgentManager Bridge
-status: proposed
+status: superseded
 created: 2026-02-25
 spec: relay-convergence
-superseded-by: null
+superseded-by: 29
 ---
 
 # 0027. Use MessageReceiver as Relay-to-AgentManager Bridge
 
 ## Status
 
-Proposed (auto-extracted from spec: relay-convergence)
+Superseded by ADR-0029 (Replace MessageReceiver with ClaudeCodeAdapter)
 
 ## Context
 

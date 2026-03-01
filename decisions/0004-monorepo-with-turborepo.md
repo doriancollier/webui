@@ -19,7 +19,7 @@ The project shipped three independent build targets (React SPA, Express API, Obs
 
 ## Decision
 
-We will migrate to a Turborepo monorepo with npm workspaces, splitting the codebase into 7 packages: 3 apps (`@dorkos/client`, `@dorkos/server`, `@dorkos/obsidian-plugin`) and 4 shared packages (`@dorkos/shared`, `@dorkos/typescript-config`, `@dorkos/test-utils`, `dorkos` CLI). Each package owns its `package.json`, build config, and TypeScript config. Imports use workspace package names (`@dorkos/shared/types`) instead of relative paths. Turborepo's `turbo.json` defines task dependency graph for parallel builds.
+We will migrate to a Turborepo monorepo with npm workspaces, splitting the codebase into packages grouped as apps and shared libraries. Current shape: 5 apps (`@dorkos/client`, `@dorkos/server`, `@dorkos/web`, `@dorkos/obsidian-plugin`, `@dorkos/roadmap`) and 4 shared packages (`@dorkos/shared`, `@dorkos/typescript-config`, `@dorkos/test-utils`, `dorkos` CLI). Each package owns its `package.json`, build config, and TypeScript config. Imports use workspace package names (`@dorkos/shared/types`) instead of relative paths. Turborepo's `turbo.json` defines task dependency graph for parallel builds.
 
 ## Consequences
 

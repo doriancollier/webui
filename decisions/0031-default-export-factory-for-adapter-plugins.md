@@ -1,7 +1,7 @@
 ---
 number: 31
 title: Use Default Export Factory Function for Adapter Plugins
-status: draft
+status: deprecated
 created: 2026-02-25
 spec: relay-runtime-adapters
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: relay-runtime-adapters)
+Deprecated — merged into ADR-0030 (Adapter Plugin Contract), which covers both loading (dynamic import) and export shape (factory function). See ADR-0030 for current guidance.
 
 ## Context
 

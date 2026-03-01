@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Proposed (auto-extracted from spec: pulse-ui-overhaul)
+Proposed
 
 ## Context
 

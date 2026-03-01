@@ -1,7 +1,7 @@
 ---
 number: 40
 title: Consolidate All DorkOS Databases to Single dork.db
-status: draft
+status: proposed
 created: 2026-02-25
 spec: db-drizzle-consolidation
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: db-drizzle-consolidation)
+Proposed
 
 ## Context
 

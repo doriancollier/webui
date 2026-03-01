@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Proposed (auto-extracted from spec: relay-server-client-integration)
+Proposed
 
 ## Context
 

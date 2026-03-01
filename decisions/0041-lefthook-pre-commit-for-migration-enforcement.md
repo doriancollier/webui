@@ -1,7 +1,7 @@
 ---
 number: 41
 title: Use Lefthook Pre-Commit Hook for Migration Enforcement
-status: draft
+status: proposed
 created: 2026-02-25
 spec: db-drizzle-consolidation
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: db-drizzle-consolidation)
+Proposed
 
 ## Context
 

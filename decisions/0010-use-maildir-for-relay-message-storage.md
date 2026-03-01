@@ -1,7 +1,7 @@
 ---
 number: 10
 title: Use Maildir for Relay Message Storage
-status: proposed
+status: deprecated
 created: 2026-02-24
 spec: relay-core-library
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Proposed (auto-extracted from spec: relay-core-library)
+Deprecated — superseded by ADR-0013 (Hybrid Maildir + SQLite), which makes the same Maildir decision and extends it with SQLite as a derived index. See ADR-0013 for current guidance.
 
 ## Context
 

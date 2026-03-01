@@ -1,7 +1,7 @@
 ---
 number: 42
 title: Use Manual Zod Validation for Env Vars, Not T3 Env
-status: draft
+status: proposed
 created: 2026-02-25
 spec: env-var-discipline
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: env-var-discipline)
+Proposed
 
 ## Context
 

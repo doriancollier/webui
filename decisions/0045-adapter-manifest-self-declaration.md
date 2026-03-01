@@ -1,7 +1,7 @@
 ---
 number: 45
 title: Adapters Self-Declare Metadata via AdapterManifest
-status: draft
+status: deprecated
 created: 2026-02-27
 spec: adapter-catalog-management
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: adapter-catalog-management)
+Deprecated — merged into ADR-0044 (Adapter Metadata Contract), which covers both AdapterManifest self-declaration and ConfigField descriptor arrays together. See ADR-0044 for current guidance.
 
 ## Context
 

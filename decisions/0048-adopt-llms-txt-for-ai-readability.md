@@ -1,7 +1,7 @@
 ---
 number: 48
 title: Adopt llms.txt for AI Agent Discoverability
-status: draft
+status: proposed
 created: 2026-02-28
 spec: og-seo-ai-readability-overhaul
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: og-seo-ai-readability-overhaul)
+Proposed
 
 ## Context
 

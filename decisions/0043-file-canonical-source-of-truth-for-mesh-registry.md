@@ -1,7 +1,7 @@
 ---
 number: 43
 title: Use Filesystem as Canonical Source of Truth for Mesh Agent Registry
-status: draft
+status: accepted
 created: 2026-02-26
 spec: mesh-registry-integrity
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: mesh-registry-integrity)
+Accepted
 
 ## Context
 

@@ -1,7 +1,7 @@
 ---
 number: 29
 title: Replace MessageReceiver with ClaudeCodeAdapter
-status: draft
+status: accepted
 created: 2026-02-25
 spec: relay-runtime-adapters
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: relay-runtime-adapters)
+Accepted
 
 Supersedes: ADR-0027 (Use MessageReceiver as Relay-to-AgentManager Bridge)
 

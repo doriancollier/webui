@@ -1,7 +1,7 @@
 ---
 number: 38
 title: Use Progressive Disclosure Mode A/B for Feature Panels
-status: draft
+status: proposed
 created: 2026-02-25
 spec: mesh-panel-ux-overhaul
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: mesh-panel-ux-overhaul)
+Proposed
 
 ## Context
 

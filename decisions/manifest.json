@@ -82,7 +82,7 @@
       "number": 10,
       "slug": "use-maildir-for-relay-message-storage",
       "title": "Use Maildir for Relay Message Storage",
-      "status": "proposed",
+      "status": "deprecated",
       "created": "2026-02-24",
       "extractedFrom": "relay-core-library",
       "specSlug": "relay-core-library"
@@ -181,7 +181,7 @@
       "number": 21,
       "slug": "restructure-server-services-into-domain-folders",
       "title": "Restructure Server Services into Domain Folders",
-      "status": "proposed",
+      "status": "accepted",
       "created": "2026-02-24",
       "extractedFrom": "relay-external-adapters",
       "specSlug": "relay-external-adapters"
@@ -235,7 +235,7 @@
       "number": 27,
       "slug": "message-receiver-bridge-pattern",
       "title": "Use MessageReceiver as Relay-to-AgentManager Bridge",
-      "status": "proposed",
+      "status": "superseded",
       "created": "2026-02-25",
       "extractedFrom": "relay-convergence",
       "specSlug": "relay-convergence"
@@ -253,7 +253,7 @@
       "number": 29,
       "slug": "replace-message-receiver-with-claude-code-adapter",
       "title": "Replace MessageReceiver with ClaudeCodeAdapter",
-      "status": "draft",
+      "status": "accepted",
       "created": "2026-02-25",
       "extractedFrom": "relay-runtime-adapters",
       "specSlug": "relay-runtime-adapters"
@@ -261,8 +261,8 @@
     {
       "number": 30,
       "slug": "dynamic-import-for-adapter-plugins",
-      "title": "Use Native Dynamic import() for Adapter Plugin Loading",
-      "status": "draft",
+      "title": "Adapter Plugin Contract — Dynamic import() Loading and Factory Export Pattern",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "relay-runtime-adapters",
       "specSlug": "relay-runtime-adapters"
@@ -271,7 +271,7 @@
       "number": 31,
       "slug": "default-export-factory-for-adapter-plugins",
       "title": "Use Default Export Factory Function for Adapter Plugins",
-      "status": "draft",
+      "status": "deprecated",
       "created": "2026-02-25",
       "extractedFrom": "relay-runtime-adapters",
       "specSlug": "relay-runtime-adapters"
@@ -280,7 +280,7 @@
       "number": 32,
       "slug": "hybrid-filesystem-namespace-derivation",
       "title": "Use Hybrid Filesystem + Manifest Namespace Derivation",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-network-topology",
       "specSlug": "mesh-network-topology"
@@ -289,7 +289,7 @@
       "number": 33,
       "slug": "default-deny-cross-namespace-with-subject-pattern-acls",
       "title": "Use Default-Deny Cross-Namespace with Subject-Pattern ACLs",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-network-topology",
       "specSlug": "mesh-network-topology"
@@ -298,7 +298,7 @@
       "number": 34,
       "slug": "open-acl-authorship-any-principal",
       "title": "Allow Any Principal to Author ACL Rules",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-network-topology",
       "specSlug": "mesh-network-topology"
@@ -307,7 +307,7 @@
       "number": 35,
       "slug": "use-xyflow-react-for-mesh-topology",
       "title": "Use @xyflow/react (React Flow v12) for Mesh Topology Visualization",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-observability-lifecycle",
       "specSlug": "mesh-observability-lifecycle"
@@ -316,7 +316,7 @@
       "number": 36,
       "slug": "computed-query-time-health-status",
       "title": "Compute Agent Health Status at Query Time via SQL",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-observability-lifecycle",
       "specSlug": "mesh-observability-lifecycle"
@@ -325,7 +325,7 @@
       "number": 37,
       "slug": "relay-signals-for-mesh-lifecycle-events",
       "title": "Use Relay Signals for Mesh Agent Lifecycle Events",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-observability-lifecycle",
       "specSlug": "mesh-observability-lifecycle"
@@ -334,7 +334,7 @@
       "number": 38,
       "slug": "progressive-disclosure-mode-ab-for-feature-panels",
       "title": "Use Progressive Disclosure Mode A/B for Feature Panels",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "mesh-panel-ux-overhaul",
       "specSlug": "mesh-panel-ux-overhaul"
@@ -343,7 +343,7 @@
       "number": 39,
       "slug": "use-drizzle-orm-for-database-layer",
       "title": "Use Drizzle ORM for Database Layer",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "db-drizzle-consolidation",
       "specSlug": "db-drizzle-consolidation"
@@ -352,7 +352,7 @@
       "number": 40,
       "slug": "consolidate-to-single-dork-db",
       "title": "Consolidate All DorkOS Databases to Single dork.db",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "db-drizzle-consolidation",
       "specSlug": "db-drizzle-consolidation"
@@ -361,7 +361,7 @@
       "number": 41,
       "slug": "lefthook-pre-commit-for-migration-enforcement",
       "title": "Use Lefthook Pre-Commit Hook for Migration Enforcement",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "db-drizzle-consolidation",
       "specSlug": "db-drizzle-consolidation"
@@ -370,7 +370,7 @@
       "number": 42,
       "slug": "manual-zod-env-validation-over-t3-env",
       "title": "Use Manual Zod Validation for Env Vars, Not T3 Env",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-25",
       "extractedFrom": "env-var-discipline",
       "specSlug": "env-var-discipline"
@@ -379,7 +379,7 @@
       "number": 43,
       "slug": "file-canonical-source-of-truth-for-mesh-registry",
       "title": "Use Filesystem as Canonical Source of Truth for Mesh Agent Registry",
-      "status": "draft",
+      "status": "accepted",
       "created": "2026-02-26",
       "extractedFrom": "mesh-registry-integrity",
       "specSlug": "mesh-registry-integrity"
@@ -387,8 +387,8 @@
     {
       "number": 44,
       "slug": "configfield-descriptor-over-zod-serialization",
-      "title": "Use ConfigField Descriptor Array Over Zod Serialization for Adapter Forms",
-      "status": "draft",
+      "title": "Adapter Metadata Contract — AdapterManifest Self-Declaration with ConfigField Descriptors",
+      "status": "proposed",
       "created": "2026-02-27",
       "extractedFrom": "adapter-catalog-management",
       "specSlug": "adapter-catalog-management"
@@ -397,7 +397,7 @@
       "number": 45,
       "slug": "adapter-manifest-self-declaration",
       "title": "Adapters Self-Declare Metadata via AdapterManifest",
-      "status": "draft",
+      "status": "deprecated",
       "created": "2026-02-27",
       "extractedFrom": "adapter-catalog-management",
       "specSlug": "adapter-catalog-management"
@@ -406,7 +406,7 @@
       "number": 46,
       "slug": "central-binding-router-for-adapter-agent-routing",
       "title": "Use Central BindingRouter for Adapter-Agent Routing",
-      "status": "draft",
+      "status": "accepted",
       "created": "2026-02-28",
       "extractedFrom": "adapter-agent-routing",
       "specSlug": "adapter-agent-routing"
@@ -415,7 +415,7 @@
       "number": 47,
       "slug": "most-specific-first-binding-resolution",
       "title": "Use Most-Specific-First Binding Resolution Order",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-28",
       "extractedFrom": "adapter-agent-routing",
       "specSlug": "adapter-agent-routing"
@@ -424,7 +424,7 @@
       "number": 48,
       "slug": "adopt-llms-txt-for-ai-readability",
       "title": "Adopt llms.txt for AI Agent Discoverability",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-28",
       "extractedFrom": "og-seo-ai-readability-overhaul",
       "specSlug": "og-seo-ai-readability-overhaul"

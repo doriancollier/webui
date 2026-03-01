@@ -1,7 +1,7 @@
 ---
 number: 47
 title: Use Most-Specific-First Binding Resolution Order
-status: draft
+status: proposed
 created: 2026-02-28
 spec: adapter-agent-routing
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: adapter-agent-routing)
+Proposed
 
 ## Context
 

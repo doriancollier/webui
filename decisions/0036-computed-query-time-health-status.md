@@ -1,7 +1,7 @@
 ---
 number: 36
 title: Compute Agent Health Status at Query Time via SQL
-status: draft
+status: proposed
 created: 2026-02-25
 spec: mesh-observability-lifecycle
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: mesh-observability-lifecycle)
+Proposed
 
 ## Context
 
