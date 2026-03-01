@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Buffer StreamEvent chunks in TelegramAdapter instead of sending raw JSON
 - Address 36 code review findings — round 3 remediation
 - Address 18 code review findings — round 3 remediation
 - Address 19 code review findings across server, CLI, and shared packages

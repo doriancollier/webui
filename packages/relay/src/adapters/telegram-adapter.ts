@@ -34,7 +34,13 @@ import type {
   TelegramAdapterConfig,
   Unsubscribe,
 } from '../types.js';
-import { extractPayloadContent } from '../lib/payload-utils.js';
+import {
+  extractPayloadContent,
+  detectStreamEventType,
+  extractTextDelta,
+  extractErrorMessage,
+  SILENT_EVENT_TYPES,
+} from '../lib/payload-utils.js';
 
 // === Constants ===
 
@@ -239,6 +245,9 @@ export class TelegramAdapter implements RelayAdapter {
   /** Pending reconnection timer — cleared in stop(). */
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /** Per-chat response buffer: accumulates text_delta chunks until done/error. */
+  private responseBuffers = new Map<number, string>();
+
   private status: AdapterStatus = {
     state: 'disconnected',
     messageCount: { inbound: 0, outbound: 0 },
@@ -409,30 +418,49 @@ export class TelegramAdapter implements RelayAdapter {
       };
     }
 
+    // --- StreamEvent-aware delivery ---
+    const eventType = detectStreamEventType(envelope.payload);
+
+    if (eventType) {
+      // text_delta: accumulate in buffer
+      const textChunk = extractTextDelta(envelope.payload);
+      if (textChunk) {
+        const existing = this.responseBuffers.get(chatId) ?? '';
+        this.responseBuffers.set(chatId, existing + textChunk);
+        return { success: true, durationMs: Date.now() - startTime };
+      }
+
+      // error: flush buffer + send error
+      const errorMsg = extractErrorMessage(envelope.payload);
+      if (errorMsg) {
+        const buffered = this.responseBuffers.get(chatId) ?? '';
+        this.responseBuffers.delete(chatId);
+        const text = buffered
+          ? truncateText(`${buffered}\n\n[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH)
+          : truncateText(`[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH);
+        return this.sendAndTrack(chatId, text, startTime);
+      }
+
+      // done: flush accumulated buffer as a single message
+      if (eventType === 'done') {
+        const buffered = this.responseBuffers.get(chatId);
+        this.responseBuffers.delete(chatId);
+        if (buffered) {
+          return this.sendAndTrack(chatId, truncateText(buffered, MAX_MESSAGE_LENGTH), startTime);
+        }
+        return { success: true, durationMs: Date.now() - startTime };
+      }
+
+      // All other StreamEvent types: silently skip
+      if (SILENT_EVENT_TYPES.has(eventType)) {
+        return { success: true, durationMs: Date.now() - startTime };
+      }
+    }
+
+    // --- Standard payload (non-StreamEvent) ---
     const content = extractPayloadContent(envelope.payload);
     const text = truncateText(content, MAX_MESSAGE_LENGTH);
-
-    try {
-      await this.bot.api.sendMessage(chatId, text);
-      this.status = {
-        ...this.status,
-        messageCount: {
-          ...this.status.messageCount,
-          outbound: this.status.messageCount.outbound + 1,
-        },
-      };
-      return {
-        success: true,
-        durationMs: Date.now() - startTime,
-      };
-    } catch (err) {
-      this.recordError(err);
-      return {
-        success: false,
-        error: err instanceof Error ? err.message : String(err),
-        durationMs: Date.now() - startTime,
-      };
-    }
+    return this.sendAndTrack(chatId, text, startTime);
   }
 
   /**
@@ -443,6 +471,32 @@ export class TelegramAdapter implements RelayAdapter {
   }
 
   // --- Private ---
+
+  /** Send a text message to Telegram and update outbound counter. */
+  private async sendAndTrack(
+    chatId: number,
+    text: string,
+    startTime: number,
+  ): Promise<DeliveryResult> {
+    try {
+      await this.bot!.api.sendMessage(chatId, text);
+      this.status = {
+        ...this.status,
+        messageCount: {
+          ...this.status.messageCount,
+          outbound: this.status.messageCount.outbound + 1,
+        },
+      };
+      return { success: true, durationMs: Date.now() - startTime };
+    } catch (err) {
+      this.recordError(err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+        durationMs: Date.now() - startTime,
+      };
+    }
+  }
 
   /**
    * Start the bot in polling or webhook mode depending on config.
@@ -649,6 +703,7 @@ export class TelegramAdapter implements RelayAdapter {
     try {
       await this.relay.publish(subject, payload, {
         from: `${SUBJECT_PREFIX}.bot`,
+        replyTo: subject,
       });
       this.status = {
         ...this.status,

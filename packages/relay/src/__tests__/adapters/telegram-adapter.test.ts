@@ -336,7 +336,7 @@ describe('TelegramAdapter', () => {
         content: 'Hello!',
         channelType: 'dm',
       }),
-      { from: 'relay.human.telegram.bot' },
+      { from: 'relay.human.telegram.bot', replyTo: 'relay.human.telegram.12345' },
     );
   });
 
@@ -357,7 +357,7 @@ describe('TelegramAdapter', () => {
         content: 'Group message',
         channelType: 'group',
       }),
-      { from: 'relay.human.telegram.bot' },
+      { from: 'relay.human.telegram.bot', replyTo: 'relay.human.telegram.group.-100111222' },
     );
   });
 
@@ -1129,6 +1129,178 @@ describe('TelegramAdapter', () => {
     expect(result.error).toMatch(/cannot extract chat ID/);
   });
 
+  // --- StreamEvent-aware delivery ---
+
+  describe('StreamEvent delivery', () => {
+    it('accumulates text_delta chunks and flushes on done', async () => {
+      await adapter.start(mockRelay);
+
+      // Send 3 text_delta events — sendMessage should NOT be called yet
+      const deltas = ['Hello', ' from', ' agent!'];
+      for (const text of deltas) {
+        const envelope = createEnvelope('relay.human.telegram.12345', {
+          type: 'text_delta',
+          data: { text },
+        });
+        const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+        expect(result.success).toBe(true);
+      }
+      expect(mockSendMessage).not.toHaveBeenCalled();
+
+      // Send done event — should flush buffer as a single message
+      const doneEnvelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'done',
+        data: {},
+      });
+      const doneResult = await adapter.deliver('relay.human.telegram.12345', doneEnvelope);
+      expect(doneResult.success).toBe(true);
+      expect(mockSendMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Hello from agent!');
+    });
+
+    it('sends error with buffered text on error event', async () => {
+      await adapter.start(mockRelay);
+
+      // Buffer some text
+      const textEnvelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'text_delta',
+        data: { text: 'Partial response' },
+      });
+      await adapter.deliver('relay.human.telegram.12345', textEnvelope);
+
+      // Send error event
+      const errorEnvelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'error',
+        data: { message: 'Context limit exceeded' },
+      });
+      const result = await adapter.deliver('relay.human.telegram.12345', errorEnvelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendMessage).toHaveBeenCalledWith(
+        12345,
+        'Partial response\n\n[Error: Context limit exceeded]',
+      );
+    });
+
+    it('sends error-only message when no text was buffered', async () => {
+      await adapter.start(mockRelay);
+
+      const errorEnvelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'error',
+        data: { message: 'Session failed' },
+      });
+      const result = await adapter.deliver('relay.human.telegram.12345', errorEnvelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, '[Error: Session failed]');
+    });
+
+    it('silently skips session_status events', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'session_status',
+        data: { sessionId: 'abc-123', costUsd: 0, contextTokens: 0 },
+      });
+      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('silently skips tool_call_start events', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'tool_call_start',
+        data: { id: 'tc-1', name: 'Read', input: {} },
+      });
+      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('silently skips tool_call_end events', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'tool_call_end',
+        data: { id: 'tc-1' },
+      });
+      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('still handles StandardPayload directly (non-StreamEvent)', async () => {
+      await adapter.start(mockRelay);
+
+      const envelope = createEnvelope('relay.human.telegram.12345', { content: 'Direct message' });
+      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Direct message');
+    });
+
+    it('done with empty buffer does not send a message', async () => {
+      await adapter.start(mockRelay);
+
+      const doneEnvelope = createEnvelope('relay.human.telegram.12345', {
+        type: 'done',
+        data: {},
+      });
+      const result = await adapter.deliver('relay.human.telegram.12345', doneEnvelope);
+      expect(result.success).toBe(true);
+      expect(mockSendMessage).not.toHaveBeenCalled();
+    });
+
+    it('buffers per-chat independently', async () => {
+      await adapter.start(mockRelay);
+
+      // Buffer text in chat 111
+      await adapter.deliver('relay.human.telegram.111', createEnvelope('relay.human.telegram.111', {
+        type: 'text_delta',
+        data: { text: 'Chat A' },
+      }));
+
+      // Buffer text in chat 222
+      await adapter.deliver('relay.human.telegram.222', createEnvelope('relay.human.telegram.222', {
+        type: 'text_delta',
+        data: { text: 'Chat B' },
+      }));
+
+      // Flush chat 111
+      await adapter.deliver('relay.human.telegram.111', createEnvelope('relay.human.telegram.111', {
+        type: 'done',
+        data: {},
+      }));
+
+      expect(mockSendMessage).toHaveBeenCalledTimes(1);
+      expect(mockSendMessage).toHaveBeenCalledWith(111, 'Chat A');
+
+      // Flush chat 222
+      await adapter.deliver('relay.human.telegram.222', createEnvelope('relay.human.telegram.222', {
+        type: 'done',
+        data: {},
+      }));
+
+      expect(mockSendMessage).toHaveBeenCalledTimes(2);
+      expect(mockSendMessage).toHaveBeenCalledWith(222, 'Chat B');
+    });
+
+    it('increments outbound count when flushing buffer on done', async () => {
+      await adapter.start(mockRelay);
+
+      await adapter.deliver('relay.human.telegram.12345', createEnvelope('relay.human.telegram.12345', {
+        type: 'text_delta',
+        data: { text: 'hi' },
+      }));
+      await adapter.deliver('relay.human.telegram.12345', createEnvelope('relay.human.telegram.12345', {
+        type: 'done',
+        data: {},
+      }));
+
+      expect(adapter.getStatus().messageCount.outbound).toBe(1);
+    });
+  });
+
   // --- M20: Caption-only message ---
 
   it('publishes caption-only messages when text is undefined (M20)', async () => {
@@ -1147,7 +1319,7 @@ describe('TelegramAdapter', () => {
         content: 'Photo description',
         channelType: 'dm',
       }),
-      { from: 'relay.human.telegram.bot' },
+      { from: 'relay.human.telegram.bot', replyTo: 'relay.human.telegram.12345' },
     );
   });
 });

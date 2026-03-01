@@ -110,6 +110,7 @@ export interface ClaudeCodeAdapterDeps {
   agentManager: AgentManagerLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
+  logger?: import('@dorkos/shared/logger').Logger;
 }
 
 // === Resolved config type (all fields required after construction) ===
@@ -307,6 +308,12 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       deliveredAt: Date.now(),
     });
 
+    if (!envelope.replyTo) {
+      (this.deps.logger ?? console).warn(
+        `ClaudeCodeAdapter: envelope ${envelope.id} has no replyTo — response events will not be published`,
+      );
+    }
+
     // Format prompt with relay context metadata
     const content = extractPayloadContent(envelope.payload);
     const prompt = this.formatPromptWithContext(content, envelope);
@@ -322,12 +329,17 @@ export class ClaudeCodeAdapter implements RelayAdapter {
         cwd: agentCwd,
       });
 
+      let eventCount = 0;
       for await (const event of eventStream) {
         if (controller.signal.aborted) break;
+        eventCount++;
         if (envelope.replyTo && this.relay) {
           await this.publishResponse(envelope, event, sessionId);
         }
       }
+      (this.deps.logger ?? console).info(
+        `ClaudeCodeAdapter: published ${eventCount} event(s) to ${envelope.replyTo ?? '(no replyTo)'}`,
+      );
 
       const aborted = controller.signal.aborted;
       this.deps.traceStore.updateSpan(envelope.id, {
