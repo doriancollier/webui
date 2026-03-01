@@ -172,7 +172,17 @@ export class BindingStore {
   private async load(): Promise<void> {
     try {
       const raw = await readFile(this.filePath, 'utf-8');
-      const parsed = BindingsFileSchema.parse(JSON.parse(raw));
+      const json = JSON.parse(raw) as { bindings?: Record<string, unknown>[] };
+      // One-time migration: agentDir → projectPath
+      if (json.bindings) {
+        for (const b of json.bindings) {
+          if ('agentDir' in b && !('projectPath' in b)) {
+            b.projectPath = b.agentDir;
+            delete b.agentDir;
+          }
+        }
+      }
+      const parsed = BindingsFileSchema.parse(json);
       this.bindings.clear();
       for (const b of parsed.bindings) {
         this.bindings.set(b.id, b);

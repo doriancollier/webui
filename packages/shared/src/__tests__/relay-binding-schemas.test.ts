@@ -26,7 +26,7 @@ describe('AdapterBindingSchema', () => {
     id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
     adapterId: 'telegram-main',
     agentId: 'agent-1',
-    agentDir: '/home/user/agents/alpha',
+    projectPath: '/home/user/agents/alpha',
     sessionStrategy: 'per-chat',
     label: 'Main bot',
     createdAt: '2026-01-01T00:00:00.000Z',
@@ -71,7 +71,7 @@ describe('CreateBindingRequestSchema', () => {
     const input = {
       adapterId: 'telegram-main',
       agentId: 'agent-1',
-      agentDir: '/home/user/agents/alpha',
+      projectPath: '/home/user/agents/alpha',
     };
     const parsed = CreateBindingRequestSchema.parse(input);
     expect(parsed.sessionStrategy).toBe('per-chat');
@@ -83,7 +83,7 @@ describe('CreateBindingRequestSchema', () => {
       id: 'should-not-be-here',
       adapterId: 'telegram-main',
       agentId: 'agent-1',
-      agentDir: '/home/user/agents/alpha',
+      projectPath: '/home/user/agents/alpha',
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-01-01T00:00:00.000Z',
     };
@@ -97,7 +97,7 @@ describe('CreateBindingRequestSchema', () => {
     const input = {
       adapterId: 'telegram-main',
       agentId: 'agent-1',
-      agentDir: '/home/user/agents/alpha',
+      projectPath: '/home/user/agents/alpha',
       chatId: '12345',
       channelType: 'group',
     };
@@ -115,7 +115,7 @@ describe('BindingListResponseSchema', () => {
           id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
           adapterId: 'telegram-main',
           agentId: 'agent-1',
-          agentDir: '/agents/alpha',
+          projectPath: '/agents/alpha',
           sessionStrategy: 'per-chat',
           label: '',
           createdAt: '2026-01-01T00:00:00.000Z',
@@ -138,7 +138,7 @@ describe('BindingResponseSchema', () => {
         id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
         adapterId: 'telegram-main',
         agentId: 'agent-1',
-        agentDir: '/agents/alpha',
+        projectPath: '/agents/alpha',
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',

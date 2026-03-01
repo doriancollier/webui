@@ -542,7 +542,7 @@ export const AdapterBindingSchema = z
     id: z.string().uuid(),
     adapterId: z.string(),
     agentId: z.string(),
-    agentDir: z.string(),
+    projectPath: z.string(),
     chatId: z.string().optional(),
     channelType: ChannelTypeSchema.optional(),
     sessionStrategy: SessionStrategySchema.default('per-chat'),

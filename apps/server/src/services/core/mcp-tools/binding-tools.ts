@@ -26,7 +26,7 @@ export function createBindingCreateHandler(deps: McpToolDeps) {
   return async (args: {
     adapterId: string;
     agentId: string;
-    agentDir: string;
+    projectPath: string;
     sessionStrategy?: string;
     chatId?: string;
     channelType?: string;
@@ -38,7 +38,7 @@ export function createBindingCreateHandler(deps: McpToolDeps) {
       const binding = await deps.bindingStore!.create({
         adapterId: args.adapterId,
         agentId: args.agentId,
-        agentDir: args.agentDir,
+        projectPath: args.projectPath,
         sessionStrategy: (args.sessionStrategy ?? 'per-chat') as 'per-chat' | 'per-user' | 'stateless',
         label: args.label ?? '',
         ...(args.chatId && { chatId: args.chatId }),
@@ -81,7 +81,7 @@ export function getBindingTools(deps: McpToolDeps) {
       {
         adapterId: z.string().describe('ID of the adapter to bind'),
         agentId: z.string().describe('Agent ID to route messages to'),
-        agentDir: z.string().describe('Filesystem path to the agent working directory'),
+        projectPath: z.string().describe('Filesystem path to the agent working directory'),
         sessionStrategy: z.string().optional().describe('Session strategy: per-chat, per-user, or stateless (default per-chat)'),
         chatId: z.string().optional().describe('Optional chat ID for targeted routing'),
         channelType: z.string().optional().describe('Optional channel type filter: dm, group, channel, or thread'),

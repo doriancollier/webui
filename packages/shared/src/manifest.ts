@@ -18,11 +18,11 @@ export const MANIFEST_FILE = 'agent.json';
 /**
  * Read and validate an agent manifest from a project directory.
  *
- * @param projectDir - Project directory containing `.dork/agent.json`
+ * @param projectPath - Project directory containing `.dork/agent.json`
  * @returns Parsed manifest, or `null` if the file doesn't exist or fails validation
  */
-export async function readManifest(projectDir: string): Promise<AgentManifest | null> {
-  const manifestPath = path.join(projectDir, MANIFEST_DIR, MANIFEST_FILE);
+export async function readManifest(projectPath: string): Promise<AgentManifest | null> {
+  const manifestPath = path.join(projectPath, MANIFEST_DIR, MANIFEST_FILE);
   try {
     const content = await fs.readFile(manifestPath, 'utf-8');
     const parsed = JSON.parse(content) as unknown;
@@ -40,11 +40,11 @@ export async function readManifest(projectDir: string): Promise<AgentManifest | 
  * file first, then atomically renames to `agent.json` to prevent partial
  * writes from corrupting the manifest.
  *
- * @param projectDir - Project directory to write `.dork/agent.json` into
+ * @param projectPath - Project directory to write `.dork/agent.json` into
  * @param manifest - The agent manifest to write
  */
-export async function writeManifest(projectDir: string, manifest: AgentManifest): Promise<void> {
-  const dorkDir = path.join(projectDir, MANIFEST_DIR);
+export async function writeManifest(projectPath: string, manifest: AgentManifest): Promise<void> {
+  const dorkDir = path.join(projectPath, MANIFEST_DIR);
   await fs.mkdir(dorkDir, { recursive: true });
 
   const manifestPath = path.join(dorkDir, MANIFEST_FILE);

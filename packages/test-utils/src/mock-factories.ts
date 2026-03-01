@@ -225,7 +225,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       id: 'mock-binding-id',
       adapterId: 'mock-adapter',
       agentId: 'mock-agent',
-      agentDir: '/mock/agent',
+      projectPath: '/mock/agent',
       sessionStrategy: 'per-chat',
       label: '',
       createdAt: new Date().toISOString(),

@@ -605,7 +605,7 @@ Create a new adapter-agent binding. Zod-validated via `CreateBindingRequestSchem
 {
   "adapterId": "telegram",
   "agentId": "my-agent",
-  "agentDir": "/path/to/project",
+  "projectPath": "/path/to/project",
   "chatId": "12345",
   "channelType": "telegram",
   "sessionStrategy": "per-chat",
@@ -613,7 +613,7 @@ Create a new adapter-agent binding. Zod-validated via `CreateBindingRequestSchem
 }
 ```
 
-`adapterId`, `agentId`, and `agentDir` are required. `sessionStrategy` defaults to `per-chat`. `chatId`, `channelType`, and `label` are optional.
+`adapterId`, `agentId`, and `projectPath` are required. `sessionStrategy` defaults to `per-chat`. `chatId`, `channelType`, and `label` are optional.
 
 **Responses:**
 

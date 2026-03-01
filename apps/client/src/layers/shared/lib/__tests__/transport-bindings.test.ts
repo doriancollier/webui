@@ -8,7 +8,7 @@ const mockBinding = {
   id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   adapterId: 'telegram-main',
   agentId: 'agent-1',
-  agentDir: '/home/user/agents/alpha',
+  projectPath: '/home/user/agents/alpha',
   sessionStrategy: 'per-chat' as const,
   label: 'Main bot',
   createdAt: '2026-01-01T00:00:00.000Z',
@@ -71,7 +71,7 @@ describe('HttpTransport — Relay Bindings', () => {
       const input = {
         adapterId: 'telegram-main',
         agentId: 'agent-1',
-        agentDir: '/home/user/agents/alpha',
+        projectPath: '/home/user/agents/alpha',
         sessionStrategy: 'per-chat' as const,
         label: 'Main bot',
       };
@@ -94,7 +94,7 @@ describe('HttpTransport — Relay Bindings', () => {
 
       const transport = new HttpTransport(BASE_URL);
       await expect(
-        transport.createBinding({ adapterId: 'x', agentId: 'y', agentDir: '/z', sessionStrategy: 'per-chat', label: '' }),
+        transport.createBinding({ adapterId: 'x', agentId: 'y', projectPath: '/z', sessionStrategy: 'per-chat', label: '' }),
       ).rejects.toThrow('Validation failed');
     });
   });
@@ -149,7 +149,7 @@ describe('DirectTransport — Relay Bindings', () => {
   it('createBinding() throws (not supported in embedded mode)', async () => {
     const transport = new DirectTransport({} as never);
     await expect(
-      transport.createBinding({ adapterId: 'x', agentId: 'y', agentDir: '/z', sessionStrategy: 'per-chat', label: '' }),
+      transport.createBinding({ adapterId: 'x', agentId: 'y', projectPath: '/z', sessionStrategy: 'per-chat', label: '' }),
     ).rejects.toThrow('Relay bindings are not supported in embedded mode');
   });
 

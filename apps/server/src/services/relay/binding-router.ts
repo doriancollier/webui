@@ -206,7 +206,7 @@ export class BindingRouter {
   }
 
   private async createNewSession(binding: AdapterBinding): Promise<string> {
-    const session = await this.deps.agentManager.createSession(binding.agentDir);
+    const session = await this.deps.agentManager.createSession(binding.projectPath);
     return session.id;
   }
 

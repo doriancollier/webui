@@ -43,7 +43,7 @@ function makeMockBindingStore(overrides?: Record<string, unknown>) {
         id: 'b-1',
         adapterId: 'tg-main',
         agentId: 'agent-1',
-        agentDir: '/projects/bot',
+        projectPath: '/projects/bot',
         sessionStrategy: 'per-chat',
         label: 'Main Bot',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -54,7 +54,7 @@ function makeMockBindingStore(overrides?: Record<string, unknown>) {
       id: 'b-new',
       adapterId: 'tg-main',
       agentId: 'agent-2',
-      agentDir: '/projects/new-bot',
+      projectPath: '/projects/new-bot',
       sessionStrategy: 'per-chat',
       label: '',
       createdAt: '2026-02-01T00:00:00.000Z',
@@ -110,7 +110,7 @@ describe('Binding MCP Tools', () => {
   describe('binding_create', () => {
     it('returns BINDINGS_DISABLED when bindingStore is undefined', async () => {
       const handler = createBindingCreateHandler(makeMockDeps());
-      const result = await handler({ adapterId: 'x', agentId: 'y', agentDir: '/z' });
+      const result = await handler({ adapterId: 'x', agentId: 'y', projectPath: '/z' });
       expect(result.isError).toBe(true);
       expect(JSON.parse(result.content[0].text)).toMatchObject({ code: 'BINDINGS_DISABLED' });
     });
@@ -121,7 +121,7 @@ describe('Binding MCP Tools', () => {
       const result = await handler({
         adapterId: 'tg-main',
         agentId: 'agent-2',
-        agentDir: '/projects/new-bot',
+        projectPath: '/projects/new-bot',
       });
       expect(result.isError).toBeUndefined();
       const data = JSON.parse(result.content[0].text);
@@ -131,7 +131,7 @@ describe('Binding MCP Tools', () => {
         expect.objectContaining({
           adapterId: 'tg-main',
           agentId: 'agent-2',
-          agentDir: '/projects/new-bot',
+          projectPath: '/projects/new-bot',
           sessionStrategy: 'per-chat',
           label: '',
         }),
@@ -144,7 +144,7 @@ describe('Binding MCP Tools', () => {
       await handler({
         adapterId: 'tg-main',
         agentId: 'agent-2',
-        agentDir: '/projects/new-bot',
+        projectPath: '/projects/new-bot',
         sessionStrategy: 'stateless',
         chatId: 'chat-123',
         channelType: 'dm',
@@ -165,7 +165,7 @@ describe('Binding MCP Tools', () => {
         create: vi.fn().mockRejectedValue(new Error('Validation failed')),
       });
       const handler = createBindingCreateHandler(makeMockDeps(store));
-      const result = await handler({ adapterId: 'x', agentId: 'y', agentDir: '/z' });
+      const result = await handler({ adapterId: 'x', agentId: 'y', projectPath: '/z' });
       expect(result.isError).toBe(true);
       const data = JSON.parse(result.content[0].text);
       expect(data.code).toBe('BINDING_CREATE_FAILED');

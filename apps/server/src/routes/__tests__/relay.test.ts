@@ -787,7 +787,7 @@ describe('Adapter routes', () => {
       id: 'b-1',
       adapterId: 'tg-main',
       agentId: 'agent-1',
-      agentDir: '/agents/a',
+      projectPath: '/agents/a',
       sessionStrategy: 'per-chat' as const,
       label: 'Test binding',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -856,7 +856,7 @@ describe('Adapter routes', () => {
         const res = await request(app).post('/api/relay/bindings').send({
           adapterId: 'tg-main',
           agentId: 'agent-1',
-          agentDir: '/agents/a',
+          projectPath: '/agents/a',
         });
         expect(res.status).toBe(201);
         expect(res.body.binding.id).toBe('b-1');

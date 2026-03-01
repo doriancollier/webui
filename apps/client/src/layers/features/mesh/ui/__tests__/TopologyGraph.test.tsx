@@ -151,7 +151,7 @@ const mockBindings = [
     id: 'bind-1',
     adapterId: 'tg-1',
     agentId: 'agent-1',
-    agentDir: '/projects/builder',
+    projectPath: '/projects/builder',
     sessionStrategy: 'per-chat' as const,
     label: 'Support',
     createdAt: '2026-01-01T00:00:00Z',

@@ -46,7 +46,7 @@ describe('BindingStore', () => {
       const binding = await store.create({
         adapterId: 'telegram-1',
         agentId: 'agent-a',
-        agentDir: '/agents/a',
+        projectPath: '/agents/a',
         sessionStrategy: 'per-chat',
         label: 'Test',
       });
@@ -62,7 +62,7 @@ describe('BindingStore', () => {
       const binding = await store.create({
         adapterId: 'telegram-1',
         agentId: 'agent-a',
-        agentDir: '/agents/a',
+        projectPath: '/agents/a',
       });
       expect(binding.sessionStrategy).toBe('per-chat');
       expect(binding.label).toBe('');
@@ -72,7 +72,7 @@ describe('BindingStore', () => {
       const binding = await store.create({
         adapterId: 'telegram-1',
         agentId: 'agent-a',
-        agentDir: '/agents/a',
+        projectPath: '/agents/a',
       });
       expect(await store.delete(binding.id)).toBe(true);
       expect(store.getById(binding.id)).toBeUndefined();
@@ -83,9 +83,9 @@ describe('BindingStore', () => {
     });
 
     it('filters by adapterId', async () => {
-      await store.create({ adapterId: 'tg-1', agentId: 'a', agentDir: '/a' });
-      await store.create({ adapterId: 'tg-2', agentId: 'b', agentDir: '/b' });
-      await store.create({ adapterId: 'tg-1', agentId: 'c', agentDir: '/c' });
+      await store.create({ adapterId: 'tg-1', agentId: 'a', projectPath: '/a' });
+      await store.create({ adapterId: 'tg-2', agentId: 'b', projectPath: '/b' });
+      await store.create({ adapterId: 'tg-1', agentId: 'c', projectPath: '/c' });
       expect(store.getByAdapterId('tg-1')).toHaveLength(2);
       expect(store.getByAdapterId('tg-2')).toHaveLength(1);
       expect(store.getByAdapterId('tg-3')).toHaveLength(0);
@@ -95,7 +95,7 @@ describe('BindingStore', () => {
       await store.create({
         adapterId: 'tg-1',
         agentId: 'a',
-        agentDir: '/a',
+        projectPath: '/a',
       });
       expect(writeFile).toHaveBeenCalled();
       expect(rename).toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe('BindingStore', () => {
       const binding = await store.create({
         adapterId: 'tg-1',
         agentId: 'a',
-        agentDir: '/a',
+        projectPath: '/a',
       });
       vi.mocked(writeFile).mockClear();
       vi.mocked(rename).mockClear();
@@ -128,21 +128,21 @@ describe('BindingStore', () => {
     });
 
     it('matches wildcard binding (adapterId only)', async () => {
-      const b = await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      const b = await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
       expect(store.resolve('tg', '12345')?.id).toBe(b.id);
     });
 
     it('matches wildcard binding without chatId', async () => {
-      const b = await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      const b = await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
       expect(store.resolve('tg')?.id).toBe(b.id);
     });
 
     it('prefers chatId match over wildcard', async () => {
-      const wildcard = await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      const wildcard = await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
       const specific = await store.create({
         adapterId: 'tg',
         agentId: 'b',
-        agentDir: '/b',
+        projectPath: '/b',
         chatId: '123',
       });
       expect(store.resolve('tg', '123')?.id).toBe(specific.id);
@@ -150,11 +150,11 @@ describe('BindingStore', () => {
     });
 
     it('prefers channelType match over wildcard', async () => {
-      const wildcard = await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      const wildcard = await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
       const channelSpecific = await store.create({
         adapterId: 'tg',
         agentId: 'b',
-        agentDir: '/b',
+        projectPath: '/b',
         channelType: 'dm',
       });
       expect(store.resolve('tg', '123', 'dm')?.id).toBe(channelSpecific.id);
@@ -165,13 +165,13 @@ describe('BindingStore', () => {
       const chatOnly = await store.create({
         adapterId: 'tg',
         agentId: 'a',
-        agentDir: '/a',
+        projectPath: '/a',
         chatId: '123',
       });
       const chatAndChannel = await store.create({
         adapterId: 'tg',
         agentId: 'b',
-        agentDir: '/b',
+        projectPath: '/b',
         chatId: '123',
         channelType: 'dm',
       });
@@ -183,7 +183,7 @@ describe('BindingStore', () => {
       await store.create({
         adapterId: 'tg',
         agentId: 'a',
-        agentDir: '/a',
+        projectPath: '/a',
         chatId: '123',
       });
       // No wildcard binding exists, so mismatch yields no result
@@ -194,7 +194,7 @@ describe('BindingStore', () => {
       await store.create({
         adapterId: 'tg',
         agentId: 'a',
-        agentDir: '/a',
+        projectPath: '/a',
         channelType: 'dm',
       });
       // No wildcard binding exists, so mismatch yields no result
@@ -205,24 +205,24 @@ describe('BindingStore', () => {
       const wildcard = await store.create({
         adapterId: 'tg',
         agentId: 'agent-wild',
-        agentDir: '/w',
+        projectPath: '/w',
       });
       const channelOnly = await store.create({
         adapterId: 'tg',
         agentId: 'agent-channel',
-        agentDir: '/c',
+        projectPath: '/c',
         channelType: 'dm',
       });
       const chatOnly = await store.create({
         adapterId: 'tg',
         agentId: 'agent-chat',
-        agentDir: '/ch',
+        projectPath: '/ch',
         chatId: '123',
       });
       const exact = await store.create({
         adapterId: 'tg',
         agentId: 'agent-exact',
-        agentDir: '/e',
+        projectPath: '/e',
         chatId: '123',
         channelType: 'dm',
       });
@@ -240,21 +240,21 @@ describe('BindingStore', () => {
 
   describe('getOrphaned()', () => {
     it('returns bindings with unknown adapter IDs', async () => {
-      await store.create({ adapterId: 'known-1', agentId: 'a', agentDir: '/a' });
-      await store.create({ adapterId: 'unknown-1', agentId: 'b', agentDir: '/b' });
+      await store.create({ adapterId: 'known-1', agentId: 'a', projectPath: '/a' });
+      await store.create({ adapterId: 'unknown-1', agentId: 'b', projectPath: '/b' });
       const orphaned = store.getOrphaned(['known-1']);
       expect(orphaned).toHaveLength(1);
       expect(orphaned[0].adapterId).toBe('unknown-1');
     });
 
     it('returns empty array when all adapters are known', async () => {
-      await store.create({ adapterId: 'known-1', agentId: 'a', agentDir: '/a' });
+      await store.create({ adapterId: 'known-1', agentId: 'a', projectPath: '/a' });
       expect(store.getOrphaned(['known-1'])).toHaveLength(0);
     });
 
     it('returns all bindings when no adapters are known', async () => {
-      await store.create({ adapterId: 'tg-1', agentId: 'a', agentDir: '/a' });
-      await store.create({ adapterId: 'tg-2', agentId: 'b', agentDir: '/b' });
+      await store.create({ adapterId: 'tg-1', agentId: 'a', projectPath: '/a' });
+      await store.create({ adapterId: 'tg-2', agentId: 'b', projectPath: '/b' });
       expect(store.getOrphaned([])).toHaveLength(2);
     });
   });
@@ -267,7 +267,7 @@ describe('BindingStore', () => {
             id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
             adapterId: 'telegram-main',
             agentId: 'agent-1',
-            agentDir: '/agents/alpha',
+            projectPath: '/agents/alpha',
             sessionStrategy: 'per-chat',
             label: 'Test',
             createdAt: '2026-01-01T00:00:00.000Z',
@@ -302,7 +302,7 @@ describe('BindingStore', () => {
 
   describe('shutdown()', () => {
     it('clears all bindings on shutdown', async () => {
-      await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
       expect(store.getAll()).toHaveLength(1);
       await store.shutdown();
       expect(store.getAll()).toEqual([]);
@@ -311,7 +311,7 @@ describe('BindingStore', () => {
 
   describe('writeGeneration — self-write suppression', () => {
     it('suppresses one chokidar change event per save call', async () => {
-      await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
 
       // Simulate the chokidar 'change' event that our own write triggered.
       // readFile will be called only on a genuine external reload; it should
@@ -326,8 +326,8 @@ describe('BindingStore', () => {
 
     it('suppresses N events for N concurrent saves without triggering reload', async () => {
       // Two rapid saves before any chokidar event fires → writeGeneration = 2
-      const saveOne = store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
-      const saveTwo = store.create({ adapterId: 'tg', agentId: 'b', agentDir: '/b' });
+      const saveOne = store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
+      const saveTwo = store.create({ adapterId: 'tg', agentId: 'b', projectPath: '/b' });
       await Promise.all([saveOne, saveTwo]);
 
       const readFileSpy = vi.mocked(readFile);
@@ -341,7 +341,7 @@ describe('BindingStore', () => {
     });
 
     it('triggers reload for an external change after all self-writes are absorbed', async () => {
-      await store.create({ adapterId: 'tg', agentId: 'a', agentDir: '/a' });
+      await store.create({ adapterId: 'tg', agentId: 'a', projectPath: '/a' });
 
       const readFileSpy = vi.mocked(readFile);
       readFileSpy.mockClear();
@@ -357,7 +357,7 @@ describe('BindingStore', () => {
               id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
               adapterId: 'external',
               agentId: 'ext-agent',
-              agentDir: '/ext',
+              projectPath: '/ext',
               sessionStrategy: 'per-chat',
               label: '',
               createdAt: '2026-01-01T00:00:00.000Z',

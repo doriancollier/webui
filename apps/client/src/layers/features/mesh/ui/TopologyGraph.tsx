@@ -604,7 +604,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
       createBindingMutate({
         adapterId: pendingConnection.sourceAdapterId,
         agentId: pendingConnection.targetAgentId,
-        agentDir: pendingConnection.targetProjectPath,
+        projectPath: pendingConnection.targetProjectPath,
         sessionStrategy: opts.sessionStrategy,
         label: opts.label,
       });
