@@ -210,7 +210,7 @@ Verify settings still work after layout changes.
 
 ---
 
-## 10. Marketing Site (apps/web)
+## 10. Marketing Site (apps/site)
 
 - [ ] Homepage loads with new DORK monogram logo
 - [ ] Logo renders at correct size in nav, header, footer

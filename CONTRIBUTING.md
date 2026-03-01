@@ -26,16 +26,20 @@ The client will be available at `http://localhost:3000` and the server at `http:
 
 ## Monorepo Structure
 
-This is a Turborepo monorepo with four apps and four shared packages:
+This is a Turborepo monorepo with five apps and seven shared packages:
 
 | Directory | Package | Description |
 |---|---|---|
 | `apps/client` | `@dorkos/client` | React 19 SPA (Vite 6, Tailwind 4, shadcn/ui) |
 | `apps/server` | `@dorkos/server` | Express API server |
+| `apps/site` | `@dorkos/site` | Marketing site & docs (Next.js 16, Fumadocs) |
 | `apps/obsidian-plugin` | `@dorkos/obsidian-plugin` | Obsidian sidebar plugin |
-| `apps/web` | `@dorkos/web` | Marketing site & docs (Next.js 16, Fumadocs) |
+| `apps/e2e` | `@dorkos/e2e` | Playwright browser tests |
 | `packages/cli` | `dorkos` | Publishable npm CLI |
 | `packages/shared` | `@dorkos/shared` | Zod schemas, shared types |
+| `packages/db` | `@dorkos/db` | Drizzle ORM schemas (SQLite) |
+| `packages/relay` | `@dorkos/relay` | Inter-agent message bus |
+| `packages/mesh` | `@dorkos/mesh` | Agent discovery & registry |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |
 | `packages/test-utils` | `@dorkos/test-utils` | Mock factories, test helpers |
 

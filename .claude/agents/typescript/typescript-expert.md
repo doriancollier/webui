@@ -244,7 +244,7 @@ command -v typesync >/dev/null 2>&1 && npx typesync  # Install missing @types pa
   "references": [
     { "path": "./packages/core" },
     { "path": "./packages/ui" },
-    { "path": "./apps/web" }
+    { "path": "./apps/site" }
   ],
   "compilerOptions": {
     "composite": true,

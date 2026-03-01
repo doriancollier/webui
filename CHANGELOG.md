@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename apps/web to apps/site and fix CLAUDE.md doc drift
 - Update all contributing guides based on 30 recent specs
 - Fix guide count and expand directory structure diagram
 - Fix command count (56→47) and add missing changelog/research namespaces

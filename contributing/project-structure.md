@@ -11,11 +11,15 @@ dorkos/
 ├── apps/
 │   ├── client/           # @dorkos/client — React 19 SPA with FSD layers
 │   ├── server/           # @dorkos/server — Express API (flat services)
-│   ├── web/              # @dorkos/web — Marketing site & docs (Next.js 16, Fumadocs)
-│   └── obsidian-plugin/  # @dorkos/obsidian-plugin — Obsidian plugin
+│   ├── site/             # @dorkos/site — Marketing site & docs (Next.js 16, Fumadocs)
+│   ├── obsidian-plugin/  # @dorkos/obsidian-plugin — Obsidian plugin
+│   └── e2e/              # @dorkos/e2e — Playwright browser tests
 ├── packages/
 │   ├── cli/              # dorkos — Publishable npm CLI
 │   ├── shared/           # @dorkos/shared — Zod schemas, types, Transport interface
+│   ├── db/               # @dorkos/db — Drizzle ORM schemas (SQLite)
+│   ├── relay/            # @dorkos/relay — Inter-agent message bus
+│   ├── mesh/             # @dorkos/mesh — Agent discovery & registry
 │   ├── typescript-config/ # Shared tsconfig presets
 │   └── test-utils/       # Mock factories, test helpers
 ├── turbo.json
