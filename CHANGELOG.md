@@ -9,53 +9,51 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Enable Settings and Chat toolbar buttons on AgentNode
-- Overhaul OG tags, share cards, SEO and AI readability
-- Add adapter-agent binding router and visual topology UI
-- Homepage rounds 4-5 — imagery, ELI5 language, and delight
-- Add new mobile and desktop images for marketing materials
-- Add lightweight testConnection() to TelegramAdapter and echo guard
-- Rebuild marketing homepage with narrative-driven design
-- Update search placeholder to describe filter behavior
-- Replace MessageRow with ConversationRow for human-readable activity feed
-- Show human-readable labels and message preview in dead letters
-- Add human-readable labels to endpoints and adapter descriptions
-- Add conversations endpoint with grouped messages and human labels
-- Add subject label resolver for human-readable names
-- Enhance version update UX with two-tier indicator and popover card
-- Fetch available models dynamically from Claude Agent SDK
-- Elevate Relay panel UX with health bar, dead letters, motion, and filters
-- Add adapter catalog and management UI
-
 ### Changed
-
-- Overhaul logging system
-- Rename agentDir → projectPath in binding subsystem
-- Sharpen villain section visuals and copy per design review
-- Rename Tunnel to Remote and use icon color for state
 
 ### Fixed
 
-- Break Telegram feedback loop, fix CWD resolution and MCP transport reuse
-- Buffer StreamEvent chunks in TelegramAdapter instead of sending raw JSON
-- Address 36 code review findings — round 3 remediation
-- Address 18 code review findings — round 3 remediation
-- Address 19 code review findings across server, CLI, and shared packages
-- Address remaining code review issues (S1, S2, C4) and fix web build
-- Address 16 code review issues — round 2 remediation
-- Address 18 code review issues across relay, mesh, and telegram adapter
-- Remove creepy eyebrow text and fix header overlap in hero
-- Resolve Vercel deployment failures
-- Infer sender label for delivered conversations
-- Wire trace store into publish pipeline for delivery tracking
-- Rename tunnel to remote in status bar settings
-- Fix publish pipeline skipping adapter delivery and improve adapter system
-- Fix critical Relay publish pipeline bug where adapter delivery was skipped when no Maildir endpoints matched — this blocked all Relay-routed chat messages and Pulse scheduled dispatches
-- Propagate rich `DeliveryResult` from adapters through the publish pipeline instead of discarding as boolean
+---
+
+## [0.5.0] - 2026-03-01
+
+> Human-readable Relay messaging, marketing site overhaul, and 125+ code quality fixes
+
+### Added
+
+- Rebuild marketing homepage with narrative-driven design, approachable language, and new imagery
+- Improve social share cards, SEO metadata, and AI readability for the marketing site
+- Browse, install, and configure external adapters from a built-in catalog
+- Route external messages to specific agents with visual binding management in topology
+- Group related messages into threaded conversations in the Relay activity feed
+- Display human-readable names for endpoints, adapters, and message subjects throughout Relay
+- Monitor Relay health at a glance with status bar, message filters, and smooth animations
+- Test Telegram adapter connections before going live
+- Choose from all available Claude models dynamically instead of a hardcoded list
+- See available updates at a glance with a version indicator and details popover
+- Access agent settings and start chats directly from topology graph nodes
+
+### Changed
+
+- Standardize logging across all packages with structured, parseable output
+- Rename "Tunnel" to "Remote" throughout the UI for clarity
+
+### Fixed
+
+- Fix critical Relay publish pipeline bug where adapter delivery was silently skipped, blocking all Relay-routed chat messages and Pulse dispatches
+- Return detailed delivery results from adapters instead of discarding status information
 - Add 30-second timeout protection for adapter delivery
-- Index adapter-delivered messages in SQLite with `adapter:` prefix for audit trail completeness
-- Return real trace ID (message ULID) instead of hardcoded `'no-trace'` from `publishViaRelay()`
-- Improve console endpoint registration error handling — only ignore expected 'already registered' errors
+- Include adapter-delivered messages in the SQLite audit trail
+- Return real trace IDs for Relay messages instead of placeholder values
+- Fix Telegram feedback loop that caused duplicate messages
+- Send properly formatted messages through Telegram instead of raw JSON chunks
+- Resolve CWD resolution and MCP transport reuse issues
+- Show correct sender names on delivered conversation messages
+- Track message delivery end-to-end through the Relay publish pipeline
+- Fix header overlap on marketing homepage hero section
+- Fix Vercel deployment failures for the marketing site
+- Handle console endpoint registration errors gracefully
+- Resolve 125+ code quality issues across server, relay, mesh, client, and shared packages
 
 ---
 
@@ -188,7 +186,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/dork-labs/dorkos/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/dork-labs/dorkos/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/dork-labs/dorkos/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/dork-labs/dorkos/compare/v0.1.0...v0.2.0

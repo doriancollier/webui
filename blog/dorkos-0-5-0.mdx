@@ -1,0 +1,62 @@
+---
+title: DorkOS 0.5.0
+description: Human-readable Relay messaging, marketing site overhaul, and 125+ code quality fixes.
+date: 2026-03-01
+author: DorkOS Team
+category: release
+tags: [release, relay, marketing, adapters, ux]
+---
+
+DorkOS 0.5.0 transforms the Relay message bus from a developer-focused system into something humans can actually read — with threaded conversations, friendly labels, and a built-in adapter catalog. The marketing site gets a complete narrative-driven rebuild, and 125+ code quality issues are resolved across the stack.
+
+## Highlights
+
+**Human-Readable Relay** — Messages are now grouped into threaded conversations with friendly labels instead of raw technical subjects. Endpoints, adapters, and dead letters all display human-readable names and message previews, making the activity feed something you'd actually want to look at.
+
+**Adapter Catalog** — Browse, install, and configure external adapters (Telegram, webhooks) from a built-in catalog. Test connections before going live, manage bindings visually in the topology graph, and monitor adapter health with a real-time status bar.
+
+**Dynamic Model Selection** — Choose from all available Claude models dynamically fetched from the Agent SDK, instead of being limited to a hardcoded list.
+
+## All Changes
+
+### Added
+
+- Rebuild marketing homepage with narrative-driven design, approachable language, and new imagery
+- Improve social share cards, SEO metadata, and AI readability for the marketing site
+- Browse, install, and configure external adapters from a built-in catalog
+- Route external messages to specific agents with visual binding management in topology
+- Group related messages into threaded conversations in the Relay activity feed
+- Display human-readable names for endpoints, adapters, and message subjects throughout Relay
+- Monitor Relay health at a glance with status bar, message filters, and smooth animations
+- Test Telegram adapter connections before going live
+- Choose from all available Claude models dynamically instead of a hardcoded list
+- See available updates at a glance with a version indicator and details popover
+- Access agent settings and start chats directly from topology graph nodes
+
+### Changed
+
+- Standardize logging across all packages with structured, parseable output
+- Rename "Tunnel" to "Remote" throughout the UI for clarity
+
+### Fixed
+
+- Fix critical Relay publish pipeline bug where adapter delivery was silently skipped, blocking all Relay-routed chat messages and Pulse dispatches
+- Return detailed delivery results from adapters instead of discarding status information
+- Add 30-second timeout protection for adapter delivery
+- Include adapter-delivered messages in the SQLite audit trail
+- Return real trace IDs for Relay messages instead of placeholder values
+- Fix Telegram feedback loop that caused duplicate messages
+- Send properly formatted messages through Telegram instead of raw JSON chunks
+- Resolve CWD resolution and MCP transport reuse issues
+- Show correct sender names on delivered conversation messages
+- Track message delivery end-to-end through the Relay publish pipeline
+- Fix header overlap on marketing homepage hero section
+- Fix Vercel deployment failures for the marketing site
+- Handle console endpoint registration errors gracefully
+- Resolve 125+ code quality issues across server, relay, mesh, client, and shared packages
+
+## Install / Update
+
+```
+npm install -g dorkos@0.5.0
+```

@@ -5,6 +5,46 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-03-01
+
+> Human-readable Relay messaging, marketing site overhaul, and 125+ code quality fixes
+
+### Added
+
+- Rebuild marketing homepage with narrative-driven design, approachable language, and new imagery
+- Improve social share cards, SEO metadata, and AI readability for the marketing site
+- Browse, install, and configure external adapters from a built-in catalog
+- Route external messages to specific agents with visual binding management in topology
+- Group related messages into threaded conversations in the Relay activity feed
+- Display human-readable names for endpoints, adapters, and message subjects throughout Relay
+- Monitor Relay health at a glance with status bar, message filters, and smooth animations
+- Test Telegram adapter connections before going live
+- Choose from all available Claude models dynamically instead of a hardcoded list
+- See available updates at a glance with a version indicator and details popover
+- Access agent settings and start chats directly from topology graph nodes
+
+### Changed
+
+- Standardize logging across all packages with structured, parseable output
+- Rename "Tunnel" to "Remote" throughout the UI for clarity
+
+### Fixed
+
+- Fix critical Relay publish pipeline bug where adapter delivery was silently skipped, blocking all Relay-routed chat messages and Pulse dispatches
+- Return detailed delivery results from adapters instead of discarding status information
+- Add 30-second timeout protection for adapter delivery
+- Include adapter-delivered messages in the SQLite audit trail
+- Return real trace IDs for Relay messages instead of placeholder values
+- Fix Telegram feedback loop that caused duplicate messages
+- Send properly formatted messages through Telegram instead of raw JSON chunks
+- Resolve CWD resolution and MCP transport reuse issues
+- Show correct sender names on delivered conversation messages
+- Track message delivery end-to-end through the Relay publish pipeline
+- Fix header overlap on marketing homepage hero section
+- Fix Vercel deployment failures for the marketing site
+- Handle console endpoint registration errors gracefully
+- Resolve 125+ code quality issues across server, relay, mesh, client, and shared packages
+
 ## [0.4.0] - 2026-02-26
 
 > Multi-agent infrastructure — Relay message bus, Mesh discovery, Agent Identity, and unified database
