@@ -230,10 +230,16 @@ router.post('/:id/messages', async (req, res) => {
   }
 
   // Legacy path: stream SSE response on the POST connection
-  // Guarantee lock release if client disconnects before try block
-  res.on('close', () => {
+  // Idempotent lock release — ensures exactly one release regardless of close/finally ordering
+  let lockReleased = false;
+  const releaseLockOnce = () => {
+    if (lockReleased) return;
+    lockReleased = true;
     agentManager.releaseLock(sessionId, clientId);
-  });
+  };
+
+  // Guarantee lock release if client disconnects before try block
+  res.on('close', releaseLockOnce);
 
   initSSEStream(res);
 
@@ -259,7 +265,7 @@ router.post('/:id/messages', async (req, res) => {
       data: { message: err instanceof Error ? err.message : 'Unknown error' },
     });
   } finally {
-    agentManager.releaseLock(sessionId, clientId);
+    releaseLockOnce();
     endSSEStream(res);
   }
 });

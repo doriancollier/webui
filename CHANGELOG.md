@@ -28,10 +28,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Sharpen villain section visuals and copy per design review
 - Rename Tunnel to Remote and use icon color for state
 
 ### Fixed
 
+- Address remaining code review issues (S1, S2, C4) and fix web build
 - Address 16 code review issues — round 2 remediation
 - Address 18 code review issues across relay, mesh, and telegram adapter
 - Remove creepy eyebrow text and fix header overlap in hero

@@ -525,7 +525,7 @@
       "slug": "server-client-code-review-fixes",
       "title": "Server & Client Code Review Fixes",
       "created": "2026-02-28",
-      "status": "specified"
+      "status": "implemented"
     }
   ]
 }

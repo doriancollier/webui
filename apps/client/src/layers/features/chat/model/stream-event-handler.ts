@@ -130,9 +130,13 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         const parts = currentPartsRef.current;
         const lastPart = parts[parts.length - 1];
         if (lastPart && lastPart.type === 'text') {
-          lastPart.text += text;
+          // Immutable update — avoid mid-mutation reads under concurrent rendering
+          currentPartsRef.current = [
+            ...parts.slice(0, -1),
+            { ...lastPart, text: lastPart.text + text },
+          ];
         } else {
-          parts.push({ type: 'text', text });
+          currentPartsRef.current = [...parts, { type: 'text', text }];
         }
         estimatedTokensRef.current += text.length / 4;
         setEstimatedTokens(estimatedTokensRef.current);

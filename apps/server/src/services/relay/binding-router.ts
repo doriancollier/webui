@@ -169,12 +169,15 @@ export class BindingRouter {
     if (pending) return pending;
 
     const promise = (async () => {
-      const sessionId = await this.createNewSession(binding);
-      this.sessionMap.set(key, sessionId);
-      this.inFlight.delete(key);
-      this.evictOldestSessions();
-      await this.saveSessionMap();
-      return sessionId;
+      try {
+        const sessionId = await this.createNewSession(binding);
+        this.sessionMap.set(key, sessionId);
+        this.evictOldestSessions();
+        await this.saveSessionMap();
+        return sessionId;
+      } finally {
+        this.inFlight.delete(key);
+      }
     })();
 
     this.inFlight.set(key, promise);
