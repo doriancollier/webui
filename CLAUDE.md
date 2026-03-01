@@ -286,6 +286,12 @@ Tests live alongside source in `__tests__/` directories within each app and pack
 - **Prettier + Tailwind**: `prettier-plugin-tailwindcss` sorts Tailwind classes automatically.
 - **Claude Code rules**: `.claude/rules/file-size.md`, `.claude/rules/documentation.md`, `.claude/rules/code-quality.md` provide additional guidelines for file size limits, documentation standards, and code quality practices.
 
+## Research
+
+Research artifacts from the `research-expert` agent live in `research/` using the naming convention `YYYYMMDD_topic-slug.md`. There are 80+ reports covering topics like scheduler design, relay/mesh architecture, Turborepo env vars, marketing strategy, and more.
+
+**Always check `research/` before doing new research.** Use `Grep` to search filenames and content for relevant keywords. If a report covers the question, use it directly rather than re-doing the work. Only research the gaps or explicitly stale information.
+
 ## Architecture Decision Records
 
 Key architectural decisions are documented in `decisions/` as lightweight ADRs (Michael Nygard format). Each ADR has YAML frontmatter (`number`, `title`, `status`, `created`, `spec`) and sections for Context, Decision, and Consequences.
