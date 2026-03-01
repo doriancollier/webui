@@ -99,6 +99,9 @@ function createMockRelayCore() {
   };
 }
 
+/** Valid UUID for session ID params (routes validate UUID format). */
+const S1 = '00000000-0000-4000-8000-000000000001';
+
 describe('Sessions Routes — Relay Integration', () => {
   let app: ReturnType<typeof createApp>;
   let mockRelayCore: ReturnType<typeof createMockRelayCore>;
@@ -126,7 +129,7 @@ describe('Sessions Routes — Relay Integration', () => {
       app.locals.relayCore = mockRelayCore;
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello relay' });
 
@@ -142,7 +145,7 @@ describe('Sessions Routes — Relay Integration', () => {
       app.locals.relayCore = mockRelayCore;
 
       await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
@@ -157,12 +160,12 @@ describe('Sessions Routes — Relay Integration', () => {
 
       const beforeTs = Date.now();
       await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello relay' });
 
       expect(mockRelayCore.publish).toHaveBeenCalledWith(
-        'relay.agent.s1',
+        `relay.agent.${S1}`,
         { content: 'hello relay', cwd: undefined },
         expect.objectContaining({
           from: 'relay.human.console.client-42',
@@ -186,16 +189,16 @@ describe('Sessions Routes — Relay Integration', () => {
       app.locals.relayCore = mockRelayCore;
 
       await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
       expect(agentManager.acquireLock).toHaveBeenCalledWith(
-        's1',
+        S1,
         'client-42',
         expect.anything(),
       );
-      expect(agentManager.releaseLock).toHaveBeenCalledWith('s1', 'client-42');
+      expect(agentManager.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
     });
 
     it('returns 409 when session is locked even in Relay path', async () => {
@@ -208,7 +211,7 @@ describe('Sessions Routes — Relay Integration', () => {
       });
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
@@ -223,7 +226,7 @@ describe('Sessions Routes — Relay Integration', () => {
       mockRelayCore.publish.mockRejectedValue(new Error('Bus overloaded'));
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
@@ -237,11 +240,11 @@ describe('Sessions Routes — Relay Integration', () => {
       mockRelayCore.publish.mockRejectedValue(new Error('Bus overloaded'));
 
       await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
-      expect(agentManager.releaseLock).toHaveBeenCalledWith('s1', 'client-42');
+      expect(agentManager.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
     });
 
     it('ignores duplicate endpoint registration errors', async () => {
@@ -250,7 +253,7 @@ describe('Sessions Routes — Relay Integration', () => {
       mockRelayCore.registerEndpoint.mockRejectedValue(new Error('Endpoint already registered'));
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
@@ -269,7 +272,7 @@ describe('Sessions Routes — Relay Integration', () => {
       });
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-1')
         .send({ content: 'hello' });
 
@@ -286,7 +289,7 @@ describe('Sessions Routes — Relay Integration', () => {
       mockRelayCore.registerEndpoint.mockRejectedValue(new Error('disk full'));
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-1')
         .send({ content: 'hello' });
 
@@ -307,7 +310,7 @@ describe('Sessions Routes — Relay Integration', () => {
       mockRelayCore.registerEndpoint.mockRejectedValue(new Error('endpoint already registered'));
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .set('X-Client-Id', 'client-1')
         .send({ content: 'hello' });
 
@@ -322,7 +325,7 @@ describe('Sessions Routes — Relay Integration', () => {
 
       const events: StreamEvent[] = [
         { type: 'text_delta', data: { text: 'Hello world' } },
-        { type: 'done', data: { sessionId: 's1' } },
+        { type: 'done', data: { sessionId: S1 } },
       ];
 
       vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
@@ -330,10 +333,10 @@ describe('Sessions Routes — Relay Integration', () => {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('s1');
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .send({ content: 'hi' })
         .buffer(true)
         .parse((res, callback) => {
@@ -360,7 +363,7 @@ describe('Sessions Routes — Relay Integration', () => {
 
       const events: StreamEvent[] = [
         { type: 'text_delta', data: { text: 'fallback' } },
-        { type: 'done', data: { sessionId: 's1' } },
+        { type: 'done', data: { sessionId: S1 } },
       ];
 
       vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
@@ -368,10 +371,10 @@ describe('Sessions Routes — Relay Integration', () => {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('s1');
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .send({ content: 'hi' })
         .buffer(true)
         .parse((res, callback) => {

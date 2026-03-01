@@ -1,5 +1,3 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { Router } from 'express';
 import { agentManager } from '../services/core/agent-manager.js';
 import { transcriptReader } from '../services/session/transcript-reader.js';
@@ -12,13 +10,13 @@ import {
   SubmitAnswersRequestSchema,
   ListSessionsQuerySchema,
 } from '@dorkos/shared/schemas';
-import { assertBoundary } from '../lib/route-utils.js';
+import { assertBoundary, parseSessionId, sendError } from '../lib/route-utils.js';
+import { DEFAULT_CWD } from '../lib/resolve-root.js';
 import { isRelayEnabled } from '../services/relay/relay-state.js';
 import { logger } from '../lib/logger.js';
 import type { RelayCore } from '@dorkos/relay';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const vaultRoot = path.resolve(__dirname, '../../../../');
+const vaultRoot = DEFAULT_CWD;
 
 const router = Router();
 
@@ -67,24 +65,30 @@ router.get('/', async (req, res) => {
 
 // GET /api/sessions/:id - Get session details
 router.get('/:id', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const cwd = (req.query.cwd as string) || undefined;
   if (!(await assertBoundary(cwd, res))) return;
 
   const projectDir = cwd || vaultRoot;
-  const session = await transcriptReader.getSession(projectDir, req.params.id);
-  if (!session) return res.status(404).json({ error: 'Session not found' });
+  const session = await transcriptReader.getSession(projectDir, sessionId);
+  if (!session) return sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
   res.json(session);
 });
 
 // GET /api/sessions/:id/tasks - Get task state from SDK transcript
 router.get('/:id/tasks', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const cwdParam = (req.query.cwd as string) || undefined;
 
   if (!(await assertBoundary(cwdParam, res))) return;
 
   const cwd = cwdParam || vaultRoot;
 
-  const etag = await transcriptReader.getTranscriptETag(cwd, req.params.id);
+  const etag = await transcriptReader.getTranscriptETag(cwd, sessionId);
   if (etag) {
     res.setHeader('ETag', etag);
     if (req.headers['if-none-match'] === etag) {
@@ -93,22 +97,25 @@ router.get('/:id/tasks', async (req, res) => {
   }
 
   try {
-    const tasks = await transcriptReader.readTasks(cwd, req.params.id);
+    const tasks = await transcriptReader.readTasks(cwd, sessionId);
     res.json({ tasks });
   } catch {
-    res.status(404).json({ error: 'Session not found' });
+    sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
   }
 });
 
 // GET /api/sessions/:id/messages - Get message history from SDK transcript
 router.get('/:id/messages', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const cwdParam = (req.query.cwd as string) || undefined;
 
   if (!(await assertBoundary(cwdParam, res))) return;
 
   const cwd = cwdParam || vaultRoot;
 
-  const etag = await transcriptReader.getTranscriptETag(cwd, req.params.id);
+  const etag = await transcriptReader.getTranscriptETag(cwd, sessionId);
   if (etag) {
     res.setHeader('ETag', etag);
     if (req.headers['if-none-match'] === etag) {
@@ -116,27 +123,31 @@ router.get('/:id/messages', async (req, res) => {
     }
   }
 
-  const messages = await transcriptReader.readTranscript(cwd, req.params.id);
+  const messages = await transcriptReader.readTranscript(cwd, sessionId);
   res.json({ messages });
 });
 
 // PATCH /api/sessions/:id - Update session settings
 router.patch('/:id', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const parsed = UpdateSessionRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { permissionMode, model } = parsed.data;
-  const updated = agentManager.updateSession(req.params.id, { permissionMode, model });
-  if (!updated) return res.status(404).json({ error: 'Session not found' });
+  const updated = agentManager.updateSession(sessionId, { permissionMode, model });
+  if (!updated) return sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
 
   const cwd = (req.query.cwd as string) || vaultRoot;
-  const session = await transcriptReader.getSession(cwd, req.params.id);
+  if (!(await assertBoundary(cwd, res))) return;
+  const session = await transcriptReader.getSession(cwd, sessionId);
   if (session) {
     session.permissionMode = permissionMode ?? session.permissionMode;
     session.model = model ?? session.model;
   }
-  res.json(session ?? { id: req.params.id, permissionMode, model });
+  res.json(session ?? { id: sessionId, permissionMode, model });
 });
 
 /**
@@ -193,13 +204,14 @@ async function publishViaRelay(
 
 // POST /api/sessions/:id/messages - Send message (SSE stream or Relay 202 receipt)
 router.post('/:id/messages', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const parsed = SendMessageRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { content, cwd } = parsed.data;
-
-  const sessionId = req.params.id;
 
   // Read X-Client-Id header, or generate UUID if missing
   const clientId = (req.headers['x-client-id'] as string) || crypto.randomUUID();
@@ -273,44 +285,55 @@ router.post('/:id/messages', async (req, res) => {
 
 // POST /api/sessions/:id/approve - Approve pending tool call
 router.post('/:id/approve', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const parsed = ApprovalRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { toolCallId } = parsed.data;
-  const approved = agentManager.approveTool(req.params.id, toolCallId, true);
-  if (!approved) return res.status(404).json({ error: 'No pending approval' });
+  const approved = agentManager.approveTool(sessionId, toolCallId, true);
+  if (!approved) return sendError(res, 404, 'No pending approval', 'NO_PENDING_APPROVAL');
   res.json({ ok: true });
 });
 
 // POST /api/sessions/:id/deny - Deny pending tool call
 router.post('/:id/deny', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const parsed = ApprovalRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { toolCallId } = parsed.data;
-  const denied = agentManager.approveTool(req.params.id, toolCallId, false);
-  if (!denied) return res.status(404).json({ error: 'No pending approval' });
+  const denied = agentManager.approveTool(sessionId, toolCallId, false);
+  if (!denied) return sendError(res, 404, 'No pending approval', 'NO_PENDING_APPROVAL');
   res.json({ ok: true });
 });
 
 // POST /api/sessions/:id/submit-answers - Submit answers for AskUserQuestion
 router.post('/:id/submit-answers', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
   const parsed = SubmitAnswersRequestSchema.safeParse(req.body);
   if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { toolCallId, answers } = parsed.data;
-  const ok = agentManager.submitAnswers(req.params.id, toolCallId, answers);
-  if (!ok) return res.status(404).json({ error: 'No pending question' });
+  const ok = agentManager.submitAnswers(sessionId, toolCallId, answers);
+  if (!ok) return sendError(res, 404, 'No pending question', 'NO_PENDING_QUESTION');
   res.json({ ok: true });
 });
 
 // GET /api/sessions/:id/stream - Persistent SSE connection for session sync
-router.get('/:id/stream', (req, res) => {
-  const sessionId = req.params.id;
+router.get('/:id/stream', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
   const cwd = (req.query.cwd as string) || vaultRoot;
+  if (!(await assertBoundary(cwd, res))) return;
   const clientId = req.query.clientId as string | undefined;
   const sessionBroadcaster = req.app.locals.sessionBroadcaster;
 

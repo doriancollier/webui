@@ -2,7 +2,7 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { join } from 'path';
 import type { Response } from 'express';
 import type { TranscriptReader } from './transcript-reader.js';
-import { WATCHER } from '../../config/constants.js';
+import { SSE, WATCHER } from '../../config/constants.js';
 import { logger } from '../../lib/logger.js';
 import type { RelayCore } from '@dorkos/relay';
 
@@ -37,8 +37,21 @@ export class SessionBroadcaster {
   private debounceTimers = new Map<string, NodeJS.Timeout>();
   private relaySubscriptions = new Map<Response, Unsubscribe>();
   private relay: RelayCore | null = null;
+  private totalClientCount = 0;
 
   constructor(private transcriptReader: TranscriptReader) {}
+
+  /**
+   * Get the number of connected SSE clients.
+   *
+   * @param sessionId - If provided, returns count for that session only. Otherwise returns global total.
+   */
+  getClientCount(sessionId?: string): number {
+    if (sessionId) {
+      return this.clients.get(sessionId)?.size ?? 0;
+    }
+    return this.totalClientCount;
+  }
 
   /**
    * Set the RelayCore instance for relay subscription fan-in.
@@ -68,11 +81,25 @@ export class SessionBroadcaster {
    * @param clientId - Optional client identifier for relay subscription
    */
   registerClient(sessionId: string, vaultRoot: string, res: Response, clientId?: string): void {
+    // Enforce global SSE connection limit
+    if (this.totalClientCount >= SSE.MAX_TOTAL_CLIENTS) {
+      res.status(503).json({ error: 'SSE connection limit reached', code: 'SSE_LIMIT' });
+      return;
+    }
+
+    // Enforce per-session SSE connection limit
+    const sessionClients = this.clients.get(sessionId);
+    if (sessionClients && sessionClients.size >= SSE.MAX_CLIENTS_PER_SESSION) {
+      res.status(503).json({ error: 'Too many connections for this session', code: 'SSE_SESSION_LIMIT' });
+      return;
+    }
+
     // Add client to set
     if (!this.clients.has(sessionId)) {
       this.clients.set(sessionId, new Set());
     }
     this.clients.get(sessionId)!.add(res);
+    this.totalClientCount++;
 
     // Start watcher if this is the first client for this session
     if (!this.watchers.has(sessionId)) {
@@ -110,6 +137,9 @@ export class SessionBroadcaster {
     const clientSet = this.clients.get(sessionId);
     if (!clientSet) return;
 
+    if (clientSet.has(res)) {
+      this.totalClientCount--;
+    }
     clientSet.delete(res);
 
     // Clean up if no clients remain
@@ -339,6 +369,7 @@ export class SessionBroadcaster {
       });
     });
     this.clients.clear();
+    this.totalClientCount = 0;
 
     // Clear offsets
     this.offsets.clear();

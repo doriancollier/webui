@@ -67,6 +67,9 @@ import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
 
 const app = createApp();
 
+/** Valid UUID for session ID params (routes validate UUID format). */
+const S1 = '00000000-0000-4000-8000-000000000001';
+
 // Mock sessionBroadcaster for tests that need it
 const mockSessionBroadcaster = {
   registerClient: vi.fn(),
@@ -136,7 +139,7 @@ describe('Sessions Routes', () => {
     it('returns sessions from transcriptReader', async () => {
       const sessions = [
         {
-          id: 's1',
+          id: S1,
           title: 'First question',
           createdAt: '2024-01-02',
           updatedAt: '2024-01-02',
@@ -163,7 +166,7 @@ describe('Sessions Routes', () => {
   describe('GET /api/sessions/:id', () => {
     it('returns session when found', async () => {
       const session = {
-        id: 's1',
+        id: S1,
         title: 'My session',
         createdAt: '2024-01-01',
         updatedAt: '2024-01-01',
@@ -171,13 +174,20 @@ describe('Sessions Routes', () => {
       };
       vi.mocked(transcriptReader.getSession).mockResolvedValue(session);
 
-      const res = await request(app).get('/api/sessions/s1');
+      const res = await request(app).get(`/api/sessions/${S1}`);
       expect(res.status).toBe(200);
       expect(res.body).toEqual(session);
     });
 
-    it('returns 404 for missing session', async () => {
+    it('returns 400 for invalid (non-UUID) session ID', async () => {
       const res = await request(app).get('/api/sessions/nonexistent');
+      expect(res.status).toBe(400);
+      expect(res.body.code).toBe('INVALID_SESSION_ID');
+    });
+
+    it('returns 404 for missing session', async () => {
+      const missingId = '00000000-0000-4000-8000-ffffffffffff';
+      const res = await request(app).get(`/api/sessions/${missingId}`);
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('Session not found');
     });
@@ -187,7 +197,7 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions/:id/messages', () => {
     it('returns 400 for missing content', async () => {
-      const res = await request(app).post('/api/sessions/s1/messages').send({});
+      const res = await request(app).post(`/api/sessions/${S1}/messages`).send({});
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Invalid request');
@@ -196,7 +206,7 @@ describe('Sessions Routes', () => {
     it('streams events from agentManager via SSE', async () => {
       const events: StreamEvent[] = [
         { type: 'text_delta', data: { text: 'Hello world' } },
-        { type: 'done', data: { sessionId: 's1' } },
+        { type: 'done', data: { sessionId: S1 } },
       ];
 
       vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
@@ -204,10 +214,10 @@ describe('Sessions Routes', () => {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('s1');
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .send({ content: 'hi' })
         .buffer(true)
         .parse((res, callback) => {
@@ -236,7 +246,7 @@ describe('Sessions Routes', () => {
       });
 
       const res = await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .send({ content: 'hi' })
         .buffer(true)
         .parse((res, callback) => {
@@ -258,7 +268,7 @@ describe('Sessions Routes', () => {
     it('acquires and releases lock when streaming', async () => {
       const events: StreamEvent[] = [
         { type: 'text_delta', data: { text: 'Hello' } },
-        { type: 'done', data: { sessionId: 's1' } },
+        { type: 'done', data: { sessionId: S1 } },
       ];
 
       vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
@@ -266,10 +276,10 @@ describe('Sessions Routes', () => {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('s1');
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
 
       await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .send({ content: 'hi' })
         .buffer(true)
         .parse((res, callback) => {
@@ -283,11 +293,11 @@ describe('Sessions Routes', () => {
         });
 
       expect(agentManager.acquireLock).toHaveBeenCalledWith(
-        's1',
+        S1,
         expect.any(String),
         expect.anything()
       );
-      expect(agentManager.releaseLock).toHaveBeenCalledWith('s1', expect.any(String));
+      expect(agentManager.releaseLock).toHaveBeenCalledWith(S1, expect.any(String));
     });
 
     it('returns 409 when session is locked by another client', async () => {
@@ -297,7 +307,7 @@ describe('Sessions Routes', () => {
         acquiredAt: Date.now() - 60000,
       });
 
-      const res = await request(app).post('/api/sessions/s1/messages').send({ content: 'hi' });
+      const res = await request(app).post(`/api/sessions/${S1}/messages`).send({ content: 'hi' });
 
       expect(res.status).toBe(409);
       expect(res.body).toMatchObject({
@@ -314,7 +324,7 @@ describe('Sessions Routes', () => {
       });
 
       await request(app)
-        .post('/api/sessions/s1/messages')
+        .post(`/api/sessions/${S1}/messages`)
         .send({ content: 'hi' })
         .buffer(true)
         .parse((res, callback) => {
@@ -338,17 +348,17 @@ describe('Sessions Routes', () => {
     it('approves pending tool call', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(true);
 
-      const res = await request(app).post('/api/sessions/s1/approve').send({ toolCallId: 'tc1' });
+      const res = await request(app).post(`/api/sessions/${S1}/approve`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
-      expect(agentManager.approveTool).toHaveBeenCalledWith('s1', 'tc1', true);
+      expect(agentManager.approveTool).toHaveBeenCalledWith(S1, 'tc1', true);
     });
 
     it('returns 404 when no pending approval', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(false);
 
-      const res = await request(app).post('/api/sessions/s1/approve').send({ toolCallId: 'tc1' });
+      const res = await request(app).post(`/api/sessions/${S1}/approve`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('No pending approval');
@@ -361,17 +371,17 @@ describe('Sessions Routes', () => {
     it('denies pending tool call', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(true);
 
-      const res = await request(app).post('/api/sessions/s1/deny').send({ toolCallId: 'tc1' });
+      const res = await request(app).post(`/api/sessions/${S1}/deny`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
-      expect(agentManager.approveTool).toHaveBeenCalledWith('s1', 'tc1', false);
+      expect(agentManager.approveTool).toHaveBeenCalledWith(S1, 'tc1', false);
     });
 
     it('returns 404 when no pending approval', async () => {
       vi.mocked(agentManager.approveTool).mockReturnValue(false);
 
-      const res = await request(app).post('/api/sessions/s1/deny').send({ toolCallId: 'tc1' });
+      const res = await request(app).post(`/api/sessions/${S1}/deny`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(404);
       expect(res.body.error).toBe('No pending approval');
@@ -387,7 +397,7 @@ describe('Sessions Routes', () => {
         res.end();
       });
 
-      const res = await request(app).get('/api/sessions/s1/stream');
+      const res = await request(app).get(`/api/sessions/${S1}/stream`);
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toBe('text/event-stream');
@@ -402,11 +412,11 @@ describe('Sessions Routes', () => {
         res.end();
       });
 
-      await request(app).get('/api/sessions/s1/stream');
+      await request(app).get(`/api/sessions/${S1}/stream`);
 
       expect(mockSessionBroadcaster.registerClient).toHaveBeenCalled();
       expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
-        's1',
+        S1,
         expect.any(String),
         expect.anything(),
         undefined
@@ -444,7 +454,7 @@ describe('Sessions Routes', () => {
         new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
       );
 
-      const res = await request(app).get('/api/sessions/s1').query({ cwd: '/etc' });
+      const res = await request(app).get(`/api/sessions/${S1}`).query({ cwd: '/etc' });
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('OUTSIDE_BOUNDARY');
@@ -455,7 +465,7 @@ describe('Sessions Routes', () => {
         new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
       );
 
-      const res = await request(app).get('/api/sessions/s1/messages').query({ cwd: '/tmp/evil' });
+      const res = await request(app).get(`/api/sessions/${S1}/messages`).query({ cwd: '/tmp/evil' });
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('OUTSIDE_BOUNDARY');
@@ -466,7 +476,7 @@ describe('Sessions Routes', () => {
         new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
       );
 
-      const res = await request(app).get('/api/sessions/s1/tasks').query({ cwd: '/tmp/evil' });
+      const res = await request(app).get(`/api/sessions/${S1}/tasks`).query({ cwd: '/tmp/evil' });
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('OUTSIDE_BOUNDARY');

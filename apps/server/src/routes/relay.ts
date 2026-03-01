@@ -17,9 +17,8 @@ import {
   AdapterCreateRequestSchema,
   AdapterConfigUpdateSchema,
 } from '@dorkos/shared/relay-schemas';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { initSSEStream } from '../services/core/stream-adapter.js';
+import { DEFAULT_CWD } from '../lib/resolve-root.js';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
 import { resolveSubjectLabels } from '../services/relay/subject-resolver.js';
@@ -130,10 +129,7 @@ export function createRelayRouter(
       // Collect all unique subjects (to + from) and resolve labels
       const toSubjects = messages.messages.map((m) => m.subject);
       const allSubjects = [...toSubjects, ...fromSubjects.values()];
-      const vaultRoot = path.resolve(
-        path.dirname(fileURLToPath(import.meta.url)),
-        '../../../../',
-      );
+      const vaultRoot = DEFAULT_CWD;
       const resolverDeps = {
         getSession: async (id: string) =>
           transcriptReader.getSession(vaultRoot, id),
@@ -360,7 +356,11 @@ export function createRelayRouter(
         clearInterval(keepalive);
         return;
       }
-      res.write(`: keepalive\n\n`);
+      try {
+        res.write(`: keepalive\n\n`);
+      } catch {
+        clearInterval(keepalive);
+      }
     }, 15_000);
 
     // Cleanup on connection close

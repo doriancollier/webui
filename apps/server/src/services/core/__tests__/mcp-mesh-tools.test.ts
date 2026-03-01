@@ -9,7 +9,7 @@ import {
   createMeshInspectHandler,
   createMeshQueryTopologyHandler,
   type McpToolDeps,
-} from '../mcp-tool-server.js';
+} from '../mcp-tools/index.js';
 
 function createMockDeps(meshEnabled = true): McpToolDeps {
   const mockMeshCore = {

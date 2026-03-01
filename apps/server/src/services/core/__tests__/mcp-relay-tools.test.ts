@@ -5,7 +5,7 @@ import {
   createRelayListEndpointsHandler,
   createRelayRegisterEndpointHandler,
   type McpToolDeps,
-} from '../mcp-tool-server.js';
+} from '../mcp-tools/index.js';
 
 function makeMockDeps(relayOverrides?: Record<string, unknown>): McpToolDeps {
   return {

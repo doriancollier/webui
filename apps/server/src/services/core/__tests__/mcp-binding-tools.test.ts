@@ -5,7 +5,7 @@ import {
   createBindingDeleteHandler,
   createDorkOsToolServer,
   type McpToolDeps,
-} from '../mcp-tool-server.js';
+} from '../mcp-tools/index.js';
 
 vi.mock('@dorkos/shared/manifest', () => ({
   readManifest: vi.fn(),

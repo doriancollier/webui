@@ -35,6 +35,9 @@ import { agentManager } from '../../services/core/agent-manager.js';
 
 const app = createApp();
 
+/** Valid UUID for session ID params (routes validate UUID format). */
+const SESSION_ID = '00000000-0000-4000-8000-000000000001';
+
 beforeEach(() => {
   vi.clearAllMocks();
 });
@@ -44,12 +47,12 @@ describe('POST /api/sessions/:id/submit-answers', () => {
     vi.mocked(agentManager.submitAnswers).mockReturnValue(true);
 
     const res = await request(app)
-      .post('/api/sessions/test-session/submit-answers')
+      .post(`/api/sessions/${SESSION_ID}/submit-answers`)
       .send({ toolCallId: 'tc-1', answers: { '0': 'Option A' } });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(agentManager.submitAnswers).toHaveBeenCalledWith('test-session', 'tc-1', {
+    expect(agentManager.submitAnswers).toHaveBeenCalledWith(SESSION_ID, 'tc-1', {
       '0': 'Option A',
     });
   });
@@ -58,7 +61,7 @@ describe('POST /api/sessions/:id/submit-answers', () => {
     vi.mocked(agentManager.submitAnswers).mockReturnValue(false);
 
     const res = await request(app)
-      .post('/api/sessions/test-session/submit-answers')
+      .post(`/api/sessions/${SESSION_ID}/submit-answers`)
       .send({ toolCallId: 'tc-1', answers: { '0': 'Option A' } });
 
     expect(res.status).toBe(404);
@@ -67,7 +70,7 @@ describe('POST /api/sessions/:id/submit-answers', () => {
 
   it('returns 400 when toolCallId is missing', async () => {
     const res = await request(app)
-      .post('/api/sessions/test-session/submit-answers')
+      .post(`/api/sessions/${SESSION_ID}/submit-answers`)
       .send({ answers: { '0': 'Option A' } });
 
     expect(res.status).toBe(400);
@@ -76,7 +79,7 @@ describe('POST /api/sessions/:id/submit-answers', () => {
 
   it('returns 400 when answers is missing', async () => {
     const res = await request(app)
-      .post('/api/sessions/test-session/submit-answers')
+      .post(`/api/sessions/${SESSION_ID}/submit-answers`)
       .send({ toolCallId: 'tc-1' });
 
     expect(res.status).toBe(400);
@@ -89,19 +92,19 @@ describe('POST /api/sessions/:id/approve', () => {
     vi.mocked(agentManager.approveTool).mockReturnValue(true);
 
     const res = await request(app)
-      .post('/api/sessions/test-session/approve')
+      .post(`/api/sessions/${SESSION_ID}/approve`)
       .send({ toolCallId: 'tc-1' });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(agentManager.approveTool).toHaveBeenCalledWith('test-session', 'tc-1', true);
+    expect(agentManager.approveTool).toHaveBeenCalledWith(SESSION_ID, 'tc-1', true);
   });
 
   it('returns 404 when no pending approval exists', async () => {
     vi.mocked(agentManager.approveTool).mockReturnValue(false);
 
     const res = await request(app)
-      .post('/api/sessions/test-session/approve')
+      .post(`/api/sessions/${SESSION_ID}/approve`)
       .send({ toolCallId: 'tc-1' });
 
     expect(res.status).toBe(404);
@@ -114,11 +117,11 @@ describe('POST /api/sessions/:id/deny', () => {
     vi.mocked(agentManager.approveTool).mockReturnValue(true);
 
     const res = await request(app)
-      .post('/api/sessions/test-session/deny')
+      .post(`/api/sessions/${SESSION_ID}/deny`)
       .send({ toolCallId: 'tc-1' });
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(agentManager.approveTool).toHaveBeenCalledWith('test-session', 'tc-1', false);
+    expect(agentManager.approveTool).toHaveBeenCalledWith(SESSION_ID, 'tc-1', false);
   });
 });

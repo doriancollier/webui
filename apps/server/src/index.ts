@@ -1,5 +1,5 @@
 import path from 'path';
-import { createApp } from './app.js';
+import { createApp, finalizeApp } from './app.js';
 import { agentManager } from './services/core/agent-manager.js';
 import { tunnelManager } from './services/core/tunnel-manager.js';
 import { SessionBroadcaster } from './services/session/session-broadcaster.js';
@@ -7,7 +7,7 @@ import { transcriptReader } from './services/session/transcript-reader.js';
 import { initConfigManager, configManager } from './services/core/config-manager.js';
 import { initBoundary } from './lib/boundary.js';
 import { initLogger, logger } from './lib/logger.js';
-import { createDorkOsToolServer } from './services/core/mcp-tool-server.js';
+import { createDorkOsToolServer } from './services/core/mcp-tools/index.js';
 import { PulseStore } from './services/pulse/pulse-store.js';
 import { SchedulerService } from './services/pulse/scheduler-service.js';
 import { createPulseRouter } from './routes/pulse.js';
@@ -61,12 +61,7 @@ async function start() {
   logger.info(`[Boundary] Directory boundary: ${resolvedBoundary}`);
 
   // Initialize Pulse scheduler if enabled
-  const schedulerConfig = configManager.get('scheduler') as {
-    enabled: boolean;
-    maxConcurrentRuns: number;
-    timezone: string | null;
-    retentionCount: number;
-  };
+  const schedulerConfig = configManager.get('scheduler');
   const pulseEnabled = env.DORKOS_PULSE_ENABLED || schedulerConfig.enabled;
 
   let pulseStore: PulseStore | undefined;
@@ -83,7 +78,7 @@ async function start() {
   }
 
   // Initialize Relay if enabled
-  const relayConfig = configManager.get('relay') as { enabled: boolean; dataDir?: string | null };
+  const relayConfig = configManager.get('relay');
   const relayEnabled = env.DORKOS_RELAY_ENABLED || relayConfig?.enabled;
 
   if (relayEnabled) {
@@ -122,7 +117,7 @@ async function start() {
   }
 
   // Initialize Mesh if enabled
-  const meshConfig = configManager.get('mesh') as { enabled: boolean } | undefined;
+  const meshConfig = configManager.get('mesh');
   const meshEnabled = env.DORKOS_MESH_ENABLED || meshConfig?.enabled;
 
   if (meshEnabled) {
@@ -210,6 +205,9 @@ async function start() {
     setMeshEnabled(true);
     logger.info('[Mesh] Routes mounted');
   }
+
+  // Finalize app: API 404 catch-all, error handler, and SPA serving
+  finalizeApp(app);
 
   // Initialize SessionBroadcaster and attach to app.locals
   sessionBroadcaster = new SessionBroadcaster(transcriptReader);

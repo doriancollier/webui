@@ -5,7 +5,10 @@
  */
 import type { Response } from 'express';
 import type { ZodSchema, ZodError } from 'zod';
+import { z } from 'zod';
 import { validateBoundary, BoundaryError } from './boundary.js';
+
+const uuidSchema = z.string().uuid();
 
 /**
  * Parse and validate a request body against a Zod schema.
@@ -34,6 +37,29 @@ export function parseBody<T>(schema: ZodSchema<T>, data: unknown, res: Response)
  */
 export function toErrorMessage(err: unknown, fallback = 'Internal server error'): string {
   return err instanceof Error ? err.message : fallback;
+}
+
+/**
+ * Validate that a string is a valid UUID.
+ *
+ * @param id - The string to validate
+ * @returns The validated UUID string, or `null` if invalid
+ */
+export function parseSessionId(id: string): string | null {
+  const result = uuidSchema.safeParse(id);
+  return result.success ? result.data : null;
+}
+
+/**
+ * Send a standardized JSON error response.
+ *
+ * @param res - Express response object
+ * @param status - HTTP status code
+ * @param message - Human-readable error message
+ * @param code - Machine-readable error code
+ */
+export function sendError(res: Response, status: number, message: string, code: string): void {
+  res.status(status).json({ error: message, code });
 }
 
 /**

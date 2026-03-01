@@ -26,6 +26,13 @@ export const GIT = {
   STATUS_TIMEOUT_MS: 5000,
 } as const;
 
+export const SSE = {
+  /** Max SSE clients connected to a single session. */
+  MAX_CLIENTS_PER_SESSION: 10,
+  /** Max total SSE clients across all sessions. */
+  MAX_TOTAL_CLIENTS: 500,
+} as const;
+
 export const SESSIONS = {
   /** In-memory session expiry (ms). */
   TIMEOUT_MS: 30 * 60 * 1000,
@@ -33,6 +40,8 @@ export const SESSIONS = {
   LOCK_TTL_MS: 5 * 60 * 1000,
   /** Interactive tool approval/question timeout (ms). */
   INTERACTION_TIMEOUT_MS: 10 * 60 * 1000,
+  /** Maximum number of concurrent in-memory sessions. */
+  MAX_SESSIONS: 50,
 } as const;
 
 export const TRANSCRIPT = {

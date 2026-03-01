@@ -1,6 +1,4 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { query, type Options, type SDKMessage } from '@anthropic-ai/claude-agent-sdk';
+import { query, type Options, type SDKMessage, type McpServerConfig } from '@anthropic-ai/claude-agent-sdk';
 import type { Response } from 'express';
 import type { StreamEvent, PermissionMode, ModelOption } from '@dorkos/shared/types';
 import { SESSIONS } from '../../config/constants.js';
@@ -12,7 +10,7 @@ import { makeUserPrompt, resolveClaudeCliPath } from '../../lib/sdk-utils.js';
 import { buildSystemPromptAppend } from './context-builder.js';
 import { validateBoundary } from '../../lib/boundary.js';
 import { logger } from '../../lib/logger.js';
-import { env } from '../../env.js';
+import { DEFAULT_CWD } from '../../lib/resolve-root.js';
 
 export { buildTaskEvent } from '../session/build-task-event.js';
 
@@ -29,16 +27,17 @@ const DEFAULT_MODELS: ModelOption[] = [
  */
 export class AgentManager {
   private sessions = new Map<string, AgentSession>();
+  /** Reverse index: SDK session ID → our session map key, for O(1) lookup. */
+  private sdkSessionIndex = new Map<string, string>();
   private lockManager = new SessionLockManager();
   private readonly SESSION_TIMEOUT_MS = SESSIONS.TIMEOUT_MS;
   private readonly cwd: string;
   private readonly claudeCliPath: string | undefined;
-  private mcpServers: Record<string, unknown> = {};
+  private mcpServers: Record<string, McpServerConfig> = {};
   private cachedModels: ModelOption[] | null = null;
 
   constructor(cwd?: string) {
-    const thisDir = path.dirname(fileURLToPath(import.meta.url));
-    this.cwd = cwd ?? env.DORKOS_DEFAULT_CWD ?? path.resolve(thisDir, '../../../../');
+    this.cwd = cwd ?? DEFAULT_CWD;
     this.claudeCliPath = resolveClaudeCliPath();
   }
 
@@ -46,7 +45,7 @@ export class AgentManager {
    * Register MCP tool servers to be injected into every SDK query() call.
    * Called once at server startup after singleton services are initialized.
    */
-  setMcpServers(servers: Record<string, unknown>): void {
+  setMcpServers(servers: Record<string, McpServerConfig>): void {
     this.mcpServers = servers;
   }
 
@@ -64,6 +63,12 @@ export class AgentManager {
     }
   ): void {
     if (!this.sessions.has(sessionId)) {
+      if (this.sessions.size >= SESSIONS.MAX_SESSIONS) {
+        throw new Error(
+          `Maximum session limit reached (${SESSIONS.MAX_SESSIONS}). ` +
+          'Wait for existing sessions to expire or restart the server.'
+        );
+      }
       this.sessions.set(sessionId, {
         sdkSessionId: sessionId,
         lastActivity: Date.now(),
@@ -73,6 +78,8 @@ export class AgentManager {
         pendingInteractions: new Map(),
         eventQueue: [],
       });
+      // Initial reverse index entry (sdkSessionId === sessionId at creation)
+      this.sdkSessionIndex.set(sessionId, sessionId);
     }
   }
 
@@ -140,12 +147,12 @@ export class AgentManager {
     }
 
     if (session.model) {
-      (sdkOptions as Record<string, unknown>).model = session.model;
+      sdkOptions.model = session.model;
     }
 
     // Inject MCP tool servers (if any registered)
     if (Object.keys(this.mcpServers).length > 0) {
-      (sdkOptions as Record<string, unknown>).mcpServers = this.mcpServers;
+      sdkOptions.mcpServers = this.mcpServers;
     }
 
     sdkOptions.canUseTool = createCanUseTool(session, logger.debug.bind(logger));
@@ -200,9 +207,15 @@ export class AgentManager {
         const { result } = winner;
         if (result.done) break;
 
+        const prevSdkId = session.sdkSessionId;
         for await (const event of mapSdkMessage(result.value, session, sessionId, toolState)) {
           if (event.type === 'done') emittedDone = true;
           yield event;
+        }
+        // Update reverse index if sdk-event-mapper assigned a new SDK session ID
+        if (session.sdkSessionId !== prevSdkId) {
+          this.sdkSessionIndex.delete(prevSdkId);
+          this.sdkSessionIndex.set(session.sdkSessionId, sessionId);
         }
       }
     } catch (err) {
@@ -275,6 +288,7 @@ export class AgentManager {
         for (const interaction of session.pendingInteractions.values()) {
           clearTimeout(interaction.timeout);
         }
+        this.sdkSessionIndex.delete(session.sdkSessionId);
         this.sessions.delete(id);
         expiredIds.push(id);
       }
@@ -282,14 +296,12 @@ export class AgentManager {
     this.lockManager.cleanup(expiredIds);
   }
 
-  /** Find a session by its map key OR by its sdkSessionId. */
+  /** Find a session by its map key OR by its sdkSessionId (O(1) via reverse index). */
   private findSession(sessionId: string): AgentSession | undefined {
     const direct = this.sessions.get(sessionId);
     if (direct) return direct;
-    for (const session of this.sessions.values()) {
-      if (session.sdkSessionId === sessionId) return session;
-    }
-    return undefined;
+    const mappedKey = this.sdkSessionIndex.get(sessionId);
+    return mappedKey ? this.sessions.get(mappedKey) : undefined;
   }
 
   hasSession(sessionId: string): boolean {

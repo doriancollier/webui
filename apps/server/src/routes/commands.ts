@@ -1,13 +1,10 @@
 import { Router } from 'express';
 import { CommandRegistryService } from '../services/core/command-registry.js';
 import { CommandsQuerySchema } from '@dorkos/shared/schemas';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
-import { env } from '../env.js';
+import { DEFAULT_CWD } from '../lib/resolve-root.js';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const defaultRoot = env.DORKOS_DEFAULT_CWD ?? path.resolve(__dirname, '../../../../');
+const defaultRoot = DEFAULT_CWD;
 const MAX_REGISTRY_CACHE_SIZE = 50;
 const registryCache = new Map<string, CommandRegistryService>();
 

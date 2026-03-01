@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 76,
+  "nextNumber": 77,
   "specs": [
     {
       "number": 1,
@@ -524,6 +524,13 @@
       "number": 75,
       "slug": "server-client-code-review-fixes",
       "title": "Server & Client Code Review Fixes",
+      "created": "2026-02-28",
+      "status": "implemented"
+    },
+    {
+      "number": 76,
+      "slug": "server-review-remediation-r3",
+      "title": "Server Code Review Remediation — Round 3",
       "created": "2026-02-28",
       "status": "implemented"
     }

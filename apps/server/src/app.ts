@@ -70,6 +70,19 @@ export function createApp() {
   app.get('/api/openapi.json', (_req, res) => res.json(spec));
   app.use('/api/docs', apiReference({ content: spec }));
 
+  return app;
+}
+
+/**
+ * Finalize the Express app by adding the API 404 catch-all, error handler,
+ * and production SPA serving. Must be called after all API routes are mounted.
+ */
+export function finalizeApp(app: express.Express): void {
+  // API 404 -- must come after all /api routes, before SPA catch-all
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'Not found', code: 'API_NOT_FOUND' });
+  });
+
   // Error handler (must be after routes)
   app.use(errorHandler);
 
@@ -81,6 +94,4 @@ export function createApp() {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }
-
-  return app;
 }

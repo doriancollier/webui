@@ -13,17 +13,21 @@ import { SERVER_VERSION } from '../lib/version.js';
 
 const router = Router();
 
+/** Keys that must be filtered during deep merge to prevent prototype pollution. */
+const DANGEROUS_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
 /**
  * Recursively merge source object into target.
  * Arrays are replaced (not merged). Null values from source override target.
  */
-function deepMerge(
+export function deepMerge(
   target: Record<string, unknown>,
   source: Record<string, unknown>
 ): Record<string, unknown> {
   const result = { ...target };
 
   for (const [key, sourceValue] of Object.entries(source)) {
+    if (DANGEROUS_KEYS.has(key)) continue;
     const targetValue = result[key];
 
     if (

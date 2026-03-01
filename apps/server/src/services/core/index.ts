@@ -36,8 +36,8 @@ export {
   createBindingCreateHandler,
   createBindingDeleteHandler,
   createDorkOsToolServer,
-} from './mcp-tool-server.js';
-export type { McpToolDeps } from './mcp-tool-server.js';
+} from './mcp-tools/index.js';
+export type { McpToolDeps } from './mcp-tools/index.js';
 export { generateOpenAPISpec } from './openapi-registry.js';
 export { initSSEStream, sendSSEEvent, endSSEStream } from './stream-adapter.js';
 export { TunnelManager, tunnelManager } from './tunnel-manager.js';

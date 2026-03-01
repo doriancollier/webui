@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Address 18 code review findings — round 3 remediation
 - Address 19 code review findings across server, CLI, and shared packages
 - Address remaining code review issues (S1, S2, C4) and fix web build
 - Address 16 code review issues — round 2 remediation
