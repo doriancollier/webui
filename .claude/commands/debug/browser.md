@@ -31,8 +31,6 @@ AskUserQuestion:
       description: "Vite dev client (proxies /api to server)"
     - label: "localhost:6942"
       description: "Express API server directly"
-    - label: "localhost:4243"
-      description: "Roadmap app"
 ```
 
 **If description not provided or vague**, ask about issue type:
