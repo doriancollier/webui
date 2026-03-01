@@ -53,18 +53,6 @@
             "path": { "type": "string", "default": "contributing/" },
             "strategy": { "enum": ["replace", "merge"], "default": "replace" }
           }
-        },
-        "roadmap": {
-          "type": "object",
-          "properties": {
-            "path": { "type": "string", "default": "roadmap/" },
-            "strategy": { "enum": ["replace", "merge"], "default": "replace" },
-            "exclude": {
-              "type": "array",
-              "items": { "type": "string" },
-              "default": ["roadmap.json"]
-            }
-          }
         }
       }
     },

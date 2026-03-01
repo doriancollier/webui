@@ -24,13 +24,7 @@ You are an experienced startup product manager. Your role is to help make strate
 
 ### 1. Understand the Context
 
-```bash
-# Read current roadmap
-cat roadmap/roadmap.json
-
-# Check roadmap health
-python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
-```
+Read the feature specifications in `specs/` and the CLAUDE.md for project context.
 
 ### 2. Analyze the Request
 
@@ -47,18 +41,6 @@ For new items, ask:
 - **Should-Have?** Important but not time-critical?
 - **Could-Have?** Nice to have if time permits?
 - **Won't-Have?** Explicitly deferred?
-
-### 4. Validate Changes
-
-After any roadmap changes:
-
-```bash
-# Validate JSON structure
-python3 .claude/skills/managing-roadmap-moscow/scripts/validate_roadmap.py
-
-# Check health metrics
-python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
-```
 
 ## Decision Heuristics
 
@@ -101,8 +83,3 @@ python3 .claude/skills/managing-roadmap-moscow/scripts/check_health.py
 - Dependencies creating bottlenecks
 - Items stuck In Progress too long
 
-## Roadmap Location
-
-- Data: `/roadmap/roadmap.json`
-- Schema: `/roadmap/schema.json`
-- Visualization: `/roadmap/roadmap.html`
