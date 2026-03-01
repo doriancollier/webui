@@ -17,7 +17,7 @@ Parse `$ARGUMENTS` for these options:
 | Scope       | Description                                    |
 | ----------- | ---------------------------------------------- |
 | _(none)_    | Interactive scope selection                    |
-| `all`       | Update everything (harness + guides + roadmap) |
+| `all`       | Update everything (harness + guides) |
 | `harness`   | Update `.claude/` directory only               |
 | `guides`    | Update `contributing/` only                          |
 | `selective` | Choose individual files to update              |
@@ -428,7 +428,7 @@ header: "Update Scope"
 question: "What would you like to update?"
 options:
   - label: "All (Recommended)"
-    description: "Update harness, guides, and roadmap system"
+    description: "Update harness and guides"
   - label: "Harness only"
     description: "Update .claude/ directory (commands, skills, agents, hooks)"
   - label: "Guides only"
@@ -465,10 +465,6 @@ Filter to updateable files and present grouped by component:
 - [ ] contributing/02-environment-variables.md
       ...
 
-### Roadmap (roadmap/)
-
-- [ ] roadmap/app/...
-- [ ] roadmap/scripts/...
 ```
 
 Use AskUserQuestion to confirm selection.
@@ -532,7 +528,6 @@ npx tsx .claude/scripts/template-fetch.ts tree [repository] [target-version]
 ```bash
 find .claude -type f 2>/dev/null
 find developer-guides -type f 2>/dev/null
-find roadmap -type f 2>/dev/null
 ```
 
 ### Step 6.3: Detect User Additions
@@ -556,8 +551,6 @@ Algorithm:
 | **Harness Core**       | `.claude/hooks/`, `.claude/scripts/`                      | Replace                           |
 | **Harness Extensible** | `.claude/commands/`, `.claude/skills/`, `.claude/agents/` | Replace (preserve user additions) |
 | **Guides**             | `contributing/*.md`                                             | Replace                           |
-| **Roadmap System**     | `roadmap/*.ts`, `roadmap/scripts/`                        | Replace                           |
-| **Roadmap Data**       | `roadmap/roadmap.json`                                    | Skip (user data)                  |
 | **Gray Zone**          | `CLAUDE.md`, `package.json`                               | Merge (Phase 8)                   |
 | **User Space**         | `src/**`, `public/**`, `prisma/schema.prisma`             | Never touch                       |
 | **User Additions**     | Files not in template                                     | Never touch                       |
@@ -1297,11 +1290,6 @@ Track as skipped and continue with remaining files. Don't abort the entire updat
       "path": "contributing/",
       "strategy": "replace"
     },
-    "roadmap": {
-      "path": "roadmap/",
-      "strategy": "replace",
-      "exclude": ["roadmap.json"]
-    }
   },
   "skipPatterns": ["src/**", "public/**", "prisma/schema.prisma", ".env*"],
   "userAdditions": [".claude/skills/my-custom-skill/", ".claude/commands/my-command.md"],

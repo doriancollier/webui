@@ -172,18 +172,6 @@ If changelog fetch succeeds, display the update summary:
 
 - Render developer guides as HTML pages at /system/guides
 
-## [0.2.0-alpha.6] - 2026-02-01
-
-### Added
-
-- Add roadmap clearing functionality
-- Add autonomous roadmap execution system
-
-### Changed
-
-- Add roadmap:clear command to documentation
-- Add comprehensive documentation for autonomous roadmap execution
-
 ---
 
 **To update:** Run `/template:update` to selectively apply these changes.

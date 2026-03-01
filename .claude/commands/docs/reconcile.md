@@ -129,7 +129,6 @@ declare -A GUIDE_PATTERNS=(
   ["animations.md"]="animation|motion|apps/client/src/index.css"
   ["styling-theming.md"]="index.css|apps/client/src/layers/shared/ui/|tailwind"
   ["parallel-execution.md"]=".claude/agents/|\.claude/commands/"
-  ["autonomous-roadmap-execution.md"]=".claude/commands/roadmap/"
 
   # External docs (MDX) — from contributing/INDEX.md External Docs Coverage table
   ["docs/getting-started/configuration.mdx"]="config-manager|config-schema|packages/cli/"

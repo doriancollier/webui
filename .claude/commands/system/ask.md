@@ -223,7 +223,6 @@ Reference these when answering:
 | "run database migration" | `/db:migrate`                       | `pnpm prisma migrate deploy`                                        |
 | "scaffold a feature"     | Direct prompt: "Create feature X"   | Create FSD directory structure per `contributing/project-structure.md` |
 | "review recent work"     | `/review-recent-work`               | Manual code inspection                                              |
-| "manage roadmap"         | `/roadmap [subcommand]`             | Edit `roadmap/roadmap.json`                                         |
 | "git status"             | Direct prompt: "Show git status"    | `git status && git diff`                                            |
 | "learn how to X"         | `/system:learn [topic]`             | Research, experiment, document manually                             |
 | "codify what worked"     | `/system:learn we successfully [X]` | Create skill/command manually                                       |
@@ -239,7 +238,7 @@ When explaining processes, clarify the invocation model:
 **Slash Commands (User-Invoked):**
 
 - User explicitly types `/command` to trigger them
-- Example: `/spec:create`, `/git:commit`, `/roadmap`
+- Example: `/spec:create`, `/git:commit`
 - Use when: User wants explicit control over execution
 - Location: `.claude/commands/[namespace]/[name].md`
 
