@@ -100,13 +100,7 @@ export class TunnelManager extends EventEmitter {
       await this.listener.close();
       this.listener = null;
     }
-    this.updateStatus({
-      enabled: false,
-      connected: false,
-      url: null,
-      port: null,
-      startedAt: null,
-    });
+    this.updateStatus({ ...DEFAULT_STATUS });
   }
 }
 

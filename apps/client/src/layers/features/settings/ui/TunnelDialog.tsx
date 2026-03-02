@@ -18,6 +18,7 @@ import {
 import { useTransport } from '@/layers/shared/model';
 import { cn, TIMING, getPlatform } from '@/layers/shared/lib';
 import { useSessionId } from '@/layers/entities/session';
+import { broadcastTunnelChange } from '@/layers/entities/tunnel';
 import { TunnelOnboarding } from './TunnelOnboarding';
 
 type TunnelState = 'off' | 'starting' | 'connected' | 'stopping' | 'error';
@@ -180,6 +181,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
           setState('connected');
           setUrl(result.url);
           queryClient.invalidateQueries({ queryKey: ['config'] });
+          broadcastTunnelChange();
         } catch (err) {
           clearTimeout(timeout);
           setState('error');
@@ -193,6 +195,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
           setState('off');
           setUrl(null);
           queryClient.invalidateQueries({ queryKey: ['config'] });
+          broadcastTunnelChange();
         } catch (err) {
           setState('connected');
           setError(err instanceof Error ? err.message : 'Failed to stop tunnel');
