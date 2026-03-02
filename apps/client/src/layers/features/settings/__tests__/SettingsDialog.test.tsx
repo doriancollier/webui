@@ -12,6 +12,21 @@ vi.mock('../../../hooks/use-is-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+// Mock TunnelDialog to avoid nuqs adapter dependency
+vi.mock('../ui/TunnelDialog', () => ({
+  TunnelDialog: () => null,
+}));
+
+// Mock AdvancedTab to avoid transport dependency in SettingsDialog tests
+vi.mock('../ui/AdvancedTab', () => ({
+  AdvancedTab: () => <div data-testid="advanced-tab">Advanced</div>,
+}));
+
+// Mock ServerRestartOverlay to avoid transport dependency in SettingsDialog tests
+vi.mock('../ui/ServerRestartOverlay', () => ({
+  ServerRestartOverlay: () => null,
+}));
+
 // Mock Radix dialog portal to render inline
 vi.mock('@radix-ui/react-dialog', async () => {
   const actual =
@@ -161,12 +176,13 @@ describe('SettingsDialog', () => {
   });
 
   // Verifies tab navigation structure renders correctly
-  it('renders four tabs: Appearance, Preferences, Status Bar, Server', () => {
+  it('renders five tabs: Appearance, Preferences, Status Bar, Server, Advanced', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     expect(screen.getByRole('tab', { name: /appearance/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /preferences/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /status bar/i })).toBeDefined();
     expect(screen.getByRole('tab', { name: /server/i })).toBeDefined();
+    expect(screen.getByRole('tab', { name: /advanced/i })).toBeDefined();
   });
 
   // Verifies font family selector appears in the Appearance tab

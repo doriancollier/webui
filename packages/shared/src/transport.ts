@@ -27,6 +27,7 @@ import type {
   CreateScheduleInput,
   UpdateScheduleRequest,
   ListRunsQuery,
+  PulsePreset,
 } from './types.js';
 import type { AdapterConfig, AdapterStatus, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from './relay-schemas.js';
 import type {
@@ -126,6 +127,8 @@ export interface Transport {
   getRun(id: string): Promise<PulseRun>;
   /** Cancel a running Pulse job. */
   cancelRun(id: string): Promise<{ success: boolean }>;
+  /** Fetch available Pulse schedule presets for onboarding. */
+  getPulsePresets(): Promise<PulsePreset[]>;
 
   // --- Relay Message Bus ---
 
@@ -252,4 +255,11 @@ export interface Transport {
   createAgent(path: string, name?: string, description?: string, runtime?: string): Promise<AgentManifest>;
   /** Update an agent's fields by path. Returns the updated manifest. */
   updateAgentByPath(path: string, updates: Partial<AgentManifest>): Promise<AgentManifest>;
+
+  // --- Admin Operations ---
+
+  /** Initiate a factory reset: delete all DorkOS data and restart the server. */
+  resetAllData(confirm: string): Promise<{ message: string }>;
+  /** Initiate a graceful server restart. */
+  restartServer(): Promise<{ message: string }>;
 }

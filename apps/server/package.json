@@ -33,6 +33,7 @@
     "cors": "^2.8.5",
     "croner": "^10.0.1",
     "express": "^4.21.0",
+    "express-rate-limit": "^8.2.1",
     "gray-matter": "^4.0.3",
     "ulidx": "^2.4.0",
     "uuid": "^10.0.0",

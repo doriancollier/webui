@@ -139,6 +139,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     listRuns: vi.fn().mockResolvedValue([]),
     getRun: vi.fn(),
     cancelRun: vi.fn().mockResolvedValue({ success: true }),
+    getPulsePresets: vi.fn().mockResolvedValue([]),
     // Relay
     listRelayMessages: vi.fn().mockResolvedValue({ messages: [] }),
     getRelayMessage: vi.fn(),
@@ -216,6 +217,9 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     }),
     deleteBinding: vi.fn().mockResolvedValue(undefined),
     updateConfig: vi.fn().mockResolvedValue(undefined),
+    // Admin Operations
+    resetAllData: vi.fn().mockResolvedValue({ message: 'Reset initiated. Server will restart.' }),
+    restartServer: vi.fn().mockResolvedValue({ message: 'Restart initiated.' }),
     ...overrides,
   };
 }

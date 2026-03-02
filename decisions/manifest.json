@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 61,
+  "nextNumber": 62,
   "decisions": [
     {
       "number": 1,
@@ -536,6 +536,15 @@
       "created": "2026-03-01",
       "extractedFrom": "installation-experience",
       "specSlug": "installation-experience"
+    },
+    {
+      "number": 61,
+      "slug": "spawn-and-exit-server-restart",
+      "title": "Use Spawn-and-Exit Pattern for Server Restart",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "settings-reset-restart",
+      "specSlug": "settings-reset-restart"
     }
   ]
 }

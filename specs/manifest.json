@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 82,
+  "nextNumber": 83,
   "specs": [
     {
       "number": 1,
@@ -568,6 +568,13 @@
       "title": "Best-in-Class Installation Experience",
       "created": "2026-03-01",
       "status": "ideation"
+    },
+    {
+      "number": 82,
+      "slug": "settings-reset-restart",
+      "title": "Settings Reset & Server Restart",
+      "created": "2026-03-01",
+      "status": "specified"
     }
   ]
 }

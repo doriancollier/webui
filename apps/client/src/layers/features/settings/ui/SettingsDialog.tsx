@@ -21,6 +21,8 @@ import {
 } from '@/layers/shared/ui';
 import { ServerTab } from './ServerTab';
 import { TunnelDialog } from './TunnelDialog';
+import { AdvancedTab } from './AdvancedTab';
+import { ServerRestartOverlay } from './ServerRestartOverlay';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -31,6 +33,7 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const { theme, setTheme } = useTheme();
   const [activeTab, setActiveTab] = useState('appearance');
   const [tunnelDialogOpen, setTunnelDialogOpen] = useState(false);
+  const [restartOverlayOpen, setRestartOverlayOpen] = useState(false);
   const {
     showTimestamps,
     setShowTimestamps,
@@ -92,13 +95,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           className="flex flex-1 flex-col overflow-hidden"
         >
           <TabsList
-            className="mx-4 mt-3 grid w-full grid-cols-4"
+            className="mx-4 mt-3 grid w-full grid-cols-5"
             style={{ width: 'calc(100% - 2rem)' }}
           >
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
             <TabsTrigger value="preferences">Preferences</TabsTrigger>
             <TabsTrigger value="statusBar">Status Bar</TabsTrigger>
             <TabsTrigger value="server">Server</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced</TabsTrigger>
           </TabsList>
 
           <div className="min-h-[280px] flex-1 overflow-y-auto p-4">
@@ -285,10 +289,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <TabsContent value="server" className="mt-0">
               <ServerTab config={config} isLoading={isLoading} onOpenTunnelDialog={() => setTunnelDialogOpen(true)} />
             </TabsContent>
+
+            <TabsContent value="advanced" className="mt-0">
+              <AdvancedTab
+                onResetComplete={() => setRestartOverlayOpen(true)}
+                onRestartComplete={() => setRestartOverlayOpen(true)}
+              />
+            </TabsContent>
           </div>
         </Tabs>
       </ResponsiveDialogContent>
       <TunnelDialog open={tunnelDialogOpen} onOpenChange={setTunnelDialogOpen} />
+      <ServerRestartOverlay
+        open={restartOverlayOpen}
+        onDismiss={() => setRestartOverlayOpen(false)}
+      />
     </ResponsiveDialog>
   );
 }

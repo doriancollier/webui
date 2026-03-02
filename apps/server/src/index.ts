@@ -21,6 +21,7 @@ import { MeshCore } from '@dorkos/mesh';
 import { createMeshRouter } from './routes/mesh.js';
 import { setMeshEnabled, setMeshInitError } from './services/mesh/mesh-state.js';
 import { createDiscoveryRouter } from './routes/discovery.js';
+import { createAdminRouter } from './routes/admin.js';
 import { createDb, runMigrations } from '@dorkos/db';
 import { INTERVALS } from './config/constants.js';
 import { resolveDorkHome } from './lib/dork-home.js';
@@ -224,6 +225,14 @@ async function start() {
   app.use('/api/discovery', createDiscoveryRouter());
   logger.info('[Discovery] Routes mounted');
 
+  // Mount Admin routes (reset, restart)
+  app.use('/api/admin', createAdminRouter({
+    dorkHome,
+    shutdownServices,
+    closeDb: () => db.$client.close(),
+  }));
+  logger.info('[Admin] Routes mounted');
+
   // Finalize app: API 404 catch-all, error handler, and SPA serving
   finalizeApp(app);
 
@@ -280,9 +289,10 @@ async function start() {
   }
 }
 
-// Graceful shutdown
-async function shutdown() {
-  logger.info('Shutting down...');
+// Ordered teardown of all running services WITHOUT calling process.exit().
+// Extracted so the admin router can invoke it before a restart.
+async function shutdownServices() {
+  logger.info('Shutting down services...');
   if (healthCheckInterval) {
     clearInterval(healthCheckInterval);
   }
@@ -308,6 +318,12 @@ async function shutdown() {
     meshCore.close();
   }
   await tunnelManager.stop();
+}
+
+// Graceful shutdown
+async function shutdown() {
+  logger.info('Shutting down...');
+  await shutdownServices();
   process.exit(0);
 }
 

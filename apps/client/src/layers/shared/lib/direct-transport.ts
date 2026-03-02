@@ -22,6 +22,7 @@ import type {
   CreateScheduleInput,
   UpdateScheduleRequest,
   ListRunsQuery,
+  PulsePreset,
 } from '@dorkos/shared/types';
 
 export interface DirectTransportServices {
@@ -288,6 +289,10 @@ export class DirectTransport implements Transport {
     throw new Error('Pulse scheduler is not supported in embedded mode');
   }
 
+  async getPulsePresets(): Promise<PulsePreset[]> {
+    return [];
+  }
+
   // Relay message bus is not supported in embedded mode
   async listRelayMessages(): Promise<{ messages: unknown[]; nextCursor?: string }> {
     return { messages: [] };
@@ -502,5 +507,13 @@ export class DirectTransport implements Transport {
     const updated: AgentManifest = { ...existing, ...updates };
     await writeManifest(agentPath, updated);
     return updated;
+  }
+
+  async resetAllData(_confirm: string): Promise<{ message: string }> {
+    throw new Error('Reset and restart are not supported in Obsidian plugin mode.');
+  }
+
+  async restartServer(): Promise<{ message: string }> {
+    throw new Error('Reset and restart are not supported in Obsidian plugin mode.');
   }
 }

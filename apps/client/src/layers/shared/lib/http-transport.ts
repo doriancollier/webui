@@ -19,6 +19,7 @@ import type {
   CreateScheduleInput,
   UpdateScheduleRequest,
   ListRunsQuery,
+  PulsePreset,
 } from '@dorkos/shared/types';
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
 import type { TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from '@dorkos/shared/relay-schemas';
@@ -336,6 +337,10 @@ export class HttpTransport implements Transport {
     });
   }
 
+  getPulsePresets(): Promise<PulsePreset[]> {
+    return fetchJSON<PulsePreset[]>(this.baseUrl, '/pulse/presets');
+  }
+
   // --- Relay Message Bus ---
 
   listRelayMessages(filters?: {
@@ -642,5 +647,31 @@ export class HttpTransport implements Transport {
         body: JSON.stringify(updates),
       }
     );
+  }
+
+  // --- Admin Operations ---
+
+  async resetAllData(confirm: string): Promise<{ message: string }> {
+    const res = await fetch(`${this.baseUrl}/admin/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+    return res.json();
+  }
+
+  async restartServer(): Promise<{ message: string }> {
+    const res = await fetch(`${this.baseUrl}/admin/restart`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+    return res.json();
   }
 }
