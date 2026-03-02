@@ -2,11 +2,14 @@
  * Opt-in ngrok tunnel lifecycle manager (singleton).
  *
  * Wraps `@ngrok/ngrok` SDK with dynamic import for zero cost when disabled.
- * Configured via env vars: `TUNNEL_ENABLED`, `NGROK_AUTHTOKEN`, `TUNNEL_PORT`,
- * `TUNNEL_AUTH`, `TUNNEL_DOMAIN`. Tunnel failure is non-blocking.
+ * Extends EventEmitter to broadcast `status_change` events for SSE and
+ * cross-tab sync. Configured via env vars: `TUNNEL_ENABLED`, `NGROK_AUTHTOKEN`,
+ * `TUNNEL_PORT`, `TUNNEL_AUTH`, `TUNNEL_DOMAIN`. Tunnel failure is non-blocking.
  *
  * @module services/tunnel-manager
  */
+import { EventEmitter } from 'node:events';
+import type { TunnelStatus } from '@dorkos/shared/types';
 
 /** Configuration for starting an ngrok tunnel. */
 export interface TunnelConfig {
@@ -16,27 +19,39 @@ export interface TunnelConfig {
   domain?: string;
 }
 
-export interface TunnelStatus {
-  enabled: boolean;
-  connected: boolean;
-  url: string | null;
-  port: number | null;
-  startedAt: string | null;
+/** Options passed to `ngrok.forward()`. */
+interface NgrokForwardOpts {
+  addr: number;
+  authtoken_from_env?: boolean;
+  authtoken?: string;
+  basic_auth?: string[];
+  domain?: string;
+  on_status_change?: (addr: string, status: string) => void;
 }
 
+const DEFAULT_STATUS: TunnelStatus = {
+  enabled: false,
+  connected: false,
+  url: null,
+  port: null,
+  startedAt: null,
+  authEnabled: false,
+  tokenConfigured: false,
+  domain: null,
+};
+
 /** Singleton manager for ngrok tunnel lifecycle (start, stop, status). */
-export class TunnelManager {
+export class TunnelManager extends EventEmitter {
   private listener: { close(): Promise<void>; url(): string | null } | null = null;
-  private _status: TunnelStatus = {
-    enabled: false,
-    connected: false,
-    url: null,
-    port: null,
-    startedAt: null,
-  };
+  private _status: TunnelStatus = { ...DEFAULT_STATUS };
 
   get status(): TunnelStatus {
     return { ...this._status };
+  }
+
+  private updateStatus(partial: Partial<TunnelStatus>): void {
+    this._status = { ...this._status, ...partial };
+    this.emit('status_change', this.status);
   }
 
   async start(config: TunnelConfig): Promise<string> {
@@ -44,7 +59,7 @@ export class TunnelManager {
 
     const ngrok = await import('@ngrok/ngrok');
 
-    const forwardOpts: Record<string, unknown> = {
+    const forwardOpts: NgrokForwardOpts = {
       addr: config.port,
       authtoken_from_env: true,
     };
@@ -56,16 +71,27 @@ export class TunnelManager {
     if (config.basicAuth) forwardOpts.basic_auth = [config.basicAuth];
     if (config.domain) forwardOpts.domain = config.domain;
 
+    forwardOpts.on_status_change = (_addr: string, status: string) => {
+      if (status === 'connected') {
+        this.updateStatus({ connected: true });
+      } else if (status === 'closed') {
+        this.updateStatus({ connected: false });
+      }
+    };
+
     this.listener = await ngrok.forward(forwardOpts);
     const url = this.listener.url() ?? '';
 
-    this._status = {
+    this.updateStatus({
       enabled: true,
       connected: true,
       url,
       port: config.port,
       startedAt: new Date().toISOString(),
-    };
+      authEnabled: !!config.basicAuth,
+      tokenConfigured: !!config.authtoken,
+      domain: config.domain ?? null,
+    });
     return url;
   }
 
@@ -74,13 +100,13 @@ export class TunnelManager {
       await this.listener.close();
       this.listener = null;
     }
-    this._status = {
-      enabled: this._status.enabled,
+    this.updateStatus({
+      enabled: false,
       connected: false,
       url: null,
-      port: this._status.port,
-      startedAt: this._status.startedAt,
-    };
+      port: null,
+      startedAt: null,
+    });
   }
 }
 

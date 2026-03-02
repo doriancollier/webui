@@ -24,9 +24,25 @@ vi.mock('../../services/core/tunnel-manager.js', () => ({
   tunnelManager: {
     start: vi.fn(),
     stop: vi.fn(),
-    status: { enabled: false, connected: false, url: null, port: null, startedAt: null },
+    on: vi.fn(),
+    off: vi.fn(),
+    status: {
+      enabled: false, connected: false, url: null, port: null, startedAt: null,
+      authEnabled: false, tokenConfigured: false, domain: null,
+    },
   },
 }));
+
+const defaultTunnelStatus = {
+  enabled: false,
+  connected: false,
+  url: null,
+  port: null,
+  startedAt: null,
+  authEnabled: false,
+  tokenConfigured: false,
+  domain: null,
+};
 
 vi.mock('../../services/core/config-manager.js', () => ({
   configManager: {
@@ -49,20 +65,18 @@ const mockConfigGet = vi.mocked(configManager.get) as unknown as ReturnType<type
 const mockTunnelStart = vi.mocked(tunnelManager.start) as unknown as ReturnType<typeof vi.fn>;
 
 describe('Tunnel Route', () => {
+  const originalNodeEnv = process.env.NODE_ENV;
+
   beforeEach(() => {
     vi.clearAllMocks();
     delete process.env.NGROK_AUTHTOKEN;
     delete process.env.TUNNEL_PORT;
     delete process.env.DORKOS_PORT;
+    delete process.env.VITE_PORT;
+    process.env.NODE_ENV = originalNodeEnv;
 
     // Reset status to default
-    (tunnelManager as unknown as Record<string, unknown>).status = {
-      enabled: false,
-      connected: false,
-      url: null,
-      port: null,
-      startedAt: null,
-    };
+    (tunnelManager as unknown as Record<string, unknown>).status = { ...defaultTunnelStatus };
   });
 
   describe('POST /api/tunnel/start', () => {
@@ -74,7 +88,7 @@ describe('Tunnel Route', () => {
           enabled: true,
           connected: true,
           url: 'https://test.ngrok.io',
-          port: 3000,
+          port: 4241,
           startedAt: new Date().toISOString(),
         };
         return 'https://test.ngrok.io';
@@ -84,9 +98,9 @@ describe('Tunnel Route', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.url).toBe('https://test.ngrok.io');
-      // In dev (NODE_ENV !== 'production'), defaults to Vite's port (3000)
+      // In dev (NODE_ENV !== 'production'), defaults to Vite's port (4241)
       expect(tunnelManager.start).toHaveBeenCalledWith(
-        expect.objectContaining({ authtoken: 'test-token-123', port: 3000 }),
+        expect.objectContaining({ authtoken: 'test-token-123', port: 4241 }),
       );
     });
 
@@ -111,9 +125,6 @@ describe('Tunnel Route', () => {
       expect(tunnelManager.start).toHaveBeenCalledWith(
         expect.objectContaining({ authtoken: 'test-token-123', port: 4242 }),
       );
-
-      // Restore for other tests
-      process.env.NODE_ENV = 'development';
     });
 
     it('returns 400 when no auth token is configured', async () => {
@@ -123,6 +134,21 @@ describe('Tunnel Route', () => {
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('No ngrok auth token configured');
+      expect(tunnelManager.start).not.toHaveBeenCalled();
+    });
+
+    it('returns 409 when tunnel is already running', async () => {
+      (tunnelManager as unknown as Record<string, unknown>).status = {
+        ...defaultTunnelStatus,
+        connected: true,
+        url: 'https://already-running.ngrok.io',
+      };
+
+      const res = await request(app).post('/api/tunnel/start');
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toBe('Tunnel is already running');
+      expect(res.body.url).toBe('https://already-running.ngrok.io');
       expect(tunnelManager.start).not.toHaveBeenCalled();
     });
 
@@ -162,6 +188,32 @@ describe('Tunnel Route', () => {
         'tunnel',
         expect.objectContaining({ enabled: true }),
       );
+    });
+  });
+
+  describe('GET /api/tunnel/status', () => {
+    it('returns current tunnel status', async () => {
+      (tunnelManager as unknown as Record<string, unknown>).status = {
+        ...defaultTunnelStatus,
+        enabled: true,
+        connected: true,
+        url: 'https://abc.ngrok.io',
+      };
+
+      const res = await request(app).get('/api/tunnel/status');
+
+      expect(res.status).toBe(200);
+      expect(res.body.enabled).toBe(true);
+      expect(res.body.connected).toBe(true);
+      expect(res.body.url).toBe('https://abc.ngrok.io');
+    });
+
+    it('returns default status when tunnel is not started', async () => {
+      const res = await request(app).get('/api/tunnel/status');
+
+      expect(res.status).toBe(200);
+      expect(res.body.enabled).toBe(false);
+      expect(res.body.connected).toBe(false);
     });
   });
 

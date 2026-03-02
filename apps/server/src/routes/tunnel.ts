@@ -1,15 +1,16 @@
 /**
- * Tunnel route — POST endpoints to start and stop the ngrok tunnel.
+ * Tunnel route — endpoints to start/stop/stream ngrok tunnel status.
  *
  * @module routes/tunnel
  */
 import { Router } from 'express';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
+import type { TunnelStatus } from '@dorkos/shared/types';
 import { tunnelManager } from '../services/core/tunnel-manager.js';
 import { configManager } from '../services/core/config-manager.js';
 
-/** Default port for the Vite dev server. */
-const DEV_CLIENT_PORT = 3000;
+/** Default port for the Vite dev server (reads from VITE_PORT env var). */
+const DEV_CLIENT_PORT = Number(process.env.VITE_PORT) || 4241;
 
 const router = Router();
 
@@ -24,7 +25,39 @@ function resolveTunnelPort(): number {
   return isDev ? DEV_CLIENT_PORT : Number(process.env.DORKOS_PORT) || DEFAULT_PORT;
 }
 
+/** GET /api/tunnel/status — on-demand status check. */
+router.get('/status', (_req, res) => {
+  res.json(tunnelManager.status);
+});
+
+/** GET /api/tunnel/stream — SSE endpoint for real-time tunnel status events. */
+router.get('/stream', (req, res) => {
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    Connection: 'keep-alive',
+  });
+
+  // Send current status immediately on connection
+  res.write(`event: tunnel_status\ndata: ${JSON.stringify(tunnelManager.status)}\n\n`);
+
+  const handler = (status: TunnelStatus) => {
+    res.write(`event: tunnel_status\ndata: ${JSON.stringify(status)}\n\n`);
+  };
+
+  tunnelManager.on('status_change', handler);
+  req.on('close', () => tunnelManager.off('status_change', handler));
+});
+
 router.post('/start', async (_req, res) => {
+  // Return 409 if tunnel is already running
+  if (tunnelManager.status.connected) {
+    return res.status(409).json({
+      error: 'Tunnel is already running',
+      url: tunnelManager.status.url,
+    });
+  }
+
   try {
     // Resolve auth token: env var first, then config fallback
     const authtoken =

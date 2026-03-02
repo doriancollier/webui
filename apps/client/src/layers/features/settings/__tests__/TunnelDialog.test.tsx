@@ -13,6 +13,16 @@ vi.mock('@/layers/shared/model/use-is-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+// Mock useSessionId
+vi.mock('@/layers/entities/session', () => ({
+  useSessionId: () => [null, vi.fn()],
+}));
+
+// Mock sonner
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
+
 // Mock Radix dialog portal to render inline
 vi.mock('@radix-ui/react-dialog', async () => {
   const actual =
@@ -52,8 +62,11 @@ const baseTunnel = {
   enabled: false,
   connected: false,
   url: null,
+  port: null as number | null,
+  startedAt: null as string | null,
   authEnabled: false,
   tokenConfigured: true,
+  domain: null as string | null,
 };
 
 function createTunnelTransport(tunnelOverrides?: Partial<typeof baseTunnel>): Transport {

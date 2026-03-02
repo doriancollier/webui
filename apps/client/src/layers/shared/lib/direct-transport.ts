@@ -229,8 +229,11 @@ export class DirectTransport implements Transport {
         enabled: false,
         connected: false,
         url: null,
+        port: null,
+        startedAt: null,
         authEnabled: false,
         tokenConfigured: false,
+        domain: null,
       },
       boundary: this.services.vaultRoot,
     };
@@ -245,11 +248,11 @@ export class DirectTransport implements Transport {
   }
 
   async startTunnel(): Promise<{ url: string }> {
-    throw new Error('Tunnel is not supported in embedded mode');
+    return { url: '' };
   }
 
   async stopTunnel(): Promise<void> {
-    throw new Error('Tunnel is not supported in embedded mode');
+    // No-op in embedded mode
   }
 
   // Pulse scheduler is not supported in embedded mode

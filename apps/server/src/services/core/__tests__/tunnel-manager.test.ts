@@ -26,6 +26,9 @@ describe('TunnelManager', () => {
       url: null,
       port: null,
       startedAt: null,
+      authEnabled: false,
+      tokenConfigured: false,
+      domain: null,
     });
   });
 
@@ -33,10 +36,12 @@ describe('TunnelManager', () => {
     const ngrok = await import('@ngrok/ngrok');
     await manager.start({ port: 4242 });
 
-    expect(ngrok.forward).toHaveBeenCalledWith({
-      addr: 4242,
-      authtoken_from_env: true,
-    });
+    expect(ngrok.forward).toHaveBeenCalledWith(
+      expect.objectContaining({
+        addr: 4242,
+        authtoken_from_env: true,
+      }),
+    );
   });
 
   it('passes basic_auth array when configured', async () => {
@@ -87,5 +92,71 @@ describe('TunnelManager', () => {
     const status1 = manager.status;
     status1.url = 'tampered';
     expect(manager.status.url).toBe('https://test.ngrok.io');
+  });
+
+  describe('EventEmitter', () => {
+    it('emits status_change on start', async () => {
+      const handler = vi.fn();
+      manager.on('status_change', handler);
+
+      await manager.start({ port: 4242 });
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: true, connected: true, url: 'https://test.ngrok.io' }),
+      );
+    });
+
+    it('emits status_change on stop', async () => {
+      await manager.start({ port: 4242 });
+
+      const handler = vi.fn();
+      manager.on('status_change', handler);
+
+      await manager.stop();
+
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false, connected: false, url: null }),
+      );
+    });
+
+    it('emits status_change when on_status_change reports connected', async () => {
+      const ngrok = await import('@ngrok/ngrok');
+      let onStatusChange: ((addr: string, status: string) => void) | undefined;
+
+      (ngrok.forward as ReturnType<typeof vi.fn>).mockImplementation(async (opts: Record<string, unknown>) => {
+        onStatusChange = opts.on_status_change as (addr: string, status: string) => void;
+        return mockListener;
+      });
+
+      const handler = vi.fn();
+      manager.on('status_change', handler);
+
+      await manager.start({ port: 4242 });
+      handler.mockClear();
+
+      // Simulate ngrok reconnection
+      onStatusChange!('localhost:4242', 'connected');
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ connected: true }));
+    });
+
+    it('emits status_change when on_status_change reports closed', async () => {
+      const ngrok = await import('@ngrok/ngrok');
+      let onStatusChange: ((addr: string, status: string) => void) | undefined;
+
+      (ngrok.forward as ReturnType<typeof vi.fn>).mockImplementation(async (opts: Record<string, unknown>) => {
+        onStatusChange = opts.on_status_change as (addr: string, status: string) => void;
+        return mockListener;
+      });
+
+      const handler = vi.fn();
+      manager.on('status_change', handler);
+
+      await manager.start({ port: 4242 });
+      handler.mockClear();
+
+      // Simulate ngrok disconnect
+      onStatusChange!('localhost:4242', 'closed');
+      expect(handler).toHaveBeenCalledWith(expect.objectContaining({ connected: false }));
+    });
   });
 });

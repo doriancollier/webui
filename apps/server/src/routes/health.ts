@@ -13,12 +13,7 @@ router.get('/', (_req, res) => {
 
   const tunnelStatus = tunnelManager.status;
   if (tunnelStatus.enabled) {
-    response.tunnel = {
-      connected: tunnelStatus.connected,
-      url: tunnelStatus.url,
-      port: tunnelStatus.port,
-      startedAt: tunnelStatus.startedAt,
-    };
+    response.tunnel = tunnelStatus;
   }
 
   res.json(response);

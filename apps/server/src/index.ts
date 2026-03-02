@@ -20,6 +20,7 @@ import { TraceStore } from './services/relay/trace-store.js';
 import { MeshCore } from '@dorkos/mesh';
 import { createMeshRouter } from './routes/mesh.js';
 import { setMeshEnabled, setMeshInitError } from './services/mesh/mesh-state.js';
+import { createDiscoveryRouter } from './routes/discovery.js';
 import { createDb, runMigrations } from '@dorkos/db';
 import { INTERVALS } from './config/constants.js';
 import { resolveDorkHome } from './lib/dork-home.js';
@@ -219,6 +220,10 @@ async function start() {
     logger.info('[Mesh] Routes mounted');
   }
 
+  // Mount Discovery routes (always available, no feature flag)
+  app.use('/api/discovery', createDiscoveryRouter());
+  logger.info('[Discovery] Routes mounted');
+
   // Finalize app: API 404 catch-all, error handler, and SPA serving
   finalizeApp(app);
 
@@ -229,7 +234,7 @@ async function start() {
   }
   app.locals.sessionBroadcaster = sessionBroadcaster;
 
-  const host = env.TUNNEL_ENABLED ? '0.0.0.0' : 'localhost';
+  const host = 'localhost';
   app.listen(PORT, host, () => {
     logger.info(`DorkOS server running on http://localhost:${PORT}`);
   });

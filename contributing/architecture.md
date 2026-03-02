@@ -250,6 +250,10 @@ apps/
       boundary.ts           -- Directory boundary validation (enforces 403 for out-of-boundary paths)
       feature-flag.ts       -- Generic feature flag helpers
       route-utils.ts        -- Shared Express route utilities
+    services/discovery/
+      discovery-scanner.ts  -- BFS filesystem scan for AI-configured projects (async generator)
+    services/pulse/
+      pulse-presets.ts      -- Default Pulse schedule presets (~/.dork/pulse/presets.json)
     services/relay/
       adapter-manager.ts    -- Server-side adapter lifecycle (config I/O, hot-reload, enable/disable)
       adapter-factory.ts    -- Adapter instantiation from config (built-in + plugin)
@@ -266,6 +270,7 @@ apps/
       relay.ts              -- Relay HTTP routes (feature-flag guarded)
       mesh.ts               -- Mesh HTTP routes (feature-flag guarded)
       models.ts             -- GET /api/models (dynamic from SDK supportedModels())
+      discovery.ts          -- POST /api/discovery/scan (SSE agent discovery)
     index.ts                -- Express server entry
 ```
 

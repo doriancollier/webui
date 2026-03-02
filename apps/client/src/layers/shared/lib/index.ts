@@ -60,3 +60,4 @@ export {
   TIME_UNITS,
 } from './constants';
 export type { FileEntry } from './file-types';
+export { createChannel, type Channel } from './broadcast-channel';

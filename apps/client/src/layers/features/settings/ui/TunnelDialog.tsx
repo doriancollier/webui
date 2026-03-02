@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
-import { ArrowUpRight, Check, Copy } from 'lucide-react';
+import { ArrowUpRight, Check, Copy, Link } from 'lucide-react';
+import { toast } from 'sonner';
 import QRCode from 'react-qr-code';
 import {
   ResponsiveDialog,
@@ -10,13 +11,20 @@ import {
   ResponsiveDialogDescription,
   Separator,
   Switch,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
 } from '@/layers/shared/ui';
 import { useTransport } from '@/layers/shared/model';
-import { cn, TIMING } from '@/layers/shared/lib';
+import { cn, TIMING, getPlatform } from '@/layers/shared/lib';
+import { useSessionId } from '@/layers/entities/session';
+import { TunnelOnboarding } from './TunnelOnboarding';
 
 type TunnelState = 'off' | 'starting' | 'connected' | 'stopping' | 'error';
 
 const START_TIMEOUT_MS = 15_000;
+const STUCK_STATE_TIMEOUT_MS = 30_000;
+const LATENCY_INTERVAL_MS = 30_000;
 
 interface TunnelDialogProps {
   open: boolean;
@@ -34,13 +42,34 @@ function friendlyErrorMessage(raw: string): string {
   if (/limit|ERR_NGROK_108/i.test(raw)) {
     return 'Tunnel limit reached. Free ngrok accounts allow one active tunnel.';
   }
+  if (/DNS|NXDOMAIN|ERR_NGROK_332/i.test(raw)) {
+    return 'DNS resolution failed. Check your domain configuration.';
+  }
+  if (/gateway|502|ERR_NGROK_3200/i.test(raw)) {
+    return 'Gateway error. The tunnel endpoint is unreachable.';
+  }
+  if (/upgrade|ERR_NGROK_120/i.test(raw)) {
+    return 'Feature requires a paid ngrok plan.';
+  }
+  if (/ECONNREFUSED/i.test(raw)) {
+    return 'Connection refused. Ensure the server is running.';
+  }
   return raw;
+}
+
+/** Determine quality color from latency. */
+function latencyColor(ms: number | null): string {
+  if (ms === null) return 'bg-gray-400';
+  if (ms < 200) return 'bg-green-500';
+  if (ms < 500) return 'bg-amber-400';
+  return 'bg-red-500';
 }
 
 /** Dialog for managing remote access via ngrok tunnel with QR code sharing. */
 export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
   const transport = useTransport();
   const queryClient = useQueryClient();
+  const [activeSessionId] = useSessionId();
   const { data: serverConfig } = useQuery({
     queryKey: ['config'],
     queryFn: () => transport.getConfig(),
@@ -48,6 +77,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
   });
 
   const tunnel = serverConfig?.tunnel;
+
   const [state, setState] = useState<TunnelState>('off');
   const [url, setUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +85,12 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [showTokenInput, setShowTokenInput] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [copiedSession, setCopiedSession] = useState(false);
+  const [domain, setDomain] = useState('');
+  const [latencyMs, setLatencyMs] = useState<number | null>(null);
+
+  // Track previous connected state for disconnect/reconnect toasts
+  const prevConnectedRef = useRef<boolean | undefined>(undefined);
 
   // Sync state from server config
   useEffect(() => {
@@ -65,7 +101,68 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
       setState('off');
       setUrl(null);
     }
+  }, [tunnel?.connected, tunnel?.url, state]);
+
+  // Sync domain from server config
+  useEffect(() => {
+    if (tunnel?.domain) setDomain(tunnel.domain);
+  }, [tunnel?.domain]);
+
+  // Disconnect/reconnect toast notifications
+  useEffect(() => {
+    const wasConnected = prevConnectedRef.current;
+    const isConnected = tunnel?.connected ?? false;
+    prevConnectedRef.current = isConnected;
+
+    if (wasConnected === undefined) return;
+
+    if (wasConnected && !isConnected) {
+      toast.error('Remote access disconnected', {
+        description: 'Attempting to reconnect...',
+      });
+    } else if (!wasConnected && isConnected && tunnel?.url) {
+      toast.success('Remote access reconnected', {
+        description: tunnel.url,
+      });
+    }
   }, [tunnel?.connected, tunnel?.url]);
+
+  // Recovery from stuck transitional states
+  useEffect(() => {
+    if (state !== 'starting' && state !== 'stopping') return;
+    const timer = setTimeout(() => {
+      if (state === 'starting') {
+        setState('error');
+        setError('Connection timed out. Please try again.');
+      } else if (state === 'stopping') {
+        setState('off');
+        setUrl(null);
+      }
+    }, STUCK_STATE_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
+
+  // Latency measurement when connected and dialog is open
+  useEffect(() => {
+    if (state !== 'connected' || !url || !open) {
+      setLatencyMs(null);
+      return;
+    }
+
+    const measure = async () => {
+      try {
+        const start = performance.now();
+        await fetch(`${url}/api/health`, { mode: 'cors', cache: 'no-store' });
+        setLatencyMs(Math.round(performance.now() - start));
+      } catch {
+        setLatencyMs(null);
+      }
+    };
+
+    measure();
+    const interval = setInterval(measure, LATENCY_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [state, url, open]);
 
   const handleToggle = useCallback(
     async (checked: boolean) => {
@@ -89,14 +186,15 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
           setError(err instanceof Error ? err.message : 'Failed to start tunnel');
         }
       } else {
-        setState('off');
-        setUrl(null);
+        setState('stopping');
         setError(null);
         try {
           await transport.stopTunnel();
+          setState('off');
+          setUrl(null);
           queryClient.invalidateQueries({ queryKey: ['config'] });
         } catch (err) {
-          setState('error');
+          setState('connected');
           setError(err instanceof Error ? err.message : 'Failed to stop tunnel');
         }
       }
@@ -107,18 +205,23 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
   const handleSaveToken = useCallback(async () => {
     setTokenError(null);
     try {
-      await fetch('/api/config', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tunnel: { authtoken: authToken } }),
-      });
+      await transport.updateConfig({ tunnel: { authtoken: authToken } });
       setAuthToken('');
       setShowTokenInput(false);
       queryClient.invalidateQueries({ queryKey: ['config'] });
     } catch {
       setTokenError('Could not save token. Try again.');
     }
-  }, [authToken, queryClient]);
+  }, [authToken, queryClient, transport]);
+
+  const handleSaveDomain = useCallback(async () => {
+    try {
+      await transport.updateConfig({ tunnel: { domain: domain.trim() || null } });
+      queryClient.invalidateQueries({ queryKey: ['config'] });
+    } catch {
+      // Silently fail — domain will be re-synced from config
+    }
+  }, [domain, queryClient, transport]);
 
   const handleCopyUrl = useCallback(() => {
     if (url) {
@@ -128,8 +231,19 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
     }
   }, [url]);
 
+  const handleCopySessionLink = useCallback(() => {
+    if (url && activeSessionId) {
+      navigator.clipboard.writeText(`${url}?session=${activeSessionId}`);
+      setCopiedSession(true);
+      setTimeout(() => setCopiedSession(false), TIMING.COPY_FEEDBACK_MS);
+    }
+  }, [url, activeSessionId]);
+
+  // Tunnel is not supported in embedded mode (Obsidian)
+  if (getPlatform().isEmbedded) return null;
+
   const isTransitioning = state === 'starting' || state === 'stopping';
-  const isChecked = state === 'connected' || state === 'starting';
+  const isChecked = state === 'connected' || state === 'starting' || state === 'stopping';
 
   const dotColor = {
     off: 'bg-gray-400',
@@ -148,7 +262,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
               className={cn(
                 'inline-block size-2 rounded-full',
                 dotColor,
-                state === 'starting' && 'animate-pulse',
+                (state === 'starting' || state === 'stopping') && 'animate-pulse',
               )}
             />
             Remote Access
@@ -163,9 +277,17 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
               Establishing connection...
             </ResponsiveDialogDescription>
           )}
+          {state === 'stopping' && (
+            <ResponsiveDialogDescription className="text-muted-foreground text-xs">
+              Disconnecting...
+            </ResponsiveDialogDescription>
+          )}
         </ResponsiveDialogHeader>
 
         <div className="space-y-4 px-4 pb-4">
+          {/* Onboarding — shown when no token configured */}
+          {state === 'off' && tunnel && !tunnel.tokenConfigured && <TunnelOnboarding />}
+
           {/* Auth token section — hidden when connected */}
           {state !== 'connected' && tunnel && (
             <>
@@ -223,13 +345,58 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
             </>
           )}
 
-          {/* Connected state — QR hero */}
-          {state === 'connected' && url && (
+          {/* Custom domain field — visible when token is configured */}
+          {tunnel?.tokenConfigured && state !== 'connected' && state !== 'stopping' && (
+            <div className="space-y-2">
+              <span className="text-muted-foreground text-xs font-medium uppercase tracking-wider">
+                Custom Domain
+              </span>
+              <input
+                type="text"
+                placeholder="e.g. my-dorkos.ngrok-free.app"
+                value={domain}
+                onChange={(e) => setDomain(e.target.value)}
+                onBlur={handleSaveDomain}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveDomain()}
+                className="border-input bg-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-1.5 text-sm shadow-sm outline-none focus-visible:ring-1"
+              />
+              <p className="text-muted-foreground text-xs">
+                <a
+                  href="https://dashboard.ngrok.com/domains"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-foreground inline-flex items-center gap-0.5 underline underline-offset-2"
+                >
+                  Get a free static domain
+                  <ArrowUpRight className="size-3" />
+                </a>
+                {' — '}same URL every restart, reusable QR codes, persistent bookmarks.
+              </p>
+            </div>
+          )}
+
+          {/* Connected/stopping state — QR hero */}
+          {(state === 'connected' || state === 'stopping') && url && (
             <div className="space-y-3">
               <div className="flex justify-center rounded-lg bg-white p-3">
                 <QRCode value={url} size={200} level="M" />
               </div>
               <div className="flex items-center gap-2">
+                {state === 'connected' && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span
+                        className={cn(
+                          'inline-block size-2 shrink-0 rounded-full',
+                          latencyColor(latencyMs),
+                        )}
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {latencyMs !== null ? `${latencyMs}ms` : 'Measuring...'}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
                 <span className="text-muted-foreground min-w-0 flex-1 truncate font-mono text-xs">
                   {url}
                 </span>
@@ -250,6 +417,25 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
                   )}
                 </button>
               </div>
+              {/* Session sharing link */}
+              {state === 'connected' && activeSessionId && (
+                <button
+                  onClick={handleCopySessionLink}
+                  className="border-input hover:bg-accent inline-flex w-full items-center justify-center gap-1.5 rounded-md border bg-transparent px-2.5 py-1 text-xs font-medium shadow-sm transition-colors"
+                >
+                  {copiedSession ? (
+                    <>
+                      <Check className="size-3" />
+                      Copied session link
+                    </>
+                  ) : (
+                    <>
+                      <Link className="size-3" />
+                      Copy session link
+                    </>
+                  )}
+                </button>
+              )}
               <p className="text-muted-foreground text-center text-xs">
                 Scan or visit from any device
               </p>

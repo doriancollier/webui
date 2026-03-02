@@ -466,10 +466,14 @@ export type BrowseDirectoryResponse = z.infer<typeof BrowseDirectoryResponseSche
 
 export const TunnelStatusSchema = z
   .object({
+    enabled: z.boolean(),
     connected: z.boolean(),
     url: z.string().nullable(),
     port: z.number().int().nullable(),
     startedAt: z.string().nullable(),
+    authEnabled: z.boolean(),
+    tokenConfigured: z.boolean(),
+    domain: z.string().nullable(),
   })
   .openapi('TunnelStatus');
 
@@ -502,13 +506,7 @@ export const ServerConfigSchema = z
     workingDirectory: z.string(),
     nodeVersion: z.string(),
     claudeCliPath: z.string().nullable(),
-    tunnel: z.object({
-      enabled: z.boolean(),
-      connected: z.boolean(),
-      url: z.string().nullable(),
-      authEnabled: z.boolean(),
-      tokenConfigured: z.boolean(),
-    }),
+    tunnel: TunnelStatusSchema,
     pulse: z
       .object({
         enabled: z.boolean().openapi({ description: 'Whether the Pulse scheduler is enabled' }),
@@ -536,6 +534,15 @@ export const ServerConfigSchema = z
       })
       .optional()
       .openapi({ description: 'Mesh agent discovery feature state' }),
+    onboarding: z
+      .object({
+        completedSteps: z.array(z.string()).openapi({ description: 'Steps the user has completed' }),
+        skippedSteps: z.array(z.string()).openapi({ description: 'Steps the user has skipped' }),
+        startedAt: z.string().nullable().openapi({ description: 'ISO timestamp when onboarding was started' }),
+        dismissedAt: z.string().nullable().openapi({ description: 'ISO timestamp when onboarding was dismissed' }),
+      })
+      .optional()
+      .openapi({ description: 'First-time user onboarding state' }),
   })
   .openapi('ServerConfig');
 

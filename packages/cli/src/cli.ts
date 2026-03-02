@@ -247,7 +247,55 @@ for (const name of Object.keys(nets)) {
 if (networkUrl) {
   console.log(`  Network: ${networkUrl}`);
 }
+
+// Print tunnel URL if tunnel started during server init
+if (process.env.TUNNEL_ENABLED) {
+  const { tunnelManager } = await import('../server/services/core/tunnel-manager.js');
+  const status = tunnelManager.status;
+  if (status.connected && status.url) {
+    console.log(`  Tunnel:  ${status.url}`);
+
+    // Print QR code for mobile access
+    try {
+      const qrcode = await import('qrcode-terminal');
+      const generate = qrcode.default?.generate ?? qrcode.generate;
+      console.log('');
+      console.log('  Scan to open on mobile:');
+      generate(status.url, { small: true }, (code: string) => {
+        // Indent each line of the QR code
+        const indented = code.split('\n').map((line: string) => `  ${line}`).join('\n');
+        console.log(indented);
+      });
+    } catch {
+      // qrcode-terminal not available — skip QR code
+    }
+  }
+}
 console.log('');
+
+// Listen for runtime tunnel activation (toggled on via UI after startup)
+{
+  const { tunnelManager } = await import('../server/services/core/tunnel-manager.js');
+  tunnelManager.on('status_change', async (status: { connected: boolean; url: string | null }) => {
+    if (status.connected && status.url) {
+      console.log('');
+      console.log(`  Tunnel:  ${status.url}`);
+      try {
+        const qrcode = await import('qrcode-terminal');
+        const generate = qrcode.default?.generate ?? qrcode.generate;
+        console.log('');
+        console.log('  Scan to open on mobile:');
+        generate(status.url, { small: true }, (code: string) => {
+          const indented = code.split('\n').map((line: string) => `  ${line}`).join('\n');
+          console.log(indented);
+        });
+      } catch {
+        // qrcode-terminal not available — skip QR code
+      }
+      console.log('');
+    }
+  });
+}
 
 // Non-blocking update check (fire-and-forget)
 checkForUpdate(__CLI_VERSION__).then((latestVersion) => {

@@ -24,6 +24,21 @@ vi.mock('@radix-ui/react-dialog', async () => {
   };
 });
 
+// Mock useSessionId (uses nuqs which requires adapter)
+vi.mock('@/layers/entities/session', () => ({
+  useSessionId: () => [null, vi.fn()],
+}));
+
+// Mock useTunnelStatus
+vi.mock('@/layers/entities/tunnel', () => ({
+  useTunnelStatus: () => ({ data: undefined }),
+}));
+
+// Mock sonner
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
+
 // Mock QRCode to avoid canvas rendering issues
 vi.mock('react-qr-code', () => ({
   default: ({ value }: { value: string }) => <div data-testid="qr-code">{value}</div>,
@@ -66,8 +81,11 @@ function makeTunnel(overrides?: Partial<ServerConfig['tunnel']>): ServerConfig['
     enabled: false,
     connected: false,
     url: null,
+    port: null,
+    startedAt: null,
     authEnabled: false,
     tokenConfigured: true,
+    domain: null,
     ...overrides,
   };
 }

@@ -91,11 +91,9 @@ router.get('/', async (_req, res) => {
     nodeVersion: process.version,
     claudeCliPath,
     tunnel: {
-      enabled: tunnel.enabled,
-      connected: tunnel.connected,
-      url: tunnel.url,
-      authEnabled: !!env.TUNNEL_AUTH,
-      tokenConfigured: !!(env.NGROK_AUTHTOKEN || configManager.get('tunnel')?.authtoken),
+      ...tunnel,
+      authEnabled: tunnel.authEnabled || !!env.TUNNEL_AUTH,
+      tokenConfigured: tunnel.tokenConfigured || !!(env.NGROK_AUTHTOKEN || configManager.get('tunnel')?.authtoken),
     },
     pulse: {
       enabled: isPulseEnabled(),
@@ -109,6 +107,12 @@ router.get('/', async (_req, res) => {
       enabled: isMeshEnabled(),
       scanRoots: configManager.get('mesh')?.scanRoots ?? [],
       ...(getMeshInitError() && { initError: getMeshInitError() }),
+    },
+    onboarding: configManager.get('onboarding') ?? {
+      completedSteps: [],
+      skippedSteps: [],
+      startedAt: null,
+      dismissedAt: null,
     },
   });
 });

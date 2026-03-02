@@ -41,5 +41,6 @@ export type { McpToolDeps } from './mcp-tools/index.js';
 export { generateOpenAPISpec } from './openapi-registry.js';
 export { initSSEStream, sendSSEEvent, endSSEStream } from './stream-adapter.js';
 export { TunnelManager, tunnelManager } from './tunnel-manager.js';
-export type { TunnelConfig, TunnelStatus } from './tunnel-manager.js';
+export type { TunnelConfig } from './tunnel-manager.js';
+export type { TunnelStatus } from '@dorkos/shared/types';
 export { getLatestVersion, resetCache } from './update-checker.js';

@@ -16,31 +16,53 @@ import { createAgentsRouter } from './routes/agents.js';
 import { generateOpenAPISpec } from './services/core/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
+import { tunnelManager } from './services/core/tunnel-manager.js';
 import { env } from './env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-/** Build the CORS origin allowlist from env vars and common DorkOS ports. */
+/**
+ * Build a dynamic CORS origin callback that checks tunnel URL at request time.
+ *
+ * When a tunnel is connected, its origin is dynamically added to the allowlist
+ * so that requests from the tunnel URL are accepted without restarting the server.
+ */
 function buildCorsOrigin(): cors.CorsOptions['origin'] {
   const envOrigin = process.env.DORKOS_CORS_ORIGIN;
 
   // Explicit wildcard opt-in
   if (envOrigin === '*') return '*';
 
-  // User-specified origins (comma-separated)
+  // User-specified origins (comma-separated) — static, no tunnel check needed
   if (envOrigin) {
     return envOrigin.split(',').map((o) => o.trim());
   }
 
-  // Default: localhost on common DorkOS ports
+  // Dynamic callback: localhost origins + tunnel URL when connected
   const port = process.env.DORKOS_PORT || '4242';
   const vitePort = process.env.VITE_PORT || '4241';
-  return [
+  const staticOrigins = [
     `http://localhost:${port}`,
     `http://localhost:${vitePort}`,
     `http://127.0.0.1:${port}`,
     `http://127.0.0.1:${vitePort}`,
   ];
+
+  return (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
+    // Allow requests with no origin (server-to-server, curl, etc.)
+    if (!origin) return callback(null, true);
+
+    if (staticOrigins.includes(origin)) return callback(null, true);
+
+    // Check tunnel URL dynamically at request time
+    const tunnelUrl = tunnelManager.status.url;
+    if (tunnelUrl) {
+      const tunnelOrigin = new URL(tunnelUrl).origin;
+      if (origin === tunnelOrigin) return callback(null, true);
+    }
+
+    callback(new Error(`Origin ${origin} not allowed by CORS`));
+  };
 }
 
 export function createApp() {
