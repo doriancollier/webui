@@ -1,5 +1,6 @@
 import { Badge } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
+import { formatMarker } from '../lib/marker-labels';
 
 interface AgentCardCandidate {
   path: string;
@@ -14,19 +15,6 @@ interface AgentCardProps {
   candidate: AgentCardCandidate;
   selected: boolean;
   onToggle: () => void;
-}
-
-/** Marker label mapping for display-friendly badge text. */
-const MARKER_LABELS: Record<string, string> = {
-  'CLAUDE.md': 'CLAUDE.md',
-  '.cursor': '.cursor',
-  '.github/copilot': 'Copilot',
-  '.dork': 'DorkOS',
-};
-
-/** Format a marker string into a user-friendly badge label. */
-function formatMarker(marker: string): string {
-  return MARKER_LABELS[marker] ?? marker;
 }
 
 /**

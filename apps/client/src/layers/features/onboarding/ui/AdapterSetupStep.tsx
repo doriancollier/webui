@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { Button } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
 import { useRelayEnabled } from '@/layers/entities/relay';
@@ -53,7 +52,6 @@ export interface AdapterSetupStepProps {
 export function AdapterSetupStep({ onStepComplete }: AdapterSetupStepProps) {
   const relayEnabled = useRelayEnabled();
   const { data: catalog, isLoading } = useAdapterCatalog(relayEnabled);
-  const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
 
   const adapters: Array<{
     type: string;
@@ -64,18 +62,6 @@ export function AdapterSetupStep({ onStepComplete }: AdapterSetupStepProps) {
   }> = catalog?.length
     ? catalog.map((entry: CatalogEntry) => entry.manifest)
     : PLACEHOLDER_ADAPTERS;
-
-  const toggleAdapter = (type: string) => {
-    setSelectedTypes((prev) => {
-      const next = new Set(prev);
-      if (next.has(type)) {
-        next.delete(type);
-      } else {
-        next.add(type);
-      }
-      return next;
-    });
-  };
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-6 px-4">
@@ -100,17 +86,12 @@ export function AdapterSetupStep({ onStepComplete }: AdapterSetupStepProps) {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {adapters.map((adapter) => {
-            const isSelected = selectedTypes.has(adapter.type);
-            return (
-              <button
+          {adapters.map((adapter) => (
+              <div
                 key={adapter.type}
-                type="button"
-                onClick={() => toggleAdapter(adapter.type)}
                 className={cn(
-                  'flex min-h-11 flex-col items-start gap-2 rounded-lg border p-4 text-left transition',
-                  'hover:bg-accent/50',
-                  isSelected && 'border-primary/40 bg-accent/30'
+                  'flex min-h-11 flex-col items-start gap-2 rounded-lg border p-4 text-left',
+                  'bg-card'
                 )}
               >
                 <div className="flex items-center gap-2">
@@ -126,9 +107,8 @@ export function AdapterSetupStep({ onStepComplete }: AdapterSetupStepProps) {
                 <p className="line-clamp-2 text-xs text-muted-foreground">
                   {adapter.description}
                 </p>
-              </button>
-            );
-          })}
+              </div>
+            ))}
         </div>
       )}
 

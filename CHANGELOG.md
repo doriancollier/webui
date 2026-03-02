@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Extract shared marker utils and remove dead state
 - Rename apps/web to apps/site and fix CLAUDE.md doc drift
 - Update all contributing guides based on 30 recent specs
 - Fix guide count and expand directory structure diagram

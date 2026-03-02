@@ -3,19 +3,7 @@ import { motion } from 'motion/react';
 import { Badge } from '@/layers/shared/ui';
 import { cn, fireConfetti } from '@/layers/shared/lib';
 import type { DiscoveryCandidate } from '@/layers/features/onboarding';
-
-/** Marker label mapping for display-friendly badge text. */
-const MARKER_LABELS: Record<string, string> = {
-  'CLAUDE.md': 'CLAUDE.md',
-  '.cursor': '.cursor',
-  '.github/copilot': 'Copilot',
-  '.dork': 'DorkOS',
-};
-
-/** Format a marker string into a user-friendly badge label. */
-function formatMarker(marker: string): string {
-  return MARKER_LABELS[marker] ?? marker;
-}
+import { formatMarker } from '../lib/marker-labels';
 
 /** Beat timing constants in milliseconds. */
 const BEAT_1_DURATION = 2000;
