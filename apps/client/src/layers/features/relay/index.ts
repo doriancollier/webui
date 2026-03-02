@@ -4,6 +4,7 @@
  * @module features/relay
  */
 export { RelayPanel } from './ui/RelayPanel';
+export { RelayEmptyState } from './ui/RelayEmptyState';
 export { ConnectionStatusBanner } from './ui/ConnectionStatusBanner';
 export { AdapterCard } from './ui/AdapterCard';
 export { CatalogCard } from './ui/CatalogCard';

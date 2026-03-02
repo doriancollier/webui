@@ -6,6 +6,21 @@ export const SENSITIVE_CONFIG_KEYS = [
   'tunnel.auth',
 ] as const;
 
+/** The three guided onboarding steps a first-time user walks through. */
+export const ONBOARDING_STEPS = ['discovery', 'pulse', 'adapters'] as const;
+
+export const OnboardingStepSchema = z.enum(ONBOARDING_STEPS);
+export type OnboardingStep = z.infer<typeof OnboardingStepSchema>;
+
+export const OnboardingStateSchema = z.object({
+  completedSteps: z.array(OnboardingStepSchema).default(() => []),
+  skippedSteps: z.array(OnboardingStepSchema).default(() => []),
+  startedAt: z.string().nullable().default(null),
+  dismissedAt: z.string().nullable().default(null),
+});
+
+export type OnboardingState = z.infer<typeof OnboardingStateSchema>;
+
 const LoggingConfigSchema = z.object({
   level: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   maxLogSizeKb: z.number().int().min(100).max(10240).default(500),
@@ -60,6 +75,12 @@ export const UserConfigSchema = z.object({
       scanRoots: z.array(z.string()).default(() => []),
     })
     .default(() => ({ enabled: true, scanRoots: [] })),
+  onboarding: OnboardingStateSchema.default(() => ({
+    completedSteps: [],
+    skippedSteps: [],
+    startedAt: null,
+    dismissedAt: null,
+  })),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;

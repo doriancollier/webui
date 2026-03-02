@@ -169,7 +169,7 @@ afterEach(cleanup);
 describe('MeshPanel - disabled state', () => {
   it('renders disabled message when mesh is disabled', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
-    expect(screen.getByText('Mesh is not enabled')).toBeInTheDocument();
+    expect(screen.getByText('Mesh is currently disabled')).toBeInTheDocument();
   });
 
   it('shows the enable hint', () => {
@@ -234,7 +234,7 @@ describe('MeshPanel - Mode B (agents present)', () => {
 
   it('does not show disabled message', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
-    expect(screen.queryByText('Mesh is not enabled')).not.toBeInTheDocument();
+    expect(screen.queryByText('Mesh is currently disabled')).not.toBeInTheDocument();
   });
 
   it('shows agent card with name and runtime', () => {

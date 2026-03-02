@@ -11,6 +11,7 @@ import {
 } from '@dorkos/shared/schemas';
 import type { PulseStore } from '../services/pulse/pulse-store.js';
 import type { SchedulerService } from '../services/pulse/scheduler-service.js';
+import { loadPresets } from '../services/pulse/pulse-presets.js';
 import { isWithinBoundary } from '../lib/boundary.js';
 import { parseBody } from '../lib/route-utils.js';
 
@@ -22,6 +23,17 @@ import { parseBody } from '../lib/route-utils.js';
  */
 export function createPulseRouter(store: PulseStore, scheduler: SchedulerService): Router {
   const router = Router();
+
+  // === Preset endpoints ===
+
+  router.get('/presets', async (_req, res) => {
+    const dorkHome = process.env.DORK_HOME;
+    if (!dorkHome) {
+      return res.status(500).json({ error: 'DORK_HOME not configured' });
+    }
+    const presets = await loadPresets(dorkHome);
+    return res.json(presets);
+  });
 
   // === Schedule endpoints ===
 

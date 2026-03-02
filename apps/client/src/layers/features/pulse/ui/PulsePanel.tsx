@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { HeartPulse, Clock } from 'lucide-react';
+import { HeartPulse } from 'lucide-react';
 import { FeatureDisabledState } from '@/layers/shared/ui';
 import { usePulseEnabled, useSchedules } from '@/layers/entities/pulse';
 import { useResolvedAgents } from '@/layers/entities/agent';
 import type { PulseSchedule } from '@dorkos/shared/types';
 import { CreateScheduleDialog } from './CreateScheduleDialog';
+import { PulseEmptyState } from './PulseEmptyState';
 import { ScheduleRow } from './ScheduleRow';
 
 /** Main Pulse panel — renders schedule list or empty/loading/disabled states. */
@@ -51,30 +52,19 @@ export function PulsePanel() {
 
   if (schedules.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 p-8 text-center">
-        <Clock className="size-8 text-muted-foreground/30" />
-        <div>
-          <p className="font-medium">No schedules yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Pulse runs AI agent tasks on a schedule — code reviews, health checks, reports, and
-            more.
-          </p>
-        </div>
-        <button
-          onClick={() => {
+      <>
+        <PulseEmptyState
+          onCreateSchedule={() => {
             setEditSchedule(undefined);
             setDialogOpen(true);
           }}
-          className="border-input hover:bg-accent hover:text-accent-foreground inline-flex items-center rounded-md border bg-transparent px-3 py-1.5 text-sm font-medium shadow-sm transition-colors"
-        >
-          New Schedule
-        </button>
+        />
         <CreateScheduleDialog
           open={dialogOpen}
           onOpenChange={setDialogOpen}
           editSchedule={editSchedule}
         />
-      </div>
+      </>
     );
   }
 

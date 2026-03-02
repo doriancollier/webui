@@ -117,16 +117,16 @@ describe('PulsePanel', () => {
     });
   });
 
-  it('"New Schedule" button opens create dialog', async () => {
+  it('"Create Schedule" button opens create dialog', async () => {
     const transport = createMockTransport();
 
     render(<PulsePanel />, { wrapper: createWrapper(transport) });
 
     await waitFor(() => {
-      expect(screen.getByText('New Schedule')).toBeTruthy();
+      expect(screen.getByText('Create Schedule')).toBeTruthy();
     });
 
-    fireEvent.click(screen.getByText('New Schedule'));
+    fireEvent.click(screen.getByText('Create Schedule'));
 
     expect(screen.getByTestId('create-schedule-dialog')).toBeTruthy();
     // Dialog should be in create mode (no editSchedule)

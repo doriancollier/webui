@@ -45,6 +45,7 @@ import { PulsePanel } from '@/layers/features/pulse';
 import { RelayPanel } from '@/layers/features/relay';
 import { MeshPanel } from '@/layers/features/mesh';
 import { AgentDialog } from '@/layers/features/agent-settings';
+import { ProgressCard, useOnboarding, OnboardingFlow } from '@/layers/features/onboarding';
 import type { Session } from '@dorkos/shared/types';
 
 const themeOrder: Theme[] = ['light', 'dark', 'system'];
@@ -78,6 +79,8 @@ export function SessionSidebar() {
   const { data: activeRunCount = 0 } = useActiveRunCount(pulseEnabled);
   const { unviewedCount, clearBadge } = useCompletedRunBadge(pulseEnabled);
   const enablePulseNotifications = useAppStore((s) => s.enablePulseNotifications);
+  const { shouldShowOnboarding, dismiss: dismissOnboarding } = useOnboarding();
+  const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
   const { theme, setTheme } = useTheme();
   const ThemeIcon = { light: Sun, dark: Moon, system: Monitor }[theme];
   const cycleTheme = useCallback(() => {
@@ -227,6 +230,15 @@ export function SessionSidebar() {
           </div>
         )}
       </div>
+      {/* Onboarding Progress */}
+      {shouldShowOnboarding && (
+        <div className="mt-2">
+          <ProgressCard
+            onStepClick={(stepIndex) => setOnboardingStep(stepIndex)}
+            onDismiss={dismissOnboarding}
+          />
+        </div>
+      )}
       {/* Footer */}
       <div className="border-border mt-2 flex items-center border-t pt-2">
         <a
@@ -390,6 +402,14 @@ export function SessionSidebar() {
           open={agentDialogOpen}
           onOpenChange={setAgentDialogOpen}
         />
+      )}
+      {onboardingStep !== null && (
+        <div className="fixed inset-0 z-50 bg-background">
+          <OnboardingFlow
+            initialStep={onboardingStep}
+            onComplete={() => setOnboardingStep(null)}
+          />
+        </div>
       )}
     </div>
   );

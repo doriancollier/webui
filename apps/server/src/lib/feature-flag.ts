@@ -16,7 +16,7 @@ interface FeatureFlag {
 
 /** Create a runtime feature flag with get/set accessors and optional init error tracking. */
 export function createFeatureFlag(): FeatureFlag {
-  const state: { enabled: boolean; initError?: string } = { enabled: false };
+  const state: { enabled: boolean; initError?: string } = { enabled: true };
   return {
     setEnabled: (enabled: boolean) => {
       state.enabled = enabled;

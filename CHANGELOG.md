@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implement first-time user experience with agent discovery, pulse presets, and adapter setup
 - Overhaul remote access with multi-tab sync, UX redesign, and CLI QR code
 - Add curl install script, tabbed UI, Homebrew tap, and CLI check
 - Add curl install script, tabbed UI, Homebrew tap, and CLI check

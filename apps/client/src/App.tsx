@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAppStore, useIsMobile, useFavicon, useDocumentTitle } from '@/layers/shared/model';
 import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entities/session';
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
@@ -6,7 +6,8 @@ import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { PanelLeft } from 'lucide-react';
 import { PermissionBanner } from '@/layers/widgets/app-layout';
 import { SessionSidebar } from '@/layers/features/session-list';
-import { ChatPanel } from '@/layers/features/chat';
+import { ChatPanel, ChatEmptyState } from '@/layers/features/chat';
+import { useOnboarding, OnboardingFlow } from '@/layers/features/onboarding';
 import { Toaster, TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/layers/shared/ui';
 import { Kbd } from '@/layers/shared/ui/kbd';
 
@@ -43,6 +44,16 @@ export function App({ transformContent, embedded }: AppProps = {}) {
     agentName: currentAgent?.name,
     agentEmoji: currentAgent ? agentVisual.emoji : undefined,
   });
+
+  // First-run onboarding detection
+  const { shouldShowOnboarding } = useOnboarding();
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    if (shouldShowOnboarding) {
+      setShowOnboarding(true);
+    }
+  }, [shouldShowOnboarding]);
 
   // Escape key closes overlay sidebar
   // Embedded: scoped to container element; Standalone: scoped to document
@@ -144,14 +155,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                     transformContent={transformContent}
                   />
                 ) : (
-                  <div className="flex h-full flex-1 items-center justify-center">
-                    <div className="text-center">
-                      <p className="text-muted-foreground text-base">New conversation</p>
-                      <p className="text-muted-foreground/60 mt-2 text-sm">
-                        Select a session or start a new one
-                      </p>
-                    </div>
-                  </div>
+                  <ChatEmptyState />
                 )}
               </main>
             </div>
@@ -165,92 +169,106 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   return (
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
-        <div ref={containerRef} data-testid="app-shell" className="bg-background text-foreground flex h-dvh flex-col">
-          <PermissionBanner sessionId={activeSessionId} />
-          <div className="relative flex flex-1 overflow-hidden">
-            {/* Floating toggle — visible when sidebar is closed */}
-            <AnimatePresence>
-              {!sidebarOpen && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <motion.button
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-                      onClick={toggleSidebar}
-                      className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
-                      aria-label="Open sidebar"
-                    >
-                      <PanelLeft className="size-(--size-icon-md)" />
-                    </motion.button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    Toggle sidebar <Kbd>{isMac ? '⌘B' : 'Ctrl+B'}</Kbd>
-                  </TooltipContent>
-                </Tooltip>
-              )}
-            </AnimatePresence>
+        <AnimatePresence mode="wait">
+          {showOnboarding ? (
+            <motion.div
+              key="onboarding"
+              initial={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <OnboardingFlow onComplete={() => setShowOnboarding(false)} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="main-app"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+              className="flex h-dvh flex-col"
+            >
+              <div ref={containerRef} data-testid="app-shell" className="bg-background text-foreground flex h-dvh flex-col">
+                <PermissionBanner sessionId={activeSessionId} />
+                <div className="relative flex flex-1 overflow-hidden">
+                  {/* Floating toggle — visible when sidebar is closed */}
+                  <AnimatePresence>
+                    {!sidebarOpen && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
+                            onClick={toggleSidebar}
+                            className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
+                            aria-label="Open sidebar"
+                          >
+                            <PanelLeft className="size-(--size-icon-md)" />
+                          </motion.button>
+                        </TooltipTrigger>
+                        <TooltipContent side="right">
+                          Toggle sidebar <Kbd>{isMac ? '⌘B' : 'Ctrl+B'}</Kbd>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
+                  </AnimatePresence>
 
-            {isMobile ? (
-              /* Mobile: overlay sidebar with backdrop */
-              <AnimatePresence>
-                {sidebarOpen && (
-                  <>
+                  {isMobile ? (
+                    /* Mobile: overlay sidebar with backdrop */
+                    <AnimatePresence>
+                      {sidebarOpen && (
+                        <>
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="fixed inset-0 z-40 bg-black/40"
+                            onClick={() => setSidebarOpen(false)}
+                            aria-label="Close sidebar"
+                          />
+                          <motion.div
+                            initial={{ x: '-90vw' }}
+                            animate={{ x: 0 }}
+                            exit={{ x: '-90vw' }}
+                            transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
+                            className="bg-background fixed top-0 left-0 z-50 h-full w-[90vw] overflow-y-auto border-r"
+                          >
+                            <SessionSidebar />
+                          </motion.div>
+                        </>
+                      )}
+                    </AnimatePresence>
+                  ) : (
+                    /* Desktop: push sidebar */
                     <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="fixed inset-0 z-40 bg-black/40"
-                      onClick={() => setSidebarOpen(false)}
-                      aria-label="Close sidebar"
-                    />
-                    <motion.div
-                      initial={{ x: '-90vw' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: '-90vw' }}
+                      animate={{ width: sidebarOpen ? 320 : 0 }}
                       transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                      className="bg-background fixed top-0 left-0 z-50 h-full w-[90vw] overflow-y-auto border-r"
+                      className="flex-shrink-0 overflow-hidden border-r"
                     >
-                      <SessionSidebar />
+                      <div className="h-full w-80 overflow-y-auto">
+                        <SessionSidebar />
+                      </div>
                     </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-            ) : (
-              /* Desktop: push sidebar */
-              <motion.div
-                animate={{ width: sidebarOpen ? 320 : 0 }}
-                transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                className="flex-shrink-0 overflow-hidden border-r"
-              >
-                <div className="h-full w-80 overflow-y-auto">
-                  <SessionSidebar />
-                </div>
-              </motion.div>
-            )}
+                  )}
 
-            <main className="flex-1 overflow-hidden">
-              {activeSessionId ? (
-                <ChatPanel
-                  key={activeSessionId}
-                  sessionId={activeSessionId}
-                  transformContent={transformContent}
-                />
-              ) : (
-                <div className="flex h-full flex-1 items-center justify-center">
-                  <div className="text-center">
-                    <p className="text-muted-foreground text-base">New conversation</p>
-                    <p className="text-muted-foreground/60 mt-2 text-sm">
-                      Select a session or start a new one
-                    </p>
-                  </div>
+                  <main className="flex-1 overflow-hidden">
+                    {activeSessionId ? (
+                      <ChatPanel
+                        key={activeSessionId}
+                        sessionId={activeSessionId}
+                        transformContent={transformContent}
+                      />
+                    ) : (
+                      <ChatEmptyState />
+                    )}
+                  </main>
                 </div>
-              )}
-            </main>
-          </div>
-        </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <Toaster />
       </MotionConfig>
     </TooltipProvider>
