@@ -39,11 +39,14 @@ function sortCandidates(candidates: ScanCandidate[]): ScanCandidate[] {
 export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) {
   const { candidates, isScanning, progress, error, startScan } = useDiscoveryScan();
   const registerAgent = useRegisterAgent();
-  const [selectedPaths, setSelectedPaths] = useState<Set<string>>(new Set());
+  const [selectedPaths, setSelectedPaths] = useState<Set<string> | null>(null);
   const [hasStarted, setHasStarted] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const reducedMotion = useReducedMotion();
   const autoStarted = useRef(false);
+
+  // All candidates selected by default until user interacts
+  const resolvedSelected = selectedPaths ?? new Set(candidates.map((c) => c.path));
 
   // Auto-start scan on mount
   useEffect(() => {
@@ -62,7 +65,8 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
 
   const handleToggle = useCallback((path: string) => {
     setSelectedPaths((prev) => {
-      const next = new Set(prev);
+      const current = prev ?? new Set(candidates.map((c) => c.path));
+      const next = new Set(current);
       if (next.has(path)) {
         next.delete(path);
       } else {
@@ -70,7 +74,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
       }
       return next;
     });
-  }, []);
+  }, [candidates]);
 
   const handleSelectAll = useCallback(() => {
     setSelectedPaths(new Set(candidates.map((c) => c.path)));
@@ -81,19 +85,19 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
   }, []);
 
   const handleRescan = useCallback(() => {
-    setSelectedPaths(new Set());
+    setSelectedPaths(null);
     setHasStarted(true);
     startScan();
   }, [startScan]);
 
   const handleConfirm = useCallback(async () => {
-    if (selectedPaths.size === 0) {
+    if (resolvedSelected.size === 0) {
       // Skip without registering
       onStepComplete();
       return;
     }
     setIsRegistering(true);
-    const paths = Array.from(selectedPaths);
+    const paths = Array.from(resolvedSelected);
     try {
       await Promise.all(paths.map((p) => registerAgent.mutateAsync({ path: p })));
     } catch {
@@ -102,7 +106,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
       setIsRegistering(false);
       onStepComplete();
     }
-  }, [selectedPaths, registerAgent, onStepComplete]);
+  }, [resolvedSelected, registerAgent, onStepComplete]);
 
   const handleAgentCreated = useCallback(() => {
     // After creating an agent via the no-results form, re-scan
@@ -113,7 +117,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
   const scanComplete = hasStarted && !isScanning;
   const showNoResults = scanComplete && !hasResults;
   const showBulkControls = !isScanning && candidates.length >= SELECT_ALL_THRESHOLD;
-  const allSelected = hasResults && selectedPaths.size === candidates.length;
+  const allSelected = hasResults && resolvedSelected.size === candidates.length;
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col items-center">
@@ -179,7 +183,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
           >
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">
-                {selectedPaths.size} of {candidates.length} selected
+                {resolvedSelected.size} of {candidates.length} selected
               </span>
               <Button
                 variant="ghost"
@@ -220,7 +224,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
                 >
                   <AgentCard
                     candidate={candidate}
-                    selected={selectedPaths.has(candidate.path)}
+                    selected={resolvedSelected.has(candidate.path)}
                     onToggle={() => handleToggle(candidate.path)}
                   />
                 </motion.div>
@@ -244,22 +248,19 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
 
       {/* Action buttons — fixed at bottom */}
       {scanComplete && hasResults && (
-        <div className="mt-6 flex shrink-0 flex-col items-center gap-3 border-t pt-6">
+        <div className="mt-4 flex shrink-0 flex-col items-center gap-2 border-t pt-4">
           <Button
             size="lg"
             onClick={handleConfirm}
             disabled={isRegistering}
-            variant={selectedPaths.size === 0 ? 'outline' : 'default'}
+            variant={resolvedSelected.size === 0 ? 'outline' : 'default'}
           >
             {isRegistering
               ? 'Registering...'
-              : selectedPaths.size > 0
-                ? `Register ${selectedPaths.size} agent${selectedPaths.size === 1 ? '' : 's'}`
+              : resolvedSelected.size > 0
+                ? `Register ${resolvedSelected.size} agent${resolvedSelected.size === 1 ? '' : 's'}`
                 : 'Continue without registering'}
           </Button>
-          <p className="text-xs text-muted-foreground">
-            You can discover more agents anytime from the Mesh panel.
-          </p>
         </div>
       )}
     </div>

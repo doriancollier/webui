@@ -125,35 +125,40 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background">
-      {/* Header with skip all */}
-      <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-        <div className="text-sm text-muted-foreground">
-          Step {currentStep + 1} of {STEPS.length}
-        </div>
-        <Button variant="ghost" size="sm" onClick={handleSkipAll}>
-          Skip all
+      {/* Unified navigation bar — Back, step dots, Skip/Skip all */}
+      <div className="flex items-center justify-between px-4 py-3 sm:px-6">
+        <Button variant="ghost" size="sm" onClick={goBack} className="min-w-16">
+          Back
         </Button>
-      </div>
 
-      {/* Animated step indicator */}
-      <div className="flex justify-center gap-2 pb-4 sm:pb-8">
-        {STEPS.map((_, i) => (
-          <div key={i} className="relative flex items-center justify-center">
-            {i === currentStep ? (
-              <motion.div
-                layoutId="step-indicator"
-                className="flex h-2 w-6 items-center justify-center rounded-full bg-primary"
-                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              />
-            ) : i < currentStep ? (
-              <div className="flex size-2 items-center justify-center rounded-full bg-primary/60">
-                <Check className="size-1.5 text-primary-foreground" />
-              </div>
-            ) : (
-              <div className={cn('size-2 rounded-full ring-1 ring-muted-foreground/30')} />
-            )}
-          </div>
-        ))}
+        <div className="flex items-center gap-2">
+          {STEPS.map((_, i) => (
+            <div key={i} className="relative flex items-center justify-center">
+              {i === currentStep ? (
+                <motion.div
+                  layoutId="step-indicator"
+                  className="flex h-2 w-6 items-center justify-center rounded-full bg-primary"
+                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                />
+              ) : i < currentStep ? (
+                <div className="flex size-2 items-center justify-center rounded-full bg-primary/60">
+                  <Check className="size-1.5 text-primary-foreground" />
+                </div>
+              ) : (
+                <div className={cn('size-2 rounded-full ring-1 ring-muted-foreground/30')} />
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="flex min-w-16 items-center justify-end gap-1">
+          <Button variant="ghost" size="sm" onClick={handleSkip}>
+            Skip
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleSkipAll} className="text-muted-foreground">
+            Skip all
+          </Button>
+        </div>
       </div>
 
       {/* Step content with slide transitions */}
@@ -174,7 +179,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
             }}
             className="absolute inset-0 flex flex-col"
           >
-            <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-4 py-8 sm:px-6">
+            <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-4 py-4 sm:px-6">
               {currentStep === 0 && (
                 <AgentDiscoveryStep onStepComplete={handleStepComplete} />
               )}
@@ -184,16 +189,6 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
             </div>
           </motion.div>
         </AnimatePresence>
-      </div>
-
-      {/* Navigation controls */}
-      <div className="flex items-center justify-between border-t px-4 py-4 sm:px-6">
-        <Button variant="ghost" onClick={goBack}>
-          Back
-        </Button>
-        <Button variant="outline" onClick={handleSkip}>
-          Skip
-        </Button>
       </div>
     </div>
   );

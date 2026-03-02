@@ -111,7 +111,6 @@ describe('OnboardingFlow', () => {
     fireEvent.click(screen.getByText('Get Started'));
 
     expect(screen.getByTestId('discovery-step')).toBeTruthy();
-    expect(screen.getByText('Step 1 of 2')).toBeTruthy();
   });
 
   it('shows step indicator dots on step pages', () => {
@@ -134,7 +133,6 @@ describe('OnboardingFlow', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={1} />);
 
     expect(screen.getByTestId('pulse-step')).toBeTruthy();
-    expect(screen.getByText('Step 2 of 2')).toBeTruthy();
   });
 
   it('completing a step calls completeStep and advances', () => {
@@ -145,7 +143,6 @@ describe('OnboardingFlow', () => {
     expect(mockCompleteStep).toHaveBeenCalledWith('discovery');
     // Should advance to step 2
     expect(screen.getByTestId('pulse-step')).toBeTruthy();
-    expect(screen.getByText('Step 2 of 2')).toBeTruthy();
   });
 
   it('completing all steps shows completion screen', () => {
