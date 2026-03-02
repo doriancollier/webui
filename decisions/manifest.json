@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 54,
+  "nextNumber": 61,
   "decisions": [
     {
       "number": 1,
@@ -473,6 +473,69 @@
       "created": "2026-02-26",
       "extractedFrom": "mesh-topology-elevation",
       "specSlug": "mesh-topology-elevation"
+    },
+    {
+      "number": 54,
+      "slug": "invert-feature-flags-to-enabled-by-default",
+      "title": "Invert Feature Flags to Enabled by Default",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "first-time-user-experience",
+      "specSlug": "first-time-user-experience"
+    },
+    {
+      "number": 55,
+      "slug": "sse-streaming-for-filesystem-discovery",
+      "title": "Use SSE Streaming for Filesystem Discovery Results",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "first-time-user-experience",
+      "specSlug": "first-time-user-experience"
+    },
+    {
+      "number": 56,
+      "slug": "server-side-onboarding-state-persistence",
+      "title": "Persist Onboarding State Server-Side in Config",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "first-time-user-experience",
+      "specSlug": "first-time-user-experience"
+    },
+    {
+      "number": 57,
+      "slug": "use-broadcastchannel-plus-sse-for-tunnel-sync",
+      "title": "Use BroadcastChannel + SSE for Cross-Tab Tunnel Sync",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "tunnel-remote-access-overhaul",
+      "specSlug": "tunnel-remote-access-overhaul"
+    },
+    {
+      "number": 58,
+      "slug": "dynamic-cors-for-tunnel-origin",
+      "title": "Use Dynamic CORS Callback for Tunnel Origin",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "tunnel-remote-access-overhaul",
+      "specSlug": "tunnel-remote-access-overhaul"
+    },
+    {
+      "number": 59,
+      "slug": "unified-tunnel-status-zod-schema",
+      "title": "Unify Tunnel Status into Single Zod Schema",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "tunnel-remote-access-overhaul",
+      "specSlug": "tunnel-remote-access-overhaul"
+    },
+    {
+      "number": 60,
+      "slug": "hybrid-curl-script-wrapping-npm",
+      "title": "Use Hybrid Curl Script Wrapping npm for Primary Install",
+      "status": "draft",
+      "created": "2026-03-01",
+      "extractedFrom": "installation-experience",
+      "specSlug": "installation-experience"
     }
   ]
 }
