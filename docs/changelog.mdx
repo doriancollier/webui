@@ -5,6 +5,39 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-03-02
+
+> First-time user experience, remote access overhaul, and research library curation
+
+### Added
+
+- Walk through first-time setup with guided agent discovery, Pulse presets, and animated onboarding flow
+- Overhaul remote access with multi-tab sync, UX redesign, and CLI QR code
+- Add curl install script, tabbed UI, Homebrew tap, and CLI check
+- Reset all data and restart server from the Advanced settings tab
+- Add research library curation with file reduction phases
+- Replace static llms.txt with dynamic route handler
+- Add header, breadcrumb, prev/next nav, tags, RSS link, and SEO improvements to blog
+- Wire research library into agent and main context
+
+### Changed
+
+- Remove standalone roadmap app and all references
+- Rename apps/web to apps/site for clarity
+- Codify plans/ as canonical location and migrate from docs/plans/
+- Update all contributing guides based on 30 recent specs
+
+### Fixed
+
+- Target registered agents in Pulse presets step instead of server default directory
+- Unify onboarding nav bar, select all agents by default, reduce spacing
+- Fix scroll containment and improve agent discovery UX
+- Reset stale tunnel status fields on stop and broadcast changes to other tabs
+- Restore code block padding after opting out of fumadocs dark theme
+- Update debug commands for .dork directory and fix ADR/README inventory
+
+---
+
 ## [0.5.0] - 2026-03-01
 
 > Human-readable Relay messaging, marketing site overhaul, and 125+ code quality fixes

@@ -1,0 +1,53 @@
+---
+title: DorkOS 0.6.0
+description: First-time user experience, remote access overhaul, and research library curation
+date: 2026-03-02
+author: DorkOS Team
+category: release
+tags: [release, onboarding, remote-access, research]
+---
+
+DorkOS 0.6.0 introduces a guided first-time setup experience that discovers your existing AI agents, creates recurring schedules, and gets you productive in minutes. This release also overhauls remote access and adds research library curation.
+
+## Highlights
+
+**Guided Onboarding** — New users are walked through a three-step setup: agent discovery scans your machine for AI-configured projects, Pulse presets create recurring schedules targeting your registered agents, and a completion screen summarizes everything that was configured.
+
+**Remote Access Redesign** — Multi-tab sync, a refreshed UX, and CLI QR code support make accessing DorkOS remotely smoother than ever. Curl install script, tabbed UI, and Homebrew tap round out the installation story.
+
+**Research Library Curation** — A new curation workflow processes, prunes, and consolidates research artifacts with structured frontmatter and lifecycle management.
+
+## All Changes
+
+### Added
+
+- Walk through first-time setup with guided agent discovery, Pulse presets, and animated onboarding flow
+- Overhaul remote access with multi-tab sync, UX redesign, and CLI QR code
+- Add curl install script, tabbed UI, Homebrew tap, and CLI check
+- Reset all data and restart server from the Advanced settings tab
+- Add research library curation with file reduction phases
+- Replace static llms.txt with dynamic route handler
+- Add header, breadcrumb, prev/next nav, tags, RSS link, and SEO improvements to blog
+- Wire research library into agent and main context
+
+### Changed
+
+- Remove standalone roadmap app and all references
+- Rename apps/web to apps/site for clarity
+- Codify plans/ as canonical location and migrate from docs/plans/
+- Update all contributing guides based on 30 recent specs
+
+### Fixed
+
+- Target registered agents in Pulse presets step instead of server default directory
+- Unify onboarding nav bar, select all agents by default, reduce spacing
+- Fix scroll containment and improve agent discovery UX
+- Reset stale tunnel status fields on stop and broadcast changes to other tabs
+- Restore code block padding after opting out of fumadocs dark theme
+- Update debug commands for .dork directory and fix ADR/README inventory
+
+## Install / Update
+
+```
+npm install -g dorkos@0.6.0
+```

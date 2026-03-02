@@ -9,35 +9,43 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Polish FTUE with Aceternity-inspired animations and UX improvements
-- Add Reset All Data and Restart Server to Advanced tab
-- Implement first-time user experience with agent discovery, pulse presets, and adapter setup
-- Overhaul remote access with multi-tab sync, UX redesign, and CLI QR code
-- Add curl install script, tabbed UI, Homebrew tap, and CLI check
-- Add curl install script, tabbed UI, Homebrew tap, and CLI check
-- Add file reduction phases to /research:curate
-- Replace static llms.txt with dynamic route handler
-- Add research library curation system
-- Add header, breadcrumb, prev/next nav, tags, RSS link, and SEO improvements
-
 ### Changed
-
-- Extract shared marker utils and remove dead state
-- Rename apps/web to apps/site and fix CLAUDE.md doc drift
-- Update all contributing guides based on 30 recent specs
-- Fix guide count and expand directory structure diagram
-- Fix command count (56→47) and add missing changelog/research namespaces
-- Remove all roadmap references from .claude/README.md
-- Remove roadmap app documentation
 
 ### Fixed
 
-- Target registered agents in Pulse presets step
-- Unify nav bar, select all agents by default, reduce spacing
+---
+
+## [0.6.0] - 2026-03-02
+
+> First-time user experience, remote access overhaul, and research library curation
+
+### Added
+
+- Walk through first-time setup with guided agent discovery, Pulse presets, and animated onboarding flow
+- Overhaul remote access with multi-tab sync, UX redesign, and CLI QR code
+- Add curl install script, tabbed UI, Homebrew tap, and CLI check
+- Reset all data and restart server from the Advanced settings tab
+- Add research library curation with file reduction phases
+- Replace static llms.txt with dynamic route handler
+- Add header, breadcrumb, prev/next nav, tags, RSS link, and SEO improvements to blog
+- Wire research library into agent and main context
+
+### Changed
+
+- Remove standalone roadmap app and all references
+- Rename apps/web to apps/site for clarity
+- Codify plans/ as canonical location and migrate from docs/plans/
+- Update all contributing guides based on 30 recent specs
+
+### Fixed
+
+- Target registered agents in Pulse presets step instead of server default directory
+- Unify onboarding nav bar, select all agents by default, reduce spacing
 - Fix scroll containment and improve agent discovery UX
-- Reset stale status fields on stop and broadcast changes to other tabs
+- Reset stale tunnel status fields on stop and broadcast changes to other tabs
 - Restore code block padding after opting out of fumadocs dark theme
 - Update debug commands for .dork directory and fix ADR/README inventory
+
 ---
 
 ## [0.5.0] - 2026-03-01
@@ -211,7 +219,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/dork-labs/dorkos/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/dork-labs/dorkos/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/dork-labs/dorkos/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/dork-labs/dorkos/compare/v0.2.0...v0.3.0
