@@ -608,6 +608,22 @@ export class MeshCore {
     this.stopPeriodicReconciliation();
   }
 
+  /**
+   * List registered agents with their project paths (lightweight view for onboarding/scheduling).
+   *
+   * Unlike `list()` which strips `projectPath`, this returns it so the client
+   * can target schedules at specific agent working directories.
+   */
+  listWithPaths(): Array<{ id: string; name: string; projectPath: string; icon?: string; color?: string }> {
+    return this.registry.list().map((e) => ({
+      id: e.id,
+      name: e.name,
+      projectPath: e.projectPath,
+      icon: e.icon,
+      color: e.color,
+    }));
+  }
+
   // --- Private helpers ---
 
   /**

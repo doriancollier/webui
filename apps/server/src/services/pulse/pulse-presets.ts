@@ -98,9 +98,9 @@ export async function loadPresets(dorkHome: string): Promise<PulsePreset[]> {
       logger.warn('[Pulse] Malformed presets JSON, returning empty array');
       return [];
     }
-    // File not found or other read error — return empty
+    // File not found — return factory defaults
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-      return [];
+      return [...DEFAULT_PRESETS];
     }
     logger.warn('[Pulse] Failed to load presets', { error: (err as Error).message });
     return [];

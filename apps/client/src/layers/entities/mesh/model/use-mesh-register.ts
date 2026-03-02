@@ -12,6 +12,7 @@ export function useRegisterAgent() {
       transport.registerMeshAgent(opts.path, opts.overrides, opts.approver),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['mesh', 'agents'] });
+      queryClient.invalidateQueries({ queryKey: ['mesh', 'agent-paths'] });
     },
   });
 }

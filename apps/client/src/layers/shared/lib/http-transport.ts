@@ -25,6 +25,7 @@ import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
 import type { TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from '@dorkos/shared/relay-schemas';
 import type {
   AgentManifest,
+  AgentPathEntry,
   DiscoveryCandidate,
   DenialRecord,
   AgentHealth,
@@ -515,6 +516,10 @@ export class HttpTransport implements Transport {
   }
 
   // --- Mesh Agent Discovery ---
+
+  listMeshAgentPaths(): Promise<{ agents: AgentPathEntry[] }> {
+    return fetchJSON(this.baseUrl, '/mesh/agents/paths');
+  }
 
   discoverMeshAgents(roots: string[], maxDepth?: number): Promise<{ candidates: DiscoveryCandidate[] }> {
     return fetchJSON(this.baseUrl, '/mesh/discover', {

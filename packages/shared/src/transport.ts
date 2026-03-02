@@ -32,6 +32,7 @@ import type {
 import type { AdapterConfig, AdapterStatus, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from './relay-schemas.js';
 import type {
   AgentManifest,
+  AgentPathEntry,
   DiscoveryCandidate,
   DenialRecord,
   AgentHealth,
@@ -208,6 +209,8 @@ export interface Transport {
 
   // --- Mesh Agent Discovery ---
 
+  /** List registered agents with their project paths (lightweight, for onboarding). */
+  listMeshAgentPaths(): Promise<{ agents: AgentPathEntry[] }>;
   /** Discover agent candidates by scanning filesystem roots. */
   discoverMeshAgents(roots: string[], maxDepth?: number): Promise<{ candidates: DiscoveryCandidate[] }>;
   /** List registered mesh agents with optional filters. */

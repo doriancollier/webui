@@ -1,26 +1,44 @@
 import { useState, useCallback } from 'react';
-import { Button } from '@/layers/shared/ui';
+import {
+  Button,
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/layers/shared/ui';
 import { useCreateSchedule } from '@/layers/entities/pulse';
+import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 import { usePulsePresets } from '../model/use-pulse-presets';
 import { PresetCard } from './PresetCard';
 
 interface PulsePresetsStepProps {
   onStepComplete: () => void;
+  agents: AgentPathEntry[];
 }
 
 /**
  * Onboarding step for selecting recurring Pulse schedule presets.
- * Displays available presets with toggles and a confirmation button.
+ * Displays available presets with toggles, a project picker when multiple
+ * agents exist, and a confirmation button.
  *
  * @param onStepComplete - Called when the user finishes selecting presets
+ * @param agents - Registered agents with project paths from the discovery step
  */
-export function PulsePresetsStep({ onStepComplete }: PulsePresetsStepProps) {
+export function PulsePresetsStep({ onStepComplete, agents }: PulsePresetsStepProps) {
   const { data: presets, isLoading, isError } = usePulsePresets();
   const createSchedule = useCreateSchedule();
   const [enabledPresets, setEnabledPresets] = useState<Set<string> | null>(
     null
   );
   const [isCreating, setIsCreating] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+
+  // Auto-resolve when exactly 1 agent
+  const resolvedAgent =
+    agents.length === 1
+      ? agents[0]
+      : agents.find((a) => a.id === selectedAgentId) ?? null;
 
   // Initialize enabledPresets with all preset IDs once data loads
   const resolvedEnabled =
@@ -43,9 +61,10 @@ export function PulsePresetsStep({ onStepComplete }: PulsePresetsStepProps) {
   );
 
   const selectedCount = resolvedEnabled.size;
+  const canCreate = selectedCount > 0 && resolvedAgent !== null;
 
   const handleCreateSchedules = useCallback(async () => {
-    if (!presets || selectedCount === 0) {
+    if (!presets || selectedCount === 0 || !resolvedAgent) {
       onStepComplete();
       return;
     }
@@ -59,6 +78,7 @@ export function PulsePresetsStep({ onStepComplete }: PulsePresetsStepProps) {
             name: preset.name,
             prompt: preset.prompt,
             cron: preset.cron,
+            cwd: resolvedAgent.projectPath,
           })
         )
       );
@@ -68,7 +88,7 @@ export function PulsePresetsStep({ onStepComplete }: PulsePresetsStepProps) {
       setIsCreating(false);
       onStepComplete();
     }
-  }, [presets, selectedCount, resolvedEnabled, createSchedule, onStepComplete]);
+  }, [presets, selectedCount, resolvedEnabled, resolvedAgent, createSchedule, onStepComplete]);
 
   return (
     <div className="mx-auto w-full max-w-2xl flex-1 space-y-4 overflow-y-auto px-4">
@@ -80,6 +100,33 @@ export function PulsePresetsStep({ onStepComplete }: PulsePresetsStepProps) {
           Pulse runs automated tasks on a schedule — like a cron job for your agents.
         </p>
       </div>
+
+      {/* Project picker — single agent shows read-only, 2+ shows Select */}
+      {agents.length === 1 && (
+        <p className="text-center text-sm text-muted-foreground">
+          Scheduling for {agents[0].icon ? `${agents[0].icon} ` : ''}{agents[0].name}
+        </p>
+      )}
+
+      {agents.length >= 2 && (
+        <div className="mx-auto max-w-xs">
+          <Select
+            value={selectedAgentId ?? ''}
+            onValueChange={setSelectedAgentId}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a project..." />
+            </SelectTrigger>
+            <SelectContent>
+              {agents.map((agent) => (
+                <SelectItem key={agent.id} value={agent.id}>
+                  {agent.icon ? `${agent.icon} ` : ''}{agent.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       {isLoading && (
         <p className="text-center text-sm text-muted-foreground">
@@ -108,16 +155,20 @@ export function PulsePresetsStep({ onStepComplete }: PulsePresetsStepProps) {
       )}
 
       <div className="flex flex-col items-center gap-3 pt-2">
-        <Button onClick={handleCreateSchedules} size="lg" disabled={isCreating}>
+        <Button
+          onClick={handleCreateSchedules}
+          size="lg"
+          disabled={isCreating || (selectedCount > 0 && !canCreate)}
+        >
           {isCreating
             ? 'Creating...'
             : selectedCount > 0
               ? `Create ${selectedCount} Schedule${selectedCount === 1 ? '' : 's'}`
               : 'Continue Without Schedules'}
         </Button>
-        {selectedCount > 0 && (
+        {agents.length >= 2 && (
           <p className="text-xs text-muted-foreground">
-            {selectedCount} preset{selectedCount === 1 ? '' : 's'} selected
+            You can put your other agents on autopilot anytime from Pulse.
           </p>
         )}
       </div>

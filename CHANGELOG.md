@@ -32,6 +32,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Target registered agents in Pulse presets step
 - Unify nav bar, select all agents by default, reduce spacing
 - Fix scroll containment and improve agent discovery UX
 - Reset stale status fields on stop and broadcast changes to other tabs

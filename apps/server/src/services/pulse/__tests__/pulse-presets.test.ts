@@ -125,13 +125,14 @@ describe('pulse-presets', () => {
       );
     });
 
-    it('returns empty array when file does not exist', async () => {
+    it('returns default presets when file does not exist', async () => {
       const err = new Error('ENOENT') as NodeJS.ErrnoException;
       err.code = 'ENOENT';
       vi.mocked(readFile).mockRejectedValue(err);
 
       const result = await loadPresets('/home/user/.dork');
-      expect(result).toEqual([]);
+      expect(result).toEqual(getDefaultPresets());
+      expect(result).toHaveLength(4);
     });
 
     it('returns empty array for malformed JSON', async () => {

@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, waitFor } from '@testing-library/react';
 
 // Mock motion/react before importing the component
 vi.mock('motion/react', () => ({
@@ -42,6 +42,20 @@ vi.mock('../model/use-onboarding', () => ({
     dismiss: mockDismiss,
     startOnboarding: mockStartOnboarding,
   })),
+}));
+
+// Mock useMeshAgentPaths — default: returns one agent
+const mockAgentPaths = vi.fn().mockReturnValue({
+  data: {
+    agents: [
+      { id: 'agent-1', name: 'Test Agent', projectPath: '/test/project', icon: '🤖' },
+    ],
+  },
+  isLoading: false,
+});
+
+vi.mock('@/layers/entities/mesh', () => ({
+  useMeshAgentPaths: () => mockAgentPaths(),
 }));
 
 // Mock step components to isolate OnboardingFlow navigation logic
@@ -87,6 +101,15 @@ import { OnboardingFlow } from '../ui/OnboardingFlow';
 describe('OnboardingFlow', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Reset to default: one agent
+    mockAgentPaths.mockReturnValue({
+      data: {
+        agents: [
+          { id: 'agent-1', name: 'Test Agent', projectPath: '/test/project', icon: '🤖' },
+        ],
+      },
+      isLoading: false,
+    });
   });
 
   afterEach(() => {
@@ -182,5 +205,29 @@ describe('OnboardingFlow', () => {
 
     expect(mockDismiss).toHaveBeenCalled();
     expect(onComplete).toHaveBeenCalled();
+  });
+
+  // --- Auto-skip Pulse when no agents ---
+
+  it('auto-skips pulse step when agents list is empty', async () => {
+    mockAgentPaths.mockReturnValue({
+      data: { agents: [] },
+      isLoading: false,
+    });
+
+    render(<OnboardingFlow onComplete={vi.fn()} initialStep={1} />);
+
+    await waitFor(() => {
+      expect(mockCompleteStep).toHaveBeenCalledWith('pulse');
+    });
+    // Should show completion screen (pulse was last step)
+    expect(screen.getByTestId('onboarding-complete')).toBeTruthy();
+  });
+
+  it('renders pulse step when agents exist', () => {
+    render(<OnboardingFlow onComplete={vi.fn()} initialStep={1} />);
+
+    expect(screen.getByTestId('pulse-step')).toBeTruthy();
+    expect(mockCompleteStep).not.toHaveBeenCalledWith('pulse');
   });
 });

@@ -4,6 +4,7 @@ import { Check } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
 import { useIsMobile } from '@/layers/shared/model';
 import { cn } from '@/layers/shared/lib';
+import { useMeshAgentPaths } from '@/layers/entities/mesh';
 import { useOnboarding } from '../model/use-onboarding';
 import { WelcomeStep } from './WelcomeStep';
 import { AgentDiscoveryStep } from './AgentDiscoveryStep';
@@ -33,6 +34,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
   const { completeStep, skipStep, dismiss, startOnboarding } = useOnboarding();
   const isMobile = useIsMobile();
   const reducedMotion = useReducedMotion();
+  const agentPaths = useMeshAgentPaths();
 
   // Record onboarding start timestamp on mount
   useEffect(() => {
@@ -81,6 +83,18 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
     setDirection(1);
     setCurrentStep(0);
   }, []);
+
+  // Auto-skip Pulse step when no agents are registered
+  useEffect(() => {
+    if (
+      currentStep === 1 &&
+      !agentPaths.isLoading &&
+      agentPaths.data?.agents.length === 0
+    ) {
+      completeStep('pulse');
+      goNext();
+    }
+  }, [currentStep, agentPaths.isLoading, agentPaths.data, completeStep, goNext]);
 
   // Show the completion screen
   if (showComplete) {
@@ -184,7 +198,10 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
                 <AgentDiscoveryStep onStepComplete={handleStepComplete} />
               )}
               {currentStep === 1 && (
-                <PulsePresetsStep onStepComplete={handleStepComplete} />
+                <PulsePresetsStep
+                  onStepComplete={handleStepComplete}
+                  agents={agentPaths.data?.agents ?? []}
+                />
               )}
             </div>
           </motion.div>

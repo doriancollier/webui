@@ -173,6 +173,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     updateRelayAdapterConfig: vi.fn().mockResolvedValue({ ok: true }),
     testRelayAdapterConnection: vi.fn().mockResolvedValue({ ok: true }),
     // Mesh
+    listMeshAgentPaths: vi.fn().mockResolvedValue({ agents: [] }),
     discoverMeshAgents: vi.fn().mockResolvedValue({ candidates: [] }),
     listMeshAgents: vi.fn().mockResolvedValue({ agents: [] }),
     getMeshAgent: vi.fn(),

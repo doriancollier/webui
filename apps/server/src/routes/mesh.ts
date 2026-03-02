@@ -279,6 +279,13 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     res.json(status);
   });
 
+  // GET /agents/paths — Lightweight agent list with projectPath (for onboarding/scheduling)
+  // Must come before GET /agents/:id to avoid param capture
+  router.get('/agents/paths', (_req, res) => {
+    const agents = meshCore.listWithPaths();
+    return res.json({ agents });
+  });
+
   // GET /agents — List agents with optional filters (includes health status)
   router.get('/agents', (req, res) => {
     const result = AgentListQuerySchema.safeParse(req.query);

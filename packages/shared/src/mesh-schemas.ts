@@ -81,6 +81,21 @@ export const AgentManifestSchema = z
 
 export type AgentManifest = z.infer<typeof AgentManifestSchema>;
 
+// === Lightweight Path Entry ===
+
+/** Minimal agent data with projectPath for onboarding/scheduling. */
+export const AgentPathEntrySchema = z
+  .object({
+    id: z.string(),
+    name: z.string(),
+    projectPath: z.string(),
+    icon: z.string().optional(),
+    color: z.string().optional(),
+  })
+  .openapi('AgentPathEntry');
+
+export type AgentPathEntry = z.infer<typeof AgentPathEntrySchema>;
+
 // === Discovery ===
 
 export const AgentHintsSchema = z

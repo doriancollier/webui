@@ -4,6 +4,7 @@
  * @module entities/mesh
  */
 export { useMeshEnabled } from './model/use-mesh-config';
+export { useMeshAgentPaths } from './model/use-mesh-agent-paths';
 export { useRegisteredAgents } from './model/use-mesh-agents';
 export { useDiscoverAgents } from './model/use-mesh-discover';
 export { useRegisterAgent } from './model/use-mesh-register';

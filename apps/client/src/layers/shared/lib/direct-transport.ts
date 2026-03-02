@@ -393,6 +393,10 @@ export class DirectTransport implements Transport {
     throw new Error('Relay bindings are not supported in embedded mode');
   }
 
+  async listMeshAgentPaths(): Promise<{ agents: never[] }> {
+    return { agents: [] };
+  }
+
   // Mesh agent discovery is not supported in embedded mode
   async discoverMeshAgents(_roots: string[], _maxDepth?: number): Promise<{ candidates: DiscoveryCandidate[] }> {
     throw new Error('Mesh is not supported in embedded mode');
