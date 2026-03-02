@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add curl install script, tabbed UI, Homebrew tap, and CLI check
+- Add curl install script, tabbed UI, Homebrew tap, and CLI check
 - Add file reduction phases to /research:curate
 - Replace static llms.txt with dynamic route handler
 - Add research library curation system

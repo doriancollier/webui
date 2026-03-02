@@ -8,7 +8,6 @@ export { SubsystemsSection } from './ui/SubsystemsSection'
 export { HonestySection } from './ui/HonestySection'
 export { InstallMoment } from './ui/InstallMoment'
 export { IdentityClose } from './ui/IdentityClose'
-export { TheClose } from './ui/TheClose'
 
 // UI components — chrome
 export { MarketingNav } from './ui/MarketingNav'

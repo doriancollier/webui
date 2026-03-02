@@ -1,0 +1,61 @@
+name: Update Homebrew Formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to update to (e.g., 1.2.3). Leave empty to use latest from npm.'
+        required: false
+
+jobs:
+  update-formula:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get version
+        id: version
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ -n "$INPUT_VERSION" ]; then
+            VERSION="$INPUT_VERSION"
+          else
+            VERSION=$(npm view dorkos version)
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Updating Homebrew formula to v$VERSION"
+
+      - name: Compute SHA256
+        id: sha
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          TARBALL_URL="https://registry.npmjs.org/dorkos/-/dorkos-${PKG_VERSION}.tgz"
+          SHA256=$(curl -sL "$TARBALL_URL" | shasum -a 256 | cut -d ' ' -f 1)
+          echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
+          echo "SHA256: $SHA256"
+
+      - name: Checkout tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: dork-labs/homebrew-dorkos
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+
+      - name: Update formula
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+          PKG_SHA256: ${{ steps.sha.outputs.sha256 }}
+        run: |
+          sed -i "s|url \"https://registry.npmjs.org/dorkos/-/dorkos-.*\.tgz\"|url \"https://registry.npmjs.org/dorkos/-/dorkos-${PKG_VERSION}.tgz\"|" Formula/dorkos.rb
+          sed -i "s|sha256 \".*\"|sha256 \"${PKG_SHA256}\"|" Formula/dorkos.rb
+          sed -i "s|version \".*\"|version \"${PKG_VERSION}\"|" Formula/dorkos.rb
+
+      - name: Commit and push
+        env:
+          PKG_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Formula/dorkos.rb
+          git diff --cached --quiet && echo "No changes" && exit 0
+          git commit -m "Update dorkos to ${PKG_VERSION}"
+          git push

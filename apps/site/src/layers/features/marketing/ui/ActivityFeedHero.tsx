@@ -411,29 +411,13 @@ export function ActivityFeedHero({ ctaText, ctaHref, githubHref }: ActivityFeedH
           variants={REVEAL}
           className="flex flex-col sm:flex-row items-center justify-center gap-5"
         >
-          {/* Desktop: npm install button */}
-          <Link
+          <a
             href={ctaHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="marketing-btn hidden lg:inline-flex items-center gap-2"
+            className="marketing-btn inline-flex items-center gap-2"
             style={{ background: '#E85D04', color: '#FFFEFB' }}
           >
             {ctaText}
-            <span className="cursor-blink" aria-hidden="true" />
-          </Link>
-
-          {/* Mobile: docs as primary action */}
-          <Link
-            href="/docs/getting-started/quickstart"
-            className="marketing-btn inline-flex lg:hidden items-center gap-2"
-            style={{ background: '#E85D04', color: '#FFFEFB' }}
-          >
-            Get started
-            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-              <path d="M2.5 6h7M6.5 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </Link>
+          </a>
 
           {/* Desktop: docs as secondary */}
           <Link

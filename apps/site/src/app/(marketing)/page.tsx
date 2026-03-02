@@ -9,7 +9,6 @@ import {
   HonestySection,
   InstallMoment,
   IdentityClose,
-  TheClose,
   MarketingNav,
   MarketingHeader,
   MarketingFooter,
@@ -50,8 +49,8 @@ export default function HomePage() {
 
       <main>
         <ActivityFeedHero
-          ctaText="npm install -g dorkos"
-          ctaHref={siteConfig.npm}
+          ctaText="Install"
+          ctaHref="#install"
           githubHref={siteConfig.github}
         />
 
@@ -68,8 +67,6 @@ export default function HomePage() {
         <IdentityClose email={siteConfig.contactEmail} />
 
         <InstallMoment />
-
-        <TheClose />
       </main>
 
       <MarketingFooter

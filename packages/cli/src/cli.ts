@@ -24,6 +24,7 @@ const { values, positionals } = parseArgs({
     'log-level': { type: 'string', short: 'l' },
     help: { type: 'boolean', short: 'h' },
     version: { type: 'boolean', short: 'v' },
+    'post-install-check': { type: 'boolean', default: false },
     yes: { type: 'boolean', short: 'y', default: false },
   },
   allowPositionals: true,
@@ -55,6 +56,7 @@ Options:
       --pulse              Enable Pulse scheduler
       --no-pulse           Disable Pulse scheduler
   -l, --log-level <level>  Log level (fatal|error|warn|info|debug|trace)
+      --post-install-check  Verify installation and exit
   -h, --help             Show this help message
   -v, --version          Show version number
 
@@ -77,6 +79,13 @@ Examples:
 
 if (values.version) {
   console.log(__CLI_VERSION__);
+  process.exit(0);
+}
+
+if (values['post-install-check']) {
+  checkClaude();
+  console.log(`dorkos ${__CLI_VERSION__}`);
+  console.log('Installation verified.');
   process.exit(0);
 }
 
