@@ -127,10 +127,13 @@ export function CommandPaletteDialog() {
       <ResponsiveDialogContent className="overflow-hidden p-0">
         <Command
           loop
-          filter={(value, search) => {
+          filter={(value, search, keywords) => {
             const term = search.startsWith('@') ? search.slice(1) : search;
             if (!term) return 1;
-            return value.toLowerCase().includes(term.toLowerCase()) ? 1 : 0;
+            const lowerTerm = term.toLowerCase();
+            if (value.toLowerCase().includes(lowerTerm)) return 1;
+            if (keywords?.some((kw) => kw.toLowerCase().includes(lowerTerm))) return 1;
+            return 0;
           }}
         >
           <CommandInput
