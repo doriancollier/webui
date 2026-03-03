@@ -18,7 +18,9 @@ export {
 } from './alert-dialog';
 export { Badge, badgeVariants } from './badge';
 export { Button, buttonVariants } from './button';
+export type { ButtonSize, ButtonProps } from './button';
 export { Input } from './input';
+export type { InputProps } from './input';
 export {
   Command,
   CommandInput,
@@ -106,10 +108,12 @@ export {
   SelectContent,
   SelectItem,
 } from './select';
+export type { SelectTriggerProps, SelectItemProps } from './select';
 export { Separator } from './separator';
 export { Switch } from './switch';
 export type { SwitchSize, SwitchProps } from './switch';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
+export type { TabsListProps } from './tabs';
 export { DirectoryPicker } from './DirectoryPicker';
 export { Skeleton } from './skeleton';
 export { Textarea } from './textarea';

@@ -38,16 +38,31 @@ const buttonVariants = cva(
   }
 )
 
+export type ButtonSize = 'xs' | 'sm' | 'default' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg';
+
+// xs and icon-xs are intentionally small UI chrome — excluded from responsive scaling
+const RESPONSIVE_SIZE_CLASSES: Partial<Record<ButtonSize, string>> = {
+  sm: 'h-10 md:h-8',
+  default: 'h-11 md:h-9',
+  lg: 'h-12 md:h-10',
+  icon: 'size-11 md:size-9',
+  'icon-sm': 'size-10 md:size-8',
+  'icon-lg': 'size-12 md:size-10',
+};
+
+export interface ButtonProps extends React.ComponentProps<"button">, VariantProps<typeof buttonVariants> {
+  asChild?: boolean;
+  responsive?: boolean;
+}
+
 function Button({
   className,
   variant = "default",
   size = "default",
   asChild = false,
+  responsive = true,
   ...props
-}: React.ComponentProps<"button"> &
-  VariantProps<typeof buttonVariants> & {
-    asChild?: boolean
-  }) {
+}: ButtonProps) {
   const Comp = asChild ? Slot.Root : "button"
 
   return (
@@ -55,7 +70,11 @@ function Button({
       data-slot="button"
       data-variant={variant}
       data-size={size}
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={cn(
+        buttonVariants({ variant, size }),
+        responsive ? RESPONSIVE_SIZE_CLASSES[size ?? 'default'] : undefined,
+        className
+      )}
       {...props}
     />
   )

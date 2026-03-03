@@ -362,7 +362,7 @@ function StatusFilterSelect({
   return (
     <div className="mb-1 flex items-center gap-2">
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-7 w-[130px] text-xs">
+        <SelectTrigger responsive={false} className="h-7 w-[130px] text-xs">
           <SelectValue placeholder="Filter status" />
         </SelectTrigger>
         <SelectContent>

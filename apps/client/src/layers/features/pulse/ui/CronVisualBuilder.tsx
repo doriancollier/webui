@@ -95,7 +95,7 @@ function CronFieldSelect({ label, value, options, onChange }: {
     <div className="space-y-1">
       <Label className="text-[11px] text-muted-foreground">{label}</Label>
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="h-8 text-xs" aria-label={label}>
+        <SelectTrigger responsive={false} className="h-8 text-xs" aria-label={label}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
