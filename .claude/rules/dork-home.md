@@ -1,3 +1,7 @@
+---
+paths: apps/server/src/**/*.ts, packages/*/src/**/*.ts
+---
+
 # DorkOS Data Directory (`dorkHome`) Convention
 
 ## Rules by Location

@@ -307,7 +307,7 @@ Tests live alongside source in `__tests__/` directories within each app and pack
 - **React Compiler rules**: Bundled with `eslint-plugin-react-hooks` v7, downgraded to warnings.
 - **TSDoc**: `eslint-plugin-jsdoc` enforces TSDoc on exported functions/classes (warn-first). See `.claude/rules/documentation.md` for conventions.
 - **Prettier + Tailwind**: `prettier-plugin-tailwindcss` sorts Tailwind classes automatically.
-- **Claude Code rules**: `.claude/rules/file-size.md`, `.claude/rules/documentation.md`, `.claude/rules/code-quality.md` provide additional guidelines for file size limits, documentation standards, and code quality practices.
+- **Claude Code rules**: 9 path-specific rules in `.claude/rules/` provide contextual guidance when editing matching files — covering API routes, components, testing, FSD layers, server structure, code quality, file size, documentation, and dorkHome conventions. See `.claude/README.md` Rules table for the full list.
 
 ## CI
 

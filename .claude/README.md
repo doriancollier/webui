@@ -22,11 +22,11 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Commands     | 47    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
 | Skills       | 11    | `.claude/skills/`                                                          |
-| Rules        | 8     | `.claude/rules/`                                                           |
+| Rules        | 9     | `.claude/rules/`                                                           |
 | Claude Hooks | 10    | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
-| ADRs         | 53    | `decisions/`                                                               |
+| ADRs         | 62    | `decisions/`                                                               |
 | Guides       | 18    | `contributing/` (17 guides + INDEX.md)                                           |
 
 ## Component Types
@@ -112,6 +112,7 @@ Rules inject context-specific guidance when Claude works with matching files. Ea
 | `server-structure.md` | `apps/server/src/services/**/*.ts`, `routes/**/*.ts` | Service count monitoring, domain grouping thresholds |
 | `code-quality.md`    | `**/*.ts`, `**/*.tsx`                                | DRY violations, complexity limits, naming conventions |
 | `file-size.md`       | `**/*.ts`, `**/*.tsx`                                | File size thresholds, extraction patterns             |
+| `dork-home.md`      | `apps/server/src/**/*.ts`, `packages/*/src/**/*.ts`  | dorkHome parameter convention, no os.homedir()        |
 | `documentation.md`   | `**/*.ts`, `**/*.tsx`                                | TSDoc standards, barrel export docs                   |
 
 ### Hooks (Event-Triggered)
@@ -274,11 +275,12 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── orchestrating-parallel-work/
 │   └── writing-changelogs/
 │
-└── rules/                 # Path-specific guidance (8 total)
+└── rules/                 # Path-specific guidance (9 total)
     ├── api.md             # API route handlers
     ├── code-quality.md    # DRY, complexity, naming
     ├── components.md      # UI components
     ├── documentation.md   # TSDoc standards
+    ├── dork-home.md       # dorkHome parameter convention
     ├── file-size.md       # File size limits
     ├── fsd-layers.md      # FSD layer imports
     ├── server-structure.md # Server size monitoring
