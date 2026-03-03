@@ -97,3 +97,24 @@ jobs:
 
       - name: Run smoke tests
         run: docker run --rm dorkos-smoke
+
+  integration-test:
+    needs: build-tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Dockerfile.integration
+            .dockerignore
+            scripts/smoke-test.sh
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-tarball
+
+      - name: Build integration test image
+        run: docker build -f Dockerfile.integration -t dorkos-integration .
+
+      - name: Run integration tests
+        run: docker run --rm dorkos-integration

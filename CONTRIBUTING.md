@@ -161,15 +161,33 @@ describe('MyComponent', () => {
 });
 ```
 
-### CLI Installation Smoke Tests
+### CLI Smoke Tests & Integration Tests
 
 The CLI package is validated via Docker and GitHub Actions to ensure `npm install -g dorkos` works in clean environments:
 
 ```bash
-pnpm smoke:docker    # Build, pack, and smoke test in Docker
+pnpm smoke:docker        # Quick smoke test (--version, --help, init)
+pnpm smoke:integration   # Full integration test (starts server, validates API + client)
+pnpm smoke:npm           # Integration test against published npm package
 ```
 
-The CI workflow (`.github/workflows/cli-smoke-test.yml`) runs on every push to main with bare Ubuntu runners (Node 20/22 matrix) and an isolated Docker container.
+The CI workflow (`.github/workflows/cli-smoke-test.yml`) runs on every push to main with bare Ubuntu runners (Node 20/22 matrix), an isolated Docker smoke test, and a full integration test that starts the server and validates API endpoints and client SPA serving.
+
+### Running DorkOS in Docker
+
+```bash
+pnpm docker:build    # Build runnable image from local code
+pnpm docker:run      # Start dorkos on port 4242
+```
+
+Or from the published npm package:
+
+```bash
+docker build -f Dockerfile.run --build-arg INSTALL_MODE=npm -t dorkos .
+docker run --rm -p 4242:4242 -e ANTHROPIC_API_KEY=your-key dorkos
+```
+
+Pass `--port` to use a custom port: `docker run --rm -p 8080:8080 dorkos --port 8080`
 
 For more testing patterns, see [.claude/rules/testing.md](.claude/rules/testing.md).
 

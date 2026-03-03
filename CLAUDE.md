@@ -40,6 +40,8 @@ dorkos/
 ├── research/             # Research artifacts (persisted by research-expert agent)
 ├── specs/                # Feature specs with manifest.json for chronological ordering
 ├── Dockerfile            # CLI install smoke test image
+├── Dockerfile.integration # Full integration test image (server + API + client)
+├── Dockerfile.run        # Runnable container image
 ├── turbo.json
 ├── vitest.workspace.ts
 └── package.json          # Root workspace config + turbo only
@@ -66,6 +68,10 @@ pnpm format            # Prettier format all files
 pnpm format:check      # Check formatting without writing
 pnpm docs:export-api   # Export OpenAPI spec to docs/api/openapi.json (loads .env)
 pnpm smoke:docker      # Build CLI, pack tarball, Docker smoke test
+pnpm smoke:integration # Full integration test (server + API + client in Docker)
+pnpm smoke:npm         # Integration test against published npm package
+pnpm docker:build      # Build runnable Docker image from local code
+pnpm docker:run        # Run dorkos in Docker (build first with docker:build)
 git gtr new <branch>     # Create worktree (runs pnpm install + port setup via .gtrconfig)
 git gtr list             # List all worktrees
 git gtr rm <branch>      # Remove worktree
@@ -304,7 +310,7 @@ Tests live alongside source in `__tests__/` directories within each app and pack
 
 ## CI
 
-A GitHub Actions workflow (`.github/workflows/cli-smoke-test.yml`) validates the CLI install path on every push to main. Three jobs run after a shared `build-tarball` step: `smoke-test-bare` (Node 20/22 matrix on Ubuntu) and `smoke-test-docker` (isolated `node:20-slim` container). Tests verify `dorkos --version`, `--help`, `--post-install-check`, and `init --yes`. A mock Claude CLI stub is used since the real CLI is unavailable in CI. Run `pnpm smoke:docker` locally for the same Docker-based smoke test.
+A GitHub Actions workflow (`.github/workflows/cli-smoke-test.yml`) validates the CLI install path on every push to main. Four jobs run after a shared `build-tarball` step: `smoke-test-bare` (Node 20/22 matrix on Ubuntu), `smoke-test-docker` (isolated `node:20-slim` container), and `integration-test` (full server startup + API/client endpoint validation). Smoke tests verify `dorkos --version`, `--help`, `--post-install-check`, and `init --yes`. Integration tests start the server and validate `/api/health`, `/api/sessions`, `/api/config`, `/api/models`, and client SPA serving. A mock Claude CLI stub is used since the real CLI is unavailable in CI. Run `pnpm smoke:docker` or `pnpm smoke:integration` locally for the same Docker-based tests.
 
 ## Research
 

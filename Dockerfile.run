@@ -1,0 +1,51 @@
+# DorkOS — Runnable Container
+# Installs dorkos (from tarball or npm) and runs the server.
+#
+# Usage (local tarball):
+#   pnpm --filter=dorkos run build
+#   cd packages/cli && pnpm pack --pack-destination ../../ && cd ../..
+#   docker build -f Dockerfile.run -t dorkos .
+#   docker run --rm -p 4242:4242 -e ANTHROPIC_API_KEY=sk-... dorkos
+#
+# Usage (published npm package):
+#   docker build -f Dockerfile.run --build-arg INSTALL_MODE=npm -t dorkos .
+#   docker run --rm -p 4242:4242 -e ANTHROPIC_API_KEY=sk-... dorkos
+#
+# Custom port:
+#   docker run --rm -p 8080:8080 -e ANTHROPIC_API_KEY=sk-... dorkos --port 8080
+
+ARG NODE_VERSION=20
+FROM node:${NODE_VERSION}-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+      python3 build-essential libsqlite3-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Mock Claude CLI (set MOCK_CLAUDE=false if mounting a real Claude CLI)
+ARG MOCK_CLAUDE=true
+RUN if [ "$MOCK_CLAUDE" = "true" ]; then \
+      printf '#!/bin/sh\necho "claude mock 1.0.0"\n' > /usr/local/bin/claude && \
+      chmod +x /usr/local/bin/claude; \
+    fi
+
+# Install mode: "tarball" (local build) or "npm" (published package)
+ARG INSTALL_MODE=tarball
+ARG DORKOS_VERSION=latest
+
+COPY dorkos-*.tgz /tmp/
+
+RUN if [ "$INSTALL_MODE" = "tarball" ]; then \
+      npm install -g /tmp/dorkos-*.tgz; \
+    else \
+      npm install -g "dorkos@${DORKOS_VERSION}"; \
+    fi && \
+    rm -f /tmp/dorkos-*.tgz
+
+# Initialize config
+RUN dorkos init --yes
+
+EXPOSE 4242
+
+ENTRYPOINT ["dorkos"]
+CMD ["--port", "4242"]

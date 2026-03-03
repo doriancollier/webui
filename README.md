@@ -25,6 +25,13 @@ dorkos
 
 The server starts on port 4242 and opens your browser automatically.
 
+### Docker
+
+```bash
+docker build -f Dockerfile.run --build-arg INSTALL_MODE=npm -t dorkos .
+docker run --rm -p 4242:4242 -e ANTHROPIC_API_KEY=your-key-here dorkos
+```
+
 ![DorkOS — Web interface for Claude Code](https://raw.githubusercontent.com/dork-labs/dorkos/main/meta/hero.png)
 
 ## Features

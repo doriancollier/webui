@@ -1,4 +1,7 @@
-# Deny-all allowlist — only copy what the Dockerfile needs
+# Deny-all allowlist — only copy what the Dockerfiles need
 **
 !Dockerfile
+!Dockerfile.integration
+!Dockerfile.run
 !dorkos-*.tgz
+!scripts/smoke-test.sh
