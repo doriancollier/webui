@@ -39,7 +39,6 @@ const ICON_MAP: Record<string, React.ElementType> = {
  * Content powered by usePaletteItems() which assembles all groups.
  *
  * The `@` prefix activates agent-only mode, hiding all non-agent groups.
- * Cmd+click on an agent opens it in a new browser tab.
  */
 export function CommandPaletteDialog() {
   const { globalPaletteOpen, setGlobalPaletteOpen } = useGlobalPalette();
@@ -57,8 +56,6 @@ export function CommandPaletteDialog() {
   const setPickerOpen = useAppStore((s) => s.setPickerOpen);
 
   const isAtMode = search.startsWith('@');
-  // cmdk uses the `value` prop on Command for controlled filtering — pass the effective search term
-  const effectiveSearch = isAtMode ? search.slice(1) : search;
 
   const closePalette = useCallback(() => {
     setGlobalPaletteOpen(false);
@@ -72,19 +69,6 @@ export function CommandPaletteDialog() {
       closePalette();
     },
     [recordUsage, setDir, closePalette],
-  );
-
-  const handleAgentClick = useCallback(
-    (agent: AgentPathEntry, e: React.MouseEvent) => {
-      if (e.metaKey || e.ctrlKey) {
-        const url = `${window.location.pathname}?dir=${encodeURIComponent(agent.projectPath)}`;
-        window.open(url, '_blank');
-        closePalette();
-      } else {
-        handleAgentSelect(agent);
-      }
-    },
-    [handleAgentSelect, closePalette],
   );
 
   const handleFeatureAction = useCallback(
@@ -141,7 +125,14 @@ export function CommandPaletteDialog() {
   return (
     <ResponsiveDialog open={globalPaletteOpen} onOpenChange={handleOpenChange}>
       <ResponsiveDialogContent className="overflow-hidden p-0">
-        <Command loop value={effectiveSearch}>
+        <Command
+          loop
+          filter={(value, search) => {
+            const term = search.startsWith('@') ? search.slice(1) : search;
+            if (!term) return 1;
+            return value.toLowerCase().includes(term.toLowerCase()) ? 1 : 0;
+          }}
+        >
           <CommandInput
             placeholder="Search agents, features, commands..."
             value={search}
@@ -158,7 +149,7 @@ export function CommandPaletteDialog() {
                     key={agent.id}
                     agent={agent}
                     isActive={agent.projectPath === selectedCwd}
-                    onSelect={(e) => handleAgentClick(agent, e as React.MouseEvent)}
+                    onSelect={() => handleAgentSelect(agent)}
                   />
                 ))}
               </CommandGroup>
@@ -172,7 +163,7 @@ export function CommandPaletteDialog() {
                     key={agent.id}
                     agent={agent}
                     isActive={agent.projectPath === selectedCwd}
-                    onSelect={(e) => handleAgentClick(agent, e as React.MouseEvent)}
+                    onSelect={() => handleAgentSelect(agent)}
                   />
                 ))}
               </CommandGroup>

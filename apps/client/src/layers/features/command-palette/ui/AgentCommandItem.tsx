@@ -9,7 +9,7 @@ interface AgentCommandItemProps {
   /** Whether this is the currently active agent */
   isActive: boolean;
   /** Called when the user selects this agent */
-  onSelect: (e: React.MouseEvent | React.KeyboardEvent) => void;
+  onSelect: () => void;
 }
 
 /**
@@ -30,9 +30,7 @@ export function AgentCommandItem({ agent, isActive, onSelect }: AgentCommandItem
     <CommandItem
       value={agent.name}
       keywords={[agent.projectPath, agent.id]}
-      onSelect={() => {
-        onSelect({} as React.MouseEvent);
-      }}
+      onSelect={() => onSelect()}
       className="flex items-start gap-2 py-2"
       forceMount={isActive ? true : undefined}
     >

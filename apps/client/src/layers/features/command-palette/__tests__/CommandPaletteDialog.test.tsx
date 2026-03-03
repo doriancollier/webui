@@ -14,6 +14,9 @@ globalThis.ResizeObserver = vi.fn().mockImplementation(() => ({
   disconnect: vi.fn(),
 }));
 
+// jsdom does not implement scrollIntoView (required by cmdk item selection)
+Element.prototype.scrollIntoView = vi.fn();
+
 // --- matchMedia mock (required for ResponsiveDialog / Radix viewport checks) ---
 beforeEach(() => {
   Object.defineProperty(window, 'matchMedia', {
