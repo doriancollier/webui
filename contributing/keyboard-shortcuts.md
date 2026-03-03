@@ -80,7 +80,20 @@ interface UseInteractiveShortcutsOptions {
 | Key                  | Action               |
 | -------------------- | -------------------- |
 | `Cmd+K` / `Ctrl+K`  | Open command palette |
-| `Cmd+B` / `Ctrl+B`  | Toggle sidebar       |
+| `Cmd+B` / `Ctrl+B`  | Toggle sidebar (Shadcn built-in `SIDEBAR_KEYBOARD_SHORTCUT`) |
+
+### Command Palette
+
+The global command palette (`Cmd+K` / `Ctrl+K`) provides unified access to agents, features, commands, and quick actions.
+
+| Behavior | Description |
+| -------- | ----------- |
+| **Content groups** | Recent Agents (frecency-sorted), All Agents, Features, Commands, Quick Actions |
+| **`@` prefix mode** | Typing `@` scopes search to agents only; the `@` is stripped from the search term |
+| **Zero-query state** | Shows frecency-sorted top 5 recent agents with the active agent pinned first |
+| **Dialog precedence** | Cmd+K toggles the palette open/closed; does not conflict with interactive tool shortcuts since the palette dialog captures focus |
+| **Mobile** | Opens as a bottom Drawer instead of a centered Dialog |
+| **Arrow wrapping** | Arrow keys wrap around the list (uses cmdk `loop` prop) |
 
 ### Approval Mode (`WAITING_FOR_APPROVAL`)
 

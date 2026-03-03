@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 64,
+  "nextNumber": 66,
   "decisions": [
     {
       "number": 1,
@@ -505,7 +505,7 @@
       "number": 62,
       "slug": "remove-mesh-feature-flag-always-on",
       "title": "Remove Mesh Feature Flag — Make Mesh Always-On",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-03",
       "extractedFrom": "agent-centric-ux",
       "specSlug": "agent-centric-ux"
@@ -514,10 +514,28 @@
       "number": 63,
       "slug": "shadcn-command-dialog-for-global-palette",
       "title": "Use Shadcn CommandDialog for Global Agent Command Palette",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-03",
       "extractedFrom": "agent-centric-ux",
       "specSlug": "agent-centric-ux"
+    },
+    {
+      "number": 64,
+      "slug": "shadcn-sidebar-for-standalone-layout",
+      "title": "Use Shadcn Sidebar for Standalone Layout",
+      "status": "draft",
+      "created": "2026-03-03",
+      "extractedFrom": "shadcn-sidebar-redesign",
+      "specSlug": "shadcn-sidebar-redesign"
+    },
+    {
+      "number": 65,
+      "slug": "lift-dialogs-to-root-dialog-host",
+      "title": "Lift Dialogs to Root-Level DialogHost",
+      "status": "draft",
+      "created": "2026-03-03",
+      "extractedFrom": "shadcn-sidebar-redesign",
+      "specSlug": "shadcn-sidebar-redesign"
     }
   ]
 }

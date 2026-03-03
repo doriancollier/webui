@@ -6,7 +6,7 @@ import type { Transport } from '@dorkos/shared/transport';
 import { createMockTransport } from '@dorkos/test-utils';
 import type { Session } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
-import { TooltipProvider } from '@/layers/shared/ui';
+import { TooltipProvider, SidebarProvider } from '@/layers/shared/ui';
 
 // Mock useSessionId (nuqs-backed)
 const mockSetSessionId = vi.fn();
@@ -21,12 +21,31 @@ vi.mock('@/layers/entities/session/model/use-directory-state', () => ({
 
 // Mock app store (sidebar state + selectedCwd)
 const mockSetSidebarOpen = vi.fn();
+const mockSetPulseOpen = vi.fn();
+const mockSetPickerOpen = vi.fn();
+const mockSetAgentDialogOpen = vi.fn();
+const mockSetOnboardingStep = vi.fn();
+const mockSetRelayOpen = vi.fn();
+const mockSetMeshOpen = vi.fn();
+const mockSetSettingsOpen = vi.fn();
 vi.mock('@/layers/shared/model/app-store', () => ({
   useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
       setSidebarOpen: mockSetSidebarOpen,
+      setPulseOpen: mockSetPulseOpen,
+      setPickerOpen: mockSetPickerOpen,
+      setAgentDialogOpen: mockSetAgentDialogOpen,
+      setOnboardingStep: mockSetOnboardingStep,
+      setRelayOpen: mockSetRelayOpen,
+      setMeshOpen: mockSetMeshOpen,
+      setSettingsOpen: mockSetSettingsOpen,
+      setGlobalPaletteOpen: vi.fn(),
+      toggleDevtools: vi.fn(),
+      devtoolsOpen: false,
       selectedCwd: '/test/cwd',
       recentCwds: [],
+      enablePulseNotifications: false,
+      pulseOpen: false,
     };
     return selector ? selector(state) : state;
   },
@@ -37,15 +56,58 @@ vi.mock('@/layers/shared/model/use-is-mobile', () => ({
   useIsMobile: () => false,
 }));
 
+// Mock onboarding hooks
+vi.mock('@/layers/features/onboarding', () => ({
+  useOnboarding: () => ({ shouldShowOnboarding: false, dismiss: vi.fn() }),
+  ProgressCard: () => null,
+}));
+
+// Mock agent entity hooks (used by AgentHeader)
+vi.mock('@/layers/entities/agent', () => ({
+  useCurrentAgent: () => ({ data: null, isLoading: false }),
+  useCreateAgent: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useAgentVisual: () => ({ color: 'hsl(0,70%,55%)', emoji: '🤖' }),
+  useResolvedAgents: () => ({ data: undefined }),
+}));
+
 // Mock usePulseEnabled
 vi.mock('@/layers/entities/pulse/model/use-pulse-config', () => ({
   usePulseEnabled: () => true,
+}));
+
+// Mock useActiveRunCount (used by AgentContextChips)
+vi.mock('@/layers/entities/pulse/model/use-runs', () => ({
+  useActiveRunCount: () => ({ data: 0 }),
 }));
 
 // Mock useCompletedRunBadge
 const mockClearBadge = vi.fn();
 vi.mock('@/layers/entities/pulse/model/use-completed-run-badge', () => ({
   useCompletedRunBadge: () => ({ unviewedCount: 0, clearBadge: mockClearBadge }),
+}));
+
+// Mock useRelayEnabled (used by AgentContextChips)
+vi.mock('@/layers/entities/relay', () => ({
+  useRelayEnabled: () => false,
+}));
+
+// Mock useRegisteredAgents (used by AgentContextChips)
+vi.mock('@/layers/entities/mesh', () => ({
+  useRegisteredAgents: () => ({ data: { agents: [] } }),
+}));
+
+// Mock @dorkos/icons (used by AgentContextChips)
+vi.mock('@dorkos/icons/registry', () => ({
+  icons: {
+    pulse: (props: Record<string, unknown>) => <span data-testid="icon-pulse" {...props} />,
+    relay: (props: Record<string, unknown>) => <span data-testid="icon-relay" {...props} />,
+    mesh: (props: Record<string, unknown>) => <span data-testid="icon-mesh" {...props} />,
+  },
+}));
+
+// Mock useTheme (used by SidebarFooterBar)
+vi.mock('@/layers/shared/model/use-theme', () => ({
+  useTheme: () => ({ theme: 'light', setTheme: vi.fn() }),
 }));
 
 // Mock sonner
@@ -110,7 +172,9 @@ function renderWithQuery(ui: React.ReactElement) {
   return render(
     <QueryClientProvider client={queryClient}>
       <TransportProvider transport={mockTransport}>
-        <TooltipProvider>{ui}</TooltipProvider>
+        <TooltipProvider>
+          <SidebarProvider>{ui}</SidebarProvider>
+        </TooltipProvider>
       </TransportProvider>
     </QueryClientProvider>
   );
@@ -176,15 +240,10 @@ describe('SessionSidebar', () => {
     });
   });
 
-  it('renders close sidebar button', () => {
+  it('renders AgentHeader when selectedCwd is set', () => {
     renderWithQuery(<SessionSidebar />);
-    expect(screen.getByLabelText('Close sidebar')).toBeDefined();
-  });
-
-  it('closes sidebar when close button clicked', () => {
-    renderWithQuery(<SessionSidebar />);
-    fireEvent.click(screen.getByLabelText('Close sidebar'));
-    expect(mockSetSidebarOpen).toHaveBeenCalledWith(false);
+    // AgentHeader renders a directory picker button when selectedCwd is present
+    expect(screen.getByLabelText('Change working directory')).toBeDefined();
   });
 
   it('hides "Today" header when it is the only group', async () => {
@@ -203,6 +262,19 @@ describe('SessionSidebar', () => {
     });
 
     expect(screen.queryByText('Today')).toBeNull();
+  });
+
+  it('renders AgentContextChips in sidebar footer', () => {
+    renderWithQuery(<SessionSidebar />);
+    expect(screen.getByLabelText('Pulse scheduler')).toBeDefined();
+    expect(screen.getByLabelText('Relay messaging')).toBeDefined();
+    expect(screen.getByLabelText('Mesh discovery')).toBeDefined();
+  });
+
+  it('renders SidebarFooterBar with branding and settings', () => {
+    renderWithQuery(<SessionSidebar />);
+    expect(screen.getByText('DorkOS by Dorkian')).toBeDefined();
+    expect(screen.getByLabelText('Settings')).toBeDefined();
   });
 
   it('auto-selects first session when no active session', async () => {

@@ -1,80 +1,43 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTransport, useAppStore, useIsMobile } from '@/layers/shared/model';
+import { groupSessionsByTime, TIMING, updateTabBadge } from '@/layers/shared/lib';
 import {
-  useTransport,
-  useAppStore,
-  useIsMobile,
-  useTheme,
-  type Theme,
-} from '@/layers/shared/model';
-import { cn, groupSessionsByTime, TIMING, updateTabBadge } from '@/layers/shared/lib';
-import {
-  ResponsiveDialog,
-  ResponsiveDialogContent,
-  ResponsiveDialogHeader,
-  ResponsiveDialogTitle,
-  ResponsiveDialogDescription,
-  ResponsiveDialogFullscreenToggle,
-  DirectoryPicker,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarRail,
 } from '@/layers/shared/ui';
-import { usePulseEnabled, useActiveRunCount, useCompletedRunBadge } from '@/layers/entities/pulse';
-import { useRelayEnabled } from '@/layers/entities/relay';
+import { usePulseEnabled, useCompletedRunBadge } from '@/layers/entities/pulse';
 import { toast } from 'sonner';
 import { useSessions, useDirectoryState } from '@/layers/entities/session';
-import { useResolvedAgents } from '@/layers/entities/agent';
 import { SessionItem } from './SessionItem';
 import { AgentHeader } from './AgentHeader';
-import { Plus, PanelLeftClose, Sun, Moon, Monitor, Bug, Settings } from 'lucide-react';
-import { icons } from '@dorkos/icons/registry';
-import { SettingsDialog } from '@/layers/features/settings';
-import { PulsePanel } from '@/layers/features/pulse';
-import { RelayPanel } from '@/layers/features/relay';
-import { MeshPanel } from '@/layers/features/mesh';
-import { AgentDialog } from '@/layers/features/agent-settings';
-import { ProgressCard, useOnboarding, OnboardingFlow } from '@/layers/features/onboarding';
+import { AgentContextChips } from './AgentContextChips';
+import { SidebarFooterBar } from './SidebarFooterBar';
+import { Plus } from 'lucide-react';
+import { ProgressCard, useOnboarding } from '@/layers/features/onboarding';
 import type { Session } from '@dorkos/shared/types';
-
-const themeOrder: Theme[] = ['light', 'dark', 'system'];
 
 export function SessionSidebar() {
   const transport = useTransport();
   const queryClient = useQueryClient();
   const { sessions, activeSessionId, setActiveSession } = useSessions();
-  const {
-    setSidebarOpen,
-    devtoolsOpen,
-    toggleDevtools,
-    pickerOpen,
-    setPickerOpen,
-    settingsOpen,
-    setSettingsOpen,
-    pulseOpen,
-    setPulseOpen,
-    relayOpen,
-    setRelayOpen,
-    meshOpen,
-    setMeshOpen,
-  } = useAppStore();
+  const { setSidebarOpen, setPulseOpen, setPickerOpen, setAgentDialogOpen, setOnboardingStep } =
+    useAppStore();
   const isMobile = useIsMobile();
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
-  const [agentDialogOpen, setAgentDialogOpen] = useState(false);
-  const relayEnabled = useRelayEnabled();
-  const [selectedCwd, setSelectedCwd] = useDirectoryState();
+  const [selectedCwd] = useDirectoryState();
   const pulseEnabled = usePulseEnabled();
-  const { data: activeRunCount = 0 } = useActiveRunCount(pulseEnabled);
   const { unviewedCount, clearBadge } = useCompletedRunBadge(pulseEnabled);
   const enablePulseNotifications = useAppStore((s) => s.enablePulseNotifications);
   const { shouldShowOnboarding, dismiss: dismissOnboarding } = useOnboarding();
-  const [onboardingStep, setOnboardingStep] = useState<number | null>(null);
-  const { theme, setTheme } = useTheme();
-  const ThemeIcon = { light: Sun, dark: Moon, system: Monitor }[theme];
-  const cycleTheme = useCallback(() => {
-    const idx = themeOrder.indexOf(theme);
-    setTheme(themeOrder[(idx + 1) % themeOrder.length]);
-  }, [theme, setTheme]);
+  const pulseOpen = useAppStore((s) => s.pulseOpen);
 
   // Auto-select most recent session when directory changes and no session is active
   useEffect(() => {
@@ -146,247 +109,79 @@ export function SessionSidebar() {
 
   const groupedSessions = useMemo(() => groupSessionsByTime(sessions), [sessions]);
 
-  // Resolve agents for recent CWDs so DirectoryPicker can show agent identity in recents
-  const { recentCwds } = useAppStore();
-  const recentPaths = useMemo(() => recentCwds.map((r) => r.path), [recentCwds]);
-  const { data: resolvedAgents } = useResolvedAgents(recentPaths);
-
   return (
-    <div data-testid="session-sidebar" className="sidebar-container flex h-full flex-col p-3">
-      {/* Header: New Chat + Collapse */}
-      <div className="mb-3 space-y-1.5">
-        {/* Agent header / working directory breadcrumb */}
-        <div className="flex items-center gap-1.5">
-          {selectedCwd && (
-            <div className="min-w-0 flex-1">
-              <AgentHeader
-                cwd={selectedCwd}
-                onOpenPicker={() => setPickerOpen(true)}
-                onOpenAgentDialog={() => setAgentDialogOpen(true)}
-              />
-            </div>
-          )}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="hover:bg-accent rounded-md p-2 transition-colors duration-150"
-            aria-label="Close sidebar"
-          >
-            <PanelLeftClose className="text-muted-foreground size-(--size-icon-md)" />
-          </button>
-        </div>
-        <button
-          onClick={() => createMutation.mutate()}
-          disabled={createMutation.isPending}
-          className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
-        >
-          <Plus className="size-(--size-icon-sm)" />
-          New session
-        </button>
-      </div>
+    <>
+      <SidebarHeader className="border-b p-3">
+        {selectedCwd && (
+          <AgentHeader
+            cwd={selectedCwd}
+            onOpenPicker={() => setPickerOpen(true)}
+            onOpenAgentDialog={() => setAgentDialogOpen(true)}
+          />
+        )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending}
+              className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
+            >
+              <Plus className="size-(--size-icon-sm)" />
+              New session
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      {/* Session List */}
-      <div data-testid="session-list" className="-mx-1 flex-1 overflow-y-auto px-1">
+      <SidebarContent data-testid="session-list">
         {groupedSessions.length > 0 ? (
-          <div className="space-y-5">
+          <>
             {groupedSessions.map((group) => {
               const hideHeader = groupedSessions.length === 1 && group.label === 'Today';
               return (
-                <div key={group.label}>
+                <SidebarGroup key={group.label}>
                   {!hideHeader && (
-                    <h3 className="text-2xs text-muted-foreground/70 mb-1.5 px-3 font-medium tracking-wider uppercase">
+                    <SidebarGroupLabel className="text-2xs text-muted-foreground/70 font-medium tracking-wider uppercase">
                       {group.label}
-                    </h3>
+                    </SidebarGroupLabel>
                   )}
-                  <div className="space-y-0.5">
+                  <SidebarMenu>
                     {group.sessions.map((session: Session) => (
-                      <SessionItem
-                        key={session.id}
-                        session={session}
-                        isActive={session.id === activeSessionId}
-                        isNew={session.id === justCreatedId}
-                        onClick={() => handleSessionClick(session.id)}
-                      />
+                      <SidebarMenuItem key={session.id}>
+                        <SessionItem
+                          session={session}
+                          isActive={session.id === activeSessionId}
+                          isNew={session.id === justCreatedId}
+                          onClick={() => handleSessionClick(session.id)}
+                        />
+                      </SidebarMenuItem>
                     ))}
-                  </div>
-                </div>
+                  </SidebarMenu>
+                </SidebarGroup>
               );
             })}
-          </div>
+          </>
         ) : (
           <div className="flex h-32 items-center justify-center">
             <p className="text-muted-foreground/60 text-sm">No conversations yet</p>
           </div>
         )}
-      </div>
-      {/* Onboarding Progress */}
-      {shouldShowOnboarding && (
-        <div className="mt-2">
-          <ProgressCard
-            onStepClick={(stepIndex) => setOnboardingStep(stepIndex)}
-            onDismiss={dismissOnboarding}
-          />
-        </div>
-      )}
-      {/* Footer */}
-      <div className="border-border mt-2 flex items-center border-t pt-2">
-        <a
-          href="https://dorkian.com"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-2xs text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-150"
-        >
-          DorkOS by Dorkian
-        </a>
-        <div className="ml-auto flex items-center gap-0.5">
-          <button
-            onClick={() => setSettingsOpen(true)}
-            className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
-            aria-label="Settings"
-          >
-            <Settings className="size-(--size-icon-sm)" />
-          </button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setRelayOpen(true)}
-                className={cn(
-                  'rounded-md p-1 transition-colors duration-150 max-md:p-2',
-                  relayEnabled
-                    ? 'text-muted-foreground/50 hover:text-muted-foreground'
-                    : 'text-muted-foreground/25 hover:text-muted-foreground/40'
-                )}
-                aria-label="Relay messaging"
-              >
-                <icons.relay className="size-(--size-icon-sm)" />
-              </button>
-            </TooltipTrigger>
-            {!relayEnabled && (
-              <TooltipContent side="top">Relay is disabled</TooltipContent>
-            )}
-          </Tooltip>
-          <button
-            onClick={() => setMeshOpen(true)}
-            className="rounded-md p-1 transition-colors duration-150 max-md:p-2 text-muted-foreground/50 hover:text-muted-foreground"
-            aria-label="Mesh agent discovery"
-          >
-            <icons.mesh className="size-(--size-icon-sm)" />
-          </button>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setPulseOpen(true)}
-                className={cn(
-                  'relative rounded-md p-1 transition-colors duration-150 max-md:p-2',
-                  pulseEnabled
-                    ? 'text-muted-foreground/50 hover:text-muted-foreground'
-                    : 'text-muted-foreground/25 hover:text-muted-foreground/40'
-                )}
-                aria-label="Pulse scheduler"
-              >
-                <icons.pulse className="size-(--size-icon-sm)" />
-                {activeRunCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-green-500 animate-pulse" />
-                )}
-                {activeRunCount === 0 && unviewedCount > 0 && (
-                  <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-amber-500" />
-                )}
-              </button>
-            </TooltipTrigger>
-            {!pulseEnabled && (
-              <TooltipContent side="top">Pulse is disabled</TooltipContent>
-            )}
-          </Tooltip>
-          <button
-            onClick={cycleTheme}
-            className="text-muted-foreground/50 hover:text-muted-foreground rounded-md p-1 transition-colors duration-150 max-md:p-2"
-            title={`Theme: ${theme}`}
-            aria-label={`Theme: ${theme}. Click to cycle.`}
-          >
-            <ThemeIcon className="size-(--size-icon-sm)" />
-          </button>
-          {import.meta.env.DEV && (
-            <button
-              onClick={toggleDevtools}
-              className={`rounded-md p-1 transition-colors duration-150 max-md:p-2 ${
-                devtoolsOpen ? 'text-amber-500' : 'text-amber-500/60 hover:text-amber-500'
-              }`}
-              title={devtoolsOpen ? 'Hide React Query devtools' : 'Show React Query devtools'}
-              aria-label="Toggle React Query devtools"
-            >
-              <Bug className="size-(--size-icon-sm)" />
-            </button>
-          )}
-        </div>
-      </div>
-      <DirectoryPicker
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        onSelect={(path) => setSelectedCwd(path)}
-        initialPath={selectedCwd}
-        resolvedAgents={resolvedAgents}
-      />
-      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
-      <ResponsiveDialog open={pulseOpen} onOpenChange={setPulseOpen}>
-        <ResponsiveDialogContent className="max-h-[85vh] max-w-2xl gap-0 p-0">
-          <ResponsiveDialogHeader className="border-b px-4 py-3">
-            <ResponsiveDialogTitle className="text-sm font-medium">
-              Pulse Scheduler
-            </ResponsiveDialogTitle>
-            <ResponsiveDialogDescription className="sr-only">
-              Manage scheduled AI agent tasks
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="overflow-y-auto">
-            <PulsePanel />
+      </SidebarContent>
+
+      <SidebarFooter className="border-t p-3">
+        {shouldShowOnboarding && (
+          <div className="mb-2">
+            <ProgressCard
+              onStepClick={(stepIndex) => setOnboardingStep(stepIndex)}
+              onDismiss={dismissOnboarding}
+            />
           </div>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
-      <ResponsiveDialog open={relayOpen} onOpenChange={setRelayOpen}>
-        <ResponsiveDialogContent className="max-h-[85vh] max-w-2xl gap-0 p-0">
-          <ResponsiveDialogHeader className="border-b px-4 py-3">
-            <ResponsiveDialogTitle className="text-sm font-medium">
-              Relay
-            </ResponsiveDialogTitle>
-            <ResponsiveDialogDescription className="sr-only">
-              Inter-agent messaging activity and endpoints
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="overflow-y-auto">
-            <RelayPanel />
-          </div>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
-      <ResponsiveDialog open={meshOpen} onOpenChange={setMeshOpen}>
-        <ResponsiveDialogContent className="h-[85vh] max-w-2xl gap-0 p-0">
-          <ResponsiveDialogFullscreenToggle />
-          <ResponsiveDialogHeader className="border-b px-4 py-3">
-            <ResponsiveDialogTitle className="text-sm font-medium">
-              Mesh
-            </ResponsiveDialogTitle>
-            <ResponsiveDialogDescription className="sr-only">
-              Agent discovery and registry
-            </ResponsiveDialogDescription>
-          </ResponsiveDialogHeader>
-          <div className="flex min-h-0 flex-1 flex-col">
-            <MeshPanel />
-          </div>
-        </ResponsiveDialogContent>
-      </ResponsiveDialog>
-      {selectedCwd && (
-        <AgentDialog
-          projectPath={selectedCwd}
-          open={agentDialogOpen}
-          onOpenChange={setAgentDialogOpen}
-        />
-      )}
-      {onboardingStep !== null && (
-        <div className="fixed inset-0 z-50 bg-background">
-          <OnboardingFlow
-            initialStep={onboardingStep}
-            onComplete={() => setOnboardingStep(null)}
-          />
-        </div>
-      )}
-    </div>
+        )}
+        <AgentContextChips />
+        <SidebarFooterBar />
+      </SidebarFooter>
+
+      <SidebarRail />
+    </>
   );
 }

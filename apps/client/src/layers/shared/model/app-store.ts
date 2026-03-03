@@ -59,6 +59,10 @@ interface AppState {
   setMeshOpen: (open: boolean) => void;
   pickerOpen: boolean;
   setPickerOpen: (open: boolean) => void;
+  agentDialogOpen: boolean;
+  setAgentDialogOpen: (open: boolean) => void;
+  onboardingStep: number | null;
+  setOnboardingStep: (step: number | null) => void;
   globalPaletteOpen: boolean;
   setGlobalPaletteOpen: (open: boolean) => void;
   toggleGlobalPalette: () => void;
@@ -199,6 +203,10 @@ export const useAppStore = create<AppState>()(
       setMeshOpen: (open) => set({ meshOpen: open }),
       pickerOpen: false,
       setPickerOpen: (open) => set({ pickerOpen: open }),
+      agentDialogOpen: false,
+      setAgentDialogOpen: (open) => set({ agentDialogOpen: open }),
+      onboardingStep: null,
+      setOnboardingStep: (step) => set({ onboardingStep: step }),
       globalPaletteOpen: false,
       setGlobalPaletteOpen: (open) => set({ globalPaletteOpen: open }),
       toggleGlobalPalette: () => set((s) => ({ globalPaletteOpen: !s.globalPaletteOpen })),

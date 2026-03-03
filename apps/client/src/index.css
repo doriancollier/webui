@@ -1,5 +1,7 @@
 @import 'tailwindcss';
 @import '@xyflow/react/dist/style.css';
+
+@custom-variant dark (&:is(.dark *));
 @source '../node_modules/streamdown/dist/*.js';
 
 /* ============================================
@@ -79,6 +81,14 @@
   --color-ring: hsl(var(--ring));
   --color-user-msg: hsl(var(--user-msg));
   --radius: var(--radius);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
 }
 
 :root {
@@ -103,6 +113,16 @@
   --ring: 217 91% 60%;
   --radius: 0.5rem;
   --user-msg: 0 0% 91%;
+
+  /* Sidebar — subtly distinct from main background */
+  --sidebar: 0 0% 96%;
+  --sidebar-foreground: 0 0% 9%;
+  --sidebar-primary: 0 0% 9%;
+  --sidebar-primary-foreground: 0 0% 98%;
+  --sidebar-accent: 0 0% 92%;
+  --sidebar-accent-foreground: 0 0% 9%;
+  --sidebar-border: 0 0% 83%;
+  --sidebar-ring: 217 91% 60%;
 }
 
 .dark {
@@ -126,6 +146,16 @@
   --input: 0 0% 25%;
   --ring: 213 94% 68%;
   --user-msg: 0 0% 15%;
+
+  /* Sidebar — subtly distinct from main background */
+  --sidebar: 0 0% 6%;
+  --sidebar-foreground: 0 0% 93%;
+  --sidebar-primary: 0 0% 93%;
+  --sidebar-primary-foreground: 0 0% 9%;
+  --sidebar-accent: 0 0% 12%;
+  --sidebar-accent-foreground: 0 0% 93%;
+  --sidebar-border: 0 0% 25%;
+  --sidebar-ring: 213 94% 68%;
 }
 
 *:where(:not(.copilot-view-content *)) {

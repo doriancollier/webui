@@ -229,16 +229,22 @@ Both overlays live in a `relative flex-1 min-h-0` wrapper in ChatPanel, position
 
 ### Sidebar
 
-- Fixed width 256px
-- **Temporal grouping**: Sessions grouped by Today / Yesterday / Previous 7 Days / Previous 30 Days / Older
-- **Group headers**: `text-[11px]`, uppercase, `tracking-wider`, `text-muted-foreground/70`
-- **Session items**: Single-line layout: truncated title (left), relative time (right). No preview text.
-- **Relative time**: "Just now", "5m ago", "3h ago" (today), "Yesterday", "Mon" (this week), "Jan 5" (older)
-- **Active session**: `bg-secondary` background
-- **"New chat" button**: Solid `bg-primary`, full-width, centered icon + text
-- **Permission toggle**: Inline beneath button, shield icon, toggles between "Require approval" / "Skip permissions"
+Built on **Shadcn Sidebar** (`layers/shared/ui/sidebar.tsx`) with `collapsible="offcanvas"` mode.
+
+- **Width**: 320px (20rem) via `--sidebar-width` CSS custom property on `SidebarProvider`
+- **CSS variables**: `--sidebar-*` in `index.css` (subtly distinct from main background — 96% vs 98% light, 6% vs 4% dark)
+- **Mobile**: Renders as Radix Sheet (drawer) with backdrop and swipe-to-close
+- **Desktop**: Push layout via `SidebarProvider` + `SidebarInset`
+- **Toggle**: `Cmd+B` / `Ctrl+B` (Shadcn built-in `SIDEBAR_KEYBOARD_SHORTCUT`)
+- **SidebarRail**: Invisible hover-target strip at sidebar edge for mouse-over toggle
+- **SidebarTrigger**: Toggle button in `SidebarInset` header (outside the sidebar itself)
+- **Temporal grouping**: Sessions grouped by Today / Yesterday / Previous 7 Days / Previous 30 Days / Older using `SidebarGroup` / `SidebarGroupLabel`
+- **Session items**: `SidebarMenuButton` with relative time + truncated title
+- **Active session**: `isActive` prop on `SidebarMenuButton`
+- **"New chat" button**: In `SidebarHeader`, below `AgentHeader`
+- **Footer**: `SidebarFooter` contains `ProgressCard` (onboarding), `AgentContextChips` (Pulse/Relay/Mesh status), `SidebarFooterBar` (branding, settings, theme toggle)
 - **Empty state**: Centered "No conversations yet" message
-- **Item spacing**: `space-y-0.5` within groups, `space-y-5` between groups
+- **Dialogs**: All 7 dialogs (Settings, DirectoryPicker, Pulse, Relay, Mesh, AgentDialog, OnboardingFlow) rendered in `DialogHost` at the app root level, outside `SidebarProvider`
 
 ### Tooltip
 

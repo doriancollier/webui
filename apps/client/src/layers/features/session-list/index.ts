@@ -4,3 +4,5 @@
  * @module features/session-list
  */
 export { SessionSidebar } from './ui/SessionSidebar';
+export { AgentContextChips } from './ui/AgentContextChips';
+export { SidebarFooterBar } from './ui/SidebarFooterBar';

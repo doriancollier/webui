@@ -1,14 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import { useAppStore, useIsMobile, useFavicon, useDocumentTitle } from '@/layers/shared/model';
+import { useAppStore, useFavicon, useDocumentTitle } from '@/layers/shared/model';
 import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entities/session';
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { PanelLeft } from 'lucide-react';
-import { PermissionBanner } from '@/layers/widgets/app-layout';
+import { PermissionBanner, DialogHost } from '@/layers/widgets/app-layout';
 import { SessionSidebar } from '@/layers/features/session-list';
 import { ChatPanel, ChatEmptyState } from '@/layers/features/chat';
 import { useOnboarding, OnboardingFlow } from '@/layers/features/onboarding';
-import { Toaster, TooltipProvider, Tooltip, TooltipTrigger, TooltipContent } from '@/layers/shared/ui';
+import {
+  Toaster,
+  TooltipProvider,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  Sidebar,
+  SidebarProvider,
+  SidebarInset,
+  SidebarTrigger,
+} from '@/layers/shared/ui';
 import { Kbd } from '@/layers/shared/ui/kbd';
 import { CommandPaletteDialog } from '@/layers/features/command-palette';
 
@@ -22,7 +32,6 @@ interface AppProps {
 export function App({ transformContent, embedded }: AppProps = {}) {
   const { sidebarOpen, setSidebarOpen, toggleSidebar } = useAppStore();
   const [activeSessionId] = useSessionId();
-  const isMobile = useIsMobile();
   const containerRef = useRef<HTMLDivElement>(null);
   useDefaultCwd();
 
@@ -56,23 +65,25 @@ export function App({ transformContent, embedded }: AppProps = {}) {
     }
   }, [shouldShowOnboarding]);
 
-  // Escape key closes overlay sidebar
-  // Embedded: scoped to container element; Standalone: scoped to document
+  // Escape key closes overlay sidebar — embedded only (scoped to container)
+  // Standalone uses SidebarProvider's built-in Sheet dismiss on mobile
   useEffect(() => {
-    const useOverlay = embedded || isMobile;
-    if (!useOverlay || !sidebarOpen) return;
-    const target = embedded ? containerRef.current : document;
+    if (!embedded) return;
+    if (!sidebarOpen) return;
+    const target = containerRef.current;
     if (!target) return;
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSidebarOpen(false);
     };
     target.addEventListener('keydown', handleEscape as EventListener);
     return () => target.removeEventListener('keydown', handleEscape as EventListener);
-  }, [embedded, isMobile, sidebarOpen, setSidebarOpen]);
+  }, [embedded, sidebarOpen, setSidebarOpen]);
 
-  // Cmd+B / Ctrl+B toggles sidebar
+  // Cmd+B / Ctrl+B toggles sidebar — embedded only (scoped to container)
+  // Standalone uses SidebarProvider's built-in keyboard shortcut
   useEffect(() => {
-    const target = embedded ? containerRef.current : document;
+    if (!embedded) return;
+    const target = containerRef.current;
     if (!target) return;
     const handleToggle = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
@@ -168,6 +179,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
     );
   }
 
+  // Standalone mode: Shadcn SidebarProvider handles layout, Sheet on mobile, push on desktop
   return (
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
@@ -187,90 +199,36 @@ export function App({ transformContent, embedded }: AppProps = {}) {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
-              className="flex h-dvh flex-col"
+              className="h-dvh"
             >
-              <div ref={containerRef} data-testid="app-shell" className="bg-background text-foreground flex h-dvh flex-col">
+              <div data-testid="app-shell" className="bg-background text-foreground flex h-dvh flex-col">
                 <PermissionBanner sessionId={activeSessionId} />
-                <div className="relative flex flex-1 overflow-hidden">
-                  {/* Floating toggle — visible when sidebar is closed */}
-                  <AnimatePresence>
-                    {!sidebarOpen && (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <motion.button
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-                            onClick={toggleSidebar}
-                            className="bg-background/80 hover:bg-accent absolute top-3 left-3 z-30 rounded-md border p-1.5 shadow-sm backdrop-blur transition-colors duration-150"
-                            aria-label="Open sidebar"
-                          >
-                            <PanelLeft className="size-(--size-icon-md)" />
-                          </motion.button>
-                        </TooltipTrigger>
-                        <TooltipContent side="right">
-                          Toggle sidebar <Kbd>{isMac ? '⌘B' : 'Ctrl+B'}</Kbd>
-                        </TooltipContent>
-                      </Tooltip>
-                    )}
-                  </AnimatePresence>
-
-                  {isMobile ? (
-                    /* Mobile: overlay sidebar with backdrop */
-                    <AnimatePresence>
-                      {sidebarOpen && (
-                        <>
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="fixed inset-0 z-40 bg-black/40"
-                            onClick={() => setSidebarOpen(false)}
-                            aria-label="Close sidebar"
-                          />
-                          <motion.div
-                            initial={{ x: '-90vw' }}
-                            animate={{ x: 0 }}
-                            exit={{ x: '-90vw' }}
-                            transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                            className="bg-background fixed top-0 left-0 z-50 h-full w-[90vw] overflow-y-auto border-r"
-                          >
-                            <SessionSidebar />
-                          </motion.div>
-                        </>
+                <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} className="flex-1 overflow-hidden" style={{ "--sidebar-width": "20rem" } as React.CSSProperties}>
+                  <Sidebar>
+                    <SessionSidebar />
+                  </Sidebar>
+                  <SidebarInset className="overflow-hidden">
+                    <header className="flex h-9 shrink-0 items-center gap-2 border-b px-2">
+                      <SidebarTrigger className="-ml-0.5" />
+                    </header>
+                    <main className="flex-1 overflow-hidden">
+                      {activeSessionId ? (
+                        <ChatPanel
+                          key={activeSessionId}
+                          sessionId={activeSessionId}
+                          transformContent={transformContent}
+                        />
+                      ) : (
+                        <ChatEmptyState />
                       )}
-                    </AnimatePresence>
-                  ) : (
-                    /* Desktop: push sidebar */
-                    <motion.div
-                      animate={{ width: sidebarOpen ? 320 : 0 }}
-                      transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-                      className="flex-shrink-0 overflow-hidden border-r"
-                    >
-                      <div className="h-full w-80 overflow-y-auto">
-                        <SessionSidebar />
-                      </div>
-                    </motion.div>
-                  )}
-
-                  <main className="flex-1 overflow-hidden">
-                    {activeSessionId ? (
-                      <ChatPanel
-                        key={activeSessionId}
-                        sessionId={activeSessionId}
-                        transformContent={transformContent}
-                      />
-                    ) : (
-                      <ChatEmptyState />
-                    )}
-                  </main>
-                </div>
+                    </main>
+                  </SidebarInset>
+                </SidebarProvider>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+        <DialogHost />
         <CommandPaletteDialog />
         <Toaster />
       </MotionConfig>

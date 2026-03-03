@@ -94,7 +94,7 @@ Express server on `DORKOS_HOST` (default `localhost`) port `DORKOS_PORT` (defaul
 - **`routes/commands.ts`** - Slash command listing via `CommandRegistryService`, which scans `.claude/commands/` using gray-matter frontmatter parsing
 - **`routes/health.ts`** - Health check; includes optional `tunnel` status field when ngrok is enabled
 - **`routes/directory.ts`** - Directory browsing for working directory selection
-- **`routes/config.ts`** - Configuration management endpoints (GET for server config including `pulse.enabled`, `mesh.enabled`, PATCH for user config updates with Zod validation)
+- **`routes/config.ts`** - Configuration management endpoints (GET for server config including `pulse.enabled`, `mesh.scanRoots`, PATCH for user config updates with Zod validation)
 - **`routes/files.ts`** - File operations (read/list files)
 - **`routes/git.ts`** - Git status and branch information
 - **`routes/tunnel.ts`** - Runtime tunnel control (POST /start and /stop). Resolves auth token from env var or config, delegates to `tunnelManager`, persists enabled state
@@ -180,8 +180,8 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `entities/binding/`      | useBindings, useCreateBinding, useDeleteBinding                    | Adapter-agent binding hooks |
 | `entities/agent/`        | useCurrentAgent, useResolvedAgents, useCreateAgent, useUpdateAgent, useAgentVisual | Agent identity domain hooks |
 | `features/chat/`         | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession  | Chat interface              |
-| `features/session-list/` | SessionSidebar, SessionItem                                        | Session management          |
-| `features/commands/`     | CommandPalette                                                     | Slash command palette       |
+| `features/session-list/` | SessionSidebar, SessionItem, AgentContextChips, SidebarFooterBar   | Session management          |
+| `features/commands/`     | CommandPalette                                                     | Inline slash command palette (chat input) |
 | `features/command-palette/` | CommandPaletteDialog, AgentCommandItem, useGlobalPalette, usePaletteItems, useAgentFrecency | Global Cmd+K command palette |
 | `features/settings/`     | SettingsDialog                                                     | Settings UI                 |
 | `features/files/`        | FilePalette, useFiles                                              | File browser                |
@@ -191,7 +191,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `features/agent-settings/` | AgentDialog, IdentityTab, PersonaTab, CapabilitiesTab, ConnectionsTab | Agent identity settings UI  |
 | `features/onboarding/`   | OnboardingFlow, AgentDiscoveryStep, PulsePresetsStep, AdapterSetupStep, AgentCard, PresetCard, NoAgentsFound, OnboardingComplete, DiscoveryCelebration, ProgressCard, useOnboarding, useDiscoveryScan, usePulsePresets | First-time user experience |
 | `features/status/`       | StatusLine, GitStatusItem, ModelItem, etc.                         | Status bar                  |
-| `widgets/app-layout/`    | PermissionBanner                                                   | App-level layout components |
+| `widgets/app-layout/`    | PermissionBanner, DialogHost                                       | App-level layout components |
 
 **Layer dependency rule**: `shared` ← `entities` ← `features` ← `widgets` ← `app` (strictly unidirectional). See `.claude/rules/fsd-layers.md` for full import rules.
 

@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Migrate standalone sidebar to Shadcn Sidebar component
+- Migrate standalone sidebar to Shadcn Sidebar component
 - Add command palette, agent-centric sidebar, mesh always-on
 - Add responsive touch targets to shared UI primitives
 - Add responsive sizing and explicit size variants

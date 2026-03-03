@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 86,
+  "nextNumber": 87,
   "specs": [
     {
       "number": 1,
@@ -596,6 +596,13 @@
       "title": "Agent-Centric UX — Command Palette, Sidebar Redesign, Mesh Always-On",
       "created": "2026-03-03",
       "status": "specified"
+    },
+    {
+      "number": 86,
+      "slug": "shadcn-sidebar-redesign",
+      "title": "Shadcn Sidebar Redesign — Agent-Centric Sidebar with Glanceable Status",
+      "created": "2026-03-03",
+      "status": "ideation"
     }
   ]
 }
