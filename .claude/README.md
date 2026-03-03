@@ -26,7 +26,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Claude Hooks | 10    | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
-| ADRs         | 62    | `decisions/`                                                               |
+| ADRs         | 56    | `decisions/`                                                               |
 | Guides       | 18    | `contributing/` (17 guides + INDEX.md)                                           |
 
 ## Component Types

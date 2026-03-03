@@ -1,7 +1,7 @@
 ---
 number: 60
 title: Use Hybrid Curl Script Wrapping npm for Primary Install
-status: draft
+status: proposed
 created: 2026-03-01
 spec: installation-experience
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: installation-experience)
+Proposed
 
 ## Context
 

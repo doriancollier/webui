@@ -430,19 +430,10 @@
       "specSlug": "og-seo-ai-readability-overhaul"
     },
     {
-      "number": 49,
-      "slug": "extract-manifest-io-to-shared-package",
-      "title": "Extract Agent Manifest I/O to Shared Package",
-      "status": "draft",
-      "created": "2026-02-26",
-      "extractedFrom": "agents-first-class-entity",
-      "specSlug": "agents-first-class-entity"
-    },
-    {
       "number": 50,
       "slug": "agent-identity-independent-of-mesh",
       "title": "Agent Identity Independent of Mesh Feature Flag",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-26",
       "extractedFrom": "agents-first-class-entity",
       "specSlug": "agents-first-class-entity"
@@ -451,7 +442,7 @@
       "number": 51,
       "slug": "persona-injection-via-context-builder",
       "title": "Inject Agent Persona via Context Builder System Prompt",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-26",
       "extractedFrom": "agents-first-class-entity",
       "specSlug": "agents-first-class-entity"
@@ -460,7 +451,7 @@
       "number": 52,
       "slug": "replace-dagre-with-elkjs-for-topology-layout",
       "title": "Replace dagre with ELK.js for Topology Layout",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-26",
       "extractedFrom": "mesh-topology-elevation",
       "specSlug": "mesh-topology-elevation"
@@ -469,7 +460,7 @@
       "number": 53,
       "slug": "server-side-topology-enrichment",
       "title": "Server-Side Cross-Subsystem Topology Enrichment",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-02-26",
       "extractedFrom": "mesh-topology-elevation",
       "specSlug": "mesh-topology-elevation"
@@ -478,25 +469,7 @@
       "number": 54,
       "slug": "invert-feature-flags-to-enabled-by-default",
       "title": "Invert Feature Flags to Enabled by Default",
-      "status": "draft",
-      "created": "2026-03-01",
-      "extractedFrom": "first-time-user-experience",
-      "specSlug": "first-time-user-experience"
-    },
-    {
-      "number": 55,
-      "slug": "sse-streaming-for-filesystem-discovery",
-      "title": "Use SSE Streaming for Filesystem Discovery Results",
-      "status": "draft",
-      "created": "2026-03-01",
-      "extractedFrom": "first-time-user-experience",
-      "specSlug": "first-time-user-experience"
-    },
-    {
-      "number": 56,
-      "slug": "server-side-onboarding-state-persistence",
-      "title": "Persist Onboarding State Server-Side in Config",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-01",
       "extractedFrom": "first-time-user-experience",
       "specSlug": "first-time-user-experience"
@@ -505,25 +478,7 @@
       "number": 57,
       "slug": "use-broadcastchannel-plus-sse-for-tunnel-sync",
       "title": "Use BroadcastChannel + SSE for Cross-Tab Tunnel Sync",
-      "status": "draft",
-      "created": "2026-03-01",
-      "extractedFrom": "tunnel-remote-access-overhaul",
-      "specSlug": "tunnel-remote-access-overhaul"
-    },
-    {
-      "number": 58,
-      "slug": "dynamic-cors-for-tunnel-origin",
-      "title": "Use Dynamic CORS Callback for Tunnel Origin",
-      "status": "draft",
-      "created": "2026-03-01",
-      "extractedFrom": "tunnel-remote-access-overhaul",
-      "specSlug": "tunnel-remote-access-overhaul"
-    },
-    {
-      "number": 59,
-      "slug": "unified-tunnel-status-zod-schema",
-      "title": "Unify Tunnel Status into Single Zod Schema",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-01",
       "extractedFrom": "tunnel-remote-access-overhaul",
       "specSlug": "tunnel-remote-access-overhaul"
@@ -532,7 +487,7 @@
       "number": 60,
       "slug": "hybrid-curl-script-wrapping-npm",
       "title": "Use Hybrid Curl Script Wrapping npm for Primary Install",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-01",
       "extractedFrom": "installation-experience",
       "specSlug": "installation-experience"
@@ -541,7 +496,7 @@
       "number": 61,
       "slug": "spawn-and-exit-server-restart",
       "title": "Use Spawn-and-Exit Pattern for Server Restart",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-01",
       "extractedFrom": "settings-reset-restart",
       "specSlug": "settings-reset-restart"

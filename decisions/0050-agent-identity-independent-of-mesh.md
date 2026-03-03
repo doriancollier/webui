@@ -1,7 +1,7 @@
 ---
 number: 50
 title: Agent Identity Independent of Mesh Feature Flag
-status: draft
+status: proposed
 created: 2026-02-26
 spec: agents-first-class-entity
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: agents-first-class-entity)
+Proposed
 
 ## Context
 

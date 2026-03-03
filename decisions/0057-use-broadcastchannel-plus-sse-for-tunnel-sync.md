@@ -1,7 +1,7 @@
 ---
 number: 57
 title: Use BroadcastChannel + SSE for Cross-Tab Tunnel Sync
-status: draft
+status: proposed
 created: 2026-03-01
 spec: tunnel-remote-access-overhaul
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: tunnel-remote-access-overhaul)
+Proposed
 
 ## Context
 

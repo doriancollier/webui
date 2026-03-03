@@ -1,7 +1,7 @@
 ---
 number: 54
 title: Invert Feature Flags to Enabled by Default
-status: draft
+status: proposed
 created: 2026-03-01
 spec: first-time-user-experience
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: first-time-user-experience)
+Proposed
 
 ## Context
 
