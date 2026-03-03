@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add responsive sizing and explicit size variants
+
 ### Changed
 
 - Update README and CLI documentation to reflect DorkOS features and usage

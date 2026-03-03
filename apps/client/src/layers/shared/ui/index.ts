@@ -108,6 +108,7 @@ export {
 } from './select';
 export { Separator } from './separator';
 export { Switch } from './switch';
+export type { SwitchSize, SwitchProps } from './switch';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 export { DirectoryPicker } from './DirectoryPicker';
 export { Skeleton } from './skeleton';
