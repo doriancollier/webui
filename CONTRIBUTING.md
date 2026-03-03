@@ -161,6 +161,16 @@ describe('MyComponent', () => {
 });
 ```
 
+### CLI Installation Smoke Tests
+
+The CLI package is validated via Docker and GitHub Actions to ensure `npm install -g dorkos` works in clean environments:
+
+```bash
+pnpm smoke:docker    # Build, pack, and smoke test in Docker
+```
+
+The CI workflow (`.github/workflows/cli-smoke-test.yml`) runs on every push to main with bare Ubuntu runners (Node 20/22 matrix) and an isolated Docker container.
+
 For more testing patterns, see [.claude/rules/testing.md](.claude/rules/testing.md).
 
 ## Code Style

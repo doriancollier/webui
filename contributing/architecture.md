@@ -321,6 +321,25 @@ All four plugins run in this order during `vite build` in `apps/obsidian-plugin/
 3. `fixDirnamePolyfill()` -- replaces `import.meta.url` polyfills after write
 4. `patchElectronCompat()` -- prepends spawn/setMaxListeners patches after write
 
+## Data Directory Resolution
+
+All persistent DorkOS state lives under a single data directory (`dorkHome`). Resolution is handled by `apps/server/src/lib/dork-home.ts`:
+
+```
+resolveDorkHome() priority:
+  1. DORK_HOME env var     — explicit override (wins in any environment)
+  2. .temp/.dork/ (cwd)    — dev default (keeps state out of ~)
+  3. ~/.dork/              — production default
+```
+
+**Broadcast pattern**: `index.ts` calls `resolveDorkHome()` once at startup, sets `process.env.DORK_HOME`, then passes the resolved path to all services as a required parameter.
+
+**Required-parameter convention**: Server services (`ConfigManager`, `initLogger`, etc.) accept `dorkHome` or `logDir` as a **required** `string` parameter — no fallback chains. This prevents dev state from silently leaking to `~/.dork`.
+
+**ESLint guardrail**: `no-restricted-imports` in `eslint.config.js` bans importing `homedir` from `os` in `apps/server/src/**/*.ts` (with a carve-out for `lib/dork-home.ts`). See `.claude/rules/dork-home.md`.
+
+**Packages**: `packages/*/` may use `os.homedir()` as standalone/test safety nets. The server always overrides via constructor options.
+
 ## Configuration System
 
 DorkOS uses a persistent JSON config file at `~/.dork/config.json` for user preferences. The config system spans three layers: schema, service, and CLI.
@@ -350,7 +369,7 @@ Location: `~/.dork/config.json` (created automatically on first run). Format:
 
 Singleton service wrapping the `conf` library for atomic JSON I/O. Key behaviors:
 
-- **Initialization**: `initConfigManager(dorkHome?)` creates the singleton. Called at server startup and in CLI subcommands.
+- **Initialization**: `initConfigManager(dorkHome)` creates the singleton. `dorkHome` is required — no fallback chain. Called at server startup and in CLI subcommands.
 - **Validation**: Uses Ajv (via `conf`) for write-time validation and Zod for explicit `validate()` calls.
 - **Corrupt config recovery**: If `conf` constructor throws, backs up the corrupt file to `config.json.bak` and recreates with defaults.
 - **First-run detection**: `isFirstRun` flag based on whether config file existed before construction.
@@ -416,6 +435,18 @@ Standard Vite React build. Server compiled separately via `tsc`.
 - **Output**: Single `main.js` file with `inlineDynamicImports`
 - CSS extracted to `styles.css` (auto-loaded by Obsidian)
 - **Build plugins**: `copyManifest`, `safeRequires`, `fixDirnamePolyfill`, `patchElectronCompat`
+
+### CLI Package (`packages/cli/scripts/build.ts`)
+
+3-step esbuild pipeline producing a standalone npm-installable CLI:
+
+1. **Vite client build** — `apps/client/` React SPA to `dist/client/`
+2. **esbuild server bundle** — `apps/server/` + workspace packages to `dist/server/index.js` (ESM, node built-ins externalized)
+3. **esbuild CLI entry** — `packages/cli/src/cli.ts` to `dist/bin/cli.js` (with shebang)
+
+**Native dependency:** `better-sqlite3` is required at runtime (via `@dorkos/db`) but cannot be inlined by esbuild. It is listed as a direct dependency in `packages/cli/package.json` so `npm install -g` compiles it via node-gyp. Install environments need build tools (`python3`, `build-essential`, `libsqlite3-dev` on Linux; Xcode CLI tools on macOS).
+
+**Smoke testing:** A `Dockerfile` at the repo root validates the CLI install path in an isolated `node:20-slim` container. The GitHub Actions workflow (`.github/workflows/cli-smoke-test.yml`) runs smoke tests on bare Ubuntu runners (Node 20/22 matrix) and Docker on every push to main. Run locally with `pnpm smoke:docker`.
 
 ## Relay
 

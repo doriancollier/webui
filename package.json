@@ -17,7 +17,8 @@
     "docs:export-api": "dotenv -- tsx scripts/export-openapi.ts",
     "test:browser": "dotenv -- turbo run e2e --filter=@dorkos/e2e --only",
     "test:browser:ui": "dotenv -- turbo run e2e:ui --filter=@dorkos/e2e --only",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "smoke:docker": "pnpm --filter=dorkos run build && cd packages/cli && pnpm pack --pack-destination ../../ && cd ../.. && docker build -t dorkos-smoke . && docker run --rm dorkos-smoke"
   },
   "dependencies": {
     "drizzle-orm": "^0.39.0",

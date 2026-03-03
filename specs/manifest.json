@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 84,
+  "nextNumber": 85,
   "specs": [
     {
       "number": 1,
@@ -582,6 +582,13 @@
       "title": "Marketing FAQ Section",
       "created": "2026-03-02",
       "status": "draft"
+    },
+    {
+      "number": 84,
+      "slug": "cli-install-smoke-testing",
+      "title": "CLI Install Smoke Testing — Docker & GitHub Actions",
+      "created": "2026-03-02",
+      "status": "ideation"
     }
   ]
 }

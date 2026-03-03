@@ -1,0 +1,99 @@
+name: CLI Smoke Test
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-tarball:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build CLI
+        run: pnpm --filter=dorkos run build
+
+      - name: Pack tarball
+        run: |
+          cd packages/cli
+          pnpm pack --pack-destination $GITHUB_WORKSPACE/artifacts
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cli-tarball
+          path: artifacts/dorkos-*.tgz
+          retention-days: 1
+
+  smoke-test-bare:
+    needs: build-tarball
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20, 22]
+    steps:
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Install build tools
+        run: sudo apt-get update && sudo apt-get install -y python3 build-essential libsqlite3-dev
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-tarball
+
+      - name: Mock Claude CLI
+        run: |
+          printf '#!/bin/sh\necho "claude mock 1.0.0"\n' | sudo tee /usr/local/bin/claude
+          sudo chmod +x /usr/local/bin/claude
+
+      - name: Install dorkos from tarball
+        run: npm install -g dorkos-*.tgz
+
+      - name: Verify install
+        run: |
+          set -e
+          echo "=== which dorkos ==="
+          which dorkos
+          echo "=== dorkos --version ==="
+          dorkos --version
+          echo "=== dorkos --help ==="
+          dorkos --help
+          echo "=== dorkos --post-install-check ==="
+          dorkos --post-install-check
+          echo "=== dorkos init --yes ==="
+          dorkos init --yes
+          echo ""
+          echo "All smoke tests passed"
+
+  smoke-test-docker:
+    needs: build-tarball
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            Dockerfile
+            .dockerignore
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: cli-tarball
+
+      - name: Build smoke test image
+        run: docker build -t dorkos-smoke .
+
+      - name: Run smoke tests
+        run: docker run --rm dorkos-smoke

@@ -1,6 +1,7 @@
 # DorkOS
 
 [![npm version](https://img.shields.io/npm/v/dorkos)](https://www.npmjs.com/package/dorkos)
+[![CI](https://github.com/dork-labs/dorkos/actions/workflows/cli-smoke-test.yml/badge.svg)](https://github.com/dork-labs/dorkos/actions/workflows/cli-smoke-test.yml)
 [![license](https://img.shields.io/npm/l/dorkos)](LICENSE)
 
 Web-based interface and REST/SSE API for Claude Code, built with the Claude Agent SDK.

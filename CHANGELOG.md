@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add Docker and GitHub Actions smoke testing for CLI installs
 - Add GitHub Actions CLI smoke test workflow for npm package install validation
 - Add Dockerfile and .dockerignore for isolated CLI smoke testing
 - Add `smoke:docker` convenience script for local Docker smoke tests

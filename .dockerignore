@@ -1,0 +1,4 @@
+# Deny-all allowlist — only copy what the Dockerfile needs
+**
+!Dockerfile
+!dorkos-*.tgz

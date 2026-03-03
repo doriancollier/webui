@@ -18,6 +18,8 @@ This is a Turborepo monorepo with five apps and seven shared packages:
 
 ```
 dorkos/
+├── .github/
+│   └── workflows/        # GitHub Actions CI (cli-smoke-test, update-homebrew)
 ├── apps/
 │   ├── client/           # @dorkos/client - React 19 SPA (Vite 6, Tailwind 4, shadcn/ui)
 │   ├── server/           # @dorkos/server - Express API (tsc, NodeNext)
@@ -37,6 +39,7 @@ dorkos/
 ├── plans/                # Implementation plans, design reviews, multi-step work breakdowns
 ├── research/             # Research artifacts (persisted by research-expert agent)
 ├── specs/                # Feature specs with manifest.json for chronological ordering
+├── Dockerfile            # CLI install smoke test image
 ├── turbo.json
 ├── vitest.workspace.ts
 └── package.json          # Root workspace config + turbo only
@@ -62,6 +65,7 @@ pnpm lint -- --fix     # Auto-fix ESLint issues
 pnpm format            # Prettier format all files
 pnpm format:check      # Check formatting without writing
 pnpm docs:export-api   # Export OpenAPI spec to docs/api/openapi.json (loads .env)
+pnpm smoke:docker      # Build CLI, pack tarball, Docker smoke test
 git gtr new <branch>     # Create worktree (runs pnpm install + port setup via .gtrconfig)
 git gtr list             # List all worktrees
 git gtr rm <branch>      # Remove worktree
@@ -102,6 +106,7 @@ Thirty services (+ 2 lib utilities + 1 env module):
 - **`services/context-builder.ts`** - `buildSystemPromptAppend(cwd)` — gathers runtime context (env info, git status, agent identity/persona) and formats as XML blocks (`<env>`, `<git_status>`, `<agent_identity>`, `<agent_persona>`) for the SDK `systemPrompt.append`. Never throws. Agent persona injection is conditional on `personaEnabled` flag in the agent manifest.
 - **`lib/sdk-utils.ts`** - `makeUserPrompt()` (wraps string as `AsyncIterable<SDKUserMessage>`) and `resolveClaudeCliPath()` (Claude CLI path resolution for Electron compatibility).
 - **`lib/resolve-root.ts`** - Single source of truth for the server's default working directory. Exports `DEFAULT_CWD`: prefers `DORKOS_DEFAULT_CWD` env var, falls back to repo root resolved from the file's own location. Consumed by routes and services that need the default CWD.
+- **`lib/dork-home.ts`** - Resolves the DorkOS data directory (`dorkHome`). Priority: `DORK_HOME` env var > `.temp/.dork` (dev) > `~/.dork` (production). Called once at startup; result broadcast via `process.env.DORK_HOME` and passed as required parameter to services. See `.claude/rules/dork-home.md`.
 - **`env.ts`** - Zod-validated environment module. Parses and type-validates all server env vars at startup; exits with a clear error if required vars are missing or invalid. Exports a typed `env` object consumed throughout the server. Each app has its own `env.ts` (`apps/client/src/env.ts`, `apps/site/src/env.ts`, `packages/cli/src/env.ts`) with app-specific schemas.
 - **`services/transcript-reader.ts`** - Single source of truth for session data. Reads SDK JSONL transcript files from `~/.claude/projects/{slug}/`. Provides `listSessions()` (scans directory, extracts metadata), `getSession()` (single session metadata), and `readTranscript()` (full message history). Extracts titles from first user message, permission mode from init message, timestamps from file stats.
 - **`services/transcript-parser.ts`** - Parses SDK JSONL transcript lines into structured `HistoryMessage` objects. Handles content blocks (text, tool_use, tool_result), question prompts, and model metadata extraction.
@@ -245,7 +250,7 @@ The plugin build (`apps/obsidian-plugin/vite.config.ts`) includes four Vite plug
 
 ### CLI Package (`packages/cli`)
 
-The `dorkos` npm package bundles the server + client into a standalone CLI tool. Published to npm as `dorkos` (unscoped). Install via `npm install -g dorkos`, run via `dorkos`. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@dorkos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The version is injected at build time via esbuild's `define` config (reads from `packages/cli/package.json`). The CLI creates `~/.dork/` on startup for config storage and sets `DORK_HOME` env var. It also sets `DORKOS_PORT`, `CLIENT_DIST_PATH`, `DORKOS_DEFAULT_CWD`, `DORKOS_BOUNDARY`, `TUNNEL_ENABLED`, and `NODE_ENV` before dynamically importing the bundled server.
+The `dorkos` npm package bundles the server + client into a standalone CLI tool. Published to npm as `dorkos` (unscoped). Install via `npm install -g dorkos`, run via `dorkos`. Build pipeline (`packages/cli/scripts/build.ts`) uses esbuild in 3 steps: (1) Vite builds client to static assets, (2) esbuild bundles server + `@dorkos/shared` into single ESM file (externalizing node_modules), (3) esbuild compiles CLI entry point. Output: `dist/bin/cli.js` (entry with shebang), `dist/server/index.js` (bundled server), `dist/client/` (React SPA). The version is injected at build time via esbuild's `define` config (reads from `packages/cli/package.json`). `better-sqlite3` is listed as a direct dependency — it's a native addon required at runtime (via `@dorkos/db`) that cannot be inlined by esbuild. The CLI creates `~/.dork/` on startup for config storage and sets `DORK_HOME` env var. It also sets `DORKOS_PORT`, `CLIENT_DIST_PATH`, `DORKOS_DEFAULT_CWD`, `DORKOS_BOUNDARY`, `TUNNEL_ENABLED`, and `NODE_ENV` before dynamically importing the bundled server.
 
 CLI subcommands: `dorkos config` (manage config), `dorkos init` (interactive setup wizard). CLI flags include `--port`/`-p`, `--dir`/`-d`, `--boundary`/`-b`, `--tunnel`/`-t`, and `--pulse`/`--no-pulse`. Config precedence: CLI flags > environment variables > `~/.dork/config.json` > built-in defaults.
 
@@ -296,6 +301,10 @@ Tests live alongside source in `__tests__/` directories within each app and pack
 - **TSDoc**: `eslint-plugin-jsdoc` enforces TSDoc on exported functions/classes (warn-first). See `.claude/rules/documentation.md` for conventions.
 - **Prettier + Tailwind**: `prettier-plugin-tailwindcss` sorts Tailwind classes automatically.
 - **Claude Code rules**: `.claude/rules/file-size.md`, `.claude/rules/documentation.md`, `.claude/rules/code-quality.md` provide additional guidelines for file size limits, documentation standards, and code quality practices.
+
+## CI
+
+A GitHub Actions workflow (`.github/workflows/cli-smoke-test.yml`) validates the CLI install path on every push to main. Three jobs run after a shared `build-tarball` step: `smoke-test-bare` (Node 20/22 matrix on Ubuntu) and `smoke-test-docker` (isolated `node:20-slim` container). Tests verify `dorkos --version`, `--help`, `--post-install-check`, and `init --yes`. A mock Claude CLI stub is used since the real CLI is unavailable in CI. Run `pnpm smoke:docker` locally for the same Docker-based smoke test.
 
 ## Research
 
