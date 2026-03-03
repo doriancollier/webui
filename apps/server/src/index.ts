@@ -44,10 +44,11 @@ async function start() {
   const dorkHome = resolveDorkHome();
   // eslint-disable-next-line no-restricted-syntax -- write (not read): broadcasts resolved dorkHome to services loaded after this point
   process.env.DORK_HOME = dorkHome;
+  console.log(`[DorkOS] Data directory: ${dorkHome}`);
 
   const logLevel = env.DORKOS_LOG_LEVEL;
   initLogger({ level: logLevel, logDir: path.join(dorkHome, 'logs') });
-  initConfigManager();
+  initConfigManager(dorkHome);
 
   // Apply logging config (maxLogSize/maxLogFiles) from user config.
   // initLogger was already called above with defaults — re-init with config values.

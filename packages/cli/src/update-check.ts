@@ -1,7 +1,7 @@
 // packages/cli/src/update-check.ts
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
 
 interface UpdateCache {
@@ -9,9 +9,14 @@ interface UpdateCache {
   checkedAt: number;
 }
 
-const CACHE_PATH = join(homedir(), '.dork', 'cache', 'update-check.json');
 const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours
 const FETCH_TIMEOUT = 3000; // 3 seconds
+
+/** Lazily resolve cache path so process.env.DORK_HOME (set by cli.ts) is available. */
+function getCachePath(): string {
+  const home = process.env.DORK_HOME || join(homedir(), '.dork');
+  return join(home, 'cache', 'update-check.json');
+}
 
 /**
  * Check the npm registry for a newer version of dorkos.
@@ -22,7 +27,7 @@ const FETCH_TIMEOUT = 3000; // 3 seconds
 export async function checkForUpdate(currentVersion: string): Promise<string | null> {
   // 1. Check cache
   try {
-    const raw = await readFile(CACHE_PATH, 'utf-8');
+    const raw = await readFile(getCachePath(), 'utf-8');
     const cache: UpdateCache = JSON.parse(raw);
     if (Date.now() - cache.checkedAt < CACHE_TTL) {
       return isNewer(cache.latestVersion, currentVersion) ? cache.latestVersion : null;
@@ -44,8 +49,9 @@ export async function checkForUpdate(currentVersion: string): Promise<string | n
     const data = (await res.json()) as { version: string };
 
     // 3. Write cache
-    await mkdir(join(homedir(), '.dork', 'cache'), { recursive: true });
-    await writeFile(CACHE_PATH, JSON.stringify({
+    const cachePath = getCachePath();
+    await mkdir(dirname(cachePath), { recursive: true });
+    await writeFile(cachePath, JSON.stringify({
       latestVersion: data.version,
       checkedAt: Date.now(),
     }));

@@ -1,6 +1,4 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import path from 'path';
-import os from 'os';
 
 // Mock the synchronous fs module so tests don't touch the real filesystem
 vi.mock('fs');
@@ -55,38 +53,6 @@ describe('logger module', () => {
       expect(loggerModule.getLogDir()).toBe('/custom/logs');
     });
 
-    it('falls back to DORK_HOME env var when no logDir passed', () => {
-      const originalDorkHome = process.env.DORK_HOME;
-      process.env.DORK_HOME = '/tmp/test-dork-home';
-
-      vi.mocked(fs.statSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-      });
-
-      loggerModule.initLogger();
-
-      expect(vi.mocked(fs.mkdirSync)).toHaveBeenCalledWith('/tmp/test-dork-home/logs', { recursive: true });
-      expect(loggerModule.getLogDir()).toBe('/tmp/test-dork-home/logs');
-
-      process.env.DORK_HOME = originalDorkHome;
-    });
-
-    it('falls back to ~/.dork/logs when neither logDir nor DORK_HOME is set', () => {
-      const originalDorkHome = process.env.DORK_HOME;
-      delete process.env.DORK_HOME;
-
-      vi.mocked(fs.statSync).mockImplementation(() => {
-        throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
-      });
-
-      loggerModule.initLogger();
-
-      const expected = path.join(os.homedir(), '.dork', 'logs');
-      expect(vi.mocked(fs.mkdirSync)).toHaveBeenCalledWith(expected, { recursive: true });
-      expect(loggerModule.getLogDir()).toBe(expected);
-
-      process.env.DORK_HOME = originalDorkHome;
-    });
   });
 
   // ---------------------------------------------------------------------------
@@ -100,7 +66,7 @@ describe('logger module', () => {
     });
 
     it('sets log level from options', () => {
-      loggerModule.initLogger({ level: 5 });
+      loggerModule.initLogger({ level: 5, logDir: '/tmp/test-logs' });
       expect(loggerModule.logger.level).toBe(5);
     });
 
@@ -108,7 +74,7 @@ describe('logger module', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'development';
 
-      loggerModule.initLogger();
+      loggerModule.initLogger({ logDir: '/tmp/test-logs' });
       expect(loggerModule.logger.level).toBe(4);
 
       process.env.NODE_ENV = originalEnv;
@@ -118,14 +84,14 @@ describe('logger module', () => {
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
 
-      loggerModule.initLogger();
+      loggerModule.initLogger({ logDir: '/tmp/test-logs' });
       expect(loggerModule.logger.level).toBe(3);
 
       process.env.NODE_ENV = originalEnv;
     });
 
     it('adds a file reporter after initialization', () => {
-      loggerModule.initLogger();
+      loggerModule.initLogger({ logDir: '/tmp/test-logs' });
       loggerModule.logger.info('test log entry');
       expect(vi.mocked(fs.appendFileSync)).toHaveBeenCalled();
     });
@@ -160,7 +126,7 @@ describe('logger module', () => {
     });
 
     it('writes each log entry on its own line', () => {
-      loggerModule.initLogger({ level: 5 });
+      loggerModule.initLogger({ level: 5, logDir: '/tmp/test-logs' });
       loggerModule.logger.info('first');
       loggerModule.logger.info('second');
 
@@ -173,7 +139,7 @@ describe('logger module', () => {
     });
 
     it('includes a valid ISO timestamp in log entries', () => {
-      loggerModule.initLogger({ level: 5 });
+      loggerModule.initLogger({ level: 5, logDir: '/tmp/test-logs' });
       loggerModule.logger.warn('timestamp test');
 
       const calls = vi.mocked(fs.appendFileSync).mock.calls;
@@ -330,14 +296,14 @@ describe('logger module', () => {
       vi.mocked(fs.statSync).mockImplementation(() => {
         throw Object.assign(new Error('ENOENT'), { code: 'ENOENT' });
       });
-      expect(() => loggerModule.initLogger()).not.toThrow();
+      expect(() => loggerModule.initLogger({ logDir: '/tmp/test-logs' })).not.toThrow();
     });
 
     it('continues without crashing if rotation fails unexpectedly', () => {
       vi.mocked(fs.statSync).mockImplementation(() => {
         throw new Error('Unexpected IO error');
       });
-      expect(() => loggerModule.initLogger()).not.toThrow();
+      expect(() => loggerModule.initLogger({ logDir: '/tmp/test-logs' })).not.toThrow();
     });
   });
 

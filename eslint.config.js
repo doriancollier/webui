@@ -226,6 +226,32 @@ export default tseslint.config(
     rules: { 'no-restricted-syntax': 'off' },
   },
 
+  // Ban os.homedir() in server code — use the resolved dorkHome parameter instead.
+  // See .claude/rules/dork-home.md for the convention.
+  {
+    files: ['apps/server/src/**/*.ts'],
+    ignores: ['apps/server/src/lib/dork-home.ts', 'apps/server/src/**/__tests__/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'os',
+              importNames: ['homedir'],
+              message: "Don't import homedir in server code. Use the resolved dorkHome parameter. See .claude/rules/dork-home.md",
+            },
+            {
+              name: 'node:os',
+              importNames: ['homedir'],
+              message: "Don't import homedir in server code. Use the resolved dorkHome parameter. See .claude/rules/dork-home.md",
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // Test file overrides — relax strict rules
   {
     files: ['**/__tests__/**/*.{ts,tsx}', '**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],

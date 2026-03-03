@@ -1,7 +1,6 @@
 import { createConsola, type LogObject } from 'consola';
 import fs from 'fs';
 import path from 'path';
-import os from 'os';
 
 /**
  * Central logger module for DorkOS server.
@@ -146,19 +145,19 @@ export let logger = createConsola({
  * Initialize the logger with file persistence and configured log level.
  * Call once at server startup after config is loaded.
  *
- * @param options - Optional configuration
+ * @param options - Configuration options
+ * @param options.logDir - Log directory path (required).
  * @param options.level - Numeric log level (0=fatal … 5=trace). Defaults to 4 (debug) in dev, 3 (info) in production.
- * @param options.logDir - Log directory path. Defaults to `{DORK_HOME}/logs`.
  * @param options.maxLogSize - Max log file size in bytes before rotation. Defaults to 500KB.
  * @param options.maxLogFiles - Max number of rotated log files to retain. Defaults to 14.
  */
-export function initLogger(options?: {
+export function initLogger(options: {
+  logDir: string;
   level?: number;
-  logDir?: string;
   maxLogSize?: number;
   maxLogFiles?: number;
 }): void {
-  logDir = options?.logDir ?? path.join(process.env.DORK_HOME ?? path.join(os.homedir(), '.dork'), 'logs');
+  logDir = options.logDir;
   logFile = path.join(logDir, 'dorkos.log');
   maxLogSize = options?.maxLogSize ?? DEFAULT_MAX_LOG_SIZE;
   maxLogFiles = options?.maxLogFiles ?? DEFAULT_MAX_LOG_FILES;

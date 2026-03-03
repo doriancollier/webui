@@ -2,7 +2,6 @@ import Conf from 'conf';
 import { type Schema } from 'conf';
 import { z } from 'zod';
 import fs from 'fs';
-import os from 'os';
 import path from 'path';
 import {
   UserConfigSchema,
@@ -11,7 +10,6 @@ import {
 } from '@dorkos/shared/config-schema';
 import type { UserConfig } from '@dorkos/shared/config-schema';
 import { logger } from '../../lib/logger.js';
-import { env } from '../../env.js';
 
 const jsonSchemaFull = z.toJSONSchema(UserConfigSchema, {
   target: 'jsonSchema2019-09',
@@ -33,9 +31,8 @@ class ConfigManager {
   private store: Conf<UserConfig>;
   private _isFirstRun = false;
 
-  constructor(dorkHome?: string) {
-    const configDir =
-      dorkHome ?? env.DORK_HOME ?? path.join(os.homedir(), '.dork');
+  constructor(dorkHome: string) {
+    const configDir = dorkHome;
     const configPath = path.join(configDir, 'config.json');
     this._isFirstRun = !fs.existsSync(configPath);
 
@@ -145,7 +142,7 @@ class ConfigManager {
 export let configManager: ConfigManager;
 
 /** Initialize the config manager. Called once at startup. */
-export function initConfigManager(dorkHome?: string): ConfigManager {
+export function initConfigManager(dorkHome: string): ConfigManager {
   configManager = new ConfigManager(dorkHome);
   return configManager;
 }

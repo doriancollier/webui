@@ -56,7 +56,13 @@ import type { DeadLetterEntry, ListDeadOptions } from './dead-letter-queue.js';
 
 // === Constants ===
 
-/** Default data directory for Relay state. */
+/**
+ * Default data directory for Relay state (standalone/test fallback).
+ *
+ * When used via the DorkOS server, the server always passes `dataDir` explicitly
+ * via constructor options (see `apps/server/src/index.ts`), so this constant is
+ * only reached in standalone or test usage.
+ */
 const DEFAULT_DATA_DIR = path.join(os.homedir(), '.dork', 'relay');
 
 /** Default TTL: 1 hour in milliseconds. */
