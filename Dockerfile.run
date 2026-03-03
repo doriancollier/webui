@@ -45,6 +45,9 @@ RUN if [ "$INSTALL_MODE" = "tarball" ]; then \
 # Initialize config
 RUN dorkos init --yes
 
+# Bind to all interfaces so Docker port forwarding works
+ENV DORKOS_HOST=0.0.0.0
+
 EXPOSE 4242
 
 ENTRYPOINT ["dorkos"]

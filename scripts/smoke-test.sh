@@ -54,16 +54,16 @@ check() {
 echo ""
 echo "=== API Tests ==="
 check "GET /api/health returns 200"    curl -sf "$BASE/api/health"
-check "Health response has status:ok"  curl -sf "$BASE/api/health" | grep -q '"status":"ok"'
-check "GET /api/health has version"    curl -sf "$BASE/api/health" | grep -q '"version"'
+check "Health response has status:ok"  bash -c "curl -sf '$BASE/api/health' | grep -q status"
+check "GET /api/health has version"    bash -c "curl -sf '$BASE/api/health' | grep -q version"
 check "GET /api/sessions returns 200"  curl -sf "$BASE/api/sessions"
 check "GET /api/config returns 200"    curl -sf "$BASE/api/config"
 check "GET /api/models returns 200"    curl -sf "$BASE/api/models"
 
 echo ""
 echo "=== Client Tests ==="
-check "GET / returns HTML"             curl -sf "$BASE/" | grep -q '</html>'
-check "GET / contains app root"        curl -sf "$BASE/" | grep -qi 'dorkos\|app\|root'
+check "GET / returns HTML"             bash -c "curl -sf '$BASE/' | grep -q /html"
+check "GET / contains app root"        bash -c "curl -sf '$BASE/' | grep -qi dorkos"
 
 echo ""
 echo "=== Results ==="

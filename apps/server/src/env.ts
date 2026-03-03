@@ -7,6 +7,7 @@ const serverEnvSchema = z.object({
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DORKOS_PORT: z.coerce.number().int().min(1).max(65535).default(4242),
+  DORKOS_HOST: z.string().default('localhost'),
   DORKOS_DEFAULT_CWD: z.string().optional(),
   DORKOS_BOUNDARY: z.string().optional(),
   DORKOS_LOG_LEVEL: z.coerce.number().int().min(0).max(5).optional(),

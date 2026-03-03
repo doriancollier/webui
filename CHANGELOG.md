@@ -29,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Resolve Docker runtime and npm publishing issues
 - Support dark mode in favicon SVG
 - Gate shouldShowOnboarding on config loading state
 - Send partial patches to prevent skip dismiss race condition

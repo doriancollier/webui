@@ -1,5 +1,6 @@
 {
   "name": "dorkos",
+  "private": true,
   "version": "0.6.0",
   "type": "module",
   "packageManager": "pnpm@10.28.2",
@@ -22,7 +23,8 @@
     "smoke:integration": "pnpm --filter=dorkos run build && cd packages/cli && pnpm pack --pack-destination ../../ && cd ../.. && docker build -f Dockerfile.integration -t dorkos-integration . && docker run --rm dorkos-integration",
     "smoke:npm": "docker build -f Dockerfile.integration --build-arg INSTALL_MODE=npm -t dorkos-integration:npm . && docker run --rm dorkos-integration:npm",
     "docker:build": "pnpm --filter=dorkos run build && cd packages/cli && pnpm pack --pack-destination ../../ && cd ../.. && docker build -f Dockerfile.run -t dorkos .",
-    "docker:run": "docker run --rm -p 4242:4242 dorkos"
+    "docker:run": "docker run --rm -p 4242:4242 dorkos",
+    "publish:cli": "pnpm publish --filter=dorkos"
   },
   "dependencies": {
     "drizzle-orm": "^0.39.0",

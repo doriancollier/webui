@@ -59,7 +59,7 @@ pnpm build             # Build all apps (client Vite + server tsc + site Next.js
 pnpm typecheck         # Type-check all packages
 turbo build --filter=@dorkos/obsidian-plugin  # Build Obsidian plugin only
 pnpm --filter=dorkos run build   # Build CLI package (esbuild bundles server+client+CLI)
-pnpm publish --filter=dorkos     # Publish dorkos to npm (prepublishOnly auto-builds)
+pnpm publish:cli       # Publish dorkos to npm (prepublishOnly auto-builds)
 pnpm start             # Production server (serves built React app, loads .env)
 pnpm --filter=@dorkos/server run dev:tunnel   # Dev server + ngrok tunnel (tunnels Vite on :3000)
 pnpm lint              # ESLint across all packages
@@ -72,6 +72,7 @@ pnpm smoke:integration # Full integration test (server + API + client in Docker)
 pnpm smoke:npm         # Integration test against published npm package
 pnpm docker:build      # Build runnable Docker image from local code
 pnpm docker:run        # Run dorkos in Docker (build first with docker:build)
+pnpm publish:cli       # Publish dorkos CLI to npm (uses pnpm publish --filter=dorkos)
 git gtr new <branch>     # Create worktree (runs pnpm install + port setup via .gtrconfig)
 git gtr list             # List all worktrees
 git gtr rm <branch>      # Remove worktree
@@ -87,7 +88,7 @@ DorkOS uses a **hexagonal architecture** with a `Transport` interface (`packages
 
 ### Server (`apps/server/src/`)
 
-Express server on port `DORKOS_PORT` (default 4242). CORS is configured in `app.ts` via `buildCorsOrigin()`: defaults to localhost on `DORKOS_PORT` and `VITE_PORT` (4241); set `DORKOS_CORS_ORIGIN` to a comma-separated list of origins (or `*`) to override. All endpoints that accept `cwd`, `path`, or `dir` parameters enforce directory boundary validation via `lib/boundary.ts`, returning 403 for paths outside the configured boundary (default: home directory). Fourteen route groups:
+Express server on `DORKOS_HOST` (default `localhost`) port `DORKOS_PORT` (default 4242). Set `DORKOS_HOST=0.0.0.0` for Docker containers. CORS is configured in `app.ts` via `buildCorsOrigin()`: defaults to localhost on `DORKOS_PORT` and `VITE_PORT` (4241); set `DORKOS_CORS_ORIGIN` to a comma-separated list of origins (or `*`) to override. All endpoints that accept `cwd`, `path`, or `dir` parameters enforce directory boundary validation via `lib/boundary.ts`, returning 403 for paths outside the configured boundary (default: home directory). Fourteen route groups:
 
 - **`routes/sessions.ts`** - Session listing (from SDK transcripts), session creation, SSE message streaming, message history, tool approve/deny endpoints
 - **`routes/commands.ts`** - Slash command listing via `CommandRegistryService`, which scans `.claude/commands/` using gray-matter frontmatter parsing

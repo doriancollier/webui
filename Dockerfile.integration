@@ -43,6 +43,9 @@ RUN if [ "$INSTALL_MODE" = "tarball" ]; then \
     fi && \
     rm -f /tmp/dorkos-*.tgz
 
+# Bind to all interfaces (localhost resolves to ::1 in containers)
+ENV DORKOS_HOST=0.0.0.0
+
 # Copy test runner
 COPY scripts/smoke-test.sh /usr/local/bin/smoke-test
 RUN chmod +x /usr/local/bin/smoke-test

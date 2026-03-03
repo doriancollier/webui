@@ -372,7 +372,7 @@ Present the release plan to the user:
 
 ### npm Publish
 
-4. `npm publish -w packages/cli` (publishes `dorkos` to npm)
+4. `pnpm run publish:cli` (publishes `dorkos` to npm)
 ```
 
 If `--dry-run` flag is present, **STOP** here.
@@ -554,7 +554,7 @@ header: "npm Publish"
 question: "Publish dorkos v0.2.0 to npm?"
 options:
   - label: "Yes, publish to npm (Recommended)"
-    description: "Runs npm publish -w packages/cli to publish the dorkos package"
+    description: "Runs pnpm run publish:cli to publish the dorkos package"
   - label: "No, skip npm publish"
     description: "Tag is pushed, but package is not published to npm"
 ```
@@ -562,7 +562,7 @@ options:
 If yes:
 
 ```bash
-npm publish -w packages/cli
+pnpm run publish:cli
 ```
 
 The `prepublishOnly` hook in `packages/cli/package.json` will automatically build before publishing.
@@ -703,7 +703,7 @@ The git tag was pushed but npm publish failed.
 Error: [error message]
 
 To retry:
-- `npm publish -w packages/cli`
+- `pnpm run publish:cli`
 
 Common fixes:
 - `npm login` (if auth expired)

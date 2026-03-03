@@ -36,6 +36,7 @@ async function buildCLI() {
       '@ngrok/ngrok',
       '@scalar/express-api-reference',
       '@asteasolutions/zod-to-openapi',
+      'better-sqlite3',
       'express',
       'cors',
       'dotenv',
@@ -48,7 +49,7 @@ async function buildCLI() {
     define: { __CLI_VERSION__: JSON.stringify(version) },
     sourcemap: true,
     banner: {
-      js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);",
+      js: "import { createRequire } from 'module'; import { fileURLToPath as __fup } from 'url'; const require = createRequire(import.meta.url); const __filename = __fup(import.meta.url);",
     },
   });
 

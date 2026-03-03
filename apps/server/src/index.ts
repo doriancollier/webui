@@ -244,9 +244,9 @@ async function start() {
   }
   app.locals.sessionBroadcaster = sessionBroadcaster;
 
-  const host = 'localhost';
+  const host = env.DORKOS_HOST;
   app.listen(PORT, host, () => {
-    logger.info(`DorkOS server running on http://localhost:${PORT}`);
+    logger.info(`DorkOS server running on http://${host}:${PORT}`);
   });
 
   // Start Pulse scheduler after server is listening
