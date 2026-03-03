@@ -205,6 +205,8 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
       return res.json({ candidates, truncated: candidates.length >= MAX_CANDIDATES });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Discovery failed';
+      const stack = err instanceof Error ? err.stack : undefined;
+      console.error('[Mesh] Discovery failed:', message, stack ?? err);
       return res.status(500).json({ error: message });
     }
   });
@@ -337,7 +339,7 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
   });
 
   // PATCH /agents/:id — Update agent fields
-  router.patch('/agents/:id', (req, res) => {
+  router.patch('/agents/:id', async (req, res) => {
     const result = UpdateAgentRequestSchema.safeParse(req.body);
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
@@ -347,7 +349,8 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     const explicitFields = Object.fromEntries(
       Object.entries(result.data).filter(([k]) => k in req.body),
     ) as typeof result.data;
-    const updated = meshCore.update(req.params.id, explicitFields);
+    // ADR-0043: update() is async — writes to disk first, then DB
+    const updated = await meshCore.update(req.params.id, explicitFields);
     if (!updated) {
       return res.status(404).json({ error: 'Agent not found' });
     }

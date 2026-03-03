@@ -27,39 +27,17 @@ vi.mock('ulidx', () => ({
   ulid: vi.fn(() => 'MOCK_ULID_001'),
 }));
 
-// Must also mock services imported by other routes in createApp
-vi.mock('../../services/session/transcript-reader.js', () => ({
-  transcriptReader: {
-    listSessions: vi.fn(),
-    getSession: vi.fn(),
-    readTranscript: vi.fn(),
-    listTranscripts: vi.fn(),
-  },
-}));
-
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {
-    ensureSession: vi.fn(),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    hasSession: vi.fn(),
-    checkSessionHealth: vi.fn(),
-    getSdkSessionId: vi.fn(),
-  },
-}));
-
-vi.mock('../../services/core/tunnel-manager.js', () => ({
-  tunnelManager: {
-    status: { enabled: false, connected: false, url: null, port: null, startedAt: null },
-  },
-}));
 
 import request from 'supertest';
-import { createApp } from '../../app.js';
+import express from 'express';
+import { createAgentsRouter } from '../agents.js';
 import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 
-const app = createApp();
+// Build a minimal Express app with just the agents router
+const app = express();
+app.use(express.json());
+app.use('/api/agents', createAgentsRouter());
 
 const mockManifest: AgentManifest = {
   id: 'test-agent-id',
@@ -321,5 +299,67 @@ describe('Agents Routes', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Validation failed');
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-0043: MeshCore sync integration
+// ---------------------------------------------------------------------------
+
+describe('Agents Routes with MeshCore (ADR-0043)', () => {
+  const mockSyncFromDisk = vi.fn().mockResolvedValue(true);
+  const mockMeshCore = { syncFromDisk: mockSyncFromDisk };
+
+  const appWithMesh = express();
+  appWithMesh.use(express.json());
+  appWithMesh.use('/api/agents', createAgentsRouter(mockMeshCore));
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockReadManifest.mockResolvedValue(null);
+    mockWriteManifest.mockResolvedValue(undefined);
+  });
+
+  it('POST calls syncFromDisk after creating agent', async () => {
+    const res = await request(appWithMesh)
+      .post('/api/agents')
+      .send({ path: '/home/user/new-project' });
+
+    expect(res.status).toBe(201);
+    expect(mockSyncFromDisk).toHaveBeenCalledWith('/home/user/new-project');
+  });
+
+  it('PATCH calls syncFromDisk after updating agent', async () => {
+    mockReadManifest.mockResolvedValue(mockManifest);
+
+    const res = await request(appWithMesh)
+      .patch('/api/agents/current')
+      .query({ path: '/home/user/project' })
+      .send({ name: 'synced-name' });
+
+    expect(res.status).toBe(200);
+    expect(mockSyncFromDisk).toHaveBeenCalledWith('/home/user/project');
+  });
+
+  it('POST succeeds even if syncFromDisk fails', async () => {
+    mockSyncFromDisk.mockRejectedValueOnce(new Error('sync failed'));
+
+    const res = await request(appWithMesh)
+      .post('/api/agents')
+      .send({ path: '/home/user/failing-sync' });
+
+    expect(res.status).toBe(201);
+  });
+
+  it('PATCH succeeds even if syncFromDisk fails', async () => {
+    mockReadManifest.mockResolvedValue(mockManifest);
+    mockSyncFromDisk.mockRejectedValueOnce(new Error('sync failed'));
+
+    const res = await request(appWithMesh)
+      .patch('/api/agents/current')
+      .query({ path: '/home/user/project' })
+      .send({ name: 'still-works' });
+
+    expect(res.status).toBe(200);
   });
 });

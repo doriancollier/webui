@@ -20,6 +20,7 @@ import { TraceStore } from './services/relay/trace-store.js';
 import { MeshCore } from '@dorkos/mesh';
 import { createMeshRouter } from './routes/mesh.js';
 import { setMeshEnabled, setMeshInitError } from './services/mesh/mesh-state.js';
+import { createAgentsRouter } from './routes/agents.js';
 import { createDiscoveryRouter } from './routes/discovery.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createDb, runMigrations } from '@dorkos/db';
@@ -221,6 +222,10 @@ async function start() {
     setMeshEnabled(true);
     logger.info('[Mesh] Routes mounted');
   }
+
+  // Always mounted — not behind any feature flag.
+  // ADR-0043: pass meshCore (when available) so writes sync to Mesh DB cache.
+  app.use('/api/agents', createAgentsRouter(meshCore));
 
   // Mount Discovery routes (always available, no feature flag)
   app.use('/api/discovery', createDiscoveryRouter());

@@ -842,7 +842,7 @@ describe('shared registration logic', () => {
       expect(agent).not.toHaveProperty('scanRoot');
     }
 
-    const updated = mesh.update(manifest.id, { description: 'updated' });
+    const updated = await mesh.update(manifest.id, { description: 'updated' });
     expect(updated).not.toHaveProperty('projectPath');
     expect(updated).not.toHaveProperty('scanRoot');
     expect(updated?.description).toBe('updated');
@@ -969,5 +969,113 @@ describe('reconciliation', () => {
     expect(spy).not.toHaveBeenCalled();
 
     vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-0043: update() write-through
+// ---------------------------------------------------------------------------
+
+describe('update() write-through (ADR-0043)', () => {
+  it('writes updated fields to manifest file on disk', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'wt-test');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+    const manifest = await mesh.registerByPath(projectDir, {
+      name: 'original',
+      runtime: 'claude-code',
+    });
+
+    await mesh.update(manifest.id, { name: 'updated-name' });
+
+    // Verify manifest file on disk reflects the change
+    const { readManifest: readDisk } = await import('../manifest.js');
+    const diskManifest = await readDisk(projectDir);
+    expect(diskManifest).toBeDefined();
+    expect(diskManifest!.name).toBe('updated-name');
+
+    mesh.close();
+  });
+
+  it('returns undefined for nonexistent agent', async () => {
+    const base = await makeTempDir();
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+
+    const result = await mesh.update('nonexistent', { name: 'x' });
+    expect(result).toBeUndefined();
+
+    mesh.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-0043: syncFromDisk()
+// ---------------------------------------------------------------------------
+
+describe('syncFromDisk() (ADR-0043)', () => {
+  it('syncs manifest changes from disk into DB', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'sync-test');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+    const manifest = await mesh.registerByPath(projectDir, {
+      name: 'before',
+      runtime: 'claude-code',
+    });
+
+    // Manually edit manifest on disk
+    const updatedManifest = { ...manifest, name: 'after' };
+    await writeManifest(projectDir, updatedManifest);
+
+    // Sync from disk
+    const synced = await mesh.syncFromDisk(projectDir);
+    expect(synced).toBe(true);
+
+    // Verify DB was updated
+    const agents = mesh.list();
+    expect(agents.some((a) => a.name === 'after')).toBe(true);
+
+    mesh.close();
+  });
+
+  it('returns false when no manifest exists on disk', async () => {
+    const base = await makeTempDir();
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+
+    const synced = await mesh.syncFromDisk('/nonexistent/path');
+    expect(synced).toBe(false);
+
+    mesh.close();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ADR-0043: unregister() file deletion
+// ---------------------------------------------------------------------------
+
+describe('unregister() file deletion (ADR-0043)', () => {
+  it('deletes .dork/agent.json when unregistering', async () => {
+    const base = await makeTempDir();
+    const projectDir = path.join(base, 'unreg-test');
+    await fs.mkdir(projectDir, { recursive: true });
+
+    const mesh = new MeshCore({ db, defaultScanRoot: base });
+    const manifest = await mesh.registerByPath(projectDir, {
+      name: 'doomed-agent',
+      runtime: 'claude-code',
+    });
+
+    // Verify manifest exists
+    await expect(fs.access(path.join(projectDir, '.dork', 'agent.json'))).resolves.toBeUndefined();
+
+    await mesh.unregister(manifest.id);
+
+    // Verify manifest file is gone
+    await expect(fs.access(path.join(projectDir, '.dork', 'agent.json'))).rejects.toThrow();
+
+    mesh.close();
   });
 });

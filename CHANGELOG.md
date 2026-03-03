@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Enforce file-first write-through for agent storage (ADR-0043)
 - Enhance step completion and skipping logic to handle rapid calls
 ---
 

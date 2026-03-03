@@ -278,16 +278,46 @@ export class MeshCore {
   /**
    * Update mutable fields of a registered agent.
    *
+   * ADR-0043: writes to `.dork/agent.json` first (canonical), then updates DB (cache).
+   * If the manifest file is missing, reconstructs from the DB entry before writing.
+   *
    * @param agentId - The agent's ULID
    * @param partial - Fields to update (name, description, capabilities, etc.)
    * @returns The updated agent manifest, or undefined if not found
    */
-  update(agentId: string, partial: Partial<AgentManifest>): AgentManifest | undefined {
-    const updated = this.registry.update(agentId, partial);
-    if (!updated) return undefined;
+  async update(agentId: string, partial: Partial<AgentManifest>): Promise<AgentManifest | undefined> {
     const entry = this.registry.get(agentId);
     if (!entry) return undefined;
-    return this.toManifest(entry);
+
+    // ADR-0043: read current manifest from disk, merge, write back
+    const diskManifest = await readManifest(entry.projectPath);
+    const base = diskManifest ?? this.toManifest(entry);
+    const merged: AgentManifest = { ...base, ...partial, id: agentId };
+    await writeManifest(entry.projectPath, merged);
+
+    // Then update DB cache
+    this.registry.update(agentId, partial);
+    const updatedEntry = this.registry.get(agentId);
+    if (!updatedEntry) return undefined;
+    return this.toManifest(updatedEntry);
+  }
+
+  // --- Sync ---
+
+  /**
+   * Sync a single agent from its `.dork/agent.json` file into the DB.
+   *
+   * ADR-0043: enables immediate file→DB sync without waiting for the
+   * 5-minute periodic reconciler. Reuses the auto-import upsert pipeline.
+   *
+   * @param projectPath - Absolute path to the agent's project directory
+   * @returns true if the manifest was found and synced, false otherwise
+   */
+  async syncFromDisk(projectPath: string): Promise<boolean> {
+    const manifest = await readManifest(projectPath);
+    if (!manifest) return false;
+    await this.upsertAutoImported(manifest, projectPath);
+    return true;
   }
 
   // --- Unregistration ---
@@ -295,14 +325,18 @@ export class MeshCore {
   /**
    * Unregister an agent by ID.
    *
-   * Removes from the registry and unregisters the Relay endpoint.
-   * Does NOT delete the `.dork/agent.json` file from disk.
+   * ADR-0043: deletes `.dork/agent.json` from disk, removes from the registry,
+   * and unregisters the Relay endpoint. Without file deletion, unregistered
+   * agents silently reappear on the next discovery scan.
    *
    * @param agentId - The ULID of the agent to unregister
    */
   async unregister(agentId: string): Promise<void> {
     const agent = this.registry.get(agentId);
     if (!agent) return;
+
+    // ADR-0043: delete manifest file first to prevent re-discovery
+    await removeManifest(agent.projectPath);
 
     const namespace = agent.namespace;
     // Use namespace for subject when available, fall back to project basename

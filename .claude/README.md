@@ -22,7 +22,7 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 | Commands     | 47    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
 | Skills       | 11    | `.claude/skills/`                                                          |
-| Rules        | 9     | `.claude/rules/`                                                           |
+| Rules        | 10    | `.claude/rules/`                                                           |
 | Claude Hooks | 10    | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
@@ -112,6 +112,7 @@ Rules inject context-specific guidance when Claude works with matching files. Ea
 | `server-structure.md` | `apps/server/src/services/**/*.ts`, `routes/**/*.ts` | Service count monitoring, domain grouping thresholds |
 | `code-quality.md`    | `**/*.ts`, `**/*.tsx`                                | DRY violations, complexity limits, naming conventions |
 | `file-size.md`       | `**/*.ts`, `**/*.tsx`                                | File size thresholds, extraction patterns             |
+| `agent-storage.md` | `packages/mesh/src/**/*.ts`, `packages/shared/src/manifest.ts`, `apps/server/src/routes/agents.ts`, `apps/server/src/routes/mesh.ts` | File-first write-through, ADR-0043 |
 | `dork-home.md`      | `apps/server/src/**/*.ts`, `packages/*/src/**/*.ts`  | dorkHome parameter convention, no os.homedir()        |
 | `documentation.md`   | `**/*.ts`, `**/*.tsx`                                | TSDoc standards, barrel export docs                   |
 
@@ -275,7 +276,8 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── orchestrating-parallel-work/
 │   └── writing-changelogs/
 │
-└── rules/                 # Path-specific guidance (9 total)
+└── rules/                 # Path-specific guidance (10 total)
+    ├── agent-storage.md   # File-first write-through (ADR-0043)
     ├── api.md             # API route handlers
     ├── code-quality.md    # DRY, complexity, naming
     ├── components.md      # UI components

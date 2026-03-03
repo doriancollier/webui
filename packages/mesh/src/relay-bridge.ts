@@ -75,7 +75,15 @@ export class RelayBridge {
 
     const ns = namespace || path.basename(projectPath);
     const subject = `relay.agent.${ns}.${agent.id}`;
-    await this.relayCore.registerEndpoint(subject);
+    try {
+      await this.relayCore.registerEndpoint(subject);
+    } catch (err) {
+      // Idempotent: if endpoint already registered, treat as no-op
+      if (err instanceof Error && err.message.includes('already registered')) {
+        return subject;
+      }
+      throw err;
+    }
 
     // Write default same-namespace allow rule (idempotent — deduped by addRule)
     this.relayCore.addAccessRule({

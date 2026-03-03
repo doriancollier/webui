@@ -181,4 +181,71 @@ describe('reconcile()', () => {
     const result = await reconcile(registry as unknown as AgentRegistry, relayBridge as unknown as RelayBridge, '/root');
     expect(result).toEqual({ synced: 0, unreachable: 0, removed: 0, discovered: 0 });
   });
+
+  it('syncs persona/color/icon fields from disk to DB (ADR-0043)', async () => {
+    const entry = makeEntry({
+      id: 'a1',
+      projectPath: '/root/proj/backend',
+      scanRoot: '/root/proj',
+    });
+    registry.list.mockReturnValue([entry]);
+    vi.mocked(fsPromises.access).mockResolvedValue(undefined);
+    vi.mocked(manifestModule.readManifest).mockResolvedValue(
+      makeManifest({
+        id: 'a1',
+        name: entry.name,
+        description: entry.description,
+        runtime: entry.runtime,
+        capabilities: entry.capabilities,
+        behavior: entry.behavior,
+        budget: entry.budget,
+        persona: 'You are a backend expert',
+        color: '#ff0000',
+        icon: 'server',
+      }),
+    );
+
+    const result = await reconcile(registry as unknown as AgentRegistry, relayBridge as unknown as RelayBridge, '/root');
+    expect(result.synced).toBe(1);
+    expect(registry.update).toHaveBeenCalledWith(
+      'a1',
+      expect.objectContaining({
+        persona: 'You are a backend expert',
+        color: '#ff0000',
+        icon: 'server',
+      }),
+    );
+  });
+
+  it('does not sync when only non-compared fields differ', async () => {
+    const entry = makeEntry({
+      id: 'a1',
+      projectPath: '/exists',
+      persona: 'same persona',
+      personaEnabled: true,
+      color: '#000',
+      icon: 'code',
+    });
+    registry.list.mockReturnValue([entry]);
+    vi.mocked(fsPromises.access).mockResolvedValue(undefined);
+    vi.mocked(manifestModule.readManifest).mockResolvedValue(
+      makeManifest({
+        id: 'a1',
+        name: entry.name,
+        description: entry.description,
+        runtime: entry.runtime,
+        capabilities: entry.capabilities,
+        behavior: entry.behavior,
+        budget: entry.budget,
+        persona: 'same persona',
+        personaEnabled: true,
+        color: '#000',
+        icon: 'code',
+      }),
+    );
+
+    const result = await reconcile(registry as unknown as AgentRegistry, relayBridge as unknown as RelayBridge, '/root');
+    expect(result.synced).toBe(0);
+    expect(registry.update).not.toHaveBeenCalled();
+  });
 });

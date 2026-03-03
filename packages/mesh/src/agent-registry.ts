@@ -56,6 +56,10 @@ export interface AggregateStats {
 /**
  * Persistent registry for discovered and registered agents.
  *
+ * ADR-0043: this is a **derived cache/index** — `.dork/agent.json` files on
+ * disk are the canonical source of truth. All writes should go through
+ * MeshCore, which writes to disk first and then updates this registry.
+ *
  * @example
  * ```typescript
  * const db = createDb(':memory:');

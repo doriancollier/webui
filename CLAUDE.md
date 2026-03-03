@@ -157,6 +157,10 @@ When `DORKOS_RELAY_ENABLED` is true, session messaging uses Relay transport:
 - Response chunks are published back to `relay.human.console.{clientId}` and fanned into the SSE stream as `relay_message` events
 - Client-side `useChatSession` branches on `useRelayEnabled()`: Relay path uses receipt+SSE, legacy path is unchanged
 
+### Agent Storage (ADR-0043)
+
+Agent data lives in two places: `.dork/agent.json` files on disk (canonical source of truth) and a SQLite `agents` table (derived cache/index). All mutations follow a **file-first write-through** pattern: write to disk, then update DB. The reconciler syncs file → DB every 5 minutes as an anti-entropy safety net. On unregistration, the manifest file is deleted to prevent re-discovery. The agents routes (`routes/agents.ts`) accept an optional `MeshCore` reference to call `syncFromDisk()` after writes, enabling immediate DB sync.
+
 ### Client (`apps/client/src/`)
 
 React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gray palette). Uses **Feature-Sliced Design (FSD)** architecture with strict unidirectional layer imports.

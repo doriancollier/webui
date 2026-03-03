@@ -90,6 +90,10 @@ export async function reconcile(
         behavior: manifest.behavior,
         budget: manifest.budget,
         namespace,
+        persona: manifest.persona,
+        personaEnabled: manifest.personaEnabled,
+        color: manifest.color,
+        icon: manifest.icon,
       });
       result.synced++;
     }
@@ -123,12 +127,17 @@ function manifestDiffersFromEntry(
   manifest: AgentManifest,
   entry: AgentRegistryEntry,
 ): boolean {
+  // ADR-0043: sync direction is file → DB; all mutable fields must be compared
   return (
     manifest.name !== entry.name ||
     manifest.description !== entry.description ||
     manifest.runtime !== entry.runtime ||
     JSON.stringify(manifest.capabilities) !== JSON.stringify(entry.capabilities) ||
     JSON.stringify(manifest.behavior) !== JSON.stringify(entry.behavior) ||
-    JSON.stringify(manifest.budget) !== JSON.stringify(entry.budget)
+    JSON.stringify(manifest.budget) !== JSON.stringify(entry.budget) ||
+    (manifest.persona ?? undefined) !== (entry.persona ?? undefined) ||
+    (manifest.personaEnabled ?? true) !== (entry.personaEnabled ?? true) ||
+    (manifest.color ?? undefined) !== (entry.color ?? undefined) ||
+    (manifest.icon ?? undefined) !== (entry.icon ?? undefined)
   );
 }

@@ -4,6 +4,10 @@
  * Provides CRUD for `.dork/agent.json` files via the shared manifest module.
  * All path parameters are boundary-validated.
  *
+ * ADR-0043: when MeshCore is provided, POST and PATCH handlers call
+ * `meshCore.syncFromDisk()` after writing the manifest to keep the
+ * Mesh DB cache in sync without waiting for the 5-min reconciler.
+ *
  * @module routes/agents
  */
 import { Router } from 'express';
@@ -19,12 +23,18 @@ import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
 import { logger } from '../lib/logger.js';
 
+/** Minimal MeshCore interface for sync-on-write. */
+interface MeshCoreLike {
+  syncFromDisk(projectPath: string): Promise<boolean>;
+}
+
 /**
  * Create the agents router for agent identity CRUD.
  *
+ * @param meshCore - Optional MeshCore instance for DB sync after writes
  * @returns Express Router with agent identity endpoints
  */
-export function createAgentsRouter(): Router {
+export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
   const router = Router();
 
   // GET /api/agents/current?path=/path/to/project
@@ -107,6 +117,10 @@ export function createAgentsRouter(): Router {
       };
 
       await writeManifest(agentPath, manifest);
+
+      // ADR-0043: sync to Mesh DB cache (best-effort)
+      try { await meshCore?.syncFromDisk(agentPath); } catch { /* non-fatal */ }
+
       return res.status(201).json(manifest);
     } catch (err) {
       if (err instanceof BoundaryError) {
@@ -139,6 +153,10 @@ export function createAgentsRouter(): Router {
 
       const updated: AgentManifest = { ...existing, ...result.data };
       await writeManifest(agentPath, updated);
+
+      // ADR-0043: sync to Mesh DB cache (best-effort)
+      try { await meshCore?.syncFromDisk(agentPath); } catch { /* non-fatal */ }
+
       return res.json(updated);
     } catch (err) {
       if (err instanceof BoundaryError) {
