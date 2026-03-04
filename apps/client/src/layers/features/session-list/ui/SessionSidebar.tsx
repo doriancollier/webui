@@ -1,9 +1,10 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef, useContext } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore, useIsMobile } from '@/layers/shared/model';
 import { groupSessionsByTime, TIMING, updateTabBadge } from '@/layers/shared/lib';
 import {
   SidebarContent,
+  SidebarContext,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
@@ -38,6 +39,8 @@ export function SessionSidebar() {
   const enablePulseNotifications = useAppStore((s) => s.enablePulseNotifications);
   const { shouldShowOnboarding, dismiss: dismissOnboarding } = useOnboarding();
   const pulseOpen = useAppStore((s) => s.pulseOpen);
+  // Null when rendered in embedded mode (no SidebarProvider); used to close the mobile Sheet.
+  const sidebarCtx = useContext(SidebarContext);
 
   // Auto-select most recent session when directory changes and no session is active
   useEffect(() => {
@@ -54,16 +57,24 @@ export function SessionSidebar() {
       setActiveSession(session.id);
       setJustCreatedId(session.id);
       setTimeout(() => setJustCreatedId(null), TIMING.NEW_SESSION_HIGHLIGHT_MS);
-      if (isMobile) setTimeout(() => setSidebarOpen(false), TIMING.SIDEBAR_AUTO_CLOSE_MS);
+      if (isMobile) {
+        setTimeout(() => {
+          setSidebarOpen(false);
+          sidebarCtx?.setOpenMobile(false);
+        }, TIMING.SIDEBAR_AUTO_CLOSE_MS);
+      }
     },
   });
 
   const handleSessionClick = useCallback(
     (sessionId: string) => {
       setActiveSession(sessionId);
-      if (isMobile) setSidebarOpen(false);
+      if (isMobile) {
+        setSidebarOpen(false);
+        sidebarCtx?.setOpenMobile(false);
+      }
     },
-    [isMobile, setActiveSession, setSidebarOpen]
+    [isMobile, setActiveSession, setSidebarOpen, sidebarCtx]
   );
 
   // Clear completion badge when Pulse panel opens

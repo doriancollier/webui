@@ -156,4 +156,5 @@ export {
   SidebarSeparator,
   SidebarTrigger,
   useSidebar,
+  SidebarContext,
 } from './sidebar';

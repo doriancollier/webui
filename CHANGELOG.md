@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix mobile Sheet close bug, sidebar transparency, and remove dead cookie persistence
 - Include keywords in custom filter for path/id search
 - Fix cmdk prop misuse, @ filtering, and dead code
 - Enforce file-first write-through for agent storage (ADR-0043)
