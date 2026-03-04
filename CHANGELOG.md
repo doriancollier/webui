@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Update developer guides for domain-grouped services and agent-tools-elevation
 - Update README and CLI documentation to reflect DorkOS features and usage
 
 ### Fixed

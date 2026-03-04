@@ -79,6 +79,10 @@ Adapter-to-agent bindings are persisted to `~/.dork/relay/bindings.json`. The fi
 | `logging.level`   | `"fatal"` \| `"error"` \| `"warn"` \| `"info"` \| `"debug"` \| `"trace"` | `"info"` | Log verbosity level |
 | `ui.theme`        | `"light"` \| `"dark"` \| `"system"` | `"system"` | UI color theme                           |
 | `mesh.scanRoots`  | string[]                       | `[]`      | Directories to scan for agent discovery    |
+| `agentContext.relayTools` | boolean                 | `true`    | Include Relay messaging tool documentation in agent context |
+| `agentContext.meshTools`  | boolean                 | `true`    | Include Mesh discovery tool documentation in agent context  |
+| `agentContext.adapterTools` | boolean               | `true`    | Include adapter tool documentation in agent context         |
+| `agentContext.pulseTools` | boolean                 | `true`    | Include Pulse scheduler tool documentation in agent context |
 
 The following settings are controlled exclusively by environment variables and have no corresponding config file key or CLI flag:
 
@@ -228,6 +232,24 @@ When `scanRoots` is empty (default), the reconciler scans from the server's defa
 dorkos config set mesh.scanRoots '["/home/user/projects", "/home/user/agents"]'
 ```
 
+### agentContext
+
+Controls which tool domain blocks are injected into agent system prompts. Each toggle determines whether the corresponding tool documentation is included in the context, helping agents understand available tools.
+
+| Key | Type | Default | Description |
+|-----|------|---------|-------------|
+| `agentContext.relayTools` | `boolean` | `true` | Include Relay messaging tool documentation |
+| `agentContext.meshTools` | `boolean` | `true` | Include Mesh discovery tool documentation |
+| `agentContext.adapterTools` | `boolean` | `true` | Include adapter tool documentation |
+| `agentContext.pulseTools` | `boolean` | `true` | Include Pulse scheduler tool documentation |
+
+These can be configured globally in Settings > Tools tab, or per-agent via the agent manifest's `enabledToolGroups` field (which overrides global defaults).
+
+```bash
+dorkos config set agentContext.relayTools false
+dorkos config set agentContext.pulseTools false
+```
+
 ### DORKOS_RELAY_ENABLED
 
 Feature flag that enables the Relay message bus subsystem. When `true`, the server mounts the `/api/relay` routes, starts the `RelayCore`, and activates Relay-backed session messaging (POST `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}` instead of calling AgentManager directly).
@@ -350,6 +372,10 @@ DorkOS Configuration (~/.dork/config.json)
   tunnel.authtoken     —              (default)
   tunnel.auth          —              (default)
   ui.theme             system         (default)
+  agentContext.relayTools   true       (default)
+  agentContext.meshTools    true       (default)
+  agentContext.adapterTools true       (default)
+  agentContext.pulseTools   true       (default)
 
 Config file: /Users/you/.dork/config.json
 ```
@@ -404,6 +430,12 @@ $ dorkos config list
   },
   "mesh": {
     "scanRoots": []
+  },
+  "agentContext": {
+    "relayTools": true,
+    "meshTools": true,
+    "adapterTools": true,
+    "pulseTools": true
   }
 }
 ```
@@ -501,7 +533,8 @@ Content-Type: application/json
     "version": 1,
     "server": { "port": 8080, "cwd": null, "boundary": null },
     "tunnel": { "enabled": false, "domain": null, "authtoken": null, "auth": null },
-    "ui": { "theme": "dark" }
+    "ui": { "theme": "dark" },
+    "agentContext": { "relayTools": true, "meshTools": true, "adapterTools": true, "pulseTools": true }
   }
 }
 ```

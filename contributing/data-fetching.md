@@ -417,12 +417,16 @@ Fetches trace spans for a specific Relay message. The query is disabled when `me
 ```typescript
 // apps/client/src/layers/entities/relay/model/use-message-trace.ts
 import { useQuery } from '@tanstack/react-query';
+import { useTransport } from '@/layers/shared/model';
 
 export function useMessageTrace(messageId: string | null) {
+  const transport = useTransport();
+
   return useQuery({
     queryKey: ['relay', 'trace', messageId],
-    queryFn: () => fetch(`/api/relay/messages/${messageId}/trace`).then(r => r.json()),
-    enabled: messageId !== null,
+    queryFn: () => transport.getRelayTrace(messageId!),
+    enabled: !!messageId,
+    staleTime: 30_000,
   });
 }
 ```
@@ -434,11 +438,15 @@ Fetches aggregate delivery metrics for the Relay system with automatic 30-second
 ```typescript
 // apps/client/src/layers/entities/relay/model/use-delivery-metrics.ts
 import { useQuery } from '@tanstack/react-query';
+import { useTransport } from '@/layers/shared/model';
 
 export function useDeliveryMetrics() {
+  const transport = useTransport();
+
   return useQuery({
-    queryKey: ['relay', 'trace', 'metrics'],
-    queryFn: () => fetch('/api/relay/trace/metrics').then(r => r.json()),
+    queryKey: ['relay', 'metrics'],
+    queryFn: () => transport.getRelayDeliveryMetrics(),
+    staleTime: 30_000,
     refetchInterval: 30_000,
   });
 }

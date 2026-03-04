@@ -47,21 +47,32 @@ src/
 │   │   │   ├── model/
 │   │   │   ├── api/
 │   │   │   └── index.ts
-│   │   └── command/     # Command types, hooks
-│   │       ├── model/
-│   │       ├── api/
-│   │       └── index.ts
+│   │   ├── command/     # Command types, hooks
+│   │   │   ├── model/
+│   │   │   ├── api/
+│   │   │   └── index.ts
+│   │   ├── agent/       # Agent identity hooks (useCurrentAgent, useAgentToolStatus, etc.)
+│   │   ├── pulse/       # Pulse scheduler hooks (useSchedules, useRuns, etc.)
+│   │   ├── relay/       # Relay messaging hooks (useRelayMessages, useRelayAdapters, etc.)
+│   │   ├── mesh/        # Mesh discovery hooks (useRegisteredAgents, useDiscoverAgents, etc.)
+│   │   └── binding/     # Adapter-agent binding hooks (useBindings, useCreateBinding, etc.)
 │   ├── features/        # Complete user-facing functionality
 │   │   ├── chat/        # ChatPanel, MessageList, streaming, useChatSession
 │   │   │   ├── ui/
 │   │   │   ├── model/
 │   │   │   ├── api/
 │   │   │   └── index.ts
-│   │   ├── command-palette/ # Global Cmd+K palette (agents, features, commands, quick actions)
-│   │   ├── commands/    # Inline slash command palette
-│   │   ├── session-list/ # SessionSidebar
-│   │   ├── settings/    # SettingsPanel
-│   │   └── files/       # FileBrowser
+│   │   ├── command-palette/ # Global Cmd+K palette (Fuse.js search, agent preview, sub-menus)
+│   │   ├── commands/    # Inline slash command palette (chat input)
+│   │   ├── session-list/ # SessionSidebar, AgentContextChips
+│   │   ├── settings/    # SettingsDialog (Appearance, Preferences, Status Bar, Server, Tools, Advanced)
+│   │   ├── agent-settings/ # AgentDialog (IdentityTab, PersonaTab, CapabilitiesTab, ConnectionsTab)
+│   │   ├── files/       # FileBrowser
+│   │   ├── pulse/       # PulsePanel, ScheduleRow, CronVisualBuilder, AgentCombobox
+│   │   ├── relay/       # RelayPanel, ActivityFeed, AdapterCard, AdapterSetupWizard
+│   │   ├── mesh/        # MeshPanel, TopologyGraph, AgentNode, BindingDialog
+│   │   ├── onboarding/  # OnboardingFlow, AgentDiscoveryStep, PulsePresetsStep
+│   │   └── status/      # StatusLine, GitStatusItem, ModelItem
 │   └── widgets/         # Large UI compositions
 │       └── app-layout/  # Header, Layout, main workspace
 │           ├── ui/
@@ -212,12 +223,13 @@ import { SessionBadge } from '@/layers/entities/session/ui/SessionBadge'; // WRO
 
 ## Server Structure (`apps/server/src/`)
 
-The server uses flat routes + services (not FSD layers):
+The server uses flat routes + domain-grouped services (not FSD layers):
 
 ```
 apps/server/src/
 ├── app.ts           # Express app configuration
 ├── index.ts         # Server entry point
+├── env.ts           # Zod-validated environment config
 ├── routes/          # HTTP endpoint handlers (thin, delegate to services)
 │   ├── sessions.ts
 │   ├── commands.ts
@@ -225,33 +237,74 @@ apps/server/src/
 │   ├── directory.ts
 │   ├── config.ts
 │   ├── files.ts
-│   └── git.ts
-├── services/        # Business logic
-│   ├── agent-manager.ts
-│   ├── transcript-reader.ts
-│   ├── session-broadcaster.ts
-│   ├── stream-adapter.ts
-│   ├── command-registry.ts
-│   ├── openapi-registry.ts
-│   ├── file-lister.ts
-│   ├── git-status.ts
-│   └── tunnel-manager.ts
+│   ├── git.ts
+│   ├── tunnel.ts
+│   ├── pulse.ts
+│   ├── relay.ts
+│   ├── mesh.ts
+│   ├── agents.ts
+│   ├── models.ts
+│   └── discovery.ts
+├── services/                    # Business logic (domain-grouped)
+│   ├── core/                    # Core orchestration services
+│   │   ├── agent-manager.ts     # Claude Agent SDK session management
+│   │   ├── agent-types.ts       # AgentSession, ToolState interfaces
+│   │   ├── sdk-event-mapper.ts  # SDK → DorkOS event transformation
+│   │   ├── tool-filter.ts       # Per-agent MCP tool filtering
+│   │   ├── context-builder.ts   # Runtime context injection (XML blocks)
+│   │   ├── interactive-handlers.ts # Tool approval, AskUserQuestion flows
+│   │   ├── stream-adapter.ts    # SSE helpers
+│   │   ├── command-registry.ts  # Slash command scanning
+│   │   ├── openapi-registry.ts  # Auto-generated OpenAPI spec
+│   │   ├── config-manager.ts    # Persistent user config (~/.dork/config.json)
+│   │   ├── file-lister.ts       # Directory file listing
+│   │   ├── git-status.ts        # Git status/branch info
+│   │   ├── tunnel-manager.ts    # ngrok tunnel lifecycle
+│   │   ├── update-checker.ts    # npm registry version check
+│   │   └── mcp-tools/           # MCP tool server (split by domain)
+│   │       ├── index.ts          # Tool server factory + registration
+│   │       ├── core-tools.ts     # ping, get_server_info, get_session_count
+│   │       ├── pulse-tools.ts    # Schedule CRUD tools
+│   │       ├── relay-tools.ts    # Message send/inbox tools
+│   │       ├── trace-tools.ts    # Delivery trace tools
+│   │       ├── mesh-tools.ts     # Agent discovery/registry tools
+│   │       ├── adapter-tools.ts  # Adapter management tools
+│   │       └── binding-tools.ts  # Adapter-agent binding tools
+│   ├── session/                 # Session data services
+│   │   ├── transcript-reader.ts # JSONL transcript file reading
+│   │   ├── transcript-parser.ts # JSONL → HistoryMessage parsing
+│   │   ├── session-broadcaster.ts # Cross-client SSE sync
+│   │   ├── session-lock.ts      # Concurrent write prevention
+│   │   ├── build-task-event.ts  # TaskUpdateEvent construction
+│   │   └── task-reader.ts       # Task state from JSONL
+│   ├── pulse/                   # Pulse scheduler services
+│   │   ├── pulse-store.ts       # SQLite + JSON schedule storage
+│   │   ├── scheduler-service.ts # Cron engine with overrun protection
+│   │   ├── pulse-presets.ts     # Default schedule presets
+│   │   └── pulse-state.ts       # Feature flag holder
+│   ├── relay/                   # Relay messaging services
+│   │   ├── adapter-manager.ts   # Adapter lifecycle management
+│   │   ├── binding-store.ts     # Adapter-agent binding persistence
+│   │   ├── binding-router.ts    # Inbound message routing
+│   │   ├── trace-store.ts       # Message delivery tracing (SQLite)
+│   │   ├── relay-state.ts       # Feature flag holder
+│   │   ├── adapter-factory.ts   # Adapter instance creation
+│   │   ├── adapter-config.ts    # Adapter configuration
+│   │   ├── adapter-error.ts     # Adapter error types
+│   │   └── subject-resolver.ts  # Message subject resolution
+│   ├── mesh/                    # Mesh discovery services
+│   │   └── mesh-state.ts        # Subsystem state tracking
+│   └── discovery/               # Agent discovery services
+│       └── discovery-scanner.ts # BFS filesystem agent scanner
+├── lib/             # Shared utilities
+│   ├── sdk-utils.ts
+│   ├── resolve-root.ts
+│   ├── boundary.ts
+│   └── dork-home.ts
 └── middleware/
 ```
 
-### Server Size Thresholds
-
-When `services/` grows beyond **15 files**, transition to domain grouping:
-
-```
-domains/
-├── session/           # transcript-reader, session-broadcaster, stream-adapter
-├── agent/             # agent-manager
-├── commands/          # command-registry
-└── shared/            # openapi-registry, file-lister, git-status, tunnel-manager
-```
-
-Routes stay flat regardless — they're thin HTTP handlers.
+Routes stay flat regardless — they are thin HTTP handlers that delegate to services.
 
 ## Import Patterns
 

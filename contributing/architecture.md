@@ -285,33 +285,54 @@ apps/
 
   server/src/
     services/
-      agent-manager.ts      -- Claude Agent SDK session orchestrator
-      agent-types.ts        -- AgentSession/ToolState interfaces
-      sdk-event-mapper.ts   -- SDK message → StreamEvent mapper
-      context-builder.ts    -- Runtime context for systemPrompt
-      interactive-handlers.ts -- Tool approval & question flows
-      transcript-reader.ts  -- JSONL session reader
-      command-registry.ts   -- Slash command discovery
+      core/                   -- Core services
+        agent-manager.ts      -- Claude Agent SDK session orchestrator
+        agent-types.ts        -- AgentSession/ToolState interfaces
+        sdk-event-mapper.ts   -- SDK message → StreamEvent mapper
+        context-builder.ts    -- Runtime context for systemPrompt
+        tool-filter.ts        -- Per-agent MCP tool filtering (resolveToolConfig, buildAllowedTools)
+        interactive-handlers.ts -- Tool approval & question flows
+        command-registry.ts   -- Slash command discovery
+        config-manager.ts     -- Persistent user config (~/.dork/config.json)
+        stream-adapter.ts     -- SSE helpers (initSSEStream, sendSSEEvent, endSSEStream)
+        tunnel-manager.ts     -- Opt-in ngrok tunnel lifecycle
+        update-checker.ts     -- npm registry version check with 1-hour cache
+        file-lister.ts        -- Directory file listing
+        git-status.ts         -- Git branch and changed files
+        openapi-registry.ts   -- Auto-generated OpenAPI spec from Zod schemas
+        mcp-tools/            -- In-process MCP tool server for Claude Agent SDK
+      session/                -- Session services
+        transcript-reader.ts  -- JSONL session reader (single source of truth)
+        transcript-parser.ts  -- JSONL line → HistoryMessage parser
+        session-broadcaster.ts -- Cross-client session sync via chokidar file watching
+        session-lock.ts       -- Session write locks with auto-expiry
+        build-task-event.ts   -- TaskUpdateEvent builder from tool call inputs
+        task-reader.ts        -- Task state parser from JSONL transcript lines
+      pulse/                  -- Pulse scheduler services
+        pulse-store.ts        -- SQLite + JSON schedule/run state
+        scheduler-service.ts  -- Cron engine (croner) with overrun protection
+        pulse-presets.ts      -- Default schedule presets (~/.dork/pulse/presets.json)
+        pulse-state.ts        -- DORKOS_PULSE_ENABLED feature flag holder
+      relay/                  -- Relay messaging services
+        adapter-manager.ts    -- Server-side adapter lifecycle (config I/O, hot-reload, enable/disable)
+        adapter-factory.ts    -- Adapter instantiation from config (built-in + plugin)
+        adapter-config.ts     -- Config load/save/watch, sensitive field masking
+        adapter-error.ts      -- AdapterError typed error class
+        binding-store.ts      -- JSON-backed adapter-agent binding store (~/.dork/relay/bindings.json)
+        binding-router.ts     -- relay.human.> → relay.agent.{sessionId} routing with session strategies
+        trace-store.ts        -- SQLite delivery trace storage (message_traces table)
+        relay-state.ts        -- DORKOS_RELAY_ENABLED feature flag holder
+        subject-resolver.ts   -- Subject pattern resolution helpers
+      mesh/                   -- Mesh state
+        mesh-state.ts         -- Mesh subsystem internal state tracking
+      discovery/              -- Agent discovery
+        discovery-scanner.ts  -- BFS filesystem scan for AI-configured projects (async generator)
     lib/
       sdk-utils.ts          -- makeUserPrompt(), resolveClaudeCliPath()
       resolve-root.ts       -- DEFAULT_CWD (prefers DORKOS_DEFAULT_CWD, falls back to repo root)
       boundary.ts           -- Directory boundary validation (enforces 403 for out-of-boundary paths)
       feature-flag.ts       -- Generic feature flag helpers
       route-utils.ts        -- Shared Express route utilities
-    services/discovery/
-      discovery-scanner.ts  -- BFS filesystem scan for AI-configured projects (async generator)
-    services/pulse/
-      pulse-presets.ts      -- Default Pulse schedule presets (~/.dork/pulse/presets.json)
-    services/relay/
-      adapter-manager.ts    -- Server-side adapter lifecycle (config I/O, hot-reload, enable/disable)
-      adapter-factory.ts    -- Adapter instantiation from config (built-in + plugin)
-      adapter-config.ts     -- Config load/save/watch, sensitive field masking
-      adapter-error.ts      -- AdapterError typed error class
-      binding-store.ts      -- JSON-backed adapter-agent binding store (~/.dork/relay/bindings.json)
-      binding-router.ts     -- relay.human.> → relay.agent.{sessionId} routing with session strategies
-      trace-store.ts        -- SQLite delivery trace storage (message_traces table)
-      relay-state.ts        -- DORKOS_RELAY_ENABLED feature flag holder
-      subject-resolver.ts   -- Subject pattern resolution helpers
     routes/
       sessions.ts / commands.ts / health.ts / directory.ts / config.ts
       files.ts / git.ts / tunnel.ts / pulse.ts / agents.ts
@@ -720,6 +741,10 @@ Health is returned by `GET /api/mesh/agents/:id/health` and aggregated by `GET /
 
 The server exposes Mesh via `routes/mesh.ts` (always mounted, no feature flag). MCP tools in `mcp-tool-server.ts` allow agents to discover, register, deny, inspect, and query topology programmatically (`mesh_discover`, `mesh_register`, `mesh_deny`, `mesh_list`, `mesh_unregister`, `mesh_status`, `mesh_inspect`, `mesh_query_topology`).
 
+### Lifecycle Hooks
+
+`MeshCore` supports an `onUnregister(callback)` lifecycle hook for extensibility. The server wires cascade effects through this hook — for example, disabling Pulse schedules linked to the unregistered agent (see [Cascade Disable on Agent Unregister](#cascade-disable-on-agent-unregister)).
+
 ### Relay Bridge
 
 When both Mesh and Relay are enabled, `RelayBridge` publishes lifecycle events (`agent.registered`, `agent.unregistered`, `agent.health_changed`) to Relay subjects, enabling cross-agent event subscriptions.
@@ -741,6 +766,10 @@ The Pulse subsystem provides cron-based agent scheduling. It lives entirely in `
 - **Relay mode** (`DORKOS_RELAY_ENABLED=true`): Publishes to `relay.system.pulse.{scheduleId}` instead; `ClaudeCodeAdapter` handles dispatch
 
 Agent-created schedules enter `pending_approval` state and require human approval before activation.
+
+### Cascade Disable on Agent Unregister
+
+When an agent is unregistered from Mesh, all Pulse schedules linked to that `agentId` are automatically disabled via `PulseStore.disableSchedulesByAgentId()`. Agent-linked schedule runs that cannot resolve the agent's project path fail with a descriptive error rather than falling back silently.
 
 ## Testing
 

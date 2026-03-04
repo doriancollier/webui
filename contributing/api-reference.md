@@ -116,9 +116,17 @@ Update user configuration. Accepts a partial config object that is deep-merged w
 ```json
 {
   "server": { "port": 8080 },
-  "ui": { "theme": "dark" }
+  "ui": { "theme": "dark" },
+  "agentContext": {
+    "relayTools": true,
+    "meshTools": true,
+    "adapterTools": true,
+    "pulseTools": false
+  }
 }
 ```
+
+The `agentContext` section controls global tool domain toggles. Each toggle determines whether the corresponding MCP tool group is injected into agent sessions by default. Per-agent overrides are set via `enabledToolGroups` on the agent manifest (see [PATCH /api/agents/current](#patch-apiagentscurrent)).
 
 **Responses:**
 
@@ -156,6 +164,22 @@ The `warnings` field is only present when the patch includes keys listed in `SEN
 }
 ```
 
+## Pulse Scheduler (`routes/pulse.ts`)
+
+Feature-flag guarded via `pulse-state.ts`.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/schedules` | List all schedules |
+| POST | `/api/schedules` | Create a schedule |
+| PATCH | `/api/schedules/:id` | Update a schedule |
+| DELETE | `/api/schedules/:id` | Delete a schedule |
+| POST | `/api/schedules/:id/trigger` | Trigger a schedule run |
+| GET | `/api/runs` | Get run history |
+| POST | `/api/runs/:id/cancel` | Cancel an active run |
+
+Schedules support an optional `agentId` field for agent-linked scheduling. When `agentId` is set, the schedule's CWD is resolved from the agent's registered project path via MeshCore.
+
 ## Feature Flags
 
 The Relay route group is guarded by an environment variable feature flag. When disabled, the router is not mounted and all requests to those paths return 404. Mesh routes are always mounted (no feature flag).
@@ -173,6 +197,7 @@ Other relevant environment variables:
 | --------------------- | ------- | ------------------------------------------------------------ |
 | `DORKOS_PORT`         | `4242`  | Express server port                                          |
 | `DORKOS_CORS_ORIGIN`  | `*`     | CORS `Access-Control-Allow-Origin` value. Set to a specific origin (e.g. `https://app.example.com`) to restrict cross-origin requests. |
+| `DORKOS_PULSE_ENABLED`| `false` | `/api/schedules/*` and `/api/runs/*` routes                  |
 
 ## Agent Endpoints
 
@@ -234,9 +259,17 @@ Update agent fields by path. Merges the request body into the existing manifest.
   "persona": "You are an expert in REST APIs...",
   "personaEnabled": true,
   "color": "#6366f1",
-  "icon": "\ud83e\udd16"
+  "icon": "\ud83e\udd16",
+  "enabledToolGroups": {
+    "pulse": true,
+    "relay": false,
+    "mesh": true,
+    "adapter": true
+  }
 }
 ```
+
+All fields are optional. The `enabledToolGroups` object controls per-agent tool domain toggles. Omitted fields inherit the global default from the `agentContext` section in `~/.dork/config.json`.
 
 **Responses:**
 

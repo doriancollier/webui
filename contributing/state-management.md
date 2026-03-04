@@ -28,6 +28,7 @@ This guide covers state management patterns in DorkOS. Zustand manages complex c
 | Persistent client state  | localStorage + useSyncExternalStore | Agent frecency scores (Slack bucket system)  | Survives page reloads, reactive updates via subscribe/getSnapshot |
 | Dialog-scoped state      | React useState  | Pages stack in CommandPaletteDialog          | Resets when dialog closes, no persistence needed           |
 | Debounced derived state  | useDeferredValue | Preview panel data during rapid navigation  | Defers expensive fetches without state management overhead |
+| Multi-source derived state | TanStack Query + `useMemo` | Feature flags + entity data combined | Each source stays in TanStack Query; derivation happens in a custom hook via `useMemo` |
 
 ## Core Patterns
 
@@ -177,6 +178,42 @@ export function usePreviewData(agentId: string, agentCwd: string) {
 ```
 
 **When to use**: Debouncing expensive effects (API calls, heavy computations) triggered by rapid input changes. The deferred value keeps UI responsive during typing but maintains correctness after input settles.
+
+### Multi-Source Derived State
+
+When a component needs state computed from multiple independent server queries, create a dedicated hook that combines them:
+
+```typescript
+// Pattern: useAgentToolStatus combines agent manifest + feature flags
+function useAgentToolStatus() {
+  const { data: agent } = useCurrentAgent();     // TanStack Query
+  const pulseEnabled = usePulseEnabled();          // TanStack Query
+  const relayEnabled = useRelayEnabled();          // TanStack Query
+
+  return useMemo(() => ({
+    pulse: !pulseEnabled ? 'disabled-by-server'
+         : agent?.enabledToolGroups?.pulse === false ? 'disabled-by-agent'
+         : 'enabled',
+    // ... similar for relay, mesh, adapter
+  }), [agent, pulseEnabled, relayEnabled]);
+}
+```
+
+**Anti-pattern:** Do NOT use `useEffect` to sync derived state into a separate `useState`. This causes unnecessary re-renders and state synchronization bugs. Use `useMemo` instead.
+
+```typescript
+// ❌ useEffect + useState for derived state — causes extra renders and sync bugs
+const [toolStatus, setToolStatus] = useState({});
+useEffect(() => {
+  setToolStatus({ pulse: computeStatus(agent, pulseEnabled) });
+}, [agent, pulseEnabled]);
+
+// ✅ useMemo — derived inline, no extra state, no sync issues
+const toolStatus = useMemo(
+  () => ({ pulse: computeStatus(agent, pulseEnabled) }),
+  [agent, pulseEnabled]
+);
+```
 
 ### Combining Zustand with TanStack Query
 

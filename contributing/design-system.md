@@ -333,17 +333,31 @@ Opacity 0.5. No cursor change beyond `not-allowed`.
 
 ### 3-State Chip Pattern (AgentContextChips)
 
-Status chips in the sidebar footer use a 3-state model driven by `useAgentToolStatus()`:
+Status chips in the sidebar footer render as colored icon buttons (one per tool domain: Pulse, Relay, Mesh, Adapter) using a 3-state model driven by `useAgentToolStatus()`:
 
 | State | Visual | Tooltip |
 |-------|--------|---------|
-| `enabled` | Colored chip, normal opacity | "{Domain} -- enabled for {agent.name}" |
-| `disabled-by-agent` | Muted chip, `opacity-40`, `[off]` suffix in label | "{Domain} -- disabled for this agent" |
-| `disabled-by-server` | Hidden entirely (not rendered) | N/A |
+| `enabled` | Full color, normal opacity | "Enabled for this agent" |
+| `disabled-by-agent` | Muted/dimmed appearance (`opacity-50`) | "Disabled for this agent" |
+| `disabled-by-server` | Hidden (not rendered) | N/A — feature is disabled server-wide |
 
-Active run counts (Pulse) and agent counts (Mesh) render as badges on `enabled` chips only. The `disabled-by-agent` state communicates that the agent manifest has explicitly opted out, while `disabled-by-server` hides the chip entirely since the feature is globally unavailable.
+Active run counts (Pulse) and agent counts (Mesh) render as dot indicators on `enabled` chips only. The `disabled-by-agent` state communicates that the agent manifest has explicitly opted out, while `disabled-by-server` hides the chip entirely since the feature is globally unavailable.
 
 This pattern applies to any status indicator that depends on both per-entity configuration and global feature flags.
+
+### 3-State Toggle Pattern (CapabilitiesTab)
+
+The CapabilitiesTab uses a 3-state display for per-agent tool group toggles:
+
+| State | Visual | Meaning |
+|-------|--------|---------|
+| Inherited (enabled) | Switch ON, "Inherited" badge | Agent inherits the global default (enabled) |
+| Overridden (disabled) | Switch OFF, "Overridden" badge | Agent explicitly disables this tool group |
+| Inherited (disabled) | Switch OFF, disabled, "Server disabled" badge | Server feature flag is off; toggle is non-interactive |
+
+The toggle writes to the agent manifest's `enabledToolGroups` field. When a toggle is flipped, it sets an explicit value; when reset, the field is removed (returning to inherited behavior).
+
+This pattern is reusable for any per-entity override of a global setting.
 
 ---
 
