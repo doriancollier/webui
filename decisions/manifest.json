@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 70,
+  "nextNumber": 73,
   "decisions": [
     {
       "number": 1,
@@ -572,6 +572,33 @@
       "created": "2026-03-04",
       "extractedFrom": "agent-tool-context-injection",
       "specSlug": "agent-tool-context-injection"
+    },
+    {
+      "number": 70,
+      "slug": "per-agent-tool-filtering-via-allowedtools",
+      "title": "Per-Agent Tool Filtering via Domain-Level allowedTools",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "agent-tools-elevation",
+      "specSlug": "agent-tools-elevation"
+    },
+    {
+      "number": 71,
+      "slug": "implicit-tool-group-hierarchy",
+      "title": "Implicit Tool Group Hierarchy for User-Facing Toggles",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "agent-tools-elevation",
+      "specSlug": "agent-tools-elevation"
+    },
+    {
+      "number": 72,
+      "slug": "cascade-disable-on-agent-unregister",
+      "title": "Cascade Disable Pulse Schedules on Agent Unregister",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "agent-tools-elevation",
+      "specSlug": "agent-tools-elevation"
     }
   ]
 }

@@ -1,6 +1,10 @@
 import { useMemo } from 'react';
 import { useMeshAgentPaths } from '@/layers/entities/mesh';
 import { useCommands } from '@/layers/entities/command';
+import { useSessions } from '@/layers/entities/session';
+import { useActiveRunCount } from '@/layers/entities/pulse';
+import { useAppStore } from '@/layers/shared/model';
+import { shortenHomePath } from '@/layers/shared/lib';
 import { useAgentFrecency } from './use-agent-frecency';
 import type { SearchableItem } from './use-palette-search';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
@@ -27,6 +31,14 @@ interface CommandItemData {
   description?: string;
 }
 
+export interface SuggestionItem {
+  id: string;
+  label: string;
+  description: string;
+  icon: string;
+  action: string;
+}
+
 export interface PaletteItems {
   recentAgents: AgentPathEntry[];
   allAgents: AgentPathEntry[];
@@ -35,6 +47,8 @@ export interface PaletteItems {
   quickActions: QuickActionItem[];
   /** Flat list of all palette items for Fuse.js search */
   searchableItems: SearchableItem[];
+  /** Contextual suggestions for the zero-query state (max 3) */
+  suggestions: SuggestionItem[];
   isLoading: boolean;
 }
 
@@ -53,6 +67,8 @@ const QUICK_ACTIONS: QuickActionItem[] = [
 ];
 
 const MAX_RECENT_AGENTS = 5;
+const MAX_SUGGESTIONS = 3;
+const ONE_HOUR_MS = 60 * 60 * 1000;
 
 /**
  * Assemble all content groups for the command palette.
@@ -66,6 +82,9 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
   const { data: agentPathsData, isLoading: agentsLoading } = useMeshAgentPaths();
   const { data: commandsData } = useCommands();
   const { getSortedAgentIds } = useAgentFrecency();
+  const { sessions } = useSessions();
+  const { data: activeRunCount } = useActiveRunCount();
+  const previousCwd = useAppStore((s) => s.previousCwd);
 
   const allAgents = useMemo(() => agentPathsData?.agents ?? [], [agentPathsData]);
 
@@ -134,6 +153,55 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
     return items;
   }, [allAgents, commands]);
 
+  const suggestions = useMemo(() => {
+    const items: SuggestionItem[] = [];
+
+    // Rule 1: 'Continue session' if most recent session in current CWD was active < 1h ago
+    if (sessions && activeCwd) {
+      const cwdSessions = sessions.filter((s) => s.cwd === activeCwd);
+      if (cwdSessions.length > 0) {
+        const mostRecent = cwdSessions[0];
+        const lastActive = new Date(mostRecent.updatedAt ?? mostRecent.createdAt ?? '').getTime();
+        if (lastActive > Date.now() - ONE_HOUR_MS) {
+          items.push({
+            id: 'suggestion-continue',
+            label: `Continue: ${mostRecent.title ?? 'Last session'}`,
+            description: 'Resume your most recent session',
+            icon: 'Clock',
+            action: `continueSession:${mostRecent.id}`,
+          });
+        }
+      }
+    }
+
+    // Rule 2: 'N active Pulse runs' if activeRunCount > 0
+    if (activeRunCount && activeRunCount > 0) {
+      items.push({
+        id: 'suggestion-pulse',
+        label: `${activeRunCount} active Pulse run${activeRunCount > 1 ? 's' : ''}`,
+        description: 'View running schedules',
+        icon: 'Clock',
+        action: 'openPulse',
+      });
+    }
+
+    // Rule 3: 'Switch back to {previousAgent}' if user recently switched
+    if (previousCwd && previousCwd !== activeCwd) {
+      const prevAgent = allAgents.find((a) => a.projectPath === previousCwd);
+      if (prevAgent) {
+        items.push({
+          id: 'suggestion-switchback',
+          label: `Switch back to ${prevAgent.name}`,
+          description: shortenHomePath(previousCwd),
+          icon: 'FolderOpen',
+          action: `switchAgent:${prevAgent.id}`,
+        });
+      }
+    }
+
+    return items.slice(0, MAX_SUGGESTIONS);
+  }, [sessions, activeCwd, activeRunCount, previousCwd, allAgents]);
+
   return {
     recentAgents,
     allAgents,
@@ -141,6 +209,7 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
     commands,
     quickActions: QUICK_ACTIONS,
     searchableItems,
+    suggestions,
     isLoading: agentsLoading,
   };
 }

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add preview panel, fuzzy search, sub-menus, and UX polish
 - Add tool context injection with config toggles and command palette enhancements
 - Add tool context injection with config toggles and command palette enhancements
 - Migrate standalone sidebar to Shadcn Sidebar component

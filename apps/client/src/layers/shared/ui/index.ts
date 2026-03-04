@@ -92,6 +92,7 @@ export {
   ResponsiveDialogFullscreenToggle,
   useResponsiveDialog,
 } from './responsive-dialog';
+export { ScrollArea, ScrollBar } from './scroll-area';
 export {
   ResponsiveDropdownMenu,
   ResponsiveDropdownMenuTrigger,

@@ -26,10 +26,10 @@ export function AgentPreviewPanel({ agent }: AgentPreviewPanelProps) {
   return (
     <motion.div
       initial={{ opacity: 0, width: 0 }}
-      animate={{ opacity: 1, width: '60%' }}
+      animate={{ opacity: 1, width: 380 }}
       exit={{ opacity: 0, width: 0 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 35 }}
-      className="border-l overflow-hidden flex-shrink-0"
+      transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+      className="border-l overflow-hidden flex-shrink-0 will-change-[width]"
     >
       <div className="p-4 space-y-4">
         {/* Agent identity header */}

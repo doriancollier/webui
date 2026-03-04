@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 89,
+  "nextNumber": 90,
   "specs": [
     {
       "number": 1,
@@ -617,6 +617,13 @@
       "title": "Agent Tool Context Injection",
       "created": "2026-03-03",
       "status": "specified"
+    },
+    {
+      "number": 89,
+      "slug": "agent-tools-elevation",
+      "title": "Agent Tools Elevation",
+      "created": "2026-03-04",
+      "status": "ideation"
     }
   ]
 }

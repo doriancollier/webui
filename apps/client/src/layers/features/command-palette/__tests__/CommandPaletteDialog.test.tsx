@@ -85,8 +85,11 @@ vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...props }: React.HTMLAttributes<HTMLDivElement> & { children?: React.ReactNode }) =>
       React.createElement('div', props, children),
+    span: ({ children, ...props }: React.HTMLAttributes<HTMLSpanElement> & { children?: React.ReactNode }) =>
+      React.createElement('span', props, children),
   },
   AnimatePresence: ({ children }: { children?: React.ReactNode }) => children,
+  LayoutGroup: ({ children }: { children?: React.ReactNode }) => children,
 }));
 
 const mockRecordUsage = vi.fn();
@@ -137,6 +140,7 @@ vi.mock('../model/use-palette-items', () => ({
       { id: 'browse', name: 'Browse Filesystem', type: 'quick-action', data: {} },
       { id: 'theme', name: 'Toggle Theme', type: 'quick-action', data: {} },
     ],
+    suggestions: [],
     isLoading: false,
   }),
 }));
@@ -245,26 +249,44 @@ describe('CommandPaletteDialog', () => {
     ).not.toBeInTheDocument();
   });
 
-  // --- Agent selection ---
+  // --- Agent selection (two-step: click agent → sub-menu → Open Here) ---
 
-  it('calls recordUsage with agent id when an agent item is clicked', () => {
+  it('clicking an agent item opens the sub-menu (agent-actions page)', () => {
     render(<CommandPaletteDialog />);
     const item = screen.getAllByText('Worker')[0].closest('[data-slot="command-item"]');
     if (item) fireEvent.click(item as Element);
-    expect(mockRecordUsage).toHaveBeenCalledWith('agent-3');
+    // Sub-menu should appear with "Open Here" action
+    expect(screen.getByText('Open Here')).toBeInTheDocument();
+    expect(screen.getByText('Open in New Tab')).toBeInTheDocument();
+    expect(screen.getByText('New Session')).toBeInTheDocument();
   });
 
-  it('calls setDir with agent projectPath when an agent item is clicked', () => {
+  it('shows breadcrumb when in agent sub-menu', () => {
     render(<CommandPaletteDialog />);
     const item = screen.getAllByText('Worker')[0].closest('[data-slot="command-item"]');
     if (item) fireEvent.click(item as Element);
+    expect(screen.getByText('All')).toBeInTheDocument();
+    expect(screen.getByText('Agent: Worker')).toBeInTheDocument();
+  });
+
+  it('calls recordUsage and setDir when Open Here is clicked in sub-menu', () => {
+    render(<CommandPaletteDialog />);
+    // Click agent to enter sub-menu
+    const item = screen.getAllByText('Worker')[0].closest('[data-slot="command-item"]');
+    if (item) fireEvent.click(item as Element);
+    // Click Open Here
+    const openHereItem = screen.getByText('Open Here').closest('[data-slot="command-item"]');
+    if (openHereItem) fireEvent.click(openHereItem as Element);
+    expect(mockRecordUsage).toHaveBeenCalledWith('agent-3');
     expect(mockSetDir).toHaveBeenCalledWith('/projects/current');
   });
 
-  it('closes palette after selecting an agent', () => {
+  it('closes palette after Open Here is clicked in sub-menu', () => {
     render(<CommandPaletteDialog />);
     const item = screen.getAllByText('Worker')[0].closest('[data-slot="command-item"]');
     if (item) fireEvent.click(item as Element);
+    const openHereItem = screen.getByText('Open Here').closest('[data-slot="command-item"]');
+    if (openHereItem) fireEvent.click(openHereItem as Element);
     expect(mockSetGlobalPaletteOpen).toHaveBeenCalledWith(false);
   });
 

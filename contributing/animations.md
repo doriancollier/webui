@@ -234,6 +234,94 @@ Choose the right transition type for the animation feel.
 />
 ```
 
+### LayoutId Selection Indicator
+
+Use for a sliding pill/highlight effect as keyboard focus moves between items in a list. The indicator animates its position between items using Motion's `layoutId` feature.
+
+```typescript
+import { motion, LayoutGroup } from 'motion/react'
+
+// Wrap the list in LayoutGroup to scope the layoutId
+<LayoutGroup>
+  <ul>
+    {items.map((item) => (
+      <li key={item.id} className="relative">
+        {/* Sliding selection background - renders behind content */}
+        {isSelected(item.id) && (
+          <motion.div
+            layoutId="my-selection-indicator"
+            className="bg-accent absolute inset-0 rounded-sm"
+            transition={{ type: 'spring', stiffness: 500, damping: 40 }}
+          />
+        )}
+        {/* Content must sit above the indicator */}
+        <div className="relative z-10">
+          {item.name}
+        </div>
+      </li>
+    ))}
+  </ul>
+</LayoutGroup>
+```
+
+Key details:
+
+- The `motion.div` with `layoutId` must be `position: absolute` with `inset-0` inside each selectable item
+- Item content must be `position: relative` with `z-10` to render above the indicator
+- Wrap the list in `<LayoutGroup>` to scope the `layoutId` and prevent conflicts with other layout animations
+- Spring config: `stiffness: 500`, `damping: 40` for a snappy feel
+- Respects `prefers-reduced-motion` via the existing `<MotionConfig reducedMotion="user">` wrapper in `App.tsx`
+
+### Stagger on Open (Not on Every Keystroke)
+
+Use for items that stagger-animate when a dialog or page opens, but should not re-stagger on every search keystroke. The trick is a `staggerKey` state that only changes on open or page transition events.
+
+```typescript
+import { motion } from 'motion/react'
+
+const listVariants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.04, delayChildren: 0.05 },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: -4 },
+  visible: {
+    opacity: 1, y: 0,
+    transition: { type: 'spring', stiffness: 400, damping: 30 },
+  },
+}
+
+// staggerKey changes only on dialog open and page transitions, NOT on search input
+const [staggerKey, setStaggerKey] = useState(0)
+
+<motion.div
+  key={staggerKey}
+  variants={listVariants}
+  initial="hidden"
+  animate="visible"
+>
+  {items.map((item, index) => (
+    <motion.div
+      key={item.id}
+      // Limit stagger to first 8 items for performance
+      variants={index < 8 ? itemVariants : undefined}
+    >
+      {item.name}
+    </motion.div>
+  ))}
+</motion.div>
+```
+
+Key details:
+
+- `staggerChildren: 0.04` (40ms per item), `delayChildren: 0.05` (50ms initial delay)
+- The `key={staggerKey}` on the container forces a remount (and thus re-stagger) only when `staggerKey` changes
+- Limit stagger to the first 8 visible items -- items beyond index 7 render immediately without animation to avoid excessive delay
+- Update `staggerKey` on dialog open and page transitions, never on search input changes
+
 ## Anti-Patterns
 
 ```typescript

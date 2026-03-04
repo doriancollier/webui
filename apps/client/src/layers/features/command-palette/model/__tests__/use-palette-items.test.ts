@@ -11,6 +11,9 @@ import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 const mockUseMeshAgentPaths = vi.fn();
 const mockUseCommands = vi.fn();
 const mockUseAgentFrecency = vi.fn();
+const mockUseSessions = vi.fn();
+const mockUseActiveRunCount = vi.fn();
+const mockUseAppStore = vi.fn();
 
 vi.mock('@/layers/entities/mesh', () => ({
   useMeshAgentPaths: () => mockUseMeshAgentPaths(),
@@ -20,9 +23,32 @@ vi.mock('@/layers/entities/command', () => ({
   useCommands: () => mockUseCommands(),
 }));
 
+vi.mock('@/layers/entities/session', () => ({
+  useSessions: () => mockUseSessions(),
+}));
+
+vi.mock('@/layers/entities/pulse', () => ({
+  useActiveRunCount: () => mockUseActiveRunCount(),
+}));
+
+vi.mock('@/layers/shared/model', () => ({
+  useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
+    const state = mockUseAppStore();
+    return selector ? selector(state) : state;
+  },
+}));
+
 vi.mock('../use-agent-frecency', () => ({
   useAgentFrecency: () => mockUseAgentFrecency(),
 }));
+
+vi.mock('@/layers/shared/lib', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/layers/shared/lib')>();
+  return {
+    ...actual,
+    shortenHomePath: (p: string) => p.replace('/Users/test', '~'),
+  };
+});
 
 // --- Fixtures ---
 
@@ -56,6 +82,9 @@ describe('usePaletteItems', () => {
     mockUseMeshAgentPaths.mockReturnValue({ data: undefined, isLoading: false });
     mockUseCommands.mockReturnValue({ data: undefined });
     mockUseAgentFrecency.mockReturnValue(makeFrecency([]));
+    mockUseSessions.mockReturnValue({ sessions: [] });
+    mockUseActiveRunCount.mockReturnValue({ data: undefined });
+    mockUseAppStore.mockReturnValue({ previousCwd: null });
   });
 
   // --- Static content groups ---
@@ -283,13 +312,97 @@ describe('usePaletteItems', () => {
 
   // --- Return shape ---
 
-  it('returns all five content groups', () => {
+  it('returns all content groups including suggestions', () => {
     const { result } = renderHook(() => usePaletteItems(null));
     expect(result.current).toHaveProperty('recentAgents');
     expect(result.current).toHaveProperty('allAgents');
     expect(result.current).toHaveProperty('features');
     expect(result.current).toHaveProperty('commands');
     expect(result.current).toHaveProperty('quickActions');
+    expect(result.current).toHaveProperty('suggestions');
     expect(result.current).toHaveProperty('isLoading');
+  });
+
+  // --- Suggestions ---
+
+  it('returns empty suggestions when no conditions are met', () => {
+    const { result } = renderHook(() => usePaletteItems(null));
+    expect(result.current.suggestions).toEqual([]);
+  });
+
+  it('suggests continue session when most recent session was active < 1h ago', () => {
+    const recentTime = new Date(Date.now() - 10 * 60 * 1000).toISOString(); // 10 min ago
+    mockUseSessions.mockReturnValue({
+      sessions: [
+        { id: 's1', title: 'Fix bug', cwd: '/projects/a', updatedAt: recentTime, createdAt: recentTime },
+      ],
+    });
+    const { result } = renderHook(() => usePaletteItems('/projects/a'));
+    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-continue');
+    expect(suggestion).toBeDefined();
+    expect(suggestion?.label).toBe('Continue: Fix bug');
+    expect(suggestion?.action).toBe('continueSession:s1');
+  });
+
+  it('does not suggest continue session when most recent session was > 1h ago', () => {
+    const oldTime = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(); // 2h ago
+    mockUseSessions.mockReturnValue({
+      sessions: [
+        { id: 's1', title: 'Old session', cwd: '/projects/a', updatedAt: oldTime, createdAt: oldTime },
+      ],
+    });
+    const { result } = renderHook(() => usePaletteItems('/projects/a'));
+    expect(result.current.suggestions.find((s) => s.id === 'suggestion-continue')).toBeUndefined();
+  });
+
+  it('suggests active Pulse runs when activeRunCount > 0', () => {
+    mockUseActiveRunCount.mockReturnValue({ data: 3 });
+    const { result } = renderHook(() => usePaletteItems(null));
+    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-pulse');
+    expect(suggestion).toBeDefined();
+    expect(suggestion?.label).toBe('3 active Pulse runs');
+    expect(suggestion?.action).toBe('openPulse');
+  });
+
+  it('uses singular "run" when activeRunCount is 1', () => {
+    mockUseActiveRunCount.mockReturnValue({ data: 1 });
+    const { result } = renderHook(() => usePaletteItems(null));
+    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-pulse');
+    expect(suggestion?.label).toBe('1 active Pulse run');
+  });
+
+  it('suggests switch back to previous agent when previousCwd is set', () => {
+    mockUseAppStore.mockReturnValue({ previousCwd: '/projects/b' });
+    mockUseMeshAgentPaths.mockReturnValue({
+      data: { agents: [agentA, agentB] },
+      isLoading: false,
+    });
+    mockUseAgentFrecency.mockReturnValue(makeFrecency(['agent-a', 'agent-b']));
+    const { result } = renderHook(() => usePaletteItems('/projects/a'));
+    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-switchback');
+    expect(suggestion).toBeDefined();
+    expect(suggestion?.label).toBe('Switch back to Agent B');
+    expect(suggestion?.action).toBe('switchAgent:agent-b');
+  });
+
+  it('does not suggest switch back when previousCwd equals activeCwd', () => {
+    mockUseAppStore.mockReturnValue({ previousCwd: '/projects/a' });
+    mockUseMeshAgentPaths.mockReturnValue({ data: { agents: [agentA] }, isLoading: false });
+    mockUseAgentFrecency.mockReturnValue(makeFrecency(['agent-a']));
+    const { result } = renderHook(() => usePaletteItems('/projects/a'));
+    expect(result.current.suggestions.find((s) => s.id === 'suggestion-switchback')).toBeUndefined();
+  });
+
+  it('caps suggestions at 3 items', () => {
+    const recentTime = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+    mockUseSessions.mockReturnValue({
+      sessions: [{ id: 's1', title: 'Session', cwd: '/projects/a', updatedAt: recentTime, createdAt: recentTime }],
+    });
+    mockUseActiveRunCount.mockReturnValue({ data: 2 });
+    mockUseAppStore.mockReturnValue({ previousCwd: '/projects/b' });
+    mockUseMeshAgentPaths.mockReturnValue({ data: { agents: [agentA, agentB] }, isLoading: false });
+    mockUseAgentFrecency.mockReturnValue(makeFrecency(['agent-a', 'agent-b']));
+    const { result } = renderHook(() => usePaletteItems('/projects/a'));
+    expect(result.current.suggestions.length).toBeLessThanOrEqual(3);
   });
 });
