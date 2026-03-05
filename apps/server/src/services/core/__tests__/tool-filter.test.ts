@@ -148,6 +148,7 @@ describe('buildAllowedTools', () => {
     expect(result).not.toContain('mcp__dorkos__relay_inbox');
     expect(result).not.toContain('mcp__dorkos__relay_list_endpoints');
     expect(result).not.toContain('mcp__dorkos__relay_register_endpoint');
+    expect(result).not.toContain('mcp__dorkos__relay_query');
   });
 
   it('excludes trace tools when relay=false (implicit grouping)', () => {
@@ -160,6 +161,7 @@ describe('buildAllowedTools', () => {
     const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true })!;
     expect(result).toContain('mcp__dorkos__relay_send');
     expect(result).toContain('mcp__dorkos__relay_inbox');
+    expect(result).toContain('mcp__dorkos__relay_query');
     expect(result).toContain('mcp__dorkos__relay_get_trace');
     expect(result).toContain('mcp__dorkos__relay_get_metrics');
   });

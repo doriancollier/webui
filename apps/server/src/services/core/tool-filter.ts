@@ -58,6 +58,7 @@ const RELAY_TOOLS = [
   'mcp__dorkos__relay_inbox',
   'mcp__dorkos__relay_list_endpoints',
   'mcp__dorkos__relay_register_endpoint',
+  'mcp__dorkos__relay_query',
 ] as const;
 
 const MESH_TOOLS = [
