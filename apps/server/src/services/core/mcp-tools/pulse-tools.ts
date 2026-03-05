@@ -106,13 +106,13 @@ export function createGetRunHistoryHandler(deps: McpToolDeps) {
 export function getPulseTools(deps: McpToolDeps) {
   return [
     tool(
-      'list_schedules',
+      'pulse_list_schedules',
       'List all Pulse scheduled jobs. Returns schedule definitions with status and configuration.',
       { enabled_only: z.boolean().optional().describe('Only return enabled schedules') },
       createListSchedulesHandler(deps)
     ),
     tool(
-      'create_schedule',
+      'pulse_create_schedule',
       'Create a new Pulse scheduled job. The schedule will be created with pending_approval status and must be approved by the user before it can run.',
       {
         name: z.string().describe('Name for the scheduled job'),
@@ -126,7 +126,7 @@ export function getPulseTools(deps: McpToolDeps) {
       createCreateScheduleHandler(deps)
     ),
     tool(
-      'update_schedule',
+      'pulse_update_schedule',
       'Update an existing Pulse schedule. Only provided fields are updated.',
       {
         id: z.string().describe('Schedule ID to update'),
@@ -141,13 +141,13 @@ export function getPulseTools(deps: McpToolDeps) {
       createUpdateScheduleHandler(deps)
     ),
     tool(
-      'delete_schedule',
+      'pulse_delete_schedule',
       'Delete a Pulse schedule permanently.',
       { id: z.string().describe('Schedule ID to delete') },
       createDeleteScheduleHandler(deps)
     ),
     tool(
-      'get_run_history',
+      'pulse_get_run_history',
       'Get recent run history for a Pulse schedule.',
       {
         schedule_id: z.string().describe('Schedule ID to get runs for'),

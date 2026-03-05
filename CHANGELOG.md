@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Rename pulse and agent tools to follow domain_verb_noun convention
+
 ### Fixed
 
 ---

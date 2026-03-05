@@ -128,7 +128,7 @@ export function getCoreTools(deps: McpToolDeps) {
       handleGetSessionCount
     ),
     tool(
-      'agent_get_current',
+      'get_current_agent',
       'Get the agent identity for the current working directory. Returns the agent manifest from .dork/agent.json if one exists, or null if no agent is registered.',
       {},
       handleGetCurrentAgent

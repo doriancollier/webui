@@ -42,15 +42,15 @@ const CORE_TOOLS = [
   'mcp__dorkos__ping',
   'mcp__dorkos__get_server_info',
   'mcp__dorkos__get_session_count',
-  'mcp__dorkos__agent_get_current',
+  'mcp__dorkos__get_current_agent',
 ] as const;
 
 const PULSE_TOOLS = [
-  'mcp__dorkos__list_schedules',
-  'mcp__dorkos__create_schedule',
-  'mcp__dorkos__update_schedule',
-  'mcp__dorkos__delete_schedule',
-  'mcp__dorkos__get_run_history',
+  'mcp__dorkos__pulse_list_schedules',
+  'mcp__dorkos__pulse_create_schedule',
+  'mcp__dorkos__pulse_update_schedule',
+  'mcp__dorkos__pulse_delete_schedule',
+  'mcp__dorkos__pulse_get_run_history',
 ] as const;
 
 const RELAY_TOOLS = [

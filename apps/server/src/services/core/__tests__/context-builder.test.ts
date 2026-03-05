@@ -589,11 +589,11 @@ describe('buildPulseToolsBlock', () => {
   it('returns pulse context when pulse enabled and config on', () => {
     const result = _buildPulseToolsBlock();
     expect(result).toContain('<pulse_tools>');
-    expect(result).toContain('list_schedules');
-    expect(result).toContain('create_schedule');
-    expect(result).toContain('update_schedule');
-    expect(result).toContain('delete_schedule');
-    expect(result).toContain('get_run_history');
+    expect(result).toContain('pulse_list_schedules');
+    expect(result).toContain('pulse_create_schedule');
+    expect(result).toContain('pulse_update_schedule');
+    expect(result).toContain('pulse_delete_schedule');
+    expect(result).toContain('pulse_get_run_history');
     expect(result).toContain('</pulse_tools>');
   });
 

@@ -124,22 +124,22 @@ describe('buildAllowedTools', () => {
     expect(result).toContain('mcp__dorkos__ping');
     expect(result).toContain('mcp__dorkos__get_server_info');
     expect(result).toContain('mcp__dorkos__get_session_count');
-    expect(result).toContain('mcp__dorkos__agent_get_current');
+    expect(result).toContain('mcp__dorkos__get_current_agent');
   });
 
   it('excludes pulse tools when pulse=false', () => {
     const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true })!;
-    expect(result).not.toContain('mcp__dorkos__list_schedules');
-    expect(result).not.toContain('mcp__dorkos__create_schedule');
-    expect(result).not.toContain('mcp__dorkos__update_schedule');
-    expect(result).not.toContain('mcp__dorkos__delete_schedule');
-    expect(result).not.toContain('mcp__dorkos__get_run_history');
+    expect(result).not.toContain('mcp__dorkos__pulse_list_schedules');
+    expect(result).not.toContain('mcp__dorkos__pulse_create_schedule');
+    expect(result).not.toContain('mcp__dorkos__pulse_update_schedule');
+    expect(result).not.toContain('mcp__dorkos__pulse_delete_schedule');
+    expect(result).not.toContain('mcp__dorkos__pulse_get_run_history');
   });
 
   it('includes pulse tools when pulse=true (with another domain disabled)', () => {
     const result = buildAllowedTools({ pulse: true, relay: false, mesh: false, adapter: false })!;
-    expect(result).toContain('mcp__dorkos__list_schedules');
-    expect(result).toContain('mcp__dorkos__create_schedule');
+    expect(result).toContain('mcp__dorkos__pulse_list_schedules');
+    expect(result).toContain('mcp__dorkos__pulse_create_schedule');
   });
 
   it('excludes relay tools when relay=false', () => {
@@ -204,7 +204,7 @@ describe('buildAllowedTools', () => {
     expect(result).toContain('mcp__dorkos__ping');
     expect(result).toContain('mcp__dorkos__get_server_info');
     expect(result).toContain('mcp__dorkos__get_session_count');
-    expect(result).toContain('mcp__dorkos__agent_get_current');
+    expect(result).toContain('mcp__dorkos__get_current_agent');
   });
 
   it('returns a non-empty array when at least one domain is disabled', () => {
@@ -232,7 +232,7 @@ describe('resolveToolConfig + buildAllowedTools integration', () => {
     const config = resolveToolConfig({ pulse: false }, allEnabledDeps);
     const allowed = buildAllowedTools(config)!;
     expect(allowed).toBeDefined();
-    expect(allowed).not.toContain('mcp__dorkos__list_schedules');
+    expect(allowed).not.toContain('mcp__dorkos__pulse_list_schedules');
     expect(allowed).toContain('mcp__dorkos__ping');
     expect(allowed).toContain('mcp__dorkos__relay_send');
   });

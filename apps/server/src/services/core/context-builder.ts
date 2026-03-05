@@ -90,11 +90,11 @@ const PULSE_TOOLS_CONTEXT = `<pulse_tools>
 DorkOS Pulse lets you create and manage scheduled agent runs.
 
 Available tools:
-  list_schedules() -- list all configured schedules
-  create_schedule(name, cron, prompt, ...) -- create a new schedule (enters pending_approval)
-  update_schedule(id, ...) -- modify schedule settings
-  delete_schedule(id) -- remove a schedule
-  get_run_history(scheduleId) -- view past run results
+  pulse_list_schedules() -- list all configured schedules
+  pulse_create_schedule(name, cron, prompt, ...) -- create a new schedule (enters pending_approval)
+  pulse_update_schedule(id, ...) -- modify schedule settings
+  pulse_delete_schedule(id) -- remove a schedule
+  pulse_get_run_history(scheduleId) -- view past run results
 
 Schedules can target a specific agent (by agentId) or a directory (by cwd).
 Agent-linked schedules automatically resolve the agent's project path at run time.

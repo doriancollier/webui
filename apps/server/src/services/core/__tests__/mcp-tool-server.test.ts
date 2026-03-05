@@ -459,12 +459,12 @@ describe('MCP Tool Handlers', () => {
       expect(toolNames).toContain('ping');
       expect(toolNames).toContain('get_server_info');
       expect(toolNames).toContain('get_session_count');
-      expect(toolNames).toContain('agent_get_current');
-      expect(toolNames).toContain('list_schedules');
-      expect(toolNames).toContain('create_schedule');
-      expect(toolNames).toContain('update_schedule');
-      expect(toolNames).toContain('delete_schedule');
-      expect(toolNames).toContain('get_run_history');
+      expect(toolNames).toContain('get_current_agent');
+      expect(toolNames).toContain('pulse_list_schedules');
+      expect(toolNames).toContain('pulse_create_schedule');
+      expect(toolNames).toContain('pulse_update_schedule');
+      expect(toolNames).toContain('pulse_delete_schedule');
+      expect(toolNames).toContain('pulse_get_run_history');
       expect(toolNames).toContain('relay_send');
       expect(toolNames).toContain('relay_inbox');
       expect(toolNames).toContain('relay_list_endpoints');
