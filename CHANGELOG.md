@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add /chat:self-test slash command
 - Add relay_dispatch fire-and-poll for long-running tasks
 
 ### Changed
