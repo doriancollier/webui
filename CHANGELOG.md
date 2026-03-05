@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add relay_query blocking MCP tool and fix inbox status vocabulary
 - Per-agent tool filtering, context injection, and cascade disable
 - Per-agent tool filtering, context injection, and cascade disable
 - Add preview panel, fuzzy search, sub-menus, and UX polish

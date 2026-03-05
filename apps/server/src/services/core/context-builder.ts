@@ -24,18 +24,25 @@ Subject hierarchy:
   relay.system.console             — system broadcast channel
   relay.system.pulse.{scheduleId}  — Pulse scheduler events
 
-Workflow: Query another agent
+Workflow: Query another agent (PREFERRED — single blocking call)
 1. mesh_list() to find available agents and their agent IDs
-2. mesh_inspect(agentId) to get their relay endpoint (relay.agent.{theirAgentId})
-3. relay_register_endpoint(subject="relay.inbox.{myAgentId}") to create your reply inbox
-4. relay_send(subject="relay.agent.{theirAgentId}", payload={task}, replyTo="relay.inbox.{myAgentId}")
-5. relay_inbox(endpoint_subject="relay.inbox.{myAgentId}") to poll for the reply
+2. relay_query(to_subject="relay.agent.{theirAgentId}", payload={task}, from={myAgentId})
+   → Blocks until the target agent replies (default timeout: 60 s)
+   → Returns: { reply, from, replyMessageId, sentMessageId }
+
+Workflow: Fire-and-forget (no reply needed)
+1. relay_send(subject="relay.agent.{theirAgentId}", payload={task}, from={myAgentId})
+
+Workflow: Manual poll (fallback when relay_query is not suitable)
+1. relay_register_endpoint(subject="relay.inbox.{myAgentId}") — create your reply inbox
+2. relay_send(subject="relay.agent.{theirAgentId}", payload={task}, from={myAgentId}, replyTo="relay.inbox.{myAgentId}")
+3. relay_inbox(endpoint_subject="relay.inbox.{myAgentId}") — poll for the reply (omit status filter)
 
 IMPORTANT: When YOU receive a relay message, just respond naturally — do NOT call relay_send to reply.
 Your response is automatically forwarded to the sender's inbox by the relay system.
-Only call relay_send to INITIATE a new message to another agent.
+Only call relay_send or relay_query to INITIATE a new message to another agent.
 
-Error codes: RELAY_DISABLED, ACCESS_DENIED, INVALID_SUBJECT, ENDPOINT_NOT_FOUND
+Error codes: RELAY_DISABLED, ACCESS_DENIED, INVALID_SUBJECT, ENDPOINT_NOT_FOUND, TIMEOUT, QUERY_FAILED
 </relay_tools>`;
 
 const MESH_TOOLS_CONTEXT = `<mesh_tools>

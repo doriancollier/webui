@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
 import type { McpToolDeps } from './types.js';
@@ -41,6 +42,23 @@ export function createRelaySendHandler(deps: McpToolDeps) {
   };
 }
 
+/** Normalize maildir-style status aliases to the DB vocabulary used by SqliteIndex. */
+function normalizeInboxStatus(status: string | undefined): string | undefined {
+  if (!status) return undefined;
+  // Accept maildir-style ("new", "cur") and natural-language aliases ("unread", "read")
+  // and map them to the DB statuses ("pending", "delivered", "failed").
+  switch (status) {
+    case 'new':
+    case 'unread':
+      return 'pending';
+    case 'cur':
+    case 'read':
+      return 'delivered';
+    default:
+      return status; // 'pending', 'delivered', 'failed' pass through unchanged
+  }
+}
+
 /** Read inbox messages for a Relay endpoint. */
 export function createRelayInboxHandler(deps: McpToolDeps) {
   return async (args: { endpoint_subject: string; limit?: number; status?: string }) => {
@@ -49,7 +67,7 @@ export function createRelayInboxHandler(deps: McpToolDeps) {
     try {
       const result = deps.relayCore!.readInbox(args.endpoint_subject, {
         limit: args.limit,
-        status: args.status,
+        status: normalizeInboxStatus(args.status),
       });
       return jsonContent({ messages: result.messages, nextCursor: result.nextCursor });
     } catch (e) {
@@ -86,6 +104,93 @@ export function createRelayRegisterEndpointHandler(deps: McpToolDeps) {
   };
 }
 
+/**
+ * Send a message to an agent and wait synchronously for the reply.
+ *
+ * Internally registers an ephemeral inbox, publishes the message with that
+ * inbox as `replyTo`, then awaits the reply via RelayCore's in-process
+ * `subscribe()` EventEmitter. Resolves in milliseconds once CCA publishes the
+ * aggregated agent response — no polling required.
+ *
+ * Cleans up the ephemeral endpoint on success, timeout, or error.
+ */
+export function createRelayQueryHandler(deps: McpToolDeps) {
+  return async (args: {
+    to_subject: string;
+    payload: unknown;
+    from: string;
+    timeout_ms?: number;
+    budget?: { maxHops?: number; ttl?: number; callBudgetRemaining?: number };
+  }) => {
+    const err = requireRelay(deps);
+    if (err) return err;
+
+    const relay = deps.relayCore!;
+    const inboxSubject = `relay.inbox.query.${randomUUID()}`;
+
+    try {
+      await relay.registerEndpoint(inboxSubject);
+
+      let sentMessageId: string;
+      try {
+        const result = await relay.publish(args.to_subject, args.payload, {
+          from: args.from,
+          replyTo: inboxSubject,
+          budget: args.budget,
+        });
+        sentMessageId = result.messageId;
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Publish failed';
+        const code = message.includes('Access denied')
+          ? 'ACCESS_DENIED'
+          : message.includes('Invalid subject')
+            ? 'INVALID_SUBJECT'
+            : 'PUBLISH_FAILED';
+        return jsonContent({ error: message, code }, true);
+      }
+
+      const timeoutMs = args.timeout_ms ?? 60_000;
+      const reply = await new Promise<{ payload: unknown; from: string; id: string }>(
+        (resolve, reject) => {
+          // `cleanup` is initialised before subscribe() so the timeout handler
+          // can call it even if the timer fires during event-loop reentry.
+          let cleanup: () => void = () => {};
+
+          const timer = setTimeout(() => {
+            cleanup();
+            reject(new Error(`relay_query timed out after ${timeoutMs}ms (sent ${sentMessageId})`));
+          }, timeoutMs);
+
+          const unsub = relay.subscribe(inboxSubject, (envelope) => {
+            cleanup();
+            resolve({ payload: envelope.payload, from: envelope.from, id: envelope.id });
+          });
+
+          cleanup = () => {
+            clearTimeout(timer);
+            unsub();
+          };
+        },
+      );
+
+      return jsonContent({ reply: reply.payload, from: reply.from, replyMessageId: reply.id, sentMessageId });
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Query failed';
+      const code = message.includes('timed out')
+        ? 'TIMEOUT'
+        : message.includes('Access denied')
+          ? 'ACCESS_DENIED'
+          : message.includes('Invalid subject')
+            ? 'INVALID_SUBJECT'
+            : 'QUERY_FAILED';
+      return jsonContent({ error: message, code }, true);
+    } finally {
+      // Best-effort cleanup — watcher and disk dirs are freed by unregisterEndpoint
+      await relay.unregisterEndpoint(inboxSubject).catch(() => undefined);
+    }
+  };
+}
+
 /** Returns the Relay tool definitions for registration with the MCP server. */
 export function getRelayTools(deps: McpToolDeps) {
   return [
@@ -114,7 +219,12 @@ export function getRelayTools(deps: McpToolDeps) {
       {
         endpoint_subject: z.string().describe('Subject of the endpoint to read inbox for'),
         limit: z.number().int().min(1).max(100).optional().describe('Max messages to return'),
-        status: z.string().optional().describe('Filter by status: new, cur, or failed'),
+        status: z
+          .string()
+          .optional()
+          .describe(
+            'Filter by status. Use "unread" (or "new"/"pending") for unread messages, "read" (or "cur"/"delivered") for processed messages, "failed" for delivery failures. Omit to return all.',
+          ),
       },
       createRelayInboxHandler(deps)
     ),
@@ -132,6 +242,33 @@ export function getRelayTools(deps: McpToolDeps) {
         description: z.string().optional().describe('Human-readable description of the endpoint'),
       },
       createRelayRegisterEndpointHandler(deps)
+    ),
+    tool(
+      'relay_query',
+      'Send a message to an agent and WAIT for the reply in a single call. Preferred over relay_send + relay_inbox polling for request/reply patterns. Internally registers an ephemeral inbox, sends the message with replyTo set, and blocks until the target agent replies or the timeout elapses.',
+      {
+        to_subject: z
+          .string()
+          .describe('Target subject for the message (e.g., "relay.agent.{agentId}")'),
+        payload: z.unknown().describe('Message payload (any JSON-serializable value)'),
+        from: z.string().describe('Sender subject identifier'),
+        timeout_ms: z
+          .number()
+          .int()
+          .min(1000)
+          .max(120000)
+          .optional()
+          .describe('Max milliseconds to wait for a reply (default: 60000)'),
+        budget: z
+          .object({
+            maxHops: z.number().int().min(1).optional().describe('Max hop count'),
+            ttl: z.number().int().optional().describe('Unix timestamp (ms) expiry'),
+            callBudgetRemaining: z.number().int().min(0).optional().describe('Remaining call budget'),
+          })
+          .optional()
+          .describe('Optional budget constraints'),
+      },
+      createRelayQueryHandler(deps)
     ),
   ];
 }
