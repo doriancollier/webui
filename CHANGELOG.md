@@ -9,33 +9,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add relay_query blocking MCP tool and fix inbox status vocabulary
-- Per-agent tool filtering, context injection, and cascade disable
-- Per-agent tool filtering, context injection, and cascade disable
-- Add preview panel, fuzzy search, sub-menus, and UX polish
-- Add tool context injection with config toggles and command palette enhancements
-- Migrate standalone sidebar to Shadcn Sidebar component
-- Add command palette, agent-centric sidebar, mesh always-on
-- Add responsive touch targets to shared UI primitives
-- Add responsive sizing and explicit size variants
-
 ### Changed
-
-- Add round-trip tests guarding against infinite loop regression
-- Update developer guides for domain-grouped services and agent-tools-elevation
-- Update README and CLI documentation to reflect DorkOS features and usage
 
 ### Fixed
 
-- Register relay_query in RELAY_TOOLS filter and add test coverage
-- Update MCP tool registration test to reflect addition of relay_query tool
-- Fix agent-to-agent routing CWD bug and harden CCA pipeline
-- Auto-stamp last_seen_at and widen health thresholds
-- Fix mobile Sheet close bug, sidebar transparency, and remove dead cookie persistence
-- Include keywords in custom filter for path/id search
-- Fix cmdk prop misuse, @ filtering, and dead code
-- Enforce file-first write-through for agent storage (ADR-0043)
-- Enhance step completion and skipping logic to handle rapid calls
+---
+
+## [0.8.0] - 2026-03-04
+
+> Agent-centric control, enhanced discovery UX, and critical infrastructure hardening
+
+### Added
+
+- Per-agent tool filtering and cascade disable — configure which tools each agent can access
+- Add relay_query blocking MCP tool for inter-agent communication
+- Rebuild command palette with preview panel, fuzzy search, and sub-menu navigation for agent discovery
+- Migrate sidebar to Shadcn Sidebar component with agent-centric layout
+- Add tool context injection with configurable toggles throughout the interface
+- Enable Mesh always-on mode for continuous agent discovery and visibility
+- Enhance UI primitives with responsive touch targets and sizing variants
+
+### Changed
+
+- Improve developer guides documenting domain-grouped services and agent tool elevation patterns
+- Update README and CLI documentation to reflect complete DorkOS feature set
+
+### Fixed
+
+- Fix critical agent-to-agent routing bug causing CWD mismatches and harden CCA pipeline
+- Improve Mesh agent health detection with auto-stamping and widened thresholds
+- Fix mobile sidebar sheet close behavior, transparency issues, and remove stale cookie code
+- Improve command palette search with keyword inclusion for better path/ID matching
+- Clean up command palette cmdk prop usage and @ filtering logic
+- Enforce file-first write-through storage pattern for agent identity (ADR-0043)
+- Improve onboarding step completion logic to handle rapid user interactions
+- Register relay_query in tool filter and add test coverage
+
 ---
 
 ## [0.7.0] - 2026-03-02

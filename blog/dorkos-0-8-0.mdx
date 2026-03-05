@@ -1,0 +1,52 @@
+---
+title: DorkOS 0.8.0
+description: Agent-centric control surfaces, a redesigned command palette, and critical reliability hardening across the relay and mesh pipelines.
+date: 2026-03-04
+author: DorkOS Team
+category: release
+tags: [release, agents, command-palette, relay]
+---
+
+DorkOS 0.8.0 brings meaningful control back to you: define exactly which tools each agent can access, discover and navigate agents faster with a rebuilt command palette, and rely on a hardened relay pipeline that just works.
+
+## Highlights
+
+🎛️ **Per-agent tool filtering** — Configure which capabilities each agent can access, with cascade disable when an agent is unregistered. No more one-size-fits-all tool exposure.
+
+🔍 **Command palette redesign** — Fuzzy search, live preview panels, and sub-menu navigation make finding and launching agents intuitive. The sidebar gets an agent-centric layout to match.
+
+🚀 **Critical routing fix** — Resolved a CWD mismatch bug in agent-to-agent messaging and hardened the entire CCA pipeline for production reliability.
+
+## All Changes
+
+### Added
+
+- Per-agent tool filtering and cascade disable — configure which tools each agent can access
+- Add relay_query blocking MCP tool for inter-agent communication
+- Rebuild command palette with preview panel, fuzzy search, and sub-menu navigation for agent discovery
+- Migrate sidebar to Shadcn Sidebar component with agent-centric layout
+- Add tool context injection with configurable toggles throughout the interface
+- Enable Mesh always-on mode for continuous agent discovery and visibility
+- Enhance UI primitives with responsive touch targets and sizing variants
+
+### Changed
+
+- Improve developer guides documenting domain-grouped services and agent tool elevation patterns
+- Update README and CLI documentation to reflect complete DorkOS feature set
+
+### Fixed
+
+- Fix critical agent-to-agent routing bug causing CWD mismatches and harden CCA pipeline
+- Improve Mesh agent health detection with auto-stamping and widened thresholds
+- Fix mobile sidebar sheet close behavior, transparency issues, and remove stale cookie code
+- Improve command palette search with keyword inclusion for better path/ID matching
+- Clean up command palette cmdk prop usage and @ filtering logic
+- Enforce file-first write-through storage pattern for agent identity (ADR-0043)
+- Improve onboarding step completion logic to handle rapid user interactions
+- Register relay_query in tool filter and add test coverage
+
+## Install / Update
+
+```
+npm install -g dorkos@0.8.0
+```
