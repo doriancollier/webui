@@ -19,7 +19,7 @@ import type { Logger } from '@dorkos/shared/logger';
  */
 export class AdapterDelivery {
   /** Adapter delivery timeout in milliseconds. */
-  static readonly TIMEOUT_MS = 30_000;
+  static readonly TIMEOUT_MS = 120_000;
 
   constructor(
     private readonly adapterRegistry: AdapterRegistryLike | undefined,
@@ -52,7 +52,7 @@ export class AdapterDelivery {
         deliveryPromise,
         new Promise<DeliveryResult>((_, reject) => {
           timer = setTimeout(
-            () => reject(new Error('adapter delivery timeout (30s)')),
+            () => reject(new Error('adapter delivery timeout (120s)')),
             AdapterDelivery.TIMEOUT_MS,
           );
         }),

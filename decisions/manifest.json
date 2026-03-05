@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 73,
+  "nextNumber": 77,
   "decisions": [
     {
       "number": 1,
@@ -599,6 +599,42 @@
       "created": "2026-03-04",
       "extractedFrom": "agent-tools-elevation",
       "specSlug": "agent-tools-elevation"
+    },
+    {
+      "number": 73,
+      "slug": "split-relay-init-for-mesh-dependency-ordering",
+      "title": "Split Relay Initialization for meshCore Dependency Ordering",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "fix-relay-agent-routing-cwd",
+      "specSlug": "fix-relay-agent-routing-cwd"
+    },
+    {
+      "number": 74,
+      "slug": "persistent-agent-session-mapping-json-file",
+      "title": "Persist Agent Session Mapping in JSON File for Cross-Restart Continuity",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "fix-relay-agent-routing-cwd",
+      "specSlug": "fix-relay-agent-routing-cwd"
+    },
+    {
+      "number": 75,
+      "slug": "promise-chain-queue-for-cca-concurrency",
+      "title": "Use Per-AgentId Promise Chain Queue for CCA Concurrency Serialization",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "fix-relay-agent-routing-cwd",
+      "specSlug": "fix-relay-agent-routing-cwd"
+    },
+    {
+      "number": 76,
+      "slug": "mesh-ulid-vs-sdk-uuid-dual-id-traceability",
+      "title": "Separate Mesh Agent ULID (Routing) from SDK Session UUID (Conversation) with Dual-ID Traceability",
+      "status": "draft",
+      "created": "2026-03-04",
+      "extractedFrom": "fix-relay-agent-routing-cwd",
+      "specSlug": "fix-relay-agent-routing-cwd"
     }
   ]
 }

@@ -34,6 +34,7 @@ const PORT = env.DORKOS_PORT;
 let sessionBroadcaster: SessionBroadcaster | null = null;
 let schedulerService: SchedulerService | null = null;
 let relayCore: RelayCore | undefined;
+let adapterRegistry: AdapterRegistry | undefined;
 let adapterManager: AdapterManager | undefined;
 let traceStore: TraceStore | undefined;
 let meshCore: MeshCore | undefined;
@@ -97,10 +98,13 @@ async function start() {
   const relayConfig = configManager.get('relay');
   const relayEnabled = env.DORKOS_RELAY_ENABLED || relayConfig?.enabled;
 
+  // Phase A: core relay infrastructure (RelayCore + TraceStore)
+  // AdapterManager construction is deferred to Phase C (after meshCore init)
+  // so that meshCore is available for CWD resolution via buildContext().
+  const relayDataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
   if (relayEnabled) {
-    const relayDataDir = relayConfig?.dataDir ?? path.join(dorkHome, 'relay');
     try {
-      const adapterRegistry = new AdapterRegistry();
+      adapterRegistry = new AdapterRegistry();
       adapterRegistry.setLogger(logger);
 
       // Initialize trace store before RelayCore so it can be injected for delivery tracking
@@ -110,18 +114,6 @@ async function start() {
       relayCore = new RelayCore({ dataDir: relayDataDir, adapterRegistry, db, traceStore });
       await relayCore.registerEndpoint('relay.system.console');
       logger.info(`[Relay] RelayCore initialized (dataDir: ${relayDataDir})`);
-
-      // Initialize adapter lifecycle manager (includes ClaudeCodeAdapter for agent dispatch)
-      const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');
-      adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
-        agentManager,
-        traceStore,
-        pulseStore,
-        relayCore,
-      });
-      await adapterManager.initialize();
-      relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
-      logger.info('[Relay] AdapterManager initialized');
     } catch (err) {
       const errInfo = logError(err);
       logger.error(`[Relay] Failed to initialize at ${relayDataDir}`, errInfo);
@@ -129,7 +121,6 @@ async function start() {
       // Relay failure is non-fatal: server continues without relay routes.
       relayCore = undefined;
       traceStore = undefined;
-      adapterManager = undefined;
     }
   }
 
@@ -166,6 +157,30 @@ async function start() {
     logger.error('[Mesh] Failed to initialize MeshCore', errInfo);
     setMeshInitError(errInfo.error);
     // Mesh failure is non-fatal: server continues without mesh routes.
+  }
+
+  // Phase C: adapter manager — now meshCore is available for CWD resolution.
+  // Must run after meshCore init so buildContext() can call meshCore.getProjectPath().
+  if (relayEnabled && relayCore && adapterRegistry && traceStore) {
+    try {
+      const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');
+      adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
+        agentManager,
+        traceStore,
+        pulseStore,
+        relayCore,
+        meshCore, // meshCore is now available
+      });
+      await adapterManager.initialize();
+      relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
+      logger.info('[Relay] AdapterManager initialized');
+    } catch (err) {
+      const errInfo = logError(err);
+      logger.error('[Relay] Failed to initialize AdapterManager', errInfo);
+      // Non-fatal: RelayCore and MeshCore remain operational.
+      // Adapters (including ClaudeCodeAdapter) will be unavailable.
+      adapterManager = undefined;
+    }
   }
 
   // Subscribe to lifecycle signals for diagnostic logging

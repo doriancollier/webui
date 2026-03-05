@@ -10,6 +10,23 @@
  *
  * @module relay/adapters/claude-code-adapter
  */
+
+/**
+ * ID GLOSSARY — three distinct IDs used in the relay pipeline:
+ *
+ * @example
+ * agentId      — Mesh ULID (e.g., '01JN4M2X5SZMHXP3EZFM9DWRXFK')
+ *                Stable across server restarts. Extracted from relay.agent.{agentId} subjects.
+ *                Use this for relay_send subjects and mesh_inspect calls.
+ *
+ * sdkSessionId — SDK UUID (e.g., '550e8400-e29b-41d4-a716-446655440000')
+ *                Assigned by Claude Agent SDK on first message. Maps to JSONL transcript file.
+ *                Changes on each full session reset; persisted by AgentSessionStore.
+ *
+ * ccaSessionKey — CCA's internal lookup key for AgentManager
+ *                 = sdkSessionId (from AgentSessionStore) if a prior mapping exists
+ *                 = agentId (Mesh ULID) on first-ever message to this agent
+ */
 import { randomUUID } from 'node:crypto';
 import type { RelayEnvelope, AdapterManifest } from '@dorkos/shared/relay-schemas';
 import { PulseDispatchPayloadSchema } from '@dorkos/shared/relay-schemas';
@@ -97,6 +114,27 @@ export interface AgentManagerLike {
     content: string,
     opts?: { permissionMode?: string; cwd?: string },
   ): AsyncGenerator<StreamEvent>;
+  /**
+   * Get the SDK-assigned session UUID for a given session key.
+   *
+   * The SDK may assign a different UUID from the one passed to ensureSession()
+   * after the first query() init message. This returns the actual SDK UUID.
+   *
+   * @param sessionId - The session key used in ensureSession/sendMessage
+   * @returns The SDK session UUID, or undefined if the session does not exist
+   */
+  getSdkSessionId(sessionId: string): string | undefined;
+}
+
+/**
+ * Minimal interface for the persistent agent session store.
+ *
+ * Maps Mesh agent ULIDs (or other stable agent keys) to their SDK session UUIDs
+ * so that conversation threads survive server restarts.
+ */
+export interface AgentSessionStoreLike {
+  get(agentId: string): string | undefined;
+  set(agentId: string, sdkSessionId: string): void;
 }
 
 
@@ -110,6 +148,15 @@ export interface ClaudeCodeAdapterDeps {
   agentManager: AgentManagerLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
+  /**
+   * Persistent store for mapping agent identifiers to SDK session UUIDs.
+   *
+   * When provided, handleAgentMessage() will look up the persisted SDK session
+   * UUID for the agent key extracted from the subject, enabling conversation
+   * continuity across server restarts. If not provided, the raw subject key
+   * is used as the session ID (original behavior).
+   */
+  agentSessionStore?: AgentSessionStoreLike;
   logger?: import('@dorkos/shared/logger').Logger;
 }
 
@@ -139,6 +186,8 @@ export class ClaudeCodeAdapter implements RelayAdapter {
   private readonly deps: ClaudeCodeAdapterDeps;
   private relay: RelayPublisher | null = null;
   private activeCount = 0;
+  /** Per-agentId promise chain for serializing concurrent messages to the same agent. */
+  private agentQueues = new Map<string, Promise<void>>();
   private status: AdapterStatus = {
     state: 'disconnected',
     messageCount: { inbound: 0, outbound: 0 },
@@ -176,10 +225,11 @@ export class ClaudeCodeAdapter implements RelayAdapter {
   }
 
   /**
-   * Stop the adapter — clear relay reference and mark as disconnected.
+   * Stop the adapter — clear relay reference, drain in-flight queue entries, and mark as disconnected.
    */
   async stop(): Promise<void> {
     this.relay = null;
+    this.agentQueues.clear();
     this.status = { ...this.status, state: 'disconnected' };
   }
 
@@ -187,7 +237,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
    * Return the current adapter status snapshot.
    */
   getStatus(): AdapterStatus {
-    return { ...this.status };
+    return { ...this.status, queuedMessages: this.agentQueues.size };
   }
 
   /**
@@ -229,7 +279,14 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       if (subject.startsWith(PULSE_SUBJECT_PREFIX)) {
         return await this.handlePulseMessage(subject, envelope, context, startTime);
       }
-      return await this.handleAgentMessage(subject, envelope, context, startTime);
+
+      // Extract agentId for queue key. If extraction fails, handleAgentMessage
+      // will return the error — we still want that error to be returned, so we
+      // must still call handleAgentMessage (not bypass it).
+      const queueKey = subject.split('.')[2] ?? subject;
+      return await this.processWithQueue(queueKey, () =>
+        this.handleAgentMessage(subject, envelope, context, startTime),
+      );
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : String(err);
       this.status = {
@@ -251,9 +308,9 @@ export class ClaudeCodeAdapter implements RelayAdapter {
   // === Private: agent message handling ===
 
   /**
-   * Handle a relay.agent.{sessionId} message.
+   * Handle a relay.agent.{agentId} message.
    *
-   * Resolves the session ID, records trace spans, formats the prompt with
+   * Resolves the agent ID, records trace spans, formats the prompt with
    * relay context, and streams the agent response back to envelope.replyTo.
    */
   private async handleAgentMessage(
@@ -262,14 +319,21 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     context: AdapterContext | undefined,
     startTime: number,
   ): Promise<DeliveryResult> {
-    const sessionId = this.extractSessionId(subject);
-    if (!sessionId) {
+    const agentId = this.extractAgentId(subject);
+    if (!agentId) {
       return {
         success: false,
-        error: `Could not extract sessionId from subject: ${subject}`,
+        error: `Could not extract agentId from subject: ${subject}`,
         durationMs: Date.now() - startTime,
       };
     }
+
+    // Resolve the canonical SDK session ID from the persistent store when available.
+    // The store maps stable agent keys (Mesh ULIDs, BindingRouter session IDs) to
+    // the SDK-assigned UUIDs so conversation threads survive server restarts.
+    // Fall back to the raw agentId for backwards compatibility.
+    const persistedSdkSessionId = this.deps.agentSessionStore?.get(agentId);
+    const ccaSessionKey = persistedSdkSessionId ?? agentId;
 
     const traceId = randomUUID();
     const spanId = randomUUID();
@@ -283,7 +347,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       parentSpanId: context?.trace?.parentSpanId ?? null,
       subject: envelope.subject,
       fromEndpoint: envelope.from,
-      toEndpoint: `agent:${sessionId}`,
+      toEndpoint: `agent:${agentId}/${ccaSessionKey}`,
       status: 'pending',
       budgetHopsUsed: envelope.budget.hopCount,
       budgetTtlRemainingMs: envelope.budget.ttl - now,
@@ -301,12 +365,12 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     const agentCwd = context?.agent?.directory;
     const log = this.deps.logger ?? console;
     log.debug?.(
-      `[CCA] handleAgentMessage session=${sessionId}, ` +
+      `[CCA] handleAgentMessage agentId=${agentId} ccaSessionKey=${ccaSessionKey}, ` +
       `context.agent.directory=${context?.agent?.directory ?? '(none)'}, ` +
       `resolvedCwd=${agentCwd ?? '(deferred to session)'}`,
     );
 
-    this.deps.agentManager.ensureSession(sessionId, {
+    this.deps.agentManager.ensureSession(ccaSessionKey, {
       permissionMode: 'default',
       hasStarted: true,
       ...(agentCwd ? { cwd: agentCwd } : {}),
@@ -323,9 +387,31 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       );
     }
 
+    // Skip if the payload is a StreamEvent response from another agent's session.
+    // When we are the replyTo for a relay_send call, the responding agent's CCA
+    // streams every event (text_delta, tool_call_delta, etc.) back to our subject.
+    // These are NOT new user queries — injecting them as sendMessage calls creates
+    // an infinite loop.
+    const payloadObj =
+      typeof envelope.payload === 'object' && envelope.payload !== null
+        ? (envelope.payload as Record<string, unknown>)
+        : null;
+    const STREAM_EVENT_TYPES = new Set([
+      'text_delta', 'tool_call_start', 'tool_call_end', 'tool_call_delta',
+      'tool_result', 'session_status', 'approval_required', 'question_prompt',
+      'error', 'done', 'task_update', 'relay_message', 'relay_receipt', 'message_delivered',
+    ]);
+    if (payloadObj?.type && STREAM_EVENT_TYPES.has(payloadObj.type as string)) {
+      (this.deps.logger ?? console).debug?.(
+        `[CCA] skipping sendMessage for StreamEvent payload type=${String(payloadObj.type)}`,
+      );
+      this.deps.traceStore.updateSpan(envelope.id, { status: 'processed', processedAt: Date.now() });
+      return { success: true, durationMs: Date.now() - startTime };
+    }
+
     // Format prompt with relay context metadata
     const content = extractPayloadContent(envelope.payload);
-    const prompt = this.formatPromptWithContext(content, envelope);
+    const prompt = this.formatPromptWithContext(content, envelope, agentId, ccaSessionKey);
 
     // Set up timeout from TTL budget
     const ttlRemaining = envelope.budget.ttl - Date.now();
@@ -333,19 +419,55 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
+    // For relay.inbox.* replyTo addresses (agent-to-agent), collect the full
+    // response text and publish a single aggregated result instead of streaming
+    // raw events. Streaming events to an inbox creates noise the receiving agent
+    // must aggregate; a single clean message is better for agent consumption.
+    // For relay.human.console.* (SSE) and other addresses, stream all events.
+    const isInboxReplyTo = envelope.replyTo?.startsWith('relay.inbox.');
+
     try {
-      const eventStream = this.deps.agentManager.sendMessage(sessionId, prompt, {
+      const eventStream = this.deps.agentManager.sendMessage(ccaSessionKey, prompt, {
         ...(agentCwd ? { cwd: agentCwd } : {}),
       });
 
       let eventCount = 0;
+      let collectedText = '';
       for await (const event of eventStream) {
         if (controller.signal.aborted) break;
         eventCount++;
         if (envelope.replyTo && this.relay) {
-          await this.publishResponse(envelope, event, sessionId);
+          if (isInboxReplyTo) {
+            // Collect text_delta events for aggregated inbox publish
+            if (event.type === 'text_delta') {
+              const data = event.data as { text: string };
+              collectedText += data.text;
+            }
+          } else {
+            await this.publishResponse(envelope, event, ccaSessionKey);
+          }
         }
       }
+
+      // Publish single aggregated result to inbox replyTo
+      if (isInboxReplyTo && envelope.replyTo && this.relay && collectedText) {
+        await this.publishAgentResult(envelope, collectedText, ccaSessionKey);
+      }
+
+      // Persist the SDK-assigned session UUID for future messages to the same agent key.
+      // After the first sendMessage(), the SDK may have assigned a different UUID from
+      // the one we passed to ensureSession(). We store the mapping so that the next
+      // message addressed to agentId resumes the same conversation thread.
+      if (this.deps.agentSessionStore && !persistedSdkSessionId) {
+        const actualSdkId = this.deps.agentManager.getSdkSessionId(ccaSessionKey);
+        if (actualSdkId && actualSdkId !== agentId) {
+          this.deps.agentSessionStore.set(agentId, actualSdkId);
+          log.debug?.(
+            `[CCA] persisted session mapping: ${agentId} → ${actualSdkId}`,
+          );
+        }
+      }
+
       (this.deps.logger ?? console).info(
         `ClaudeCodeAdapter: published ${eventCount} event(s) to ${envelope.replyTo ?? '(no replyTo)'}`,
       );
@@ -554,17 +676,54 @@ export class ClaudeCodeAdapter implements RelayAdapter {
   // === Private: helpers ===
 
   /**
+   * Process a deliver function for a given agentId through a per-agent serial queue.
+   *
+   * Prevents the SDK "Already connected to a transport" error by ensuring
+   * only one sendMessage() call runs per agentId at a time. Cross-agent
+   * messages run in parallel (separate queue entries).
+   *
+   * @param agentId - The Mesh ULID identifying the target agent (used as the queue key)
+   * @param fn - Async function that performs the actual delivery
+   */
+  private async processWithQueue(
+    agentId: string,
+    fn: () => Promise<DeliveryResult>,
+  ): Promise<DeliveryResult> {
+    const current = this.agentQueues.get(agentId) ?? Promise.resolve();
+    let result!: DeliveryResult;
+    const next = current.then(() =>
+      fn().then((r) => {
+        result = r;
+      }),
+    );
+    // Store the chain but swallow errors to prevent unhandled rejection
+    // on the queue reference itself (errors are returned via result)
+    this.agentQueues.set(agentId, next.catch(() => {}));
+    await next;
+    return result;
+  }
+
+  /**
    * Format the user prompt with a <relay_context> XML block.
    *
    * Follows the XML block pattern used by context-builder.ts (<env>, <git_status>).
    * The relay context provides the agent with sender info, budget awareness,
-   * and reply instructions.
+   * reply instructions, and dual-ID identity lines (Agent-ID + Session-ID).
    *
    * @param content - The plain text content from the envelope payload
    * @param envelope - The relay envelope for metadata
+   * @param agentId - The stable Mesh ULID (subject key) used to address this agent
+   * @param sdkSessionId - The SDK-assigned session UUID for the active conversation thread
    */
-  private formatPromptWithContext(content: string, envelope: RelayEnvelope): string {
+  private formatPromptWithContext(
+    content: string,
+    envelope: RelayEnvelope,
+    agentId: string,
+    sdkSessionId: string,
+  ): string {
     const lines: string[] = [
+      `Agent-ID: ${agentId}`,
+      `Session-ID: ${sdkSessionId}`,
       `From: ${envelope.from}`,
       `Message-ID: ${envelope.id}`,
       `Subject: ${envelope.subject}`,
@@ -589,12 +748,12 @@ export class ClaudeCodeAdapter implements RelayAdapter {
   }
 
   /**
-   * Extract session ID from relay.agent.{sessionId} subject.
+   * Extract agent ID from relay.agent.{agentId} subject.
    *
    * @param subject - A relay.agent.* subject
-   * @returns The session ID segment, or null if the subject is malformed
+   * @returns The Mesh agent ULID segment, or null if the subject is malformed
    */
-  private extractSessionId(subject: string): string | null {
+  private extractAgentId(subject: string): string | null {
     const segments = subject.split('.');
     if (segments.length < 3 || segments[0] !== 'relay' || segments[1] !== 'agent') {
       return null;
@@ -602,6 +761,31 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     return segments[2] || null;
   }
 
+
+  /**
+   * Publish a single aggregated agent result to a relay.inbox.* replyTo address.
+   *
+   * Used for agent-to-agent communication where the receiving agent polls an
+   * inbox. Sends one clean message instead of streaming raw events.
+   *
+   * @param originalEnvelope - The original incoming envelope
+   * @param text - The full collected response text
+   * @param fromId - The session ID to use as the sender
+   */
+  private async publishAgentResult(
+    originalEnvelope: RelayEnvelope,
+    text: string,
+    fromId: string,
+  ): Promise<void> {
+    if (!this.relay || !originalEnvelope.replyTo) return;
+    const opts: PublishOptions = {
+      from: `agent:${fromId}`,
+      budget: {
+        hopCount: originalEnvelope.budget.hopCount + 1,
+      },
+    };
+    await this.relay.publish(originalEnvelope.replyTo, { type: 'agent_result', text }, opts);
+  }
 
   /**
    * Publish a response event to the envelope's replyTo subject.

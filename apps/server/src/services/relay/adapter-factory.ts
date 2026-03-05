@@ -24,6 +24,7 @@ import type {
   ClaudeCodeAgentManagerLike,
   TraceStoreLike,
   PulseStoreLike,
+  AgentSessionStoreLike,
 } from '@dorkos/relay';
 import type { AdapterManifest } from '@dorkos/shared/relay-schemas';
 import { logger } from '../../lib/logger.js';
@@ -33,6 +34,8 @@ export interface AdapterFactoryDeps {
   agentManager: ClaudeCodeAgentManagerLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
+  /** Optional persistent store for agent key → SDK session UUID mappings. */
+  agentSessionStore?: AgentSessionStoreLike;
 }
 
 /** Default status for adapters that are not currently running. */
@@ -81,6 +84,7 @@ export async function createAdapter(
           agentManager: deps.agentManager,
           traceStore: deps.traceStore,
           pulseStore: deps.pulseStore,
+          agentSessionStore: deps.agentSessionStore,
           logger,
         },
       );

@@ -78,6 +78,35 @@ export function createCanUseTool(
       logFn('[canUseTool] routing to question handler', { toolName, toolUseID: context.toolUseID });
       return handleAskUserQuestion(session, context.toolUseID, input);
     }
+
+    // Read-only Claude Code tools are always auto-approved for relay-triggered sessions.
+    // These cannot modify the filesystem or execute shell commands.
+    const READ_ONLY_TOOLS = new Set([
+      'Read', 'Grep', 'Glob', 'LS', 'NotebookRead', 'WebSearch', 'WebFetch',
+    ]);
+
+    // DorkOS agent communication tools are always auto-approved regardless of permissionMode.
+    // These are pure messaging/discovery infrastructure — no filesystem or shell access.
+    // Relay access control (relay/access-rules.json) handles authorization separately.
+    const DORKOS_AGENT_TOOLS = new Set([
+      'mcp__dorkos__relay_send',
+      'mcp__dorkos__relay_inbox',
+      'mcp__dorkos__relay_list_endpoints',
+      'mcp__dorkos__relay_register_endpoint',
+      'mcp__dorkos__mesh_list',
+      'mcp__dorkos__mesh_inspect',
+      'mcp__dorkos__mesh_discover',
+      'mcp__dorkos__mesh_register',
+      'mcp__dorkos__mesh_status',
+      'mcp__dorkos__mesh_query_topology',
+      'mcp__dorkos__agent_get_current',
+    ]);
+
+    if (READ_ONLY_TOOLS.has(toolName) || DORKOS_AGENT_TOOLS.has(toolName)) {
+      logFn('[canUseTool] auto-allow safe tool', { toolName, toolUseID: context.toolUseID });
+      return { behavior: 'allow', updatedInput: input };
+    }
+
     if (session.permissionMode === 'default') {
       logFn('[canUseTool] requesting approval', { toolName, permissionMode: 'default', toolUseID: context.toolUseID });
       return handleToolApproval(session, context.toolUseID, toolName, input);

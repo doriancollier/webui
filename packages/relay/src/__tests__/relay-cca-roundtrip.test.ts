@@ -64,6 +64,7 @@ function createMockAgentManager(): AgentManagerLike {
         yield { type: 'done', data: {} } as StreamEvent;
       })(),
     ),
+    getSdkSessionId: vi.fn().mockReturnValue(undefined),
   };
 }
 
@@ -149,5 +150,64 @@ describe('relay → CCA round-trip', () => {
     );
 
     expect(agentManager.sendMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it('passes context.agent.directory as cwd to ensureSession() in the full pipeline', async () => {
+    // Purpose: end-to-end regression guard for the CWD bug fix.
+    // Verifies that AdapterContext.agent.directory set by buildContext() flows
+    // all the way through CCA to AgentManager.ensureSession().
+    const context: AdapterContext = {
+      agent: { directory: '/path/to/agent-b', runtime: 'claude-code' },
+    };
+
+    // Deliver directly to CCA with the context (simulating what AdapterDelivery does
+    // after calling buildContext())
+    await cca.deliver('relay.agent.lifeOS-session', {
+      id: 'msg-cwd-test',
+      subject: 'relay.agent.lifeOS-session',
+      from: 'agent:sender',
+      budget: {
+        hopCount: 1, maxHops: 5, ancestorChain: [],
+        ttl: Date.now() + 300_000, callBudgetRemaining: 10,
+      },
+      createdAt: new Date().toISOString(),
+      payload: { text: 'Hello' },
+    } as RelayEnvelope, context);
+
+    expect(agentManager.ensureSession).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ cwd: '/path/to/agent-b' }),
+    );
+  });
+
+  it('publishes single agent_result to relay.inbox.* replyTo — not individual StreamEvents', async () => {
+    await relay.registerEndpoint('relay.inbox.sender-session');
+
+    const receivedPayloads: unknown[] = [];
+    relay.subscribe('relay.inbox.sender-session', (envelope) => {
+      receivedPayloads.push(envelope.payload);
+    });
+
+    vi.mocked(agentManager.sendMessage).mockClear();
+
+    await relay.publish(
+      'relay.agent.lifeOS-session',
+      { text: 'question' },
+      { from: 'relay.agent.sender-session', replyTo: 'relay.inbox.sender-session' },
+    );
+
+    // AgentManager called exactly once — no loop from inbox replyTo
+    expect(agentManager.sendMessage).toHaveBeenCalledTimes(1);
+
+    // Inbox receives exactly one aggregated result, not individual stream events
+    expect(receivedPayloads).toHaveLength(1);
+    expect(receivedPayloads[0]).toMatchObject({ type: 'agent_result', text: 'Deus' });
+
+    // No raw streaming events published to the inbox
+    const hasStreamEvents = receivedPayloads.some(
+      (p) => (p as Record<string, unknown>).type === 'text_delta' ||
+               (p as Record<string, unknown>).type === 'done',
+    );
+    expect(hasStreamEvents).toBe(false);
   });
 });

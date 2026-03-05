@@ -29,6 +29,7 @@ import type { AdapterManifest, CatalogEntry } from '@dorkos/shared/relay-schemas
 import type { AdapterStatus } from '@dorkos/relay';
 import { logger } from '../../lib/logger.js';
 import { BindingStore } from './binding-store.js';
+import { AgentSessionStore } from './agent-session-store.js';
 import { BindingRouter, type RelayCoreLike, type AgentSessionCreator } from './binding-router.js';
 import { AdapterError } from './adapter-error.js';
 import {
@@ -44,6 +45,11 @@ import { createAdapter, defaultAdapterStatus, testAdapterConnection } from './ad
 // Re-export for consumers that import AdapterError from this module
 export { AdapterError } from './adapter-error.js';
 
+/** Minimal MeshCore interface needed by AdapterManager for CWD resolution. */
+export interface AdapterMeshCoreLike {
+  getProjectPath(agentId: string): string | undefined;
+}
+
 /** Dependencies for constructing runtime adapters. */
 export interface AdapterManagerDeps {
   agentManager: ClaudeCodeAgentManagerLike;
@@ -51,10 +57,8 @@ export interface AdapterManagerDeps {
   pulseStore?: PulseStoreLike;
   /** Optional RelayCore for binding subsystem initialization */
   relayCore?: RelayCoreLike;
-  /** Optional MeshCore for enriching AdapterContext with agent info */
-  meshCore?: {
-    getAgent(id: string): { manifest: Record<string, unknown> } | undefined;
-  };
+  /** Optional MeshCore for enriching AdapterContext with agent CWD resolution */
+  meshCore?: AdapterMeshCoreLike;
 }
 
 /** Server-side adapter lifecycle manager. */
@@ -66,6 +70,7 @@ export class AdapterManager {
   private readonly deps: AdapterManagerDeps;
   private manifests = new Map<string, AdapterManifest>();
   private bindingStore?: BindingStore;
+  private agentSessionStore?: AgentSessionStore;
   private bindingRouter?: BindingRouter;
 
   constructor(
@@ -104,6 +109,10 @@ export class AdapterManager {
       this.bindingStore = new BindingStore(relayDir);
       await this.bindingStore.init();
       logger.info('[AdapterManager] BindingStore initialized');
+
+      this.agentSessionStore = new AgentSessionStore(relayDir);
+      await this.agentSessionStore.init();
+      logger.info('[AdapterManager] AgentSessionStore initialized');
 
       const agentManager = this.deps.agentManager;
       const sessionCreator: AgentSessionCreator = {
@@ -224,6 +233,11 @@ export class AdapterManager {
     return this.bindingStore;
   }
 
+  /** Get the AgentSessionStore, or undefined if binding subsystem was not initialized. */
+  getAgentSessionStore(): AgentSessionStore | undefined {
+    return this.agentSessionStore;
+  }
+
   /** Get the BindingRouter, or undefined if binding subsystem was not initialized. */
   getBindingRouter(): BindingRouter | undefined {
     return this.bindingRouter;
@@ -234,19 +248,16 @@ export class AdapterManager {
     if (!this.deps.meshCore) return undefined;
     if (!subject.startsWith('relay.agent.')) return undefined;
 
-    const segments = subject.split('.');
-    const sessionId = segments[2]; // relay.agent.{sessionId}
-    if (!sessionId) return undefined;
+    const agentId = subject.split('.')[2]; // relay.agent.{agentId}
+    if (!agentId) return undefined;
 
-    const agentInfo = this.deps.meshCore.getAgent(sessionId);
-    if (!agentInfo) return undefined;
+    const projectPath = this.deps.meshCore.getProjectPath(agentId);
+    if (!projectPath) return undefined;
 
-    const manifest = agentInfo.manifest;
     return {
       agent: {
-        directory: (manifest.directory as string) ?? process.cwd(),
-        runtime: (manifest.runtime as string) ?? 'claude-code',
-        manifest,
+        directory: projectPath,
+        runtime: 'claude-code',
       },
     };
   }
@@ -427,7 +438,7 @@ export class AdapterManager {
   private async buildAdapter(config: AdapterConfig): Promise<RelayAdapter | null> {
     return createAdapter(
       config,
-      this.deps,
+      { ...this.deps, agentSessionStore: this.agentSessionStore },
       this.configPath,
       (type, manifest) => this.registerPluginManifest(type, manifest),
     );

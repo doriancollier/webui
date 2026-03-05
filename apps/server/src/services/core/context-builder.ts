@@ -14,17 +14,26 @@ const RELAY_TOOLS_CONTEXT = `<relay_tools>
 DorkOS Relay is a pub/sub message bus for inter-agent communication.
 
 Subject hierarchy:
-  relay.agent.{sessionId}          — address a specific agent session
+// Agent IDs are Mesh ULIDs (stable across restarts), NOT SDK session UUIDs.
+// Your Agent-ID and Session-ID are injected by the relay system in the <relay_context> block.
+// Agent-ID  = stable Mesh ULID — use this in relay subjects and mesh_inspect() calls.
+// Session-ID = SDK session UUID — matches the current conversation thread.
+  relay.agent.{agentId}            — activate a specific agent session (CCA-owned, do NOT use as replyTo)
+  relay.inbox.{agentId}            — agent-to-agent reply inbox (use this for replyTo and polling)
   relay.human.console.{clientId}   — reach a human in the DorkOS UI
   relay.system.console             — system broadcast channel
   relay.system.pulse.{scheduleId}  — Pulse scheduler events
 
 Workflow: Query another agent
-1. mesh_list() to find available agents and their session IDs
-2. mesh_inspect(agentId) to get their relay endpoint
-3. relay_register_endpoint(subject="relay.agent.{mySessionId}") to enable replies
-4. relay_send(subject="relay.agent.{theirSessionId}", payload={task}, replyTo="relay.agent.{mySessionId}")
-5. relay_inbox(endpoint_subject="relay.agent.{mySessionId}") to check for reply
+1. mesh_list() to find available agents and their agent IDs
+2. mesh_inspect(agentId) to get their relay endpoint (relay.agent.{theirAgentId})
+3. relay_register_endpoint(subject="relay.inbox.{myAgentId}") to create your reply inbox
+4. relay_send(subject="relay.agent.{theirAgentId}", payload={task}, replyTo="relay.inbox.{myAgentId}")
+5. relay_inbox(endpoint_subject="relay.inbox.{myAgentId}") to poll for the reply
+
+IMPORTANT: When YOU receive a relay message, just respond naturally — do NOT call relay_send to reply.
+Your response is automatically forwarded to the sender's inbox by the relay system.
+Only call relay_send to INITIATE a new message to another agent.
 
 Error codes: RELAY_DISABLED, ACCESS_DENIED, INVALID_SUBJECT, ENDPOINT_NOT_FOUND
 </relay_tools>`;

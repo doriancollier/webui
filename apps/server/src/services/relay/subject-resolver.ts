@@ -40,8 +40,9 @@ export async function resolveSubjectLabel(
   }
 
   // Agent pattern — resolve name from manifest
-  if (subject.startsWith('relay.agent.')) {
-    const sessionId = subject.slice('relay.agent.'.length);
+  if (subject.startsWith('relay.agent.') || subject.startsWith('relay.inbox.')) {
+    const prefix = subject.startsWith('relay.agent.') ? 'relay.agent.' : 'relay.inbox.';
+    const sessionId = subject.slice(prefix.length);
     const shortId = sessionId.slice(0, SESSION_ID_PREVIEW_LENGTH);
     const fallback: SubjectLabel = { label: `Agent (${shortId})`, raw };
 

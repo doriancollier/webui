@@ -26,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix agent-to-agent routing CWD bug and harden CCA pipeline
 - Auto-stamp last_seen_at and widen health thresholds
 - Fix mobile Sheet close bug, sidebar transparency, and remove dead cookie persistence
 - Include keywords in custom filter for path/id search

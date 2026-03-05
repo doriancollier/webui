@@ -436,7 +436,7 @@ describe('buildRelayToolsBlock', () => {
   it('returns relay context when relay enabled and config on', () => {
     const result = _buildRelayToolsBlock();
     expect(result).toContain('<relay_tools>');
-    expect(result).toContain('relay.agent.{sessionId}');
+    expect(result).toContain('relay.agent.{agentId}');
     expect(result).toContain('relay_register_endpoint');
     expect(result).toContain('relay_send');
     expect(result).toContain('relay_inbox');

@@ -72,14 +72,15 @@ export function DialogHost() {
         </ResponsiveDialogContent>
       </ResponsiveDialog>
       <ResponsiveDialog open={relayOpen} onOpenChange={setRelayOpen}>
-        <ResponsiveDialogContent className="max-h-[85vh] max-w-2xl gap-0 p-0">
+        <ResponsiveDialogContent className="h-[85vh] max-w-2xl gap-0 p-0">
+          <ResponsiveDialogFullscreenToggle />
           <ResponsiveDialogHeader className="border-b px-4 py-3">
             <ResponsiveDialogTitle className="text-sm font-medium">Relay</ResponsiveDialogTitle>
             <ResponsiveDialogDescription className="sr-only">
               Inter-agent messaging activity and endpoints
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
-          <div className="overflow-y-auto">
+          <div className="flex min-h-0 flex-1 flex-col">
             <RelayPanel />
           </div>
         </ResponsiveDialogContent>

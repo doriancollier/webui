@@ -74,25 +74,30 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
         onClick={() => setExpanded(!expanded)}
         className="w-full p-3"
       >
-        <div className="flex items-center gap-2">
-          <span className={cn('size-2 shrink-0 rounded-full', dotColor)} />
-          <span className="min-w-0 flex-1 truncate text-sm font-medium">
-            {conversation.from.label}
-            <span className="mx-1.5 text-muted-foreground">&rarr;</span>
-            {conversation.to.label}
-          </span>
+        <div className="flex items-start gap-2">
+          <span className={cn('mt-1 size-2 shrink-0 rounded-full', dotColor)} />
+          <div className="min-w-0 flex-1">
+            <div className="text-xs text-muted-foreground">
+              <span className="inline-block w-8 font-medium">From</span>
+              <span className="text-foreground">{conversation.from.label}</span>
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <span className="inline-block w-8 font-medium">To</span>
+              <span className="text-foreground">{conversation.to.label}</span>
+            </div>
+            <div className="mt-1 flex items-center gap-2">
+              {conversation.preview && (
+                <span className="min-w-0 flex-1 truncate text-xs text-muted-foreground">
+                  &quot;{conversation.preview}&quot;
+                </span>
+              )}
+              <span className={cn('shrink-0 text-xs', textColor)}>
+                {buildOutcome(conversation)}
+              </span>
+            </div>
+          </div>
           <span className="shrink-0 text-xs text-muted-foreground">
             {formatTimeAgo(conversation.sentAt)}
-          </span>
-        </div>
-        <div className="mt-1 flex items-center gap-2">
-          {conversation.preview && (
-            <span className="min-w-0 flex-1 truncate text-sm text-muted-foreground">
-              &quot;{conversation.preview}&quot;
-            </span>
-          )}
-          <span className={cn('shrink-0 text-xs', textColor)}>
-            {buildOutcome(conversation)}
           </span>
         </div>
       </button>

@@ -28,7 +28,7 @@ export function createRelaySendHandler(deps: McpToolDeps) {
         replyTo: args.replyTo,
         budget: args.budget,
       });
-      return jsonContent({ messageId: result.messageId, deliveredTo: result.deliveredTo });
+      return jsonContent({ messageId: result.messageId, deliveredTo: result.deliveredTo, queued: result.deliveredTo === 0 });
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Publish failed';
       const code = message.includes('Access denied')

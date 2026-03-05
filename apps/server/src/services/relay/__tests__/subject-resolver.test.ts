@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { resolveSubjectLabel, type SubjectLabel } from '../subject-resolver.js';
+import { resolveSubjectLabel, resolveSubjectLabels } from '../subject-resolver.js';
 
 describe('resolveSubjectLabel', () => {
   it('resolves relay.human.console.* to "You"', async () => {
@@ -43,5 +43,40 @@ describe('resolveSubjectLabel', () => {
       getSession: mockGetSession,
     });
     expect(result).toEqual({ label: 'Agent (abc-123)', raw: 'relay.agent.abc-123-def' });
+  });
+
+  it('resolves relay.inbox.{sessionId} — same agent name lookup as relay.agent.*', async () => {
+    const mockGetSession = vi.fn().mockResolvedValue({ cwd: '/path/to/project' });
+    const mockReadManifest = vi.fn().mockResolvedValue({ name: 'InboxBot' });
+    const result = await resolveSubjectLabel('relay.inbox.abc-123-def', {
+      getSession: mockGetSession,
+      readManifest: mockReadManifest,
+    });
+    expect(result).toEqual({ label: 'InboxBot', raw: 'relay.inbox.abc-123-def' });
+  });
+
+  it('relay.inbox.* falls back to Agent (shortId) when no manifest', async () => {
+    const mockGetSession = vi.fn().mockResolvedValue({ cwd: '/path' });
+    const mockReadManifest = vi.fn().mockResolvedValue(null);
+    const result = await resolveSubjectLabel('relay.inbox.abc-123-def', {
+      getSession: mockGetSession,
+      readManifest: mockReadManifest,
+    });
+    expect(result).toEqual({ label: 'Agent (abc-123)', raw: 'relay.inbox.abc-123-def' });
+  });
+
+  it('unknown subject passes through as-is', async () => {
+    const result = await resolveSubjectLabel('some.unknown.subject', {});
+    expect(result).toEqual({ label: 'some.unknown.subject', raw: 'some.unknown.subject' });
+  });
+});
+
+describe('resolveSubjectLabels', () => {
+  it('deduplicates subjects and resolves all', async () => {
+    const subjects = ['relay.human.console.x', 'relay.human.console.x', 'relay.system.console'];
+    const result = await resolveSubjectLabels(subjects, {});
+    expect(result.size).toBe(2);
+    expect(result.get('relay.human.console.x')?.label).toBe('You');
+    expect(result.get('relay.system.console')?.label).toBe('System Console');
   });
 });

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AdapterManager, AdapterError } from '../adapter-manager.js';
 import type { AdapterRegistry, RelayAdapter } from '@dorkos/relay';
-import type { AdapterManagerDeps } from '../adapter-manager.js';
+import type { AdapterManagerDeps, AdapterMeshCoreLike } from '../adapter-manager.js';
 
 // Mock fs/promises
 vi.mock('node:fs/promises', () => ({
@@ -1076,6 +1076,86 @@ describe('AdapterManager', () => {
       const writeOrder = vi.mocked(writeFile).mock.invocationCallOrder[0];
       const renameOrder = vi.mocked(rename).mock.invocationCallOrder[0];
       expect(renameOrder).toBeGreaterThan(writeOrder);
+    });
+  });
+
+  describe('buildContext()', () => {
+    function createMockMeshCore(projectPaths: Record<string, string | undefined>): AdapterMeshCoreLike {
+      return {
+        getProjectPath: vi.fn((agentId: string) => projectPaths[agentId]),
+      };
+    }
+
+    function createMinimalDeps(overrides?: Partial<AdapterManagerDeps>): AdapterManagerDeps {
+      return {
+        agentManager: {
+          ensureSession: vi.fn(),
+          sendMessage: vi.fn(),
+        } as unknown as AdapterManagerDeps['agentManager'],
+        traceStore: {
+          insertSpan: vi.fn(),
+          updateSpan: vi.fn(),
+        },
+        ...overrides,
+      };
+    }
+
+    it('returns valid AdapterContext with correct directory when meshCore resolves a path', () => {
+      const meshCore = createMockMeshCore({
+        '01JN4M2X5SZMHXP3EZFM9DWRXFK': '/home/user/projectB',
+      });
+      const deps = createMinimalDeps({ meshCore });
+      const manager = new AdapterManager(registry, '/tmp/adapters.json', deps);
+
+      const ctx = manager.buildContext('relay.agent.01JN4M2X5SZMHXP3EZFM9DWRXFK');
+
+      expect(ctx).toEqual({
+        agent: {
+          directory: '/home/user/projectB',
+          runtime: 'claude-code',
+        },
+      });
+      expect(meshCore.getProjectPath).toHaveBeenCalledWith('01JN4M2X5SZMHXP3EZFM9DWRXFK');
+    });
+
+    it('returns undefined when agentId not found in Mesh', () => {
+      const meshCore = createMockMeshCore({});
+      const deps = createMinimalDeps({ meshCore });
+      const manager = new AdapterManager(registry, '/tmp/adapters.json', deps);
+
+      const ctx = manager.buildContext('relay.agent.UNKNOWN_AGENT_ULID');
+
+      expect(ctx).toBeUndefined();
+    });
+
+    it('returns undefined when meshCore is not injected (backward compat)', () => {
+      const deps = createMinimalDeps({ meshCore: undefined });
+      const manager = new AdapterManager(registry, '/tmp/adapters.json', deps);
+
+      const ctx = manager.buildContext('relay.agent.01JN4M2X');
+
+      expect(ctx).toBeUndefined();
+    });
+
+    it('returns undefined for non-agent subjects (relay.human.*)', () => {
+      const meshCore = createMockMeshCore({ 'some-id': '/path/to/project' });
+      const deps = createMinimalDeps({ meshCore });
+      const manager = new AdapterManager(registry, '/tmp/adapters.json', deps);
+
+      expect(manager.buildContext('relay.human.console.client-1')).toBeUndefined();
+      expect(manager.buildContext('relay.system.pulse.sched-1')).toBeUndefined();
+      expect(manager.buildContext('relay.inbox.some-agent')).toBeUndefined();
+    });
+
+    it('correctly parses relay.agent.{agentId} segment at index 2', () => {
+      const meshCore = createMockMeshCore({
+        '01JN4M2X5SZMHXP3EZFM9DWRXFK': '/path/to/agent',
+      });
+      const deps = createMinimalDeps({ meshCore });
+      const manager = new AdapterManager(registry, '/tmp/adapters.json', deps);
+
+      const ctx = manager.buildContext('relay.agent.01JN4M2X5SZMHXP3EZFM9DWRXFK');
+      expect(ctx?.agent.directory).toBe('/path/to/agent');
     });
   });
 

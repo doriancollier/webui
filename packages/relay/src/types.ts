@@ -311,7 +311,10 @@ export interface RelayAdapter {
 export type AdapterStatus = Pick<
   SharedAdapterStatus,
   'state' | 'messageCount' | 'errorCount' | 'lastError' | 'lastErrorAt' | 'startedAt'
->;
+> & {
+  /** Number of agents with queued messages waiting to be delivered. */
+  queuedMessages?: number;
+};
 
 /**
  * Rich context passed to adapter deliver() for informed dispatch decisions.

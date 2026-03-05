@@ -1,4 +1,4 @@
-import { useDeliveryMetrics } from '@/layers/entities/relay';
+import { useDeliveryMetrics, useDeadLetters } from '@/layers/entities/relay';
 
 /** Format a number or null to a display string. */
 function fmt(n: number | null, suffix = ''): string {
@@ -9,6 +9,7 @@ function fmt(n: number | null, suffix = ''): string {
 /** Dashboard showing Relay delivery health metrics. */
 export function DeliveryMetricsDashboard() {
   const { data, isLoading, error } = useDeliveryMetrics();
+  const { data: deadLetters = [] } = useDeadLetters();
 
   if (isLoading) {
     return (
@@ -26,7 +27,7 @@ export function DeliveryMetricsDashboard() {
     );
   }
 
-  const dlqDepth = data.deadLetteredCount;
+  const dlqDepth = deadLetters.length;
   const hasBudgetRejections =
     data.budgetRejections &&
     Object.values(data.budgetRejections).some((v) => v > 0);
@@ -62,8 +63,11 @@ export function DeliveryMetricsDashboard() {
       </div>
 
       {/* Endpoints */}
-      <div className="text-xs text-muted-foreground">
-        Active endpoints: {data.activeEndpoints}
+      <div
+        className="text-xs text-muted-foreground"
+        title="Distinct relay subjects seen in delivery history"
+      >
+        Subjects with traffic: {data.activeEndpoints}
       </div>
 
       {/* Budget rejections (only shown when non-zero) */}

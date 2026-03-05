@@ -108,6 +108,7 @@ export type {
   ClaudeCodeAdapterConfig,
   ClaudeCodeAdapterDeps,
   AgentManagerLike as ClaudeCodeAgentManagerLike,
+  AgentSessionStoreLike,
   TraceStoreLike,
   PulseStoreLike,
 } from './adapters/claude-code-adapter.js';
