@@ -1,7 +1,7 @@
 {
   "name": "dorkos",
   "version": "0.8.0",
-  "description": "Web-based interface and REST/SSE API for Claude Code",
+  "description": "The operating system for autonomous AI agents — scheduling, messaging, and agent coordination so one person can ship like a team.",
   "license": "MIT",
   "author": "Dorian Collier",
   "repository": {
@@ -9,25 +9,27 @@
     "url": "https://github.com/dork-labs/dorkos.git",
     "directory": "packages/cli"
   },
-  "homepage": "https://github.com/dork-labs/dorkos#readme",
+  "homepage": "https://dorkos.ai",
   "bugs": "https://github.com/dork-labs/dorkos/issues",
   "keywords": [
     "claude",
     "claude-code",
-    "agent-sdk",
+    "claude-code-ui",
     "dorkos",
-    "ai-platform",
-    "webui",
-    "sse",
-    "rest-api",
+    "autonomous-agents",
+    "ai-agent",
+    "agent-sdk",
+    "agent-scheduler",
+    "agent-scheduling",
+    "agent-discovery",
+    "agent-mesh",
+    "cron",
+    "scheduler",
+    "telegram",
+    "obsidian",
     "relay",
     "mesh",
-    "agent-mesh",
-    "pub-sub",
-    "agent-discovery",
-    "message-bus",
-    "scheduler",
-    "pulse"
+    "rest-api"
   ],
   "type": "module",
   "bin": {

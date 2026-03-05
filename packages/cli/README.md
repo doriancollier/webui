@@ -1,10 +1,15 @@
-# dorkos
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/dork-labs/dorkos/main/apps/site/public/images/dork-logo-white.svg">
+  <img alt="DorkOS" src="https://raw.githubusercontent.com/dork-labs/dorkos/main/apps/site/public/images/dork-logo.svg" height="52">
+</picture>
+
+&nbsp;
 
 [![npm version](https://img.shields.io/npm/v/dorkos)](https://www.npmjs.com/package/dorkos)
 [![CI](https://github.com/dork-labs/dorkos/actions/workflows/cli-smoke-test.yml/badge.svg)](https://github.com/dork-labs/dorkos/actions/workflows/cli-smoke-test.yml)
 [![license](https://img.shields.io/npm/l/dorkos)](https://github.com/dork-labs/dorkos/blob/main/LICENSE)
 
-The operating system for autonomous AI agents. Scheduling, messaging, agent discovery, and a browser-based command center — so one person can ship like a team.
+The operating system for autonomous AI agents. Scheduling, messaging, agent discovery, and a browser-based command center. One person can ship like a team.
 
 ## Install
 
@@ -19,13 +24,15 @@ export ANTHROPIC_API_KEY=your-key-here
 dorkos
 ```
 
-Your browser opens. You're looking at every Claude Code session across all your projects — sessions you started from the CLI, from VS Code, from anywhere. One place. Every session. Already there.
+Your browser opens. You're looking at every Claude Code session across all your projects: sessions you started from the CLI, from VS Code, from anywhere. One place. Every session. Already there.
 
 ## What DorkOS Does
 
-DorkOS gives your AI agents what they're missing: scheduling, communication, coordination, and a unified interface. The intelligence comes from the agents. Everything else comes from DorkOS.
+It's 7am. CI has been red since 2:47am. A dependency update cascaded across three repos. Your agent could have caught this overnight, fixed it, and sent you a Telegram message. Instead, the terminal was closed. The agent wasn't running.
 
-### Pulse — Scheduling
+DorkOS gives your agents what they're missing: scheduling, communication, and coordination. The intelligence comes from the agents. Everything else comes from DorkOS.
+
+### Pulse - Scheduling
 
 Cron-based agent execution, independent of your IDE or terminal. Your agents ship code, triage issues, and run audits on schedule. You wake up to completed pull requests.
 
@@ -34,26 +41,34 @@ Cron-based agent execution, independent of your IDE or terminal. Your agents shi
 - Configurable concurrency limits
 - Approval gates for agent-created schedules
 
-### Relay — Communication
+### Relay - Communication
 
-Built-in messaging between your agents and the channels you already use. Telegram, webhooks, browser — agents send notifications to where you are. Agents can also message each other across project boundaries.
+Built-in messaging between your agents and the channels you already use. Telegram, webhooks, browser. Agents reach you where you are. Agents can also message each other across project boundaries.
 
 - Telegram and webhook adapters built in
-- Plugin system for adding new channels
-- Messages persist even when terminals close
+- Add new channels with a plugin, no custom bots required
+- Messages persist when terminals close
+- Your research agent can notify your coding agent. No copy-paste required.
 
-### Mesh — Agent Discovery
+### Mesh - Agent Discovery
 
-Scans your projects and finds agent-capable directories automatically. You approve which agents join the network. They coordinate through governed channels.
+Scans your projects and finds agent-capable directories. You approve which agents join the network. They coordinate through channels you define.
 
-- Pluggable discovery strategies (Claude Code, Cursor, Codex)
-- `.dork/agent.json` identity manifests
-- Network topology with namespace isolation
-- Access control rules enforced by Relay
+- Finds Claude Code, Cursor, and Codex projects automatically
+- Each agent gets an identity: name, color, icon, purpose
+- Agents know about each other: what they can do and how to reach them
+- From solo agents to a coordinated team
 
-### Console — Browser UI
+### Console - Browser UI
 
-Chat with agents in rich markdown. Approve or deny tool calls. Browse and resume sessions across devices. Real-time sync across multiple clients.
+Your agents have names, colors, and status. Glance at your browser tabs and know which ones are working, which are done, and which need your attention.
+
+Start a session from the browser. Check on it from your phone. Resume it from inside Obsidian. Every session, regardless of which client started it, visible in one place.
+
+- Rich markdown rendering with full session history
+- Approve or deny tool calls from any device
+- Real-time sync across multiple clients
+- Available in any browser or embedded in Obsidian
 
 ## CLI Reference
 
@@ -134,7 +149,9 @@ Interactive API docs at `/api/docs` (Scalar UI) and raw OpenAPI spec at `/api/op
 
 ## Open Source
 
-MIT-licensed. Runs on your machine. Your agents, your data, your rules.
+MIT-licensed. Open source. Runs on your machine. Your agents, your data, your rules.
+
+Choose your permission mode, from approve-every-tool-call to fully autonomous. Every session is recorded locally. When your agent runs overnight, you'll see exactly what it did in the morning.
 
 - [Documentation](https://dorkos.ai/docs)
 - [Changelog](https://dorkos.ai/docs/changelog)
