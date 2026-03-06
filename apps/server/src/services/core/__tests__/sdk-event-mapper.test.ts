@@ -1,9 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-vi.mock('../../session/build-task-event.js', () => ({
-  buildTaskEvent: vi.fn(),
-  TASK_TOOL_NAMES: new Set(['TaskCreate', 'TaskUpdate']),
-}));
+const { mockBuildTaskEvent, buildTaskEventFactory } = vi.hoisted(() => {
+  const fn = vi.fn();
+  return {
+    mockBuildTaskEvent: fn,
+    buildTaskEventFactory: () => ({
+      buildTaskEvent: fn,
+      TASK_TOOL_NAMES: new Set(['TaskCreate', 'TaskUpdate']),
+    }),
+  };
+});
+vi.mock('../../runtimes/claude-code/build-task-event.js', buildTaskEventFactory);
+vi.mock('../../session/build-task-event.js', buildTaskEventFactory);
 vi.mock('../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
@@ -16,9 +24,8 @@ vi.mock('../../../lib/logger.js', () => ({
   },
 }));
 
-import { mapSdkMessage } from '../sdk-event-mapper.js';
-import { buildTaskEvent } from '../../session/build-task-event.js';
-import type { AgentSession, ToolState } from '../agent-types.js';
+import { mapSdkMessage } from '../../runtimes/claude-code/sdk-event-mapper.js';
+import type { AgentSession, ToolState } from '../../runtimes/claude-code/agent-types.js';
 import type { StreamEvent } from '@dorkos/shared/types';
 
 /** Collect all events from the async generator. */
@@ -89,7 +96,7 @@ describe('mapSdkMessage', () => {
             subtype: 'init',
             session_id: 'new-sdk-id',
             model: 'claude-3',
-          } as any,
+          } as unknown,
           session,
           'session-1',
           makeToolState()
@@ -97,7 +104,7 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('session_status');
-      expect((events[0].data as any).model).toBe('claude-3');
+      expect((events[0].data as Record<string, unknown>).model).toBe('claude-3');
     });
 
     it('sets session.sdkSessionId and hasStarted on init', async () => {
@@ -109,7 +116,7 @@ describe('mapSdkMessage', () => {
             subtype: 'init',
             session_id: 'new-sdk-id',
             model: 'claude-3',
-          } as any,
+          } as unknown,
           session,
           'session-1',
           makeToolState()
@@ -131,7 +138,7 @@ describe('mapSdkMessage', () => {
               index: 0,
               content_block: { type: 'tool_use', id: 'tc-1', name: 'Read', input: {} },
             },
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           makeToolState()
@@ -139,8 +146,8 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('tool_call_start');
-      expect((events[0].data as any).toolName).toBe('Read');
-      expect((events[0].data as any).toolCallId).toBe('tc-1');
+      expect((events[0].data as Record<string, unknown>).toolName).toBe('Read');
+      expect((events[0].data as Record<string, unknown>).toolCallId).toBe('tc-1');
     });
 
     it('content_block_delta (text_delta, not in tool) emits text_delta', async () => {
@@ -153,7 +160,7 @@ describe('mapSdkMessage', () => {
               index: 0,
               delta: { type: 'text_delta', text: 'Hello world' },
             },
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           makeToolState()
@@ -161,7 +168,7 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('text_delta');
-      expect((events[0].data as any).text).toBe('Hello world');
+      expect((events[0].data as Record<string, unknown>).text).toBe('Hello world');
     });
 
     it('content_block_delta (input_json, in tool) emits tool_call_delta', async () => {
@@ -176,7 +183,7 @@ describe('mapSdkMessage', () => {
               index: 0,
               delta: { type: 'input_json_delta', partial_json: '{"file":"test.ts"}' },
             },
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           toolState
@@ -184,7 +191,7 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('tool_call_delta');
-      expect((events[0].data as any).input).toBe('{"file":"test.ts"}');
+      expect((events[0].data as Record<string, unknown>).input).toBe('{"file":"test.ts"}');
     });
 
     it('content_block_stop (in tool) emits tool_call_end', async () => {
@@ -195,7 +202,7 @@ describe('mapSdkMessage', () => {
           {
             type: 'stream_event',
             event: { type: 'content_block_stop', index: 0 },
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           toolState
@@ -203,8 +210,8 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(1);
       expect(events[0].type).toBe('tool_call_end');
-      expect((events[0].data as any).toolCallId).toBe('tc-1');
-      expect((events[0].data as any).status).toBe('complete');
+      expect((events[0].data as Record<string, unknown>).toolCallId).toBe('tc-1');
+      expect((events[0].data as Record<string, unknown>).status).toBe('complete');
     });
 
     it('task tool stop also emits task_update when buildTaskEvent returns event', async () => {
@@ -213,14 +220,14 @@ describe('mapSdkMessage', () => {
       toolState.appendTaskInput('{"subject":"Test task"}');
 
       const mockTaskEvent = { id: 'task-1', subject: 'Test task', status: 'in_progress' };
-      (buildTaskEvent as ReturnType<typeof vi.fn>).mockReturnValue(mockTaskEvent);
+      mockBuildTaskEvent.mockReturnValue(mockTaskEvent);
 
       const events = await collectEvents(
         mapSdkMessage(
           {
             type: 'stream_event',
             event: { type: 'content_block_stop', index: 0 },
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           toolState
@@ -241,7 +248,7 @@ describe('mapSdkMessage', () => {
             type: 'tool_use_summary',
             summary: 'File read successfully',
             preceding_tool_use_ids: ['tc-1', 'tc-2'],
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           makeToolState()
@@ -249,9 +256,9 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(2);
       expect(events[0].type).toBe('tool_result');
-      expect((events[0].data as any).toolCallId).toBe('tc-1');
+      expect((events[0].data as Record<string, unknown>).toolCallId).toBe('tc-1');
       expect(events[1].type).toBe('tool_result');
-      expect((events[1].data as any).toolCallId).toBe('tc-2');
+      expect((events[1].data as Record<string, unknown>).toolCallId).toBe('tc-2');
     });
   });
 
@@ -265,7 +272,7 @@ describe('mapSdkMessage', () => {
             total_cost_usd: 0.001,
             usage: { input_tokens: 100, output_tokens: 50 },
             modelUsage: {},
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           makeToolState()
@@ -273,7 +280,7 @@ describe('mapSdkMessage', () => {
       );
       expect(events).toHaveLength(2);
       expect(events[0].type).toBe('session_status');
-      expect((events[0].data as any).costUsd).toBe(0.001);
+      expect((events[0].data as Record<string, unknown>).costUsd).toBe(0.001);
       expect(events[1].type).toBe('done');
     });
 
@@ -286,15 +293,15 @@ describe('mapSdkMessage', () => {
             total_cost_usd: 0.002,
             usage: { input_tokens: 200, output_tokens: 100 },
             modelUsage: { 'claude-3': { contextWindow: 200000 } },
-          } as any,
+          } as unknown,
           makeSession(),
           'session-1',
           makeToolState()
         )
       );
       const statusEvent = events.find((e) => e.type === 'session_status');
-      expect((statusEvent!.data as any).contextTokens).toBe(200);
-      expect((statusEvent!.data as any).contextMaxTokens).toBe(200000);
+      expect((statusEvent!.data as Record<string, unknown>).contextTokens).toBe(200);
+      expect((statusEvent!.data as Record<string, unknown>).contextMaxTokens).toBe(200000);
     });
   });
 
@@ -302,7 +309,7 @@ describe('mapSdkMessage', () => {
     it('yields nothing and does not throw', async () => {
       const events = await collectEvents(
         mapSdkMessage(
-          { type: 'unknown_type', data: {} } as any,
+          { type: 'unknown_type', data: {} } as unknown,
           makeSession(),
           'session-1',
           makeToolState()

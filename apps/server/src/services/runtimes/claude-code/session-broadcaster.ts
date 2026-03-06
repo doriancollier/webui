@@ -2,8 +2,8 @@ import chokidar, { type FSWatcher } from 'chokidar';
 import { join } from 'path';
 import type { Response } from 'express';
 import type { TranscriptReader } from './transcript-reader.js';
-import { SSE, WATCHER } from '../../config/constants.js';
-import { logger } from '../../lib/logger.js';
+import { SSE, WATCHER } from '../../../config/constants.js';
+import { logger } from '../../../lib/logger.js';
 import type { RelayCore } from '@dorkos/relay';
 
 /** Unsubscribe function returned by RelayCore.subscribe(). */

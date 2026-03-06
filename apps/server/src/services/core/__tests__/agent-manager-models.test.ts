@@ -15,9 +15,13 @@ vi.mock('../../../lib/logger.js', () => ({
   },
   initLogger: vi.fn(),
 }));
-vi.mock('../context-builder.js', () => ({
-  buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
+// Mock the canonical path so that ClaudeCodeRuntime's direct import is intercepted.
+const { contextBuilderFactory } = vi.hoisted(() => ({
+  contextBuilderFactory: () => ({
+    buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
+  }),
 }));
+vi.mock('../../runtimes/claude-code/context-builder.js', contextBuilderFactory);
 vi.mock('../../../lib/boundary.js', () => ({
   validateBoundary: vi.fn().mockResolvedValue('/mock/path'),
   getBoundary: vi.fn().mockReturnValue('/mock/boundary'),
@@ -33,19 +37,19 @@ vi.mock('../../../lib/boundary.js', () => ({
 }));
 
 describe('AgentManager.getSupportedModels', () => {
-  let AgentManager: typeof import('../agent-manager.js').AgentManager;
+  let ClaudeCodeRuntime: typeof import('../../runtimes/claude-code/claude-code-runtime.js').ClaudeCodeRuntime;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
       query: vi.fn(),
     }));
-    const mod = await import('../agent-manager.js');
-    AgentManager = mod.AgentManager;
+    const mod = await import('../../runtimes/claude-code/claude-code-runtime.js');
+    ClaudeCodeRuntime = mod.ClaudeCodeRuntime;
   });
 
   it('returns default models when no query has run', async () => {
-    const manager = new AgentManager();
+    const manager = new ClaudeCodeRuntime();
     const models = await manager.getSupportedModels();
 
     expect(models).toHaveLength(3);
@@ -74,7 +78,7 @@ describe('AgentManager.getSupportedModels', () => {
   });
 
   it('returns cached models after they are populated', async () => {
-    const manager = new AgentManager();
+    const manager = new ClaudeCodeRuntime();
     const customModels = [
       { value: 'custom-model', displayName: 'Custom', description: 'A custom model' },
     ];

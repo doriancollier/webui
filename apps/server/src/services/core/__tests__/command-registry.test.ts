@@ -5,12 +5,12 @@ import type { Dirent } from 'fs';
 vi.mock('fs/promises');
 
 describe('CommandRegistryService', () => {
-  let CommandRegistryService: typeof import('../command-registry.js').CommandRegistryService;
+  let CommandRegistryService: typeof import('../../runtimes/claude-code/command-registry.js').CommandRegistryService;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.clearAllMocks();
-    const mod = await import('../command-registry.js');
+    const mod = await import('../../runtimes/claude-code/command-registry.js');
     CommandRegistryService = mod.CommandRegistryService;
   });
 
@@ -31,8 +31,8 @@ describe('CommandRegistryService', () => {
 
   it('scans directory structure and parses frontmatter', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([makeDirent('daily', true)] as any)
-      .mockResolvedValueOnce(['plan.md', 'note.md'] as any);
+      .mockResolvedValueOnce([makeDirent('daily', true)] as never)
+      .mockResolvedValueOnce(['plan.md', 'note.md'] as never);
 
     vi.mocked(fs.readFile)
       .mockResolvedValueOnce('---\ndescription: Plan your day\nargument-hint: none\n---\n# Plan\n')
@@ -58,8 +58,8 @@ describe('CommandRegistryService', () => {
 
   it('caches results on second call', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([makeDirent('ns', true)] as any)
-      .mockResolvedValueOnce(['cmd.md'] as any);
+      .mockResolvedValueOnce([makeDirent('ns', true)] as never)
+      .mockResolvedValueOnce(['cmd.md'] as never);
     vi.mocked(fs.readFile).mockResolvedValueOnce('---\ndescription: Test\n---\n');
 
     const registry = new CommandRegistryService('/vault');
@@ -72,10 +72,10 @@ describe('CommandRegistryService', () => {
 
   it('invalidateCache forces rescan', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([makeDirent('ns', true)] as any)
-      .mockResolvedValueOnce(['cmd.md'] as any)
-      .mockResolvedValueOnce([makeDirent('ns', true)] as any)
-      .mockResolvedValueOnce(['cmd.md', 'new.md'] as any);
+      .mockResolvedValueOnce([makeDirent('ns', true)] as never)
+      .mockResolvedValueOnce(['cmd.md'] as never)
+      .mockResolvedValueOnce([makeDirent('ns', true)] as never)
+      .mockResolvedValueOnce(['cmd.md', 'new.md'] as never);
     vi.mocked(fs.readFile)
       .mockResolvedValueOnce('---\ndescription: Test\n---\n')
       .mockResolvedValueOnce('---\ndescription: Test\n---\n')
@@ -100,9 +100,9 @@ describe('CommandRegistryService', () => {
 
   it('sorts commands alphabetically', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([makeDirent('system', true), makeDirent('daily', true)] as any)
-      .mockResolvedValueOnce(['review.md'] as any)
-      .mockResolvedValueOnce(['plan.md'] as any);
+      .mockResolvedValueOnce([makeDirent('system', true), makeDirent('daily', true)] as never)
+      .mockResolvedValueOnce(['review.md'] as never)
+      .mockResolvedValueOnce(['plan.md'] as never);
 
     vi.mocked(fs.readFile)
       .mockResolvedValueOnce('---\ndescription: System review\n---\n')
@@ -119,8 +119,8 @@ describe('CommandRegistryService', () => {
     vi.mocked(fs.readdir).mockResolvedValueOnce([
       makeDirent('README.md', false),
       makeDirent('daily', true),
-    ] as any);
-    vi.mocked(fs.readdir).mockResolvedValueOnce(['plan.md'] as any);
+    ] as never);
+    vi.mocked(fs.readdir).mockResolvedValueOnce(['plan.md'] as never);
     vi.mocked(fs.readFile).mockResolvedValueOnce('---\ndescription: Plan\n---\n');
 
     const registry = new CommandRegistryService('/vault');
@@ -132,8 +132,8 @@ describe('CommandRegistryService', () => {
 
   it('skips non-md files', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([makeDirent('daily', true)] as any)
-      .mockResolvedValueOnce(['plan.md', 'notes.txt', '.DS_Store'] as any);
+      .mockResolvedValueOnce([makeDirent('daily', true)] as never)
+      .mockResolvedValueOnce(['plan.md', 'notes.txt', '.DS_Store'] as never);
     vi.mocked(fs.readFile).mockResolvedValueOnce('---\ndescription: Plan\n---\n');
 
     const registry = new CommandRegistryService('/vault');
@@ -144,8 +144,8 @@ describe('CommandRegistryService', () => {
 
   it('parses allowed-tools from frontmatter', async () => {
     vi.mocked(fs.readdir)
-      .mockResolvedValueOnce([makeDirent('daily', true)] as any)
-      .mockResolvedValueOnce(['plan.md'] as any);
+      .mockResolvedValueOnce([makeDirent('daily', true)] as never)
+      .mockResolvedValueOnce(['plan.md'] as never);
     vi.mocked(fs.readFile).mockResolvedValueOnce(
       '---\ndescription: Plan\nallowed-tools: Read, Write, Bash\n---\n'
     );

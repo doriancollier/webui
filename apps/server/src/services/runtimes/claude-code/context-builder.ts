@@ -1,12 +1,12 @@
 import os from 'node:os';
-import { getGitStatus } from './git-status.js';
+import { getGitStatus } from '../../core/git-status.js';
 import type { GitStatusResponse } from '@dorkos/shared/types';
 import { readManifest } from '@dorkos/shared/manifest';
-import { logger } from '../../lib/logger.js';
-import { env } from '../../env.js';
-import { isRelayEnabled } from '../relay/relay-state.js';
-import { isPulseEnabled } from '../pulse/pulse-state.js';
-import { configManager } from './config-manager.js';
+import { logger } from '../../../lib/logger.js';
+import { env } from '../../../env.js';
+import { isRelayEnabled } from '../../relay/relay-state.js';
+import { isPulseEnabled } from '../../pulse/pulse-state.js';
+import { configManager } from '../../core/config-manager.js';
 import type { ResolvedToolConfig } from './tool-filter.js';
 import type { MeshCore } from '@dorkos/mesh';
 

@@ -16,30 +16,47 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
-vi.mock('../../services/session/transcript-reader.js', () => ({
-  transcriptReader: {
-    listSessions: vi.fn().mockResolvedValue([]),
-    getSession: vi.fn().mockResolvedValue({ id: 'test-id', title: 'Test' }),
-    readTranscript: vi.fn().mockResolvedValue([]),
-    listTranscripts: vi.fn().mockResolvedValue([]),
-    getTranscriptETag: vi.fn().mockResolvedValue(null),
-    readTasks: vi.fn().mockResolvedValue([]),
-  },
+// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
+const mockRuntime = vi.hoisted(() => ({
+  type: 'claude-code',
+  ensureSession: vi.fn(),
+  hasSession: vi.fn(() => false),
+  updateSession: vi.fn().mockReturnValue(true),
+  sendMessage: vi.fn(),
+  approveTool: vi.fn(),
+  submitAnswers: vi.fn(() => true),
+  listSessions: vi.fn().mockResolvedValue([]),
+  getSession: vi.fn().mockResolvedValue({ id: 'test-id', title: 'Test' }),
+  getMessageHistory: vi.fn().mockResolvedValue([]),
+  getSessionTasks: vi.fn().mockResolvedValue([]),
+  getSessionETag: vi.fn().mockResolvedValue(null),
+  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
+  watchSession: vi.fn(() => () => {}),
+  acquireLock: vi.fn().mockReturnValue(true),
+  releaseLock: vi.fn(),
+  isLocked: vi.fn(() => false),
+  getLockInfo: vi.fn(),
+  getSupportedModels: vi.fn().mockResolvedValue([]),
+  getCapabilities: vi.fn(() => ({
+    type: 'claude-code',
+    supportsPermissionModes: true,
+    supportsToolApproval: true,
+    supportsCostTracking: true,
+    supportsResume: true,
+    supportsMcp: true,
+    supportsQuestionPrompt: true,
+  })),
+  getInternalSessionId: vi.fn(),
+  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
+  checkSessionHealth: vi.fn(),
 }));
 
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {
-    ensureSession: vi.fn(),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    updateSession: vi.fn().mockReturnValue(true),
-    hasSession: vi.fn(),
-    checkSessionHealth: vi.fn(),
-    getSdkSessionId: vi.fn(),
-    acquireLock: vi.fn().mockReturnValue(true),
-    releaseLock: vi.fn(),
-    getLockInfo: vi.fn(),
-    isLocked: vi.fn(),
+vi.mock('../../services/core/runtime-registry.js', () => ({
+  runtimeRegistry: {
+    getDefault: vi.fn(() => mockRuntime),
+    get: vi.fn(() => mockRuntime),
+    getAllCapabilities: vi.fn(() => ({})),
+    getDefaultType: vi.fn(() => 'claude-code'),
   },
 }));
 
@@ -49,13 +66,6 @@ vi.mock('../../services/core/tunnel-manager.js', () => ({
   },
 }));
 
-vi.mock('../../services/session/session-broadcaster.js', () => ({
-  SessionBroadcaster: vi.fn().mockImplementation(() => ({
-    registerClient: vi.fn(),
-    deregisterClient: vi.fn(),
-    shutdown: vi.fn(),
-  })),
-}));
 
 import request from 'supertest';
 import { createApp } from '../../app.js';

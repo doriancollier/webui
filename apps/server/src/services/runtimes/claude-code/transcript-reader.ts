@@ -11,8 +11,8 @@ import type {
 import { parseTranscript, extractTextContent, stripSystemTags } from './transcript-parser.js';
 import type { TranscriptLine } from './transcript-parser.js';
 import { parseTasks } from './task-reader.js';
-import { TRANSCRIPT } from '../../config/constants.js';
-import { validateBoundary } from '../../lib/boundary.js';
+import { TRANSCRIPT } from '../../../config/constants.js';
+import { validateBoundary } from '../../../lib/boundary.js';
 
 export type { HistoryMessage, HistoryToolCall };
 

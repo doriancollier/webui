@@ -1,7 +1,7 @@
 import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
 import type { AgentSession, ToolState } from './agent-types.js';
-import { buildTaskEvent, TASK_TOOL_NAMES } from '../session/build-task-event.js';
+import { buildTaskEvent, TASK_TOOL_NAMES } from './build-task-event.js';
 
 /**
  * Map a single SDK message to zero or more DorkOS StreamEvent objects.

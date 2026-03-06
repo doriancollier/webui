@@ -1,13 +1,12 @@
 import path from 'path';
 import { createApp, finalizeApp } from './app.js';
-import { agentManager } from './services/core/agent-manager.js';
+import { ClaudeCodeRuntime } from './services/runtimes/claude-code/claude-code-runtime.js';
+import { runtimeRegistry } from './services/core/runtime-registry.js';
 import { tunnelManager } from './services/core/tunnel-manager.js';
-import { SessionBroadcaster } from './services/session/session-broadcaster.js';
-import { transcriptReader } from './services/session/transcript-reader.js';
 import { initConfigManager, configManager } from './services/core/config-manager.js';
 import { initBoundary } from './lib/boundary.js';
 import { initLogger, logger, logError } from './lib/logger.js';
-import { createDorkOsToolServer } from './services/core/mcp-tools/index.js';
+import { createDorkOsToolServer } from './services/runtimes/claude-code/mcp-tools/index.js';
 import { PulseStore } from './services/pulse/pulse-store.js';
 import { SchedulerService } from './services/pulse/scheduler-service.js';
 import { createPulseRouter } from './routes/pulse.js';
@@ -31,7 +30,7 @@ import { env } from './env.js';
 const PORT = env.DORKOS_PORT;
 
 // Global references for graceful shutdown
-let sessionBroadcaster: SessionBroadcaster | null = null;
+let claudeRuntime: ClaudeCodeRuntime | null = null;
 let schedulerService: SchedulerService | null = null;
 let relayCore: RelayCore | undefined;
 let adapterRegistry: AdapterRegistry | undefined;
@@ -76,6 +75,11 @@ async function start() {
   const boundaryConfig = env.DORKOS_BOUNDARY;
   const resolvedBoundary = await initBoundary(boundaryConfig);
   logger.info(`[Boundary] Directory boundary: ${resolvedBoundary}`);
+
+  // --- Create ClaudeCodeRuntime and register in RuntimeRegistry ---
+  claudeRuntime = new ClaudeCodeRuntime(env.DORKOS_DEFAULT_CWD);
+  runtimeRegistry.register(claudeRuntime);
+  logger.info('[Runtime] ClaudeCodeRuntime registered as default');
 
   // Initialize Pulse scheduler if enabled
   const schedulerConfig = configManager.get('scheduler');
@@ -139,8 +143,8 @@ async function start() {
     });
     logger.info('[Mesh] MeshCore initialized');
 
-    // Provide MeshCore to AgentManager for per-session manifest lookup and peer agents context
-    agentManager.setMeshCore(meshCore);
+    // Provide MeshCore to runtime for per-session manifest lookup and peer agents context
+    claudeRuntime.setMeshCore(meshCore);
 
     // Run startup reconciliation (non-fatal)
     try {
@@ -165,7 +169,7 @@ async function start() {
     try {
       const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');
       adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
-        agentManager,
+        agentManager: claudeRuntime,
         traceStore,
         pulseStore,
         relayCore,
@@ -193,7 +197,7 @@ async function start() {
   // Register MCP tool server factory — creates fresh instances per query() call
   // to avoid "Already connected to a transport" errors from reused Protocol objects.
   const mcpToolDeps = {
-    transcriptReader,
+    transcriptReader: claudeRuntime.getTranscriptReader(),
     defaultCwd: env.DORKOS_DEFAULT_CWD ?? process.cwd(),
     ...(pulseStore && { pulseStore }),
     ...(relayCore && { relayCore }),
@@ -202,13 +206,13 @@ async function start() {
     ...(traceStore && { traceStore }),
     ...(meshCore && { meshCore }),
   };
-  agentManager.setMcpServerFactory(() => ({ dorkos: createDorkOsToolServer(mcpToolDeps) }));
+  claudeRuntime.setMcpServerFactory(() => ({ dorkos: createDorkOsToolServer(mcpToolDeps) }));
 
   const app = createApp();
 
   // Mount Pulse routes if enabled
   if (pulseEnabled && pulseStore) {
-    schedulerService = new SchedulerService(pulseStore, agentManager, {
+    schedulerService = new SchedulerService(pulseStore, claudeRuntime, {
       maxConcurrentRuns: schedulerConfig.maxConcurrentRuns,
       retentionCount: schedulerConfig.retentionCount,
       timezone: schedulerConfig.timezone,
@@ -267,8 +271,8 @@ async function start() {
   // Finalize app: API 404 catch-all, error handler, and SPA serving
   finalizeApp(app);
 
-  // Initialize SessionBroadcaster and attach to app.locals
-  sessionBroadcaster = new SessionBroadcaster(transcriptReader);
+  // SessionBroadcaster is owned by the runtime — configure relay and attach to app.locals
+  const sessionBroadcaster = claudeRuntime.getSessionBroadcaster();
   if (relayCore) {
     sessionBroadcaster.setRelay(relayCore);
   }
@@ -288,7 +292,7 @@ async function start() {
   // Run session health check periodically
   healthCheckInterval = setInterval(
     () => {
-      agentManager.checkSessionHealth();
+      claudeRuntime!.checkSessionHealth();
     },
     INTERVALS.HEALTH_CHECK_MS
   );
@@ -327,8 +331,9 @@ async function shutdownServices() {
   if (healthCheckInterval) {
     clearInterval(healthCheckInterval);
   }
-  if (sessionBroadcaster) {
-    sessionBroadcaster.shutdown();
+  // SessionBroadcaster is owned by the runtime
+  if (claudeRuntime) {
+    claudeRuntime.getSessionBroadcaster().shutdown();
   }
   if (schedulerService) {
     await schedulerService.stop();

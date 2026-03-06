@@ -1,9 +1,9 @@
-import type { TranscriptReader } from '../../session/transcript-reader.js';
-import type { PulseStore } from '../../pulse/pulse-store.js';
+import type { TranscriptReader } from '../transcript-reader.js';
+import type { PulseStore } from '../../../pulse/pulse-store.js';
 import type { RelayCore } from '@dorkos/relay';
-import type { AdapterManager } from '../../relay/adapter-manager.js';
-import type { BindingStore } from '../../relay/binding-store.js';
-import type { TraceStore } from '../../relay/trace-store.js';
+import type { AdapterManager } from '../../../relay/adapter-manager.js';
+import type { BindingStore } from '../../../relay/binding-store.js';
+import type { TraceStore } from '../../../relay/trace-store.js';
 import type { MeshCore } from '@dorkos/mesh';
 
 /**

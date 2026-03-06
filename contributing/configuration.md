@@ -252,7 +252,7 @@ dorkos config set agentContext.pulseTools false
 
 ### DORKOS_RELAY_ENABLED
 
-Feature flag that enables the Relay message bus subsystem. When `true`, the server mounts the `/api/relay` routes, starts the `RelayCore`, and activates Relay-backed session messaging (POST `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}` instead of calling AgentManager directly).
+Feature flag that enables the Relay message bus subsystem. When `true`, the server mounts the `/api/relay` routes, starts the `RelayCore`, and activates Relay-backed session messaging (POST `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}` instead of calling the runtime directly).
 
 ```bash
 export DORKOS_RELAY_ENABLED=true

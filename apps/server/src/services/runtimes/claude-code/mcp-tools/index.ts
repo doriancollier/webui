@@ -2,7 +2,7 @@
  * MCP tool server — composition root that assembles domain-specific tools
  * into a single SDK MCP server instance.
  *
- * @module services/core/mcp-tools
+ * @module services/runtimes/claude-code/mcp-tools
  */
 import { createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import type { McpToolDeps } from './types.js';

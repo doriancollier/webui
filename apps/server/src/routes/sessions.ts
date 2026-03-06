@@ -1,6 +1,5 @@
 import { Router } from 'express';
-import { agentManager } from '../services/core/agent-manager.js';
-import { transcriptReader } from '../services/session/transcript-reader.js';
+import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { initSSEStream, sendSSEEvent, endSSEStream } from '../services/core/stream-adapter.js';
 import {
   CreateSessionRequestSchema,
@@ -37,7 +36,8 @@ router.post('/', async (req, res) => {
   // We need to send a real first message, so we'll just create an in-memory
   // session entry and let the first POST /messages call create the JSONL.
   const sessionId = crypto.randomUUID();
-  agentManager.ensureSession(sessionId, { permissionMode, cwd });
+  const runtime = runtimeRegistry.getDefault();
+  runtime.ensureSession(sessionId, { permissionMode, cwd });
 
   res.json({
     id: sessionId,
@@ -59,7 +59,8 @@ router.get('/', async (req, res) => {
   if (!(await assertBoundary(cwd, res))) return;
 
   const projectDir = cwd || vaultRoot;
-  const sessions = await transcriptReader.listSessions(projectDir);
+  const runtime = runtimeRegistry.getDefault();
+  const sessions = await runtime.listSessions(projectDir);
   res.json(sessions.slice(0, limit));
 });
 
@@ -72,9 +73,10 @@ router.get('/:id', async (req, res) => {
   if (!(await assertBoundary(cwd, res))) return;
 
   const projectDir = cwd || vaultRoot;
-  // Translate client-facing session ID to SDK-assigned JSONL filename
-  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
-  const session = await transcriptReader.getSession(projectDir, sdkSessionId);
+  // Translate client-facing session ID to backend-internal session ID
+  const runtime = runtimeRegistry.getDefault();
+  const internalSessionId = runtime.getInternalSessionId(sessionId) ?? sessionId;
+  const session = await runtime.getSession(projectDir, internalSessionId);
   if (!session) return sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
   res.json(session);
 });
@@ -90,10 +92,11 @@ router.get('/:id/tasks', async (req, res) => {
 
   const cwd = cwdParam || vaultRoot;
 
-  // Translate client-facing session ID to SDK-assigned JSONL filename
-  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+  // Translate client-facing session ID to backend-internal session ID
+  const runtime = runtimeRegistry.getDefault();
+  const internalSessionId = runtime.getInternalSessionId(sessionId) ?? sessionId;
 
-  const etag = await transcriptReader.getTranscriptETag(cwd, sdkSessionId);
+  const etag = await runtime.getSessionETag(cwd, internalSessionId);
   if (etag) {
     res.setHeader('ETag', etag);
     if (req.headers['if-none-match'] === etag) {
@@ -102,7 +105,7 @@ router.get('/:id/tasks', async (req, res) => {
   }
 
   try {
-    const tasks = await transcriptReader.readTasks(cwd, sdkSessionId);
+    const tasks = await runtime.getSessionTasks(cwd, internalSessionId);
     res.json({ tasks });
   } catch {
     sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
@@ -120,10 +123,11 @@ router.get('/:id/messages', async (req, res) => {
 
   const cwd = cwdParam || vaultRoot;
 
-  // Translate client-facing session ID to SDK-assigned JSONL filename
-  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+  // Translate client-facing session ID to backend-internal session ID
+  const runtime = runtimeRegistry.getDefault();
+  const internalSessionId = runtime.getInternalSessionId(sessionId) ?? sessionId;
 
-  const etag = await transcriptReader.getTranscriptETag(cwd, sdkSessionId);
+  const etag = await runtime.getSessionETag(cwd, internalSessionId);
   if (etag) {
     res.setHeader('ETag', etag);
     if (req.headers['if-none-match'] === etag) {
@@ -131,7 +135,7 @@ router.get('/:id/messages', async (req, res) => {
     }
   }
 
-  const messages = await transcriptReader.readTranscript(cwd, sdkSessionId);
+  const messages = await runtime.getMessageHistory(cwd, internalSessionId);
   res.json({ messages });
 });
 
@@ -145,12 +149,13 @@ router.patch('/:id', async (req, res) => {
     return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { permissionMode, model } = parsed.data;
-  const updated = agentManager.updateSession(sessionId, { permissionMode, model });
+  const runtime = runtimeRegistry.getDefault();
+  const updated = runtime.updateSession(sessionId, { permissionMode, model });
   if (!updated) return sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
 
   const cwd = (req.query.cwd as string) || vaultRoot;
   if (!(await assertBoundary(cwd, res))) return;
-  const session = await transcriptReader.getSession(cwd, sessionId);
+  const session = await runtime.getSession(cwd, sessionId);
   if (session) {
     session.permissionMode = permissionMode ?? session.permissionMode;
     session.model = model ?? session.model;
@@ -224,10 +229,12 @@ router.post('/:id/messages', async (req, res) => {
   // Read X-Client-Id header, or generate UUID if missing
   const clientId = (req.headers['x-client-id'] as string) || crypto.randomUUID();
 
+  const runtime = runtimeRegistry.getDefault();
+
   // Acquire lock before processing
-  const lockAcquired = agentManager.acquireLock(sessionId, clientId, res);
+  const lockAcquired = runtime.acquireLock(sessionId, clientId, res);
   if (!lockAcquired) {
-    const lockInfo = agentManager.getLockInfo(sessionId);
+    const lockInfo = runtime.getLockInfo(sessionId);
     return res.status(409).json({
       error: 'Session locked',
       code: 'SESSION_LOCKED',
@@ -246,7 +253,7 @@ router.post('/:id/messages', async (req, res) => {
       const message = err instanceof Error ? err.message : 'Relay publish failed';
       return res.status(500).json({ error: message });
     } finally {
-      agentManager.releaseLock(sessionId, clientId);
+      runtime.releaseLock(sessionId, clientId);
     }
   }
 
@@ -256,7 +263,7 @@ router.post('/:id/messages', async (req, res) => {
   const releaseLockOnce = () => {
     if (lockReleased) return;
     lockReleased = true;
-    agentManager.releaseLock(sessionId, clientId);
+    runtime.releaseLock(sessionId, clientId);
   };
 
   // Guarantee lock release if client disconnects before try block
@@ -265,17 +272,17 @@ router.post('/:id/messages', async (req, res) => {
   initSSEStream(res);
 
   try {
-    for await (const event of agentManager.sendMessage(sessionId, content, { cwd })) {
+    for await (const event of runtime.sendMessage(sessionId, content, { cwd })) {
       await sendSSEEvent(res, event);
 
-      // If SDK assigned a different session ID, track it
+      // If the backend assigned a different internal session ID, track it
       if (event.type === 'done') {
-        const actualSdkId = agentManager.getSdkSessionId(sessionId);
-        if (actualSdkId && actualSdkId !== sessionId) {
+        const actualInternalId = runtime.getInternalSessionId(sessionId);
+        if (actualInternalId && actualInternalId !== sessionId) {
           // Send a redirect hint so the client can update its session ID
           await sendSSEEvent(res, {
             type: 'done',
-            data: { sessionId: actualSdkId },
+            data: { sessionId: actualInternalId },
           });
         }
       }
@@ -301,7 +308,8 @@ router.post('/:id/approve', async (req, res) => {
     return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { toolCallId } = parsed.data;
-  const approved = agentManager.approveTool(sessionId, toolCallId, true);
+  const runtime = runtimeRegistry.getDefault();
+  const approved = runtime.approveTool(sessionId, toolCallId, true);
   if (!approved) return sendError(res, 404, 'No pending approval', 'NO_PENDING_APPROVAL');
   res.json({ ok: true });
 });
@@ -316,7 +324,8 @@ router.post('/:id/deny', async (req, res) => {
     return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { toolCallId } = parsed.data;
-  const denied = agentManager.approveTool(sessionId, toolCallId, false);
+  const runtime = runtimeRegistry.getDefault();
+  const denied = runtime.approveTool(sessionId, toolCallId, false);
   if (!denied) return sendError(res, 404, 'No pending approval', 'NO_PENDING_APPROVAL');
   res.json({ ok: true });
 });
@@ -331,7 +340,8 @@ router.post('/:id/submit-answers', async (req, res) => {
     return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
   const { toolCallId, answers } = parsed.data;
-  const ok = agentManager.submitAnswers(sessionId, toolCallId, answers);
+  const runtime = runtimeRegistry.getDefault();
+  const ok = runtime.submitAnswers(sessionId, toolCallId, answers);
   if (!ok) return sendError(res, 404, 'No pending question', 'NO_PENDING_QUESTION');
   res.json({ ok: true });
 });
@@ -347,13 +357,14 @@ router.get('/:id/stream', async (req, res) => {
 
   initSSEStream(res);
 
-  // Translate agent session ID to SDK session ID so the broadcaster watches
-  // the correct .jsonl file on disk (filename matches SDK session ID, not agent ID).
+  // Translate agent session ID to backend-internal session ID so the broadcaster
+  // watches the correct .jsonl file on disk (filename matches internal ID, not agent ID).
   // Falls back to sessionId if no mapping exists (e.g. CLI-started sessions).
-  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+  const runtime = runtimeRegistry.getDefault();
+  const internalSessionId = runtime.getInternalSessionId(sessionId) ?? sessionId;
 
   // Register with broadcaster (clientId enables relay subscription fan-in)
-  sessionBroadcaster.registerClient(sdkSessionId, cwd, res, clientId);
+  sessionBroadcaster.registerClient(internalSessionId, cwd, res, clientId);
 
   // The broadcaster handles:
   // - Sending sync_connected event

@@ -16,9 +16,6 @@ vi.mock('../../lib/sdk-utils.js', () => ({
   resolveClaudeCliPath: () => '/usr/local/bin/claude',
   makeUserPrompt: vi.fn(),
 }));
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {},
-}));
 
 vi.mock('../../lib/boundary.js', () => ({
   getBoundary: () => '/Users/test-user',

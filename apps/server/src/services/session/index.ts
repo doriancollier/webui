@@ -4,10 +4,10 @@
  *
  * @module services/session
  */
-export { TASK_TOOL_NAMES, buildTaskEvent } from './build-task-event.js';
-export { SessionBroadcaster } from './session-broadcaster.js';
-export { SessionLockManager } from './session-lock.js';
-export { parseTasks } from './task-reader.js';
+export { TASK_TOOL_NAMES, buildTaskEvent } from '../runtimes/claude-code/build-task-event.js';
+export { SessionBroadcaster } from '../runtimes/claude-code/session-broadcaster.js';
+export { SessionLockManager } from '../runtimes/claude-code/session-lock.js';
+export { parseTasks } from '../runtimes/claude-code/task-reader.js';
 export {
   extractToolResultContent,
   extractTextContent,
@@ -16,7 +16,7 @@ export {
   mapSdkAnswersToIndices,
   parseQuestionAnswers,
   parseTranscript,
-} from './transcript-parser.js';
-export type { TranscriptLine, ContentBlock } from './transcript-parser.js';
-export { TranscriptReader, transcriptReader } from './transcript-reader.js';
-export type { HistoryMessage, HistoryToolCall } from './transcript-reader.js';
+} from '../runtimes/claude-code/transcript-parser.js';
+export type { TranscriptLine, ContentBlock } from '../runtimes/claude-code/transcript-parser.js';
+export { TranscriptReader, transcriptReader } from '../runtimes/claude-code/transcript-reader.js';
+export type { HistoryMessage, HistoryToolCall } from '../runtimes/claude-code/transcript-reader.js';

@@ -1,7 +1,7 @@
 import { tool } from '@anthropic-ai/claude-agent-sdk';
 import { z } from 'zod';
 import { readManifest } from '@dorkos/shared/manifest';
-import { env } from '../../../env.js';
+import { env } from '../../../../env.js';
 import type { McpToolDeps } from './types.js';
 import { jsonContent } from './types.js';
 

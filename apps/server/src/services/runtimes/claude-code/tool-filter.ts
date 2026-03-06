@@ -12,7 +12,7 @@
  * - `relay: false` also disables Trace tools
  * - Core tools are always enabled
  *
- * @module services/core/tool-filter
+ * @module services/runtimes/claude-code/tool-filter
  */
 import type { EnabledToolGroups } from '@dorkos/shared/mesh-schemas';
 

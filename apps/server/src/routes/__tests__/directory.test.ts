@@ -28,30 +28,6 @@ vi.mock('fs/promises', () => ({
   readdir: (...args: unknown[]) => mockReaddir(...args),
 }));
 
-// Mock transcript-reader and agent-manager (required by createApp)
-vi.mock('../../services/session/transcript-reader.js', () => ({
-  transcriptReader: {
-    listSessions: vi.fn().mockResolvedValue([]),
-    getSession: vi.fn(),
-    readTranscript: vi.fn(),
-    readTasks: vi.fn(),
-    listTranscripts: vi.fn(),
-  },
-}));
-
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {
-    ensureSession: vi.fn(),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    hasSession: vi.fn(),
-    checkSessionHealth: vi.fn(),
-    getSdkSessionId: vi.fn(),
-    updateSession: vi.fn(),
-    submitAnswers: vi.fn(),
-  },
-}));
-
 vi.mock('../../services/core/tunnel-manager.js', () => ({
   tunnelManager: {
     status: { enabled: false, connected: false, url: null, port: null, startedAt: null },

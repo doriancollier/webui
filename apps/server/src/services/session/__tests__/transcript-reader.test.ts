@@ -18,12 +18,12 @@ vi.mock('../../../lib/boundary.js', () => ({
 import fs from 'fs/promises';
 
 describe('TranscriptReader', () => {
-  let transcriptReader: typeof import('../transcript-reader.js').transcriptReader;
+  let transcriptReader: typeof import('../../runtimes/claude-code/transcript-reader.js').transcriptReader;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.mock('fs/promises');
-    const mod = await import('../transcript-reader.js');
+    const mod = await import('../../runtimes/claude-code/transcript-reader.js');
     transcriptReader = mod.transcriptReader;
   });
 
@@ -211,7 +211,7 @@ describe('TranscriptReader', () => {
       // The parts-level tool call should also have the result
       const toolPart = messages[0].parts!.find((p) => p.type === 'tool_call');
       expect(toolPart).toBeDefined();
-      expect((toolPart as any).result).toBe('file contents here');
+      expect((toolPart as Record<string, unknown>).result).toBe('file contents here');
     });
 
     it('preserves interleaved order in parts (text -> tool -> text)', async () => {

@@ -43,6 +43,7 @@ import type {
   TransportScanEvent,
   TransportScanOptions,
 } from './mesh-schemas.js';
+import type { RuntimeCapabilities } from './agent-runtime.js';
 
 /** A single entry in the adapter list — config plus live status. */
 export interface AdapterListItem {
@@ -107,6 +108,12 @@ export interface Transport {
   updateConfig(patch: Record<string, unknown>): Promise<void>;
   /** List available Claude models (dynamic from SDK, with defaults). */
   getModels(): Promise<ModelOption[]>;
+  /**
+   * Get capabilities for all registered runtimes.
+   *
+   * @returns A map of runtime type → capabilities, plus the default runtime type.
+   */
+  getCapabilities(): Promise<{ capabilities: Record<string, RuntimeCapabilities>; defaultRuntime: string }>;
   /** Start the ngrok tunnel and return the public URL. */
   startTunnel(): Promise<{ url: string }>;
   /** Stop the ngrok tunnel. */

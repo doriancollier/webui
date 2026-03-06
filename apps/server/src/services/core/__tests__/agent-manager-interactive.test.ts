@@ -18,13 +18,18 @@ vi.mock('../../../lib/boundary.js', () => ({
   },
 }));
 
-vi.mock('../context-builder.js', () => ({
-  buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
+// Mock the canonical paths so that ClaudeCodeRuntime's direct imports are intercepted.
+const { contextBuilderFactory, toolFilterFactory } = vi.hoisted(() => ({
+  contextBuilderFactory: () => ({
+    buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
+  }),
+  toolFilterFactory: () => ({
+    resolveToolConfig: vi.fn().mockReturnValue({ pulse: true, relay: true, mesh: true, adapter: true }),
+    buildAllowedTools: vi.fn().mockReturnValue(undefined),
+  }),
 }));
-vi.mock('../tool-filter.js', () => ({
-  resolveToolConfig: vi.fn().mockReturnValue({ pulse: true, relay: true, mesh: true, adapter: true }),
-  buildAllowedTools: vi.fn().mockReturnValue(undefined),
-}));
+vi.mock('../../runtimes/claude-code/context-builder.js', contextBuilderFactory);
+vi.mock('../../runtimes/claude-code/tool-filter.js', toolFilterFactory);
 vi.mock('@dorkos/shared/manifest', async () => ({
   readManifest: vi.fn().mockResolvedValue(null),
 }));
@@ -63,7 +68,7 @@ vi.mock('fs', async (importOriginal) => {
   };
 });
 
-import { AgentManager } from '../agent-manager.js';
+import { ClaudeCodeRuntime } from '../../runtimes/claude-code/claude-code-runtime.js';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
 
@@ -77,12 +82,12 @@ function withQueryMethods<T extends object>(obj: T): T {
   });
 }
 
-describe('AgentManager interactive tools', () => {
-  let manager: AgentManager;
+describe('ClaudeCodeRuntime interactive tools', () => {
+  let manager: ClaudeCodeRuntime;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    manager = new AgentManager('/tmp/test-cwd');
+    manager = new ClaudeCodeRuntime('/tmp/test-cwd');
   });
 
   afterEach(() => {

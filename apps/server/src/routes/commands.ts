@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { CommandRegistryService } from '../services/core/command-registry.js';
+import { CommandRegistryService } from '../services/runtimes/claude-code/command-registry.js';
 import { CommandsQuerySchema } from '@dorkos/shared/schemas';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
 import { DEFAULT_CWD } from '../lib/resolve-root.js';

@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { agentManager } from '../services/core/agent-manager.js';
+import { runtimeRegistry } from '../services/core/runtime-registry.js';
 
 const router = Router();
 
 /** GET /api/models — list available Claude models. */
 router.get('/', async (_req, res) => {
-  const models = await agentManager.getSupportedModels();
+  const runtime = runtimeRegistry.getDefault();
+  const models = await runtime.getSupportedModels();
   res.json({ models });
 });
 

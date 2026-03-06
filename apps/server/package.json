@@ -4,9 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
-    "./services/agent-manager": "./src/services/core/agent-manager.ts",
-    "./services/transcript-reader": "./src/services/session/transcript-reader.ts",
-    "./services/command-registry": "./src/services/core/command-registry.ts"
+    "./services/agent-manager": "./src/services/runtimes/claude-code/claude-code-runtime.ts",
+    "./services/transcript-reader": "./src/services/runtimes/claude-code/transcript-reader.ts",
+    "./services/command-registry": "./src/services/runtimes/claude-code/command-registry.ts",
+    "./services/runtimes/claude-code": "./src/services/runtimes/claude-code/index.ts"
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",

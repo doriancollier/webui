@@ -22,7 +22,7 @@ import { DEFAULT_CWD } from '../lib/resolve-root.js';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
 import { resolveSubjectLabels, type SubjectLabel } from '../services/relay/subject-resolver.js';
-import { transcriptReader } from '../services/session/transcript-reader.js';
+import { transcriptReader } from '../services/runtimes/claude-code/transcript-reader.js';
 import { readManifest } from '@dorkos/shared/manifest';
 
 /** Allowed subject prefixes for SSE subscription patterns. */

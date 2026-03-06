@@ -878,7 +878,7 @@ Get overall mesh status — counts of registered, healthy, and denied agents.
 
 ### GET /api/models
 
-Returns the list of Claude models supported by the Agent SDK. Uses the SDK's `supportedModels()` function and includes display names and descriptions for each model.
+Returns the list of Claude models supported by the active runtime. Delegates to `runtimeRegistry.getDefault().getSupportedModels()` and includes display names and descriptions for each model.
 
 No feature flag required — always mounted.
 
@@ -900,6 +900,38 @@ No feature flag required — always mounted.
   }
 ]
 ```
+
+## Capabilities Endpoint
+
+### GET /api/capabilities
+
+Returns capability flags for all registered agent runtimes and the current default runtime type. This enables the client to gate UI features (e.g., tool approval, cost tracking) behind runtime capability checks.
+
+No feature flag required — always mounted.
+
+**Responses:**
+
+- `200` - Runtime capabilities map:
+
+```json
+{
+  "capabilities": {
+    "claude-code": {
+      "type": "claude-code",
+      "supportsPermissionModes": true,
+      "supportedPermissionModes": ["default", "plan", "bypassPermissions"],
+      "supportsToolApproval": true,
+      "supportsCostTracking": true,
+      "supportsResume": true,
+      "supportsMcp": true,
+      "supportsQuestionPrompt": true
+    }
+  },
+  "defaultRuntime": "claude-code"
+}
+```
+
+The `capabilities` object is keyed by runtime type string. Each value is a `RuntimeCapabilities` object (defined in `@dorkos/shared/agent-runtime`). The `defaultRuntime` field indicates which runtime is currently active.
 
 ## Discovery Endpoint
 

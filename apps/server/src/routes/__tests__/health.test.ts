@@ -1,26 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock dependencies that createApp imports
-vi.mock('../../services/session/transcript-reader.js', () => ({
-  transcriptReader: {
-    listSessions: vi.fn(),
-    getSession: vi.fn(),
-    readTranscript: vi.fn(),
-    listTranscripts: vi.fn(),
-  },
-}));
-
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {
-    ensureSession: vi.fn(),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    hasSession: vi.fn(),
-    checkSessionHealth: vi.fn(),
-    getSdkSessionId: vi.fn(),
-  },
-}));
-
 vi.mock('../../services/core/tunnel-manager.js', () => ({
   tunnelManager: {
     status: {

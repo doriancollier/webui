@@ -35,29 +35,47 @@ vi.mock('../../lib/logger.js', () => ({
   initLogger: vi.fn(),
 }));
 
-// Mock services before importing app
-vi.mock('../../services/session/transcript-reader.js', () => ({
-  transcriptReader: {
-    listSessions: vi.fn(),
-    getSession: vi.fn(),
-    readTranscript: vi.fn(),
-    listTranscripts: vi.fn(),
-  },
+// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
+const mockRuntime = vi.hoisted(() => ({
+  type: 'claude-code',
+  ensureSession: vi.fn(),
+  hasSession: vi.fn(() => false),
+  updateSession: vi.fn(() => true),
+  sendMessage: vi.fn(),
+  approveTool: vi.fn(),
+  submitAnswers: vi.fn(() => true),
+  listSessions: vi.fn(),
+  getSession: vi.fn(),
+  getMessageHistory: vi.fn(),
+  getSessionTasks: vi.fn().mockResolvedValue([]),
+  getSessionETag: vi.fn().mockResolvedValue(null),
+  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
+  watchSession: vi.fn(() => () => {}),
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
+  isLocked: vi.fn(() => false),
+  getLockInfo: vi.fn(),
+  getSupportedModels: vi.fn().mockResolvedValue([]),
+  getCapabilities: vi.fn(() => ({
+    type: 'claude-code',
+    supportsPermissionModes: true,
+    supportsToolApproval: true,
+    supportsCostTracking: true,
+    supportsResume: true,
+    supportsMcp: true,
+    supportsQuestionPrompt: true,
+  })),
+  getInternalSessionId: vi.fn(),
+  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
+  checkSessionHealth: vi.fn(),
 }));
 
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {
-    ensureSession: vi.fn(),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    updateSession: vi.fn(),
-    hasSession: vi.fn(),
-    checkSessionHealth: vi.fn(),
-    getSdkSessionId: vi.fn(),
-    acquireLock: vi.fn(),
-    releaseLock: vi.fn(),
-    getLockInfo: vi.fn(),
-    isLocked: vi.fn(),
+vi.mock('../../services/core/runtime-registry.js', () => ({
+  runtimeRegistry: {
+    getDefault: vi.fn(() => mockRuntime),
+    get: vi.fn(() => mockRuntime),
+    getAllCapabilities: vi.fn(() => ({})),
+    getDefaultType: vi.fn(() => 'claude-code'),
   },
 }));
 
@@ -67,18 +85,10 @@ vi.mock('../../services/core/tunnel-manager.js', () => ({
   },
 }));
 
-vi.mock('../../services/session/session-broadcaster.js', () => ({
-  SessionBroadcaster: vi.fn().mockImplementation(() => ({
-    registerClient: vi.fn(),
-    deregisterClient: vi.fn(),
-    shutdown: vi.fn(),
-  })),
-}));
 
 // Dynamically import after mocks are set up
 import request from 'supertest';
 import { createApp } from '../../app.js';
-import { agentManager } from '../../services/core/agent-manager.js';
 import { isRelayEnabled } from '../../services/relay/relay-state.js';
 import { parseSSEResponse } from '@dorkos/test-utils/sse-helpers';
 
@@ -108,8 +118,9 @@ describe('Sessions Routes — Relay Integration', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(agentManager.acquireLock).mockReturnValue(true);
-    vi.mocked(agentManager.getLockInfo).mockReturnValue(null);
+    mockRuntime.acquireLock.mockReturnValue(true);
+    mockRuntime.getLockInfo.mockReturnValue(null);
+    mockRuntime.getInternalSessionId.mockReturnValue(undefined);
     vi.mocked(isRelayEnabled).mockReturnValue(false);
 
     app = createApp();
@@ -193,19 +204,19 @@ describe('Sessions Routes — Relay Integration', () => {
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
-      expect(agentManager.acquireLock).toHaveBeenCalledWith(
+      expect(mockRuntime.acquireLock).toHaveBeenCalledWith(
         S1,
         'client-42',
         expect.anything(),
       );
-      expect(agentManager.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
+      expect(mockRuntime.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
     });
 
     it('returns 409 when session is locked even in Relay path', async () => {
       vi.mocked(isRelayEnabled).mockReturnValue(true);
       app.locals.relayCore = mockRelayCore;
-      vi.mocked(agentManager.acquireLock).mockReturnValue(false);
-      vi.mocked(agentManager.getLockInfo).mockReturnValue({
+      mockRuntime.acquireLock.mockReturnValue(false);
+      mockRuntime.getLockInfo.mockReturnValue({
         clientId: 'other-client',
         acquiredAt: Date.now() - 60000,
       });
@@ -244,7 +255,7 @@ describe('Sessions Routes — Relay Integration', () => {
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
-      expect(agentManager.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
+      expect(mockRuntime.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
     });
 
     it('ignores duplicate endpoint registration errors', async () => {
@@ -328,12 +339,12 @@ describe('Sessions Routes — Relay Integration', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+      mockRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
+      mockRuntime.getInternalSessionId.mockReturnValue(S1);
 
       const res = await request(app)
         .post(`/api/sessions/${S1}/messages`)
@@ -366,12 +377,12 @@ describe('Sessions Routes — Relay Integration', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+      mockRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
+      mockRuntime.getInternalSessionId.mockReturnValue(S1);
 
       const res = await request(app)
         .post(`/api/sessions/${S1}/messages`)

@@ -57,10 +57,10 @@ User responds (clicks button / selects option)
 Transport method called (submitAnswers / approveTool / denyTool)
   |
   |  HttpTransport: POST to /api/sessions/:id/submit-answers (or /approve, /deny)
-  |  DirectTransport: calls agentManager method directly
+  |  DirectTransport: calls runtime method directly
   |
   v
-AgentManager resolves the deferred Promise
+Runtime resolves the deferred Promise
   |
   |  Clears timeout, removes from pendingInteractions
   |  Returns PermissionResult to SDK
@@ -176,7 +176,7 @@ await transport.submitAnswers(sessionId, toolCallId, answers);
 
 **6. Transport resolves the deferred promise**
 
-The transport calls `agentManager.submitAnswers(sessionId, toolCallId, answers)`, which finds the pending interaction and calls its `resolve(answers)` function. This resolves the original promise with `{ behavior: 'allow', updatedInput: { ...input, answers } }`, and the SDK continues with the user's answers injected into the tool input.
+The transport calls `runtime.submitAnswers(sessionId, toolCallId, answers)`, which finds the pending interaction and calls its `resolve(answers)` function. This resolves the original promise with `{ behavior: 'allow', updatedInput: { ...input, answers } }`, and the SDK continues with the user's answers injected into the tool input.
 
 ### Tool Approval
 
@@ -270,7 +270,7 @@ await transport.denyTool(sessionId, toolCallId);
 
 **6. Transport resolves the deferred promise**
 
-Both `approveTool` and `denyTool` call `agentManager.approveTool(sessionId, toolCallId, approved)` with `true` or `false`. The pending interaction's `resolve(approved)` is called, returning `{ behavior: 'allow' }` or `{ behavior: 'deny' }` to the SDK.
+Both `approveTool` and `denyTool` call `runtime.approveTool(sessionId, toolCallId, approved)` with `true` or `false`. The pending interaction's `resolve(approved)` is called, returning `{ behavior: 'allow' }` or `{ behavior: 'deny' }` to the SDK.
 
 ## Adding a New Interactive Tool
 
@@ -383,7 +383,7 @@ export interface Transport {
 }
 ```
 
-Add a resolver method to `AgentManager`:
+Add a resolver method to the runtime (e.g., `ClaudeCodeRuntime`):
 
 ```typescript
 // agent-manager.ts
@@ -396,7 +396,7 @@ submitMyNewResult(sessionId: string, toolCallId: string, result: MyResult): bool
 }
 ```
 
-Implement in `HttpTransport` (POST to a new route) and `DirectTransport` (call agentManager directly).
+Implement in `HttpTransport` (POST to a new route) and `DirectTransport` (call the runtime directly).
 
 ### Step 4: Add route (HttpTransport only)
 
@@ -404,7 +404,7 @@ Implement in `HttpTransport` (POST to a new route) and `DirectTransport` (call a
 // apps/server/src/routes/sessions.ts
 router.post('/:id/my-new-result', async (req, res) => {
   const { toolCallId, result } = req.body;
-  const ok = agentManager.submitMyNewResult(req.params.id, toolCallId, result);
+  const ok = runtime.submitMyNewResult(req.params.id, toolCallId, result);
   if (!ok) return res.status(404).json({ error: 'No pending interaction' });
   res.json({ ok: true });
 });
@@ -497,8 +497,8 @@ The timeout is cleared whenever the interaction is resolved normally (user respo
 
 Both `HttpTransport` and `DirectTransport` implement the same `Transport` interface, so interactive tool components work identically in both environments:
 
-- **HttpTransport** (standalone web): Makes POST requests to Express routes (`/approve`, `/deny`, `/submit-answers`). The route handler calls `agentManager` methods.
-- **DirectTransport** (Obsidian plugin): Calls `agentManager` methods directly in-process.
+- **HttpTransport** (standalone web): Makes POST requests to Express routes (`/approve`, `/deny`, `/submit-answers`). The route handler calls the runtime methods.
+- **DirectTransport** (Obsidian plugin): Calls runtime methods directly in-process.
 
 Components use `useTransport()` to get the current transport and never know which adapter is active.
 
@@ -506,17 +506,21 @@ Components use `useTransport()` to get the current transport and never know whic
 
 ### Route Tests
 
-Route-level tests for interactive endpoints mock `agentManager` and verify HTTP status codes and request/response shapes. See `apps/server/src/routes/__tests__/sessions-interactive.test.ts` for examples:
+Route-level tests for interactive endpoints mock `runtimeRegistry` and verify HTTP status codes and request/response shapes. See `apps/server/src/routes/__tests__/sessions-interactive.test.ts` for examples:
 
 ```typescript
 const mockSubmitAnswers = vi.fn();
 const mockApproveTool = vi.fn();
 
-vi.mock('@dorkos/server/services/agent-manager', () => ({
-  agentManager: {
-    approveTool: mockApproveTool,
-    submitAnswers: mockSubmitAnswers,
-    // ... other methods
+const mockRuntime = {
+  approveTool: mockApproveTool,
+  submitAnswers: mockSubmitAnswers,
+  // ... other AgentRuntime methods
+};
+
+vi.mock('../../services/core/runtime-registry.js', () => ({
+  runtimeRegistry: {
+    getDefault: vi.fn(() => mockRuntime),
   },
 }));
 

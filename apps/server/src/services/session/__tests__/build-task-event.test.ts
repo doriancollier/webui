@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildTaskEvent } from '../build-task-event.js';
+import { buildTaskEvent } from '../../runtimes/claude-code/build-task-event.js';
 
 describe('buildTaskEvent', () => {
   it('returns a create event for TaskCreate', () => {

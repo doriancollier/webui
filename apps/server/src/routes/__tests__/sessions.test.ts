@@ -17,31 +17,47 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
-// Mock services before importing app
-vi.mock('../../services/session/transcript-reader.js', () => ({
-  transcriptReader: {
-    listSessions: vi.fn(),
-    getSession: vi.fn(),
-    readTranscript: vi.fn(),
-    listTranscripts: vi.fn(),
-    getTranscriptETag: vi.fn().mockResolvedValue(null),
-    readTasks: vi.fn().mockResolvedValue([]),
-  },
-}));
+// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
+const mockRuntime = {
+  type: 'claude-code',
+  ensureSession: vi.fn(),
+  hasSession: vi.fn(() => false),
+  updateSession: vi.fn(() => true),
+  sendMessage: vi.fn(),
+  approveTool: vi.fn(),
+  submitAnswers: vi.fn(() => true),
+  listSessions: vi.fn(),
+  getSession: vi.fn(),
+  getMessageHistory: vi.fn(),
+  getSessionTasks: vi.fn().mockResolvedValue([]),
+  getSessionETag: vi.fn().mockResolvedValue(null),
+  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
+  watchSession: vi.fn(() => () => {}),
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
+  isLocked: vi.fn(() => false),
+  getLockInfo: vi.fn(),
+  getSupportedModels: vi.fn().mockResolvedValue([]),
+  getCapabilities: vi.fn(() => ({
+    type: 'claude-code',
+    supportsPermissionModes: true,
+    supportsToolApproval: true,
+    supportsCostTracking: true,
+    supportsResume: true,
+    supportsMcp: true,
+    supportsQuestionPrompt: true,
+  })),
+  getInternalSessionId: vi.fn(),
+  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
+  checkSessionHealth: vi.fn(),
+};
 
-vi.mock('../../services/core/agent-manager.js', () => ({
-  agentManager: {
-    ensureSession: vi.fn(),
-    sendMessage: vi.fn(),
-    approveTool: vi.fn(),
-    updateSession: vi.fn(),
-    hasSession: vi.fn(),
-    checkSessionHealth: vi.fn(),
-    getSdkSessionId: vi.fn(),
-    acquireLock: vi.fn(),
-    releaseLock: vi.fn(),
-    getLockInfo: vi.fn(),
-    isLocked: vi.fn(),
+vi.mock('../../services/core/runtime-registry.js', () => ({
+  runtimeRegistry: {
+    getDefault: vi.fn(() => mockRuntime),
+    get: vi.fn(() => mockRuntime),
+    getAllCapabilities: vi.fn(() => ({})),
+    getDefaultType: vi.fn(() => 'claude-code'),
   },
 }));
 
@@ -51,19 +67,10 @@ vi.mock('../../services/core/tunnel-manager.js', () => ({
   },
 }));
 
-vi.mock('../../services/session/session-broadcaster.js', () => ({
-  SessionBroadcaster: vi.fn().mockImplementation(() => ({
-    registerClient: vi.fn(),
-    deregisterClient: vi.fn(),
-    shutdown: vi.fn(),
-  })),
-}));
 
 // Dynamically import after mocks are set up
 import request from 'supertest';
 import { createApp } from '../../app.js';
-import { transcriptReader } from '../../services/session/transcript-reader.js';
-import { agentManager } from '../../services/core/agent-manager.js';
 import { parseSSEResponse } from '@dorkos/test-utils/sse-helpers';
 import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
 
@@ -84,11 +91,14 @@ describe('Sessions Routes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     // Default: return empty sessions list
-    vi.mocked(transcriptReader.listSessions).mockResolvedValue([]);
-    vi.mocked(transcriptReader.getSession).mockResolvedValue(null);
+    mockRuntime.listSessions.mockResolvedValue([]);
+    mockRuntime.getSession.mockResolvedValue(null);
+    mockRuntime.getSessionETag.mockResolvedValue(null);
+    mockRuntime.getSessionTasks.mockResolvedValue([]);
     // Default: allow lock acquisition
-    vi.mocked(agentManager.acquireLock).mockReturnValue(true);
-    vi.mocked(agentManager.getLockInfo).mockReturnValue(null);
+    mockRuntime.acquireLock.mockReturnValue(true);
+    mockRuntime.getLockInfo.mockReturnValue(null);
+    mockRuntime.getInternalSessionId.mockReturnValue(undefined);
     // Reset sessionBroadcaster mock
     mockSessionBroadcaster.registerClient.mockClear();
   });
@@ -103,7 +113,7 @@ describe('Sessions Routes', () => {
       expect(res.body.id).toBeDefined();
       expect(res.body.title).toBe('New Session');
       expect(res.body.permissionMode).toBe('default');
-      expect(agentManager.ensureSession).toHaveBeenCalledWith(res.body.id, {
+      expect(mockRuntime.ensureSession).toHaveBeenCalledWith(res.body.id, {
         permissionMode: 'default',
       });
     });
@@ -115,7 +125,7 @@ describe('Sessions Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.permissionMode).toBe('bypassPermissions');
-      expect(agentManager.ensureSession).toHaveBeenCalledWith(res.body.id, {
+      expect(mockRuntime.ensureSession).toHaveBeenCalledWith(res.body.id, {
         permissionMode: 'bypassPermissions',
       });
     });
@@ -135,10 +145,10 @@ describe('Sessions Routes', () => {
       const res = await request(app).get('/api/sessions');
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
-      expect(transcriptReader.listSessions).toHaveBeenCalled();
+      expect(mockRuntime.listSessions).toHaveBeenCalled();
     });
 
-    it('returns sessions from transcriptReader', async () => {
+    it('returns sessions from runtime', async () => {
       const sessions = [
         {
           id: S1,
@@ -155,7 +165,7 @@ describe('Sessions Routes', () => {
           permissionMode: 'bypassPermissions' as const,
         },
       ];
-      vi.mocked(transcriptReader.listSessions).mockResolvedValue(sessions);
+      mockRuntime.listSessions.mockResolvedValue(sessions);
 
       const res = await request(app).get('/api/sessions');
       expect(res.status).toBe(200);
@@ -174,7 +184,7 @@ describe('Sessions Routes', () => {
         updatedAt: '2024-01-01',
         permissionMode: 'default' as const,
       };
-      vi.mocked(transcriptReader.getSession).mockResolvedValue(session);
+      mockRuntime.getSession.mockResolvedValue(session);
 
       const res = await request(app).get(`/api/sessions/${S1}`);
       expect(res.status).toBe(200);
@@ -205,18 +215,18 @@ describe('Sessions Routes', () => {
       expect(res.body.error).toBe('Invalid request');
     });
 
-    it('streams events from agentManager via SSE', async () => {
+    it('streams events from runtime via SSE', async () => {
       const events: StreamEvent[] = [
         { type: 'text_delta', data: { text: 'Hello world' } },
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+      mockRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
+      mockRuntime.getInternalSessionId.mockReturnValue(S1);
 
       const res = await request(app)
         .post(`/api/sessions/${S1}/messages`)
@@ -242,8 +252,8 @@ describe('Sessions Routes', () => {
       expect(parsed[1].type).toBe('done');
     });
 
-    it('sends error event on agentManager failure', async () => {
-      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+    it('sends error event on runtime failure', async () => {
+      mockRuntime.sendMessage.mockImplementation(async function* () {
         throw new Error('SDK failure');
       });
 
@@ -273,12 +283,12 @@ describe('Sessions Routes', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+      mockRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(S1);
+      mockRuntime.getInternalSessionId.mockReturnValue(S1);
 
       await request(app)
         .post(`/api/sessions/${S1}/messages`)
@@ -294,17 +304,17 @@ describe('Sessions Routes', () => {
           });
         });
 
-      expect(agentManager.acquireLock).toHaveBeenCalledWith(
+      expect(mockRuntime.acquireLock).toHaveBeenCalledWith(
         S1,
         expect.any(String),
         expect.anything()
       );
-      expect(agentManager.releaseLock).toHaveBeenCalledWith(S1, expect.any(String));
+      expect(mockRuntime.releaseLock).toHaveBeenCalledWith(S1, expect.any(String));
     });
 
     it('returns 409 when session is locked by another client', async () => {
-      vi.mocked(agentManager.acquireLock).mockReturnValue(false);
-      vi.mocked(agentManager.getLockInfo).mockReturnValue({
+      mockRuntime.acquireLock.mockReturnValue(false);
+      mockRuntime.getLockInfo.mockReturnValue({
         clientId: 'other-client',
         acquiredAt: Date.now() - 60000,
       });
@@ -321,7 +331,7 @@ describe('Sessions Routes', () => {
     });
 
     it('releases lock even when streaming errors', async () => {
-      vi.mocked(agentManager.sendMessage).mockImplementation(async function* () {
+      mockRuntime.sendMessage.mockImplementation(async function* () {
         throw new Error('SDK failure');
       });
 
@@ -339,8 +349,8 @@ describe('Sessions Routes', () => {
           });
         });
 
-      expect(agentManager.acquireLock).toHaveBeenCalled();
-      expect(agentManager.releaseLock).toHaveBeenCalled();
+      expect(mockRuntime.acquireLock).toHaveBeenCalled();
+      expect(mockRuntime.releaseLock).toHaveBeenCalled();
     });
   });
 
@@ -348,17 +358,17 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions/:id/approve', () => {
     it('approves pending tool call', async () => {
-      vi.mocked(agentManager.approveTool).mockReturnValue(true);
+      mockRuntime.approveTool.mockReturnValue(true);
 
       const res = await request(app).post(`/api/sessions/${S1}/approve`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
-      expect(agentManager.approveTool).toHaveBeenCalledWith(S1, 'tc1', true);
+      expect(mockRuntime.approveTool).toHaveBeenCalledWith(S1, 'tc1', true);
     });
 
     it('returns 404 when no pending approval', async () => {
-      vi.mocked(agentManager.approveTool).mockReturnValue(false);
+      mockRuntime.approveTool.mockReturnValue(false);
 
       const res = await request(app).post(`/api/sessions/${S1}/approve`).send({ toolCallId: 'tc1' });
 
@@ -371,17 +381,17 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions/:id/deny', () => {
     it('denies pending tool call', async () => {
-      vi.mocked(agentManager.approveTool).mockReturnValue(true);
+      mockRuntime.approveTool.mockReturnValue(true);
 
       const res = await request(app).post(`/api/sessions/${S1}/deny`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
-      expect(agentManager.approveTool).toHaveBeenCalledWith(S1, 'tc1', false);
+      expect(mockRuntime.approveTool).toHaveBeenCalledWith(S1, 'tc1', false);
     });
 
     it('returns 404 when no pending approval', async () => {
-      vi.mocked(agentManager.approveTool).mockReturnValue(false);
+      mockRuntime.approveTool.mockReturnValue(false);
 
       const res = await request(app).post(`/api/sessions/${S1}/deny`).send({ toolCallId: 'tc1' });
 
@@ -425,26 +435,26 @@ describe('Sessions Routes', () => {
       );
     });
 
-    it('translates agent-ID to SDK session ID before registering client', async () => {
-      const SDK_ID = '00000000-0000-4000-8000-000000000099';
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(SDK_ID);
+    it('translates agent-ID to internal session ID before registering client', async () => {
+      const INTERNAL_ID = '00000000-0000-4000-8000-000000000099';
+      mockRuntime.getInternalSessionId.mockReturnValue(INTERNAL_ID);
       mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
         res.end();
       });
 
       await request(app).get(`/api/sessions/${S1}/stream`);
 
-      // registerClient must receive the SDK session ID, not the raw agent ID from the URL
+      // registerClient must receive the internal session ID, not the raw agent ID from the URL
       expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
-        SDK_ID,
+        INTERNAL_ID,
         expect.any(String),
         expect.anything(),
         undefined
       );
     });
 
-    it('falls back to original session ID when no SDK mapping exists', async () => {
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(undefined);
+    it('falls back to original session ID when no internal mapping exists', async () => {
+      mockRuntime.getInternalSessionId.mockReturnValue(undefined);
       mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
         res.end();
       });
@@ -463,34 +473,34 @@ describe('Sessions Routes', () => {
   // ---- Session ID Translation ----
 
   describe('session ID translation', () => {
-    it('GET /messages uses SDK session ID when available', async () => {
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('sdk-uuid-123');
-      vi.mocked(transcriptReader.readTranscript).mockResolvedValue([]);
+    it('GET /messages uses internal session ID when available', async () => {
+      mockRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-123');
+      mockRuntime.getMessageHistory.mockResolvedValue([]);
 
       await request(app).get(`/api/sessions/${S1}/messages`);
 
-      expect(agentManager.getSdkSessionId).toHaveBeenCalledWith(S1);
-      expect(transcriptReader.readTranscript).toHaveBeenCalledWith(
+      expect(mockRuntime.getInternalSessionId).toHaveBeenCalledWith(S1);
+      expect(mockRuntime.getMessageHistory).toHaveBeenCalledWith(
         expect.any(String),
         'sdk-uuid-123'
       );
     });
 
-    it('GET /messages falls back to URL session ID when not in agentManager', async () => {
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(undefined);
-      vi.mocked(transcriptReader.readTranscript).mockResolvedValue([]);
+    it('GET /messages falls back to URL session ID when not in runtime', async () => {
+      mockRuntime.getInternalSessionId.mockReturnValue(undefined);
+      mockRuntime.getMessageHistory.mockResolvedValue([]);
 
       await request(app).get(`/api/sessions/${S1}/messages`);
 
-      expect(transcriptReader.readTranscript).toHaveBeenCalledWith(
+      expect(mockRuntime.getMessageHistory).toHaveBeenCalledWith(
         expect.any(String),
         S1
       );
     });
 
-    it('GET /:id uses SDK session ID for metadata lookup', async () => {
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('sdk-uuid-456');
-      vi.mocked(transcriptReader.getSession).mockResolvedValue({
+    it('GET /:id uses internal session ID for metadata lookup', async () => {
+      mockRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-456');
+      mockRuntime.getSession.mockResolvedValue({
         id: 'sdk-uuid-456',
         title: 'Test',
         createdAt: '2026-01-01',
@@ -501,18 +511,18 @@ describe('Sessions Routes', () => {
       const res = await request(app).get(`/api/sessions/${S1}`);
 
       expect(res.status).toBe(200);
-      expect(transcriptReader.getSession).toHaveBeenCalledWith(
+      expect(mockRuntime.getSession).toHaveBeenCalledWith(
         expect.any(String),
         'sdk-uuid-456'
       );
     });
 
-    it('GET /:id/tasks uses SDK session ID', async () => {
-      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('sdk-uuid-789');
+    it('GET /:id/tasks uses internal session ID', async () => {
+      mockRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-789');
 
       await request(app).get(`/api/sessions/${S1}/tasks`);
 
-      expect(transcriptReader.readTasks).toHaveBeenCalledWith(
+      expect(mockRuntime.getSessionTasks).toHaveBeenCalledWith(
         expect.any(String),
         'sdk-uuid-789'
       );

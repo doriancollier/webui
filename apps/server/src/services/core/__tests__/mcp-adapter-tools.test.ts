@@ -5,7 +5,7 @@ import {
   createRelayDisableAdapterHandler,
   createRelayReloadAdaptersHandler,
   type McpToolDeps,
-} from '../mcp-tools/index.js';
+} from '../../runtimes/claude-code/mcp-tools/index.js';
 
 /** Create a mock AdapterManager with default stubs. */
 function makeMockAdapterManager(overrides?: Record<string, unknown>) {
@@ -161,7 +161,7 @@ describe('Adapter MCP Tools', () => {
   describe('tool registration', () => {
     it('adapter tools are not registered when adapterManager is undefined', async () => {
       // Import the factory to verify conditional registration
-      const { createDorkOsToolServer: _createDorkOsToolServer } = await import('../mcp-tools/index.js');
+      const { createDorkOsToolServer: _createDorkOsToolServer } = await import('../../runtimes/claude-code/mcp-tools/index.js');
 
       // The tool server with no adapterManager should not include adapter tools
       // We verify by checking the deps flow — the handler guards will block calls

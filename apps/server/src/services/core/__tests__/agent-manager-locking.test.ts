@@ -28,8 +28,8 @@ function getLocksMap(am: unknown): Map<string, SessionLock> {
 }
 
 describe('AgentManager - Session Locking', () => {
-  let AgentManager: typeof import('../agent-manager.js').AgentManager;
-  let agentManager: InstanceType<typeof AgentManager>;
+  let ClaudeCodeRuntime: typeof import('../../runtimes/claude-code/claude-code-runtime.js').ClaudeCodeRuntime;
+  let agentManager: InstanceType<typeof ClaudeCodeRuntime>;
 
   // Helper to create a mock Express Response
   function createMockResponse(): Response & { _triggerClose: () => void } {
@@ -52,9 +52,9 @@ describe('AgentManager - Session Locking', () => {
     vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
       query: vi.fn(),
     }));
-    const mod = await import('../agent-manager.js');
-    AgentManager = mod.AgentManager;
-    agentManager = new AgentManager();
+    const mod = await import('../../runtimes/claude-code/claude-code-runtime.js');
+    ClaudeCodeRuntime = mod.ClaudeCodeRuntime;
+    agentManager = new ClaudeCodeRuntime();
   });
 
   describe('acquireLock()', () => {

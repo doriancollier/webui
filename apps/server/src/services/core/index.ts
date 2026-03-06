@@ -4,12 +4,12 @@
  *
  * @module services/core
  */
-export { AgentManager, agentManager } from './agent-manager.js';
-export type { AgentSession, ToolState } from './agent-types.js';
-export { createToolState } from './agent-types.js';
-export { buildSystemPromptAppend } from './context-builder.js';
-export { mapSdkMessage } from './sdk-event-mapper.js';
-export { CommandRegistryService } from './command-registry.js';
+export { ClaudeCodeRuntime as AgentManager } from '../runtimes/claude-code/claude-code-runtime.js';
+export type { AgentSession, ToolState } from '../runtimes/claude-code/agent-types.js';
+export { createToolState } from '../runtimes/claude-code/agent-types.js';
+export { buildSystemPromptAppend } from '../runtimes/claude-code/context-builder.js';
+export { mapSdkMessage } from '../runtimes/claude-code/sdk-event-mapper.js';
+export { CommandRegistryService } from '../runtimes/claude-code/command-registry.js';
 export { configManager, initConfigManager } from './config-manager.js';
 export { fileLister } from './file-lister.js';
 export { getGitStatus, parsePorcelainOutput } from './git-status.js';
@@ -17,8 +17,8 @@ export {
   handleAskUserQuestion,
   createCanUseTool,
   handleToolApproval,
-} from './interactive-handlers.js';
-export type { PendingInteraction, InteractiveSession } from './interactive-handlers.js';
+} from '../runtimes/claude-code/interactive-handlers.js';
+export type { PendingInteraction, InteractiveSession } from '../runtimes/claude-code/interactive-handlers.js';
 export {
   handlePing,
   handleGetServerInfo,
@@ -36,8 +36,8 @@ export {
   createBindingCreateHandler,
   createBindingDeleteHandler,
   createDorkOsToolServer,
-} from './mcp-tools/index.js';
-export type { McpToolDeps } from './mcp-tools/index.js';
+} from '../runtimes/claude-code/mcp-tools/index.js';
+export type { McpToolDeps } from '../runtimes/claude-code/mcp-tools/index.js';
 export { generateOpenAPISpec } from './openapi-registry.js';
 export { initSSEStream, sendSSEEvent, endSSEStream } from './stream-adapter.js';
 export { TunnelManager, tunnelManager } from './tunnel-manager.js';

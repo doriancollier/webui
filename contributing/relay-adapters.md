@@ -768,7 +768,7 @@ interface AdapterBinding {
   id: string;             // UUID, assigned on creation
   adapterId: string;      // Matches an adapter config id (e.g., 'my-telegram')
   agentId: string;        // Agent identity ID for display purposes
-  projectPath: string;    // Working directory passed to AgentManager.createSession()
+  projectPath: string;    // Working directory passed to runtime.createSession()
   chatId?: string;        // Optional: restrict to a specific chat/user ID
   channelType?: 'dm' | 'group';  // Optional: restrict to a channel type
   sessionStrategy: 'per-chat' | 'per-user' | 'stateless';

@@ -344,6 +344,42 @@ registry.registerPath({
   },
 });
 
+// --- Capabilities ---
+
+const RuntimeCapabilitiesSchema = z.object({
+  type: z.string().openapi({ description: 'Runtime identifier, e.g. claude-code' }),
+  supportsPermissionModes: z.boolean(),
+  supportedPermissionModes: z.array(z.string()).optional(),
+  supportsToolApproval: z.boolean(),
+  supportsCostTracking: z.boolean(),
+  supportsResume: z.boolean(),
+  supportsMcp: z.boolean(),
+  supportsQuestionPrompt: z.boolean(),
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/capabilities',
+  tags: ['Capabilities'],
+  summary: 'Get runtime capabilities',
+  description:
+    'Returns capabilities for all registered runtimes, keyed by type string, ' +
+    'along with the default runtime type.',
+  responses: {
+    200: {
+      description: 'Runtime capabilities',
+      content: {
+        'application/json': {
+          schema: z.object({
+            capabilities: z.record(z.string(), RuntimeCapabilitiesSchema),
+            defaultRuntime: z.string(),
+          }),
+        },
+      },
+    },
+  },
+});
+
 // --- Directory ---
 
 registry.registerPath({

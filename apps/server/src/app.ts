@@ -12,6 +12,7 @@ import fileRoutes from './routes/files.js';
 import gitRoutes from './routes/git.js';
 import tunnelRoutes from './routes/tunnel.js';
 import modelRoutes from './routes/models.js';
+import capabilitiesRoutes from './routes/capabilities.js';
 import { generateOpenAPISpec } from './services/core/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
@@ -82,6 +83,7 @@ export function createApp() {
   app.use('/api/git', gitRoutes);
   app.use('/api/tunnel', tunnelRoutes);
   app.use('/api/models', modelRoutes);
+  app.use('/api/capabilities', capabilitiesRoutes);
 
   // OpenAPI spec + interactive docs
   const spec = generateOpenAPISpec();

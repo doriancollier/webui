@@ -39,6 +39,10 @@
     "./logger": {
       "types": "./src/logger.ts",
       "default": "./dist/logger.js"
+    },
+    "./agent-runtime": {
+      "types": "./src/agent-runtime.ts",
+      "default": "./dist/agent-runtime.js"
     }
   },
   "scripts": {

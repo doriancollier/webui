@@ -252,7 +252,7 @@ This allows the UI to show both "available adapter types" and "running instances
 
 ```typescript
 interface AdapterManagerDeps {
-  agentManager: ClaudeCodeAgentManagerLike;
+  runtime: ClaudeCodeAgentManagerLike;  // (formerly agentManager)
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
   /** Optional RelayCore for binding subsystem initialization */
@@ -264,7 +264,7 @@ interface AdapterManagerDeps {
 }
 ```
 
-- `agentManager` and `traceStore` are required. `pulseStore` is optional but needed for Pulse-aware adapters (e.g., ClaudeCodeAdapter schedule dispatching).
+- `runtime` and `traceStore` are required. `pulseStore` is optional but needed for Pulse-aware adapters (e.g., ClaudeCodeAdapter schedule dispatching).
 - When `relayCore` is provided, `AdapterManager` initializes the full binding subsystem (`BindingStore` + `BindingRouter`) during `initialize()`. When omitted, the binding subsystem is skipped and binding API endpoints return 503.
 - `meshCore` is optional; when provided, the adapter context passed to each adapter's `deliver()` call is enriched with agent manifest data for the resolved agent.
 

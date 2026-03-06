@@ -2,7 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import matter from 'gray-matter';
 import type { CommandEntry, CommandRegistry } from '@dorkos/shared/types';
-import { logger } from '../../lib/logger.js';
+import { logger } from '../../../lib/logger.js';
 
 /**
  * Fallback frontmatter parser for when gray-matter's YAML parser fails

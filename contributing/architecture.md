@@ -30,6 +30,7 @@ Transport
   getConfig()                -> ServerConfig
   updateConfig(patch)        -> void
   getModels()                -> ModelOption[]
+  getCapabilities()          -> { capabilities: Record<string, RuntimeCapabilities>, defaultRuntime: string }
   startTunnel()              -> { url: string }
   stopTunnel()               -> void
   browseDirectory(path?, showHidden?) -> BrowseDirectoryResponse
@@ -78,7 +79,7 @@ Transport
 `sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. An optional `cwd` parameter is passed through so the SDK uses the correct project directory when resuming sessions. This normalizes both transports:
 
 - **HttpTransport** parses SSE events from a `ReadableStream` and calls `onEvent`
-- **DirectTransport** iterates the `AsyncGenerator` from AgentManager and calls `onEvent`
+- **DirectTransport** iterates the `AsyncGenerator` from the runtime and calls `onEvent`
 
 Consumers (hooks, components) see the same interface regardless of transport.
 
@@ -106,11 +107,11 @@ HttpTransport({ baseUrl: '/api' })
 // Vault path = workspace/, repo root = its parent (where .claude/ lives)
 repoRoot = path.resolve(vaultPath, '..')
 
-AgentManager(repoRoot)          -- resolves Claude CLI, sets cwd
+ClaudeCodeRuntime(repoRoot)     -- resolves Claude CLI, sets cwd
 TranscriptReader()              -- reads JSONL from ~/.claude/projects/{slug}/
 CommandRegistryService(repoRoot) -- scans repoRoot/.claude/commands/
 
-DirectTransport({ agentManager, transcriptReader, commandRegistry, vaultRoot: repoRoot })
+DirectTransport({ runtime, transcriptReader, commandRegistry, vaultRoot: repoRoot })
   -> TransportProvider
     -> ObsidianApp -> App
 ```
@@ -132,7 +133,7 @@ Calls service instances directly in the same process:
 
 - No HTTP, no port binding, no serialization
 - Uses `DirectTransportServices` interface (narrow typed subset of service methods)
-- `sendMessage` iterates `AsyncGenerator<StreamEvent>` from AgentManager
+- `sendMessage` iterates `AsyncGenerator<StreamEvent>` from the runtime
 - `createSession` generates UUIDs via `crypto.randomUUID()`
 - Respects `AbortSignal` for cancellation
 
@@ -152,17 +153,98 @@ User input -> ChatPanel -> useChatSession.handleSubmit()
 ```
 User input -> ChatPanel -> useChatSession.handleSubmit()
   -> transport.sendMessage(sessionId, content, onEvent, signal, cwd)
-    -> agentManager.sendMessage() -> SDK query()
+    -> runtime.sendMessage() -> SDK query()
       -> AsyncGenerator<StreamEvent>
         -> onEvent(event) -> React state updates -> UI re-render
 ```
 
+## Runtime Registry
+
+DorkOS abstracts agent backends behind the `AgentRuntime` interface (`packages/shared/src/agent-runtime.ts`). This allows routes and services to interact with any agent backend (Claude Code, future alternatives) through a uniform contract.
+
+### AgentRuntime Interface
+
+The `AgentRuntime` interface defines all operations that an agent backend must support:
+
+- **Session lifecycle**: `ensureSession`, `hasSession`, `updateSession`
+- **Messaging**: `sendMessage` (returns `AsyncGenerator<StreamEvent>`)
+- **Interactive flows**: `approveTool`, `submitAnswers`
+- **Session queries**: `listSessions`, `getSession`, `getMessageHistory`, `getSessionTasks`, `getSessionETag`, `readFromOffset`
+- **Session sync**: `watchSession`
+- **Session locking**: `acquireLock`, `releaseLock`, `isLocked`, `getLockInfo`
+- **Capabilities**: `getSupportedModels`, `getCapabilities` (returns `RuntimeCapabilities`)
+- **Commands**: `getCommands`
+- **Lifecycle**: `checkSessionHealth`, `getInternalSessionId`
+- **Optional DI**: `setMcpServerFactory?`, `setMeshCore?`, `setRelay?`
+
+### RuntimeCapabilities
+
+Each runtime declares static capability flags via `getCapabilities()`:
+
+| Flag | Description |
+|------|-------------|
+| `supportsPermissionModes` | Whether permission modes (default, plan, auto) are supported |
+| `supportsToolApproval` | Whether tool approval UI should be shown |
+| `supportsCostTracking` | Whether cost/token tracking is available |
+| `supportsResume` | Whether sessions can be resumed |
+| `supportsMcp` | Whether MCP tool servers can be injected |
+| `supportsQuestionPrompt` | Whether AskUserQuestion interactive flow is supported |
+
+### RuntimeRegistry
+
+`RuntimeRegistry` (`apps/server/src/services/core/runtime-registry.ts`) is a singleton that holds all registered runtime implementations. Routes call `runtimeRegistry.getDefault()` to obtain the active runtime.
+
+Key methods:
+
+- `register(runtime)` — register or replace a runtime by its `type` string
+- `getDefault()` — returns the default runtime (claude-code unless changed)
+- `resolveForAgent(agentId, meshCore?)` — looks up the agent's manifest to determine which runtime to use, falling back to the default
+- `getAllCapabilities()` — returns capability flags for all registered runtimes (used by `GET /api/capabilities`)
+
+### How Routes Use the Registry
+
+Routes never reference a specific runtime class. They obtain the active runtime from the registry:
+
+```typescript
+import { runtimeRegistry } from '../services/core/runtime-registry.js';
+
+router.get('/sessions', async (req, res) => {
+  const runtime = runtimeRegistry.getDefault();
+  const sessions = await runtime.listSessions(projectDir);
+  res.json({ sessions });
+});
+```
+
+### File Organization
+
+All Claude Code-specific services live under `services/runtimes/claude-code/`:
+
+| File | Purpose |
+|------|---------|
+| `claude-code-runtime.ts` | `ClaudeCodeRuntime` class implementing `AgentRuntime` |
+| `agent-types.ts` | `AgentSession` and `ToolState` interfaces |
+| `sdk-event-mapper.ts` | SDK message to `StreamEvent` transformation |
+| `context-builder.ts` | Runtime context injection for system prompt |
+| `tool-filter.ts` | Per-agent MCP tool filtering |
+| `interactive-handlers.ts` | Tool approval and question flows |
+| `transcript-reader.ts` | JSONL session data reader |
+| `transcript-parser.ts` | JSONL line parser |
+| `session-broadcaster.ts` | Cross-client session sync via file watching |
+| `session-lock.ts` | Session write locks |
+| `command-registry.ts` | Slash command discovery |
+| `build-task-event.ts` | Task event builder |
+| `task-reader.ts` | Task state parser |
+| `mcp-tools/` | MCP tool server (core, pulse, relay, mesh, adapter, binding tools) |
+| `index.ts` | Barrel export for `ClaudeCodeRuntime` |
+
+SDK imports (`@anthropic-ai/claude-agent-sdk`) are contained exclusively within `services/runtimes/claude-code/` and `lib/sdk-utils.ts`. No other server code imports the SDK directly.
+
 ## Per-Session Tool Filtering
 
-Each agent session can have a tailored MCP tool palette. The filtering pipeline runs on every `sendMessage()` call in `AgentManager`:
+Each agent session can have a tailored MCP tool palette. The filtering pipeline runs on every `sendMessage()` call in `ClaudeCodeRuntime`:
 
 ```
-sendMessage(sessionId, content, cwd)
+ClaudeCodeRuntime.sendMessage(sessionId, content, cwd)
   -> readManifest(effectiveCwd)                    // Load .dork/agent.json
   -> resolveToolConfig(manifest.enabledToolGroups, // Merge agent overrides with global defaults
        { relayEnabled, pulseEnabled, globalConfig })
@@ -199,8 +281,8 @@ When a domain is disabled, both the MCP `allowedTools` filter and the context bl
 
 | File | Purpose |
 |------|---------|
-| `apps/server/src/services/core/tool-filter.ts` | `resolveToolConfig()` + `buildAllowedTools()` |
-| `apps/server/src/services/core/context-builder.ts` | Agent-aware block gating, peer agents block |
+| `apps/server/src/services/runtimes/claude-code/tool-filter.ts` | `resolveToolConfig()` + `buildAllowedTools()` |
+| `apps/server/src/services/runtimes/claude-code/context-builder.ts` | Agent-aware block gating, peer agents block |
 | `packages/shared/src/mesh-schemas.ts` | `EnabledToolGroupsSchema` on `AgentManifest` |
 | `packages/shared/src/config-schema.ts` | `agentContext.pulseTools` global default |
 
@@ -209,7 +291,8 @@ When a domain is disabled, both the MCP `allowedTools` filter and the context bl
 ```
 packages/
   shared/src/
-    transport.ts            -- Transport interface (the "port")
+    agent-runtime.ts        -- AgentRuntime interface + RuntimeCapabilities (universal backend contract)
+    transport.ts            -- Transport interface (the "port", includes getCapabilities)
     types.ts                -- Shared type definitions
     manifest.ts             -- Agent manifest I/O (readManifest, writeManifest, removeManifest)
     relay-schemas.ts        -- Zod schemas for Relay (envelopes, budgets, adapters, bindings)
@@ -237,7 +320,7 @@ packages/
     subject-matcher.ts      -- NATS-style subject and wildcard matching
     endpoint-registry.ts    -- Maildir endpoint registration + hash computation
     adapters/
-      claude-code-adapter.ts -- Routes relay.agent.> and relay.system.pulse.> to AgentManager
+      claude-code-adapter.ts -- Routes relay.agent.> and relay.system.pulse.> to ClaudeCodeRuntime
       telegram-adapter.ts   -- Telegram Bot API via grammY (long polling / webhook)
       webhook-adapter.ts    -- Generic HTTP POST with HMAC-SHA256 verification
 
@@ -287,14 +370,8 @@ apps/
 
   server/src/
     services/
-      core/                   -- Core services
-        agent-manager.ts      -- Claude Agent SDK session orchestrator
-        agent-types.ts        -- AgentSession/ToolState interfaces
-        sdk-event-mapper.ts   -- SDK message → StreamEvent mapper
-        context-builder.ts    -- Runtime context for systemPrompt
-        tool-filter.ts        -- Per-agent MCP tool filtering (resolveToolConfig, buildAllowedTools)
-        interactive-handlers.ts -- Tool approval & question flows
-        command-registry.ts   -- Slash command discovery
+      core/                   -- Shared infrastructure services
+        runtime-registry.ts   -- Registry of agent runtimes (singleton, keyed by type)
         config-manager.ts     -- Persistent user config (~/.dork/config.json)
         stream-adapter.ts     -- SSE helpers (initSSEStream, sendSSEEvent, endSSEStream).
                                   sendSSEEvent is async — must be awaited. Awaits drain
@@ -304,14 +381,24 @@ apps/
         file-lister.ts        -- Directory file listing
         git-status.ts         -- Git branch and changed files
         openapi-registry.ts   -- Auto-generated OpenAPI spec from Zod schemas
-        mcp-tools/            -- In-process MCP tool server for Claude Agent SDK
-      session/                -- Session services
-        transcript-reader.ts  -- JSONL session reader (single source of truth)
-        transcript-parser.ts  -- JSONL line → HistoryMessage parser
-        session-broadcaster.ts -- Cross-client session sync via chokidar file watching
-        session-lock.ts       -- Session write locks with auto-expiry
-        build-task-event.ts   -- TaskUpdateEvent builder from tool call inputs
-        task-reader.ts        -- Task state parser from JSONL transcript lines
+      runtimes/               -- Agent backend implementations
+        index.ts              -- Barrel export for runtimes
+        claude-code/          -- Claude Code runtime (Agent SDK)
+          claude-code-runtime.ts -- ClaudeCodeRuntime implementing AgentRuntime
+          agent-types.ts      -- AgentSession/ToolState interfaces
+          sdk-event-mapper.ts -- SDK message → StreamEvent mapper
+          context-builder.ts  -- Runtime context for systemPrompt
+          tool-filter.ts      -- Per-agent MCP tool filtering (resolveToolConfig, buildAllowedTools)
+          interactive-handlers.ts -- Tool approval & question flows
+          command-registry.ts -- Slash command discovery
+          transcript-reader.ts  -- JSONL session reader (single source of truth)
+          transcript-parser.ts  -- JSONL line → HistoryMessage parser
+          session-broadcaster.ts -- Cross-client session sync via chokidar file watching
+          session-lock.ts     -- Session write locks with auto-expiry
+          build-task-event.ts -- TaskUpdateEvent builder from tool call inputs
+          task-reader.ts      -- Task state parser from JSONL transcript lines
+          mcp-tools/          -- In-process MCP tool server for Claude Agent SDK
+          index.ts            -- Barrel export for ClaudeCodeRuntime
       pulse/                  -- Pulse scheduler services
         pulse-store.ts        -- SQLite + JSON schedule/run state
         scheduler-service.ts  -- Cron engine (croner) with overrun protection
@@ -341,7 +428,8 @@ apps/
       files.ts / git.ts / tunnel.ts / pulse.ts / agents.ts
       relay.ts              -- Relay HTTP routes (feature-flag guarded)
       mesh.ts               -- Mesh HTTP routes (always mounted)
-      models.ts             -- GET /api/models (dynamic from SDK supportedModels())
+      models.ts             -- GET /api/models (dynamic via runtimeRegistry.getDefault())
+      capabilities.ts       -- GET /api/capabilities (all runtime capability flags)
       discovery.ts          -- POST /api/discovery/scan (SSE agent discovery)
     index.ts                -- Express server entry
 ```
@@ -372,7 +460,7 @@ In Electron's renderer, `new AbortController().signal` is Chromium's Web API `Ab
 
 The SDK resolves its `cli.js` relative to `import.meta.url`. In the bundled plugin, this resolves inside `Obsidian.app`, which doesn't have a `cli.js`.
 
-**Fix:** `AgentManager` resolves the CLI path dynamically via `resolveClaudeCliPath()`:
+**Fix:** `ClaudeCodeRuntime` resolves the CLI path dynamically via `resolveClaudeCliPath()`:
 
 1. Try `require.resolve('@anthropic-ai/claude-agent-sdk/cli.js')` (works in dev)
 2. Fall back to `which claude` (finds the globally installed CLI)
@@ -490,7 +578,7 @@ The server reads `DORKOS_CORS_ORIGIN` from the environment to configure CORS all
 
 ### Dynamic Model List (`GET /api/models`)
 
-Available Claude models are served dynamically from the SDK's `agentManager.getSupportedModels()` rather than being hardcoded. The `models` route (`routes/models.ts`) delegates to this method and returns `{ models: ModelOption[] }`. This ensures the model list automatically reflects SDK updates.
+Available Claude models are served dynamically from the active runtime's `getSupportedModels()` method rather than being hardcoded. The `models` route (`routes/models.ts`) calls `runtimeRegistry.getDefault().getSupportedModels()` and returns `{ models: ModelOption[] }`. This ensures the model list automatically reflects SDK updates.
 
 ## Build Configuration
 
@@ -625,8 +713,8 @@ Outbound: RelayCore.publish() → AdapterRegistry.deliver() → Adapter.deliver(
 `ClaudeCodeAdapter` (`packages/relay/src/adapters/claude-code-adapter.ts`) is the runtime adapter that bridges Relay to Claude Agent SDK sessions. It replaces the earlier `MessageReceiver` bridge and plugs into `AdapterRegistry` alongside external adapters.
 
 It handles two subject prefixes:
-- `relay.agent.>` — delivers messages to an existing agent session (`AgentManager.sendToSession`)
-- `relay.system.pulse.>` — dispatches Pulse scheduler jobs (`AgentManager.createAndRunSession`)
+- `relay.agent.>` — delivers messages to an existing agent session (via the runtime's `sendMessage()`)
+- `relay.system.pulse.>` — dispatches Pulse scheduler jobs (via the runtime's `sendMessage()`)
 
 On deliver, it extracts payload content via shared `extractPayloadContent()` utilities, streams the SDK response back to the `replyTo` subject as individual `StreamEvent` chunks, and records delivery spans in `TraceStore`.
 
@@ -685,14 +773,14 @@ The EventSource lifecycle on the client is decoupled from `isStreaming` state to
 
 ## Relay Convergence (when DORKOS_RELAY_ENABLED=true)
 
-When the Relay feature flag is enabled, both Console (chat) and Pulse (scheduled) message flows are routed through the Relay message bus instead of calling AgentManager directly. This provides unified message tracing, delivery tracking, and subject-based routing.
+When the Relay feature flag is enabled, both Console (chat) and Pulse (scheduled) message flows are routed through the Relay message bus instead of calling the runtime directly. This provides unified message tracing, delivery tracking, and subject-based routing.
 
 ### Console Message Flow
 
 ```
 Client transport.sendMessageRelay() → POST /api/sessions/:id/messages
   → relay.publish('relay.agent.{sessionId}') returns { messageId, traceId }
-    → ClaudeCodeAdapter.deliver() → agentManager.query() → Claude SDK
+    → ClaudeCodeAdapter.deliver() → runtime.sendMessage() → Claude SDK
       → response chunks → relay.publish(replyTo) → SSE fan-in → client EventSource
 ```
 
@@ -702,7 +790,7 @@ Client-side `useChatSession` branches on `useRelayEnabled()`: the Relay path cal
 
 ```
 SchedulerService → relay.publish('relay.system.pulse.{scheduleId}')
-  → ClaudeCodeAdapter.deliver() (handlePulseDispatch) → agentManager.query() → Claude SDK
+  → ClaudeCodeAdapter.deliver() (handlePulseDispatch) → runtime.sendMessage() → Claude SDK
 ```
 
 ### Message Tracing
@@ -782,7 +870,7 @@ The Pulse subsystem provides cron-based agent scheduling. It lives entirely in `
 
 ### Dispatch Modes
 
-- **Direct mode** (default): `SchedulerService` calls `AgentManager.query()` directly to start agent sessions
+- **Direct mode** (default): `SchedulerService` calls the active runtime's `sendMessage()` directly to start agent sessions
 - **Relay mode** (`DORKOS_RELAY_ENABLED=true`): Publishes to `relay.system.pulse.{scheduleId}` instead; `ClaudeCodeAdapter` handles dispatch
 
 Agent-created schedules enter `pending_approval` state and require human approval before activation.

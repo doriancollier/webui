@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 90,
+  "nextNumber": 99,
   "specs": [
     {
       "number": 1,
@@ -327,14 +327,14 @@
     {
       "number": 47,
       "slug": "pulse-ui-overhaul",
-      "title": "Pulse UI/UX Overhaul — World-Class Scheduler Experience",
+      "title": "Pulse UI/UX Overhaul \u2014 World-Class Scheduler Experience",
       "created": "2026-02-21",
       "status": "specified"
     },
     {
       "number": 48,
       "slug": "pulse-v2-enhancements",
-      "title": "Pulse V2 Enhancements — Visual Cron Builder, DirectoryPicker, Calm Notifications",
+      "title": "Pulse V2 Enhancements \u2014 Visual Cron Builder, DirectoryPicker, Calm Notifications",
       "created": "2026-02-21",
       "status": "specified"
     },
@@ -383,7 +383,7 @@
     {
       "number": 55,
       "slug": "relay-convergence",
-      "title": "Relay Convergence — Migrate Pulse & Console to Relay Transport",
+      "title": "Relay Convergence \u2014 Migrate Pulse & Console to Relay Transport",
       "created": "2026-02-25",
       "status": "ideation"
     },
@@ -439,7 +439,7 @@
     {
       "number": 63,
       "slug": "db-drizzle-consolidation",
-      "title": "Database Consolidation — Single DB, packages/db, Drizzle ORM",
+      "title": "Database Consolidation \u2014 Single DB, packages/db, Drizzle ORM",
       "created": "2026-02-25",
       "status": "specified"
     },
@@ -474,7 +474,7 @@
     {
       "number": 68,
       "slug": "relay-ux-elevation",
-      "title": "Relay UX Elevation — World-Class Relay Panel Experience",
+      "title": "Relay UX Elevation \u2014 World-Class Relay Panel Experience",
       "created": "2026-02-27",
       "status": "draft"
     },
@@ -509,14 +509,14 @@
     {
       "number": 73,
       "slug": "relay-mesh-telegram-review-fixes",
-      "title": "Relay, Mesh & Telegram Adapter — Code Review Remediation",
+      "title": "Relay, Mesh & Telegram Adapter \u2014 Code Review Remediation",
       "created": "2026-02-28",
       "status": "specified"
     },
     {
       "number": 74,
       "slug": "relay-mesh-telegram-review-fixes-r2",
-      "title": "Relay, Mesh & Telegram Adapter — Code Review Remediation Round 2",
+      "title": "Relay, Mesh & Telegram Adapter \u2014 Code Review Remediation Round 2",
       "created": "2026-02-28",
       "status": "implemented"
     },
@@ -530,14 +530,14 @@
     {
       "number": 76,
       "slug": "server-review-remediation-r3",
-      "title": "Server Code Review Remediation — Round 3",
+      "title": "Server Code Review Remediation \u2014 Round 3",
       "created": "2026-02-28",
       "status": "implemented"
     },
     {
       "number": 77,
       "slug": "relay-mesh-review-remediation-r3",
-      "title": "Relay, Mesh & Telegram Adapter — Code Review Remediation Round 3",
+      "title": "Relay, Mesh & Telegram Adapter \u2014 Code Review Remediation Round 3",
       "created": "2026-03-01",
       "status": "implemented"
     },
@@ -586,21 +586,21 @@
     {
       "number": 84,
       "slug": "cli-install-smoke-testing",
-      "title": "CLI Install Smoke Testing — Docker & GitHub Actions",
+      "title": "CLI Install Smoke Testing \u2014 Docker & GitHub Actions",
       "created": "2026-03-02",
       "status": "ideation"
     },
     {
       "number": 85,
       "slug": "agent-centric-ux",
-      "title": "Agent-Centric UX — Command Palette, Sidebar Redesign, Mesh Always-On",
+      "title": "Agent-Centric UX \u2014 Command Palette, Sidebar Redesign, Mesh Always-On",
       "created": "2026-03-03",
       "status": "specified"
     },
     {
       "number": 86,
       "slug": "shadcn-sidebar-redesign",
-      "title": "Shadcn Sidebar Redesign — Agent-Centric Sidebar with Glanceable Status",
+      "title": "Shadcn Sidebar Redesign \u2014 Agent-Centric Sidebar with Glanceable Status",
       "created": "2026-03-03",
       "status": "ideation"
     },
@@ -642,7 +642,7 @@
     {
       "number": 92,
       "slug": "relay-inbox-lifecycle",
-      "title": "Relay Inbox Lifecycle — Endpoint Types, Dispatch TTL, relay_query Streaming",
+      "title": "Relay Inbox Lifecycle \u2014 Endpoint Types, Dispatch TTL, relay_query Streaming",
       "created": "2026-03-05",
       "status": "ideation"
     },
@@ -666,7 +666,27 @@
       "title": "Fix Relay SSE Message Delivery Pipeline",
       "created": "2026-03-06",
       "status": "ideation"
+    },
+    {
+      "number": 96,
+      "slug": "fix-relay-history-sse-gaps",
+      "title": "Fix Relay History Rendering & Remaining SSE Delivery Gaps",
+      "created": "2026-03-06",
+      "status": "draft"
+    },
+    {
+      "number": 97,
+      "slug": "agent-runtime-abstraction",
+      "title": "Agent Runtime Abstraction",
+      "created": "2026-03-06",
+      "status": "draft"
+    },
+    {
+      "number": 98,
+      "slug": "eslint-per-package-config",
+      "title": "ESLint Per-Package Config Refactor",
+      "created": "2026-03-06",
+      "status": "ideation"
     }
-  ],
-  "nextNumber": 96
+  ]
 }

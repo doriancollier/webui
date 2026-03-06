@@ -2,8 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
   resolveToolConfig,
   buildAllowedTools,
-} from '../tool-filter.js';
-import type { ToolFilterDeps, ResolvedToolConfig } from '../tool-filter.js';
+} from '../../runtimes/claude-code/tool-filter.js';
+import type { ToolFilterDeps, ResolvedToolConfig } from '../../runtimes/claude-code/tool-filter.js';
 
 // Fixture: all features enabled, all global toggles on
 const allEnabledDeps: ToolFilterDeps = {

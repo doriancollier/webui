@@ -43,7 +43,7 @@ import {
   _buildAdapterToolsBlock,
   _buildPulseToolsBlock,
   _buildPeerAgentsBlock,
-} from '../context-builder.js';
+} from '../../runtimes/claude-code/context-builder.js';
 import { getGitStatus } from '../git-status.js';
 import { readManifest } from '@dorkos/shared/manifest';
 import { isRelayEnabled } from '../../relay/relay-state.js';

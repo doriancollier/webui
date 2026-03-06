@@ -22,6 +22,7 @@ import type {
   PulsePreset,
 } from '@dorkos/shared/types';
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
+import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type { TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from '@dorkos/shared/relay-schemas';
 import type {
   AgentManifest,
@@ -278,6 +279,10 @@ export class HttpTransport implements Transport {
 
   getModels(): Promise<ModelOption[]> {
     return fetchJSON<{ models: ModelOption[] }>(this.baseUrl, '/models').then((r) => r.models);
+  }
+
+  getCapabilities(): Promise<{ capabilities: Record<string, RuntimeCapabilities>; defaultRuntime: string }> {
+    return fetchJSON(this.baseUrl, '/capabilities');
   }
 
   startTunnel(): Promise<{ url: string }> {

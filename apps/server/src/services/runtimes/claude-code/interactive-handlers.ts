@@ -1,6 +1,6 @@
 import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
-import { SESSIONS } from '../../config/constants.js';
+import { SESSIONS } from '../../../config/constants.js';
 
 export interface PendingInteraction {
   type: 'question' | 'approval';

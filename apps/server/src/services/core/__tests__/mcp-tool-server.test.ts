@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { McpToolDeps } from '../mcp-tools/index.js';
+import type { McpToolDeps } from '../../runtimes/claude-code/mcp-tools/index.js';
 import {
   handlePing,
   handleGetServerInfo,
@@ -13,7 +13,7 @@ import {
   createGetRunHistoryHandler,
   createRelayDispatchHandler,
   createRelayUnregisterEndpointHandler,
-} from '../mcp-tools/index.js';
+} from '../../runtimes/claude-code/mcp-tools/index.js';
 
 vi.mock('@dorkos/shared/manifest', () => ({
   readManifest: vi.fn(),
@@ -121,7 +121,7 @@ describe('MCP Tool Handlers', () => {
     it('uses DORKOS_PORT env var when set', async () => {
       vi.stubEnv('DORKOS_PORT', '9999');
       vi.resetModules();
-      const { handleGetServerInfo: handler } = await import('../mcp-tools/core-tools.js');
+      const { handleGetServerInfo: handler } = await import('../../runtimes/claude-code/mcp-tools/core-tools.js');
       const result = await handler({});
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.port).toBe(9999);
@@ -131,7 +131,7 @@ describe('MCP Tool Handlers', () => {
     it('uses DORKOS_VERSION env var when set', async () => {
       vi.stubEnv('DORKOS_VERSION', '2.0.0');
       vi.resetModules();
-      const { handleGetServerInfo: handler } = await import('../mcp-tools/core-tools.js');
+      const { handleGetServerInfo: handler } = await import('../../runtimes/claude-code/mcp-tools/core-tools.js');
       const result = await handler({});
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.version).toBe('2.0.0');
@@ -141,7 +141,7 @@ describe('MCP Tool Handlers', () => {
     it('defaults port to 4242 when env var unset', async () => {
       vi.stubEnv('DORKOS_PORT', undefined as unknown as string);
       vi.resetModules();
-      const { handleGetServerInfo: handler } = await import('../mcp-tools/core-tools.js');
+      const { handleGetServerInfo: handler } = await import('../../runtimes/claude-code/mcp-tools/core-tools.js');
       const result = await handler({});
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.port).toBe(4242);

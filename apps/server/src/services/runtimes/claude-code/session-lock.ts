@@ -1,5 +1,5 @@
 import type { Response } from 'express';
-import { SESSIONS } from '../../config/constants.js';
+import { SESSIONS } from '../../../config/constants.js';
 
 interface SessionLock {
   clientId: string;

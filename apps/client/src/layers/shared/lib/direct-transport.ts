@@ -1,4 +1,5 @@
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
+import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type { TraceSpan, DeliveryMetrics, CatalogEntry, AdapterBinding, CreateBindingRequest, RelayConversation } from '@dorkos/shared/relay-schemas';
 import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus, TopologyView, CrossNamespaceRule, UpdateAccessRuleRequest, TransportScanOptions, TransportScanEvent } from '@dorkos/shared/mesh-schemas';
 import type {
@@ -26,7 +27,7 @@ import type {
 } from '@dorkos/shared/types';
 
 export interface DirectTransportServices {
-  agentManager: {
+  runtime: {
     ensureSession(id: string, opts: { permissionMode: PermissionMode; cwd?: string }): void;
     sendMessage(
       id: string,
@@ -39,6 +40,7 @@ export interface DirectTransportServices {
       sessionId: string,
       opts: { permissionMode?: PermissionMode; model?: string }
     ): boolean;
+    getCapabilities(): RuntimeCapabilities;
   };
   transcriptReader: {
     listSessions(vaultRoot: string): Promise<Session[]>;
@@ -64,7 +66,7 @@ export class DirectTransport implements Transport {
   async createSession(opts: CreateSessionRequest): Promise<Session> {
     const id = crypto.randomUUID();
     const permissionMode = opts.permissionMode ?? 'default';
-    this.services.agentManager.ensureSession(id, { permissionMode, cwd: opts.cwd });
+    this.services.runtime.ensureSession(id, { permissionMode, cwd: opts.cwd });
     const now = new Date().toISOString();
     return {
       id,
@@ -92,7 +94,7 @@ export class DirectTransport implements Transport {
   }
 
   async updateSession(id: string, opts: UpdateSessionRequest, cwd?: string): Promise<Session> {
-    const updated = this.services.agentManager.updateSession(id, opts);
+    const updated = this.services.runtime.updateSession(id, opts);
     if (!updated) throw new Error(`Session not found: ${id}`);
     return this.getSession(id, cwd);
   }
@@ -112,7 +114,7 @@ export class DirectTransport implements Transport {
     signal?: AbortSignal,
     cwd?: string
   ): Promise<void> {
-    const generator = this.services.agentManager.sendMessage(
+    const generator = this.services.runtime.sendMessage(
       sessionId,
       content,
       ...(cwd ? [{ cwd }] : [])
@@ -124,12 +126,12 @@ export class DirectTransport implements Transport {
   }
 
   async approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }> {
-    const result = this.services.agentManager.approveTool(sessionId, toolCallId, true);
+    const result = this.services.runtime.approveTool(sessionId, toolCallId, true);
     return { ok: result };
   }
 
   async denyTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }> {
-    const result = this.services.agentManager.approveTool(sessionId, toolCallId, false);
+    const result = this.services.runtime.approveTool(sessionId, toolCallId, false);
     return { ok: result };
   }
 
@@ -138,7 +140,7 @@ export class DirectTransport implements Transport {
     toolCallId: string,
     answers: Record<string, string>
   ): Promise<{ ok: boolean }> {
-    const ok = this.services.agentManager.submitAnswers(sessionId, toolCallId, answers);
+    const ok = this.services.runtime.submitAnswers(sessionId, toolCallId, answers);
     return { ok };
   }
 
@@ -512,6 +514,15 @@ export class DirectTransport implements Transport {
     const updated: AgentManifest = { ...existing, ...updates };
     await writeManifest(agentPath, updated);
     return updated;
+  }
+
+  async getCapabilities(): Promise<{ capabilities: Record<string, RuntimeCapabilities>; defaultRuntime: string }> {
+    // Delegate to the runtime's getCapabilities() and wrap for the transport response shape.
+    const caps = this.services.runtime.getCapabilities();
+    return {
+      capabilities: { [caps.type]: caps },
+      defaultRuntime: caps.type,
+    };
   }
 
   async resetAllData(_confirm: string): Promise<{ message: string }> {

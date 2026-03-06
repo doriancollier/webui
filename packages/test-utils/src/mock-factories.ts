@@ -130,6 +130,20 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       { value: 'claude-sonnet-4-5-20250929', displayName: 'Sonnet 4.5', description: 'Fast model' },
       { value: 'claude-opus-4-6', displayName: 'Opus 4.6', description: 'Capable model' },
     ]),
+    getCapabilities: vi.fn().mockResolvedValue({
+      capabilities: {
+        'claude-code': {
+          type: 'claude-code',
+          supportsPermissionModes: true,
+          supportsToolApproval: true,
+          supportsCostTracking: false,
+          supportsResume: true,
+          supportsMcp: true,
+          supportsQuestionPrompt: true,
+        },
+      },
+      defaultRuntime: 'claude-code',
+    }),
     startTunnel: vi.fn().mockResolvedValue({ url: 'https://test.ngrok.io' }),
     stopTunnel: vi.fn().mockResolvedValue(undefined),
     // Pulse

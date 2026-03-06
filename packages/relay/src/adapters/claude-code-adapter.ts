@@ -102,7 +102,14 @@ export interface ClaudeCodeAdapterConfig {
 /**
  * Minimal interface for agent session management.
  *
- * Matches the existing AgentManagerLike from message-receiver.ts.
+ * This is a structural subset of the `AgentRuntime` interface from
+ * `@dorkos/shared/agent-runtime`. Any `AgentRuntime` implementation
+ * (e.g., `ClaudeCodeRuntime`) satisfies this interface without explicit
+ * casting, so callers can pass a runtime instance directly as `agentManager`.
+ *
+ * Kept as a separate interface (rather than importing `AgentRuntime`) to avoid
+ * adding a compile-time dependency from `@dorkos/relay` to `@dorkos/shared` for
+ * types that are not relevant to the adapter's narrow concerns.
  */
 export interface AgentManagerLike {
   ensureSession(

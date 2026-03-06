@@ -1,5 +1,26 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
+// Hoist shared mock functions so the test and ClaudeCodeRuntime share the same
+// vi.fn() instances for context-builder and tool-filter.
+const {
+  mockBuildSystemPromptAppend,
+  mockResolveToolConfig,
+  mockBuildAllowedTools,
+  contextBuilderFactory,
+  toolFilterFactory,
+} = vi.hoisted(() => {
+  const bspa = vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>');
+  const rtc = vi.fn().mockReturnValue({ pulse: true, relay: true, mesh: true, adapter: true });
+  const bat = vi.fn().mockReturnValue(undefined);
+  return {
+    mockBuildSystemPromptAppend: bspa,
+    mockResolveToolConfig: rtc,
+    mockBuildAllowedTools: bat,
+    contextBuilderFactory: () => ({ buildSystemPromptAppend: bspa }),
+    toolFilterFactory: () => ({ resolveToolConfig: rtc, buildAllowedTools: bat }),
+  };
+});
+
 // Mock the SDK before importing agent-manager
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: vi.fn(),
@@ -16,13 +37,9 @@ vi.mock('../../../lib/logger.js', () => ({
   },
   initLogger: vi.fn(),
 }));
-vi.mock('../context-builder.js', () => ({
-  buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
-}));
-vi.mock('../tool-filter.js', () => ({
-  resolveToolConfig: vi.fn().mockReturnValue({ pulse: true, relay: true, mesh: true, adapter: true }),
-  buildAllowedTools: vi.fn().mockReturnValue(undefined),
-}));
+// Mock the canonical paths so that ClaudeCodeRuntime's direct imports are intercepted.
+vi.mock('../../runtimes/claude-code/context-builder.js', contextBuilderFactory);
+vi.mock('../../runtimes/claude-code/tool-filter.js', toolFilterFactory);
 vi.mock('@dorkos/shared/manifest', () => ({
   readManifest: vi.fn().mockResolvedValue(null),
 }));
@@ -65,7 +82,7 @@ function mockQueryResult(gen: AsyncGenerator) {
 }
 
 describe('AgentManager', () => {
-  let agentManager: typeof import('../agent-manager.js').agentManager;
+  let agentManager: InstanceType<typeof import('../../runtimes/claude-code/claude-code-runtime.js').ClaudeCodeRuntime>;
 
   beforeEach(async () => {
     vi.resetModules();
@@ -73,8 +90,8 @@ describe('AgentManager', () => {
     vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
       query: vi.fn(),
     }));
-    const mod = await import('../agent-manager.js');
-    agentManager = mod.agentManager;
+    const mod = await import('../../runtimes/claude-code/claude-code-runtime.js');
+    agentManager = new mod.ClaudeCodeRuntime();
   });
 
   describe('ensureSession()', () => {
@@ -219,11 +236,11 @@ describe('AgentManager', () => {
 
       const textEvent = events.find((e) => e.type === 'text_delta');
       expect(textEvent).toBeDefined();
-      expect((textEvent!.data as any).text).toBe('Hello world');
+      expect((textEvent!.data as Record<string, unknown>).text).toBe('Hello world');
 
       const doneEvent = events.find((e) => e.type === 'done');
       expect(doneEvent).toBeDefined();
-      expect((doneEvent!.data as any).sessionId).toBe('s1');
+      expect((doneEvent!.data as Record<string, unknown>).sessionId).toBe('s1');
     });
 
     it('streams tool call events', async () => {
@@ -308,15 +325,15 @@ describe('AgentManager', () => {
 
       const startEvent = events.find((e) => e.type === 'tool_call_start');
       expect(startEvent).toBeDefined();
-      expect((startEvent!.data as any).toolName).toBe('Read');
+      expect((startEvent!.data as Record<string, unknown>).toolName).toBe('Read');
 
       const deltaEvent = events.find((e) => e.type === 'tool_call_delta');
       expect(deltaEvent).toBeDefined();
-      expect((deltaEvent!.data as any).input).toBe('{"file":"test.ts"}');
+      expect((deltaEvent!.data as Record<string, unknown>).input).toBe('{"file":"test.ts"}');
 
       const endEvent = events.find((e) => e.type === 'tool_call_end');
       expect(endEvent).toBeDefined();
-      expect((endEvent!.data as any).status).toBe('complete');
+      expect((endEvent!.data as Record<string, unknown>).status).toBe('complete');
     });
 
     it('passes systemPrompt with claude_code preset to SDK query', async () => {
@@ -580,7 +597,7 @@ describe('AgentManager', () => {
 
       const errorEvent = events.find((e) => e.type === 'error');
       expect(errorEvent).toBeDefined();
-      expect((errorEvent!.data as any).message).toBe('API key not found');
+      expect((errorEvent!.data as Record<string, unknown>).message).toBe('API key not found');
 
       // Should still emit done
       const doneEvent = events.find((e) => e.type === 'done');
@@ -612,7 +629,7 @@ describe('AgentManager', () => {
 
       const errorEvent = events.find((e) => e.type === 'error');
       expect(errorEvent).toBeDefined();
-      expect((errorEvent!.data as any).message).toContain('Directory boundary violation');
+      expect((errorEvent!.data as Record<string, unknown>).message).toContain('Directory boundary violation');
     });
   });
 
@@ -720,7 +737,7 @@ describe('AgentManager', () => {
     it('calls resolveToolConfig with manifest enabledToolGroups', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
       const { readManifest } = await import('@dorkos/shared/manifest');
-      const { resolveToolConfig } = await import('../tool-filter.js');
+      const { resolveToolConfig } = await import('../../runtimes/claude-code/tool-filter.js');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(mockSuccessFlow());
       (readManifest as ReturnType<typeof vi.fn>).mockResolvedValue({
@@ -750,7 +767,7 @@ describe('AgentManager', () => {
 
     it('passes toolConfig to buildSystemPromptAppend', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
-      const { buildSystemPromptAppend } = await import('../context-builder.js');
+      const { buildSystemPromptAppend } = await import('../../runtimes/claude-code/context-builder.js');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(mockSuccessFlow());
       (buildSystemPromptAppend as ReturnType<typeof vi.fn>).mockClear();
@@ -777,7 +794,7 @@ describe('AgentManager', () => {
 
     it('applies allowedTools to SDK options when buildAllowedTools returns a list', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
-      const { buildAllowedTools } = await import('../tool-filter.js');
+      const { buildAllowedTools } = await import('../../runtimes/claude-code/tool-filter.js');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(mockSuccessFlow());
       (buildAllowedTools as ReturnType<typeof vi.fn>).mockReturnValue([
@@ -805,7 +822,7 @@ describe('AgentManager', () => {
 
     it('does not set allowedTools when buildAllowedTools returns undefined', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
-      const { buildAllowedTools } = await import('../tool-filter.js');
+      const { buildAllowedTools } = await import('../../runtimes/claude-code/tool-filter.js');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(mockSuccessFlow());
       (buildAllowedTools as ReturnType<typeof vi.fn>).mockReturnValue(undefined);
@@ -823,7 +840,7 @@ describe('AgentManager', () => {
     it('uses global defaults when no agent manifest exists', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
       const { readManifest } = await import('@dorkos/shared/manifest');
-      const { resolveToolConfig } = await import('../tool-filter.js');
+      const { resolveToolConfig } = await import('../../runtimes/claude-code/tool-filter.js');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(mockSuccessFlow());
       // readManifest throws (no .dork/agent.json)
