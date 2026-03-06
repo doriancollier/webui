@@ -14,7 +14,7 @@ Agent backends are abstracted behind the `AgentRuntime` interface (`packages/sha
 
 ## Monorepo Structure
 
-This is a Turborepo monorepo with five apps and eight shared packages:
+This is a Turborepo monorepo with five apps and nine shared packages:
 
 ```
 dorkos/
@@ -34,6 +34,7 @@ dorkos/
 │   ├── mesh/             # @dorkos/mesh - Agent discovery & registry
 │   ├── eslint-config/    # @dorkos/eslint-config - Shared ESLint presets (base, react, node, test)
 │   ├── typescript-config/ # @dorkos/typescript-config - Shared tsconfig presets
+│   ├── icons/            # @dorkos/icons - SVG icon & logo registry
 │   └── test-utils/       # @dorkos/test-utils - Mock factories, test helpers
 ├── decisions/            # Architecture Decision Records (ADRs)
 ├── docs/                 # External user-facing docs (MDX for Fumadocs, consumed by marketing site)

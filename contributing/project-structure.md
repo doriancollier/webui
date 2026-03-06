@@ -21,6 +21,8 @@ dorkos/
 │   ├── relay/            # @dorkos/relay — Inter-agent message bus
 │   ├── mesh/             # @dorkos/mesh — Agent discovery & registry
 │   ├── typescript-config/ # Shared tsconfig presets
+│   ├── eslint-config/    # @dorkos/eslint-config — Shared ESLint presets
+│   ├── icons/            # @dorkos/icons — SVG icon & logo registry
 │   └── test-utils/       # Mock factories, test helpers
 ├── turbo.json
 ├── vitest.workspace.ts

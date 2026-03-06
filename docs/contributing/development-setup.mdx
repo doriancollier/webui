@@ -105,7 +105,7 @@ pnpm vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 
 ## Monorepo Structure
 
-DorkOS is a Turborepo monorepo with five apps and seven shared packages:
+DorkOS is a Turborepo monorepo with five apps and nine shared packages:
 
 <Files>
   <Folder name="apps" defaultOpen>
@@ -144,6 +144,12 @@ DorkOS is a Turborepo monorepo with five apps and seven shared packages:
     <Folder name="typescript-config">
       <File name="package.json" />
     </Folder>
+    <Folder name="eslint-config">
+      <File name="package.json" />
+    </Folder>
+    <Folder name="icons">
+      <File name="package.json" />
+    </Folder>
     <Folder name="test-utils">
       <File name="package.json" />
     </Folder>
@@ -166,6 +172,8 @@ DorkOS is a Turborepo monorepo with five apps and seven shared packages:
 | `packages/relay` | `@dorkos/relay` | Inter-agent message bus |
 | `packages/mesh` | `@dorkos/mesh` | Agent discovery & registry |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |
+| `packages/eslint-config` | `@dorkos/eslint-config` | Shared ESLint presets (base, react, node, test) |
+| `packages/icons` | `@dorkos/icons` | SVG icon & logo registry |
 | `packages/test-utils` | `@dorkos/test-utils` | Mock factories, test helpers |
 
 ## Next Steps

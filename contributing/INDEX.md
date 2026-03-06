@@ -42,23 +42,23 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 
 | Guide | Last Reviewed | Reviewer | Notes |
 |---|---|---|---|
-| `project-structure.md` | 2026-03-06 | Claude | Added entities/discovery |
-| `architecture.md` | 2026-03-06 | Claude | Subscribe-first SSE, unified scanner |
+| `project-structure.md` | 2026-03-06 | Claude | Added eslint-config and icons packages |
+| `architecture.md` | 2026-03-06 | Claude | SDK confinement, dorkHome lint refs |
 | `design-system.md` | 2026-02-17 | Claude | Fixed pre-FSD component paths |
-| `api-reference.md` | 2026-03-02 | Claude | Added POST /api/discovery/scan |
-| `configuration.md` | 2026-03-02 | Claude | Added Docker/publish workflow |
-| `interactive-tools.md` | 2026-02-17 | Claude | Fixed pre-FSD paths |
+| `api-reference.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
+| `configuration.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
+| `interactive-tools.md` | 2026-03-06 | Claude | Updated file paths for runtime abstraction |
 | `keyboard-shortcuts.md` | 2026-02-17 | Claude | Fixed pre-FSD paths |
-| `obsidian-plugin-development.md` | 2026-02-17 | Claude | Fixed pre-FSD paths |
-| `data-fetching.md` | 2026-02-17 | Claude | Full rewrite for DorkOS stack |
+| `obsidian-plugin-development.md` | 2026-03-06 | Claude | Updated sdk-utils paths for runtime abstraction |
+| `data-fetching.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `state-management.md` | 2026-02-17 | Claude | Full rewrite for DorkOS stack |
 | `animations.md` | 2026-02-17 | Claude | Fixed path references |
 | `styling-theming.md` | 2026-02-17 | Claude | Fixed path references |
 | `parallel-execution.md` | 2026-02-17 | Claude | Current |
 | `relay-adapters.md` | 2026-02-17 | Claude | Current |
 | `adapter-catalog.md` | 2026-02-17 | Claude | Current |
-| `browser-testing.md` | 2026-03-01 | Claude | Added to index |
-| `environment-variables.md` | 2026-03-02 | Claude | Added DORKOS_HOST |
+| `browser-testing.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
+| `environment-variables.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 
 ## External Docs Coverage
 
@@ -82,14 +82,14 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 
 | MDX File | Last Reviewed | Reviewer | Notes |
 |---|---|---|---|
-| `docs/getting-started/configuration.mdx` | 2026-02-17 | Claude | Pre-existing content |
+| `docs/getting-started/configuration.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `docs/integrations/sse-protocol.mdx` | 2026-02-17 | Claude | Written from scratch |
-| `docs/integrations/building-integrations.mdx` | 2026-02-17 | Claude | Written from scratch |
-| `docs/self-hosting/deployment.mdx` | 2026-03-02 | Claude | Added Docker deployment |
+| `docs/integrations/building-integrations.mdx` | 2026-03-06 | Claude | Added getCapabilities() to Transport listing |
+| `docs/self-hosting/deployment.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `docs/self-hosting/reverse-proxy.mdx` | 2026-02-17 | Claude | Written from scratch |
-| `docs/contributing/architecture.mdx` | 2026-02-17 | Claude | Fixed service count + links |
-| `docs/contributing/testing.mdx` | 2026-02-17 | Claude | Written from scratch |
-| `docs/contributing/development-setup.mdx` | 2026-03-02 | Claude | Added Docker/smoke test commands |
-| `docs/guides/cli-usage.mdx` | 2026-03-02 | Claude | Added Docker section |
+| `docs/contributing/architecture.mdx` | 2026-03-06 | Claude | Updated for AgentRuntime, RuntimeRegistry, ClaudeCodeRuntime |
+| `docs/contributing/testing.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
+| `docs/contributing/development-setup.mdx` | 2026-03-06 | Claude | Added eslint-config and icons packages |
+| `docs/guides/cli-usage.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `docs/guides/tunnel-setup.mdx` | 2026-02-17 | Claude | Written from scratch |
 | `docs/guides/slash-commands.mdx` | 2026-02-17 | Claude | Written from scratch |
