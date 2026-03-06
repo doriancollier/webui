@@ -190,12 +190,27 @@ export class SessionBroadcaster {
       writing = true;
       while (queue.length > 0) {
         const data = queue.shift()!;
+        // Detect done events in the SSE payload for tracing purposes
+        const isDoneWrite = data.includes('"type":"done"');
+        if (isDoneWrite) {
+          logger.debug('[SSE] done event writing to stream for client %s', clientId);
+        }
         try {
           const ok = res.write(data);
           if (!ok) {
             await new Promise<void>((resolve) => res.once('drain', resolve));
           }
+          if (isDoneWrite) {
+            logger.debug('[SSE] done event written to stream for client %s', clientId);
+          }
         } catch (err) {
+          if (isDoneWrite) {
+            logger.warn(
+              '[SSE] done event write FAILED for client %s: %s',
+              clientId,
+              (err as Error).message
+            );
+          }
           logger.error('[SessionBroadcaster] Write error, unsubscribing relay:', err);
           // Clean up the relay subscription — no more events should queue
           if (unsubFn) {
@@ -211,6 +226,13 @@ export class SessionBroadcaster {
     };
 
     unsubFn = this.relay!.subscribe(subject, (envelope) => {
+      const payload = envelope.payload as Record<string, unknown> | null | undefined;
+      const isDone = typeof payload === 'object' && payload !== null && payload['type'] === 'done';
+
+      if (isDone) {
+        logger.debug('[SSE] done event queued for client %s', clientId);
+      }
+
       const eventData = `event: relay_message\ndata: ${JSON.stringify({
         messageId: envelope.id,
         payload: envelope.payload,

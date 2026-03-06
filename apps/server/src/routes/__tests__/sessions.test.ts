@@ -424,6 +424,40 @@ describe('Sessions Routes', () => {
         undefined
       );
     });
+
+    it('translates agent-ID to SDK session ID before registering client', async () => {
+      const SDK_ID = '00000000-0000-4000-8000-000000000099';
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(SDK_ID);
+      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
+        res.end();
+      });
+
+      await request(app).get(`/api/sessions/${S1}/stream`);
+
+      // registerClient must receive the SDK session ID, not the raw agent ID from the URL
+      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
+        SDK_ID,
+        expect.any(String),
+        expect.anything(),
+        undefined
+      );
+    });
+
+    it('falls back to original session ID when no SDK mapping exists', async () => {
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(undefined);
+      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
+        res.end();
+      });
+
+      await request(app).get(`/api/sessions/${S1}/stream`);
+
+      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
+        S1,
+        expect.any(String),
+        expect.anything(),
+        undefined
+      );
+    });
   });
 
   // ---- Session ID Translation ----

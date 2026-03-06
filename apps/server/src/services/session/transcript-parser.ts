@@ -5,6 +5,7 @@ import type {
   ToolCallPart,
   HistoryToolCall,
 } from '@dorkos/shared/types';
+import { SDK_TOOL_NAMES } from '@dorkos/shared/constants';
 
 export interface TranscriptLine {
   type: string;
@@ -129,6 +130,84 @@ export function parseQuestionAnswers(
 }
 
 /**
+ * Strip relay context wrapper, returning the user content or null if pure metadata.
+ *
+ * @param text - Raw message text potentially wrapped in relay_context tags
+ * @returns The user content after the closing tag, or null if pure metadata/malformed
+ * @internal Exported for testing only.
+ */
+export function stripRelayContext(text: string): string | null {
+  if (!text.startsWith('<relay_context>')) return text;
+  const closingTag = '</relay_context>';
+  const idx = text.indexOf(closingTag);
+  if (idx === -1) return null; // Malformed, no closing tag
+  const content = text.slice(idx + closingTag.length).trim();
+  return content || null; // Empty content = pure metadata
+}
+
+/**
+ * Apply a tool_result block to the matching HistoryToolCall and ToolCallPart entries.
+ *
+ * Mutates `tc` and `tcPart` in place with `result` and, for AskUserQuestion,
+ * the resolved `answers` record.
+ *
+ * @param tc - The HistoryToolCall to update, or undefined if not tracked.
+ * @param tcPart - The ToolCallPart to update, or undefined if not tracked.
+ * @param resultText - Extracted text content from the tool_result block.
+ * @param sdkAnswers - Optional SDK-provided answers keyed by question text.
+ */
+export function applyToolResult(
+  tc: HistoryToolCall | undefined,
+  tcPart: ToolCallPart | undefined,
+  resultText: string,
+  sdkAnswers: Record<string, string> | undefined
+): void {
+  if (tc) {
+    tc.result = resultText;
+    if (tc.toolName === SDK_TOOL_NAMES.ASK_USER_QUESTION && tc.questions && !tc.answers) {
+      tc.answers = sdkAnswers
+        ? mapSdkAnswersToIndices(sdkAnswers, tc.questions)
+        : parseQuestionAnswers(resultText, tc.questions);
+    }
+  }
+  if (tcPart) {
+    tcPart.result = resultText;
+    if (
+      tcPart.toolName === SDK_TOOL_NAMES.ASK_USER_QUESTION &&
+      tcPart.questions &&
+      !tcPart.answers
+    ) {
+      tcPart.answers = sdkAnswers
+        ? mapSdkAnswersToIndices(sdkAnswers, tcPart.questions as QuestionItem[])
+        : parseQuestionAnswers(resultText, tcPart.questions as QuestionItem[]);
+    }
+  }
+}
+
+/**
+ * Build a command HistoryMessage from a pending command and UUID.
+ *
+ * @param commandName - Slash command name, e.g. `/test`.
+ * @param commandArgs - Optional arguments following the command name.
+ * @param uuid - Optional UUID for the message; falls back to a random UUID.
+ */
+export function buildCommandMessage(
+  commandName: string,
+  commandArgs: string,
+  uuid?: string
+): HistoryMessage {
+  const displayContent = commandArgs ? `${commandName} ${commandArgs}` : commandName;
+  return {
+    id: uuid || crypto.randomUUID(),
+    role: 'user',
+    content: displayContent,
+    messageType: 'command',
+    commandName,
+    commandArgs: commandArgs || undefined,
+  };
+}
+
+/**
  * Parse an array of JSONL lines into HistoryMessage objects.
  *
  * Implements a state machine that tracks pending slash commands, tool call
@@ -161,30 +240,21 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
           if (block.type === 'tool_result' && block.tool_use_id) {
             hasToolResult = true;
             const resultText = extractToolResultContent(block.content);
-            const tc = toolCallMap.get(block.tool_use_id);
-            if (tc) {
-              tc.result = resultText;
-              if (tc.toolName === 'AskUserQuestion' && tc.questions && !tc.answers) {
-                tc.answers = sdkAnswers
-                  ? mapSdkAnswersToIndices(sdkAnswers, tc.questions)
-                  : parseQuestionAnswers(resultText, tc.questions);
-              }
-            }
-            const tcPart = toolCallPartMap.get(block.tool_use_id);
-            if (tcPart) {
-              tcPart.result = resultText;
-              if (tcPart.toolName === 'AskUserQuestion' && tcPart.questions && !tcPart.answers) {
-                tcPart.answers = sdkAnswers
-                  ? mapSdkAnswersToIndices(sdkAnswers, tcPart.questions as QuestionItem[])
-                  : parseQuestionAnswers(resultText, tcPart.questions as QuestionItem[]);
-              }
-            }
+            applyToolResult(
+              toolCallMap.get(block.tool_use_id),
+              toolCallPartMap.get(block.tool_use_id),
+              resultText,
+              sdkAnswers
+            );
           } else if (block.type === 'text' && block.text) {
             textParts.push(block.text);
           }
         }
 
-        if (hasToolResult && textParts.length === 0) {
+        // When tool_result blocks are present, any text blocks are SDK-internal
+        // (skill expansion prompts, system context), never user-authored content.
+        // Process tool results but suppress the text parts.
+        if (hasToolResult) {
           if (parsed.toolUseResult?.commandName) {
             const cmdName = '/' + parsed.toolUseResult.commandName.replace(/^\//, '');
             pendingCommand = { commandName: cmdName, commandArgs: pendingSkillArgs || '' };
@@ -196,15 +266,7 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
         if (pendingCommand) {
           const { commandName, commandArgs } = pendingCommand;
           pendingCommand = null;
-          const displayContent = commandArgs ? `${commandName} ${commandArgs}` : commandName;
-          messages.push({
-            id: parsed.uuid || crypto.randomUUID(),
-            role: 'user',
-            content: displayContent,
-            messageType: 'command',
-            commandName,
-            commandArgs: commandArgs || undefined,
-          });
+          messages.push(buildCommandMessage(commandName, commandArgs, parsed.uuid));
           continue;
         }
 
@@ -221,15 +283,17 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
         continue;
       }
 
-      const text = typeof msgContent === 'string' ? msgContent : '';
+      let text = typeof msgContent === 'string' ? msgContent : '';
 
       if (text.startsWith('<task-notification>')) {
         continue;
       }
 
-      // Filter relay metadata injected by ClaudeCodeAdapter — never user-authored content
+      // Strip relay context wrapper, preserving the actual user content after </relay_context>
       if (text.startsWith('<relay_context>')) {
-        continue;
+        const userContent = stripRelayContext(text);
+        if (!userContent) continue; // Pure metadata or malformed
+        text = userContent; // Fall through to process as normal user message
       }
 
       if (text.startsWith('<command-message>') || text.startsWith('<command-name>')) {
@@ -248,15 +312,7 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
       if (pendingCommand) {
         const { commandName, commandArgs } = pendingCommand;
         pendingCommand = null;
-        const displayContent = commandArgs ? `${commandName} ${commandArgs}` : commandName;
-        messages.push({
-          id: parsed.uuid || crypto.randomUUID(),
-          role: 'user',
-          content: displayContent,
-          messageType: 'command',
-          commandName,
-          commandArgs: commandArgs || undefined,
-        });
+        messages.push(buildCommandMessage(commandName, commandArgs, parsed.uuid));
         continue;
       }
 
@@ -300,7 +356,7 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
             input: block.input ? JSON.stringify(block.input) : undefined,
             status: 'complete',
           };
-          if (block.name === 'AskUserQuestion' && block.input) {
+          if (block.name === SDK_TOOL_NAMES.ASK_USER_QUESTION && block.input) {
             if (Array.isArray(block.input.questions)) {
               tc.questions = block.input.questions as QuestionItem[];
             }
@@ -308,7 +364,7 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
               tc.answers = block.input.answers as Record<string, string>;
             }
           }
-          if (block.name === 'Skill' && block.input) {
+          if (block.name === SDK_TOOL_NAMES.SKILL && block.input) {
             const input = block.input as Record<string, unknown>;
             pendingSkillArgs = (input.args as string) || null;
           }

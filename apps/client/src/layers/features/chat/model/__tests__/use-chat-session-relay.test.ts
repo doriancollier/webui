@@ -391,4 +391,185 @@ describe('useChatSession relay protocol', () => {
     expect(es).toBeDefined();
     expect(es.url).not.toContain('clientId=');
   });
+
+  describe('staleness detector', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('transitions to idle and refreshes messages when staleness timer fires and backend completed', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+      // getSession resolves = backend completed
+      vi.mocked(mockTransport.getSession).mockResolvedValue({
+        id: 'session-1',
+        title: 'Test',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissionMode: 'default',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      act(() => {
+        const es = MockEventSource.instances[0];
+        es?.emit('stream_ready', {});
+      });
+
+      act(() => { result.current.setInput('test'); });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      // Status is streaming on relay path — we haven't received a done event
+      expect(result.current.status).toBe('streaming');
+
+      // Advance past the staleness timeout
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_001);
+      });
+
+      // Should transition to idle after staleness timer fires
+      expect(result.current.status).toBe('idle');
+      expect(mockTransport.getSession).toHaveBeenCalledWith('session-1', undefined);
+    });
+
+    it('does not transition to idle when getSession throws (network error)', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+      // getSession throws = backend unreachable
+      vi.mocked(mockTransport.getSession).mockRejectedValue(new Error('Network error'));
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      act(() => {
+        const es = MockEventSource.instances[0];
+        es?.emit('stream_ready', {});
+      });
+
+      act(() => { result.current.setInput('test'); });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(result.current.status).toBe('streaming');
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(15_001);
+      });
+
+      // Should stay streaming — network error means we can't confirm completion
+      expect(result.current.status).toBe('streaming');
+    });
+
+    it('staleness timer resets on each received relay_message event', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+      vi.mocked(mockTransport.getSession).mockResolvedValue({
+        id: 'session-1',
+        title: 'Test',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissionMode: 'default',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      const es = MockEventSource.instances[0];
+
+      act(() => { es?.emit('stream_ready', {}); });
+      act(() => { result.current.setInput('test'); });
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      expect(result.current.status).toBe('streaming');
+
+      // Advance 10s (less than the 15s timeout) and emit a relay_message to reset the timer
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+
+      act(() => {
+        es?.emit('relay_message', {
+          payload: { type: 'text_delta', data: { text: 'still going' } },
+        });
+      });
+
+      // Advance another 10s — the timer was reset, so it hasn't fired yet (only 10s since last event)
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(10_000);
+      });
+
+      // Should still be streaming — timer was reset by the relay_message event
+      expect(result.current.status).toBe('streaming');
+      expect(mockTransport.getSession).not.toHaveBeenCalled();
+
+      // Now advance past the full 15s since last event
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(5_001);
+      });
+
+      // Now the timer should have fired
+      expect(result.current.status).toBe('idle');
+    });
+
+    it('does not start staleness timer when relay is disabled', async () => {
+      mockUseRelayEnabled.mockReturnValue(false);
+      vi.mocked(mockTransport.getSession).mockResolvedValue({
+        id: 'session-1',
+        title: 'Test',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        permissionMode: 'default',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      act(() => { result.current.setInput('test'); });
+
+      // Legacy path — sendMessage resolves immediately with done event
+      vi.mocked(mockTransport.sendMessage).mockImplementation(
+        async (_id, _content, onEvent) => {
+          onEvent({ type: 'text_delta', data: { text: 'hi' } } as Parameters<typeof onEvent>[0]);
+          // Don't emit done — to keep status streaming if legacy path were to do so
+        }
+      );
+
+      await act(async () => {
+        await result.current.handleSubmit();
+      });
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(20_000);
+      });
+
+      // getSession should NOT be called — staleness detector is relay-only
+      expect(mockTransport.getSession).not.toHaveBeenCalled();
+    });
+  });
 });

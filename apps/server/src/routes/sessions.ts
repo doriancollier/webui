@@ -347,8 +347,13 @@ router.get('/:id/stream', async (req, res) => {
 
   initSSEStream(res);
 
+  // Translate agent session ID to SDK session ID so the broadcaster watches
+  // the correct .jsonl file on disk (filename matches SDK session ID, not agent ID).
+  // Falls back to sessionId if no mapping exists (e.g. CLI-started sessions).
+  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+
   // Register with broadcaster (clientId enables relay subscription fan-in)
-  sessionBroadcaster.registerClient(sessionId, cwd, res, clientId);
+  sessionBroadcaster.registerClient(sdkSessionId, cwd, res, clientId);
 
   // The broadcaster handles:
   // - Sending sync_connected event

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Resolve history gaps, SSE session mismatch, and done event loss
 - Export health thresholds to eliminate fragile hardcoded test values
 - Resolve SSE delivery pipeline causing ~40-50% message freezes
 - Apply SSE backpressure handling to session broadcaster relay writes

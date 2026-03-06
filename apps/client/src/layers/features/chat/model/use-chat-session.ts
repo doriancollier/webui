@@ -104,6 +104,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const isTextStreamingRef = useRef(false);
   const [isTextStreaming, setIsTextStreaming] = useState(false);
   const sessionBusyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stalenessTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedCwdRef = useRef(selectedCwd);
   const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
   const messagesRef = useRef<ChatMessage[]>(messages);
@@ -129,6 +130,11 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
   const isStreaming = status === 'streaming';
   const streamReadyRef = useRef<boolean>(false);
+  // Keep status in a ref so the staleness timer async callback sees the current value
+  const statusRef = useRef(status);
+  useEffect(() => {
+    statusRef.current = status;
+  });
 
   // Ref-stabilize callbacks to prevent streamEventHandler identity churn.
   // Synced on every render (refs are synchronous — no useEffect needed).
@@ -211,6 +217,30 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     }
   }, [historyQuery.data, isStreaming]);
 
+  // Client-side staleness detector (relay path only).
+  // Resets on every relay SSE event; fires if stream goes silent for DONE_STALENESS_MS.
+  // On expiry, polls transport.getSession() — a successful response means the backend
+  // completed but the `done` event was lost. Transitions to idle and refreshes messages.
+  // Uses statusRef to read current status without adding it as a dep (avoids timer churn).
+  const resetStalenessTimer = useCallback(() => {
+    if (!relayEnabled) return;
+    if (stalenessTimerRef.current) clearTimeout(stalenessTimerRef.current);
+    stalenessTimerRef.current = setTimeout(async () => {
+      stalenessTimerRef.current = null;
+      // Only act if still streaming — a `done` event may have arrived in the meantime
+      if (statusRef.current !== 'streaming') return;
+      try {
+        await transport.getSession(sessionId, selectedCwdRef.current ?? undefined);
+        // Successful response: backend session exists and is no longer actively streaming.
+        // Transition to idle and refresh message history.
+        setStatus('idle');
+        queryClient.invalidateQueries({ queryKey: ['messages', sessionId, selectedCwdRef.current] });
+      } catch {
+        // Session not found or network error — leave streaming state unchanged
+      }
+    }, TIMING.DONE_STALENESS_MS);
+  }, [relayEnabled, sessionId, transport, queryClient]);
+
   // Relay-path EventSource: stable, never torn down by isStreaming changes.
   // Only recreated when sessionId or relayEnabled changes.
   // Response chunks arrive as relay_message events on this SSE connection.
@@ -229,6 +259,8 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     eventSource.addEventListener('relay_message', (event: MessageEvent) => {
       try {
         const envelope = JSON.parse(event.data) as { payload: { type: string; data: unknown } };
+        // Reset staleness timer on every relay event — stream is still active
+        resetStalenessTimer();
         streamEventHandler(envelope.payload.type, envelope.payload.data, assistantIdRef.current);
       } catch {
         // Ignore parse errors
@@ -248,8 +280,12 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     return () => {
       eventSource.close();
       streamReadyRef.current = false;
+      if (stalenessTimerRef.current) {
+        clearTimeout(stalenessTimerRef.current);
+        stalenessTimerRef.current = null;
+      }
     };
-  }, [sessionId, relayEnabled, streamEventHandler, queryClient]);
+  }, [sessionId, relayEnabled, streamEventHandler, queryClient, resetStalenessTimer]);
 
   // Legacy-path EventSource: closes during streaming since SSE is embedded in POST.
   // No-op when relay is enabled — the relay effect above handles sync updates.
@@ -270,10 +306,11 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     };
   }, [sessionId, isStreaming, queryClient, relayEnabled]);
 
-  // Cleanup sessionBusy timer on unmount
+  // Cleanup sessionBusy and staleness timers on unmount
   useEffect(() => {
     return () => {
       if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
+      if (stalenessTimerRef.current) clearTimeout(stalenessTimerRef.current);
     };
   }, []);
 
@@ -321,6 +358,9 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         await transport.sendMessageRelay(sessionId, finalContent, {
           clientId: clientIdRef.current,
         });
+        // Start the staleness detector — if the `done` event is lost, this fires after
+        // DONE_STALENESS_MS of silence and polls the backend to recover gracefully.
+        resetStalenessTimer();
         // Status stays 'streaming' — done event will arrive via EventSource relay_message
       } else {
         // Legacy path: POST streams SSE inline
