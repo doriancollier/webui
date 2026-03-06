@@ -1,7 +1,7 @@
 # DorkOS: The Operating System for Autonomous AI Agents
 
 **By Dorian Collier**
-**February 2026**
+**March 2026**
 
 ---
 
@@ -23,7 +23,7 @@ We solved this problem for applications fifty years ago. We called the solution 
 
 ## What DorkOS Is
 
-DorkOS is an open-source operating system that makes AI coding agents more capable. It provides the infrastructure that agents need to be autonomous: scheduling, memory, communication, coordination, and a unified interface for humans to manage it all.
+DorkOS is an open-source operating system that makes AI coding agents more capable. It provides the coordination layer that agents need to be autonomous: scheduling, memory, communication, discovery, and a unified interface for humans to manage it all.
 
 **DorkOS is not an agent.** It doesn't contain an AI model. It doesn't generate code. It doesn't make inferences.
 
@@ -35,7 +35,7 @@ DorkOS gives agents:
 
 - **A heartbeat** — scheduled execution that keeps your ideas moving forward
 - **A memory** — persistent context that survives across sessions
-- **A voice** — a universal message bus for agents, humans, and external services
+- **A reach** — built-in messaging to agents, humans, and external channels
 - **A network** — agent discovery, network topology, and access control
 - **An interface** — a browser-based command center for human oversight
 
@@ -43,15 +43,15 @@ The intelligence comes from the agents. Everything else comes from DorkOS.
 
 ---
 
-## Agent Adapters
+## Runtime Adapters
 
-DorkOS doesn't depend on any single AI agent. It uses a pluggable adapter architecture.
+DorkOS doesn't depend on any single AI agent. It's built on the `AgentRuntime` interface — a defined contract for session management, message streaming, tool approvals, and command discovery. This isn't just positioning: DorkOS routes, the shared schema layer, and the React client have zero direct SDK dependencies. The agent-agnostic claim is structurally enforced, not aspirational.
 
-The first adapter supports Claude Code via Anthropic's Agent SDK. Claude Code is the most capable coding agent available today, and DorkOS makes full use of it — sessions, tool approvals, streaming, slash commands, all of it.
+The first runtime implements Claude Code via Anthropic's Agent SDK. Claude Code is the most capable coding agent available today, and DorkOS makes full use of it — sessions, tool approvals, streaming, slash commands, all of it.
 
-But Claude Code is the first supported agent, not the only one. The adapter pattern means adding support for a new agent requires implementing a defined interface: start a session, send messages, stream responses, handle tool approvals. The core DorkOS infrastructure — scheduling, communication, the mesh, the console — works with any agent that conforms to this interface.
+But Claude Code is the first supported agent, not the only one. Adding a new backend — OpenCode, Aider, Codex, or anything else — means implementing a defined interface: start a session, send messages, stream responses, handle tool approvals. The core DorkOS coordination layer — scheduling, messaging, the mesh, the console — works with any runtime that conforms to this contract.
 
-Codex, OpenCode, and others are on the roadmap. The positioning is deliberate: bring your agent, we make it autonomous.
+The positioning is deliberate: bring your agent, we make it autonomous.
 
 ---
 
@@ -63,16 +63,17 @@ The **platform** — Engine and Console — is the foundation: a runtime for AI 
 
 ### Engine — The Runtime
 
-Engine is the foundation. It connects your AI agents via adapters, exposes a secure REST + SSE API, manages sessions, and composes the modules (Pulse, Relay, Mesh) into a unified server.
+Engine is the foundation. It connects your AI agents via the `AgentRuntime` interface, exposes a secure REST + SSE API, manages sessions, and composes the modules (Pulse, Relay, Mesh) into a unified server.
 
 Engine runs locally on your machine. Sessions are stored as JSONL transcript files — the same format Claude Code uses natively. This means every session is visible regardless of how it was started: from DorkOS, from the CLI, from an Obsidian plugin. One source of truth.
 
-Remote access is available via an optional ngrok tunnel. Engine can serve the Console UI and accept API calls from any device, anywhere.
+Remote access is available via an optional Remote module (ngrok-based). Engine can serve the Console UI and accept API calls from any device, anywhere.
 
 - REST + SSE API with OpenAPI documentation
 - JSONL transcripts as the single source of truth for session data
-- Pluggable agent adapters (Claude Code via Agent SDK today)
-- Optional tunnel for remote access
+- Pluggable agent runtimes via `AgentRuntime` interface (Claude Code via Agent SDK today)
+- Per-agent tool filtering — control which MCP tools each agent can access
+- Optional Remote for access from any device
 - Directory boundary enforcement for security
 - MCP tool server for agent-accessible capabilities
 
@@ -84,9 +85,13 @@ Console is a browser-based command center built with React 19, Tailwind CSS 4, a
 
 Console connects to Engine via a Transport interface that decouples the UI from its backend. Two adapters exist: `HttpTransport` for standalone web use, and `DirectTransport` for embedded use in Obsidian. This means Console works as a standalone web app, as a plugin inside your knowledge management tool, or as a bundled CLI — same interface, different delivery mechanisms.
 
+Each agent is a first-class citizen in Console. Agents have names, colors, icons, and personas. The sidebar shows every agent across your projects. Agent settings expose identity, persona, capabilities, and connections — all configurable per-agent.
+
 - Chat with agents in rich markdown with syntax highlighting
 - Approve or deny every tool call before it executes
 - Browse, resume, and sync sessions across devices
+- Command Palette (Cmd+K) for agent navigation with fuzzy search and preview panel
+- Agent settings — identity, persona, per-agent tool group controls
 - Slash command palette for custom workflows
 - Real-time session sync across multiple clients
 
@@ -94,31 +99,40 @@ Console connects to Engine via a Transport interface that decouples the UI from 
 
 ### Pulse — The Scheduler
 
-Pulse is the heartbeat. It executes work autonomously on a cron schedule — running roadmap items, triaging issues, soliciting feedback, and dispatching tasks to agents without human intervention.
+Pulse is the heartbeat. It executes work autonomously on a cron schedule — running roadmap items, triaging issues, dispatching tasks to agents, and keeping your ideas moving without human intervention.
 
-Pulse uses `croner` with overrun protection to prevent concurrent execution of the same schedule. Each run creates an isolated agent session with full context about what needs to be done. Runs are tracked in a SQLite database with retention pruning.
+Pulse uses `croner` with overrun protection to prevent concurrent execution of the same schedule. Each run creates an isolated agent session with full context about what needs to be done. Runs are tracked with retention pruning and a full visual run history.
+
+Schedules can be linked to a specific agent — tied to that agent's project directory so the right agent handles the right work. When Relay is enabled, Pulse dispatches jobs through Relay rather than calling the runtime directly, giving agents full message context about why they're running.
 
 When integrated with Loop (see below), Pulse polls for the next priority task and executes it with fully prepared instructions. This is how DorkOS achieves autonomous improvement — Pulse provides the execution cadence, Loop provides the intelligence about what to execute.
 
-- Cron-based scheduling with overrun protection
+- Cron-based scheduling with overrun protection and visual cron builder
 - Isolated agent sessions per run
+- Agent-linked schedules — tie a schedule to a specific agent's project
 - Run history and retention management
 - Configurable concurrency limits
 - API for schedule CRUD and manual triggering
+- Relay dispatch for agent-native job delivery
 
 **Status: Available**
 
-### Relay — The Universal Message Bus
+### Relay — Built-in Messaging
 
-Relay is kernel IPC for agents. It handles all messaging in DorkOS — agent-to-agent, human-to-agent, external-to-agent, and system dispatches. One message format, one delivery system, one audit trail.
+Relay is how agents reach you and each other. It handles all messaging in DorkOS — agent-to-agent, human-to-agent, and external-to-agent. One message format, one delivery system.
 
-Without Relay, agents are trapped inside your terminal. They can write code and create PRs, but they can't tell anyone about it and they can't coordinate with each other. Relay gives agents a voice and a network.
+Without Relay, agents are trapped inside your terminal. They can write code and create PRs, but they can't tell anyone about it and they can't coordinate with each other. Relay gives agents a way to reach you and a way to connect with the rest of your system.
 
-- Hierarchical subjects with NATS-style wildcards for point-to-point and pub/sub
+Relay also connects the outside world to your agents. The external adapter ecosystem — Telegram, webhooks, and more — lets messages flow in both directions. You can get a Telegram notification when an agent finishes a task. You can message an agent from your phone. You can route external events (webhooks, notifications, triggers) directly to the right agent via binding management: define which external identities reach which agents, and Relay handles the routing.
+
+- Hierarchical subjects with wildcard routing for point-to-point and pub/sub
 - Two modes: persistent Messages (Maildir + SQLite) and ephemeral Signals (typing, presence, receipts)
 - Budget envelopes that prevent runaway loops — hop counts, ancestor chains, TTL, call budgets
-- Plugin adapter model for external channels (Telegram, Slack, email, webhooks)
+- External adapter ecosystem — Telegram and webhook adapters built in, plugin system for new channels
+- Binding management — route specific external identities to specific agents
+- `relay_query` for blocking request/reply between agents
 - At-most-once delivery with dead letter queue for failed messages
+- Threaded message conversations with human-readable endpoint names
 
 See the [Relay Litepaper](./modules/relay-litepaper.md) for the full vision.
 
@@ -130,19 +144,36 @@ Mesh turns isolated agents into a discoverable, governed network.
 
 The core idea: every project directory is a potential agent. Each has its own rules, hooks, skills, and memories. Mesh uses pluggable discovery strategies to find candidates — detecting `.claude/`, `.cursor/`, `.codex/`, or custom file patterns. But discovery is reconnaissance, not admission. A human or agent must review candidates and explicitly register them before they join the mesh.
 
-Registration is the intentional act. When an agent is registered, Mesh writes a `.dork/agent.json` manifest to the project directory — the agent's portable identity card. It registers a Relay endpoint, configures access control rules, and adds the agent to the network. Agents that are denied won't resurface on subsequent scans.
+Registration is the intentional act. When an agent is registered, Mesh writes a `.dork/agent.json` manifest to the project directory — the agent's identity card. It includes the agent's name, persona, color, icon, and tool configuration. It registers a Relay endpoint, configures access control rules, and adds the agent to the network. Agents that are denied won't resurface on subsequent scans.
 
 A concrete example: your scheduling agent detects a birthday next week. It queries Mesh for a registered agent with budgeting capabilities. Mesh returns the finance agent's identity and Relay address. The scheduling agent sends a message through Relay. The finance agent approves $50, discovers the purchasing agent through Mesh, and routes the order through Relay. Four agents, four domains, one coordinated action — every agent there because someone chose to put it there.
 
+Mesh is always-on. No feature flag required.
+
 - Pluggable discovery strategies (Claude Code, Cursor, Codex, custom patterns)
 - Intentional registration workflow — approve, deny, or manually register agents
-- `.dork/agent.json` manifest generated by Mesh at registration time
+- `.dork/agent.json` manifest generated at registration — name, persona, color, icon, tool config
 - Agent-agnostic: `.dork/` configuration works with any runtime, not just Claude Code
-- Network topology with namespace isolation (default-allow within project, default-deny across)
+- Network topology graph with ELK.js layout, zoom levels, and access control visualization
+- Per-agent tool filtering — each agent can have a custom set of enabled tool domains
+- Health monitoring and heartbeat system
 - Access control rules authored by Mesh, enforced by Relay
 - Three approval interfaces: Console UI, MCP tools (agent-driven), CLI
 
 See the [Mesh Litepaper](./modules/mesh-litepaper.md) for the full vision.
+
+**Status: Available**
+
+### Remote — Access From Anywhere
+
+Remote is how you reach your agents when you're away from your desk. It creates a secure ngrok tunnel so Console and the Engine API are accessible from any device — your phone, a browser on another machine, a tablet.
+
+Open Console on your phone to check a session in progress. Scan a QR code to share access instantly. Multiple clients stay in sync in real time — a session you start from the browser appears in Obsidian, and vice versa.
+
+- ngrok-based secure tunnel with optional auth
+- QR code for instant mobile access
+- Multi-tab, multi-device session sync
+- Optional custom domain support
 
 **Status: Available**
 
@@ -177,12 +208,12 @@ See the [Loop Litepaper](../research/loop-litepaper.md) for the full vision.
 
 ```mermaid
 graph TD
-    Console["<b>CONSOLE</b><br/>Browser UI · Chat · Approvals · Monitoring"]
+    Console["<b>CONSOLE</b><br/>Browser UI · Chat · Approvals · Command Palette · Agent Settings"]
 
-    subgraph Engine["<b>ENGINE</b> — Agent Adapters · REST API · Session Management · Tunnel"]
+    subgraph Engine["<b>ENGINE</b> — AgentRuntime Interface · REST API · Session Management · Remote"]
         Pulse["<b>PULSE</b><br/>Schedule · Execute · Track"]
-        Mesh["<b>MESH</b><br/>Discover · Topology · Policy"]
-        Relay["<b>RELAY</b><br/>Messages · Signals · Deliver"]
+        Mesh["<b>MESH</b><br/>Discover · Topology · Identity"]
+        Relay["<b>RELAY</b><br/>Messages · Adapters · Bindings"]
         Pulse -- dispatch --> Relay
         Mesh -- configure --> Relay
     end
@@ -192,20 +223,21 @@ graph TD
 
     Console -- HTTP/SSE --> Engine
     Pulse -- poll --> Loop
+    Relay -- adapters --> External["<b>EXTERNAL</b><br/>Telegram · Webhooks · Channels"]
 ```
 
-**A concrete workflow — autonomous roadmap execution:**
+**A concrete workflow — autonomous execution while you focus on what matters:**
 
-1. **Pulse** fires at 2am. It polls **Loop** for the next priority task.
-2. **Loop** returns: "Implement dark mode toggle — hypothesis: users in dark environments have 15% higher bounce rate. Validation: bounce rate drops below 8% within 72 hours."
-3. **Engine** creates an isolated agent session. The agent adapter connects to Claude Code.
-4. **Wing** injects context: "The user prefers Tailwind CSS, uses shadcn/ui components, and the design system specifies `bg-neutral-950` as the dark background."
-5. The agent writes the code, creates a PR, and writes tests.
-6. **Relay** delivers a notification to `relay.human.slack.channel.deploys` via the Slack adapter: "Dark mode toggle shipped — PR #312 ready for review."
-7. **Relay** routes an inter-agent message to the monitoring agent (discovered by **Mesh**) to watch bounce rate metrics for 72 hours.
-8. 72 hours later, the monitoring agent reports results back to **Loop**. The hypothesis is validated (or not). The loop continues.
+1. **Pulse** fires at 2am on a schedule linked to your main project agent. It dispatches through **Relay**: "Run the test suite. Fix failures. Open a PR."
+2. **Engine** creates an isolated agent session. The `AgentRuntime` connects to Claude Code.
+3. **Wing** injects context: the user's current priorities, their preference for small atomic PRs, the project's branching conventions.
+4. The agent runs the suite, identifies two failures, writes fixes, creates PR #312, and writes a summary.
+5. **Relay** delivers a notification via the Telegram adapter to your phone: "Test suite passed. Two failures fixed. PR #312 ready."
+6. **Relay** routes an inter-agent message to the monitoring agent (discovered by **Mesh**) to watch for regressions over the next 24 hours.
+7. You wake up at 7am. Your phone has the PR link. Your morning starts with progress, not firefighting.
+8. On your commute, you open **Console** on your phone via **Remote**. You review the session transcript, approve the merge, and close your phone.
 
-No human intervened. The system scheduled, executed, communicated, coordinated, and measured — autonomously.
+Your ideas kept moving forward. You maintained full oversight — on your schedule, from any device.
 
 ---
 
@@ -217,7 +249,7 @@ All of DorkOS is MIT-licensed. The architecture, the modules, the adapters — e
 
 ### Honest by Design
 
-DorkOS doesn't hide what it is. The agents use cloud APIs for inference. Your code context is sent to model providers. DorkOS doesn't change that and won't pretend it does. What DorkOS controls: the agent runs on your machine, sessions are stored locally, tools execute in your shell, and the orchestration layer is entirely yours.
+DorkOS doesn't hide what it is. The agents use cloud APIs for inference. Your code context is sent to model providers. DorkOS doesn't change that and won't pretend it does. What DorkOS controls: the agent runs on your machine, sessions are stored locally, tools execute in your shell, and the coordination layer is entirely yours.
 
 ### Autonomous by Default
 
@@ -225,7 +257,7 @@ DorkOS is built for agents that work without human intervention. Pulse doesn't w
 
 ### Agent-Agnostic
 
-Claude Code is the first supported agent. It won't be the last. The adapter architecture ensures DorkOS never depends on a single model provider or agent platform. Bring your agent. We make it autonomous.
+Claude Code is the first supported runtime. It won't be the last. This is architecturally enforced via the `AgentRuntime` interface — routes, clients, and shared schemas have zero direct SDK dependencies. Adding a new backend means implementing a defined contract. The coordination layer works with any agent that conforms to it. Bring your agent. We make it autonomous.
 
 ### Developer-First
 
@@ -239,31 +271,24 @@ DorkOS installs via npm. Configures via JSON. Extends via slash commands and MCP
 
 **Not a model provider.** DorkOS doesn't contain an AI model. It connects to agents that use models. The model costs are between you and your provider.
 
-**Not a chatbot wrapper.** DorkOS is infrastructure. A chatbot wrapper puts a pretty face on an API call. DorkOS gives agents scheduling, memory, communication, coordination, and a management interface. These are fundamentally different things.
+**Not a chatbot wrapper.** A chatbot wrapper puts a pretty face on an API call. DorkOS gives agents scheduling, messaging, coordination, and a management interface. These are fundamentally different things.
 
 **Not an LLM.** DorkOS doesn't do inference. It doesn't have weights. It doesn't generate text. It orchestrates agents that do all of that.
 
-**Not an agent wrapper.** The most common misconception. DorkOS doesn't just "wrap" Claude Code with a UI. It provides the infrastructure layer that makes agents autonomous — the same way an operating system provides the infrastructure layer that makes applications useful. Remove the OS, and applications can still compute. But they can't schedule, communicate, coordinate, or persist. That's what DorkOS provides.
-
----
-
-## Changes from v1 → v2 (February 2026)
-
-- **Relay**: Reframed from "outbound communication" to "universal message bus" — Relay now handles all messaging (agent↔agent, human↔agent, external↔agent), not just outbound notifications
-- **Mesh**: Narrowed from "structured message passing + discovery" to "agent discovery + network topology + access control" — messaging responsibilities moved to Relay
-- **Architecture diagram**: Relay shown as foundation layer beneath Mesh and Pulse (was shown as a peer)
-- **Workflow example**: Updated to reflect Relay as transport for both external notifications and inter-agent messages
-- **Module litepapers**: Added links to standalone [Relay](./modules/relay-litepaper.md) and [Mesh](./modules/mesh-litepaper.md) litepapers in `meta/modules/`
-- **Architecture taxonomy**: Replaced flat "seven modules" with three-tier framing — platform (Engine, Console), composable modules (Pulse, Relay, Mesh as independent npm packages), and extensions (Wing, Loop)
+**Not an agent wrapper.** The most common misconception. DorkOS doesn't just "wrap" Claude Code with a UI. It provides the coordination layer that makes agents autonomous — the same way an operating system provides the layer that makes applications useful. Remove the OS, and applications can still compute. But they can't schedule, communicate, coordinate, or persist. That's what DorkOS provides.
 
 ---
 
 ## The Vision
 
-The trajectory is clear. AI agents are becoming infrastructure — as fundamental as databases, message queues, and container orchestrators. Every company will run agents. Every developer will manage agents. The question is whether those agents will be isolated processes with no coordination, or a unified system with scheduling, memory, communication, and feedback loops.
+The trajectory is clear. AI agents are becoming foundational — as essential as databases, message queues, and container orchestrators. Every company will run agents. Every developer will manage agents. The question is whether those agents will be disconnected processes with no coordination, or a unified system with scheduling, memory, communication, and feedback loops.
 
 DorkOS is the operating layer for that future.
 
 Any agent. Any model. Your system. Your rules.
 
 You've always had more ideas than hours. That ratio just changed.
+
+---
+
+*Intelligence doesn't scale. Coordination does.*
