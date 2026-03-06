@@ -4,7 +4,16 @@ import type { Db } from '@dorkos/db';
 import { AgentRegistry } from '../agent-registry.js';
 import type { AgentRegistryEntry } from '../agent-registry.js';
 import { DenialList } from '../denial-list.js';
-import { computeHealthStatus } from '../health.js';
+import {
+  computeHealthStatus,
+  ACTIVE_THRESHOLD_MINUTES,
+  INACTIVE_THRESHOLD_MINUTES,
+} from '../health.js';
+
+/** Helper: create an ISO timestamp `minutes` before now. */
+function minutesAgo(minutes: number): string {
+  return new Date(Date.now() - minutes * 60_000).toISOString();
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -279,24 +288,22 @@ describe('health tracking', () => {
 
   it('getWithHealth() computes active status for recent timestamp', () => {
     registry.upsert(makeEntry());
-    const recentTime = new Date(Date.now() - 60 * 1000).toISOString(); // 1 min ago
-    registry.updateHealth('01JKABC00001', recentTime, 'message');
+    registry.updateHealth('01JKABC00001', minutesAgo(ACTIVE_THRESHOLD_MINUTES / 2), 'message');
     const entry = registry.getWithHealth('01JKABC00001');
     expect(entry!.healthStatus).toBe('active');
   });
 
-  it('getWithHealth() computes inactive status for 10-minute-old timestamp', () => {
+  it('getWithHealth() computes inactive status beyond active threshold', () => {
     registry.upsert(makeEntry());
-    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    registry.updateHealth('01JKABC00001', tenMinAgo, 'message');
+    const midpoint = (ACTIVE_THRESHOLD_MINUTES + INACTIVE_THRESHOLD_MINUTES) / 2;
+    registry.updateHealth('01JKABC00001', minutesAgo(midpoint), 'message');
     const entry = registry.getWithHealth('01JKABC00001');
     expect(entry!.healthStatus).toBe('inactive');
   });
 
-  it('getWithHealth() computes stale status for 60-minute-old timestamp', () => {
+  it('getWithHealth() computes stale status beyond inactive threshold', () => {
     registry.upsert(makeEntry());
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    registry.updateHealth('01JKABC00001', oneHourAgo, 'old_event');
+    registry.updateHealth('01JKABC00001', minutesAgo(INACTIVE_THRESHOLD_MINUTES + 60), 'old_event');
     const entry = registry.getWithHealth('01JKABC00001');
     expect(entry!.healthStatus).toBe('stale');
   });
@@ -315,8 +322,9 @@ describe('health tracking', () => {
     registry.upsert(agent1);
     registry.upsert(agent2);
     registry.upsert(agent3);
-    registry.updateHealth('agent1', new Date().toISOString(), 'recent'); // active
-    registry.updateHealth('agent2', new Date(Date.now() - 10 * 60 * 1000).toISOString(), 'old'); // inactive
+    registry.updateHealth('agent1', minutesAgo(1), 'recent'); // active
+    const midpoint = (ACTIVE_THRESHOLD_MINUTES + INACTIVE_THRESHOLD_MINUTES) / 2;
+    registry.updateHealth('agent2', minutesAgo(midpoint), 'old'); // inactive
     // agent3 has no last_seen_at -> stale
     const stats = registry.getAggregateStats();
     expect(stats.totalAgents).toBe(3);
@@ -330,7 +338,7 @@ describe('health tracking', () => {
     registry.upsert(makeEntry({ id: 'a1', projectPath: '/p/1' }));
     registry.upsert(makeEntry({ id: 'a2', projectPath: '/p/2' }));
     registry.upsert(makeEntry({ id: 'a3', projectPath: '/p/3' }));
-    registry.updateHealth('a1', new Date().toISOString(), 'recent'); // active
+    registry.updateHealth('a1', minutesAgo(1), 'recent'); // active
     registry.markUnreachable('a2');
     registry.markUnreachable('a3');
     const stats = registry.getAggregateStats();
@@ -342,7 +350,7 @@ describe('health tracking', () => {
 
   it('listWithHealth() includes healthStatus for all agents', () => {
     registry.upsert(makeEntry());
-    registry.updateHealth('01JKABC00001', new Date().toISOString(), 'test');
+    registry.updateHealth('01JKABC00001', minutesAgo(1), 'test');
     const entries = registry.listWithHealth();
     expect(entries.length).toBe(1);
     expect(entries[0]!.healthStatus).toBe('active');
@@ -372,26 +380,27 @@ describe('anti-regression: Drizzle migration', () => {
   it('computes health status in TypeScript via computeHealthStatus()', () => {
     registry.upsert(makeEntry());
 
-    // Active: < 5 min ago
-    const recentTime = new Date(Date.now() - 60 * 1000).toISOString();
+    // Active: within active threshold
+    const recentTime = minutesAgo(ACTIVE_THRESHOLD_MINUTES / 2);
     registry.updateHealth('01JKABC00001', recentTime, 'heartbeat');
     const active = registry.getWithHealth('01JKABC00001');
     expect(active!.healthStatus).toBe('active');
     expect(computeHealthStatus(recentTime)).toBe('active');
 
-    // Inactive: 5-30 min ago
-    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000).toISOString();
-    registry.updateHealth('01JKABC00001', tenMinAgo, 'heartbeat');
+    // Inactive: between active and inactive thresholds
+    const midpoint = (ACTIVE_THRESHOLD_MINUTES + INACTIVE_THRESHOLD_MINUTES) / 2;
+    const midTime = minutesAgo(midpoint);
+    registry.updateHealth('01JKABC00001', midTime, 'heartbeat');
     const inactive = registry.getWithHealth('01JKABC00001');
     expect(inactive!.healthStatus).toBe('inactive');
-    expect(computeHealthStatus(tenMinAgo)).toBe('inactive');
+    expect(computeHealthStatus(midTime)).toBe('inactive');
 
-    // Stale: > 30 min ago
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-    registry.updateHealth('01JKABC00001', oneHourAgo, 'heartbeat');
+    // Stale: beyond inactive threshold
+    const staleTime = minutesAgo(INACTIVE_THRESHOLD_MINUTES + 60);
+    registry.updateHealth('01JKABC00001', staleTime, 'heartbeat');
     const stale = registry.getWithHealth('01JKABC00001');
     expect(stale!.healthStatus).toBe('stale');
-    expect(computeHealthStatus(oneHourAgo)).toBe('stale');
+    expect(computeHealthStatus(staleTime)).toBe('stale');
 
     // Null lastSeenAt: stale
     expect(computeHealthStatus(null)).toBe('stale');

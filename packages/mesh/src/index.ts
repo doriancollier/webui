@@ -43,7 +43,11 @@ export { TopologyManager } from './topology.js';
 export type { TopologyView, NamespaceInfo, CrossNamespaceRule } from './topology.js';
 
 // Health
-export { computeHealthStatus } from './health.js';
+export {
+  computeHealthStatus,
+  ACTIVE_THRESHOLD_MINUTES,
+  INACTIVE_THRESHOLD_MINUTES,
+} from './health.js';
 
 // Reconciler
 export { reconcile } from './reconciler.js';

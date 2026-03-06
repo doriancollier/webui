@@ -7,9 +7,9 @@
  * @module mesh/health
  */
 
-/** Health status thresholds in minutes. */
-const ACTIVE_THRESHOLD_MINUTES = 60;
-const INACTIVE_THRESHOLD_MINUTES = 60 * 24; // 1440 minutes
+/** Health status thresholds in minutes. Exported for test use. */
+export const ACTIVE_THRESHOLD_MINUTES = 60;
+export const INACTIVE_THRESHOLD_MINUTES = 60 * 24; // 1440 minutes
 
 /**
  * Compute agent health status from last_seen_at timestamp.

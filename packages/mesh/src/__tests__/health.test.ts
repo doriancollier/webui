@@ -1,7 +1,18 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { computeHealthStatus } from '../health.js';
+import {
+  computeHealthStatus,
+  ACTIVE_THRESHOLD_MINUTES,
+  INACTIVE_THRESHOLD_MINUTES,
+} from '../health.js';
+
+/** Helper: create a Date that is `minutes` before `base`. */
+function minutesBefore(base: Date, minutes: number): Date {
+  return new Date(base.getTime() - minutes * 60_000);
+}
 
 describe('computeHealthStatus', () => {
+  const BASE = new Date('2026-01-15T12:00:00Z');
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -10,39 +21,47 @@ describe('computeHealthStatus', () => {
     expect(computeHealthStatus(null)).toBe('stale');
   });
 
-  it('returns "active" when last seen < 1 hour ago', () => {
+  it('returns "active" when last seen within active threshold', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-01T12:30:00Z'));
-    expect(computeHealthStatus('2026-01-01T12:00:00Z')).toBe('active');
+    vi.setSystemTime(BASE);
+    const recent = minutesBefore(BASE, ACTIVE_THRESHOLD_MINUTES / 2);
+    expect(computeHealthStatus(recent.toISOString())).toBe('active');
   });
 
-  it('returns "inactive" when last seen 1-24 hours ago', () => {
+  it('returns "inactive" when last seen between active and inactive thresholds', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-02T00:00:00Z')); // 12 hours later
-    expect(computeHealthStatus('2026-01-01T12:00:00Z')).toBe('inactive');
+    vi.setSystemTime(BASE);
+    const midpoint = (ACTIVE_THRESHOLD_MINUTES + INACTIVE_THRESHOLD_MINUTES) / 2;
+    const timestamp = minutesBefore(BASE, midpoint);
+    expect(computeHealthStatus(timestamp.toISOString())).toBe('inactive');
   });
 
-  it('returns "stale" when last seen > 24 hours ago', () => {
+  it('returns "stale" when last seen beyond inactive threshold', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-02T13:00:00Z'));
-    expect(computeHealthStatus('2026-01-01T12:00:00Z')).toBe('stale');
+    vi.setSystemTime(BASE);
+    const timestamp = minutesBefore(BASE, INACTIVE_THRESHOLD_MINUTES + 60);
+    expect(computeHealthStatus(timestamp.toISOString())).toBe('stale');
   });
 
-  it('returns "active" at exactly the boundary (< 1 hr)', () => {
+  it('returns "active" just before active threshold boundary', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-01T12:59:59.999Z'));
-    expect(computeHealthStatus('2026-01-01T12:00:00Z')).toBe('active');
+    vi.setSystemTime(BASE);
+    // 1ms before the boundary
+    const justBefore = new Date(BASE.getTime() - ACTIVE_THRESHOLD_MINUTES * 60_000 + 1);
+    expect(computeHealthStatus(justBefore.toISOString())).toBe('active');
   });
 
-  it('returns "inactive" at exactly 1 hour', () => {
+  it('returns "inactive" at exactly the active threshold', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-01T13:00:00Z'));
-    expect(computeHealthStatus('2026-01-01T12:00:00Z')).toBe('inactive');
+    vi.setSystemTime(BASE);
+    const atBoundary = minutesBefore(BASE, ACTIVE_THRESHOLD_MINUTES);
+    expect(computeHealthStatus(atBoundary.toISOString())).toBe('inactive');
   });
 
-  it('returns "stale" at exactly 24 hours', () => {
+  it('returns "stale" at exactly the inactive threshold', () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-01-02T12:00:00Z'));
-    expect(computeHealthStatus('2026-01-01T12:00:00Z')).toBe('stale');
+    vi.setSystemTime(BASE);
+    const atBoundary = minutesBefore(BASE, INACTIVE_THRESHOLD_MINUTES);
+    expect(computeHealthStatus(atBoundary.toISOString())).toBe('stale');
   });
 });
