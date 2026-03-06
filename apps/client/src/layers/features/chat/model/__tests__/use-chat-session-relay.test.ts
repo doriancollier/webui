@@ -84,7 +84,9 @@ describe('useChatSession relay protocol', () => {
   });
 
   afterEach(() => {
-    delete (globalThis as Record<string, unknown>).EventSource;
+    // Reset instances but keep EventSource defined to avoid uncaught errors from
+    // React effect cleanup that fires after test teardown
+    MockEventSource.reset();
   });
 
   it('calls sendMessageRelay when relay enabled', async () => {
@@ -96,6 +98,12 @@ describe('useChatSession relay protocol', () => {
 
     const { result } = renderHook(() => useChatSession('session-1'), {
       wrapper: createWrapper(mockTransport),
+    });
+
+    // Emit stream_ready so handleSubmit doesn't wait for the 5s timeout
+    act(() => {
+      const es = MockEventSource.instances[0];
+      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
     });
 
     // Set input
@@ -145,6 +153,11 @@ describe('useChatSession relay protocol', () => {
     });
 
     act(() => {
+      const es = MockEventSource.instances[0];
+      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
+    });
+
+    act(() => {
       result.current.setInput('optimistic msg');
     });
 
@@ -172,6 +185,11 @@ describe('useChatSession relay protocol', () => {
 
     const { result } = renderHook(() => useChatSession('session-1'), {
       wrapper: createWrapper(mockTransport),
+    });
+
+    act(() => {
+      const es = MockEventSource.instances[0];
+      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
     });
 
     act(() => {
@@ -208,6 +226,11 @@ describe('useChatSession relay protocol', () => {
     });
 
     act(() => {
+      const es = MockEventSource.instances[0];
+      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
+    });
+
+    act(() => {
       result.current.setInput('will fail');
     });
 
@@ -228,6 +251,12 @@ describe('useChatSession relay protocol', () => {
 
     const { result } = renderHook(() => useChatSession('session-1'), {
       wrapper: createWrapper(mockTransport),
+    });
+
+    // Emit stream_ready so handleSubmit doesn't block on the 5s wait
+    act(() => {
+      const es = MockEventSource.instances[0];
+      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
     });
 
     // Submit a message to enter streaming state, which triggers EventSource creation
@@ -276,5 +305,90 @@ describe('useChatSession relay protocol', () => {
       // The EventSource with relay listeners is created when isStreaming is false
       expect(MockEventSource.instances.length).toBeGreaterThan(0);
     }
+  });
+
+  it('relay EventSource is NOT torn down when isStreaming changes', async () => {
+    mockUseRelayEnabled.mockReturnValue(true);
+    vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+      messageId: 'msg-1',
+      traceId: 'trace-1',
+    });
+
+    const { result } = renderHook(() => useChatSession('session-1'), {
+      wrapper: createWrapper(mockTransport),
+    });
+
+    // One EventSource created on mount for relay path
+    expect(MockEventSource.instances).toHaveLength(1);
+    const originalEs = MockEventSource.instances[0];
+
+    // Emit stream_ready
+    act(() => {
+      originalEs.emit('stream_ready', { clientId: 'test-uuid-1' });
+    });
+
+    // Submit — sets isStreaming=true
+    act(() => {
+      result.current.setInput('hello');
+    });
+    await act(async () => {
+      await result.current.handleSubmit();
+    });
+
+    // Status is still 'streaming' on relay path
+    expect(result.current.status).toBe('streaming');
+
+    // The original EventSource should still be open (not replaced)
+    expect(MockEventSource.instances).toHaveLength(1);
+    expect(MockEventSource.instances[0]).toBe(originalEs);
+    expect(originalEs.readyState).toBe(1); // OPEN
+  });
+
+  it('relay EventSource listens for stream_ready and registers it', async () => {
+    mockUseRelayEnabled.mockReturnValue(true);
+
+    renderHook(() => useChatSession('session-1'), {
+      wrapper: createWrapper(mockTransport),
+    });
+
+    const es = MockEventSource.instances[0];
+    expect(es).toBeDefined();
+    // stream_ready listener should be registered
+    expect(es.listeners['stream_ready']).toHaveLength(1);
+  });
+
+  it('relay EventSource URL includes clientId', () => {
+    mockUseRelayEnabled.mockReturnValue(true);
+
+    renderHook(() => useChatSession('session-1'), {
+      wrapper: createWrapper(mockTransport),
+    });
+
+    const es = MockEventSource.instances[0];
+    expect(es.url).toContain('clientId=test-uuid-1');
+  });
+
+  it('legacy path does NOT create EventSource when relay enabled', () => {
+    mockUseRelayEnabled.mockReturnValue(true);
+
+    renderHook(() => useChatSession('session-1'), {
+      wrapper: createWrapper(mockTransport),
+    });
+
+    // Only one EventSource (relay path), not two
+    expect(MockEventSource.instances).toHaveLength(1);
+    expect(MockEventSource.instances[0].url).toContain('clientId=');
+  });
+
+  it('legacy path creates EventSource without clientId when relay disabled', () => {
+    mockUseRelayEnabled.mockReturnValue(false);
+
+    renderHook(() => useChatSession('session-1'), {
+      wrapper: createWrapper(mockTransport),
+    });
+
+    const es = MockEventSource.instances[0];
+    expect(es).toBeDefined();
+    expect(es.url).not.toContain('clientId=');
   });
 });

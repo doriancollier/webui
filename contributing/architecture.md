@@ -243,7 +243,9 @@ packages/
 
   mesh/src/
     mesh-core.ts            -- MeshCore class (discovery + registry entry point)
-    discovery-engine.ts     -- Pluggable directory scanner with DiscoveryStrategy interface
+    discovery/              -- Unified discovery system
+      unified-scanner.ts    -- BFS async generator with detection strategies, symlink support
+      types.ts              -- ScanEvent, UnifiedScanOptions, UNIFIED_EXCLUDE_PATTERNS
     agent-registry.ts       -- SQLite-backed persistent agent registry
     denial-list.ts          -- SQLite-backed denial list to suppress re-discovery
     namespace-resolver.ts   -- Namespace derivation from agent workspace paths
@@ -327,8 +329,7 @@ apps/
         subject-resolver.ts   -- Subject pattern resolution helpers
       mesh/                   -- Mesh state
         mesh-state.ts         -- Mesh subsystem internal state tracking
-      discovery/              -- Agent discovery
-        discovery-scanner.ts  -- BFS filesystem scan for AI-configured projects (async generator)
+      discovery/              -- Agent discovery (delegates to @dorkos/mesh unified scanner)
     lib/
       sdk-utils.ts          -- makeUserPrompt(), resolveClaudeCliPath()
       resolve-root.ts       -- DEFAULT_CWD (prefers DORKOS_DEFAULT_CWD, falls back to repo root)
@@ -665,6 +666,23 @@ The `BindingRouter` (`apps/server/src/services/relay/binding-router.ts`) routes 
 
 See `contributing/relay-adapters.md` for the full developer guide on creating custom adapters.
 
+### Subscribe-First SSE Handshake
+
+When Relay is enabled, the SSE delivery pipeline uses a subscribe-first handshake to prevent message loss during the EventSource establishment window:
+
+1. Client opens `EventSource` to `GET /api/sessions/:id/stream?clientId={clientId}`
+2. Server registers SSE client and subscribes to `relay.human.console.{clientId}` via `subscribeToRelay()`
+3. Server sends `stream_ready` SSE event to confirm the subscription is active and delivery path is established
+4. Client receives `stream_ready`, sets `streamReadyRef.current = true`, then sends `POST /api/sessions/:id/messages`
+5. SDK processes the user message and produces response chunks
+6. ClaudeCodeAdapter publishes chunks to `relay.human.console.{clientId}`
+7. SessionBroadcaster receives chunks via the relay subscription and writes to SSE stream
+8. Client receives `relay_message` events via EventSource
+
+**Defense-in-depth:** A pending buffer in `SubscriptionRegistry` captures messages published to subjects with registered endpoints but no active subscriber (5-second TTL). When the subscriber later registers (on EventSource connection), buffered messages are drained immediately in order. This handles edge cases like reconnects and slow subscribers where messages might arrive during the TCP handshake window before the subscription is fully established.
+
+The EventSource lifecycle on the client is decoupled from `isStreaming` state to prevent the EventSource from being torn down and recreated during each message exchange, which would cause loss of messages published during the reconnection window.
+
 ## Relay Convergence (when DORKOS_RELAY_ENABLED=true)
 
 When the Relay feature flag is enabled, both Console (chat) and Pulse (scheduled) message flows are routed through the Relay message bus instead of calling AgentManager directly. This provides unified message tracing, delivery tracking, and subject-based routing.
@@ -700,7 +718,7 @@ The Mesh subsystem (`packages/mesh/src/`) provides agent discovery, registration
 | Module | Purpose |
 |--------|---------|
 | `mesh-core.ts` | Main entry point composing discovery, registry, denial list, and Relay bridge |
-| `discovery-engine.ts` | Scans directories for agent workspaces using pluggable strategies |
+| `discovery/unified-scanner.ts` | Unified BFS async generator with detection strategies (claude-code, cursor, copilot, dork-manifest) |
 | `agent-registry.ts` | SQLite-backed persistent registry of known agents (via `@dorkos/db` Drizzle instance) |
 | `denial-list.ts` | SQLite-backed denial list preventing re-discovery of denied paths |
 | `namespace-resolver.ts` | Resolves agent namespaces from workspace paths for subject-based routing |

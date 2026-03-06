@@ -395,7 +395,15 @@ export class RelayCore {
       deliveredTo += subscriberCount;
     }
 
-    // 8. Dead-letter only when NO delivery targets matched at all
+    // 8. Buffer for late subscribers when no subscription handlers matched.
+    // This catches the subscribe-first race: response chunks published before
+    // the SSE client's relay subscription is registered are held in memory
+    // and drained when the subscription arrives (see SubscriptionRegistry).
+    if (subscriberCount === 0 && matchingEndpoints.length === 0) {
+      this.subscriptionRegistry.bufferForPendingSubscriber(subject, envelope);
+    }
+
+    // 9. Dead-letter only when NO delivery targets matched at all
     // Reliability rejections (backpressure, circuit_open) are NOT dead-lettered
     if (deliveredTo === 0 && matchingEndpoints.length === 0 && subscriberCount === 0) {
       const subjectHash = hashSubject(subject);
@@ -407,7 +415,7 @@ export class RelayCore {
       await this.deadLetterQueue.reject(subjectHash, envelope, reason);
     }
 
-    // 9. Record trace span for delivery tracking
+    // 10. Record trace span for delivery tracking
     if (this.traceStore) {
       try {
         this.traceStore.insertSpan({
@@ -691,7 +699,8 @@ export class RelayCore {
       this.ttlSweepInterval = undefined;
     }
 
-    // Clear all subscriptions to prevent leaked handlers
+    // Clear all subscriptions and pending buffers to prevent leaked handlers/timers
+    this.subscriptionRegistry.shutdown();
     this.subscriptionRegistry.clear();
 
     // Clean up dedup timers to allow clean process exit

@@ -478,6 +478,139 @@ describe('SubscriptionRegistry', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // Pending buffer (task 2.1: bufferForPendingSubscriber)
+  // ---------------------------------------------------------------------------
+
+  describe('pending buffer', () => {
+    it('subscriber receives messages published after registration', async () => {
+      // This tests the existing pub/sub behavior: messages are only delivered
+      // to subscribers that exist at publish time. This is the baseline that
+      // the pending buffer (task 2.1) extends.
+      const received: RelayEnvelope[] = [];
+      const handler: MessageHandler = async (envelope) => {
+        received.push(envelope);
+      };
+
+      registry.subscribe('relay.human.console.abc', handler);
+
+      // Simulate what getSubscribers + handler invocation looks like
+      const envelope = makeEnvelope('relay.human.console.abc');
+      const subscribers = registry.getSubscribers('relay.human.console.abc');
+      for (const sub of subscribers) {
+        await sub(envelope);
+      }
+
+      expect(received).toHaveLength(1);
+      expect(received[0].id).toBe(envelope.id);
+    });
+
+    it('messages published before subscriber registration are lost without pending buffer', async () => {
+      // Demonstrates the gap that bufferForPendingSubscriber (task 2.1) addresses.
+      // Without the buffer, messages published before subscribe() are dropped.
+      const envelope = makeEnvelope('relay.human.console.abc');
+
+      // Publish BEFORE any subscriber exists
+      const subscribersBefore = registry.getSubscribers('relay.human.console.abc');
+      expect(subscribersBefore).toHaveLength(0);
+
+      // Now subscribe
+      const received: RelayEnvelope[] = [];
+      registry.subscribe('relay.human.console.abc', async (env) => {
+        received.push(env);
+      });
+
+      // The envelope was already published — the subscriber won't see it
+      // (unless bufferForPendingSubscriber is implemented)
+      expect(received).toHaveLength(0);
+    });
+
+    it('buffers messages when no subscriber exists', async () => {
+      const envelope = makeEnvelope('relay.human.console.abc');
+      registry.bufferForPendingSubscriber('relay.human.console.abc', envelope);
+
+      const received: RelayEnvelope[] = [];
+      registry.subscribe('relay.human.console.abc', async (env) => {
+        received.push(env);
+      });
+
+      // Wait for microtask drain
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(received).toHaveLength(1);
+      expect(received[0].id).toBe(envelope.id);
+    });
+
+    it('drains buffered messages in order when subscriber registers', async () => {
+      const envelope1 = makeEnvelope('relay.human.console.abc');
+      const envelope2 = makeEnvelope('relay.human.console.abc');
+
+      registry.bufferForPendingSubscriber('relay.human.console.abc', envelope1);
+      registry.bufferForPendingSubscriber('relay.human.console.abc', envelope2);
+
+      const received: RelayEnvelope[] = [];
+      registry.subscribe('relay.human.console.abc', async (env) => {
+        received.push(env);
+      });
+
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
+      expect(received).toHaveLength(2);
+      expect(received[0].id).toBe(envelope1.id);
+      expect(received[1].id).toBe(envelope2.id);
+    });
+
+    it('does not deliver messages after cleanup timer evicts them', async () => {
+      vi.useFakeTimers();
+
+      // Create registry with fake timers so setInterval is controlled
+      const timedRegistry = new SubscriptionRegistry(tempDir);
+
+      const envelope = makeEnvelope('relay.human.console.abc');
+      timedRegistry.bufferForPendingSubscriber('relay.human.console.abc', envelope);
+
+      // Advance past TTL so cleanup timer fires and evicts the message.
+      // Cleanup fires at 30s intervals; at 60s the message (buffered at t=0) is stale.
+      await vi.advanceTimersByTimeAsync(60_001);
+
+      const received: RelayEnvelope[] = [];
+      timedRegistry.subscribe('relay.human.console.abc', async (env) => {
+        received.push(env);
+      });
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(received).toHaveLength(0);
+
+      timedRegistry.shutdown();
+      vi.useRealTimers();
+    });
+
+    it('cleanup timer removes stale entries from pendingBuffers map', async () => {
+      vi.useFakeTimers();
+
+      const timedRegistry = new SubscriptionRegistry(tempDir);
+
+      const envelope = makeEnvelope('relay.human.console.abc');
+      timedRegistry.bufferForPendingSubscriber('relay.human.console.abc', envelope);
+
+      // Advance past TTL + cleanup interval
+      await vi.advanceTimersByTimeAsync(61_000);
+
+      const received: RelayEnvelope[] = [];
+      timedRegistry.subscribe('relay.human.console.abc', async (env) => {
+        received.push(env);
+      });
+
+      await vi.advanceTimersByTimeAsync(10);
+
+      expect(received).toHaveLength(0);
+
+      timedRegistry.shutdown();
+      vi.useRealTimers();
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // size
   // ---------------------------------------------------------------------------
 

@@ -485,6 +485,7 @@ describe('SessionBroadcaster', () => {
       const { res, drainCallbacks } = createBackpressureRes();
       vi.mocked(res.write)
         .mockReturnValueOnce(true) // sync_connected
+        .mockReturnValueOnce(true) // stream_ready
         .mockReturnValueOnce(false) // relay message triggers backpressure
         .mockReturnValue(true);
 
@@ -507,14 +508,89 @@ describe('SessionBroadcaster', () => {
       });
     });
 
+    it('unsubscribes from relay when write throws', async () => {
+      const { res } = createBackpressureRes();
+      const mockUnsub = vi.fn();
+      mockRelay.subscribe.mockImplementationOnce((_subject: string, cb: (envelope: Record<string, unknown>) => void) => {
+        relayCallback = cb;
+        return mockUnsub;
+      });
+
+      vi.mocked(res.write)
+        .mockReturnValueOnce(true) // sync_connected
+        .mockReturnValueOnce(true) // stream_ready
+        .mockImplementationOnce(() => {
+          throw new Error('Connection reset');
+        });
+
+      vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
+        content: '',
+        newOffset: 100,
+      });
+
+      broadcaster.registerClient('session-1', '/vault', res, 'test-client');
+
+      // Trigger a relay message
+      relayCallback!({
+        id: '1',
+        payload: { type: 'text_delta', data: { text: 'a' } },
+        subject: 'relay.human.console.test-client',
+      });
+
+      await new Promise(process.nextTick);
+
+      // Unsub should have been called due to write error
+      expect(mockUnsub).toHaveBeenCalled();
+    });
+
+    it('clears queue after write error', async () => {
+      const { res, writes } = createBackpressureRes();
+      const mockUnsub = vi.fn();
+      mockRelay.subscribe.mockImplementationOnce((_subject: string, cb: (envelope: Record<string, unknown>) => void) => {
+        relayCallback = cb;
+        return mockUnsub;
+      });
+
+      let writeCount = 0;
+      vi.mocked(res.write).mockImplementation((data: string) => {
+        writeCount++;
+        if (writeCount <= 2) {
+          writes.push(data);
+          return true; // sync_connected + stream_ready
+        }
+        // All relay writes throw
+        throw new Error('Connection reset');
+      });
+
+      vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
+        content: '',
+        newOffset: 100,
+      });
+
+      broadcaster.registerClient('session-1', '/vault', res, 'test-client');
+
+      // Send 3 relay messages rapidly
+      relayCallback!({ id: '1', payload: { type: 'text_delta', data: { text: 'a' } }, subject: 'test' });
+      relayCallback!({ id: '2', payload: { type: 'text_delta', data: { text: 'b' } }, subject: 'test' });
+      relayCallback!({ id: '3', payload: { type: 'done', data: {} }, subject: 'test' });
+
+      await new Promise(process.nextTick);
+
+      // Only sync_connected should have been written successfully
+      const relayWrites = writes.filter((w) => w.includes('relay_message'));
+      expect(relayWrites).toHaveLength(0);
+      // Unsub called, remaining queued events discarded
+      expect(mockUnsub).toHaveBeenCalled();
+    });
+
     it('preserves event order under backpressure', async () => {
       const { res, writes, fireDrain } = createBackpressureRes();
       let writeCount = 0;
       vi.mocked(res.write).mockImplementation((data: string) => {
         writes.push(data);
         writeCount++;
-        // sync_connected is write 1, backpressure on write 3 (second relay msg)
-        return writeCount !== 3;
+        // sync_connected=1, stream_ready=2, backpressure on write 4 (second relay msg)
+        return writeCount !== 4;
       });
 
       vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
@@ -542,6 +618,67 @@ describe('SessionBroadcaster', () => {
         expect(relayWrites[0]).toContain('"text":"a"');
         expect(relayWrites[2]).toContain('"done"');
       });
+    });
+  });
+
+  describe('relay subscription stream_ready', () => {
+    let relayCallback3: ((envelope: Record<string, unknown>) => void) | null;
+    const mockRelay3 = {
+      subscribe: vi.fn((_subject: string, cb: (envelope: Record<string, unknown>) => void) => {
+        relayCallback3 = cb;
+        return vi.fn(); // unsub
+      }),
+    };
+
+    beforeEach(() => {
+      relayCallback3 = null;
+      broadcaster.setRelay(mockRelay3 as never);
+    });
+
+    it('sends stream_ready after relay subscribe when clientId provided', () => {
+      vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
+        content: '',
+        newOffset: 100,
+      });
+
+      broadcaster.registerClient('session-1', '/vault', mockRes, 'client-abc');
+
+      const writes = vi.mocked(mockRes.write).mock.calls.map((c) => c[0] as string);
+
+      // Verify sync_connected is present
+      expect(writes.some((w) => w.includes('event: sync_connected'))).toBe(true);
+
+      // Verify relay subscription was established
+      expect(mockRelay3.subscribe).toHaveBeenCalledWith(
+        'relay.human.console.client-abc',
+        expect.any(Function),
+      );
+
+      // Verify stream_ready is present and comes AFTER sync_connected
+      const streamReadyIdx = writes.findIndex((w) => w.includes('stream_ready'));
+      const syncConnectedIdx = writes.findIndex((w) => w.includes('sync_connected'));
+
+      expect(streamReadyIdx).toBeGreaterThanOrEqual(0);
+      expect(streamReadyIdx).toBeGreaterThan(syncConnectedIdx);
+
+      // Verify stream_ready payload includes clientId
+      const streamReadyData = writes[streamReadyIdx];
+      expect(streamReadyData).toContain('"clientId":"client-abc"');
+    });
+
+    it('does not send stream_ready when no clientId is provided', () => {
+      vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
+        content: '',
+        newOffset: 100,
+      });
+
+      broadcaster.registerClient('session-1', '/vault', mockRes);
+
+      const writes = vi.mocked(mockRes.write).mock.calls.map((c) => c[0] as string);
+      expect(writes.some((w) => w.includes('stream_ready'))).toBe(false);
+
+      // No relay subscription should be established without clientId
+      expect(mockRelay3.subscribe).not.toHaveBeenCalled();
     });
   });
 

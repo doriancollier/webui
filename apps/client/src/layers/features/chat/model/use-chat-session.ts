@@ -7,6 +7,32 @@ import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ChatSessionOptions } from './chat-types';
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
 
+/**
+ * Poll a ref until it becomes true, with a best-effort timeout.
+ * Resolves (never rejects) — caller should proceed after timeout.
+ *
+ * @param ref - Boolean ref to poll
+ * @param timeoutMs - Max wait time in milliseconds
+ */
+function waitForStreamReady(
+  ref: React.MutableRefObject<boolean>,
+  timeoutMs: number
+): Promise<void> {
+  return new Promise((resolve) => {
+    if (ref.current) return resolve();
+    const start = Date.now();
+    const interval = setInterval(() => {
+      if (ref.current) {
+        clearInterval(interval);
+        resolve();
+      } else if (Date.now() - start > timeoutMs) {
+        clearInterval(interval);
+        resolve(); // Proceed anyway — pending buffer catches early events
+      }
+    }, 50);
+  });
+}
+
 // Re-export types for backward compat
 export type { ChatMessage, ToolCallState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions } from './chat-types';
 
@@ -102,6 +128,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   }, []);
 
   const isStreaming = status === 'streaming';
+  const streamReadyRef = useRef<boolean>(false);
 
   // Ref-stabilize callbacks to prevent streamEventHandler identity churn.
   // Synced on every render (refs are synchronous — no useEffect needed).
@@ -184,18 +211,53 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     }
   }, [historyQuery.data, isStreaming]);
 
-  // EventSource subscription for real-time sync updates
+  // Relay-path EventSource: stable, never torn down by isStreaming changes.
+  // Only recreated when sessionId or relayEnabled changes.
+  // Response chunks arrive as relay_message events on this SSE connection.
   useEffect(() => {
-    // Legacy path closes EventSource during streaming (SSE is embedded in POST).
-    // Relay path must keep EventSource open — response chunks arrive via relay_message.
-    if (!sessionId || (isStreaming && !relayEnabled)) return;
+    if (!sessionId || !relayEnabled) return;
 
     const params = new URLSearchParams();
-    if (relayEnabled) {
-      params.set('clientId', clientIdRef.current);
-    }
-    const qs = params.toString();
-    const url = `/api/sessions/${sessionId}/stream${qs ? `?${qs}` : ''}`;
+    params.set('clientId', clientIdRef.current);
+    const url = `/api/sessions/${sessionId}/stream?${params}`;
+    const eventSource = new EventSource(url);
+
+    eventSource.addEventListener('stream_ready', () => {
+      streamReadyRef.current = true;
+    });
+
+    eventSource.addEventListener('relay_message', (event: MessageEvent) => {
+      try {
+        const envelope = JSON.parse(event.data) as { payload: { type: string; data: unknown } };
+        streamEventHandler(envelope.payload.type, envelope.payload.data, assistantIdRef.current);
+      } catch {
+        // Ignore parse errors
+      }
+    });
+
+    eventSource.addEventListener('sync_update', () => {
+      queryClient.invalidateQueries({ queryKey: ['messages', sessionId, selectedCwdRef.current] });
+      queryClient.invalidateQueries({ queryKey: ['tasks', sessionId, selectedCwdRef.current] });
+    });
+
+    eventSource.onerror = () => {
+      // EventSource auto-reconnects; reset ready state so we re-handshake
+      streamReadyRef.current = false;
+    };
+
+    return () => {
+      eventSource.close();
+      streamReadyRef.current = false;
+    };
+  }, [sessionId, relayEnabled, streamEventHandler, queryClient]);
+
+  // Legacy-path EventSource: closes during streaming since SSE is embedded in POST.
+  // No-op when relay is enabled — the relay effect above handles sync updates.
+  useEffect(() => {
+    if (!sessionId || relayEnabled) return;
+    if (isStreaming) return;
+
+    const url = `/api/sessions/${sessionId}/stream`;
     const eventSource = new EventSource(url);
 
     eventSource.addEventListener('sync_update', () => {
@@ -203,30 +265,10 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       queryClient.invalidateQueries({ queryKey: ['tasks', sessionId, selectedCwdRef.current] });
     });
 
-    eventSource.addEventListener('sync_connected', () => {
-      // Optional: track connection status
-    });
-
-    // Relay protocol: response chunks arrive as relay_message events on this EventSource
-    if (relayEnabled) {
-      eventSource.addEventListener('relay_message', (event: MessageEvent) => {
-        const envelope = JSON.parse(event.data) as { payload: { type: string; data: unknown } };
-        streamEventHandler(envelope.payload.type, envelope.payload.data, assistantIdRef.current);
-      });
-
-      eventSource.addEventListener('relay_receipt', () => {
-        // Receipt confirmation — delivery indicator (no-op for now)
-      });
-
-      eventSource.addEventListener('message_delivered', () => {
-        // Delivery confirmation (no-op for now)
-      });
-    }
-
     return () => {
       eventSource.close();
     };
-  }, [sessionId, isStreaming, queryClient, relayEnabled, streamEventHandler]);
+  }, [sessionId, isStreaming, queryClient, relayEnabled]);
 
   // Cleanup sessionBusy timer on unmount
   useEffect(() => {
@@ -270,6 +312,11 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         : userMessage.content;
 
       if (relayEnabled) {
+        // Wait for SSE stream_ready handshake (5s timeout, best-effort).
+        // This ensures the relay subscription is active before the POST triggers SDK events.
+        if (!streamReadyRef.current) {
+          await waitForStreamReady(streamReadyRef, 5000);
+        }
         // Relay path: POST returns 202 receipt, response chunks arrive via EventSource
         await transport.sendMessageRelay(sessionId, finalContent, {
           clientId: clientIdRef.current,

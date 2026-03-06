@@ -425,18 +425,24 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     // Other addresses (relay.human.console.*, relay.agent.*) receive raw event streaming.
     const isInboxReplyTo = envelope.replyTo?.startsWith('relay.inbox.');
 
-    try {
-      const eventStream = this.deps.agentManager.sendMessage(ccaSessionKey, prompt, {
-        ...(agentCwd ? { cwd: agentCwd } : {}),
-      });
+    const eventStream = this.deps.agentManager.sendMessage(ccaSessionKey, prompt, {
+      ...(agentCwd ? { cwd: agentCwd } : {}),
+    });
 
-      let eventCount = 0;
-      let collectedText = '';
-      let stepCounter = 0;
-      let messageBuffer = '';
+    let eventCount = 0;
+    let collectedText = '';
+    let stepCounter = 0;
+    let messageBuffer = '';
+    let streamedDone = false;
+    let streamError: string | undefined;
+
+    try {
       for await (const event of eventStream) {
         if (controller.signal.aborted) break;
         eventCount++;
+
+        // Track if we see a natural done event
+        if (event.type === 'done') streamedDone = true;
 
         if (envelope.replyTo && this.relay) {
           if (isInboxReplyTo) {
@@ -463,58 +469,70 @@ export class ClaudeCodeAdapter implements RelayAdapter {
           }
         }
       }
-
-      // After loop — flush and publish final result for all relay.inbox.* replyTos
-      if (isInboxReplyTo && envelope.replyTo && this.relay) {
-        if (messageBuffer) {
-          stepCounter++;
-          await this.publishDispatchProgress(envelope, stepCounter, 'message', messageBuffer, ccaSessionKey);
-        }
-        await this.publishAgentResult(envelope, collectedText, ccaSessionKey);
-      }
-
-      // Persist the SDK-assigned session UUID for future messages to the same agent key.
-      // After the first sendMessage(), the SDK may have assigned a different UUID from
-      // the one we passed to ensureSession(). We store the mapping so that the next
-      // message addressed to agentId resumes the same conversation thread.
-      if (this.deps.agentSessionStore && !persistedSdkSessionId) {
-        const actualSdkId = this.deps.agentManager.getSdkSessionId(ccaSessionKey);
-        if (actualSdkId && actualSdkId !== agentId) {
-          this.deps.agentSessionStore.set(agentId, actualSdkId);
-          log.debug?.(
-            `[CCA] persisted session mapping: ${agentId} → ${actualSdkId}`,
-          );
+    } catch (err) {
+      streamError = err instanceof Error ? err.message : String(err);
+      log.error('[CCA] Streaming error:', err);
+      this.deps.traceStore.updateSpan(envelope.id, {
+        status: 'failed',
+        processedAt: Date.now(),
+        error: streamError,
+      });
+    } finally {
+      clearTimeout(timeout);
+      // Always send terminal done if not already sent
+      if (!streamedDone && envelope.replyTo && this.relay) {
+        try {
+          await this.publishResponse(envelope, { type: 'done', data: { sessionId: ccaSessionKey } }, ccaSessionKey);
+        } catch {
+          // Best-effort — if this also fails, client will timeout
+          log.warn('[CCA] Failed to publish terminal done event');
         }
       }
+    }
 
-      (this.deps.logger ?? console).info(
-        `ClaudeCodeAdapter: published ${eventCount} event(s) to ${envelope.replyTo ?? '(no replyTo)'}`,
-      );
+    // After loop — flush and publish final result for all relay.inbox.* replyTos
+    if (isInboxReplyTo && envelope.replyTo && this.relay) {
+      if (messageBuffer) {
+        stepCounter++;
+        await this.publishDispatchProgress(envelope, stepCounter, 'message', messageBuffer, ccaSessionKey);
+      }
+      await this.publishAgentResult(envelope, collectedText, ccaSessionKey);
+    }
 
-      const aborted = controller.signal.aborted;
+    // Persist the SDK-assigned session UUID for future messages to the same agent key.
+    if (this.deps.agentSessionStore && !persistedSdkSessionId) {
+      const actualSdkId = this.deps.agentManager.getSdkSessionId(ccaSessionKey);
+      if (actualSdkId && actualSdkId !== agentId) {
+        this.deps.agentSessionStore.set(agentId, actualSdkId);
+        log.debug?.(
+          `[CCA] persisted session mapping: ${agentId} → ${actualSdkId}`,
+        );
+      }
+    }
+
+    (this.deps.logger ?? console).info(
+      `ClaudeCodeAdapter: published ${eventCount} event(s) to ${envelope.replyTo ?? '(no replyTo)'}`,
+    );
+
+    const aborted = controller.signal.aborted;
+    const failed = !!streamError || aborted;
+    const errorMsg = streamError ?? (aborted ? 'TTL budget expired' : undefined);
+
+    // Only update trace if the catch block didn't already mark it as failed
+    if (!streamError) {
       this.deps.traceStore.updateSpan(envelope.id, {
         status: aborted ? 'failed' : 'processed',
         processedAt: Date.now(),
         ...(aborted && { error: 'TTL budget expired' }),
       });
-
-      return {
-        success: !aborted,
-        error: aborted ? 'TTL budget expired' : undefined,
-        deadLettered: aborted,
-        durationMs: Date.now() - startTime,
-      };
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : String(err);
-      this.deps.traceStore.updateSpan(envelope.id, {
-        status: 'failed',
-        processedAt: Date.now(),
-        error: errorMsg,
-      });
-      throw err;
-    } finally {
-      clearTimeout(timeout);
     }
+
+    return {
+      success: !failed,
+      error: errorMsg,
+      deadLettered: aborted,
+      durationMs: Date.now() - startTime,
+    };
   }
 
   // === Private: pulse message handling ===
@@ -856,6 +874,11 @@ export class ClaudeCodeAdapter implements RelayAdapter {
         hopCount: originalEnvelope.budget.hopCount + 1,
       },
     };
-    await this.relay.publish(originalEnvelope.replyTo, event, opts);
+    const result = await this.relay.publish(originalEnvelope.replyTo, event, opts);
+    if (result.deliveredTo === 0 && event.type !== 'done') {
+      (this.deps.logger ?? console).warn(
+        `[CCA] publishResponse delivered to 0 subscribers: subject=${originalEnvelope.replyTo}, eventType=${event.type}`,
+      );
+    }
   }
 }

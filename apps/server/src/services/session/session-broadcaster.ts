@@ -114,6 +114,12 @@ export class SessionBroadcaster {
     // Send sync_connected event
     res.write(`event: sync_connected\ndata: ${JSON.stringify({ sessionId })}\n\n`);
 
+    // Signal to client that relay subscription is active and ready to receive.
+    // Sent after sync_connected so clients can rely on ordering.
+    if (this.relay && clientId) {
+      res.write(`event: stream_ready\ndata: ${JSON.stringify({ clientId })}\n\n`);
+    }
+
     // Auto-deregister on close
     res.on('close', () => {
       this.deregisterClient(sessionId, res);
@@ -177,6 +183,7 @@ export class SessionBroadcaster {
     const subject = `relay.human.console.${clientId}`;
     let writing = false;
     const queue: string[] = [];
+    let unsubFn: (() => void) | null = null;
 
     const flush = async () => {
       if (writing) return;
@@ -189,14 +196,21 @@ export class SessionBroadcaster {
             await new Promise<void>((resolve) => res.once('drain', resolve));
           }
         } catch (err) {
-          logger.error(`[SessionBroadcaster] Failed to write relay event to client:`, err);
+          logger.error('[SessionBroadcaster] Write error, unsubscribing relay:', err);
+          // Clean up the relay subscription — no more events should queue
+          if (unsubFn) {
+            unsubFn();
+            unsubFn = null;
+          }
+          this.relaySubscriptions.delete(res);
+          queue.length = 0; // Discard remaining queued events
           break;
         }
       }
       writing = false;
     };
 
-    const unsub = this.relay!.subscribe(subject, (envelope) => {
+    unsubFn = this.relay!.subscribe(subject, (envelope) => {
       const eventData = `event: relay_message\ndata: ${JSON.stringify({
         messageId: envelope.id,
         payload: envelope.payload,
@@ -206,7 +220,7 @@ export class SessionBroadcaster {
       void flush();
     });
 
-    this.relaySubscriptions.set(res, unsub);
+    this.relaySubscriptions.set(res, unsubFn);
   }
 
   /**

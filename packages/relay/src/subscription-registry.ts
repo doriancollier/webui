@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import { monotonicFactory } from 'ulidx';
 import { validateSubject, matchesPattern } from './subject-matcher.js';
 import type { MessageHandler, Unsubscribe, SubscriptionInfo } from './types.js';
+import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 
 /** ULID generator for subscription IDs. Monotonic to guarantee ordering. */
 const generateUlid = monotonicFactory();
@@ -38,6 +39,18 @@ interface PersistedSubscription {
   createdAt: string;
 }
 
+/** A message held in the pending buffer awaiting a subscriber. */
+interface PendingMessage {
+  envelope: RelayEnvelope;
+  bufferedAt: number;
+}
+
+/** Maximum number of messages to retain per subject in the pending buffer. */
+const MAX_PENDING_BUFFER_SIZE = 100;
+
+/** Milliseconds before a buffered message is considered stale and discarded. */
+const PENDING_BUFFER_TTL_MS = 30_000;
+
 /**
  * In-memory registry of pattern-based subscriptions, persisted to disk.
  *
@@ -52,6 +65,12 @@ export class SubscriptionRegistry {
   /** Subscription ID -> entry mapping. */
   private readonly subscriptions = new Map<string, SubscriptionEntry>();
 
+  /** Subject -> pending messages awaiting a subscriber. */
+  private readonly pendingBuffers = new Map<string, PendingMessage[]>();
+
+  /** Timer handle for periodic pending buffer cleanup. */
+  private cleanupTimer?: ReturnType<typeof setInterval>;
+
   /**
    * Create a SubscriptionRegistry.
    *
@@ -65,6 +84,7 @@ export class SubscriptionRegistry {
   constructor(dataDir: string) {
     this.subscriptionsPath = join(dataDir, SUBSCRIPTIONS_FILE);
     this.loadPersistedSubscriptions();
+    this.startCleanupTimer();
   }
 
   /**
@@ -91,10 +111,56 @@ export class SubscriptionRegistry {
     this.subscriptions.set(id, { pattern, handler, createdAt });
     this.persistSubscriptions();
 
+    // Drain any buffered messages whose subject matches this pattern
+    this.drainPendingBuffer(pattern, handler);
+
     return () => {
       this.subscriptions.delete(id);
       this.persistSubscriptions();
     };
+  }
+
+  /**
+   * Buffer a message for a subject that currently has no subscribers.
+   *
+   * When `publish()` finds no matching subscription handlers and no registered
+   * Maildir endpoints, it can call this method to hold the envelope in memory.
+   * The next `subscribe()` call whose pattern matches the subject will drain
+   * the buffer, delivering any pending messages to the new handler.
+   *
+   * Buffers are capped at {@link MAX_PENDING_BUFFER_SIZE} messages per subject
+   * (oldest dropped when full). Messages older than {@link PENDING_BUFFER_TTL_MS}
+   * are discarded during periodic cleanup.
+   *
+   * @param subject - The concrete subject of the message
+   * @param envelope - The message envelope to buffer
+   */
+  bufferForPendingSubscriber(subject: string, envelope: RelayEnvelope): void {
+    let buffer = this.pendingBuffers.get(subject);
+    if (!buffer) {
+      buffer = [];
+      this.pendingBuffers.set(subject, buffer);
+    }
+
+    // Evict oldest entry when buffer is full
+    if (buffer.length >= MAX_PENDING_BUFFER_SIZE) {
+      buffer.shift();
+    }
+
+    buffer.push({ envelope, bufferedAt: Date.now() });
+  }
+
+  /**
+   * Stop the cleanup timer and clear all pending buffers.
+   *
+   * Should be called alongside `clear()` during shutdown.
+   */
+  shutdown(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = undefined;
+    }
+    this.pendingBuffers.clear();
   }
 
   /**
@@ -157,6 +223,62 @@ export class SubscriptionRegistry {
   clear(): void {
     this.subscriptions.clear();
     this.persistSubscriptions();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pending buffer internals
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Drain buffered messages for subjects matching `pattern` to `handler`.
+   *
+   * Called synchronously after a new subscription is registered. Invokes the
+   * handler asynchronously (via `Promise.resolve()`) so the subscribe call
+   * returns before any buffered messages are delivered.
+   */
+  private drainPendingBuffer(pattern: string, handler: MessageHandler): void {
+    for (const [subject, buffer] of this.pendingBuffers.entries()) {
+      if (!matchesPattern(subject, pattern)) continue;
+
+      const messages = buffer.splice(0);
+      if (messages.length === 0) continue;
+
+      if (buffer.length === 0) {
+        this.pendingBuffers.delete(subject);
+      }
+
+      // Deliver asynchronously to avoid blocking the subscribe() caller
+      Promise.resolve().then(async () => {
+        for (const { envelope } of messages) {
+          try {
+            await handler(envelope);
+          } catch {
+            // Handler errors during drain are non-fatal
+          }
+        }
+      }).catch(() => undefined);
+    }
+  }
+
+  /**
+   * Start the periodic timer that evicts stale pending-buffer entries.
+   *
+   * Uses `.unref()` so this timer does not prevent process exit when the
+   * registry is used in standalone/test contexts without explicit `shutdown()`.
+   */
+  private startCleanupTimer(): void {
+    this.cleanupTimer = setInterval(() => {
+      const cutoff = Date.now() - PENDING_BUFFER_TTL_MS;
+      for (const [subject, buffer] of this.pendingBuffers.entries()) {
+        const fresh = buffer.filter((m) => m.bufferedAt >= cutoff);
+        if (fresh.length === 0) {
+          this.pendingBuffers.delete(subject);
+        } else if (fresh.length !== buffer.length) {
+          this.pendingBuffers.set(subject, fresh);
+        }
+      }
+    }, PENDING_BUFFER_TTL_MS);
+    this.cleanupTimer.unref();
   }
 
   // ---------------------------------------------------------------------------

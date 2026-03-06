@@ -648,4 +648,149 @@ describe('ClaudeCodeAdapter', () => {
     const updateCall = vi.mocked(pulseStore.updateRun).mock.calls[0][1];
     expect((updateCall.outputSummary as string).length).toBeLessThanOrEqual(1000);
   });
+
+  // === Terminal done event and delivery diagnostics (tasks 1.3, 1.4) ===
+
+  describe('terminal done event on generator error', () => {
+    it('publishes done event when SDK generator throws', async () => {
+      vi.mocked(agentManager.sendMessage).mockReturnValue(
+        (async function* () {
+          yield { type: 'text_delta', data: { text: 'hello' } } as StreamEvent;
+          throw new Error('SDK stream error');
+        })(),
+      );
+
+      await adapter.start(relay);
+      const envelope = createTestEnvelope({ replyTo: 'relay.human.console.client-1' });
+
+      const result = await adapter.deliver(envelope.subject, envelope);
+
+      expect(result.success).toBe(false);
+      expect(result.error).toMatch(/SDK stream error/);
+
+      // The finally block should publish a done event even on error
+      const publishCalls = vi.mocked(relay.publish).mock.calls;
+      expect(publishCalls.length).toBeGreaterThanOrEqual(2); // text_delta + done
+
+      const lastPublish = publishCalls[publishCalls.length - 1];
+      const payload = lastPublish[1] as Record<string, unknown>;
+      expect(payload).toMatchObject({ type: 'done', data: {} });
+    });
+
+    it('does not double-send done event on normal completion', async () => {
+      vi.mocked(agentManager.sendMessage).mockReturnValue(
+        (async function* () {
+          yield { type: 'text_delta', data: { text: 'hello' } } as StreamEvent;
+          yield { type: 'done', data: {} } as StreamEvent;
+        })(),
+      );
+
+      await adapter.start(relay);
+      const envelope = createTestEnvelope({ replyTo: 'relay.human.console.client-1' });
+
+      await adapter.deliver(envelope.subject, envelope);
+
+      const publishCalls = vi.mocked(relay.publish).mock.calls;
+      const doneCalls = publishCalls.filter(
+        ([, payload]) => (payload as Record<string, unknown>).type === 'done',
+      );
+      expect(doneCalls).toHaveLength(1);
+    });
+
+    it('sends done in finally even when publishResponse throws', async () => {
+      let publishCount = 0;
+      vi.mocked(relay.publish).mockImplementation(async () => {
+        publishCount++;
+        if (publishCount === 1) {
+          throw new Error('Publish failed for text_delta');
+        }
+        return { messageId: `resp-${publishCount}`, deliveredTo: 1 };
+      });
+
+      vi.mocked(agentManager.sendMessage).mockReturnValue(
+        (async function* () {
+          yield { type: 'text_delta', data: { text: 'hello' } } as StreamEvent;
+          yield { type: 'done', data: {} } as StreamEvent;
+        })(),
+      );
+
+      await adapter.start(relay);
+      const envelope = createTestEnvelope({ replyTo: 'relay.human.console.client-1' });
+
+      await adapter.deliver(envelope.subject, envelope);
+
+      // done event should still have been published despite earlier publish failure
+      const publishCalls = vi.mocked(relay.publish).mock.calls;
+      const donePublish = publishCalls.find(
+        ([, payload]) => (payload as Record<string, unknown>).type === 'done',
+      );
+      expect(donePublish).toBeDefined();
+    });
+  });
+
+  describe('delivery diagnostics', () => {
+    it('logs warning when deliveredTo is 0 for non-done events', async () => {
+      const mockLogger = {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+      };
+
+      const adapterWithLogger = new ClaudeCodeAdapter(
+        'diagnostic-test',
+        { defaultCwd: '/tmp' },
+        { agentManager, traceStore, logger: mockLogger },
+      );
+      await adapterWithLogger.start({
+        ...relay,
+        publish: vi.fn().mockResolvedValue({ messageId: 'resp-1', deliveredTo: 0 }),
+      });
+
+      const envelope = createTestEnvelope({ replyTo: 'relay.human.console.client-1' });
+
+      await adapterWithLogger.deliver(envelope.subject, envelope);
+
+      // Warning should be logged for text_delta events with deliveredTo=0
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('delivered to 0'),
+      );
+    });
+
+    it('does not log warning for done events with deliveredTo=0', async () => {
+      const mockLogger = {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+      };
+
+      // Stream that only yields done
+      vi.mocked(agentManager.sendMessage).mockReturnValue(
+        (async function* () {
+          yield { type: 'done', data: {} } as StreamEvent;
+        })(),
+      );
+
+      const adapterWithLogger = new ClaudeCodeAdapter(
+        'diagnostic-done',
+        { defaultCwd: '/tmp' },
+        { agentManager, traceStore, logger: mockLogger },
+      );
+      await adapterWithLogger.start({
+        ...relay,
+        publish: vi.fn().mockResolvedValue({ messageId: 'resp-1', deliveredTo: 0 }),
+      });
+
+      const envelope = createTestEnvelope({ replyTo: 'relay.human.console.client-1' });
+
+      await adapterWithLogger.deliver(envelope.subject, envelope);
+
+      // No warning for done events
+      const warnCalls = mockLogger.warn.mock.calls.filter(
+        ([msg]: [string]) => msg.includes('delivered to 0'),
+      );
+      expect(warnCalls).toHaveLength(0);
+    });
+  });
 });
