@@ -438,6 +438,159 @@ describe('SessionBroadcaster', () => {
     });
   });
 
+  describe('relay subscription backpressure', () => {
+    let relayCallback: ((envelope: Record<string, unknown>) => void) | null;
+    const mockRelay = {
+      subscribe: vi.fn((subject: string, cb: (envelope: Record<string, unknown>) => void) => {
+        relayCallback = cb;
+        return vi.fn(); // unsub
+      }),
+    };
+
+    beforeEach(() => {
+      relayCallback = null;
+      broadcaster.setRelay(mockRelay as never);
+    });
+
+    function createBackpressureRes() {
+      const onceCallbacks = new Map<string, Array<() => void>>();
+      const writes: string[] = [];
+      return {
+        res: {
+          write: vi.fn((data: string) => {
+            writes.push(data);
+            return true;
+          }),
+          end: vi.fn(),
+          on: vi.fn((event: string, cb: () => void) => {
+            if (event === 'close') closeHandler = cb;
+          }),
+          once: vi.fn((event: string, cb: () => void) => {
+            if (!onceCallbacks.has(event)) onceCallbacks.set(event, []);
+            onceCallbacks.get(event)!.push(cb);
+          }),
+          headersSent: true,
+        } as unknown as Response,
+        writes,
+        drainCallbacks: onceCallbacks,
+        fireDrain: () => {
+          const cbs = onceCallbacks.get('drain') ?? [];
+          onceCallbacks.delete('drain');
+          cbs.forEach((cb) => cb());
+        },
+      };
+    }
+
+    it('waits for drain when write returns false', async () => {
+      const { res, drainCallbacks } = createBackpressureRes();
+      vi.mocked(res.write)
+        .mockReturnValueOnce(true) // sync_connected
+        .mockReturnValueOnce(false) // relay message triggers backpressure
+        .mockReturnValue(true);
+
+      vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
+        content: '',
+        newOffset: 100,
+      });
+
+      broadcaster.registerClient('session-1', '/vault', res, 'test-client');
+
+      // Trigger a relay message
+      relayCallback!({
+        id: '1',
+        payload: { type: 'done', data: {} },
+        subject: 'relay.human.console.test-client',
+      });
+
+      await vi.waitFor(() => {
+        expect(drainCallbacks.has('drain')).toBe(true);
+      });
+    });
+
+    it('preserves event order under backpressure', async () => {
+      const { res, writes, fireDrain } = createBackpressureRes();
+      let writeCount = 0;
+      vi.mocked(res.write).mockImplementation((data: string) => {
+        writes.push(data);
+        writeCount++;
+        // sync_connected is write 1, backpressure on write 3 (second relay msg)
+        return writeCount !== 3;
+      });
+
+      vi.mocked(mockTranscriptReader.readFromOffset).mockResolvedValue({
+        content: '',
+        newOffset: 100,
+      });
+
+      broadcaster.registerClient('session-1', '/vault', res, 'test-client');
+
+      // Send 3 relay messages rapidly
+      relayCallback!({ id: '1', payload: { type: 'text_delta', data: { text: 'a' } }, subject: 'test' });
+      relayCallback!({ id: '2', payload: { type: 'text_delta', data: { text: 'b' } }, subject: 'test' });
+      relayCallback!({ id: '3', payload: { type: 'done', data: {} }, subject: 'test' });
+
+      // Allow first write to process
+      await new Promise(process.nextTick);
+
+      // Resolve drain
+      fireDrain();
+
+      await vi.waitFor(() => {
+        const relayWrites = writes.filter((w) => w.includes('relay_message'));
+        expect(relayWrites).toHaveLength(3);
+        // Verify ordering: first has 'a', last has 'done'
+        expect(relayWrites[0]).toContain('"text":"a"');
+        expect(relayWrites[2]).toContain('"done"');
+      });
+    });
+  });
+
+  describe('broadcastUpdate backpressure', () => {
+    it('waits for drain on sync_update writes', async () => {
+      const onceCallbacks: Array<[string, () => void]> = [];
+      const bpRes = {
+        write: vi.fn(),
+        end: vi.fn(),
+        on: vi.fn((event: string, cb: () => void) => {
+          if (event === 'close') closeHandler = cb;
+        }),
+        once: vi.fn((event: string, cb: () => void) => {
+          onceCallbacks.push([event, cb]);
+        }),
+        headersSent: true,
+      } as unknown as Response;
+
+      // sync_connected returns true, sync_update returns false
+      vi.mocked(bpRes.write)
+        .mockReturnValueOnce(true) // sync_connected
+        .mockReturnValueOnce(false) // sync_update triggers backpressure
+        .mockReturnValue(true);
+
+      vi.mocked(mockTranscriptReader.readFromOffset)
+        .mockResolvedValueOnce({ content: '', newOffset: 100 }) // init
+        .mockResolvedValueOnce({ content: 'new data\n', newOffset: 200 }); // update
+
+      broadcaster.registerClient('session-1', '/vault', bpRes);
+
+      // Wait for offset init
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      // Trigger file change
+      const changeHandler = mockWatcher.on.mock.calls.find(([event]) => event === 'change')?.[1] as
+        | (() => void)
+        | undefined;
+      expect(changeHandler).toBeDefined();
+      changeHandler!();
+
+      // Wait for debounce + async
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // Should have registered a drain listener
+      const drainCall = onceCallbacks.find(([event]) => event === 'drain');
+      expect(drainCall).toBeDefined();
+    });
+  });
+
   describe('shutdown', () => {
     it('closes all watchers and clients', () => {
       const sessionId1 = 'session-1';

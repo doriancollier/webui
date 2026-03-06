@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Apply SSE backpressure handling to session broadcaster relay writes
 - Resolve SSE freeze, blank refresh, and relay metadata leaks
 - Remove acted candidates from discovery list after approve/deny
 ---

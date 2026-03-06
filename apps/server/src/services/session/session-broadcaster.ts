@@ -175,18 +175,35 @@ export class SessionBroadcaster {
    */
   private subscribeToRelay(res: Response, clientId: string): void {
     const subject = `relay.human.console.${clientId}`;
+    let writing = false;
+    const queue: string[] = [];
+
+    const flush = async () => {
+      if (writing) return;
+      writing = true;
+      while (queue.length > 0) {
+        const data = queue.shift()!;
+        try {
+          const ok = res.write(data);
+          if (!ok) {
+            await new Promise<void>((resolve) => res.once('drain', resolve));
+          }
+        } catch (err) {
+          logger.error(`[SessionBroadcaster] Failed to write relay event to client:`, err);
+          break;
+        }
+      }
+      writing = false;
+    };
+
     const unsub = this.relay!.subscribe(subject, (envelope) => {
       const eventData = `event: relay_message\ndata: ${JSON.stringify({
         messageId: envelope.id,
         payload: envelope.payload,
         subject: envelope.subject,
       })}\n\n`;
-
-      try {
-        res.write(eventData);
-      } catch (err) {
-        logger.error(`[SessionBroadcaster] Failed to write relay event to client:`, err);
-      }
+      queue.push(eventData);
+      void flush();
     });
 
     this.relaySubscriptions.set(res, unsub);
@@ -321,7 +338,10 @@ export class SessionBroadcaster {
 
       for (const client of Array.from(clientSet)) {
         try {
-          client.write(eventData);
+          const ok = client.write(eventData);
+          if (!ok) {
+            await new Promise<void>((resolve) => client.once('drain', resolve));
+          }
         } catch (err) {
           // Client may have disconnected, will be cleaned up on 'close' event
           logger.error(
