@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import type {
+  Session,
   SessionStatusEvent,
   PermissionMode,
   UpdateSessionRequest,
@@ -81,7 +82,10 @@ export function useSessionStatus(
 
       try {
         const updated = await transport.updateSession(sessionId, opts, selectedCwd ?? undefined);
-        queryClient.setQueryData(['session', sessionId, selectedCwd], updated);
+        queryClient.setQueryData(
+          ['session', sessionId, selectedCwd],
+          (old: Session | undefined) => ({ ...old, ...updated })
+        );
         // Clear optimistic overrides — server data is now authoritative
         if (opts.model) setLocalModel(null);
         if (opts.permissionMode) setLocalPermissionMode(null);

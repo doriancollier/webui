@@ -294,7 +294,9 @@ apps/
         interactive-handlers.ts -- Tool approval & question flows
         command-registry.ts   -- Slash command discovery
         config-manager.ts     -- Persistent user config (~/.dork/config.json)
-        stream-adapter.ts     -- SSE helpers (initSSEStream, sendSSEEvent, endSSEStream)
+        stream-adapter.ts     -- SSE helpers (initSSEStream, sendSSEEvent, endSSEStream).
+                                  sendSSEEvent is async — must be awaited. Awaits drain
+                                  when res.write() returns false (backpressure handling).
         tunnel-manager.ts     -- Opt-in ngrok tunnel lifecycle
         update-checker.ts     -- npm registry version check with 1-hour cache
         file-lister.ts        -- Directory file listing

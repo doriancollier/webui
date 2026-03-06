@@ -227,6 +227,11 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
         continue;
       }
 
+      // Filter relay metadata injected by ClaudeCodeAdapter — never user-authored content
+      if (text.startsWith('<relay_context>')) {
+        continue;
+      }
+
       if (text.startsWith('<command-message>') || text.startsWith('<command-name>')) {
         const meta = extractCommandMeta(text);
         if (meta) {

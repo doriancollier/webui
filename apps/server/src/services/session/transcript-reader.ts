@@ -248,7 +248,8 @@ export class TranscriptReader {
           text.startsWith('<local-command') ||
           text.startsWith('<command-name>') ||
           text.startsWith('<command-message>') ||
-          text.startsWith('<task-notification>')
+          text.startsWith('<task-notification>') ||
+          text.startsWith('<relay_context>')
         ) {
           continue;
         }

@@ -72,7 +72,9 @@ router.get('/:id', async (req, res) => {
   if (!(await assertBoundary(cwd, res))) return;
 
   const projectDir = cwd || vaultRoot;
-  const session = await transcriptReader.getSession(projectDir, sessionId);
+  // Translate client-facing session ID to SDK-assigned JSONL filename
+  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+  const session = await transcriptReader.getSession(projectDir, sdkSessionId);
   if (!session) return sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
   res.json(session);
 });
@@ -88,7 +90,10 @@ router.get('/:id/tasks', async (req, res) => {
 
   const cwd = cwdParam || vaultRoot;
 
-  const etag = await transcriptReader.getTranscriptETag(cwd, sessionId);
+  // Translate client-facing session ID to SDK-assigned JSONL filename
+  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+
+  const etag = await transcriptReader.getTranscriptETag(cwd, sdkSessionId);
   if (etag) {
     res.setHeader('ETag', etag);
     if (req.headers['if-none-match'] === etag) {
@@ -97,7 +102,7 @@ router.get('/:id/tasks', async (req, res) => {
   }
 
   try {
-    const tasks = await transcriptReader.readTasks(cwd, sessionId);
+    const tasks = await transcriptReader.readTasks(cwd, sdkSessionId);
     res.json({ tasks });
   } catch {
     sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
@@ -115,7 +120,10 @@ router.get('/:id/messages', async (req, res) => {
 
   const cwd = cwdParam || vaultRoot;
 
-  const etag = await transcriptReader.getTranscriptETag(cwd, sessionId);
+  // Translate client-facing session ID to SDK-assigned JSONL filename
+  const sdkSessionId = agentManager.getSdkSessionId(sessionId) ?? sessionId;
+
+  const etag = await transcriptReader.getTranscriptETag(cwd, sdkSessionId);
   if (etag) {
     res.setHeader('ETag', etag);
     if (req.headers['if-none-match'] === etag) {
@@ -123,7 +131,7 @@ router.get('/:id/messages', async (req, res) => {
     }
   }
 
-  const messages = await transcriptReader.readTranscript(cwd, sessionId);
+  const messages = await transcriptReader.readTranscript(cwd, sdkSessionId);
   res.json({ messages });
 });
 
@@ -258,14 +266,14 @@ router.post('/:id/messages', async (req, res) => {
 
   try {
     for await (const event of agentManager.sendMessage(sessionId, content, { cwd })) {
-      sendSSEEvent(res, event);
+      await sendSSEEvent(res, event);
 
       // If SDK assigned a different session ID, track it
       if (event.type === 'done') {
         const actualSdkId = agentManager.getSdkSessionId(sessionId);
         if (actualSdkId && actualSdkId !== sessionId) {
           // Send a redirect hint so the client can update its session ID
-          sendSSEEvent(res, {
+          await sendSSEEvent(res, {
             type: 'done',
             data: { sessionId: actualSdkId },
           });
@@ -273,7 +281,7 @@ router.post('/:id/messages', async (req, res) => {
       }
     }
   } catch (err) {
-    sendSSEEvent(res, {
+    await sendSSEEvent(res, {
       type: 'error',
       data: { message: err instanceof Error ? err.message : 'Unknown error' },
     });

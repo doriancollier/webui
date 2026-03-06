@@ -16,10 +16,13 @@ export function initSSEStream(res: Response): void {
   });
 }
 
-/** Write a single StreamEvent as an SSE message (event type + JSON data). */
-export function sendSSEEvent(res: Response, event: StreamEvent): void {
-  res.write(`event: ${event.type}\n`);
-  res.write(`data: ${JSON.stringify(event.data)}\n\n`);
+/** Write a single StreamEvent as an SSE message with backpressure handling. */
+export async function sendSSEEvent(res: Response, event: StreamEvent): Promise<void> {
+  const payload = `event: ${event.type}\ndata: ${JSON.stringify(event.data)}\n\n`;
+  const ok = res.write(payload);
+  if (!ok) {
+    await new Promise<void>((resolve) => res.once('drain', resolve));
+  }
 }
 
 /** End the SSE stream and close the response. */

@@ -24,6 +24,8 @@ vi.mock('../../services/session/transcript-reader.js', () => ({
     getSession: vi.fn(),
     readTranscript: vi.fn(),
     listTranscripts: vi.fn(),
+    getTranscriptETag: vi.fn().mockResolvedValue(null),
+    readTasks: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -420,6 +422,65 @@ describe('Sessions Routes', () => {
         expect.any(String),
         expect.anything(),
         undefined
+      );
+    });
+  });
+
+  // ---- Session ID Translation ----
+
+  describe('session ID translation', () => {
+    it('GET /messages uses SDK session ID when available', async () => {
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('sdk-uuid-123');
+      vi.mocked(transcriptReader.readTranscript).mockResolvedValue([]);
+
+      await request(app).get(`/api/sessions/${S1}/messages`);
+
+      expect(agentManager.getSdkSessionId).toHaveBeenCalledWith(S1);
+      expect(transcriptReader.readTranscript).toHaveBeenCalledWith(
+        expect.any(String),
+        'sdk-uuid-123'
+      );
+    });
+
+    it('GET /messages falls back to URL session ID when not in agentManager', async () => {
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue(undefined);
+      vi.mocked(transcriptReader.readTranscript).mockResolvedValue([]);
+
+      await request(app).get(`/api/sessions/${S1}/messages`);
+
+      expect(transcriptReader.readTranscript).toHaveBeenCalledWith(
+        expect.any(String),
+        S1
+      );
+    });
+
+    it('GET /:id uses SDK session ID for metadata lookup', async () => {
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('sdk-uuid-456');
+      vi.mocked(transcriptReader.getSession).mockResolvedValue({
+        id: 'sdk-uuid-456',
+        title: 'Test',
+        createdAt: '2026-01-01',
+        updatedAt: '2026-01-01',
+        permissionMode: 'default',
+      });
+
+      const res = await request(app).get(`/api/sessions/${S1}`);
+
+      expect(res.status).toBe(200);
+      expect(transcriptReader.getSession).toHaveBeenCalledWith(
+        expect.any(String),
+        'sdk-uuid-456'
+      );
+    });
+
+    it('GET /:id/tasks uses SDK session ID', async () => {
+      vi.mocked(agentManager.getSdkSessionId).mockReturnValue('sdk-uuid-789');
+
+      await request(app).get(`/api/sessions/${S1}/tasks`);
+
+      expect(transcriptReader.readTasks).toHaveBeenCalledWith(
+        expect.any(String),
+        'sdk-uuid-789'
       );
     });
   });
