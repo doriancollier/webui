@@ -55,6 +55,7 @@ src/
 │   │   ├── pulse/       # Pulse scheduler hooks (useSchedules, useRuns, etc.)
 │   │   ├── relay/       # Relay messaging hooks (useRelayMessages, useRelayAdapters, etc.)
 │   │   ├── mesh/        # Mesh discovery hooks (useRegisteredAgents, useDiscoverAgents, etc.)
+│   │   ├── discovery/   # Shared discovery scan state (Zustand store + useDiscoveryScan hook)
 │   │   └── binding/     # Adapter-agent binding hooks (useBindings, useCreateBinding, etc.)
 │   ├── features/        # Complete user-facing functionality
 │   │   ├── chat/        # ChatPanel, MessageList, streaming, useChatSession

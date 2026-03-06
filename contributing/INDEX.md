@@ -42,8 +42,8 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 
 | Guide | Last Reviewed | Reviewer | Notes |
 |---|---|---|---|
-| `project-structure.md` | 2026-02-17 | Claude | Verified post-FSD paths |
-| `architecture.md` | 2026-03-02 | Claude | Added 3 Dockerfile differentiation |
+| `project-structure.md` | 2026-03-06 | Claude | Added entities/discovery |
+| `architecture.md` | 2026-03-06 | Claude | Subscribe-first SSE, unified scanner |
 | `design-system.md` | 2026-02-17 | Claude | Fixed pre-FSD component paths |
 | `api-reference.md` | 2026-03-02 | Claude | Added POST /api/discovery/scan |
 | `configuration.md` | 2026-03-02 | Claude | Added Docker/publish workflow |
