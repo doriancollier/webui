@@ -1,18 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DEFAULT_CWD } from '../../lib/resolve-root.js';
 import { parseSSEResponse } from '@dorkos/test-utils/sse-helpers';
-
-// Mock the discovery scanner
-const mockScanForAgents = vi.fn();
-vi.mock('../../services/discovery/discovery-scanner.js', () => ({
-  scanForAgents: (...args: unknown[]) => mockScanForAgents(...args),
-}));
 
 // Mock boundary module
 const mockIsWithinBoundary = vi.fn();
+const mockGetBoundary = vi.fn().mockReturnValue('/home/user');
 vi.mock('../../lib/boundary.js', () => ({
   isWithinBoundary: (...args: unknown[]) => mockIsWithinBoundary(...args),
-  getBoundary: vi.fn().mockReturnValue('/home/user'),
+  getBoundary: () => mockGetBoundary(),
   initBoundary: vi.fn(),
   validateBoundary: vi.fn(),
   BoundaryError: class BoundaryError extends Error {
@@ -29,11 +23,15 @@ import request from 'supertest';
 import express from 'express';
 import { createDiscoveryRouter } from '../discovery.js';
 
+/** Mock MeshCore with a controllable discover() async generator. */
+const mockDiscover = vi.fn();
+const mockMeshCore = { discover: mockDiscover } as unknown as import('@dorkos/mesh').MeshCore;
+
 /** Create a minimal Express app with the discovery router mounted. */
 function createTestApp() {
   const app = express();
   app.use(express.json());
-  app.use('/api/discovery', createDiscoveryRouter());
+  app.use('/api/discovery', createDiscoveryRouter(mockMeshCore));
   return app;
 }
 
@@ -41,6 +39,7 @@ describe('Discovery Route', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockIsWithinBoundary.mockResolvedValue(true);
+    mockGetBoundary.mockReturnValue('/home/user');
   });
 
   describe('POST /api/discovery/scan — validation', () => {
@@ -71,7 +70,7 @@ describe('Discovery Route', () => {
 
       const res = await request(app)
         .post('/api/discovery/scan')
-        .send({ timeout: 100000 });
+        .send({ timeout: 200000 });
 
       expect(res.status).toBe(400);
       expect(res.body.error).toBe('Validation failed');
@@ -103,14 +102,27 @@ describe('Discovery Route', () => {
       expect(mockIsWithinBoundary).toHaveBeenCalledWith('/etc/secrets');
     });
 
-    it('does not check boundary when root is not provided', async () => {
-      mockScanForAgents.mockImplementation(async function* () {
+    it('returns 403 when any root in roots array is outside boundary', async () => {
+      mockIsWithinBoundary
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
+      const app = createTestApp();
+
+      const res = await request(app)
+        .post('/api/discovery/scan')
+        .send({ roots: ['/home/user/ok', '/etc/secrets'] });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('defaults to boundary (home dir) when no root or roots provided', async () => {
+      mockDiscover.mockImplementation(async function* () {
         yield { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } };
       });
 
       const app = createTestApp();
 
-      const res = await request(app)
+      await request(app)
         .post('/api/discovery/scan')
         .send({})
         .buffer(true)
@@ -120,14 +132,18 @@ describe('Discovery Route', () => {
           res.on('end', () => { callback(null, data); });
         });
 
-      expect(res.status).toBe(200);
-      expect(mockIsWithinBoundary).not.toHaveBeenCalled();
+      // Should validate boundary path and call discover with it
+      expect(mockIsWithinBoundary).toHaveBeenCalledWith('/home/user');
+      expect(mockDiscover).toHaveBeenCalledWith(
+        ['/home/user'],
+        expect.objectContaining({}),
+      );
     });
   });
 
   describe('POST /api/discovery/scan — streaming', () => {
-    it('calls scanForAgents with correct options', async () => {
-      mockScanForAgents.mockImplementation(async function* () {
+    it('calls meshCore.discover with correct options', async () => {
+      mockDiscover.mockImplementation(async function* () {
         yield { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } };
       });
 
@@ -143,11 +159,33 @@ describe('Discovery Route', () => {
           res.on('end', () => { callback(null, data); });
         });
 
-      expect(mockScanForAgents).toHaveBeenCalledWith({
-        root: '/home/user/projects',
-        maxDepth: 3,
-        timeout: 10000,
+      expect(mockDiscover).toHaveBeenCalledWith(
+        ['/home/user/projects'],
+        { maxDepth: 3, timeout: 10000 },
+      );
+    });
+
+    it('passes roots array through to meshCore.discover', async () => {
+      mockDiscover.mockImplementation(async function* () {
+        yield { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } };
       });
+
+      const app = createTestApp();
+
+      await request(app)
+        .post('/api/discovery/scan')
+        .send({ roots: ['/home/user/a', '/home/user/b'] })
+        .buffer(true)
+        .parse((res, callback) => {
+          let data = '';
+          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+          res.on('end', () => { callback(null, data); });
+        });
+
+      expect(mockDiscover).toHaveBeenCalledWith(
+        ['/home/user/a', '/home/user/b'],
+        expect.objectContaining({}),
+      );
     });
 
     it('streams SSE events from scanner', async () => {
@@ -156,11 +194,9 @@ describe('Discovery Route', () => {
           type: 'candidate' as const,
           data: {
             path: '/home/user/project-a',
-            name: 'project-a',
-            markers: ['CLAUDE.md'],
-            gitBranch: 'main',
-            gitRemote: null,
-            hasDorkManifest: false,
+            strategy: 'claude-code',
+            hints: { name: 'project-a' },
+            discoveredAt: '2026-01-01T00:00:00.000Z',
           },
         },
         {
@@ -173,7 +209,7 @@ describe('Discovery Route', () => {
         },
       ];
 
-      mockScanForAgents.mockImplementation(async function* () {
+      mockDiscover.mockImplementation(async function* () {
         for (const e of events) yield e;
       });
 
@@ -190,19 +226,43 @@ describe('Discovery Route', () => {
         });
 
       expect(res.status).toBe(200);
-      expect(mockScanForAgents).toHaveBeenCalledTimes(1);
+      expect(mockDiscover).toHaveBeenCalledTimes(1);
 
       const parsed = parseSSEResponse(res.body as string);
 
       expect(parsed).toHaveLength(3);
       expect(parsed[0].type).toBe('candidate');
-      expect(parsed[0].data).toEqual(expect.objectContaining({ name: 'project-a' }));
+      expect(parsed[0].data).toEqual(expect.objectContaining({ path: '/home/user/project-a' }));
       expect(parsed[1].type).toBe('progress');
       expect(parsed[2].type).toBe('complete');
     });
 
+    it('filters auto-import events from SSE output', async () => {
+      mockDiscover.mockImplementation(async function* () {
+        yield { type: 'auto-import', data: { manifest: {}, path: '/home/user/proj' } };
+        yield { type: 'candidate', data: { path: '/home/user/proj', strategy: 'claude-code', hints: {}, discoveredAt: '' } };
+        yield { type: 'complete', data: { scannedDirs: 1, foundAgents: 1, timedOut: false } };
+      });
+
+      const app = createTestApp();
+
+      const res = await request(app)
+        .post('/api/discovery/scan')
+        .send({})
+        .buffer(true)
+        .parse((res, callback) => {
+          let data = '';
+          res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+          res.on('end', () => { callback(null, data); });
+        });
+
+      const parsed = parseSSEResponse(res.body as string);
+      expect(parsed).toHaveLength(2);
+      expect(parsed.find((e) => e.type === 'auto-import')).toBeUndefined();
+    });
+
     it('passes undefined for omitted optional fields', async () => {
-      mockScanForAgents.mockImplementation(async function* () {
+      mockDiscover.mockImplementation(async function* () {
         yield { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } };
       });
 
@@ -218,11 +278,10 @@ describe('Discovery Route', () => {
           res.on('end', () => { callback(null, data); });
         });
 
-      expect(mockScanForAgents).toHaveBeenCalledWith({
-        root: DEFAULT_CWD,
-        maxDepth: undefined,
-        timeout: undefined,
-      });
+      expect(mockDiscover).toHaveBeenCalledWith(
+        ['/home/user'],
+        { maxDepth: undefined, timeout: undefined },
+      );
     });
   });
 });

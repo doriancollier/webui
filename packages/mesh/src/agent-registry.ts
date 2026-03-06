@@ -159,6 +159,16 @@ export class AgentRegistry {
   }
 
   /**
+   * Check whether a project path is already registered.
+   *
+   * @param projectPath - Absolute path to the project directory
+   * @returns true if an agent is registered at this path
+   */
+  isRegistered(projectPath: string): boolean {
+    return this.getByPath(projectPath) !== undefined;
+  }
+
+  /**
    * List all registered agents, optionally filtered by runtime or capability.
    *
    * @param filters - Optional filters to narrow results

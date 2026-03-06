@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { Badge } from '@/layers/shared/ui';
 import { cn, fireConfetti } from '@/layers/shared/lib';
-import type { ScanCandidate } from '@/layers/features/onboarding';
+import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { formatMarker } from '../lib/marker-labels';
 
 /** Beat timing constants in milliseconds. */
@@ -17,7 +17,7 @@ const TOTAL_DURATION = BEAT_3_DELAY + BEAT_3_DURATION;
 const REDUCED_MOTION_DELAY = 800;
 
 interface DiscoveryCelebrationProps {
-  candidates: ScanCandidate[];
+  candidates: DiscoveryCandidate[];
   onComplete: () => void;
 }
 
@@ -136,7 +136,7 @@ export function DiscoveryCelebration({ candidates, onComplete }: DiscoveryCelebr
 }
 
 /** Compact read-only card for a discovered agent during celebration. */
-function CandidateCard({ candidate }: { candidate: ScanCandidate }) {
+function CandidateCard({ candidate }: { candidate: DiscoveryCandidate }) {
   return (
     <div
       className={cn(
@@ -145,14 +145,12 @@ function CandidateCard({ candidate }: { candidate: ScanCandidate }) {
       )}
     >
       <div className="space-y-1.5">
-        <span className="text-sm font-semibold">{candidate.name}</span>
+        <span className="text-sm font-semibold">{candidate.hints.suggestedName}</span>
         <p className="truncate text-xs text-muted-foreground">{candidate.path}</p>
         <div className="flex flex-wrap gap-1">
-          {candidate.markers.map((marker) => (
-            <Badge key={marker} variant="secondary" className="text-xs">
-              {formatMarker(marker)}
-            </Badge>
-          ))}
+          <Badge variant="secondary" className="text-xs">
+            {formatMarker(candidate.strategy)}
+          </Badge>
         </div>
       </div>
     </div>

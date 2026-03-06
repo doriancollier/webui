@@ -198,8 +198,10 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
       const MAX_CANDIDATES = 1000;
       const candidates = [];
       const options = result.data.maxDepth ? { maxDepth: result.data.maxDepth } : undefined;
-      for await (const candidate of meshCore.discover(validatedRoots, options)) {
-        candidates.push(candidate);
+      for await (const event of meshCore.discover(validatedRoots, options)) {
+        if (event.type === 'candidate') {
+          candidates.push(event.data);
+        }
         if (candidates.length >= MAX_CANDIDATES) break;
       }
       return res.json({ candidates, truncated: candidates.length >= MAX_CANDIDATES });

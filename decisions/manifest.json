@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 82,
+  "nextNumber": 85,
   "decisions": [
+    {
+      "number": 84,
+      "slug": "pending-buffer-for-late-relay-subscribers",
+      "title": "Pending Buffer with TTL for Late Relay Subscribers",
+      "status": "draft",
+      "created": "2026-03-06",
+      "extractedFrom": "fix-relay-sse-delivery-pipeline",
+      "specSlug": "fix-relay-sse-delivery-pipeline"
+    },
+    {
+      "number": 83,
+      "slug": "subscribe-first-sse-handshake",
+      "title": "Subscribe-First SSE Handshake for Relay Delivery",
+      "status": "draft",
+      "created": "2026-03-06",
+      "extractedFrom": "fix-relay-sse-delivery-pipeline",
+      "specSlug": "fix-relay-sse-delivery-pipeline"
+    },
+    {
+      "number": 82,
+      "slug": "unify-discovery-scanners",
+      "title": "Unify Discovery Scanners into Single Implementation",
+      "status": "draft",
+      "created": "2026-03-06",
+      "extractedFrom": "unify-discovery-system",
+      "specSlug": "unify-discovery-system"
+    },
     {
       "number": 79,
       "slug": "derive-endpoint-type-from-subject-prefix",

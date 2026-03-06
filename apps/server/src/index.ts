@@ -250,9 +250,11 @@ async function start() {
   // ADR-0043: pass meshCore (when available) so writes sync to Mesh DB cache.
   app.use('/api/agents', createAgentsRouter(meshCore));
 
-  // Mount Discovery routes (always available, no feature flag)
-  app.use('/api/discovery', createDiscoveryRouter());
-  logger.info('[Discovery] Routes mounted');
+  // Mount Discovery routes when MeshCore is available (delegates to meshCore.discover())
+  if (meshCore) {
+    app.use('/api/discovery', createDiscoveryRouter(meshCore));
+    logger.info('[Discovery] Routes mounted');
+  }
 
   // Mount Admin routes (reset, restart)
   app.use('/api/admin', createAdminRouter({

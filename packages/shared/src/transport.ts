@@ -40,6 +40,8 @@ import type {
   TopologyView,
   UpdateAccessRuleRequest,
   CrossNamespaceRule,
+  TransportScanEvent,
+  TransportScanOptions,
 } from './mesh-schemas.js';
 
 /** A single entry in the adapter list — config plus live status. */
@@ -258,6 +260,21 @@ export interface Transport {
   createAgent(path: string, name?: string, description?: string, runtime?: string): Promise<AgentManifest>;
   /** Update an agent's fields by path. Returns the updated manifest. */
   updateAgentByPath(path: string, updates: Partial<AgentManifest>): Promise<AgentManifest>;
+
+  // --- Discovery ---
+
+  /**
+   * Stream discovery scan results progressively via SSE.
+   *
+   * @param options - Scan roots, depth, and timeout options
+   * @param onEvent - Callback invoked for each streamed scan event
+   * @param signal - Optional AbortSignal to cancel the scan
+   */
+  scan(
+    options: TransportScanOptions,
+    onEvent: (event: TransportScanEvent) => void,
+    signal?: AbortSignal,
+  ): Promise<void>;
 
   // --- Admin Operations ---
 

@@ -1,0 +1,21 @@
+{
+  "id": "01KJXYKJYW4N8QGQ5W4GB6YM9J",
+  "name": "core",
+  "description": "This file provides guidance to AI Coding Agents when working with code and files in this repository.",
+  "runtime": "claude-code",
+  "capabilities": [
+    "code"
+  ],
+  "behavior": {
+    "responseMode": "always"
+  },
+  "budget": {
+    "maxHopsPerMessage": 5,
+    "maxCallsPerHour": 100
+  },
+  "namespace": "keep",
+  "registeredAt": "2026-03-05T02:53:07.420Z",
+  "registeredBy": "mesh",
+  "personaEnabled": true,
+  "enabledToolGroups": {}
+}

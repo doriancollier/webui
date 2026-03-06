@@ -91,10 +91,10 @@ describe('Mesh routes', () => {
         { projectPath: '/home/user/proj-b', suggestedName: 'proj-b', detectedRuntime: 'cursor' },
       ];
 
-      // Mock the async generator
+      // Mock the async generator — yields ScanEvent objects
       meshCore.discover.mockImplementation(async function* () {
         for (const c of candidates) {
-          yield c;
+          yield { type: 'candidate', data: c };
         }
       });
 

@@ -18,10 +18,12 @@ export function createMeshDiscoverHandler(deps: McpToolDeps) {
     if (err) return err;
     try {
       const candidates = [];
-      for await (const candidate of deps.meshCore!.discover(args.roots, {
+      for await (const event of deps.meshCore!.discover(args.roots, {
         maxDepth: args.maxDepth,
       })) {
-        candidates.push(candidate);
+        if (event.type === 'candidate') {
+          candidates.push(event.data);
+        }
       }
       return jsonContent({ candidates, count: candidates.length });
     } catch (e) {

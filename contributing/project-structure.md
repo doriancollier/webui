@@ -294,8 +294,7 @@ apps/server/src/
 │   │   └── subject-resolver.ts  # Message subject resolution
 │   ├── mesh/                    # Mesh discovery services
 │   │   └── mesh-state.ts        # Subsystem state tracking
-│   └── discovery/               # Agent discovery services
-│       └── discovery-scanner.ts # BFS filesystem agent scanner
+│   └── discovery/               # Agent discovery (delegates to @dorkos/mesh unified scanner)
 ├── lib/             # Shared utilities
 │   ├── sdk-utils.ts
 │   ├── resolve-root.ts

@@ -1,6 +1,6 @@
 import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
 import type { TraceSpan, DeliveryMetrics, CatalogEntry, AdapterBinding, CreateBindingRequest, RelayConversation } from '@dorkos/shared/relay-schemas';
-import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus, TopologyView, CrossNamespaceRule, UpdateAccessRuleRequest } from '@dorkos/shared/mesh-schemas';
+import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus, TopologyView, CrossNamespaceRule, UpdateAccessRuleRequest, TransportScanOptions, TransportScanEvent } from '@dorkos/shared/mesh-schemas';
 import type {
   StreamEvent,
   Session,
@@ -520,5 +520,13 @@ export class DirectTransport implements Transport {
 
   async restartServer(): Promise<{ message: string }> {
     throw new Error('Reset and restart are not supported in Obsidian plugin mode.');
+  }
+
+  async scan(
+    _options: TransportScanOptions,
+    _onEvent: (event: TransportScanEvent) => void,
+    _signal?: AbortSignal,
+  ): Promise<void> {
+    throw new Error('Discovery scan is not supported in Obsidian plugin mode.');
   }
 }

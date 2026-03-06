@@ -652,7 +652,21 @@
       "title": "Chat Streaming & Session Reliability Fixes",
       "created": "2026-03-05",
       "status": "draft"
+    },
+    {
+      "number": 94,
+      "slug": "unify-discovery-system",
+      "title": "Unify Discovery System",
+      "created": "2026-03-06",
+      "status": "draft"
+    },
+    {
+      "number": 95,
+      "slug": "fix-relay-sse-delivery-pipeline",
+      "title": "Fix Relay SSE Message Delivery Pipeline",
+      "created": "2026-03-06",
+      "status": "ideation"
     }
   ],
-  "nextNumber": 94
+  "nextNumber": 96
 }

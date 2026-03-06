@@ -13,8 +13,10 @@ export type { MeshOptions } from './mesh-core.js';
 
 // Discovery
 export type { DiscoveryStrategy } from './discovery-strategy.js';
-export { scanDirectory, EXCLUDED_DIRS } from './discovery-engine.js';
-export type { DiscoveryOptions, AutoImportedAgent, RegistryLike, DenialListLike } from './discovery-engine.js';
+export { unifiedScan } from './discovery/unified-scanner.js';
+export type { RegistryLike, DenialListLike } from './discovery/unified-scanner.js';
+export type { ScanEvent, ScanProgress, UnifiedScanOptions } from './discovery/types.js';
+export { UNIFIED_EXCLUDE_PATTERNS } from './discovery/types.js';
 
 // Strategies
 export { ClaudeCodeStrategy } from './strategies/claude-code-strategy.js';

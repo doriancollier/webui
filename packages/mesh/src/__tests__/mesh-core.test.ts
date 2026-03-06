@@ -10,6 +10,16 @@ import { writeManifest } from '../manifest.js';
 import * as manifestModule from '../manifest.js';
 import * as reconcilerModule from '../reconciler.js';
 import type { AgentManifest, DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
+import type { ScanEvent } from '../discovery/types.js';
+
+/** Collect only candidate events from a discover() stream. */
+async function collectCandidates(stream: AsyncGenerator<ScanEvent>): Promise<DiscoveryCandidate[]> {
+  const candidates: DiscoveryCandidate[] = [];
+  for await (const event of stream) {
+    if (event.type === 'candidate') candidates.push(event.data);
+  }
+  return candidates;
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -76,10 +86,7 @@ describe('full lifecycle', () => {
     const mesh = new MeshCore({ db, defaultScanRoot: base });
 
     // Discover
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
     expect(candidates.length).toBeGreaterThanOrEqual(1);
     const candidateA = candidates.find((c) => c.path === projectA);
     expect(candidateA).toBeDefined();
@@ -121,10 +128,7 @@ describe('auto-import', () => {
 
     const mesh = new MeshCore({ db, defaultScanRoot: base });
 
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
 
     // pre-registered should not appear as a candidate
     const preRegisteredCandidate = candidates.find((c) => c.path === preRegisteredDir);
@@ -156,7 +160,7 @@ describe('upsertAutoImported()', () => {
 
     // First discover — auto-imports V1
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const _c of mesh.discover([projects])) { /* drain */ }
+    await collectCandidates(mesh.discover([projects])); // drain
     let agents = mesh.list();
     expect(agents.some((a) => a.name === 'V1')).toBe(true);
 
@@ -166,7 +170,7 @@ describe('upsertAutoImported()', () => {
 
     // Second discover — should sync V2 into DB
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const _c of mesh.discover([projects])) { /* drain */ }
+    await collectCandidates(mesh.discover([projects])); // drain
     agents = mesh.list();
     expect(agents.some((a) => a.name === 'V2')).toBe(true);
 
@@ -187,7 +191,7 @@ describe('upsertAutoImported()', () => {
 
     // First discover — auto-imports at old path
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const _c of mesh.discover([projects])) { /* drain */ }
+    await collectCandidates(mesh.discover([projects])); // drain
     expect(mesh.list()).toHaveLength(1);
 
     // Move agent to new path
@@ -199,7 +203,7 @@ describe('upsertAutoImported()', () => {
 
     // Second discover — should update path via upsert
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for await (const _c of mesh.discover([projects])) { /* drain */ }
+    await collectCandidates(mesh.discover([projects])); // drain
     const agents = mesh.list();
     expect(agents).toHaveLength(1);
     expect(agents[0].name).toBe('movable-agent');
@@ -222,10 +226,7 @@ describe('denial filtering', () => {
 
     await mesh.deny(projectA, 'not needed');
 
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
 
     expect(candidates.every((c) => c.path !== projectA)).toBe(true);
     expect(candidates.some((c) => c.path === projectB)).toBe(true);
@@ -245,10 +246,7 @@ describe('denial filtering', () => {
     // Undeny
     await mesh.undeny(projectA);
 
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
 
     expect(candidates.some((c) => c.path === projectA)).toBe(true);
 
@@ -403,10 +401,7 @@ describe('namespace wiring', () => {
 
     const mesh = new MeshCore({ db, defaultScanRoot: scanRoot });
 
-    const candidates = [];
-    for await (const c of mesh.discover([scanRoot])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([scanRoot]));
 
     const candidate = candidates.find((c) => c.path === projectDir);
     expect(candidate).toBeDefined();
@@ -426,10 +421,7 @@ describe('namespace wiring', () => {
 
     const mesh = new MeshCore({ db, defaultScanRoot: scanRoot });
 
-    const candidates = [];
-    for await (const c of mesh.discover([scanRoot])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([scanRoot]));
 
     const candidate = candidates.find((c) => c.path === projectDir);
     expect(candidate).toBeDefined();
@@ -606,10 +598,7 @@ describe('register() compensation', () => {
     const mesh = new MeshCore({ db, defaultScanRoot: base });
 
     // Discover to get a candidate
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
     const candidate = candidates.find((c) => c.path === projectA);
     expect(candidate).toBeDefined();
 
@@ -640,10 +629,7 @@ describe('register() compensation', () => {
 
     const mesh = new MeshCore({ db, relayCore: mockRelayCore as never, defaultScanRoot: base });
 
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
     const candidate = candidates.find((c) => c.path === projectA);
     expect(candidate).toBeDefined();
 
@@ -673,10 +659,7 @@ describe('register() compensation', () => {
 
     const mesh = new MeshCore({ db, relayCore: mockRelayCore as never, defaultScanRoot: base });
 
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
     const candidate = candidates.find((c) => c.path === projectA);
     expect(candidate).toBeDefined();
 
@@ -694,10 +677,7 @@ describe('register() compensation', () => {
     const { projectA } = await setupProjects(projects);
     const mesh = new MeshCore({ db, defaultScanRoot: base });
 
-    const candidates = [];
-    for await (const c of mesh.discover([projects])) {
-      candidates.push(c);
-    }
+    const candidates = await collectCandidates(mesh.discover([projects]));
     const candidate = candidates.find((c) => c.path === projectA);
     expect(candidate).toBeDefined();
 

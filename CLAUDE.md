@@ -103,7 +103,7 @@ Express server on `DORKOS_HOST` (default `localhost`) port `DORKOS_PORT` (defaul
 - **`routes/mesh.ts`** - Mesh agent discovery and registry (POST /discover, POST/GET/PATCH/DELETE /agents, GET /agents/:id/access, GET /agents/:id/health, POST /agents/:id/heartbeat, GET /topology, PUT /topology/access, POST /deny, GET/DELETE /denied, GET /status). Always-on (no feature flag). Factory: `createMeshRouter(meshCore)`
 - **`routes/agents.ts`** - Agent identity CRUD (GET/POST/PATCH /agents/current for per-CWD agent identity, POST /agents/resolve for batch path→agent resolution). Always mounted (no feature flag). Reads/writes `.dork/agent.json` manifest files via `@dorkos/shared/manifest`
 - **`routes/models.ts`** - GET /api/models — returns available Claude models via `agentManager.getSupportedModels()`
-- **`routes/discovery.ts`** - Agent discovery SSE endpoint (POST /api/discovery/scan). Streams candidate agents found via filesystem scan. Validates scan parameters with Zod, enforces directory boundary. Factory: `createDiscoveryRouter()`
+- **`routes/discovery.ts`** - Agent discovery SSE endpoint (POST /api/discovery/scan). Delegates to `meshCore.discover()` (unified scanner) and streams results as SSE. Validates scan parameters with Zod, enforces directory boundary. Factory: `createDiscoveryRouter(meshCore)`
 
 Thirty-two services (+ 2 lib utilities + 1 env module):
 
@@ -140,7 +140,7 @@ Thirty-two services (+ 2 lib utilities + 1 env module):
 - **`services/relay/adapter-manager.ts`** - Server-side adapter lifecycle management. Creates and manages adapter instances based on config. Accepts `AdapterManagerDeps` (agentManager, traceStore, pulseStore) for dependency injection into adapters like ClaudeCodeAdapter.
 - **`services/relay/binding-store.ts`** - JSON file-backed store for adapter-agent bindings. Persists to `~/.dork/relay/bindings.json` with chokidar hot-reload. Provides CRUD operations and most-specific-first resolution for routing inbound adapter messages to the correct agent.
 - **`services/relay/binding-router.ts`** - Central routing service for adapter-agent bindings. Subscribes to `relay.human.*` messages, resolves adapter-agent bindings via BindingStore, manages session lifecycle based on session strategies (per-chat, per-user, stateless), and republishes to `relay.agent.*` for ClaudeCodeAdapter to handle. Persists session map to `{relayDir}/sessions.json` for recovery across restarts.
-- **`services/discovery/discovery-scanner.ts`** - Async generator that performs BFS filesystem traversal to discover AI-configured projects. Scans for markers (CLAUDE.md, .claude/, .cursor/, .github/copilot, .dork/agent.json) with configurable depth limits, exclusion patterns, and timeout. Yields candidate, progress, and complete events.
+- **`packages/mesh/src/discovery/unified-scanner.ts`** - Unified async generator that performs BFS filesystem traversal to discover AI-configured projects. Scans for markers via detection strategies (claude-code, cursor, copilot, dork-manifest) with configurable depth limits, exclusion patterns, symlink following with cycle detection, and timeout. Yields candidate, auto-import, progress, and complete events. Replaces both the legacy `discovery-engine.ts` (Scanner A) and `discovery-scanner.ts` (Scanner B).
 - **`services/pulse/pulse-presets.ts`** - Manages default Pulse schedule presets at `~/.dork/pulse/presets.json`. Creates default presets on first access (codebase health, dependency audit, documentation sync, code quality review). Provides `loadPresets()` and `getPresetsPath()`.
 - **`services/pulse/pulse-state.ts`** - Feature flag holder for Pulse subsystem. Exports `setPulseEnabled()`/`isPulseEnabled()`. Same pattern as `relay-state.ts`.
 
@@ -180,6 +180,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `entities/relay/`        | useRelayEnabled, useRelayMessages, useRelayEndpoints, useRelayMetrics, useSendRelayMessage, useRelayEventStream, useMessageTrace, useDeliveryMetrics, useDeadLetters, useRelayAdapters, useToggleAdapter, useAdapterCatalog, useAddAdapter, useRemoveAdapter, useUpdateAdapterConfig, useTestAdapterConnection | Relay messaging domain hooks|
 | `entities/mesh/`         | useMeshEnabled, useRegisteredAgents, useDiscoverAgents, useRegisterAgent, useDenyAgent, useUnregisterAgent, useUpdateAgent, useDeniedAgents, useMeshStatus, useMeshAgentHealth, useMeshHeartbeat | Mesh discovery domain hooks |
 | `entities/binding/`      | useBindings, useCreateBinding, useDeleteBinding                    | Adapter-agent binding hooks |
+| `entities/discovery/`    | useDiscoveryStore, useDiscoveryScan                                | Shared discovery scan state (Zustand store + hook) |
 | `entities/agent/`        | useCurrentAgent, useResolvedAgents, useCreateAgent, useUpdateAgent, useAgentVisual, useAgentToolStatus | Agent identity domain hooks |
 | `features/chat/`         | ChatPanel, MessageList, MessageItem, ToolCallCard, useChatSession  | Chat interface              |
 | `features/session-list/` | SessionSidebar, SessionItem, AgentContextChips, SidebarFooterBar   | Session management. AgentContextChips uses `useAgentToolStatus` for per-agent 3-state chip rendering (enabled/disabled-by-agent/disabled-by-server) |
@@ -191,7 +192,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, pure neutral gra
 | `features/relay/`        | RelayPanel, ActivityFeed, MessageRow, EndpointList, InboxView, MessageTrace, DeliveryMetricsDashboard, RelayHealthBar, DeadLetterSection, ConnectionStatusBanner, ComposeMessageDialog, AdapterCard, CatalogCard, ConfigFieldInput, AdapterSetupWizard | Relay messaging UI          |
 | `features/mesh/`         | MeshPanel, CandidateCard, AgentCard, RegisterAgentDialog, TopologyGraph, AgentNode, AdapterNode, BindingEdge, BindingDialog, MeshStatsHeader, AgentHealthDetail | Mesh discovery, registry & observability UI|
 | `features/agent-settings/` | AgentDialog, IdentityTab, PersonaTab, CapabilitiesTab, ConnectionsTab | Agent identity settings UI (4 tabs). CapabilitiesTab includes per-agent Tool Groups toggles with 3-state display (inherited/overridden) |
-| `features/onboarding/`   | OnboardingFlow, AgentDiscoveryStep, PulsePresetsStep, AdapterSetupStep, AgentCard, PresetCard, NoAgentsFound, OnboardingComplete, DiscoveryCelebration, ProgressCard, useOnboarding, useDiscoveryScan, usePulsePresets | First-time user experience |
+| `features/onboarding/`   | OnboardingFlow, AgentDiscoveryStep, PulsePresetsStep, AdapterSetupStep, AgentCard, PresetCard, NoAgentsFound, OnboardingComplete, DiscoveryCelebration, ProgressCard, useOnboarding, usePulsePresets | First-time user experience |
 | `features/status/`       | StatusLine, GitStatusItem, ModelItem, etc.                         | Status bar                  |
 | `widgets/app-layout/`    | PermissionBanner, DialogHost                                       | App-level layout components |
 

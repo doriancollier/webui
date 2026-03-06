@@ -1,37 +1,44 @@
 /**
  * Discovery routes — SSE-streamed filesystem scanning for AI-configured projects.
  *
+ * Delegates to `meshCore.discover()` (unified scanner) and streams results as SSE.
+ *
  * @module routes/discovery
  */
 import { Router } from 'express';
 import { z } from 'zod';
-import { scanForAgents } from '../services/discovery/discovery-scanner.js';
+import type { MeshCore } from '@dorkos/mesh';
 import { parseBody } from '../lib/route-utils.js';
-import { isWithinBoundary } from '../lib/boundary.js';
-import { DEFAULT_CWD } from '../lib/resolve-root.js';
+import { isWithinBoundary, getBoundary } from '../lib/boundary.js';
 
 /** Zod schema for the POST /scan request body. */
 const ScanRequestSchema = z.object({
   root: z.string().optional(),
+  roots: z.array(z.string()).optional(),
   maxDepth: z.number().int().min(1).max(10).optional(),
-  timeout: z.number().int().min(1000).max(60000).optional(),
+  timeout: z.number().int().min(1000).max(120000).optional(),
 });
 
 /**
  * Create the Discovery router with the SSE scan endpoint.
+ *
+ * @param meshCore - MeshCore instance for delegating discovery scans
  */
-export function createDiscoveryRouter(): Router {
+export function createDiscoveryRouter(meshCore: MeshCore): Router {
   const router = Router();
 
   router.post('/scan', async (req, res) => {
     const data = parseBody(ScanRequestSchema, req.body, res);
     if (!data) return;
 
-    // Validate root against directory boundary if provided
-    if (data.root) {
-      const withinBoundary = await isWithinBoundary(data.root);
+    // Default to boundary (home dir) instead of DEFAULT_CWD
+    const roots = data.roots ?? (data.root ? [data.root] : [getBoundary()]);
+
+    // Validate each root against boundary
+    for (const root of roots) {
+      const withinBoundary = await isWithinBoundary(root);
       if (!withinBoundary) {
-        return res.status(403).json({ error: 'Root path outside directory boundary' });
+        return res.status(403).json({ error: `Root path outside directory boundary` });
       }
     }
 
@@ -44,12 +51,13 @@ export function createDiscoveryRouter(): Router {
     });
 
     try {
-      for await (const event of scanForAgents({
-        root: data.root ?? DEFAULT_CWD,
+      for await (const event of meshCore.discover(roots, {
         maxDepth: data.maxDepth,
         timeout: data.timeout,
       })) {
         if (res.writableEnded) break;
+        // Filter auto-import events (internal to mesh)
+        if (event.type === 'auto-import') continue;
         res.write(`event: ${event.type}\n`);
         res.write(`data: ${JSON.stringify(event.data)}\n\n`);
       }

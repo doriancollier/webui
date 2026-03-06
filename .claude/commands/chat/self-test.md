@@ -1,7 +1,7 @@
 ---
 description: "Self-test the DorkOS chat UI in a live browser session — drives real interactions, monitors JSONL transcript, compares API vs UI, researches issues, and creates a spec for improvements"
 argument-hint: "[url]"
-allowed-tools: Read, Write, Bash, Grep, Glob, Task, TaskOutput, AskUserQuestion, Skill, WebSearch, WebFetch, mcp__playwright__browser_snapshot, mcp__playwright__browser_navigate, mcp__playwright__browser_console_messages, mcp__playwright__browser_network_requests, mcp__playwright__browser_click, mcp__playwright__browser_type, mcp__playwright__browser_resize, mcp__playwright__browser_take_screenshot, mcp__playwright__browser_evaluate, mcp__playwright__browser_press_key, mcp__playwright__browser_wait_for, mcp__playwright__browser_fill_form, mcp__playwright__browser_select_option, mcp__playwright__browser_tabs, mcp__playwright__browser_handle_dialog
+allowed-tools: Read, Write, Bash, Grep, Glob, Task, TaskOutput, AskUserQuestion, Skill, WebSearch, WebFetch, mcp__claude-in-chrome__computer, mcp__claude-in-chrome__read_page, mcp__claude-in-chrome__find, mcp__claude-in-chrome__navigate, mcp__claude-in-chrome__read_console_messages, mcp__claude-in-chrome__read_network_requests, mcp__claude-in-chrome__javascript_tool, mcp__claude-in-chrome__tabs_context_mcp, mcp__claude-in-chrome__tabs_create_mcp, mcp__claude-in-chrome__get_page_text, mcp__claude-in-chrome__computer
 category: testing
 ---
 
@@ -19,34 +19,70 @@ TEST_URL="http://localhost:4241/?dir=/Users/doriancollier/Keep/temp/empty"
 
 Extract the `dir` query param value from `TEST_URL` for JSONL resolution later.
 
-Verify the dev server is up:
+Verify the dev server is up. Try multiple ports since the server may run on `DORKOS_PORT` (from `.env`), the default 4242 (when `.env` isn't loaded), or be proxied through Vite on 4241:
 
 ```bash
 DORKOS_PORT="${DORKOS_PORT:-6942}"
-curl -sf "http://localhost:$DORKOS_PORT/api/health" | grep -q '"ok"' \
-  || { echo "ERROR: DorkOS server not responding on port $DORKOS_PORT. Run 'pnpm dev' first."; exit 1; }
+# Try configured port first, then default, then Vite proxy
+for port in $DORKOS_PORT 4242 4241; do
+  if curl -sf "http://localhost:$port/api/health" | grep -q '"ok"'; then
+    API_PORT=$port
+    echo "Server found on port $port"
+    break
+  fi
+done
+[ -z "$API_PORT" ] && { echo "ERROR: DorkOS server not responding. Run 'pnpm dev' first."; exit 1; }
 ```
+
+Check server config for Relay and Pulse status (affects session ID resolution and API comparison):
+
+```bash
+curl -s "http://localhost:$API_PORT/api/config" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+print('RELAY_ENABLED:', d.get('relay',{}).get('enabled', False))
+print('PULSE_ENABLED:', d.get('pulse',{}).get('enabled', False))
+"
+```
+
+Store `RELAY_ENABLED` — this affects session ID resolution in Phase 2 and API comparison in Phase 4.
 
 Fetch the current model list to know what's available:
 
 ```bash
-curl -s "http://localhost:$DORKOS_PORT/api/models" | jq '.models[].id'
+curl -s "http://localhost:$API_PORT/api/models" | jq '.models[].value'
 ```
 
-Navigate the browser to `TEST_URL`. Take a screenshot and accessibility snapshot. Capture any pre-existing console errors as a baseline (filter: `error`).
+Navigate the browser to `TEST_URL`. Use `mcp__claude-in-chrome__tabs_context_mcp` first to get tab context, then `mcp__claude-in-chrome__navigate`. Take a screenshot and read the page. Capture any pre-existing console errors as a baseline via `mcp__claude-in-chrome__read_console_messages` (filter: `error`).
 
 ---
 
 ## Phase 2 — Create New Session
 
-1. Locate the "New Session" button (Plus icon) in the SessionSidebar via the accessibility snapshot.
+1. Locate the "New Session" button in the SessionSidebar via `mcp__claude-in-chrome__find`.
 2. Click it and wait for the URL to update with a `?session=` query parameter.
-3. Evaluate `window.location.search` in the browser to extract the session UUID. Store it as `SESSION_ID`.
-4. Locate the JSONL file on disk:
+3. Extract the session UUID from the URL. Store it as `URL_SESSION_ID`.
+
+**Relay-aware JSONL resolution:**
+
+When Relay is enabled, the URL `?session=` param contains the **Agent-ID**, NOT the SDK session ID. The JSONL filename uses the real SDK session ID. The sidebar displays the SDK session ID.
+
+4. Locate the JSONL file on disk. **If Relay is enabled**, find by most-recent modification time (since the URL session ID won't match the JSONL filename):
 
 ```bash
-SESSION_ID="<extracted UUID>"
-JSONL_FILE=$(find ~/.claude/projects -name "${SESSION_ID}.jsonl" -type f 2>/dev/null)
+# When Relay is enabled — find by recent modification
+JSONL_FILE=$(find ~/.claude/projects -name "*.jsonl" -mmin -2 -type f 2>/dev/null | head -1)
+SDK_SESSION_ID=$(basename "$JSONL_FILE" .jsonl)
+echo "URL Session ID (Agent-ID): $URL_SESSION_ID"
+echo "SDK Session ID: $SDK_SESSION_ID"
+echo "JSONL: $JSONL_FILE"
+```
+
+When Relay is NOT enabled, find by URL session ID directly:
+
+```bash
+JSONL_FILE=$(find ~/.claude/projects -name "${URL_SESSION_ID}.jsonl" -type f 2>/dev/null)
+SDK_SESSION_ID="$URL_SESSION_ID"
 echo "JSONL: $JSONL_FILE"
 ```
 
@@ -64,48 +100,64 @@ The file may not exist yet — re-run this check after the first message is sent
 
 ---
 
-## Phase 4 — Send Messages & Observe (8 rounds)
+## Phase 4 — Send Messages & Observe (5 rounds)
 
 Send the following messages in sequence. For each message:
 
 **Message script:**
 
-| # | Message |
-|---|---------|
-| 1 | `Write a JavaScript bubble sort function with comments` |
-| 2 | `Add TypeScript types to the function` |
-| 3 | `Write a minimal HTML page with a <h1>Hello World</h1> heading` |
-| 4 | `Use the Task tool to launch a background agent that counts the number of files in /tmp and reports back` |
-| 5 | `Use the Bash tool in the background to watch /tmp for 5 seconds and report any changes` |
-| 6 | `Use TodoWrite to create a task list with 3 tasks for our current conversation` |
-| 7 | `Mark the first task as completed` |
-| 8 | `What is 2+2?` |
+| # | Message | Notes |
+|---|---------|-------|
+| 1 | `Write a JavaScript bubble sort function with comments` | Tests code rendering |
+| 2 | `Add TypeScript types to the function` | Tests multi-turn context |
+| 3 | `Write a minimal HTML page with a <h1>Hello World</h1> heading` | Tests HTML in code blocks |
+| 4 | `Use TodoWrite to create a task list with 3 tasks for our current conversation` | Tests task UI |
+| 5 | `What is 2+2?` | Tests simple text response |
+
+**Extended test messages (optional, adds significant time):**
+
+| # | Message | Notes |
+|---|---------|-------|
+| E1 | `Use the Task tool to launch a background agent that counts the number of files in /tmp and reports back` | Tests background agents |
+| E2 | `Use the Bash tool in the background to watch /tmp for 5 seconds and report any changes` | Tests background tasks |
+| E3 | `Mark the first task as completed` | Tests task updates |
 
 **Per-message observation loop (repeat for each message):**
 
 **a. Send the message:**
-Click the chat input, type the message text, and press `Meta+Enter` (Cmd+Enter) to submit.
+Click the chat input (use `mcp__claude-in-chrome__find` for "Message Claude input"), type the message text, and press `Meta+Enter` (Cmd+Enter) to submit.
 
-**b. Wait for streaming to complete:**
-Watch for the Stop button to disappear from the DOM. Use `mcp__playwright__browser_wait_for` with `textGone` on the stop button label. Use a 30-second time-based fallback if the indicator cannot be detected. For background agent messages (4, 5), allow up to 60 seconds and poll every 3 seconds.
+**b. Wait for streaming to complete (with SSE freeze regression detection):**
+Wait up to 120 seconds for the stop button to disappear. Use this staleness detection heuristic:
+
+1. Take a screenshot after 15 seconds.
+2. Wait 10 more seconds, take another screenshot.
+3. If visible text is identical between screenshots but stop button persists, record an **"SSE stream freeze"** observation and click the stop button to unblock the test.
+4. If stop button disappears naturally, note the actual streaming duration.
+
+This prevents the test from hanging indefinitely per message. SSE freezes were fixed in the `fix-relay-sse-delivery-pipeline` spec — any freeze is now a **regression** and should be investigated with high priority.
 
 **c. Take a screenshot** of the full rendered exchange.
 
-**d. Collect console messages** at `warning` level. Note any new warnings since the last check.
+**d. Collect console messages** at `warning` level via `mcp__claude-in-chrome__read_console_messages`. Note any new warnings since the last check.
 
-**e. Collect network requests.** Note status codes for `/api/sessions/:id/messages` POST calls.
+**e. Collect network requests** via `mcp__claude-in-chrome__read_network_requests`. Note status codes for `/api/sessions/:id/messages` POST calls.
 
 **f. Extract visible messages from the DOM:**
 ```js
-// Use mcp__playwright__browser_evaluate
+// Use mcp__claude-in-chrome__javascript_tool
 () => [...document.querySelectorAll('[data-message-role]')]
   .map(el => ({ role: el.dataset.messageRole, text: el.textContent.slice(0, 120) }))
 ```
-First inspect the actual DOM via snapshot to confirm the correct selectors are used.
+First inspect the actual DOM via `mcp__claude-in-chrome__read_page` to confirm the correct selectors are used.
 
-**g. Compare against the API:**
+**g. Compare against the API (skip when Relay is enabled):**
+
+When Relay is enabled, `GET /api/sessions/:id/messages` may return 0 messages even for valid sessions. This is a known limitation — skip the API comparison and rely on JSONL as the source of truth.
+
+When Relay is NOT enabled:
 ```bash
-curl -s "http://localhost:$DORKOS_PORT/api/sessions/$SESSION_ID/messages" \
+curl -s "http://localhost:$API_PORT/api/sessions/$SDK_SESSION_ID/messages" \
   | jq '[.messages[] | {role, preview: (.content | if type=="string" then .[0:100] else (.[0].text // "[block]")[0:100] end)}]'
 ```
 
@@ -119,31 +171,23 @@ for line in open('$JSONL_FILE'):
 "
 ```
 
-**i. For background agent messages (4 and 5):**
-After sending, poll every 3 seconds until the background task token appears resolved. Check:
-- Is a "completed" badge shown on the tool call card in the DOM?
-- Does a `tool_result` line appear for the corresponding `tool_use` ID in the JSONL?
-
-Compare timing: when does JSONL update vs when does the UI update?
-
-**j. For task list messages (6 and 7):**
-After sending, check whether `TaskListPanel` is visible in the DOM. Compare its rendered tasks against:
-- `GET /api/sessions/:id/tasks` response (if this endpoint exists)
+**i. For task list messages (message 4):**
+After sending, check whether task list UI elements are visible in the DOM. Compare rendered tasks against:
 - `task_update` SSE events captured in the network log
 - `TaskCreate`/`TaskUpdate` tool_use blocks in the JSONL
 
-**k. Record any discrepancy or anomaly** — data mismatch, console error, broken element, missing state update, unexpected blank area, scroll regression, etc.
+**j. Record any discrepancy or anomaly** — data mismatch, console error, broken element, missing state update, unexpected blank area, scroll regression, SSE freeze, etc.
 
 ---
 
 ## Phase 5 — Final State Capture
 
-After all 8 rounds:
+After all 5 rounds:
 
 1. Full-page screenshot.
-2. Console messages at `debug` level (comprehensive log).
-3. Full network request log.
-4. Full DOM snapshot of the message list.
+2. Console messages at `debug` level (comprehensive log) via `mcp__claude-in-chrome__read_console_messages`.
+3. Full network request log via `mcp__claude-in-chrome__read_network_requests`.
+4. Full DOM snapshot of the message list via `mcp__claude-in-chrome__read_page`.
 5. Read the complete JSONL file (all lines) in structured form:
 
 ```bash
@@ -158,18 +202,18 @@ for i, line in enumerate(open('$JSONL_FILE')):
 6. Fetch final session metadata:
 
 ```bash
-curl -s "http://localhost:$DORKOS_PORT/api/sessions/$SESSION_ID" | jq '{model, permissionMode, title}'
+curl -s "http://localhost:$API_PORT/api/sessions/$SDK_SESSION_ID" | jq '{model, permissionMode, title}'
 ```
 
 ---
 
 ## Phase 5b — Reload from History (Critical Regression Check)
 
-This phase verifies that message history renders correctly when loaded from disk — a different code path (`GET /api/sessions/:id/messages` → `transcript-parser.ts` → `MessageList` props) that often hides bugs invisible during live streaming.
+This phase verifies that message history renders correctly when loaded from disk — a different code path (`GET /api/sessions/:id/messages` -> `transcript-parser.ts` -> `MessageList` props) that often hides bugs invisible during live streaming.
 
 **Method A: Hard page refresh**
 
-Navigate to the same URL with the `?session=` param preserved (e.g., `http://localhost:4241/?dir=...&session=SESSION_ID`). Wait for messages to finish loading (use `mcp__playwright__browser_wait_for` with text from the first response). Take a screenshot and accessibility snapshot.
+Navigate to the same URL with the `?session=` param preserved. Wait for messages to finish loading. Take a screenshot.
 
 **Method B: Navigate away then back**
 
@@ -177,20 +221,19 @@ Navigate to the same URL with the `?session=` param preserved (e.g., `http://loc
 2. Wait for that session to load.
 3. Click the test session back in the sidebar.
 4. Wait for messages to re-render.
-5. Take a screenshot and accessibility snapshot.
+5. Take a screenshot.
 
 **Verify after each reload:**
 
 | Check | Expected |
 |-------|----------|
-| Message count | Same as during live session (DOM count == API count == JSONL count) |
+| Message count | Same as during live session (DOM count == JSONL count) |
 | Code blocks | Properly rendered (not raw markdown) |
 | Tool call cards | All tool calls visible and collapsible |
-| Background agent results | Result shown, not stuck as "pending" |
 | Task list | Tasks visible with correct status |
 | Tool call order | Same order as during live session |
 | Model/permission display | Correct values in status bar |
-| Scroll position | Scrolled to bottom (latest message) — check via `window.scrollY` |
+| Scroll position | Scrolled to bottom (latest message) |
 
 Compare the history-loaded screenshots against the live-session screenshots from Phase 4. Note any visual differences, especially:
 - Expanded/collapsed state of tool call cards
@@ -233,10 +276,12 @@ Use this structure:
 
 ## Test Config
 - URL: [test URL]
-- Session ID: [UUID]
+- Session ID (URL/Agent): [URL_SESSION_ID]
+- Session ID (SDK/JSONL): [SDK_SESSION_ID]
 - Model: [model used]
 - Permission mode: [mode used]
-- Messages sent: 8
+- Relay enabled: [yes/no]
+- Messages sent: 5
 
 ## Summary
 [2-3 sentences: overall quality, number of issues, anything critical]
@@ -270,12 +315,23 @@ Use this structure:
 
 ## Technical Notes
 
-- **JSONL location:** `~/.claude/projects/{slug}/{sessionId}.jsonl` — use `find` by session ID since computing the slug is non-trivial.
+- **JSONL location:** `~/.claude/projects/{slug}/{sessionId}.jsonl` — use `find` by session ID or by recent modification time.
 - **Session ID:** `?session=` URL param, managed by `useSessionId()` hook via nuqs.
 - **Model selector:** `ModelItem` in `StatusLine` — opens a `ResponsiveDropdownMenu`.
 - **Permission mode selector:** `PermissionModeItem` in `StatusLine` — 4 options available.
 - **New session button:** Plus icon in `SessionSidebar`.
-- **API port:** `DORKOS_PORT` env var — default in this repo is 6942.
+- **API port:** `DORKOS_PORT` env var — default is 4242; user config may override (e.g., 6942 via `.env`). The Vite dev server on 4241 proxies `/api` to the backend.
 - **Streaming complete signal:** Stop button present during streaming, gone when done.
-- **SSE event types to watch:** `text_delta`, `tool_call_start`, `tool_call_end`, `tool_result`, `task_update`, `done`.
-- **Background task polling:** For `Task` tool with `run_in_background: true`, the stream may stay alive until the background agent completes — poll at 3s intervals and check both DOM and JSONL.
+- **SSE event types to watch:** `text_delta`, `tool_call_start`, `tool_call_end`, `tool_result`, `task_update`, `done`, `stream_ready` (Relay only — confirms SSE subscription is active before POST).
+- **SSE freeze detection:** Use content staleness detection (two screenshots 10s apart with identical text) to detect and unblock via stop button click. SSE freezes were fixed in `fix-relay-sse-delivery-pipeline` — any occurrence is a regression.
+
+### Relay Mode
+
+When `DORKOS_RELAY_ENABLED` is true, session messaging uses Relay transport. This changes several behaviors:
+
+- **URL session ID is the Agent-ID**, not the SDK session ID. The JSONL filename uses the real SDK session ID (different from the URL).
+- **The sidebar shows the SDK session ID** (e.g., "Session 21b09157"), which matches the JSONL filename.
+- **User messages in JSONL are wrapped in `<relay_context>` XML** containing Agent-ID, Session-ID, From, Message-ID, Subject, Sent, Budget, and Reply-to fields.
+- **Subscribe-first handshake:** The SSE `/stream` endpoint sends a `stream_ready` event after the relay subscription is active. The client waits for this event (up to 5s) before POSTing the message. If the POST fires before `stream_ready` arrives, early response chunks are buffered server-side (pending buffer in SubscriptionRegistry) and drained when the subscription registers.
+- **`GET /api/sessions/:id/messages` may return 0 messages** for Relay sessions — this is a known limitation (session ID duality between Agent-ID and SDK-Session-ID). Use JSONL on disk as the source of truth for comparison.
+- **To find the JSONL**, use `find ~/.claude/projects -name "*.jsonl" -mmin -2 -type f` (by recent modification time) rather than searching by URL session ID.

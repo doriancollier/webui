@@ -3,7 +3,8 @@ import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Search, CheckSquare, Square } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
 import { useRegisterAgent } from '@/layers/entities/mesh';
-import { useDiscoveryScan, type ScanCandidate } from '../model/use-discovery-scan';
+import { useDiscoveryScan, useDiscoveryStore } from '@/layers/entities/discovery';
+import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { AgentCard } from './AgentCard';
 import { NoAgentsFound } from './NoAgentsFound';
 
@@ -15,15 +16,17 @@ interface AgentDiscoveryStepProps {
 }
 
 /**
- * Sort candidates by relevance: manifest-registered first, then by marker count descending.
+ * Sort candidates by relevance: dork-manifest first, then alphabetically by path.
  * Only applied after scan completes to avoid cards jumping during progressive results.
  */
-function sortCandidates(candidates: ScanCandidate[]): ScanCandidate[] {
+function sortCandidates(candidates: DiscoveryCandidate[]): DiscoveryCandidate[] {
   return [...candidates].sort((a, b) => {
-    // Manifest-registered agents first
-    if (a.hasDorkManifest !== b.hasDorkManifest) return a.hasDorkManifest ? -1 : 1;
-    // Then by marker count (more markers = more relevant)
-    return b.markers.length - a.markers.length;
+    // Dork-manifest agents first (already have a .dork/agent.json)
+    const aIsDork = a.strategy === 'dork-manifest';
+    const bIsDork = b.strategy === 'dork-manifest';
+    if (aIsDork !== bIsDork) return aIsDork ? -1 : 1;
+    // Then alphabetically by path for stable ordering
+    return a.path.localeCompare(b.path);
   });
 }
 
@@ -37,7 +40,8 @@ function sortCandidates(candidates: ScanCandidate[]): ScanCandidate[] {
  * @param onStepComplete - Called when the user confirms or skips
  */
 export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) {
-  const { candidates, isScanning, progress, error, startScan } = useDiscoveryScan();
+  const { startScan } = useDiscoveryScan();
+  const { candidates, isScanning, progress, error } = useDiscoveryStore();
   const registerAgent = useRegisterAgent();
   const [selectedPaths, setSelectedPaths] = useState<Set<string> | null>(null);
   const [hasStarted, setHasStarted] = useState(false);

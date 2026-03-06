@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, Loader2, Search, FolderSearch } from 'lucide-react';
-import { useDiscoverAgents, useMeshScanRoots, useRegisteredAgents, useRegisterAgent, useDenyAgent } from '@/layers/entities/mesh';
+import { useMeshScanRoots, useRegisteredAgents, useRegisterAgent, useDenyAgent } from '@/layers/entities/mesh';
+import { useDiscoveryScan, useDiscoveryStore } from '@/layers/entities/discovery';
 import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { ScanRootInput } from './ScanRootInput';
 import { CandidateCard } from './CandidateCard';
@@ -23,7 +24,8 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
   const [localRoots, setLocalRoots] = useState<string[] | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [depth, setDepth] = useState(3);
-  const { mutate: discover, data: result, isPending } = useDiscoverAgents();
+  const { startScan } = useDiscoveryScan();
+  const { candidates, isScanning: isPending } = useDiscoveryStore();
   const { mutate: registerAgent } = useRegisterAgent();
   const { mutate: denyAgent } = useDenyAgent();
   const { data: agentsResult } = useRegisteredAgents();
@@ -38,12 +40,12 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
 
   function handleScan() {
     if (displayRoots.length > 0) {
-      discover({ roots: displayRoots, maxDepth: depth });
+      startScan({ roots: displayRoots, maxDepth: depth });
     }
   }
 
   const [actedPaths, setActedPaths] = useState<Set<string>>(new Set());
-  const visibleCandidates = result?.candidates?.filter((c) => !actedPaths.has(c.path));
+  const visibleCandidates = candidates.filter((c) => !actedPaths.has(c.path));
 
   function markActed(path: string) {
     setActedPaths((prev) => new Set([...prev, path]));

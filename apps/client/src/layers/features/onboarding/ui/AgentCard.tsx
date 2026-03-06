@@ -1,12 +1,12 @@
-import { Folder, GitBranch } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import { Badge } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
+import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { formatMarker } from '../lib/marker-labels';
 import { useSpotlight } from '../lib/use-spotlight';
-import type { ScanCandidate } from '../model/use-discovery-scan';
 
 interface AgentCardProps {
-  candidate: ScanCandidate;
+  candidate: DiscoveryCandidate;
   selected: boolean;
   onToggle: () => void;
 }
@@ -84,35 +84,29 @@ export function AgentCard({ candidate, selected, onToggle }: AgentCardProps) {
       {/* Card content */}
       <div className="min-w-0 flex-1 space-y-2">
         <div className="flex items-center gap-2">
-          <span className="text-lg font-semibold">{candidate.name}</span>
-          {candidate.hasDorkManifest && (
+          <span className="text-lg font-semibold">{candidate.hints.suggestedName}</span>
+          {candidate.strategy === 'dork-manifest' && (
             <Badge variant="secondary" className="text-xs">
               Registered
             </Badge>
           )}
         </div>
 
- {/* Marker badges */}
- <div className="flex flex-wrap gap-1.5">
-          {candidate.markers.map((marker) => (
-            <Badge key={marker} variant="secondary" className="text-xs">
-              {formatMarker(marker)}
-            </Badge>
-          ))}
-        </div>
+        {/* Capability badges derived from inferred capabilities */}
+        {(candidate.hints.inferredCapabilities ?? []).length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {(candidate.hints.inferredCapabilities ?? []).map((cap) => (
+              <Badge key={cap} variant="secondary" className="text-xs">
+                {formatMarker(cap)}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         <p className="flex items-center gap-1.5 truncate text-sm text-muted-foreground">
           <Folder className="size-3.5 shrink-0" />
           <span className="truncate font-mono">{formatPath(candidate.path)}</span>
         </p>
-
-        {/* Git remote */}
-        {candidate.gitRemote && (
-          <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <GitBranch className="size-3 shrink-0" />
-            <span className="truncate font-mono">{formatRemote(candidate.gitRemote)}</span>
-          </p>
-        )}
       </div>
     </button>
   );

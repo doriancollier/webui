@@ -5,18 +5,13 @@
  * of POST /api/discovery/scan by mounting the router in a real Express app
  * and using supertest to make requests.
  *
- * The scanner is mocked to return controlled async generators — the focus
- * is on the route/SSE layer, not the filesystem scanning logic.
+ * The scanner is mocked via a fake meshCore.discover() async generator —
+ * the focus is on the route/SSE layer, not the filesystem scanning logic.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { parseSSEResponse } from '@dorkos/test-utils/sse-helpers';
-import type { ScanEvent } from '../../services/discovery/discovery-scanner.js';
-
-// Mock the discovery scanner
-const mockScanForAgents = vi.fn();
-vi.mock('../../services/discovery/discovery-scanner.js', () => ({
-  scanForAgents: (...args: unknown[]) => mockScanForAgents(...args),
-}));
+import type { MeshCore } from '@dorkos/mesh';
+import type { ScanEvent } from '@dorkos/mesh';
 
 // Mock boundary module
 const mockIsWithinBoundary = vi.fn();
@@ -39,11 +34,15 @@ import request from 'supertest';
 import express from 'express';
 import { createDiscoveryRouter } from '../discovery.js';
 
+/** Mock MeshCore with a controllable discover() async generator. */
+const mockDiscover = vi.fn();
+const mockMeshCore = { discover: mockDiscover } as unknown as MeshCore;
+
 /** Helper to create a minimal Express app with the discovery router mounted. */
 function createTestApp() {
   const app = express();
   app.use(express.json());
-  app.use('/api/discovery', createDiscoveryRouter());
+  app.use('/api/discovery', createDiscoveryRouter(mockMeshCore));
   return app;
 }
 
@@ -88,7 +87,7 @@ describe('Discovery SSE Integration', () => {
 
   describe('SSE format', () => {
     it('returns text/event-stream content type', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),
@@ -102,7 +101,7 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('returns no-cache and keep-alive headers', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),
@@ -117,7 +116,7 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('formats each event as event: + data: lines separated by double newlines', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 5, foundAgents: 1, timedOut: false } },
         ]),
@@ -127,10 +126,8 @@ describe('Discovery SSE Integration', () => {
       const res = await postScan(app);
       const raw = res.body as string;
 
-      // Verify the raw SSE wire format
       expect(raw).toContain('event: complete\n');
       expect(raw).toContain('data: ');
-      // Each event block ends with a double newline
       expect(raw).toMatch(/data: .+\n\n/);
     });
   });
@@ -146,22 +143,18 @@ describe('Discovery SSE Integration', () => {
           type: 'candidate',
           data: {
             path: '/home/user/project-alpha',
-            name: 'project-alpha',
-            markers: ['CLAUDE.md', '.claude'],
-            gitBranch: 'main',
-            gitRemote: 'git@github.com:user/project-alpha.git',
-            hasDorkManifest: false,
+            strategy: 'claude-code',
+            hints: { name: 'project-alpha' },
+            discoveredAt: '2026-01-01T00:00:00.000Z',
           },
         },
         {
           type: 'candidate',
           data: {
             path: '/home/user/project-beta',
-            name: 'project-beta',
-            markers: ['.dork/agent.json'],
-            gitBranch: 'develop',
-            gitRemote: null,
-            hasDorkManifest: true,
+            strategy: 'dork-manifest',
+            hints: { name: 'project-beta' },
+            discoveredAt: '2026-01-01T00:00:00.000Z',
           },
         },
         {
@@ -170,7 +163,7 @@ describe('Discovery SSE Integration', () => {
         },
       ];
 
-      mockScanForAgents.mockImplementation(mockGenerator(candidates));
+      mockDiscover.mockImplementation(mockGenerator(candidates));
 
       const app = createTestApp();
       const res = await postScan(app);
@@ -180,50 +173,21 @@ describe('Discovery SSE Integration', () => {
 
       // First candidate
       expect(parsed[0].type).toBe('candidate');
-      expect(parsed[0].data).toEqual({
-        path: '/home/user/project-alpha',
-        name: 'project-alpha',
-        markers: ['CLAUDE.md', '.claude'],
-        gitBranch: 'main',
-        gitRemote: 'git@github.com:user/project-alpha.git',
-        hasDorkManifest: false,
-      });
+      expect(parsed[0].data).toEqual(
+        expect.objectContaining({
+          path: '/home/user/project-alpha',
+          strategy: 'claude-code',
+        }),
+      );
 
       // Second candidate
       expect(parsed[1].type).toBe('candidate');
       expect(parsed[1].data).toEqual(
         expect.objectContaining({
-          name: 'project-beta',
-          hasDorkManifest: true,
+          path: '/home/user/project-beta',
+          strategy: 'dork-manifest',
         }),
       );
-    });
-
-    it('preserves null values for git fields in candidate data', async () => {
-      mockScanForAgents.mockImplementation(
-        mockGenerator([
-          {
-            type: 'candidate',
-            data: {
-              path: '/home/user/no-git',
-              name: 'no-git',
-              markers: ['CLAUDE.md'],
-              gitBranch: null,
-              gitRemote: null,
-              hasDorkManifest: false,
-            },
-          },
-          { type: 'complete', data: { scannedDirs: 1, foundAgents: 1, timedOut: false } },
-        ]),
-      );
-
-      const app = createTestApp();
-      const res = await postScan(app);
-      const parsed = parseSSEResponse(res.body as string);
-
-      const candidate = parsed[0].data as Record<string, unknown>;
-      expect(candidate.gitBranch).toBeNull();
-      expect(candidate.gitRemote).toBeNull();
     });
   });
 
@@ -233,7 +197,7 @@ describe('Discovery SSE Integration', () => {
 
   describe('progress events', () => {
     it('emits progress events with scanned dir and agent counts', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'progress', data: { scannedDirs: 100, foundAgents: 2 } },
           { type: 'progress', data: { scannedDirs: 200, foundAgents: 5 } },
@@ -252,7 +216,7 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('handles zero progress events when scan completes quickly', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 3, foundAgents: 0, timedOut: false } },
         ]),
@@ -275,7 +239,7 @@ describe('Discovery SSE Integration', () => {
 
   describe('complete event', () => {
     it('emits a complete event with summary counts', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 500, foundAgents: 12, timedOut: false } },
         ]),
@@ -295,7 +259,7 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('reports timedOut: true when scan exceeds timeout', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'progress', data: { scannedDirs: 100, foundAgents: 1 } },
           { type: 'complete', data: { scannedDirs: 100, foundAgents: 1, timedOut: true } },
@@ -313,17 +277,15 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('is the last event in the stream', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           {
             type: 'candidate',
             data: {
               path: '/home/user/proj',
-              name: 'proj',
-              markers: ['CLAUDE.md'],
-              gitBranch: null,
-              gitRemote: null,
-              hasDorkManifest: false,
+              strategy: 'claude-code',
+              hints: {},
+              discoveredAt: '',
             },
           },
           { type: 'progress', data: { scannedDirs: 100, foundAgents: 1 } },
@@ -336,6 +298,29 @@ describe('Discovery SSE Integration', () => {
       const parsed = parseSSEResponse(res.body as string);
 
       expect(parsed[parsed.length - 1].type).toBe('complete');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Auto-import filtering
+  // -------------------------------------------------------------------------
+
+  describe('auto-import filtering', () => {
+    it('filters auto-import events from SSE output', async () => {
+      mockDiscover.mockImplementation(async function* () {
+        yield { type: 'auto-import', data: { manifest: { name: 'test' }, path: '/home/user/proj' } };
+        yield { type: 'candidate', data: { path: '/home/user/proj', strategy: 'claude-code', hints: {}, discoveredAt: '' } };
+        yield { type: 'complete', data: { scannedDirs: 1, foundAgents: 1, timedOut: false } };
+      });
+
+      const app = createTestApp();
+      const res = await postScan(app);
+      const parsed = parseSSEResponse(res.body as string);
+
+      expect(parsed).toHaveLength(2);
+      expect(parsed.find((e) => e.type === 'auto-import')).toBeUndefined();
+      expect(parsed[0].type).toBe('candidate');
+      expect(parsed[1].type).toBe('complete');
     });
   });
 
@@ -373,7 +358,7 @@ describe('Discovery SSE Integration', () => {
       const app = createTestApp();
       await request(app).post('/api/discovery/scan').send({ maxDepth: 999 });
 
-      expect(mockScanForAgents).not.toHaveBeenCalled();
+      expect(mockDiscover).not.toHaveBeenCalled();
     });
   });
 
@@ -402,11 +387,11 @@ describe('Discovery SSE Integration', () => {
         .post('/api/discovery/scan')
         .send({ root: '/root/forbidden' });
 
-      expect(mockScanForAgents).not.toHaveBeenCalled();
+      expect(mockDiscover).not.toHaveBeenCalled();
     });
 
-    it('skips boundary check when root is omitted', async () => {
-      mockScanForAgents.mockImplementation(
+    it('validates boundary for default root when no root/roots provided', async () => {
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),
@@ -415,8 +400,9 @@ describe('Discovery SSE Integration', () => {
       const app = createTestApp();
       await postScan(app, {});
 
-      expect(mockIsWithinBoundary).not.toHaveBeenCalled();
-      expect(mockScanForAgents).toHaveBeenCalled();
+      // Default root (boundary) is still validated
+      expect(mockIsWithinBoundary).toHaveBeenCalledWith('/home/user');
+      expect(mockDiscover).toHaveBeenCalled();
     });
   });
 
@@ -426,7 +412,7 @@ describe('Discovery SSE Integration', () => {
 
   describe('timeout parameter', () => {
     it('passes timeout to the scanner', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),
@@ -435,13 +421,14 @@ describe('Discovery SSE Integration', () => {
       const app = createTestApp();
       await postScan(app, { timeout: 5000 });
 
-      expect(mockScanForAgents).toHaveBeenCalledWith(
+      expect(mockDiscover).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ timeout: 5000 }),
       );
     });
 
     it('passes maxDepth to the scanner', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),
@@ -450,13 +437,14 @@ describe('Discovery SSE Integration', () => {
       const app = createTestApp();
       await postScan(app, { maxDepth: 7 });
 
-      expect(mockScanForAgents).toHaveBeenCalledWith(
+      expect(mockDiscover).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ maxDepth: 7 }),
       );
     });
 
     it('passes root to the scanner after boundary check', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),
@@ -466,8 +454,9 @@ describe('Discovery SSE Integration', () => {
       await postScan(app, { root: '/home/user/projects' });
 
       expect(mockIsWithinBoundary).toHaveBeenCalledWith('/home/user/projects');
-      expect(mockScanForAgents).toHaveBeenCalledWith(
-        expect.objectContaining({ root: '/home/user/projects' }),
+      expect(mockDiscover).toHaveBeenCalledWith(
+        ['/home/user/projects'],
+        expect.objectContaining({}),
       );
     });
   });
@@ -478,7 +467,7 @@ describe('Discovery SSE Integration', () => {
 
   describe('scanner error handling', () => {
     it('emits an error SSE event when the scanner throws', async () => {
-      mockScanForAgents.mockImplementation(async function* () {
+      mockDiscover.mockImplementation(async function* () {
         yield { type: 'progress', data: { scannedDirs: 10, foundAgents: 0 } };
         throw new Error('Permission denied');
       });
@@ -493,7 +482,7 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('emits a generic error message for non-Error exceptions', async () => {
-      mockScanForAgents.mockImplementation(async function* () {
+      mockDiscover.mockImplementation(async function* () {
         throw 'string-error';
       });
 
@@ -507,14 +496,13 @@ describe('Discovery SSE Integration', () => {
     });
 
     it('still returns 200 status for scanner errors (error is in SSE stream)', async () => {
-      mockScanForAgents.mockImplementation(async function* () {
+      mockDiscover.mockImplementation(async function* () {
         throw new Error('Boom');
       });
 
       const app = createTestApp();
       const res = await postScan(app);
 
-      // SSE streams return 200; errors are communicated via event data
       expect(res.status).toBe(200);
     });
   });
@@ -530,11 +518,9 @@ describe('Discovery SSE Integration', () => {
           type: 'candidate',
           data: {
             path: '/home/user/web-app',
-            name: 'web-app',
-            markers: ['CLAUDE.md'],
-            gitBranch: 'main',
-            gitRemote: 'https://github.com/user/web-app.git',
-            hasDorkManifest: false,
+            strategy: 'claude-code',
+            hints: { name: 'web-app' },
+            discoveredAt: '2026-01-01T00:00:00.000Z',
           },
         },
         { type: 'progress', data: { scannedDirs: 100, foundAgents: 1 } },
@@ -542,11 +528,9 @@ describe('Discovery SSE Integration', () => {
           type: 'candidate',
           data: {
             path: '/home/user/api-server',
-            name: 'api-server',
-            markers: ['.dork/agent.json', '.claude'],
-            gitBranch: 'feature/auth',
-            gitRemote: 'https://github.com/user/api-server.git',
-            hasDorkManifest: true,
+            strategy: 'dork-manifest',
+            hints: { name: 'api-server' },
+            discoveredAt: '2026-01-01T00:00:00.000Z',
           },
         },
         { type: 'progress', data: { scannedDirs: 200, foundAgents: 2 } },
@@ -554,7 +538,7 @@ describe('Discovery SSE Integration', () => {
         { type: 'complete', data: { scannedDirs: 350, foundAgents: 2, timedOut: false } },
       ];
 
-      mockScanForAgents.mockImplementation(mockGenerator(events));
+      mockDiscover.mockImplementation(mockGenerator(events));
 
       const app = createTestApp();
       const res = await postScan(app);
@@ -562,7 +546,6 @@ describe('Discovery SSE Integration', () => {
 
       expect(parsed).toHaveLength(6);
 
-      // Verify event ordering
       const types = parsed.map((e) => e.type);
       expect(types).toEqual([
         'candidate',
@@ -573,15 +556,14 @@ describe('Discovery SSE Integration', () => {
         'complete',
       ]);
 
-      // Verify candidate data integrity through JSON serialization round-trip
       const candidates = parsed.filter((e) => e.type === 'candidate');
       expect(candidates).toHaveLength(2);
-      expect((candidates[0].data as Record<string, unknown>).name).toBe('web-app');
-      expect((candidates[1].data as Record<string, unknown>).name).toBe('api-server');
+      expect((candidates[0].data as Record<string, unknown>).path).toBe('/home/user/web-app');
+      expect((candidates[1].data as Record<string, unknown>).path).toBe('/home/user/api-server');
     });
 
     it('handles an empty scan with only a complete event', async () => {
-      mockScanForAgents.mockImplementation(
+      mockDiscover.mockImplementation(
         mockGenerator([
           { type: 'complete', data: { scannedDirs: 0, foundAgents: 0, timedOut: false } },
         ]),

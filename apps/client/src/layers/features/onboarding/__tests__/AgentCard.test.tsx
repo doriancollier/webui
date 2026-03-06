@@ -17,11 +17,13 @@ import { AgentCard } from '../ui/AgentCard';
 function createCandidate(overrides: Record<string, unknown> = {}) {
   return {
     path: '/home/user/projects/my-app',
-    name: 'my-app',
-    markers: ['CLAUDE.md', '.github/copilot'],
-    gitBranch: null as string | null,
-    gitRemote: null as string | null,
-    hasDorkManifest: false,
+    strategy: 'claude-code',
+    hints: {
+      suggestedName: 'my-app',
+      detectedRuntime: 'claude-code' as const,
+      inferredCapabilities: ['CLAUDE.md', '.github/copilot'],
+    },
+    discoveredAt: '2025-01-01T00:00:00.000Z',
     ...overrides,
   };
 }

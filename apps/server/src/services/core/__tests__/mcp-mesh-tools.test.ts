@@ -93,7 +93,7 @@ describe('Mesh MCP Tools', () => {
       ];
       const meshCore = deps.meshCore as unknown as Record<string, ReturnType<typeof vi.fn>>;
       meshCore.discover.mockImplementation(async function* () {
-        for (const c of mockCandidates) yield c;
+        for (const c of mockCandidates) yield { type: 'candidate', data: c };
       });
 
       const handler = createMeshDiscoverHandler(deps);

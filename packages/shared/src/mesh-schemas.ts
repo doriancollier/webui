@@ -374,3 +374,38 @@ export const HeartbeatRequestSchema = z
   .openapi('HeartbeatRequest');
 
 export type HeartbeatRequest = z.infer<typeof HeartbeatRequestSchema>;
+
+// === Transport-Level Discovery Types ===
+
+/**
+ * Progress counters emitted during a discovery scan.
+ * Shared between the server-side scanner and transport-level events.
+ */
+export const ScanProgressSchema = z
+  .object({
+    scannedDirs: z.number().int().min(0),
+    foundAgents: z.number().int().min(0),
+  })
+  .openapi('ScanProgress');
+
+export type ScanProgress = z.infer<typeof ScanProgressSchema>;
+
+/**
+ * Transport-level discovery scan event — discriminated union of all event types
+ * surfaced to the client. Intentionally omits `auto-import` (server-internal concern).
+ */
+export type TransportScanEvent =
+  | { type: 'candidate'; data: DiscoveryCandidate }
+  | { type: 'progress'; data: ScanProgress }
+  | { type: 'complete'; data: ScanProgress & { timedOut: boolean } }
+  | { type: 'error'; data: { error: string } };
+
+/** Options for a discovery scan request. */
+export interface TransportScanOptions {
+  /** Root directories to scan. Empty array defaults to boundary (home dir) on the server. */
+  roots: string[];
+  /** Maximum BFS depth (default: 5). */
+  maxDepth?: number;
+  /** Scan timeout in ms (default: 30000). */
+  timeout?: number;
+}

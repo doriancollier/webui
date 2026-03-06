@@ -33,8 +33,8 @@ import { resolveNamespace } from './namespace-resolver.js';
 import { ClaudeCodeStrategy } from './strategies/claude-code-strategy.js';
 import { CursorStrategy } from './strategies/cursor-strategy.js';
 import { CodexStrategy } from './strategies/codex-strategy.js';
-import { scanDirectory } from './discovery-engine.js';
-import type { DiscoveryOptions } from './discovery-engine.js';
+import { unifiedScan } from './discovery/unified-scanner.js';
+import type { ScanEvent, UnifiedScanOptions } from './discovery/types.js';
 import { readManifest, writeManifest, removeManifest } from './manifest.js';
 import { reconcile } from './reconciler.js';
 import type { ReconcileResult } from './reconciler.js';
@@ -122,33 +122,30 @@ export class MeshCore {
   /**
    * Scan root directories for agent candidates.
    *
-   * Directories with an existing `.dork/agent.json` are auto-imported
-   * into the registry without appearing as candidates. Already-registered
-   * and denied paths are skipped automatically.
+   * Yields all `ScanEvent` types: `candidate`, `auto-import`, `progress`, and `complete`.
+   * Auto-import events are upserted into the registry automatically before being yielded.
+   * Already-registered and denied paths are skipped automatically.
    *
    * @param roots - Root directories to scan
-   * @param options - Scan configuration (maxDepth, excludedDirs, followSymlinks)
-   * @returns Async generator of new DiscoveryCandidate objects
+   * @param options - Scan configuration (maxDepth, timeout, followSymlinks, extraExcludes)
+   * @returns Async generator of ScanEvent objects
    */
   async *discover(
     roots: string[],
-    options?: DiscoveryOptions,
-  ): AsyncGenerator<DiscoveryCandidate> {
+    options?: Omit<UnifiedScanOptions, 'root'>,
+  ): AsyncGenerator<ScanEvent> {
     for (const root of roots) {
-      for await (const event of scanDirectory(
-        root,
+      for await (const event of unifiedScan(
+        { ...options, root, logger: options?.logger ?? this.logger },
         this.strategies,
         this.registry,
         this.denialList,
-        options,
       )) {
-        if ('type' in event && event.type === 'auto-import') {
-          // Auto-import: upsert into registry if not already there
-          await this.upsertAutoImported(event.manifest, event.path);
-        } else if (!('type' in event)) {
-          // New candidate — yield to caller for approval
-          yield event;
+        if (event.type === 'auto-import') {
+          // Auto-import: upsert into registry before yielding
+          await this.upsertAutoImported(event.data.manifest, event.data.path);
         }
+        yield event;
       }
     }
   }

@@ -33,6 +33,8 @@ import type {
   TopologyView,
   UpdateAccessRuleRequest,
   CrossNamespaceRule,
+  TransportScanOptions,
+  TransportScanEvent,
 } from '@dorkos/shared/mesh-schemas';
 
 async function fetchJSON<T>(baseUrl: string, url: string, opts?: RequestInit): Promise<T> {
@@ -678,5 +680,55 @@ export class HttpTransport implements Transport {
       throw new Error(text);
     }
     return res.json();
+  }
+
+  async scan(
+    options: TransportScanOptions,
+    onEvent: (event: TransportScanEvent) => void,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/discovery/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+      signal,
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(body.error ?? `HTTP ${response.status}`);
+    }
+
+    const reader = response.body!.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? '';
+
+        let eventType = '';
+        for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            eventType = line.slice(7).trim();
+          } else if (line.startsWith('data: ') && eventType) {
+            try {
+              const data = JSON.parse(line.slice(6)) as TransportScanEvent['data'];
+              onEvent({ type: eventType, data } as TransportScanEvent);
+            } catch {
+              // Skip malformed JSON lines
+            }
+            eventType = '';
+          }
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 }

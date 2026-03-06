@@ -12,8 +12,9 @@ import {
 import type { AgentManifest, DenialRecord } from '@dorkos/shared/mesh-schemas';
 import { useDirectoryState } from '@/layers/entities/session';
 import { AgentDialog } from '@/layers/features/agent-settings';
-import { useDiscoveryScan, AgentCard as OnboardingAgentCard } from '@/layers/features/onboarding';
-import type { ScanCandidate } from '@/layers/features/onboarding';
+import { useDiscoveryScan, useDiscoveryStore } from '@/layers/entities/discovery';
+import { AgentCard as OnboardingAgentCard } from '@/layers/features/onboarding';
+import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { MeshStatsHeader } from './MeshStatsHeader';
 import { AgentHealthDetail } from './AgentHealthDetail';
 import { TopologyPanel } from './TopologyPanel';
@@ -145,9 +146,10 @@ interface DiscoverAgentsSectionProps {
   registeredNames: Set<string>;
 }
 
-/** Inline discovery section using the SSE-based scanner from onboarding. */
+/** Inline discovery section using the shared discovery scanner. */
 function DiscoverAgentsSection({ registeredNames }: DiscoverAgentsSectionProps) {
-  const { candidates, isScanning, progress, startScan, error } = useDiscoveryScan();
+  const { startScan } = useDiscoveryScan();
+  const { candidates, isScanning, progress, error } = useDiscoveryStore();
   const { mutate: registerAgent } = useRegisterAgent();
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -163,9 +165,10 @@ function DiscoverAgentsSection({ registeredNames }: DiscoverAgentsSectionProps) 
     });
   }, []);
 
-  /** Check if a candidate is already registered by name or .dork marker. */
+  /** Check if a candidate is already registered by name or .dork manifest. */
   const isRegistered = useCallback(
-    (c: ScanCandidate) => registeredNames.has(c.name) || c.markers.includes('.dork'),
+    (c: DiscoveryCandidate) =>
+      registeredNames.has(c.hints.suggestedName) || c.strategy === 'dork-manifest',
     [registeredNames],
   );
 
@@ -178,16 +181,6 @@ function DiscoverAgentsSection({ registeredNames }: DiscoverAgentsSectionProps) 
     }
     setSelected(new Set());
   }, [selected, candidates, isRegistered, registerAgent]);
-
-  // Enrich candidates with registration status for the onboarding AgentCard
-  const enrichedCandidates = useMemo(
-    () =>
-      candidates.map((c) => ({
-        ...c,
-        hasDorkManifest: isRegistered(c),
-      })),
-    [candidates, isRegistered],
-  );
 
   const unregisteredSelected = [...selected].filter((p) => {
     const c = candidates.find((cand) => cand.path === p);
@@ -231,10 +224,10 @@ function DiscoverAgentsSection({ registeredNames }: DiscoverAgentsSectionProps) 
         </div>
       )}
 
-      {enrichedCandidates.length > 0 && (
+      {candidates.length > 0 && (
         <>
           <div className="space-y-2">
-            {enrichedCandidates.map((c) => (
+            {candidates.map((c) => (
               <OnboardingAgentCard
                 key={c.path}
                 candidate={c}
