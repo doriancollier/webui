@@ -179,7 +179,7 @@ export function MessageItem({
             </span>
           ))}
       </div>
-      <div className="max-w-[80ch] min-w-0 flex-1">
+      <div className="max-w-[80ch] min-w-0 flex-1 text-sm">
         {isUser ? (
           message.messageType === 'command' ? (
             <div className="text-muted-foreground truncate font-mono text-sm">

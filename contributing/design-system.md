@@ -93,8 +93,8 @@ Base values at desktop (no mobile scaling applied). Actual rendered sizes multip
 | Token       | Base size | Usage                     |
 | ----------- | --------- | ------------------------- |
 | `text-xs`   | 12px      | Timestamps, tool status   |
-| `text-sm`   | 14px      | Code, metadata, labels    |
-| `text-base` | 16px      | Message body text         |
+| `text-sm`   | 14px      | Message body text, code, metadata, labels |
+| `text-base` | 16px      | (unused in chat UI)                       |
 | `text-lg`   | 18px      | In-message headings (h3+) |
 
 ### Weights

@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Tighten chat typography to text-sm (14px)
 - Address 12 agent-runtime code review issues from bc0fe8b
 - Curate ADRs, add agent-runtime-review-remediation spec, and update guides
 - Reconcile guides for eslint-config and icons package gaps
