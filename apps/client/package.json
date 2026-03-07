@@ -50,7 +50,7 @@
     "react-dom": "^19.0.0",
     "react-qr-code": "^2.0.18",
     "sonner": "^2.0.7",
-    "streamdown": "latest",
+    "streamdown": "^2.4.0",
     "tailwind-merge": "^3.4.0",
     "vaul": "^1.1.2",
     "zod": "^4.3.6",

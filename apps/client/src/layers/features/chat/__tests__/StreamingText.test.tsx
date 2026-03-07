@@ -49,4 +49,15 @@ describe('StreamingText', () => {
     const wrapper = container.firstElementChild;
     expect(wrapper?.classList.contains('streaming-cursor')).toBe(false);
   });
+
+  it('passes TypeScript array type syntax through without truncation', () => {
+    // Purpose: Regression guard for the streamdown@2.3.0/remend@1.2.1 bug where `[]`
+    // inside inline code spans caused trailing content to be silently dropped during
+    // streaming. Verifies the full content string—including array brackets—reaches
+    // <Streamdown> unchanged. This test CAN fail if the dependency is downgraded to 2.3.x.
+    const content =
+      '- **Array literals**: `numbers` is typed as `number[]`\n\nThis paragraph must also render.';
+    render(<StreamingText content={content} />);
+    expect(screen.getByTestId('streamdown').textContent).toBe(content);
+  });
 });

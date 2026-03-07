@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 100,
+  "nextNumber": 102,
   "specs": [
     {
       "number": 1,
@@ -693,6 +693,20 @@
       "slug": "agent-runtime-review-remediation",
       "title": "Agent Runtime Abstraction \u2014 Review Remediation",
       "created": "2026-03-06",
+      "status": "ideation"
+    },
+    {
+      "number": 100,
+      "slug": "fix-relay-streaming-bugs",
+      "title": "Fix Two Relay-Mode Streaming Bugs",
+      "created": "2026-03-07",
+      "status": "ideation"
+    },
+    {
+      "number": 101,
+      "slug": "fix-streamdown-render-truncation",
+      "title": "Fix streamdown Render Truncation of []-Containing Inline Code",
+      "created": "2026-03-07",
       "status": "ideation"
     }
   ]

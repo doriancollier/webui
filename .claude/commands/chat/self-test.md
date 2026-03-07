@@ -119,9 +119,27 @@ Fetch the current model list to know what's available:
 curl -s "http://localhost:$API_PORT/api/models" | jq '.models[].value'
 ```
 
+Fetch runtime capabilities and verify the `ClaudeCodeRuntime` is correctly registered:
+
+```bash
+curl -s "http://localhost:$API_PORT/api/capabilities" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+default = d.get('defaultRuntime', '(missing)')
+caps = d.get('capabilities', {}).get(default, {})
+print('Default runtime:', default)
+print('supportsPermissionModes:', caps.get('supportsPermissionModes'))
+print('supportsToolApproval:', caps.get('supportsToolApproval'))
+print('supportsQuestionPrompt:', caps.get('supportsQuestionPrompt'))
+print('supportsCostTracking:', caps.get('supportsCostTracking'))
+"
+```
+
+Store `RUNTIME_CAPS` — if `supportsPermissionModes` or `supportsToolApproval` is `false`, note it as a **preflight warning** because Phase 3 and 4 depend on those capabilities being enabled. A missing or empty capabilities response is a **Bug** (the `GET /api/capabilities` endpoint was added in the agent-runtime-abstraction spec).
+
 Navigate the browser to `TEST_URL`. Use `mcp__claude-in-chrome__tabs_context_mcp` first to get tab context, then `mcp__claude-in-chrome__navigate`. Take a screenshot and read the page. Capture any pre-existing console errors as a baseline via `mcp__claude-in-chrome__read_console_messages` (filter: `error`).
 
-**Update the results file** — fill in the remaining Test Config fields (API port, Relay/Pulse status, available models, baseline console errors).
+**Update the results file** — fill in the remaining Test Config fields (API port, Relay/Pulse status, available models, runtime capabilities, baseline console errors).
 
 ---
 
