@@ -1,6 +1,6 @@
 ---
 title: Keyboard Shortcuts
-description: Navigate DorkOS efficiently with keyboard shortcuts
+description: Navigate DorkOS and respond to Claude without reaching for the mouse
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
@@ -9,14 +9,22 @@ import { TypeTable } from 'fumadocs-ui/components/type-table'
 
 # Keyboard Shortcuts
 
-DorkOS supports keyboard shortcuts to help you respond to Claude's requests without reaching for the mouse. When Claude needs your approval or input, you can use these shortcuts to interact quickly.
+DorkOS supports keyboard shortcuts for navigation and for responding to Claude's tool approvals and questions. When Claude is waiting for input, shortcuts let you act without touching the mouse.
 
-## Navigation Shortcuts
+<Callout type="info">
+Shortcuts are only active on desktop (screens 768px and wider). On mobile, use the on-screen buttons.
+</Callout>
 
-These shortcuts work at any time, regardless of what Claude is doing.
+## Navigation
+
+These shortcuts work at any time.
 
 <TypeTable
   type={{
+    '⌘K / Ctrl+K': {
+      description: 'Open the global command palette.',
+      type: 'key',
+    },
     '⌘B / Ctrl+B': {
       description: 'Toggle the sidebar open or closed.',
       type: 'key',
@@ -24,17 +32,43 @@ These shortcuts work at any time, regardless of what Claude is doing.
   }}
 />
 
-## When Shortcuts Work
+## Command Palette
 
-Keyboard shortcuts activate automatically when Claude pauses to ask for your approval or answer. You'll see visual indicators (amber borders and key hints) on the active request.
+The global command palette (`⌘K` / `Ctrl+K`) provides access to agents, features, commands, and quick actions.
 
-<Callout type="info">
-Shortcuts are only available on desktop (screens 768px and wider). On mobile devices, use the on-screen buttons.
-</Callout>
+<TypeTable
+  type={{
+    'Enter': {
+      description: 'Open the selected agent sub-menu.',
+      type: 'key',
+    },
+    '⌘Enter / Ctrl+Enter': {
+      description: 'Open the selected agent in a new browser tab (skips sub-menu).',
+      type: 'key',
+    },
+    'Backspace': {
+      description: 'Go back one level when in a sub-menu and the input is empty.',
+      type: 'key',
+    },
+    'Escape (sub-menu)': {
+      description: 'Go back one level without closing the palette.',
+      type: 'key',
+    },
+    'Escape (root)': {
+      description: 'Close the command palette.',
+      type: 'key',
+    },
+  }}
+/>
 
-## Tool Approval Shortcuts
+Prefix shortcuts in the palette search field:
 
-When Claude asks to approve a tool (like running a command or accessing a file):
+- Type `@` to scope search to agents only
+- Type `>` to scope search to commands only
+
+## Tool Approval
+
+When Claude asks to run a tool (like a shell command or file write):
 
 <TypeTable
   type={{
@@ -49,24 +83,24 @@ When Claude asks to approve a tool (like running a command or accessing a file):
   }}
 />
 
-## Question Response Shortcuts
+## Question Response
 
-When Claude asks you a question with multiple options:
+When Claude asks a question with multiple options:
 
 ### Selecting Options
 
 <TypeTable
   type={{
     '1 - 9': {
-      description: 'Toggle the option at that position (1 is first, 2 is second, etc.).',
+      description: 'Toggle the option at that position (1 is first).',
       type: 'key',
     },
     '↑ Arrow Up': {
-      description: 'Move focus to the previous option.',
+      description: 'Move focus to the previous option (wraps).',
       type: 'key',
     },
     '↓ Arrow Down': {
-      description: 'Move focus to the next option.',
+      description: 'Move focus to the next option (wraps).',
       type: 'key',
     },
     Space: {
@@ -99,23 +133,19 @@ When Claude asks multiple questions at once:
 
 ### Free-Text Responses
 
-If you select "Other" to provide a custom answer, most shortcuts are disabled while you're typing. Only `Enter` remains active to submit your response.
+When you select "Other" to type a custom answer, most shortcuts are suppressed so you can type freely. Only `Enter` remains active to submit.
 
 ## Visual Indicators
 
 When shortcuts are active, you'll see:
 
 - **Amber border ring** around the active request
-- **Key hints** next to buttons showing which keys to press (e.g., `Enter`, `Esc`, `1`, `2`)
-- **Highlighted option** when using arrow keys to navigate
+- **Key hints** next to buttons (e.g., `Enter`, `Esc`, `1`, `2`)
+- **Highlighted option** when navigating with arrow keys
 
 ## Multiple Pending Requests
 
-If Claude asks for multiple approvals or answers at once, only the first pending request responds to keyboard shortcuts. After you resolve it, the next request automatically becomes active.
-
-## Chat Input
-
-When you're typing a message in the chat input, all shortcuts are disabled so you can type freely. Shortcuts only activate when Claude is waiting for your approval or answer.
+If Claude issues multiple approvals or questions simultaneously, only the first pending request responds to keyboard shortcuts. Resolving it automatically activates the next one.
 
 ## Next Steps
 

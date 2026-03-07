@@ -37,39 +37,35 @@ We follow three principles inherited from Dieter Rams and Jony Ive:
 
 We avoid pure extremes. Pure white on screens produces glare; pure black creates harsh contrast. Instead, we use **off-white** and **near-black** — colors that feel natural and reduce eye strain.
 
+Tokens are defined as HSL custom properties in `:root`/`.dark` in `apps/client/src/index.css` and exposed to Tailwind via `@theme inline`. Use the Tailwind semantic class names in components, not raw hex values.
+
 ### Light Mode
 
-| Token              | Value     | Usage                          |
-| ------------------ | --------- | ------------------------------ |
-| `--bg-primary`     | `#FAFAFA` | Page background                |
-| `--bg-secondary`   | `#F5F5F5` | User message tint, code blocks |
-| `--bg-surface`     | `#FFFFFF` | Elevated cards, popovers       |
-| `--text-primary`   | `#171717` | Body text                      |
-| `--text-secondary` | `#525252` | Labels, metadata               |
-| `--text-tertiary`  | `#A3A3A3` | Placeholders, timestamps       |
-| `--border-subtle`  | `#E5E5E5` | Dividers                       |
-| `--border-default` | `#D4D4D4` | Card borders, inputs           |
+| Tailwind class       | HSL value      | Usage                          |
+| -------------------- | -------------- | ------------------------------ |
+| `bg-background`      | `0 0% 98%`     | Page background                |
+| `bg-muted`           | `0 0% 96%`     | Subtle backgrounds             |
+| `bg-secondary`       | `0 0% 92%`     | User message tint              |
+| `bg-card`            | `0 0% 100%`    | Elevated cards, popovers       |
+| `text-foreground`    | `0 0% 9%`      | Body text                      |
+| `text-muted-foreground` | `0 0% 32%`  | Labels, metadata               |
+| `border-border`      | `0 0% 83%`     | Card borders, inputs           |
 
 ### Dark Mode
 
-| Token              | Value     | Usage                          |
-| ------------------ | --------- | ------------------------------ |
-| `--bg-primary`     | `#0A0A0A` | Page background                |
-| `--bg-secondary`   | `#171717` | User message tint, code blocks |
-| `--bg-surface`     | `#262626` | Elevated cards, popovers       |
-| `--text-primary`   | `#EDEDED` | Body text                      |
-| `--text-secondary` | `#A3A3A3` | Labels, metadata               |
-| `--text-tertiary`  | `#737373` | Placeholders, timestamps       |
-| `--border-subtle`  | `#262626` | Dividers                       |
-| `--border-default` | `#404040` | Card borders, inputs           |
+| Tailwind class       | HSL value      | Usage                          |
+| -------------------- | -------------- | ------------------------------ |
+| `bg-background`      | `0 0% 4%`      | Page background                |
+| `bg-muted`           | `0 0% 9%`      | Subtle backgrounds             |
+| `bg-secondary`       | `0 0% 14%`     | User message tint              |
+| `bg-card`            | `0 0% 4%`      | Elevated cards, popovers       |
+| `text-foreground`    | `0 0% 93%`     | Body text                      |
+| `text-muted-foreground` | `0 0% 64%`  | Labels, metadata               |
+| `border-border`      | `0 0% 25%`     | Card borders, inputs           |
 
 ### Accent
 
-One accent color, used sparingly: **blue** (`#3B82F6` light / `#60A5FA` dark`). Reserved for:
-
-- Focus rings
-- Active links
-- The send button
+One accent color, used sparingly: **blue** (HSL `217 91% 60%` light / `213 94% 68%` dark). Used for focus rings (`ring`), active links, and the send button.
 
 Everything else is grayscale. Color should mean something. If everything is colored, nothing is.
 
@@ -81,19 +77,25 @@ System fonts. They load instantly, render crisply, and feel native to the platfo
 
 ### Font Stacks
 
+Default stacks (from `--font-sans` and `--font-mono` in `index.css`):
+
 ```
 Sans:  system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif
 Mono:  ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, monospace
 ```
 
+Users can override font family via Settings → Appearance. The app store (`setFontFamily`) loads Google Fonts dynamically and updates `--font-sans`/`--font-mono` via JavaScript. Avoid hardcoding specific font names in component styles.
+
 ### Scale
 
-| Token       | Size | Line Height | Usage                     |
-| ----------- | ---- | ----------- | ------------------------- |
-| `text-xs`   | 11px | 1.4         | Timestamps, tool status   |
-| `text-sm`   | 13px | 1.5         | Code, metadata, labels    |
-| `text-base` | 15px | 1.6         | Message body text         |
-| `text-lg`   | 17px | 1.5         | In-message headings (h3+) |
+Base values at desktop (no mobile scaling applied). Actual rendered sizes multiply by `--_st` on mobile (default 1.25x). Users can apply a further `--user-font-scale` via Settings → Appearance.
+
+| Token       | Base size | Usage                     |
+| ----------- | --------- | ------------------------- |
+| `text-xs`   | 12px      | Timestamps, tool status   |
+| `text-sm`   | 14px      | Code, metadata, labels    |
+| `text-base` | 16px      | Message body text         |
+| `text-lg`   | 18px      | In-message headings (h3+) |
 
 ### Weights
 
@@ -103,7 +105,7 @@ Mono:  ui-monospace, 'SF Mono', 'Cascadia Code', 'Fira Code', Menlo, Consolas, m
 
 ### Line Length
 
-Messages are constrained to `max-width: 65ch` (~520px at 15px). This is the typographic sweet spot for reading comfort. Code blocks may overflow wider.
+Messages are constrained to `max-width: 65ch` (~1040px in characters, roughly 520-544px at 16px). This is the typographic sweet spot for reading comfort. Code blocks may overflow wider.
 
 ---
 
@@ -170,7 +172,7 @@ Animation should feel like physics, not decoration. Things should move because t
 
 **Command palette:** Spring entrance (scale 0.96 + y: -8, stiffness: 500, damping: 35). Sliding selection indicator via `layoutId`. Stagger items on open (first 8 only, 40ms per item). Directional x-axis page transitions (150ms ease-out). Item hover nudge (2px rightward). Preview panel width spring (stiffness: 400, damping: 35). Dialog width animates from 480px to 720px when preview panel appears.
 
-**Streaming cursor:** Blinking pipe character, 1s infinite.
+**Streaming cursor:** 2px wide block, 1.1em tall, `blink-cursor` keyframe at 1s step-end infinite. Appended via `::after` on the last text element inside Streamdown's DOM using a `:last-child` chain. Fades in on appearance (`cursor-fade-in`, 150ms ease-out). Only the deepest matching element renders it; shallower matches use `display: none` to prevent duplicates.
 
 **Scroll-to-bottom button:** Fade in + slide up 10px, 150ms ease-out. Fade out + slide down on exit. Right-aligned in message area overlay wrapper.
 
@@ -276,17 +278,17 @@ Searchable combobox from `shared/ui/command.tsx`. Used with Popover for dropdown
 
 Pattern: `Popover` > `PopoverTrigger` > `PopoverContent` > `Command` > `CommandInput` + `CommandList` > `CommandGroup` > `CommandItem`.
 
-**Global command palette**: The `features/command-palette/` module uses cmdk with `shouldFilter={false}` to disable built-in filtering, delegating all search to Fuse.js (`use-palette-search.ts`). Category prefixes: `@` for agents, `>` for commands. The palette uses cmdk's native `pages` array pattern for sub-menu drill-down with breadcrumb navigation. List height transitions use the `--cmdk-list-height` CSS variable:
+**Global command palette**: The `features/command-palette/` module uses cmdk with `shouldFilter={false}` to disable built-in filtering, delegating all search to Fuse.js (`use-palette-search.ts`). Category prefixes: `@` for agents, `>` for commands. The palette uses a `pages` array state for sub-menu drill-down with breadcrumb navigation. List height transitions use the `--cmdk-list-height` CSS variable with a `max-height` cap:
 
 ```css
 [cmdk-list] {
-  height: var(--cmdk-list-height);
-  transition: height 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  max-height: min(var(--cmdk-list-height), 60vh);
+  transition: max-height 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden !important;
 }
 ```
 
-**Split-pane layout**: The palette dialog uses a flex-row container. `CommandList` takes ~40% width, `AgentPreviewPanel` takes ~60%. The preview panel only appears when the selected item is an agent. On mobile (`useIsMobile()` or below 900px viewport), the preview panel is hidden.
+**Split-pane layout**: The palette dialog uses a flex-row container. `CommandList` takes remaining width; `AgentPreviewPanel` (60%) appears when an agent item is keyboard-selected. The `ResponsiveDialogContent` transitions between `max-w-[480px]` and `max-w-[720px]` via a CSS `transition-[max-width] duration-200`. On mobile (`useIsMobile()`), the preview panel is hidden entirely.
 
 **Character highlighting**: `HighlightedText` renders Fuse.js match indices as `<mark>` elements with `bg-transparent text-foreground font-semibold`. All content passes through React's createElement pipeline (no raw HTML).
 

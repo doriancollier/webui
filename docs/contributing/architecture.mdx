@@ -1,20 +1,20 @@
 ---
 title: Architecture
-description: High-level architecture overview for DorkOS contributors
+description: Architecture overview for DorkOS contributors
 ---
 
 # Architecture
 
-DorkOS uses a hexagonal (ports & adapters) architecture that allows the same React client to run in two different modes:
+DorkOS uses a hexagonal (ports & adapters) architecture that lets the same React client run in two modes:
 
-1. **Standalone web** — Express server + HTTP/SSE communication
-2. **Obsidian plugin** — In-process services, no server needed
+1. **Standalone web** — Express server with HTTP/SSE communication
+2. **Obsidian plugin** — In-process services, no server or network required
 
 This guide explains how the pieces fit together.
 
 ## Monorepo Structure
 
-DorkOS is organized as a Turborepo monorepo with npm workspaces:
+DorkOS is a Turborepo monorepo with five apps and nine shared packages:
 
 <Files>
   <Folder name="dorkos" defaultOpen>
@@ -25,11 +25,14 @@ DorkOS is organized as a Turborepo monorepo with npm workspaces:
       <Folder name="server">
         <File name="Express + TypeScript" />
       </Folder>
-      <Folder name="web">
+      <Folder name="site">
         <File name="Next.js 16 + Fumadocs" />
       </Folder>
       <Folder name="obsidian-plugin">
         <File name="Vite lib build (CJS)" />
+      </Folder>
+      <Folder name="e2e">
+        <File name="Playwright browser tests" />
       </Folder>
     </Folder>
     <Folder name="packages" defaultOpen>
@@ -37,10 +40,13 @@ DorkOS is organized as a Turborepo monorepo with npm workspaces:
         <File name="Publishable npm CLI" />
       </Folder>
       <Folder name="shared">
-        <File name="Zod schemas, shared types" />
+        <File name="Zod schemas, shared types, Transport interface" />
       </Folder>
-      <Folder name="typescript-config">
-        <File name="Shared TypeScript configs" />
+      <Folder name="relay">
+        <File name="Inter-agent messaging" />
+      </Folder>
+      <Folder name="mesh">
+        <File name="Agent discovery & registry" />
       </Folder>
       <Folder name="test-utils">
         <File name="Mock factories, test helpers" />
@@ -49,24 +55,29 @@ DorkOS is organized as a Turborepo monorepo with npm workspaces:
   </Folder>
 </Files>
 
-## Hexagonal Architecture: The Transport Interface
+## The Transport Interface
 
-The core abstraction in DorkOS is the **Transport** interface (`packages/shared/src/transport.ts`). This interface defines all client-server communication methods:
+The core abstraction is the **Transport** interface (`packages/shared/src/transport.ts`). It defines all client-server communication — session management, messaging, tool interaction, Pulse, Relay, Mesh, and agent identity.
+
+A condensed view of the core methods:
 
 ```typescript
 interface Transport {
-  createSession(opts)        → Session
-  listSessions()             → Session[]
-  getSession(id)             → Session
-  getMessages(sessionId)     → { messages: HistoryMessage[] }
-  sendMessage(id, content, onEvent, signal, cwd?) → void
-  approveTool(sessionId, toolCallId)        → { ok: boolean }
-  denyTool(sessionId, toolCallId)           → { ok: boolean }
-  getCommands(refresh?)      → CommandRegistry
-  getCapabilities()          → { capabilities, defaultRuntime }
-  health()                   → { status, version, uptime }
+  createSession(opts): Promise<Session>
+  listSessions(cwd?)       → Promise<Session[]>
+  getSession(id, cwd?)     → Promise<Session>
+  getMessages(sessionId)   → Promise<{ messages: HistoryMessage[] }>
+  sendMessage(id, content, onEvent, signal?, cwd?) → Promise<void>
+  approveTool(sessionId, toolCallId)  → Promise<{ ok: boolean }>
+  denyTool(sessionId, toolCallId)     → Promise<{ ok: boolean }>
+  getCommands(refresh?)    → Promise<CommandRegistry>
+  getModels()              → Promise<ModelOption[]>
+  getCapabilities()        → Promise<{ capabilities, defaultRuntime }>
+  health()                 → Promise<{ status, version, uptime }>
 }
 ```
+
+The interface extends further to cover Pulse schedules, Relay messaging, Mesh agents, bindings, and admin operations. See [`packages/shared/src/transport.ts`](https://github.com/dork-labs/dorkos/blob/main/packages/shared/src/transport.ts) for the complete definition.
 
 ### Two Transport Implementations
 
@@ -74,7 +85,7 @@ interface Transport {
 <Tab value="HttpTransport (Standalone Web)">
 `HttpTransport` communicates with the Express server over HTTP:
 
-- Uses standard `fetch()` for CRUD operations
+- Uses `fetch()` for CRUD operations
 - Parses Server-Sent Events (SSE) streams in `sendMessage()`
 - Converts SSE events into `StreamEvent` objects that update the UI
 
@@ -84,18 +95,18 @@ interface Transport {
 `DirectTransport` calls service instances directly in the same process:
 
 - No HTTP, no port binding, no network serialization
-- Iterates `AsyncGenerator<StreamEvent>` from the Agent SDK
-- Much lower latency, perfect for embedded contexts
+- Iterates `AsyncGenerator<StreamEvent>` from the Claude Agent SDK
+- Lower latency, ideal for embedded contexts
 
 **Location:** `apps/client/src/layers/shared/lib/direct-transport.ts`
 </Tab>
 </Tabs>
 
-Both implementations expose the same interface, so the React client doesn't know (or care) which one it's using.
+Both implementations expose the same interface, so the React client doesn't know which one it's using.
 
 ## Dependency Injection via React Context
 
-The Transport is injected into the React app via a Context provider:
+The Transport is injected into the React app via a context provider:
 
 <Tabs items={["Standalone Web", "Obsidian Plugin"]}>
 <Tab value="Standalone Web">
@@ -138,60 +149,61 @@ import { useTransport } from '@/layers/shared/model/TransportContext'
 function MyComponent() {
   const transport = useTransport()
   const sessions = await transport.listSessions()
-  // ...
 }
 ```
 
 ## Server Architecture
 
-The Express server (`apps/server/`) is organized into routes and services:
+The Express server (`apps/server/`) is organized into routes and services.
 
 ### Routes
 
-Route groups handle REST/SSE endpoints. Routes obtain the active runtime via `runtimeRegistry.getDefault()`:
+Routes are thin HTTP handlers. They obtain the active runtime via `runtimeRegistry.getDefault()`:
 
 <TypeTable type={{
   "sessions.ts": { type: "route", description: "Session listing, creation, message streaming, tool approval/denial" },
   "commands.ts": { type: "route", description: "Slash command discovery" },
   "capabilities.ts": { type: "route", description: "Runtime capability flags for all registered runtimes" },
   "models.ts": { type: "route", description: "Available Claude models via runtime" },
-  "health.ts": { type: "route", description: "Health checks and tunnel status" },
+  "health.ts": { type: "route", description: "Health check and optional tunnel status" },
   "directory.ts": { type: "route", description: "Directory browsing for working directory selection" },
   "config.ts": { type: "route", description: "Configuration management" },
   "files.ts": { type: "route", description: "File operations" },
-  "git.ts": { type: "route", description: "Git status and branch info" }
+  "git.ts": { type: "route", description: "Git status and branch info" },
+  "pulse.ts": { type: "route", description: "Pulse scheduler CRUD and run history" },
+  "relay.ts": { type: "route", description: "Relay messaging, adapter catalog, and binding management" },
+  "mesh.ts": { type: "route", description: "Mesh agent discovery and registry" },
+  "agents.ts": { type: "route", description: "Agent identity CRUD" },
 }} />
 
 ### Services
 
-Services are organized under `services/core/` (shared infrastructure) and `services/runtimes/` (agent backend implementations):
-
 <TypeTable type={{
-  "runtime-registry.ts": { type: "core service", description: "Registry of AgentRuntime instances keyed by type (e.g., 'claude-code')" },
+  "runtime-registry.ts": { type: "core", description: "Registry of AgentRuntime instances keyed by type. Routes call runtimeRegistry.getDefault()." },
   "claude-code-runtime.ts": { type: "runtime", description: "ClaudeCodeRuntime — implements AgentRuntime, encapsulates Claude Agent SDK" },
-  "transcript-reader.ts": { type: "runtime", description: "Reads SDK JSONL transcript files (single source of truth for session data)" },
-  "session-broadcaster.ts": { type: "runtime", description: "Watches JSONL files for changes, broadcasts sync events to clients" },
-  "stream-adapter.ts": { type: "core service", description: "SSE helpers for formatting StreamEvent objects" },
+  "transcript-reader.ts": { type: "runtime", description: "Reads SDK JSONL transcript files — single source of truth for session data" },
+  "session-broadcaster.ts": { type: "runtime", description: "Watches JSONL files for changes, broadcasts sync events to connected clients" },
+  "stream-adapter.ts": { type: "core", description: "SSE helpers for formatting StreamEvent objects as wire protocol" },
   "command-registry.ts": { type: "runtime", description: "Scans .claude/commands/ for slash commands" },
-  "openapi-registry.ts": { type: "core service", description: "Auto-generates OpenAPI spec from Zod schemas" },
-  "config-manager.ts": { type: "core service", description: "Persistent user config at ~/.dork/config.json" },
-  "tunnel-manager.ts": { type: "core service", description: "Optional ngrok tunnel lifecycle" }
+  "openapi-registry.ts": { type: "core", description: "Auto-generates OpenAPI spec from Zod schemas" },
+  "config-manager.ts": { type: "core", description: "Persistent user config at ~/.dork/config.json" },
+  "tunnel-manager.ts": { type: "core", description: "Optional ngrok tunnel lifecycle" },
 }} />
 
 ### Session Storage: SDK JSONL Transcripts
 
 <Callout type="info">
-Sessions are **not** stored in a database. The `TranscriptReader` scans SDK JSONL files at `~/.claude/projects/\{slug\}/*.jsonl`. All sessions are visible regardless of which client created them.
+Sessions are **not** stored in a database. `TranscriptReader` scans SDK JSONL files at `~/.claude/projects/\{slug\}/*.jsonl`. All sessions are visible regardless of which client created them — CLI, DorkOS, or otherwise.
 </Callout>
 
 - Session ID = SDK session ID (UUID from filename)
-- No delete endpoint (sessions persist in SDK storage)
-- Session metadata (title, preview, timestamps) is extracted from file content on every request
-- The `ClaudeCodeRuntime` calls the SDK's `query()` function with `resume: sessionId` for continuity across clients
+- No delete endpoint — sessions persist in SDK storage
+- Session metadata (title, preview, timestamps) extracted from file content on every request
+- `ClaudeCodeRuntime` calls SDK `query()` with `resume: sessionId` for continuity across clients
 
 ## Client Architecture
 
-The React client (`apps/client/`) uses Feature-Sliced Design (FSD) architecture:
+The React client (`apps/client/`) uses Feature-Sliced Design (FSD):
 
 ### FSD Layers
 
@@ -201,30 +213,28 @@ The React client (`apps/client/`) uses Feature-Sliced Design (FSD) architecture:
 | `shared/model/`          | Hooks, stores, context      | TransportContext, app-store, useTheme   |
 | `shared/lib/`            | Domain-agnostic utilities   | cn(), font-config, celebrations         |
 | `entities/session/`      | Session domain hooks        | useSessionId, useSessions               |
-| `entities/command/`      | Command domain hook         | useCommands                             |
-| `entities/runtime/`      | Runtime capabilities        | useRuntimeCapabilities, useDefaultCapabilities |
+| `entities/runtime/`      | Runtime capabilities        | useRuntimeCapabilities                  |
 | `entities/agent/`        | Agent identity hooks        | useCurrentAgent, useAgentVisual         |
+| `entities/pulse/`        | Pulse scheduler hooks       | usePulseEnabled, useSchedules, useRuns  |
+| `entities/relay/`        | Relay messaging hooks       | useRelayEnabled, useRelayMessages       |
+| `entities/mesh/`         | Mesh discovery hooks        | useMeshEnabled, useRegisteredAgents     |
 | `features/chat/`         | Chat interface              | ChatPanel, MessageList, ToolCallCard    |
 | `features/session-list/` | Session management          | SessionSidebar, SessionItem             |
-| `features/commands/`     | Slash command palette       | CommandPalette                          |
 | `features/settings/`     | Settings UI                 | SettingsDialog                          |
-| `features/files/`        | File browser                | FilePalette, useFiles                   |
-| `features/status/`       | Status bar                  | StatusLine, GitStatusItem, ModelItem    |
-| `widgets/app-layout/`    | App-level layout components | PermissionBanner                        |
+| `features/pulse/`        | Pulse scheduler UI          | PulsePanel, CreateScheduleDialog        |
+| `features/relay/`        | Relay messaging UI          | RelayPanel, AdapterCard                 |
+| `features/mesh/`         | Mesh discovery UI           | MeshPanel, TopologyGraph                |
+| `widgets/app-layout/`    | App-level layout            | PermissionBanner                        |
 
 <Callout type="warn">
-Layers follow a strict dependency rule: `shared` ← `entities` ← `features` ← `widgets` ← `app` (unidirectional only). Cross-feature model/hook imports are forbidden.
+Layer imports are strictly unidirectional: `shared` ← `entities` ← `features` ← `widgets` ← `app`. Cross-feature model/hook imports are forbidden.
 </Callout>
 
 ### State Management
 
-- **Zustand** for UI state (sidebar open/closed, theme, etc.) — `layers/shared/model/app-store.ts`
-- **TanStack Query** for server state (sessions, messages, commands) — `entities/session/`, `entities/command/`
-- **URL Parameters** (standalone mode) — `?session=` and `?dir=` persist state in the URL for bookmarking and sharing
-
-### Markdown Rendering
-
-Assistant messages are rendered as rich markdown via the `streamdown` library (from Vercel). The `StreamingText` component wraps `<Streamdown>` with syntax highlighting (Shiki) and shows a blinking cursor during active streaming. User messages remain plain text.
+- **Zustand** for UI state (sidebar, theme, etc.) — `layers/shared/model/app-store.ts`
+- **TanStack Query** for server state (sessions, messages, commands, schedules)
+- **URL Parameters** (standalone mode) — `?session=` and `?dir=` persist state in the URL
 
 ## Data Flow: Message from UI to Claude and Back
 
@@ -269,8 +279,6 @@ React state updates → UI re-renders with new message chunks
 
 ### StreamEvent Types
 
-Events flowing from the SDK to the UI include:
-
 <TypeTable type={{
   "text_delta": { type: "StreamEvent", description: "Incremental text for assistant messages" },
   "tool_call_start": { type: "StreamEvent", description: "Tool invocation begins" },
@@ -282,76 +290,26 @@ Events flowing from the SDK to the UI include:
   "error": { type: "StreamEvent", description: "Error occurred during execution" },
   "done": { type: "StreamEvent", description: "Message stream complete" },
   "session_status": { type: "StreamEvent", description: "Session state changed" },
-  "task_update": { type: "StreamEvent", description: "Task list updated" }
+  "task_update": { type: "StreamEvent", description: "Task list updated" },
+  "relay_message": { type: "StreamEvent (Relay)", description: "Relay response chunk — nested StreamEvent. Only when DORKOS_RELAY_ENABLED=true" },
+  "relay_receipt": { type: "StreamEvent (Relay)", description: "Delivery confirmation for a Relay-routed message" },
+  "message_delivered": { type: "StreamEvent (Relay)", description: "Message delivery notification" },
 }} />
 
 ## Session Sync Protocol
 
-Clients can subscribe to real-time session changes via `GET /api/sessions/:id/stream` (persistent SSE connection). This enables multi-client sync (e.g., CLI writes then DorkOS UI updates automatically).
+Subscribe to real-time session changes via `GET /api/sessions/:id/stream` (persistent SSE). This enables multi-client sync — CLI writes appear in the DorkOS UI automatically.
 
 Events:
 
 - **`sync_connected`** — Sent on initial connection. Data: `{ sessionId }`
 - **`sync_update`** — Sent when new content is written to the session's JSONL file. Data: `{ sessionId, timestamp }`
 
-Clients receiving `sync_update` should re-fetch message history. The `GET /messages` endpoint supports ETag caching for efficient polling.
-
-## Module Layout
-
-<Files>
-  <Folder name="packages" defaultOpen>
-    <Folder name="shared/src" defaultOpen>
-      <File name="transport.ts" />
-      <File name="types.ts" />
-      <File name="schemas.ts" />
-      <File name="config-schema.ts" />
-    </Folder>
-  </Folder>
-  <Folder name="apps" defaultOpen>
-    <Folder name="client/src/layers" defaultOpen>
-      <Folder name="shared" defaultOpen>
-        <Folder name="model">
-          <File name="TransportContext.tsx" />
-          <File name="app-store.ts" />
-        </Folder>
-        <Folder name="lib">
-          <File name="http-transport.ts" />
-          <File name="direct-transport.ts" />
-        </Folder>
-      </Folder>
-    </Folder>
-    <Folder name="server/src" defaultOpen>
-      <Folder name="routes">
-        <File name="sessions.ts" />
-        <File name="commands.ts" />
-        <File name="health.ts" />
-      </Folder>
-      <Folder name="services" defaultOpen>
-        <Folder name="core">
-          <File name="runtime-registry.ts" />
-          <File name="stream-adapter.ts" />
-        </Folder>
-        <Folder name="runtimes/claude-code">
-          <File name="claude-code-runtime.ts" />
-          <File name="transcript-reader.ts" />
-          <File name="command-registry.ts" />
-        </Folder>
-      </Folder>
-    </Folder>
-    <Folder name="obsidian-plugin/src" defaultOpen>
-      <Folder name="views">
-        <File name="CopilotView.tsx" />
-      </Folder>
-      <Folder name="components">
-        <File name="ObsidianApp.tsx" />
-      </Folder>
-    </Folder>
-  </Folder>
-</Files>
+On `sync_update`, re-fetch message history. `GET /messages` supports ETag caching for efficient polling.
 
 ## Testing
 
-Tests use Vitest with `vi.mock()` for Node modules. All client tests inject mock `Transport` objects via `TransportProvider`:
+Tests use Vitest with `vi.mock()` for Node modules. Client tests inject mock `Transport` objects via `TransportProvider`:
 
 ```typescript
 import { createMockTransport } from '@dorkos/test-utils'
@@ -374,14 +332,14 @@ render(<MyComponent />, { wrapper: Wrapper })
 
 This pattern provides type safety and explicit test setup without global mocks.
 
-## Key Architectural Benefits
+## Key Design Properties
 
-- **Same React app runs standalone and embedded** — Transport abstraction enables code reuse
-- **Server-optional** — Obsidian plugin has zero network latency
-- **Type-safe** — Zod schemas generate both TypeScript types and OpenAPI specs
+- **Same React app, two deployment modes** — Transport abstraction enables full code reuse
+- **No network required for Obsidian** — DirectTransport runs entirely in-process
+- **Type-safe end-to-end** — Zod schemas generate both TypeScript types and OpenAPI specs
 - **Testable** — Mock Transport objects make testing React hooks and components straightforward
 - **Real-time sync** — SSE streaming and file watching keep all clients in sync
-- **SDK-first** — JSONL transcripts are the single source of truth (no separate database)
+- **SDK-first storage** — JSONL transcripts are the single source of truth (no separate database)
 
 ## Next Steps
 
@@ -390,10 +348,10 @@ This pattern provides type safety and explicit test setup without global mocks.
     Get your local environment configured and running
   </Card>
   <Card title="Testing" href="/docs/contributing/testing">
-    Learn testing patterns, mock Transport setup, and test conventions
+    Testing patterns, mock Transport setup, and conventions
   </Card>
   <Card title="API Reference" href="/docs/api">
-    Explore the REST and SSE endpoints with the interactive Scalar UI
+    REST and SSE endpoints with the interactive Scalar UI
   </Card>
   <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
     Deep dive into real-time streaming and session sync

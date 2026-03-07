@@ -10,7 +10,7 @@ Get DorkOS running locally for development.
 ## Prerequisites
 
 <Callout type="info">
-DorkOS requires Node.js 18 or later. Check your version with `node --version`.
+DorkOS requires Node.js 18 or later. Check with `node --version`.
 </Callout>
 
 - **Node.js 18+**
@@ -33,8 +33,6 @@ pnpm install
 <Step>
 ### Configure environment
 
-Copy the example environment file and add your API key:
-
 ```bash
 cp .env.example .env
 ```
@@ -49,7 +47,7 @@ Edit `.env` and set `ANTHROPIC_API_KEY=your-key-here`.
 pnpm dev
 ```
 
-This starts both the Express server (port 4242) and the Vite dev server (port 3000). Open [http://localhost:3000](http://localhost:3000) in your browser.
+This starts both the Express server (default port 4242) and the Vite dev server (port 4241). Open [http://localhost:4241](http://localhost:4241) in your browser.
 </Step>
 </Steps>
 
@@ -69,7 +67,7 @@ dotenv -- turbo dev --filter=@dorkos/client
 </Tabs>
 
 <Callout type="warn">
-Always use `pnpm` scripts or prefix commands with `dotenv --` to ensure `.env` is loaded. Running bare `turbo` will not pick up environment variables.
+Always use `pnpm` scripts or prefix commands with `dotenv --` to ensure `.env` is loaded. Bare `turbo` commands do not pick up environment variables.
 </Callout>
 
 ## Common Commands
@@ -104,8 +102,6 @@ pnpm vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 ```
 
 ## Monorepo Structure
-
-DorkOS is a Turborepo monorepo with five apps and nine shared packages:
 
 <Files>
   <Folder name="apps" defaultOpen>
@@ -167,9 +163,9 @@ DorkOS is a Turborepo monorepo with five apps and nine shared packages:
 | `apps/obsidian-plugin` | `@dorkos/obsidian-plugin` | Obsidian sidebar plugin |
 | `apps/e2e` | `@dorkos/e2e` | Playwright browser tests |
 | `packages/cli` | `dorkos` | Publishable npm CLI |
-| `packages/shared` | `@dorkos/shared` | Zod schemas, shared types |
+| `packages/shared` | `@dorkos/shared` | Zod schemas, shared types, Transport interface |
 | `packages/db` | `@dorkos/db` | Drizzle ORM schemas (SQLite) |
-| `packages/relay` | `@dorkos/relay` | Inter-agent message bus |
+| `packages/relay` | `@dorkos/relay` | Inter-agent messaging |
 | `packages/mesh` | `@dorkos/mesh` | Agent discovery & registry |
 | `packages/typescript-config` | `@dorkos/typescript-config` | Shared tsconfig presets |
 | `packages/eslint-config` | `@dorkos/eslint-config` | Shared ESLint presets (base, react, node, test) |
@@ -180,12 +176,12 @@ DorkOS is a Turborepo monorepo with five apps and nine shared packages:
 
 <Cards>
   <Card title="Architecture" href="/docs/contributing/architecture">
-    Understand the hexagonal architecture, Transport interface, and data flow
+    Hexagonal architecture, Transport interface, and data flow
   </Card>
   <Card title="Testing" href="/docs/contributing/testing">
-    Learn testing patterns, conventions, and how to write component and service tests
+    Testing patterns, conventions, and how to write component and service tests
   </Card>
   <Card title="API Reference" href="/docs/api">
-    Explore the REST and SSE endpoints
+    REST and SSE endpoints
   </Card>
 </Cards>

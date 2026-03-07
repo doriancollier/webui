@@ -22,7 +22,7 @@ import { DEFAULT_CWD } from '../lib/resolve-root.js';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
 import { resolveSubjectLabels, type SubjectLabel } from '../services/relay/subject-resolver.js';
-import { transcriptReader } from '../services/runtimes/claude-code/transcript-reader.js';
+import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { readManifest } from '@dorkos/shared/manifest';
 
 /** Allowed subject prefixes for SSE subscription patterns. */
@@ -240,7 +240,10 @@ export function createRelayRouter(
       const allSubjects = [...new Set(messages.messages.map((m) => m.subject))];
       const vaultRoot = DEFAULT_CWD;
       const resolverDeps = {
-        getSession: async (id: string) => transcriptReader.getSession(vaultRoot, id),
+        getSession: async (id: string) => {
+          const runtime = runtimeRegistry.getDefault();
+          return runtime.getSession(vaultRoot, id);
+        },
         readManifest: async (cwd: string) => readManifest(cwd),
       };
       const labelMap = await resolveSubjectLabels(allSubjects, resolverDeps);

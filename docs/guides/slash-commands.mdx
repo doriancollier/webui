@@ -1,11 +1,11 @@
 ---
 title: Slash Commands
-description: Discover and use slash commands in DorkOS
+description: Create and use slash commands to guide Claude through repeatable tasks
 ---
 
 # Slash Commands
 
-DorkOS discovers slash commands from your project's `.claude/commands/` directory and makes them available through a command palette in the chat UI.
+DorkOS discovers slash commands from your project's `.claude/commands/` directory and makes them available through a command palette in the chat input.
 
 ## Using Commands
 
@@ -25,7 +25,7 @@ Search or browse available commands. Commands are sorted alphabetically and grou
 <Step>
 ### Insert and run
 
-Select a command to insert it into the chat. Optionally add arguments after the command name, then send the message.
+Select a command to insert it into the chat input. Add arguments after the command name if needed, then send.
 </Step>
 </Steps>
 
@@ -44,12 +44,9 @@ DorkOS scans `.claude/commands/` recursively. Directory nesting creates namespac
         <File name="create.md" />
         <File name="execute.md" />
       </Folder>
-      <File name="commit.md" />
     </Folder>
   </Folder>
 </Files>
-
-This structure produces the following commands:
 
 | File | Command |
 |---|---|
@@ -57,10 +54,9 @@ This structure produces the following commands:
 | `docs/status.md` | `/docs:status` |
 | `spec/create.md` | `/spec:create` |
 | `spec/execute.md` | `/spec:execute` |
-| `commit.md` | `/commit` |
 
 <Callout type="info">
-Only `.md` files inside namespace subdirectories are discovered. Top-level files like `commit.md` are not currently picked up by the registry -- commands must be inside a subdirectory.
+Only `.md` files inside namespace subdirectories are discovered. Top-level files directly inside `commands/` are not picked up — commands must be inside a named subdirectory.
 </Callout>
 
 ## Command Format
@@ -77,7 +73,7 @@ category: documentation
 
 # Documentation Reconciliation
 
-[Instructions for Claude Code to follow...]
+[Instructions for Claude to follow...]
 ```
 
 ### Frontmatter Fields
@@ -85,7 +81,7 @@ category: documentation
 <TypeTable type={{
   "description": { type: "string", description: "Short description shown in the command palette", default: "''" },
   "argument-hint": { type: "string", description: "Placeholder text for command arguments (e.g. '[guide-name | --all]')" },
-  "allowed-tools": { type: "string", description: "Comma-separated list of allowed tools (e.g. 'Read, Grep, Glob, Bash')" },
+  "allowed-tools": { type: "string", description: "Comma-separated list of tools this command may use (e.g. 'Read, Grep, Glob, Bash')" },
   "category": { type: "string", description: "Grouping category in the palette" }
 }} />
 
@@ -114,14 +110,14 @@ Create a Markdown file with frontmatter and instructions:
 ```bash
 cat > .claude/commands/mytools/greet.md << 'EOF'
 ---
-description: Generate a friendly greeting
+description: Generate a greeting
 argument-hint: '[name]'
 allowed-tools: Read, Bash
 ---
 
 # Greeting Generator
 
-Say hello to the user by name. Be friendly and enthusiastic.
+Say hello to the user by name.
 EOF
 ```
 </Step>
@@ -129,20 +125,16 @@ EOF
 <Step>
 ### Refresh the command list
 
-Click the refresh button in the command palette, or call the API with the `refresh` query parameter.
+The registry caches results for 5 minutes. To refresh immediately, click the refresh button in the command palette or call the API with `?refresh=true`.
 </Step>
 </Steps>
 
-## Refreshing Commands
+## Cache Behavior
 
-The command registry caches results for performance. To refresh:
+The command registry caches results for 5 minutes. The cache is also cleared on server restart. To force an immediate refresh:
 
 - Click the refresh button in the command palette
-- Or call the API with `?refresh=true`
-
-<Callout type="info">
-The cache is also invalidated when the server restarts. During development, use the refresh button for the fastest feedback loop.
-</Callout>
+- Call the API with `?refresh=true`
 
 ## API
 
@@ -160,12 +152,12 @@ The response includes a `lastScanned` timestamp and an array of `commands`, each
 
 <Cards>
   <Card title="Tool Approval" href="/docs/guides/tool-approval">
-    Learn how to control which tools your commands can use
+    Control which tools your commands can use.
   </Card>
   <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
-    Speed up your workflow with keyboard shortcuts
+    Speed up your workflow with keyboard shortcuts.
   </Card>
   <Card title="CLI Usage" href="/docs/guides/cli-usage">
-    Configure the DorkOS CLI for your project
+    Configure the DorkOS CLI for your project.
   </Card>
 </Cards>

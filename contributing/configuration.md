@@ -77,19 +77,29 @@ Adapter-to-agent bindings are persisted to `~/.dork/relay/bindings.json`. The fi
 | `tunnel.authtoken`| string \| null                 | `null`    | ngrok auth token (sensitive)               |
 | `tunnel.auth`     | string \| null                 | `null`    | HTTP basic auth for tunnel, `user:pass` format (sensitive) |
 | `logging.level`   | `"fatal"` \| `"error"` \| `"warn"` \| `"info"` \| `"debug"` \| `"trace"` | `"info"` | Log verbosity level |
+| `logging.maxLogSizeKb` | integer (100--10240)      | `500`     | Maximum log file size in KB before rotation |
+| `logging.maxLogFiles`  | integer (1--30)           | `14`      | Number of rotated log files to retain      |
 | `ui.theme`        | `"light"` \| `"dark"` \| `"system"` | `"system"` | UI color theme                           |
+| `relay.enabled`   | boolean                        | `true`    | Enable Relay subsystem (config-level toggle, distinct from `DORKOS_RELAY_ENABLED`) |
+| `relay.dataDir`   | string \| null                 | `null`    | Override Relay data directory (`null` = default under `DORK_HOME`) |
+| `scheduler.enabled` | boolean                      | `true`    | Enable Pulse scheduler subsystem (config-level toggle) |
+| `scheduler.maxConcurrentRuns` | integer (1--10)    | `1`       | Maximum concurrently executing Pulse runs  |
+| `scheduler.timezone` | string \| null              | `null`    | Default timezone for cron expressions (`null` = system timezone) |
+| `scheduler.retentionCount` | integer              | `100`     | Number of completed run records to retain in the database |
 | `mesh.scanRoots`  | string[]                       | `[]`      | Directories to scan for agent discovery    |
 | `agentContext.relayTools` | boolean                 | `true`    | Include Relay messaging tool documentation in agent context |
 | `agentContext.meshTools`  | boolean                 | `true`    | Include Mesh discovery tool documentation in agent context  |
 | `agentContext.adapterTools` | boolean               | `true`    | Include adapter tool documentation in agent context         |
 | `agentContext.pulseTools` | boolean                 | `true`    | Include Pulse scheduler tool documentation in agent context |
 
-The following settings are controlled exclusively by environment variables and have no corresponding config file key or CLI flag:
+The `onboarding` section tracks first-time setup wizard state (`completedSteps`, `skippedSteps`, `startedAt`, `dismissedAt`). It is managed automatically by the server and should not be edited manually.
 
-| Environment Variable    | Default  | Description                                                |
-| ----------------------- | -------- | ---------------------------------------------------------- |
-| `DORKOS_RELAY_ENABLED`  | `false`  | Enable the Relay message bus subsystem                     |
-| `DORKOS_CORS_ORIGIN`    | `*`      | CORS allowed origin for the Express server                 |
+The following settings are controlled exclusively by environment variables and have no corresponding config file key:
+
+| Environment Variable    | Default                       | Description                                                |
+| ----------------------- | ----------------------------- | ---------------------------------------------------------- |
+| `DORKOS_RELAY_ENABLED`  | `false`                       | Enable the Relay message bus subsystem at the process level |
+| `DORKOS_CORS_ORIGIN`    | localhost on DORKOS_PORT/VITE_PORT | CORS allowed origin(s). Set to `*` for wildcard or a comma-separated list to override. |
 
 The config file also contains a `version` field (always `1`) used for schema migrations.
 
@@ -252,18 +262,18 @@ dorkos config set agentContext.pulseTools false
 
 ### DORKOS_RELAY_ENABLED
 
-Feature flag that enables the Relay message bus subsystem. When `true`, the server mounts the `/api/relay` routes, starts the `RelayCore`, and activates Relay-backed session messaging (POST `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}` instead of calling the runtime directly).
+Process-level feature flag that enables the Relay message bus subsystem. When `true`, the server mounts the `/api/relay` routes, starts the `RelayCore`, and activates Relay-backed session messaging (POST `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}` instead of calling the runtime directly).
 
 ```bash
 export DORKOS_RELAY_ENABLED=true
 dorkos
 ```
 
-There is no config file key for this setting. It must be set as an environment variable.
+This env var controls process-level Relay initialization and must be set before the server starts. The config file has a separate `relay.enabled` field (default `true`) that controls the config-layer toggle independently.
 
 ### DORKOS_CORS_ORIGIN
 
-Configures the `Access-Control-Allow-Origin` header on the Express server. Defaults to `*` (all origins) when unset. Set this to a specific origin in production deployments to restrict cross-origin access.
+Configures the `Access-Control-Allow-Origin` header on the Express server. When unset, defaults to localhost on `DORKOS_PORT` and `VITE_PORT` (4241). Set to `*` for wildcard, or a comma-separated list of origins to allow multiple production origins.
 
 ```bash
 export DORKOS_CORS_ORIGIN=https://myapp.example.com
@@ -314,10 +324,10 @@ false                    # Built-in default (fallback)
 **Log level resolution:**
 
 ```
---log-level debug        # CLI flag (wins if provided)
-LOG_LEVEL=debug          # Env var (wins if no CLI flag)
-logging.level: debug     # config.json (wins if no env var)
-info                     # Built-in default (fallback)
+--log-level debug           # CLI flag (wins if provided)
+DORKOS_LOG_LEVEL=4          # Env var (wins if no CLI flag; numeric 0-5)
+logging.level: debug        # config.json (wins if no env var)
+info                        # Built-in default (fallback)
 ```
 
 **Boundary resolution:**
@@ -414,29 +424,14 @@ Output the full config as formatted JSON. Useful for scripting and debugging.
 $ dorkos config list
 {
   "version": 1,
-  "server": {
-    "port": 4242,
-    "cwd": null,
-    "boundary": null
-  },
-  "tunnel": {
-    "enabled": false,
-    "domain": null,
-    "authtoken": null,
-    "auth": null
-  },
-  "ui": {
-    "theme": "system"
-  },
-  "mesh": {
-    "scanRoots": []
-  },
-  "agentContext": {
-    "relayTools": true,
-    "meshTools": true,
-    "adapterTools": true,
-    "pulseTools": true
-  }
+  "server": { "port": 4242, "cwd": null, "boundary": null },
+  "tunnel": { "enabled": false, "domain": null, "authtoken": null, "auth": null },
+  "ui": { "theme": "system" },
+  "logging": { "level": "info", "maxLogSizeKb": 500, "maxLogFiles": 14 },
+  "relay": { "enabled": true, "dataDir": null },
+  "scheduler": { "enabled": true, "maxConcurrentRuns": 1, "timezone": null, "retentionCount": 100 },
+  "mesh": { "scanRoots": [] },
+  "agentContext": { "relayTools": true, "meshTools": true, "adapterTools": true, "pulseTools": true }
 }
 ```
 
@@ -534,6 +529,10 @@ Content-Type: application/json
     "server": { "port": 8080, "cwd": null, "boundary": null },
     "tunnel": { "enabled": false, "domain": null, "authtoken": null, "auth": null },
     "ui": { "theme": "dark" },
+    "logging": { "level": "info", "maxLogSizeKb": 500, "maxLogFiles": 14 },
+    "relay": { "enabled": true, "dataDir": null },
+    "scheduler": { "enabled": true, "maxConcurrentRuns": 1, "timezone": null, "retentionCount": 100 },
+    "mesh": { "scanRoots": [] },
     "agentContext": { "relayTools": true, "meshTools": true, "adapterTools": true, "pulseTools": true }
   }
 }

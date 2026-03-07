@@ -21,7 +21,7 @@ import {
   loadAdapters,
 } from '@dorkos/relay';
 import type {
-  ClaudeCodeAgentManagerLike,
+  ClaudeCodeAgentRuntimeLike,
   TraceStoreLike,
   PulseStoreLike,
   AgentSessionStoreLike,
@@ -31,7 +31,7 @@ import { logger } from '../../lib/logger.js';
 
 /** Dependencies for constructing runtime adapters. */
 export interface AdapterFactoryDeps {
-  agentManager: ClaudeCodeAgentManagerLike;
+  agentManager: ClaudeCodeAgentRuntimeLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
   /** Optional persistent store for agent key → SDK session UUID mappings. */

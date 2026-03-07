@@ -2,19 +2,18 @@
 
 ## Overview
 
-This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI components following the "Calm Tech" design language. All theme tokens are defined in `apps/client/src/index.css` using OKLCH color space for better color manipulation and dark mode support.
+This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI components following the "Calm Tech" design language. All theme tokens are defined in `apps/client/src/index.css` using HSL CSS custom properties surfaced through the `@theme inline` block.
 
 ## Key Files
 
 | Concept             | Location                                       |
 | ------------------- | ---------------------------------------------- |
-| Theme configuration | `apps/client/src/index.css` (via `@theme` directive) |
+| Theme configuration | `apps/client/src/index.css` (via `@theme inline` + `:root`/`.dark`) |
 | Design system spec  | `contributing/design-system.md`                      |
-| Shadcn components   | `src/layers/shared/ui/` (barrel export)        |
 | Shadcn components   | `apps/client/src/layers/shared/ui/` (barrel export)           |
 | Animation patterns  | `contributing/animations.md`                         |
-| cn() utility        | `src/layers/shared/lib/utils.ts`               |
-| ThemeProvider       | `apps/client/src/App.tsx`                        |
+| cn() utility        | `apps/client/src/layers/shared/lib/utils.ts`               |
+| Theme hook          | `apps/client/src/layers/shared/model/use-theme.ts`                        |
 
 ## When to Use What
 
@@ -35,43 +34,50 @@ This project uses Tailwind CSS v4 (CSS-first configuration) with Shadcn UI compo
 
 ### Theme Token Definition (index.css)
 
-All design tokens live in `apps/client/src/index.css`:
+All design tokens live in `apps/client/src/index.css`. The pattern uses HSL custom properties defined in `:root`/`.dark` blocks, surfaced to Tailwind via `@theme inline`:
 
 ```css
 @import 'tailwindcss';
+@custom-variant dark (&:is(.dark *));
+@source '../node_modules/streamdown/dist/*.js';
 
-@theme {
-  /* Colors - OKLCH for better manipulation */
-  --color-background: oklch(100% 0 0);
-  --color-foreground: oklch(10% 0 0);
-  --color-primary: oklch(15% 0 0);
-  --color-primary-foreground: oklch(98% 0 0);
-  --color-muted: oklch(96% 0 0);
-  --color-muted-foreground: oklch(45% 0 0);
+@theme inline {
+  /* Colors reference HSL variables */
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  /* ...all other tokens follow the same pattern */
+  --radius: var(--radius);
+}
 
-  /* Radius tokens */
-  --radius: 0.625rem; /* 10px - buttons, inputs */
-  --radius-lg: 1rem; /* 16px - cards */
-
-  /* Fonts */
-  --font-sans: 'Geist Sans', system-ui, sans-serif;
-  --font-mono: 'Geist Mono', monospace;
-
-  /* Custom utilities (not part of Tailwind defaults) */
-  --shadow-soft: 0 2px 8px oklch(0% 0 0 / 0.08);
-  --shadow-elevated: 0 4px 16px oklch(0% 0 0 / 0.12);
+/* Light mode HSL values */
+:root {
+  --background: 0 0% 98%;
+  --foreground: 0 0% 9%;
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --muted: 0 0% 96%;
+  --muted-foreground: 0 0% 32%;
+  --radius: 0.5rem;
 }
 
 /* Dark mode overrides */
 .dark {
-  --color-background: oklch(10% 0 0);
-  --color-foreground: oklch(98% 0 0);
-  --color-primary: oklch(98% 0 0);
-  --color-primary-foreground: oklch(15% 0 0);
-  --color-muted: oklch(15% 0 0);
-  --color-muted-foreground: oklch(65% 0 0);
+  --background: 0 0% 4%;
+  --foreground: 0 0% 93%;
+  --primary: 0 0% 93%;
+  --muted: 0 0% 9%;
+  --muted-foreground: 0 0% 64%;
 }
 ```
+
+Three things to note:
+
+- `@custom-variant dark (&:is(.dark *))` enables the `dark:` prefix using class-based dark mode (`.dark` on `<html>`).
+- `@source '../node_modules/streamdown/dist/*.js'` is required so Tailwind scans the `streamdown` markdown renderer for classes it injects at runtime. Without this, streamdown's utility classes are purged in production.
+- Fonts default to system stacks: `system-ui, -apple-system, ...` (set in `:root` as `--font-sans` and `--font-mono`). Users can override via Settings → Appearance, which loads Google Fonts dynamically and writes to `--font-sans`/`--font-mono` via JavaScript.
 
 ### Using Semantic Tokens
 
@@ -91,11 +97,9 @@ export function FeatureCard({ title, description }: FeatureCardProps) {
 
 ### Dark Mode with Class Strategy
 
-Dark mode uses the `useTheme` hook with class strategy:
+Dark mode uses the `useTheme` hook. The `dark` class is toggled on `<html>` by `ThemeProvider` in `App.tsx`. This is a Vite SPA — no `suppressHydrationWarning` or Next.js layout file needed.
 
 ```tsx
-// Toggle theme
-'use client';
 import { useTheme } from '@/layers/shared/model';
 
 export function ThemeToggle() {
@@ -106,18 +110,22 @@ export function ThemeToggle() {
       onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
       className="hover:bg-muted rounded-md p-2"
     >
-      {theme === 'dark' ? '☀️' : '🌙'}
+      {theme === 'dark' ? 'Light' : 'Dark'}
     </button>
   );
 }
 ```
 
-Apply dark mode variants with `dark:` prefix:
+Apply dark mode variants with `dark:` prefix, but prefer semantic tokens which handle both modes automatically:
 
 ```tsx
-<div className="bg-white text-black dark:bg-black dark:text-white">
-  <p className="text-gray-600 dark:text-gray-400">Muted text</p>
+{/* Prefer tokens — no dark: variant needed */}
+<div className="bg-background text-foreground">
+  <p className="text-muted-foreground">Muted text</p>
 </div>
+
+{/* Only use dark: when tokens don't cover the case */}
+<div className="bg-gray-100 dark:bg-gray-900">...</div>
 ```
 
 ### Conditional Classes with cn()
@@ -343,7 +351,7 @@ Usage:
 
 // ✅ Use tinted neutrals from tokens
 <div className="bg-background text-foreground">
-  // Rich neutrals: oklch(100% 0 0) in light, oklch(10% 0 0) in dark
+  // Rich neutrals: hsl(0 0% 98%) in light, hsl(0 0% 4%) in dark
 </div>
 ```
 
@@ -380,17 +388,16 @@ export function Button(props) {
 
 The "Calm Tech" design language specifications:
 
-| Element                 | Specification                                 |
-| ----------------------- | --------------------------------------------- |
-| **Fonts**               | Geist Sans (UI), Geist Mono (code)            |
-| **Colors**              | OKLCH tokens — never pure black/white         |
-| **Card radius**         | 16px (`rounded-xl` or `--radius-lg`)          |
-| **Button/Input radius** | 10px (`rounded-md` or `--radius`)             |
-| **Button height**       | 40px default (`h-10`)                         |
-| **Card padding**        | 24px (`p-6`)                                  |
-| **Animation duration**  | 100-300ms (fast to slower)                    |
-| **Shadow hierarchy**    | soft → elevated → floating → modal            |
-| **Container widths**    | narrow (42rem), default (56rem), wide (72rem) |
+| Element                 | Specification                                      |
+| ----------------------- | -------------------------------------------------- |
+| **Fonts**               | System UI stack (user-configurable via Settings)   |
+| **Colors**              | HSL tokens via `:root`/`.dark` — never pure black/white |
+| **Base radius**         | 8px (`--radius: 0.5rem`)                           |
+| **Button height**       | 36px default (`--size-btn-md: 2.25rem`)            |
+| **Card padding**        | 24px (`p-6`)                                       |
+| **Animation duration**  | 100-300ms (fast to slower)                         |
+| **Shadow hierarchy**    | soft → elevated → floating → modal                 |
+| **Container widths**    | narrow (42rem), default (56rem), wide (72rem)      |
 
 ### Core Principles
 
@@ -403,82 +410,59 @@ The "Calm Tech" design language specifications:
 
 ## Adding a New Theme Token
 
-1. **Add to `@theme` block** in `apps/client/src/index.css`:
+1. **Add to `@theme inline`** in `apps/client/src/index.css`:
 
    ```css
-   @theme {
-     --color-accent: oklch(60% 0.15 270); /* Purple accent */
-     --color-accent-foreground: oklch(98% 0 0);
+   @theme inline {
+     --color-warning: hsl(var(--warning));
+     --color-warning-foreground: hsl(var(--warning-foreground));
    }
    ```
 
-2. **Add dark mode variant** in `.dark` block:
+2. **Define HSL values** in `:root` and `.dark`:
 
    ```css
+   :root {
+     --warning: 38 92% 50%;           /* amber-500 equivalent */
+     --warning-foreground: 0 0% 9%;
+   }
+
    .dark {
-     --color-accent: oklch(70% 0.15 270); /* Lighter in dark mode */
-     --color-accent-foreground: oklch(10% 0 0);
+     --warning: 38 92% 60%;           /* slightly lighter in dark mode */
+     --warning-foreground: 0 0% 9%;
    }
    ```
 
 3. **Use in components**:
 
    ```tsx
-   <button className="bg-accent text-accent-foreground">Accent Button</button>
+   <div className="bg-warning text-warning-foreground">Warning</div>
    ```
 
-4. **Add to TypeScript types** (optional, for autocomplete):
-
-   ```typescript
-   // src/types/tailwind.d.ts
-   declare module 'tailwindcss/types/config' {
-     export interface ThemeConfig {
-       colors: {
-         accent: string;
-         'accent-foreground': string;
-       };
-     }
-   }
-   ```
-
-5. **Verify**: Check both light and dark modes in browser.
+4. **Verify**: Check both light and dark modes in browser.
 
 ## Troubleshooting
 
 ### "Styles not applying in production"
 
-**Cause**: Tailwind couldn't find the classes during build (content paths issue).
-**Fix**: Ensure `content` paths in `postcss.config.js` include all component locations:
+**Cause**: Tailwind v4 scans source files via `@import 'tailwindcss'` — it automatically includes all files reachable from `index.css`. Classes are missing when they come from files outside that scan (e.g., third-party packages).
 
-```javascript
-// postcss.config.js
-module.exports = {
-  plugins: {
-    '@tailwindcss/postcss': {
-      content: [
-        './src/**/*.{ts,tsx}', // Catches all TypeScript/React files
-      ],
-    },
-  },
-};
+**Fix**: Add an explicit `@source` directive for any npm package that injects Tailwind classes at runtime:
+
+```css
+/* apps/client/src/index.css */
+@source '../node_modules/streamdown/dist/*.js';
 ```
+
+This is already present for `streamdown`. Add additional entries if you integrate another library that generates Tailwind class names dynamically.
 
 ### "Dark mode not working"
 
-**Cause**: One of:
+**Cause**: `ThemeProvider` not wrapping the app, or `dark` class not being toggled on `<html>`.
 
-1. ThemeProvider not wrapping app
-2. `suppressHydrationWarning` missing from `<html>` tag
-3. Using wrong strategy (should be `class`)
+**Fix**: `ThemeProvider` is mounted in `App.tsx` wrapping all content. The `.dark` class is set on `<html>` by the provider. Verify with browser devtools that `<html class="dark">` toggles correctly.
 
-**Fix**:
-
-```tsx
-// apps/client/src/App.tsx
-// DorkOS uses a Vite SPA (not Next.js), so the theme provider
-// is configured in App.tsx, not a layout file.
-// The ThemeProvider wraps the entire app with class-based dark mode.
-```
+No `suppressHydrationWarning` needed — this is a Vite SPA, not Next.js.
 
 ### "cn() not combining classes correctly"
 
@@ -511,16 +495,20 @@ export function cn(...inputs: ClassValue[]) {
 
 ### "Token colors look wrong in dark mode"
 
-**Cause**: Forgot to override in `.dark` class.
-**Fix**: Every color token needs a dark mode variant:
+**Cause**: Forgot to override the HSL variable in `.dark`.
+**Fix**: Every token needs both `:root` and `.dark` definitions:
 
 ```css
-@theme {
-  --color-custom: oklch(60% 0.1 200); /* Light mode */
+:root {
+  --custom: 200 50% 40%; /* Light mode */
 }
 
 .dark {
-  --color-custom: oklch(80% 0.1 200); /* Dark mode - lighter */
+  --custom: 200 50% 60%; /* Dark mode — lighter */
+}
+
+@theme inline {
+  --color-custom: hsl(var(--custom));
 }
 ```
 
@@ -560,6 +548,5 @@ export function AccentButton(props) {
 - **[contributing/animations.md](./animations.md)** - Motion library patterns and spring physics
 - **[apps/client/src/index.css](../apps/client/src/index.css)** - Live theme token definitions
 - **[Tailwind CSS v4 Docs](https://tailwindcss.com/docs)** - Official Tailwind CSS documentation
-- **[OKLCH Color Picker](https://oklch.com)** - Interactive OKLCH color space tool
 - **[Shadcn UI](https://ui.shadcn.com)** - Component documentation and examples
-- **[Theme Hook](../apps/client/src/layers/shared/model/)** - useTheme hook for dark mode toggling
+- **[apps/client/src/layers/shared/model/](../apps/client/src/layers/shared/model/)** - useTheme hook for dark mode toggling

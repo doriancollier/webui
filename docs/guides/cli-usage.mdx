@@ -1,6 +1,6 @@
 ---
 title: CLI Usage
-description: Command-line options and workflows for the dorkos CLI
+description: Command-line flags, subcommands, and configuration for the dorkos CLI
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card'
@@ -28,9 +28,11 @@ The server starts on port 4242 and opens your browser automatically.
 <TypeTable type={{
   "--port, -p": { type: "number", description: "Port for the server", default: "4242" },
   "--dir, -d": { type: "string", description: "Default working directory", default: "Current directory" },
-  "--boundary, -b": { type: "string", description: "Directory boundary — restricts file access to this path and its children", default: "Home directory" },
+  "--boundary, -b": { type: "string", description: "Restricts file access to this path and its children", default: "Home directory" },
   "--tunnel, -t": { type: "boolean", description: "Enable ngrok tunnel for remote access", default: "false" },
-  "--log-level, -l": { type: "string", description: "Log verbosity (fatal, error, warn, info, debug, trace)", default: "info" },
+  "--pulse": { type: "boolean", description: "Enable the Pulse scheduler" },
+  "--no-pulse": { type: "boolean", description: "Disable the Pulse scheduler" },
+  "--log-level, -l": { type: "string", description: "Log verbosity: fatal, error, warn, info, debug, trace", default: "info" },
 }} />
 
 ### Examples
@@ -47,6 +49,12 @@ dorkos --boundary /home/user/projects
 
 # Enable tunnel for remote access
 dorkos --tunnel
+
+# Enable Pulse scheduler
+dorkos --pulse
+
+# Verbose logging
+dorkos --log-level debug
 ```
 
 ## Subcommands
@@ -68,7 +76,7 @@ dorkos config validate               # Check config validity
 
 ### `dorkos init`
 
-Interactive setup wizard for first-time configuration. Walks you through setting your API key, default port, and working directory.
+Interactive setup wizard for first-time configuration. Walks through API key, default port, and working directory.
 
 ```bash
 dorkos init
@@ -106,7 +114,7 @@ Configuration is resolved in this order (highest priority first):
 4. Built-in defaults
 
 <Callout type="info">
-  Use `dorkos config` to view the resolved configuration and see which values come from which source.
+  Run `dorkos config` to view the resolved configuration and see which values come from which source.
 </Callout>
 
 ## Docker
@@ -127,7 +135,7 @@ The container binds to `0.0.0.0` automatically for Docker port forwarding.
 
 ## Automatic Update Checks
 
-DorkOS checks the npm registry for new versions each time it starts. If a newer version is available, you will see a notification in the terminal:
+DorkOS checks the npm registry for new versions at startup. When a newer version is available, you'll see a notification in the terminal:
 
 ```
 ┌───────────────────────────────────────┐
@@ -136,7 +144,7 @@ DorkOS checks the npm registry for new versions each time it starts. If a newer 
 └───────────────────────────────────────┘
 ```
 
-The check runs in the background with a 3-second timeout and caches results for 24 hours, so it never slows down startup. To update manually:
+The check runs in the background with a 3-second timeout and caches results for 24 hours. To update:
 
 ```bash
 npm install -g dorkos@latest

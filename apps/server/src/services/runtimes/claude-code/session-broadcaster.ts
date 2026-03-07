@@ -1,6 +1,7 @@
 import chokidar, { type FSWatcher } from 'chokidar';
 import { join } from 'path';
 import type { Response } from 'express';
+import type { StreamEvent } from '@dorkos/shared/types';
 import type { TranscriptReader } from './transcript-reader.js';
 import { SSE, WATCHER } from '../../../config/constants.js';
 import { logger } from '../../../lib/logger.js';
@@ -8,6 +9,13 @@ import type { RelayCore } from '@dorkos/relay';
 
 /** Unsubscribe function returned by RelayCore.subscribe(). */
 type Unsubscribe = () => void;
+
+/** Callback-based listener entry for session changes. */
+interface CallbackEntry {
+  callback: (event: StreamEvent) => void;
+  sessionId: string;
+  vaultRoot: string;
+}
 
 /**
  * SessionBroadcaster manages file watching and SSE broadcasting for cross-client session sync.
@@ -31,11 +39,13 @@ type Unsubscribe = () => void;
  */
 export class SessionBroadcaster {
   private clients = new Map<string, Set<Response>>();
+  private callbacks = new Map<string, CallbackEntry>();
   private watchers = new Map<string, FSWatcher>();
   private offsets = new Map<string, number>();
   private offsetInitializing = new Set<string>();
   private debounceTimers = new Map<string, NodeJS.Timeout>();
   private relaySubscriptions = new Map<Response, Unsubscribe>();
+  private callbackRelayUnsubs = new Map<string, Unsubscribe>();
   private relay: RelayCore | null = null;
   private totalClientCount = 0;
 
@@ -127,6 +137,82 @@ export class SessionBroadcaster {
   }
 
   /**
+   * Register a callback-based listener for session changes.
+   * Returns an unsubscribe function.
+   * Used by ClaudeCodeRuntime.watchSession() to satisfy the AgentRuntime interface.
+   *
+   * @param sessionId - Session UUID to watch
+   * @param vaultRoot - Vault root path for resolving transcript directory
+   * @param callback - Called with each new stream event
+   * @param clientId - Optional client identifier (auto-generated if omitted)
+   * @returns Unsubscribe function — call to stop watching
+   */
+  registerCallback(
+    sessionId: string,
+    vaultRoot: string,
+    callback: (event: StreamEvent) => void,
+    clientId?: string
+  ): () => void {
+    const id = clientId ?? `cb-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    this.callbacks.set(id, { callback, sessionId, vaultRoot });
+
+    // Start watcher if this is the first listener (SSE or callback) for this session
+    if (!this.watchers.has(sessionId)) {
+      this.startWatcher(sessionId, vaultRoot);
+    }
+
+    // Subscribe to relay messages if relay is set and clientId is provided
+    if (this.relay && clientId) {
+      const subject = `relay.human.console.${clientId}`;
+      const relayUnsub = this.relay.subscribe(subject, (envelope) => {
+        callback({
+          type: 'relay_message',
+          data: {
+            messageId: (envelope as Record<string, unknown>).id,
+            payload: (envelope as Record<string, unknown>).payload,
+            subject: (envelope as Record<string, unknown>).subject,
+          },
+        } as StreamEvent);
+      });
+      this.callbackRelayUnsubs.set(id, relayUnsub);
+    }
+
+    // Return unsubscribe function
+    return () => {
+      this.callbacks.delete(id);
+
+      // Clean up relay subscription for this callback
+      const relayUnsub = this.callbackRelayUnsubs.get(id);
+      if (relayUnsub) {
+        relayUnsub();
+        this.callbackRelayUnsubs.delete(id);
+      }
+
+      // Stop watcher if no more listeners (SSE clients OR callbacks) for this session
+      const hasSSEClients = (this.clients.get(sessionId)?.size ?? 0) > 0;
+      const hasCallbacks = Array.from(this.callbacks.values()).some(
+        (entry) => entry.sessionId === sessionId
+      );
+
+      if (!hasSSEClients && !hasCallbacks) {
+        const watcher = this.watchers.get(sessionId);
+        if (watcher) {
+          watcher.close();
+          this.watchers.delete(sessionId);
+        }
+        this.offsets.delete(sessionId);
+        this.offsetInitializing.delete(sessionId);
+        const timer = this.debounceTimers.get(sessionId);
+        if (timer) {
+          clearTimeout(timer);
+          this.debounceTimers.delete(sessionId);
+        }
+      }
+    };
+  }
+
+  /**
    * Deregister an SSE client from a session.
    *
    * - Removes the response from the client set
@@ -148,25 +234,32 @@ export class SessionBroadcaster {
     }
     clientSet.delete(res);
 
-    // Clean up if no clients remain
+    // Clean up if no SSE clients remain
     if (clientSet.size === 0) {
       this.clients.delete(sessionId);
 
-      // Stop watcher
-      const watcher = this.watchers.get(sessionId);
-      if (watcher) {
-        watcher.close();
-        this.watchers.delete(sessionId);
-      }
+      // Only stop watcher if no callbacks remain for this session
+      const hasCallbacks = Array.from(this.callbacks.values()).some(
+        (entry) => entry.sessionId === sessionId
+      );
 
-      // Clean up state
-      this.offsets.delete(sessionId);
-      this.offsetInitializing.delete(sessionId);
+      if (!hasCallbacks) {
+        // Stop watcher
+        const watcher = this.watchers.get(sessionId);
+        if (watcher) {
+          watcher.close();
+          this.watchers.delete(sessionId);
+        }
 
-      const timer = this.debounceTimers.get(sessionId);
-      if (timer) {
-        clearTimeout(timer);
-        this.debounceTimers.delete(sessionId);
+        // Clean up state
+        this.offsets.delete(sessionId);
+        this.offsetInitializing.delete(sessionId);
+
+        const timer = this.debounceTimers.get(sessionId);
+        if (timer) {
+          clearTimeout(timer);
+          this.debounceTimers.delete(sessionId);
+        }
       }
     }
   }
@@ -359,9 +452,12 @@ export class SessionBroadcaster {
         return;
       }
 
-      // Send to all connected clients
+      // Check if there are any listeners (SSE clients or callbacks)
       const clientSet = this.clients.get(sessionId);
-      if (!clientSet || clientSet.size === 0) {
+      const hasCallbacks = Array.from(this.callbacks.values()).some(
+        (entry) => entry.sessionId === sessionId
+      );
+      if ((!clientSet || clientSet.size === 0) && !hasCallbacks) {
         return;
       }
 
@@ -372,18 +468,38 @@ export class SessionBroadcaster {
 
       const eventData = `event: sync_update\ndata: ${JSON.stringify(event)}\n\n`;
 
-      for (const client of Array.from(clientSet)) {
-        try {
-          const ok = client.write(eventData);
-          if (!ok) {
-            await new Promise<void>((resolve) => client.once('drain', resolve));
+      // Send to SSE clients
+      if (clientSet) {
+        for (const client of Array.from(clientSet)) {
+          try {
+            const ok = client.write(eventData);
+            if (!ok) {
+              await new Promise<void>((resolve) => client.once('drain', resolve));
+            }
+          } catch (err) {
+            // Client may have disconnected, will be cleaned up on 'close' event
+            logger.error(
+              `[SessionBroadcaster] Failed to write to client for session ${sessionId}:`,
+              err
+            );
           }
-        } catch (err) {
-          // Client may have disconnected, will be cleaned up on 'close' event
-          logger.error(
-            `[SessionBroadcaster] Failed to write to client for session ${sessionId}:`,
-            err
-          );
+        }
+      }
+
+      // Invoke registered callbacks for this session
+      for (const [, entry] of this.callbacks) {
+        if (entry.sessionId === sessionId) {
+          try {
+            entry.callback({
+              type: 'sync_update',
+              data: { sessionId, timestamp: new Date().toISOString() },
+            } as StreamEvent);
+          } catch (err) {
+            logger.error(
+              `[SessionBroadcaster] Callback error for session ${sessionId}:`,
+              err
+            );
+          }
         }
       }
     } catch (err) {
@@ -413,6 +529,15 @@ export class SessionBroadcaster {
       unsub();
     }
     this.relaySubscriptions.clear();
+
+    // Unsubscribe all callback relay subscriptions
+    for (const unsub of this.callbackRelayUnsubs.values()) {
+      unsub();
+    }
+    this.callbackRelayUnsubs.clear();
+
+    // Clear all callbacks
+    this.callbacks.clear();
 
     // End all client responses
     Array.from(this.clients.values()).forEach((clientSet) => {

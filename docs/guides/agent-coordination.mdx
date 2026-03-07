@@ -10,24 +10,22 @@ import { Cards, Card } from 'fumadocs-ui/components/card'
 
 DorkOS provides three subsystems that work together to coordinate multiple AI agents: **Relay** handles messaging, **Mesh** handles discovery and identity, and **Pulse** handles scheduling. This guide covers practical patterns for combining them to build multi-agent workflows.
 
+For Relay internals — message envelopes, budget enforcement, delivery pipeline — see [Relay Messaging](/docs/guides/relay-messaging).
+
 ## Multi-Agent Project Setup
 
-A typical multi-agent setup involves several agents working on different parts of a codebase. Consider a web application with a backend API, a frontend client, and an infrastructure layer. Each can have its own agent with specialized knowledge.
+A typical multi-agent setup involves several agents working on different parts of a codebase: a backend API, a frontend client, an infrastructure layer. Each gets its own agent with specialized context.
 
 ### Registering Agents
 
-Start by enabling Mesh and Relay, then scan for agents:
+Enable Relay, then start DorkOS:
 
 ```bash
-# Set environment variables
 export DORKOS_RELAY_ENABLED=true
-export DORKOS_MESH_ENABLED=true
-
-# Start DorkOS
 dorkos --dir /path/to/projects
 ```
 
-Open the Mesh panel in the DorkOS UI and trigger a discovery scan. Mesh walks your project directories looking for agent markers (`.claude/` directories, `.cursor/` configs, etc.). Each discovered project appears as a candidate that you can approve or deny.
+Open the Mesh panel and trigger a discovery scan. Mesh walks your project directories looking for agent markers (`.claude/`, `.cursor/`, `.dork/agent.json`, and others). Each discovered project appears as a candidate to approve or deny.
 
 Once registered, each agent gets:
 
@@ -35,7 +33,7 @@ Once registered, each agent gets:
 - A Relay endpoint at `relay.agent.{namespace}.{agentId}`
 - A namespace derived from its filesystem location
 
-For example, if your scan root is `/home/user/projects` and you have:
+For example, with `/home/user/projects` as the scan root:
 
 ```
 /home/user/projects/backend/api/      -> namespace: backend, agent: api
@@ -43,38 +41,37 @@ For example, if your scan root is `/home/user/projects` and you have:
 /home/user/projects/frontend/web/     -> namespace: frontend, agent: web
 ```
 
-Agents within the same namespace (`backend`) can communicate freely. Cross-namespace communication (backend to frontend) requires explicit access rules.
+### Access Rules
 
-### Setting Up Access Rules
+Mesh enforces a three-tier priority scheme on inter-agent communication:
 
-Mesh manages cross-namespace access through the UI or API. To allow backend agents to send messages to frontend agents:
+| Priority | Rule | Effect |
+|----------|------|--------|
+| 100 | Same-namespace allow | Agents within a namespace communicate freely by default |
+| 50 | Cross-namespace allow | Explicitly granted — you add these rules |
+| 10 | Cross-namespace deny | Default catch-all — blocks everything not explicitly allowed |
+
+Agents in the same namespace (`backend`) can communicate without any configuration. Cross-namespace communication (backend to frontend) requires an explicit allow rule:
 
 ```bash
-# Via the REST API — allow backend to message frontend
+# Allow backend agents to message frontend agents
 curl -X PUT http://localhost:4242/api/mesh/topology/access \
   -H 'Content-Type: application/json' \
   -d '{"sourceNamespace": "backend", "targetNamespace": "frontend", "action": "allow"}'
 ```
 
-This creates a Relay access rule permitting messages from `relay.agent.backend.*` to `relay.agent.frontend.*`. Note that access rules are **unidirectional** — the rule above allows backend to message frontend, but not the reverse. To enable two-way communication, add a second rule with the namespaces swapped:
-
-```bash
-# Allow frontend to message backend (reverse direction)
-curl -X PUT http://localhost:4242/api/mesh/topology/access \
-  -H 'Content-Type: application/json' \
-  -d '{"sourceNamespace": "frontend", "targetNamespace": "backend", "action": "allow"}'
-```
+Access rules are unidirectional. To enable two-way communication, add a second rule with the namespaces swapped.
 
 ## Agent-to-Agent Messaging
 
-Once agents are registered and access is configured, they communicate through Relay subjects. The Claude Code adapter handles the dispatching: when a message arrives on a `relay.agent.*` subject, the adapter creates or resumes a Claude session in the target agent's working directory and passes the message as a prompt.
+Once agents are registered and access is configured, they communicate through Relay subjects. When a message arrives on a `relay.agent.*` subject, the Claude Code adapter creates or resumes a Claude session in the target agent's working directory and passes the message as a prompt.
 
 ### Direct Messaging
 
-An agent sends a message to another agent by publishing to its Relay subject. This happens automatically through the MCP tool server that DorkOS injects into every Claude session:
+An agent sends a message to another by publishing to its Relay subject — available through the MCP tool server injected into every Claude session:
 
 ```
-Agent "api" wants to notify "web" about an API change:
+Agent "api" notifies "web" about an API change:
 
 > Use relay_send to tell the frontend agent about the new /users endpoint.
 > Subject: relay.agent.frontend.web
@@ -82,11 +79,11 @@ Agent "api" wants to notify "web" about an API change:
 >           Please update the UserList component to fetch from this endpoint."
 ```
 
-The Claude Code adapter receives this message, starts a session in the `web` agent's working directory, and passes the content as a prompt. The web agent processes the request in its own context with full access to the frontend codebase.
+The Claude Code adapter receives this, starts a session in the `web` agent's working directory, and passes the content as a prompt. The web agent processes the request with full access to the frontend codebase.
 
-### Request-Reply Pattern
+### Request-Reply
 
-For conversations where an agent needs a response, use the `replyTo` field:
+For conversations where an agent needs a response, set the `replyTo` field:
 
 ```
 Agent "api" asks "web" a question:
@@ -97,36 +94,17 @@ Agent "api" asks "web" a question:
 >           I want to make sure the API response matches your expectations."
 ```
 
-The web agent's response is automatically routed back to `relay.agent.backend.api` because the reply-to subject is set. The api agent receives the response in its Relay inbox and can act on the information.
-
-### Broadcast Pattern
-
-To send a message to all agents in a namespace, publish to a wildcard subject with a subscription set up in advance. In practice, the most common broadcast scenario is a system notification where one agent announces a change that affects multiple consumers.
-
-For example, when the infrastructure agent deploys a new database schema, it can notify all backend agents:
-
-```
-Agent "infra" broadcasts a schema change:
-
-> Use relay_send to each backend agent:
-> Subject: relay.agent.backend.api
-> Content: "Database schema updated: added 'created_at' column to users table."
-
-> Subject: relay.agent.backend.worker
-> Content: "Database schema updated: added 'created_at' column to users table."
-```
+The web agent's response routes back to `relay.agent.backend.api` automatically.
 
 <Callout type="info">
-Every message flowing through Relay carries a budget that limits hops (default 5), TTL (default 1 hour), and API call allowance. This prevents infinite message loops and runaway costs. See the [Relay concepts page](/docs/concepts/relay) for details on budget enforcement.
+Every message flowing through Relay carries a budget that limits hops (default 5), TTL (default 1 hour), and API call allowance. This prevents infinite message loops and runaway costs.
 </Callout>
 
 ## Scheduled Coordination with Pulse
 
-Pulse adds time-based automation to agent coordination. You can schedule tasks that trigger agent actions on a cron schedule, and when Relay is enabled, Pulse dispatches through the message bus rather than calling agents directly.
+Pulse adds time-based automation to agent coordination. When Relay is enabled, Pulse dispatches through the Relay bus rather than calling agents directly — so scheduled tasks follow the same access rules and budget limits as manual messages.
 
-### Scheduled Code Review
-
-Set up a nightly review where an agent scans for code quality issues:
+### Nightly Code Review
 
 ```json
 {
@@ -138,33 +116,16 @@ Set up a nightly review where an agent scans for code quality issues:
 }
 ```
 
-When Relay is enabled, Pulse publishes this task to `relay.system.pulse.{scheduleId}` instead of calling the agent directly. The Claude Code adapter picks up the message and runs the session in the specified working directory.
-
 ### Chained Workflows
 
-Combine scheduled triggers with agent-to-agent messaging for multi-step workflows. For example, a deployment pipeline:
+Combine scheduled triggers with agent-to-agent messaging for multi-step pipelines. For example, a deployment pipeline:
 
-1. **Pulse triggers** a test run at 6 AM every day via a scheduled task on the backend agent.
-2. **Backend agent** runs the test suite. If all tests pass, it uses `relay_send` to notify the infrastructure agent.
-3. **Infrastructure agent** receives the notification, builds the Docker image, and deploys to staging.
-4. **Infrastructure agent** uses `relay_send` to notify all agents that staging is updated.
+1. **Pulse triggers** a test run at 6 AM on the backend agent.
+2. **Backend agent** runs the test suite. If all pass, it uses `relay_send` to notify the infrastructure agent.
+3. **Infrastructure agent** builds the Docker image and deploys to staging.
+4. **Infrastructure agent** notifies all agents that staging is updated.
 
-Each step happens in the correct working directory with the right codebase context, because Mesh tells the Claude Code adapter where each agent lives.
-
-### Monitoring Agent Health
-
-Pulse can also schedule health checks. Create a schedule that periodically verifies agents are responsive:
-
-```json
-{
-  "name": "agent-health-check",
-  "cron": "*/30 * * * *",
-  "prompt": "Check the Mesh status. List any agents that are stale or inactive. If any backend agents are stale, try sending them a ping via relay_send.",
-  "cwd": "/home/user/projects"
-}
-```
-
-Mesh tracks agent health through heartbeats. The `lastSeenAt` timestamp on each agent record is updated whenever the agent processes a message or sends a heartbeat. The health status (active, inactive, stale) is computed from this timestamp and visible in the topology graph.
+Each step executes in the correct working directory with the right codebase context, because Mesh tells the Claude Code adapter where each agent lives.
 
 ## Use Cases
 
@@ -174,40 +135,38 @@ A monorepo with `apps/api`, `apps/web`, and `packages/shared` benefits from thre
 
 **Setup:** Register each app directory as an agent via Mesh discovery. They all land in the same namespace (derived from the monorepo root), so they can communicate without extra access rules.
 
-**Workflow:** When you ask the API agent to add a new endpoint, it implements the route and then messages the web agent to create the corresponding frontend hook. The web agent imports the shared types from `packages/shared` and builds the UI component. If the shared types need updating, either agent can message the other about the required change.
+**Workflow:** When you ask the API agent to add a new endpoint, it implements the route and messages the web agent to create the corresponding frontend hook. If shared types need updating, either agent can message the other about the required change.
 
-**Benefit:** Each agent operates with full context of its own codebase slice, but can request changes across boundaries through Relay rather than trying to edit code in unfamiliar directories.
+**Outcome:** Each agent operates with full context of its own codebase slice, but can coordinate changes across boundaries through Relay rather than trying to edit code in unfamiliar directories.
 
 ### Cross-Repository Coordination
 
-When your system spans multiple repositories (a backend repo, a frontend repo, and a deployment repo), each repository gets its own scan root and namespace.
+When your system spans multiple repositories, each gets its own namespace.
 
 **Setup:** Register agents from each repository. Add cross-namespace access rules between backend and frontend, and between both and the deployment namespace.
 
 **Workflow:** The backend agent finishes an API change and publishes the new OpenAPI spec to Relay. The frontend agent receives it, generates updated API client code, and runs its own tests. Once both are green, either agent notifies the deployment agent to trigger a release.
 
-**Benefit:** Agents in different repositories stay synchronized without manual intervention. Changes propagate through the Relay bus with full traceability.
+### Human-in-the-Loop via Telegram
 
-### Human-in-the-Loop via External Adapters
+Connect a Telegram adapter so agents can escalate decisions and receive approvals from outside the development environment.
 
-Connect a Telegram bot so that agents can escalate decisions to a human and receive instructions from outside the development environment.
+**Setup:** Configure the Telegram adapter in Relay settings with your bot token. Messages from your Telegram chat arrive on `relay.human.telegram.{chatId}`.
 
-**Setup:** Configure the Telegram adapter in `~/.dork/relay/adapters.json` with your bot token. Messages from your Telegram chat arrive on `relay.human.telegram.{chatId}`.
+**Workflow:** A Pulse-scheduled task runs a database migration check. The agent finds a migration that would drop a column with existing data. Instead of proceeding, it sends a message to your Telegram chat asking for confirmation. You reply "approved", the message flows back through Relay, and the agent continues.
 
-**Workflow:** A Pulse-scheduled task runs a database migration check. The agent finds a migration that would drop a column with existing data. Instead of proceeding, it sends a Relay message to `relay.human.telegram.{yourChatId}` asking for confirmation. You reply in Telegram with "approved", and the message flows back through Relay to the agent, which proceeds with the migration.
-
-**Benefit:** Critical decisions remain under human control even when agents are operating autonomously on scheduled tasks. The Telegram adapter provides a natural interface for quick approvals without opening the DorkOS UI.
+**Outcome:** Critical decisions stay under your control even when agents are operating on schedule. Telegram gives you a natural interface for quick approvals without opening the DorkOS UI.
 
 ## Next Steps
 
 <Cards>
-  <Card title="Relay Concepts" href="/docs/concepts/relay">
-    Deep dive into the message bus architecture, budgets, and delivery pipeline.
+  <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
+    Message bus details: envelopes, budgets, adapters, and delivery pipeline.
   </Card>
   <Card title="Mesh Concepts" href="/docs/concepts/mesh">
-    Understand agent discovery, registration, namespaces, and topology.
+    Agent discovery, registration, namespaces, and topology in depth.
   </Card>
   <Card title="Building Relay Adapters" href="/docs/guides/building-relay-adapters">
-    Create custom adapters to connect new platforms to the agent network.
+    Connect new platforms to the agent network.
   </Card>
 </Cards>

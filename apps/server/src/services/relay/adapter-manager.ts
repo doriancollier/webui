@@ -21,7 +21,7 @@ import {
   CLAUDE_CODE_MANIFEST,
 } from '@dorkos/relay';
 import type {
-  ClaudeCodeAgentManagerLike,
+  ClaudeCodeAgentRuntimeLike,
   TraceStoreLike,
   PulseStoreLike,
 } from '@dorkos/relay';
@@ -52,7 +52,7 @@ export interface AdapterMeshCoreLike {
 
 /** Dependencies for constructing runtime adapters. */
 export interface AdapterManagerDeps {
-  agentManager: ClaudeCodeAgentManagerLike;
+  agentManager: ClaudeCodeAgentRuntimeLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
   /** Optional RelayCore for binding subsystem initialization */

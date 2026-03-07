@@ -18,13 +18,13 @@ vi.mock('../../../lib/boundary.js', () => ({
 import fs from 'fs/promises';
 
 describe('TranscriptReader', () => {
-  let transcriptReader: typeof import('../../runtimes/claude-code/transcript-reader.js').transcriptReader;
+  let transcriptReader: InstanceType<typeof import('../../runtimes/claude-code/transcript-reader.js').TranscriptReader>;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.mock('fs/promises');
     const mod = await import('../../runtimes/claude-code/transcript-reader.js');
-    transcriptReader = mod.transcriptReader;
+    transcriptReader = new mod.TranscriptReader();
   });
 
   describe('boundary enforcement', () => {

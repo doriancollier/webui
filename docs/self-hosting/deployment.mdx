@@ -5,7 +5,7 @@ description: Deploy DorkOS in production
 
 # Deployment
 
-DorkOS can be deployed as a standalone server using the `dorkos` npm package.
+DorkOS deploys as a standalone server via the `dorkos` npm package. A single process serves both the API and the built React client.
 
 ## Quick Deploy
 
@@ -14,8 +14,6 @@ npm install -g dorkos
 export ANTHROPIC_API_KEY=your-key-here
 dorkos --port 4242
 ```
-
-The server serves both the API (Express) and the client (built React SPA) from a single port.
 
 ## Production Setup
 
@@ -31,8 +29,6 @@ npm install -g dorkos
 
 <Step>
 ### Configure environment
-
-Set environment variables or use the interactive setup wizard:
 
 <Tabs items={["Environment Variables", "Interactive Setup"]}>
 
@@ -51,7 +47,7 @@ export NODE_ENV=production
 dorkos init
 ```
 
-The setup wizard walks you through configuring port, working directory, boundary, and optional tunnel settings. Configuration is saved to `~/.dork/config.json`.
+The setup wizard configures port, working directory, boundary, and optional tunnel settings. Configuration is saved to `~/.dork/config.json`.
 </Tab>
 
 </Tabs>
@@ -76,26 +72,27 @@ dorkos
 <TypeTable type={{
   "ANTHROPIC_API_KEY": { type: "string", description: "Claude API key (required)" },
   "DORKOS_PORT": { type: "number", description: "Server port", default: "'4242'" },
-  "DORKOS_DEFAULT_CWD": { type: "string", description: "Default working directory", default: "Current directory" },
+  "DORKOS_HOST": { type: "string", description: "Bind address. Set to 0.0.0.0 for Docker or any network-accessible deployment", default: "'localhost'" },
+  "DORKOS_DEFAULT_CWD": { type: "string", description: "Default working directory", default: "Repo root" },
   "DORKOS_BOUNDARY": { type: "string", description: "Directory boundary for file access", default: "Home directory" },
   "NODE_ENV": { type: "string", description: "Set to 'production' for production mode", default: "'development'" },
 }} />
 
 ## Directory Boundary
 
-The `DORKOS_BOUNDARY` setting restricts file access to a specific directory tree. All `cwd`, `path`, and `dir` parameters are validated against this boundary, returning 403 for paths outside it.
+`DORKOS_BOUNDARY` restricts file access to a specific directory tree. All `cwd`, `path`, and `dir` parameters are validated against this boundary — requests outside it return `403`.
 
 <Callout type="warn">
-  The default boundary is the user's home directory. For production deployments, set a tighter boundary to limit the directories Claude can access.
+  The default boundary is the home directory. For production deployments, set a tighter boundary to limit what Claude can access.
 </Callout>
 
 ## systemd Service
 
-For long-running deployments on Linux, create a systemd service unit:
+For long-running deployments on Linux:
 
 ```ini title="/etc/systemd/system/dorkos.service"
 [Unit]
-Description=DorkOS - Web UI for Claude Code
+Description=DorkOS - Autonomous Agent Operating System
 After=network.target
 
 [Service]
@@ -103,7 +100,9 @@ Type=simple
 User=dorkos
 Environment=ANTHROPIC_API_KEY=your-key-here
 Environment=DORKOS_PORT=4242
+Environment=DORKOS_HOST=0.0.0.0
 Environment=DORKOS_DEFAULT_CWD=/home/dorkos/projects
+Environment=DORKOS_BOUNDARY=/home/dorkos/projects
 Environment=NODE_ENV=production
 ExecStart=/usr/local/bin/dorkos
 Restart=on-failure
@@ -122,7 +121,9 @@ sudo systemctl start dorkos
 
 ## Docker Deployment
 
-DorkOS provides a runnable Docker image for containerized deployments.
+<Callout type="warn">
+  Docker deployments must set `DORKOS_HOST=0.0.0.0`. Without it, the server binds to `localhost` inside the container and port forwarding will not work. The official `Dockerfile.run` sets this automatically.
+</Callout>
 
 ### Build and Run
 
@@ -139,30 +140,38 @@ Or directly with Docker:
 docker build -f Dockerfile.run -t dorkos:local .
 docker run --rm -p 4242:4242 \
   -e ANTHROPIC_API_KEY=your-key-here \
+  -e DORKOS_HOST=0.0.0.0 \
   -e DORKOS_PORT=4242 \
   dorkos:local
 ```
 
-The container sets `DORKOS_HOST=0.0.0.0` automatically so the server binds to all interfaces for port forwarding.
+Custom port:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -e DORKOS_HOST=0.0.0.0 \
+  dorkos:local --port 8080
+```
 
 ## Health Check
 
-Verify the server is running:
-
 ```bash
 curl http://localhost:4242/api/health
-# { "status": "ok", "version": "0.2.0", "uptime": 12345 }
+# { "status": "ok", "version": "0.8.0", "uptime": 12345 }
 ```
 
+When a tunnel is active, the response includes a `tunnel` field with tunnel status.
+
 <Callout type="info">
-  The health endpoint is unauthenticated and suitable for load balancer or monitoring integration.
+  The health endpoint is unauthenticated and suitable for load balancer or monitoring use.
 </Callout>
 
 ## Next Steps
 
 <Cards>
   <Card title="Reverse Proxy" href="/docs/self-hosting/reverse-proxy">
-    Set up nginx or Caddy for HTTPS, domain routing, and SSE compatibility.
+    Configure nginx or Caddy for HTTPS, domain routing, and SSE compatibility.
   </Card>
   <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
     Expose your instance remotely via ngrok without a reverse proxy.

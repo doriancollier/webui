@@ -1,6 +1,6 @@
 ---
 title: Relay
-description: How DorkOS routes messages between agents, humans, and external platforms using a subject-based message bus
+description: Built-in messaging between agents, humans, and external platforms like Telegram
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout'
@@ -8,23 +8,19 @@ import { Cards, Card } from 'fumadocs-ui/components/card'
 
 # Relay
 
-Relay is the inter-agent message bus built into DorkOS. It handles routing, delivery, and reliability for messages flowing between agents, humans, and external platforms like Telegram. Relay is an opt-in subsystem controlled by the `DORKOS_RELAY_ENABLED` environment variable.
+Relay is the messaging layer built into DorkOS. It handles routing and delivery for messages flowing between agents, humans, and external platforms like Telegram. Relay is opt-in, controlled by the `DORKOS_RELAY_ENABLED` environment variable.
 
-## Why a Message Bus?
+## What Relay Does
 
-When you have multiple AI agents working on different parts of a project, they need a way to communicate. An agent fixing backend code might need to tell the frontend agent about an API change. A scheduled task might need to notify you on Telegram when it finishes.
+When you have agents working across different projects, they need a way to reach you and each other. An agent finishing a task should be able to message you on Telegram. An agent that finds a breaking API change should be able to notify the agent working on the frontend.
 
-Relay provides this communication layer. Rather than agents calling each other directly, they publish messages to named subjects, and Relay handles routing those messages to the right recipients. This decoupling means agents do not need to know about each other's internals — they only need to agree on subject naming conventions.
+Relay provides this. Agents publish messages to named subjects. Relay routes those messages to the right recipients — whether that is your phone, your browser console, or another agent. Agents do not need to know each other's internals: they only agree on subject naming.
 
 ## Subjects and Endpoints
 
-Relay organizes communication around **subjects** — hierarchical dot-separated names that describe where a message should go. Subjects follow a NATS-style naming convention with wildcard support.
+Relay organizes communication around **subjects** — hierarchical dot-separated names that describe where a message goes. Subjects follow a three-tier hierarchy: `relay.{audience}.{identifier}`.
 
-### Subject Hierarchy
-
-Subjects use a three-tier hierarchy: `relay.{audience}.{identifier}`. The first segment is always `relay`, the second indicates the audience type, and the third and beyond identify the specific target.
-
-Common subject patterns include:
+Common patterns:
 
 - `relay.agent.{agentId}` — Messages addressed to a specific agent
 - `relay.human.console.{clientId}` — Messages destined for a human's console
@@ -33,140 +29,90 @@ Common subject patterns include:
 
 ### Endpoints
 
-An **endpoint** is a registered destination on the bus. When you register an endpoint for a subject, Relay creates a Maildir directory structure on disk to receive messages. Each endpoint has a unique hash derived from its subject, and messages are delivered as JSON files into its `new/` directory.
+An **endpoint** is a registered destination on the bus. Registering an endpoint for a subject creates a Maildir directory structure on disk to receive messages. Messages arrive as JSON files in the endpoint's `new/` directory and are indexed in SQLite.
 
-Endpoints are the durable side of Relay. Even if no subscriber is actively listening, messages are still delivered to the endpoint's Maildir and indexed in SQLite. Subscribers can pick them up later.
+Endpoints are durable. Even if no subscriber is actively listening, messages are delivered to the endpoint's Maildir and held for later pickup.
 
-### Pattern Matching
+### Wildcards
 
-Relay supports two wildcard tokens for flexible routing:
+Relay supports two wildcard tokens:
 
-- `*` matches exactly one segment (e.g., `relay.agent.*` matches `relay.agent.backend` but not `relay.agent.backend.tasks`)
-- `>` matches one or more trailing segments (e.g., `relay.agent.>` matches `relay.agent.backend` and `relay.agent.backend.tasks`)
-
-Subscriptions use these wildcards to listen to broad categories of messages without registering separate endpoints for each one.
+- `*` matches exactly one segment (`relay.agent.*` matches `relay.agent.backend`, not `relay.agent.backend.tasks`)
+- `>` matches one or more trailing segments (`relay.agent.>` matches both)
 
 ## The Envelope
 
-Every message flowing through Relay is wrapped in an **envelope** that carries metadata alongside the payload. The envelope includes:
+Every message is wrapped in an **envelope** that carries routing metadata alongside the payload:
 
-- **id** — A ULID that uniquely identifies the message and provides natural time-ordering
+- **id** — A ULID that uniquely identifies the message and provides time-ordering
 - **subject** — The target subject for delivery
 - **from** — The sender's subject identifier
-- **replyTo** — An optional subject for response routing
+- **replyTo** — Optional subject for response routing
 - **budget** — Resource constraints that prevent runaway message chains
-- **createdAt** — ISO 8601 timestamp
 - **payload** — The actual message content (any JSON-serializable value)
-
-The envelope is what gets written to disk, indexed in SQLite, and passed to subscription handlers. The separation of routing metadata (envelope) from content (payload) means Relay can make delivery decisions without understanding the message content.
 
 ## Budget Enforcement
 
-One of Relay's most important safety features is its budget system. Every envelope carries a budget that constrains how far the message can travel and how many resources it can consume.
+Every envelope carries a budget that constrains how far a message can travel:
 
-### Budget Fields
+- **hopCount / maxHops** — How many times the message has been forwarded. Default maximum: 5 hops. Prevents infinite loops where agent A sends to agent B, which sends back to agent A.
+- **ttl** — A Unix timestamp after which the message expires. Default: 1 hour.
+- **callBudgetRemaining** — API calls an agent may make when processing this message.
 
-The budget tracks three limits:
-
-- **hopCount / maxHops** — How many times the message has been forwarded versus the maximum allowed. Default maximum is 5 hops. This prevents infinite message loops where agent A sends to agent B, which sends back to agent A.
-- **ttl** — A Unix timestamp (milliseconds) after which the message expires. Default is 1 hour. Expired messages are rejected to the dead letter queue rather than delivered.
-- **callBudgetRemaining** — The number of API calls an agent is allowed to make when processing this message. This prevents a single message from triggering an expensive chain of Claude API calls.
-
-### Ancestor Chain
-
-The budget also carries an **ancestor chain** — a list of sender identifiers for every hop the message has taken. Relay uses this to detect cycles: if a message would be delivered to a sender that already appears in the ancestor chain, it is rejected. This is a second line of defense against message loops, complementing the hop count limit.
+The budget also carries an **ancestor chain** — sender identifiers for every hop. If a message would be delivered to a sender that already appears in the chain, it is rejected as a cycle.
 
 <Callout type="warn">
-Budget limits are enforced per-delivery, not per-publish. A message published to three endpoints consumes one hop for each delivery, and each endpoint receives its own copy of the budget with an incremented hop count.
-</Callout>
-
-## Delivery Pipeline
-
-When a message is published, it passes through a multi-stage pipeline before reaching its destinations.
-
-### Pipeline Stages
-
-1. **Subject validation** — The target subject is checked for valid format (dot-separated segments, no empty segments, no leading/trailing dots).
-2. **Access control** — Relay checks whether the sender is allowed to publish to the target subject. Access rules are priority-ordered and support wildcards.
-3. **Rate limiting** — A per-sender sliding window rate limit is applied before fan-out. By default, each sender can publish 100 messages per 60-second window.
-4. **Envelope construction** — A ULID is generated, the budget is populated with defaults and any caller overrides, and the full envelope is assembled.
-5. **Endpoint matching** — All registered endpoints whose subject matches the target are identified.
-6. **Per-endpoint delivery** — For each matching endpoint, three additional checks run in sequence: backpressure (is the endpoint's mailbox full?), circuit breaker (has this endpoint been failing?), and budget enforcement (has the message exceeded its hop/TTL/call limits?).
-7. **Maildir write** — The envelope is written as a JSON file into the endpoint's `new/` directory, then indexed in SQLite.
-8. **Subscriber dispatch** — Matching subscription handlers are invoked synchronously. On success, the message moves from `new/` to completed. On failure, it moves to `failed/`.
-
-### Dead Letter Queue
-
-Messages that cannot be delivered end up in the **dead letter queue** (DLQ). This happens when no endpoints match the subject, when budget limits are exceeded, or when Maildir delivery fails. Dead letters are stored on disk and indexed for later inspection, providing visibility into delivery failures without losing messages.
-
-## Reliability
-
-Relay includes three reliability mechanisms that protect endpoints from being overwhelmed and ensure graceful degradation under load.
-
-### Rate Limiting
-
-Per-sender sliding window rate limiting prevents any single sender from flooding the bus. The default configuration allows 100 messages per 60-second window, with optional per-sender overrides for high-throughput endpoints.
-
-### Circuit Breakers
-
-Each endpoint has its own circuit breaker that tracks consecutive delivery failures. After 5 consecutive failures (configurable), the circuit opens and further deliveries to that endpoint are rejected immediately. After a 30-second cooldown, the circuit moves to half-open state and allows a probe message through. If the probe succeeds, the circuit closes and normal delivery resumes.
-
-### Backpressure
-
-When an endpoint's mailbox accumulates too many unprocessed messages, backpressure kicks in. At 80% capacity (configurable), Relay emits a warning signal. At 100% capacity (default: 1000 messages), new deliveries are rejected outright. This prevents slow consumers from causing memory issues or disk exhaustion.
-
-<Callout type="info">
-All three reliability settings can be tuned via a `config.json` file in the Relay data directory (`~/.dork/relay/config.json`). Changes are hot-reloaded — you do not need to restart the server.
+Budget limits are enforced per-delivery, not per-publish. A message published to three endpoints consumes one hop for each delivery.
 </Callout>
 
 ## Access Control
 
-Relay enforces sender-to-subject access rules that determine who can publish to what. Rules are defined as `{from, to, action, priority}` tuples, where `from` and `to` are subject patterns supporting wildcards.
+Relay enforces sender-to-subject rules that determine who can publish to what. Rules are `{from, to, action, priority}` tuples supporting subject wildcards. The first matching rule wins. If no rules match, the default is allow — you start open and add deny rules to restrict specific paths.
 
-Rules are evaluated in priority order (highest priority first). The first matching rule wins. If no rules match, the default policy is to allow the message. This makes access control additive — you start open and add deny rules to restrict specific paths.
-
-Access rules are persisted in `access-rules.json` inside the Relay data directory and are watched for changes via a file watcher, so you can edit them externally and have them take effect without a restart.
+Access rules live in `access-rules.json` inside the Relay data directory and are watched for changes, so edits take effect without a restart.
 
 ## Adapters
 
-Relay connects to external platforms through **adapters** — plugins that bridge external communication channels into the Relay subject hierarchy. Adapters handle both inbound messages (external platform to Relay) and outbound delivery (Relay to external platform).
+Relay connects to external platforms through **adapters** — plugins that bridge external channels into the Relay subject hierarchy. DorkOS ships with three built-in adapters:
 
-### Built-in Adapters
+- **Claude Code adapter** — Routes messages to Claude sessions. When a message arrives on `relay.agent.*`, this adapter creates or resumes a Claude session and passes the message as a prompt. Response chunks flow back to the sender's reply-to subject.
+- **Telegram adapter** — Connects a Telegram bot to the bus. Inbound messages publish to `relay.human.telegram.{chatId}`. Outbound messages on matching subjects are delivered to the chat.
+- **Webhook adapter** — A generic HTTP webhook bridge with HMAC-SHA256 signature verification for both directions.
 
-DorkOS ships with three built-in adapters:
-
-- **Claude Code adapter** — Routes messages to Claude Agent SDK sessions. When a message arrives on a `relay.agent.*` subject, this adapter creates or resumes a Claude session and passes the message content as a prompt. Response chunks flow back through Relay to the sender's reply-to subject.
-- **Telegram adapter** — Connects a Telegram bot to the Relay bus. Inbound Telegram messages are published to `relay.human.telegram.{chatId}`, and outbound messages on matching subjects are delivered back to the Telegram chat.
-- **Webhook adapter** — A generic HTTP webhook bridge with HMAC-SHA256 signature verification for both inbound and outbound directions. Supports secret rotation with a 24-hour transition window.
-
-### Plugin Adapters
-
-You can extend Relay with custom adapters loaded from npm packages or local file paths. Plugin adapters implement the same `RelayAdapter` interface as built-in adapters and are managed through the adapter configuration file.
+You can add custom adapters from npm packages or local file paths. Plugin adapters implement the same `RelayAdapter` interface as built-in adapters.
 
 ## Storage
 
-Relay uses two storage systems working together:
+Relay uses two storage systems:
 
-- **Maildir** — A filesystem-based message store inspired by the traditional Maildir email format. Each endpoint gets a directory with `new/`, `cur/`, and `failed/` subdirectories. Messages are delivered as atomic file writes, making the store resilient to crashes. The Maildir is the authoritative source of message data.
-- **SQLite** — The consolidated DorkOS database (`~/.dork/dork.db`) managed by Drizzle ORM provides fast querying by subject, sender, status, and time range. SQLite uses WAL mode for concurrent read/write access. The `relay_index` and `relay_traces` tables live alongside other DorkOS tables. If the index becomes corrupted, it can be rebuilt from the Maildir files.
-
-This dual-storage design means you get both durability (Maildir survives crashes) and performance (SQLite enables efficient queries and cursor-based pagination).
+- **Maildir** — A filesystem-based message store. Each endpoint gets a directory with `new/`, `cur/`, and `failed/` subdirectories. Messages are delivered as atomic file writes, making the store resilient to crashes.
+- **SQLite** — `~/.dork/relay/index.db` provides fast querying by subject, sender, status, and time range. WAL mode enables concurrent read/write access. If the index becomes corrupted, it can be rebuilt from Maildir.
 
 ## Tracing
 
-Relay includes a tracing system for tracking message delivery end-to-end. Each published message gets a trace ID, and each delivery to an endpoint creates a span. Spans record timing information (sent, delivered, processed timestamps), budget consumption, and error details.
+Each published message gets a trace ID. Each delivery to an endpoint creates a span recording timing, budget consumption, and error details. The trace store lives in `~/.dork/relay/index.db` alongside the message index and provides:
 
-The trace store lives in the consolidated DorkOS database (`~/.dork/dork.db`) alongside the message index and provides:
+- Per-message trace lookup (every delivery attempt for a given message)
+- Aggregate delivery metrics (success/failure counts, latency percentiles)
+- Budget rejection breakdowns
 
-- Per-message trace lookup (see every delivery attempt for a given message)
-- Aggregate delivery metrics (total messages, success/failure counts, latency percentiles)
-- Budget rejection breakdowns (how many messages were rejected for hop limits, TTL expiry, cycle detection, or budget exhaustion)
+## Reliability
+
+Three mechanisms protect endpoints under load:
+
+- **Rate limiting** — Per-sender sliding window. Default: 100 messages per 60 seconds.
+- **Circuit breakers** — After 5 consecutive delivery failures, an endpoint's circuit opens and rejects further deliveries for 30 seconds before retrying.
+- **Backpressure** — When an endpoint's mailbox reaches capacity (default: 1000 messages), new deliveries are rejected.
+
+<Callout type="info">
+All reliability settings can be tuned in `~/.dork/relay/config.json`. Changes are hot-reloaded.
+</Callout>
 
 ## Integration with Sessions
 
-When Relay is enabled, the standard DorkOS session messaging path changes. Instead of POST `/api/sessions/:id/messages` directly calling the Agent SDK, the message is published to `relay.agent.{sessionId}`. The Claude Code adapter picks it up and routes it to the Agent SDK. Response chunks flow back through `relay.human.console.{clientId}` and into the client's SSE stream as `relay_message` events.
+When Relay is enabled, session messaging routes through Relay instead of calling the Agent SDK directly. A POST to `/api/sessions/:id/messages` publishes to `relay.agent.{sessionId}`. The Claude Code adapter picks it up and routes it to the SDK. Response chunks flow back through `relay.human.console.{clientId}` and into the client's SSE stream as `relay_message` events.
 
-This indirection means every session message is tracked in the Relay index with full delivery tracing, and the same message routing rules (access control, budgets, rate limits) apply to interactive sessions as they do to automated agent-to-agent communication.
+Every session message is tracked in the Relay index with full delivery tracing, and the same access control and budget rules apply to interactive sessions as to agent-to-agent communication.
 
 ## Next Steps
 

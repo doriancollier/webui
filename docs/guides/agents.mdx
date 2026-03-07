@@ -72,15 +72,20 @@ Configure the agent's visual identity:
 
 ### Persona
 
-Configure how the agent influences Claude's behavior. See the [Persona Injection](/docs/guides/persona) guide for details.
+Configure how the agent shapes Claude's behavior. See the [Persona Injection](/docs/guides/persona) guide for details.
 
 ### Capabilities
 
-Configure agent metadata used by Mesh for discovery and routing:
+Per-agent tool group toggles and Mesh metadata:
 
-- **Capabilities** — tag-style chips (e.g., `api-design`, `frontend`)
+- **Tool Groups** — enable or disable MCP tool domains per agent (Relay tools, Mesh tools, Adapter tools, Pulse tools). Each toggle has three states: inherited (follows global config), enabled, or disabled. Changes take effect on the next session.
+- **Capabilities** — tag-style chips used by Mesh for discovery and routing (e.g., `api-design`, `frontend`)
 - **Namespace** — subject namespace for Relay routing
 - **Response Mode** and **Budget** — behavioral constraints
+
+<Callout type="info">
+Tool group overrides layer on top of server-level feature flags. Disabling a tool group for an agent removes those tools from that agent's sessions only — other agents are unaffected.
+</Callout>
 
 ### Connections
 
@@ -98,7 +103,7 @@ Every agent gets a deterministic color and emoji derived from its ID. You can ov
 
 1. User-set override (stored in `.dork/agent.json` as `color`/`icon`)
 2. Deterministic hash from the agent's ID (stable across directory renames)
-3. For unregistered directories: deterministic hash from the path (current behavior)
+3. For unregistered directories: deterministic hash from the path
 
 <Callout type="info">
 Clearing a color or emoji override reverts to the deterministic default — no visual identity is ever lost.
@@ -119,4 +124,4 @@ These endpoints are always available — no feature flag needed. All paths are b
 
 ## MCP Tool
 
-Claude sessions can query their own agent identity via the `agent_get_current` MCP tool. This is always available, even without Mesh enabled.
+Claude sessions can query their own agent identity via the `get_current_agent` MCP tool. This is always available, regardless of whether Mesh is configured.

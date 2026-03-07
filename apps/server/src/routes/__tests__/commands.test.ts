@@ -15,17 +15,50 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
-vi.mock('../../services/runtimes/claude-code/command-registry.js', () => {
-  const mockGetCommands = vi.fn();
-  const mockInvalidateCache = vi.fn();
-  return {
-    CommandRegistryService: vi.fn().mockImplementation(() => ({
-      getCommands: mockGetCommands,
-      invalidateCache: mockInvalidateCache,
-    })),
-    __mockGetCommands: mockGetCommands,
-  };
-});
+// Mock runtime that satisfies the AgentRuntime interface methods used by commands.ts
+const mockGetCommands = vi.fn();
+const mockRuntime = {
+  type: 'claude-code',
+  ensureSession: vi.fn(),
+  hasSession: vi.fn(() => false),
+  updateSession: vi.fn(() => true),
+  sendMessage: vi.fn(),
+  approveTool: vi.fn(),
+  submitAnswers: vi.fn(() => true),
+  listSessions: vi.fn(),
+  getSession: vi.fn(),
+  getMessageHistory: vi.fn(),
+  getSessionTasks: vi.fn().mockResolvedValue([]),
+  getSessionETag: vi.fn().mockResolvedValue(null),
+  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
+  watchSession: vi.fn(() => () => {}),
+  acquireLock: vi.fn(),
+  releaseLock: vi.fn(),
+  isLocked: vi.fn(() => false),
+  getLockInfo: vi.fn(),
+  getSupportedModels: vi.fn().mockResolvedValue([]),
+  getCapabilities: vi.fn(() => ({
+    type: 'claude-code',
+    supportsPermissionModes: true,
+    supportsToolApproval: true,
+    supportsCostTracking: true,
+    supportsResume: true,
+    supportsMcp: true,
+    supportsQuestionPrompt: true,
+  })),
+  getInternalSessionId: vi.fn(),
+  getCommands: mockGetCommands,
+  checkSessionHealth: vi.fn(),
+};
+
+vi.mock('../../services/core/runtime-registry.js', () => ({
+  runtimeRegistry: {
+    getDefault: vi.fn(() => mockRuntime),
+    get: vi.fn(() => mockRuntime),
+    getAllCapabilities: vi.fn(() => ({})),
+    getDefaultType: vi.fn(() => 'claude-code'),
+  },
+}));
 
 vi.mock('../../services/core/tunnel-manager.js', () => ({
   tunnelManager: {
@@ -36,10 +69,6 @@ vi.mock('../../services/core/tunnel-manager.js', () => ({
 import request from 'supertest';
 import { createApp } from '../../app.js';
 import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
-
-// Get a reference to the mock function
-const { __mockGetCommands: mockGetCommands } =
-  (await import('../../services/runtimes/claude-code/command-registry.js')) as Record<string, unknown>;
 
 const app = createApp();
 
@@ -68,7 +97,7 @@ describe('Commands Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.commands).toHaveLength(1);
       expect(res.body.commands[0].fullCommand).toBe('/daily:plan');
-      expect(mockGetCommands).toHaveBeenCalledWith(false);
+      expect(mockGetCommands).toHaveBeenCalledWith(false, undefined);
     });
 
     it('passes refresh=true to registry', async () => {
@@ -76,7 +105,7 @@ describe('Commands Routes', () => {
 
       const res = await request(app).get('/api/commands?refresh=true');
       expect(res.status).toBe(200);
-      expect(mockGetCommands).toHaveBeenCalledWith(true);
+      expect(mockGetCommands).toHaveBeenCalledWith(true, undefined);
     });
 
     it('returns empty when no commands exist', async () => {

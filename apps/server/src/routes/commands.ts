@@ -1,27 +1,7 @@
 import { Router } from 'express';
-import { CommandRegistryService } from '../services/runtimes/claude-code/command-registry.js';
+import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { CommandsQuerySchema } from '@dorkos/shared/schemas';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
-import { DEFAULT_CWD } from '../lib/resolve-root.js';
-
-const defaultRoot = DEFAULT_CWD;
-const MAX_REGISTRY_CACHE_SIZE = 50;
-const registryCache = new Map<string, CommandRegistryService>();
-
-function getRegistry(cwd?: string): CommandRegistryService {
-  const root = cwd || defaultRoot;
-  let registry = registryCache.get(root);
-  if (!registry) {
-    // Evict oldest entry if cache is full
-    if (registryCache.size >= MAX_REGISTRY_CACHE_SIZE) {
-      const oldest = registryCache.keys().next().value!;
-      registryCache.delete(oldest);
-    }
-    registry = new CommandRegistryService(root);
-    registryCache.set(root, registry);
-  }
-  return registry;
-}
 
 const router = Router();
 
@@ -37,8 +17,8 @@ router.get('/', async (req, res) => {
     if (parsed.data.cwd) {
       validatedCwd = await validateBoundary(parsed.data.cwd);
     }
-    const registry = getRegistry(validatedCwd);
-    const commands = await registry.getCommands(refresh);
+    const runtime = runtimeRegistry.getDefault();
+    const commands = await runtime.getCommands(refresh, validatedCwd);
     res.json(commands);
   } catch (err) {
     if (err instanceof BoundaryError) {

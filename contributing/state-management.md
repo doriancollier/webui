@@ -34,25 +34,37 @@ This guide covers state management patterns in DorkOS. Zustand manages complex c
 
 ### Zustand Store (App Store)
 
-The central UI store lives at `apps/client/src/layers/shared/model/app-store.ts`:
+The central UI store lives at `apps/client/src/layers/shared/model/app-store.ts`. It uses the `devtools` middleware for Redux DevTools support and persists boolean preferences to `localStorage` via `readBool`/`writeBool` helpers.
+
+Key state owned by the app store:
+- `sidebarOpen` — persisted to localStorage; always `false` on mobile on first load
+- `previousCwd` — transient; used by command palette for "switch back" suggestions
+- Dialog open states (`settingsOpen`, `pulseOpen`, `relayOpen`, `meshOpen`, etc.) — transient, not persisted
+- `selectedCwd` — writes to `recentCwds` in localStorage on change
+- UI preferences (`showTimestamps`, `expandToolCalls`, font size/family, etc.) — persisted
 
 ```typescript
 // apps/client/src/layers/shared/model/app-store.ts
 import { create } from 'zustand';
+import { devtools } from 'zustand/middleware';
 
-interface AppState {
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-  toggleSidebar: () => void;
-  previousCwd: string | null;
-  setPreviousCwd: (cwd: string | null) => void;
-}
-
-export const useAppStore = create<AppState>((set) => ({
-  sidebarOpen: true,
-  setSidebarOpen: (open) => set({ sidebarOpen: open }),
-  toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
-}));
+export const useAppStore = create<AppState>()(
+  devtools(
+    (set) => ({
+      sidebarOpen: readBool('dorkos-sidebar-open', false),
+      toggleSidebar: () =>
+        set((s) => {
+          const next = !s.sidebarOpen;
+          writeBool('dorkos-sidebar-open', next);
+          return { sidebarOpen: next };
+        }),
+      previousCwd: null,
+      setPreviousCwd: (cwd) => set({ previousCwd: cwd }),
+      // ...many more fields
+    }),
+    { name: 'app-store' }
+  )
+);
 ```
 
 ### Using Selectors (Prevent Re-renders)
@@ -336,17 +348,25 @@ export function CommandPaletteDialog() {
    ```typescript
    // apps/client/src/layers/shared/model/my-store.ts
    import { create } from 'zustand';
+   import { devtools } from 'zustand/middleware';
 
    interface MyState {
      value: string;
      setValue: (value: string) => void;
    }
 
-   export const useMyStore = create<MyState>((set) => ({
-     value: '',
-     setValue: (value) => set({ value }),
-   }));
+   export const useMyStore = create<MyState>()(
+     devtools(
+       (set) => ({
+         value: '',
+         setValue: (value) => set({ value }),
+       }),
+       { name: 'my-store' }
+     )
+   );
    ```
+
+   Use `devtools` middleware for any store that would benefit from Redux DevTools inspection. The `name` field appears as the store label in DevTools.
 
 3. **Export from barrel**: Add to `apps/client/src/layers/shared/model/index.ts`
 

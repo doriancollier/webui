@@ -10,45 +10,16 @@ import { Cards, Card } from 'fumadocs-ui/components/card'
 
 # Agent Discovery
 
-Mesh is the agent discovery and registry system in DorkOS. It scans your filesystem for AI agent projects, registers them with capability manifests, and connects them to [Relay](/docs/concepts/relay) for inter-agent communication. For a deeper look at the architecture, see the [Mesh concept page](/docs/concepts/mesh).
-
-## Enabling Mesh
-
-<Steps>
-<Step>
-### Set the environment variable
-
-Add `DORKOS_MESH_ENABLED=true` to your `.env` file, or export it in your shell:
-
-```bash
-export DORKOS_MESH_ENABLED=true
-```
-</Step>
-
-<Step>
-### Restart DorkOS
-
-Restart the server for the change to take effect:
-
-```bash
-dorkos
-```
-</Step>
-
-<Step>
-### Open the Mesh tab
-
-The Mesh tab now appears in the sidebar navigation. It shows the agent registry, discovery candidates, and network topology.
-</Step>
-</Steps>
-
-<Callout type="info">
-Mesh requires Relay to be enabled for inter-agent communication. Set both `DORKOS_MESH_ENABLED=true` and `DORKOS_RELAY_ENABLED=true` to get the full experience.
-</Callout>
+Mesh is the agent discovery and registry system in DorkOS. It scans your filesystem for AI agent projects, registers them with capability manifests, and connects them to [Relay](/docs/concepts/relay) for inter-agent communication. Mesh is always on — no feature flag or environment variable required. For a deeper look at the architecture, see the [Mesh concept page](/docs/concepts/mesh).
 
 ## Discovering Agents
 
-Discovery scans your filesystem for directories that contain recognized agent markers. Mesh ships with strategies for Claude Code (`.claude/` directory), Cursor (`.cursor/` or `.cursorrc`), and Codex projects.
+Discovery scans your filesystem for directories that contain recognized agent markers. Mesh ships with four detection strategies:
+
+- **claude-code** — `.claude/` directory present
+- **cursor** — `.cursor/` directory or `.cursorrc` file
+- **copilot** — GitHub Copilot configuration markers
+- **dork-manifest** — `.dork/agent.json` file (auto-imports previously registered agents)
 
 Trigger a scan from the UI by opening the Mesh tab and clicking the discover button, or use the REST API:
 
@@ -136,7 +107,7 @@ mesh_register({ path: "/home/user/projects/research", name: "research-agent", ru
 When an agent creates a registration via MCP tools, the manifest is written to `.dork/agent.json` in the project directory and the agent is immediately available in the registry.
 
 <Callout type="info">
-When both Relay and Mesh are enabled, registering an agent automatically creates a Relay endpoint at `relay.agent.{namespace}.{agentId}`, making it immediately reachable through the message bus.
+When Relay is enabled, registering an agent automatically creates a Relay endpoint at `relay.agent.{namespace}.{agentId}`, making it immediately reachable for inter-agent messaging.
 </Callout>
 
 ## Network Topology
@@ -167,7 +138,7 @@ curl -X POST http://localhost:4242/api/mesh/agents/{agentId}/heartbeat \
   "stale": { type: "status", description: "Agent has not been seen for over 24 hours and may be offline" },
 }} />
 
-When an agent's health state changes (for example, from stale to active after receiving a heartbeat), Mesh emits a lifecycle event through the Relay signal system. The AgentHealthDetail component in the UI provides a per-agent drill-down showing the current state, last seen timestamp, last event, and capabilities.
+When an agent's health state changes, Mesh emits a lifecycle event through the Relay signal system. The AgentHealthDetail component provides a per-agent drill-down showing the current state, last seen timestamp, last event, and capabilities.
 
 ## Access Control
 
@@ -197,14 +168,9 @@ curl http://localhost:4242/api/mesh/denied
 curl -X DELETE "http://localhost:4242/api/mesh/denied/%2Fhome%2Fuser%2Fprojects%2Flegacy-bot"
 ```
 
-<Callout type="warn">
-Denials include a reason and denier field for audit purposes. Include a meaningful reason when denying a path so other team members understand why it was excluded.
-</Callout>
-
 ## Configuration Reference
 
 <TypeTable type={{
-  "DORKOS_MESH_ENABLED": { type: "boolean", description: "Enable the Mesh agent discovery and registry subsystem", default: "false" },
   "Discovery roots": { type: "string[]", description: "Directories to scan for agents (passed in the POST /discover request body)" },
   "Max scan depth": { type: "number", description: "How many directory levels deep to scan", default: "3" },
 }} />

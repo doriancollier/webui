@@ -379,5 +379,3 @@ export class TranscriptReader {
     }
   }
 }
-
-export const transcriptReader = new TranscriptReader();

@@ -1,23 +1,17 @@
 ---
 title: Quickstart
-description: Go from install to your first Claude Code conversation in under two minutes.
+description: Launch DorkOS and open your first Claude Code session in under two minutes.
 ---
 
 # Quickstart
 
-This guide takes you from installation to your first Claude Code conversation through the DorkOS web interface.
+From a fresh install to a running Claude Code session in the browser.
 
 ## Prerequisites
 
-Before you begin, make sure you have:
-
 - **Node.js 18+** installed
-- **Claude Code CLI** installed and authenticated (`claude` must be available in your PATH)
-- **DorkOS** installed via `curl -fsSL https://dorkos.ai/install | bash` (or `npm install -g dorkos`)
-
-<Callout type="info">
-  Need help with installation? See the [Installation guide](/docs/getting-started/installation) for detailed setup instructions.
-</Callout>
+- **Claude Code CLI** installed and authenticated (`claude` available in your PATH)
+- **DorkOS** installed — see the [Installation guide](/docs/getting-started/installation)
 
 ## Launch DorkOS
 
@@ -25,8 +19,6 @@ Before you begin, make sure you have:
 
 <Step>
 ### Start the server
-
-Open a terminal, navigate to your project directory, and run:
 
 ```bash
 dorkos
@@ -51,9 +43,7 @@ dorkos --port 8080 --dir ~/projects/myapp
 <Step>
 ### Send your first message
 
-Type a message in the chat input at the bottom of the screen and press **Enter**. Claude will begin streaming its response in real time.
-
-Try something like:
+Type a message in the chat input and press **Enter**. Claude streams its response in real time.
 
 ```
 Explain the structure of this project
@@ -64,10 +54,10 @@ Explain the structure of this project
 <Step>
 ### Approve tool calls
 
-When Claude needs to read files, run commands, or make edits, it will request permission through a tool approval card. Review what Claude wants to do, then click **Approve** or **Deny**.
+When Claude needs to read files, run commands, or make edits, a tool approval card appears. Review the action and click **Approve** or **Deny**.
 
 <Callout type="warn">
-  Tool approval is a safety mechanism. Always review tool calls before approving, especially for write operations and shell commands.
+  Always review tool calls before approving — especially write operations and shell commands.
 </Callout>
 
 </Step>
@@ -79,19 +69,19 @@ When Claude needs to read files, run commands, or make edits, it will request pe
 <Tabs items={["Sessions", "Slash Commands", "Working Directory"]}>
 
 <Tab value="Sessions">
-The **sidebar** lists all your conversation sessions. Sessions are stored as SDK transcript files, so conversations started from any Claude Code client (CLI, DorkOS, Obsidian) all appear here.
+The **sidebar** lists every conversation session across all your Claude Code clients — CLI, browser, and Obsidian all write to the same JSONL transcripts, so everything appears here. Each session entry shows the agent identity with color and icon, making it easy to see which project is active at a glance.
 
 - Click a session to switch to it
-- Click **New Session** to start a fresh conversation
-- Session history persists across restarts
+- Click **New Session** to start fresh
+- History persists across restarts
 </Tab>
 
 <Tab value="Slash Commands">
-Type `/` in the chat input to open the **command palette**. Slash commands are loaded from `.claude/commands/` in your working directory and can inject predefined prompts or workflows.
+Type `/` in the chat input to open the **command palette**. Slash commands load from `.claude/commands/` in your working directory and inject predefined prompts or workflows into the conversation.
 </Tab>
 
 <Tab value="Working Directory">
-DorkOS operates in a working directory, just like the Claude Code CLI. By default it uses the directory where you launched `dorkos`. Use the **directory picker** in the sidebar to switch directories without restarting.
+DorkOS operates in a working directory, the same way the Claude Code CLI does. By default it uses the directory where you ran `dorkos`. Use the **directory picker** in the sidebar to switch without restarting.
 </Tab>
 
 </Tabs>
@@ -110,15 +100,15 @@ DorkOS operates in a working directory, just like the Claude Code CLI. By defaul
 
 <Cards>
   <Card title="Configuration" href="/docs/getting-started/configuration">
-    Customize ports, directories, and persistent settings via config file or CLI flags.
+    Customize ports, directories, and persistent settings.
   </Card>
   <Card title="Tool Approval" href="/docs/guides/tool-approval">
-    Learn how the tool approval flow works and how to configure permission modes.
+    Configure permission modes — from approve-everything to fully autonomous.
   </Card>
-  <Card title="Slash Commands" href="/docs/guides/slash-commands">
-    Create custom slash commands to streamline your workflows.
+  <Card title="Pulse Scheduler" href="/docs/guides/pulse-scheduler">
+    Schedule agents to run on a cron, independently of your terminal.
   </Card>
-  <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
-    Speed up your workflow with keyboard shortcuts.
+  <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
+    Connect agents to Telegram, webhooks, and each other.
   </Card>
 </Cards>

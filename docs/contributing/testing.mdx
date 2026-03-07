@@ -20,13 +20,12 @@ Runs all tests in watch mode.
 ```bash
 pnpm test -- --run
 ```
-Runs all tests once without watch mode. Useful for CI.
+Runs all tests once. Use this for CI.
 </Tab>
 <Tab value="Specific file">
 ```bash
 pnpm vitest run apps/server/src/services/__tests__/transcript-reader.test.ts
 ```
-Runs a single test file directly.
 </Tab>
 </Tabs>
 
@@ -37,10 +36,9 @@ Tests live alongside source code in `__tests__/` directories:
 <Files>
   <Folder name="apps" defaultOpen>
     <Folder name="server/src" defaultOpen>
-      <Folder name="services" defaultOpen>
+      <Folder name="services/runtimes/claude-code" defaultOpen>
         <Folder name="__tests__" defaultOpen>
           <File name="transcript-reader.test.ts" />
-          <File name="agent-manager.test.ts" />
           <File name="session-broadcaster.test.ts" />
         </Folder>
       </Folder>
@@ -68,7 +66,7 @@ Component tests require the jsdom environment directive and a mock Transport.
 <Step>
 ### Add the environment directive
 
-Every component test file must start with the jsdom directive:
+Every component test file must start with:
 
 ```typescript
 /**
@@ -155,16 +153,16 @@ describe('useCustomHook', () => {
 
 <TypeTable type={{
   "@vitest-environment jsdom": { type: "directive", description: "Required at the top of every component test file" },
-  "createMockTransport()": { type: "function", description: "Creates a fully mocked Transport object from @dorkos/test-utils" },
-  "TransportProvider wrapper": { type: "pattern", description: "Wrap components in TransportProvider with mock Transport" },
-  "@testing-library/jest-dom": { type: "import", description: "Provides DOM assertion matchers like toBeInTheDocument()" },
+  "createMockTransport()": { type: "function", description: "Creates a fully mocked Transport from @dorkos/test-utils" },
+  "TransportProvider wrapper": { type: "pattern", description: "Wrap components in TransportProvider with a mock Transport" },
+  "@testing-library/jest-dom": { type: "import", description: "DOM assertion matchers like toBeInTheDocument()" },
   "matchMedia mock": { type: "pattern", description: "Mock window.matchMedia in beforeAll for responsive components" }
 }} />
 
 ## Mock Browser APIs
 
 <Callout type="warn">
-Components that use browser APIs like `matchMedia` need explicit mocks. Add these in `beforeAll` and clean up in `afterEach`.
+Components that use browser APIs like `matchMedia` need explicit mocks. Add them in `beforeAll` and clean up in `afterEach`.
 </Callout>
 
 ```typescript
@@ -189,7 +187,7 @@ beforeAll(() => {
 
 The `@dorkos/test-utils` package provides:
 
-- `createMockTransport()` — Creates a fully mocked Transport object with all 9 methods
+- `createMockTransport()` — fully mocked Transport with all required methods
 - Mock factories for sessions, messages, and other domain objects
 
 ## Anti-Patterns
@@ -200,16 +198,16 @@ Avoid these common testing mistakes.
 
 ```typescript
 // NEVER test implementation details
-expect(component.state.isOpen).toBe(true); // Wrong - test behavior instead
+expect(component.state.isOpen).toBe(true); // test behavior instead
 
 // NEVER use waitFor without an assertion
-await waitFor(() => {}); // Wrong - always include an expect()
+await waitFor(() => {}); // always include an expect()
 
 // NEVER leave console mocks without cleanup
-vi.spyOn(console, 'error'); // Add mockRestore in afterEach
+vi.spyOn(console, 'error'); // add mockRestore in afterEach
 
 // NEVER use arbitrary timeouts
-await new Promise((r) => setTimeout(r, 1000)); // Wrong - use waitFor
+await new Promise((r) => setTimeout(r, 1000)); // use waitFor
 ```
 
 ## Next Steps

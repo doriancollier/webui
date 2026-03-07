@@ -45,7 +45,7 @@ The chat textarea is `disabled={isLoading}` during streaming. Interactive tools 
 
 ## Hook: `useInteractiveShortcuts`
 
-**Location:** `apps/client/src/layers/features/chat/model/use-interactive-shortcuts.ts`
+**Location:** `apps/client/src/layers/shared/model/use-interactive-shortcuts.ts`
 
 The hook attaches a global `keydown` listener only when `activeInteraction` is non-null (i.e., a tool is waiting for user input). It removes the listener when the interaction is resolved.
 
@@ -112,9 +112,9 @@ The command palette displays a `PaletteFooter` bar showing context-appropriate k
 
 | Context | Hints Shown |
 | ------- | ----------- |
-| Root level, no selection | `up/down` Navigate, `esc` Close |
-| Root level, agent selected | `up/down` Navigate, `Enter` Open, `Cmd+Enter` New Tab, `esc` Close |
-| Sub-menu active | `up/down` Navigate, `Backspace` Back, `esc` Close |
+| Root level, no selection | `↑↓` Navigate, `esc` Close |
+| Root level, agent selected | `↑↓` Navigate, `Enter` Open, `⌘+Enter` / `Ctrl+Enter` New Tab, `esc` Close |
+| Sub-menu active | `↑↓` Navigate, `Backspace` Back, `esc` Close |
 
 ### Approval Mode (`WAITING_FOR_APPROVAL`)
 
@@ -297,10 +297,10 @@ Key details:
 
 ## Adding Shortcuts for a New Interactive Tool
 
-If you add a new interactive tool (see `contributing/interactive-tools.md` for the full pattern), extend the keyboard shortcut system:
+When adding a new interactive tool (see `contributing/interactive-tools.md`), extend the keyboard shortcut system in order:
 
-1. **Add a new type** to `activeInteraction.type` (currently `'approval' | 'question'`).
-2. **Add a new branch** in the `useInteractiveShortcuts` handler for your type's key bindings.
+1. **Add a new type** to `activeInteraction.type` (currently `'approval' | 'question'`) in the `UseInteractiveShortcutsOptions` interface in `apps/client/src/layers/shared/model/use-interactive-shortcuts.ts`.
+2. **Add a new branch** in the `handler` function inside `useInteractiveShortcuts` for your type's key bindings.
 3. **Define a handle interface** for your component (e.g., `MyToolHandle`) and add it to the `InteractiveToolHandle` union in `MessageItem.tsx`.
 4. **Expose the handle** via `forwardRef` + `useImperativeHandle` in your component.
 5. **Wire callbacks** in `ChatPanel.tsx` that delegate from the shortcut hook to the imperative handle.

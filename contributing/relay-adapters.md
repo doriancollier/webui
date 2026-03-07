@@ -31,6 +31,7 @@ interface RelayAdapter {
   stop(): Promise<void>;                                        // Disconnect gracefully
   deliver(subject: string, envelope: RelayEnvelope, context?: AdapterContext): Promise<DeliveryResult>;  // Send outbound message
   getStatus(): AdapterStatus;                                   // Current runtime status
+  testConnection?(): Promise<{ ok: boolean; error?: string }>; // Optional lightweight credential check
 }
 ```
 
@@ -150,15 +151,15 @@ Returns a snapshot of the adapter's current runtime state. Used by the client to
 **Result type:**
 
 ```typescript
-interface AdapterStatus {
-  state: 'connected' | 'disconnected' | 'error' | 'starting' | 'stopping';
-  messageCount: { inbound: number; outbound: number };
-  errorCount: number;
-  lastError?: string;
-  lastErrorAt?: string;
-  startedAt?: string;
-}
+type AdapterStatus = Pick<
+  SharedAdapterStatus,
+  'state' | 'messageCount' | 'errorCount' | 'lastError' | 'lastErrorAt' | 'startedAt'
+> & {
+  queuedMessages?: number; // Agents with queued messages pending delivery
+};
 ```
+
+`SharedAdapterStatus` is defined in `@dorkos/shared/relay-schemas`. The `id`, `type`, and `displayName` fields are added by `AdapterManager` when building catalog entries — adapters only track runtime state.
 
 **Implementation:**
 
@@ -167,6 +168,12 @@ getStatus(): AdapterStatus {
   return { ...this.status }; // Return a shallow copy to prevent mutation
 }
 ```
+
+#### `testConnection?(): Promise<{ ok: boolean; error?: string }>`
+
+Optional method for lightweight credential validation without starting the full adapter lifecycle. When present, `AdapterManager.testConnection()` calls this instead of the heavier `start()`/`stop()` cycle. This avoids side effects like Telegram's 409 Conflict error when a polling session lingers.
+
+If absent, `AdapterManager` falls back to creating a temporary adapter instance and calling `start()`/`stop()` to test connectivity.
 
 ## Subject Hierarchy
 
@@ -825,6 +832,22 @@ Session mappings for `per-chat` and `per-user` strategies are persisted to `~/.d
 5. Republish the payload to `relay.agent.{sessionId}` for `ClaudeCodeAdapter` to handle
 
 Agent responses published back to `relay.human.*` subjects are detected by checking `envelope.from.startsWith('agent:')` and are skipped to prevent routing loops.
+
+## AdapterManager Dependency Injection
+
+`AdapterManager` (`apps/server/src/services/relay/adapter-manager.ts`) accepts `AdapterManagerDeps` at construction time:
+
+```typescript
+interface AdapterManagerDeps {
+  agentManager: ClaudeCodeAgentRuntimeLike; // Required — wraps the active AgentRuntime
+  traceStore: TraceStoreLike;               // Required — records delivery spans
+  pulseStore?: PulseStoreLike;              // Optional — needed for ClaudeCodeAdapter schedule dispatching
+  relayCore?: RelayCoreLike;               // Optional — enables binding subsystem (BindingStore + BindingRouter)
+  meshCore?: AdapterMeshCoreLike;          // Optional — resolves agent CWD via getProjectPath(agentId)
+}
+```
+
+When `relayCore` is omitted, `initialize()` skips binding subsystem setup and the binding API endpoints return 503. When `meshCore` is omitted, `AdapterContext` passed to `deliver()` contains no agent info.
 
 ## Creating a Custom Adapter
 

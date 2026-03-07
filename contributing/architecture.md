@@ -235,6 +235,7 @@ All Claude Code-specific services live under `services/runtimes/claude-code/`:
 | `build-task-event.ts` | Task event builder |
 | `task-reader.ts` | Task state parser |
 | `sdk-utils.ts` | `makeUserPrompt()`, `resolveClaudeCliPath()` |
+| `message-sender.ts` | Extracted send-message logic (streaming, tool filtering, context building) |
 | `mcp-tools/` | MCP tool server (core, pulse, relay, mesh, adapter, binding tools) |
 | `index.ts` | Barrel export for `ClaudeCodeRuntime` |
 
@@ -272,7 +273,7 @@ Four top-level toggles control six tool groups:
 | `mesh` | Mesh tools (discover, register, list, deny, status, inspect, topology) |
 | `adapter` | Adapter tools (list/enable/disable/reload adapters) + Binding tools (list/create/delete bindings) |
 
-Core tools (ping, get_server_info, get_session_count, agent_get_current) are always included.
+Core tools (ping, get_server_info, get_session_count, get_current_agent) are always included.
 
 ### Defense in Depth
 
@@ -512,9 +513,14 @@ Location: `~/.dork/config.json` (created automatically on first run). Format:
 ```json
 {
   "version": 1,
-  "server": { "port": 4242, "cwd": null },
+  "server": { "port": 4242, "cwd": null, "boundary": null },
   "tunnel": { "enabled": false, "domain": null, "authtoken": null, "auth": null },
-  "ui": { "theme": "system" }
+  "ui": { "theme": "system" },
+  "logging": { "level": "info", "maxLogSizeKb": 500, "maxLogFiles": 14 },
+  "relay": { "enabled": true, "dataDir": null },
+  "scheduler": { "enabled": true, "maxConcurrentRuns": 1, "timezone": null, "retentionCount": 100 },
+  "mesh": { "scanRoots": [] },
+  "agentContext": { "relayTools": true, "meshTools": true, "adapterTools": true, "pulseTools": true }
 }
 ```
 
@@ -526,7 +532,7 @@ Location: `~/.dork/config.json` (created automatically on first run). Format:
 - `USER_CONFIG_DEFAULTS` (parsed defaults for `conf` constructor)
 - `SENSITIVE_CONFIG_KEYS` (fields that trigger warnings: `tunnel.authtoken`, `tunnel.auth`)
 
-### ConfigManager Service (`apps/server/src/services/config-manager.ts`)
+### ConfigManager Service (`apps/server/src/services/core/config-manager.ts`)
 
 Singleton service wrapping the `conf` library for atomic JSON I/O. Key behaviors:
 

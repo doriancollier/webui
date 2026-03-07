@@ -55,7 +55,7 @@ Config precedence: CLI flags &gt; environment variables &gt; `~/.dork/config.jso
 
 ## Tunnel Configuration
 
-DorkOS supports ngrok tunnels for remote access. See the [Tunnel Setup](/docs/guides/tunnel-setup) guide for full details.
+DorkOS supports ngrok tunnels for remote access from any device. See the [Tunnel Setup](/docs/guides/tunnel-setup) guide for full details.
 
 <TypeTable
   type={{
@@ -85,35 +85,39 @@ Always set `TUNNEL_AUTH` when exposing DorkOS publicly via a tunnel. Without it,
 
 ## Relay Configuration
 
-DorkOS includes a subject-based pub/sub message bus for inter-agent communication. See the [Relay Messaging guide](/docs/guides/relay-messaging) for setup details.
+Relay is the messaging layer that lets agents reach you on Telegram, notify each other, and connect to external channels. See the [Relay Messaging guide](/docs/guides/relay-messaging) for setup details.
 
 <TypeTable
   type={{
     DORKOS_RELAY_ENABLED: {
-      description: 'Enable the Relay message bus for inter-agent communication. Adapter configuration lives in `~/.dork/config.json` under the `relay` key.',
+      description: 'Enable the Relay messaging layer for inter-agent communication. Adapter configuration lives in `~/.dork/config.json` under the `relay` key.',
       type: 'boolean',
       default: 'false',
     },
   }}
 />
 
-## Mesh Configuration
+## Pulse Configuration
 
-Mesh provides agent discovery, health monitoring, and network topology visualization. See the [Agent Discovery guide](/docs/guides/agent-discovery) for setup details.
+Pulse schedules agent tasks on a cron — independently, without keeping a terminal open. See the [Pulse Scheduler guide](/docs/guides/pulse-scheduler) for setup details.
 
 <TypeTable
   type={{
-    DORKOS_MESH_ENABLED: {
-      description: 'Enable agent discovery and registry.',
+    DORKOS_PULSE_ENABLED: {
+      description: 'Enable the Pulse scheduler for autonomous cron-based agent execution.',
       type: 'boolean',
       default: 'false',
     },
   }}
 />
 
+## Mesh
+
+Mesh is always on. It scans your projects for agent-capable directories and builds a discoverable registry without any additional configuration. See the [Agent Discovery guide](/docs/guides/agent-discovery) for details on registration and access control.
+
 ## Config Directory
 
-DorkOS creates a `~/.dork/` directory on startup for storing configuration. Structured logs are written to `~/.dork/logs/dorkos.log` as NDJSON (newline-delimited JSON).
+DorkOS creates `~/.dork/` on startup for configuration and state storage. Structured logs are written to `~/.dork/logs/dorkos.log` as NDJSON.
 
 Use `dorkos config path` to print the path to your config file, and `dorkos config list` to view all active settings.
 
@@ -124,7 +128,7 @@ Use `dorkos config path` to print the path to your config file, and `dorkos conf
     Manage config via CLI subcommands: get, set, list, reset, edit.
   </Card>
   <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
-    Access DorkOS remotely via ngrok tunnels.
+    Access DorkOS remotely via ngrok tunnel.
   </Card>
   <Card title="Quickstart" href="/docs/getting-started/quickstart">
     Get up and running with your first session.

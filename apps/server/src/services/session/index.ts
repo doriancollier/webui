@@ -18,5 +18,5 @@ export {
   parseTranscript,
 } from '../runtimes/claude-code/transcript-parser.js';
 export type { TranscriptLine, ContentBlock } from '../runtimes/claude-code/transcript-parser.js';
-export { TranscriptReader, transcriptReader } from '../runtimes/claude-code/transcript-reader.js';
+export { TranscriptReader } from '../runtimes/claude-code/transcript-reader.js';
 export type { HistoryMessage, HistoryToolCall } from '../runtimes/claude-code/transcript-reader.js';

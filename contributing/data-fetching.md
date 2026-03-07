@@ -407,6 +407,24 @@ export function useResolvedAgents(paths: string[]) {
 }
 ```
 
+## Session Entity: useModels
+
+Available models are fetched via `useModels()` in `entities/session/`. Models rarely change so the query uses a long `staleTime` (30 minutes):
+
+```typescript
+// apps/client/src/layers/entities/session/model/use-models.ts
+export function useModels() {
+  const transport = useTransport();
+  return useQuery<ModelOption[]>({
+    queryKey: ['models'],
+    queryFn: () => transport.getModels(),
+    staleTime: 30 * 60 * 1000,
+  });
+}
+```
+
+The server delegates to `runtimeRegistry.getDefault().getSupportedModels()` via `GET /api/models`.
+
 ## Runtime Entity Hooks
 
 The runtime entity layer (`entities/runtime/`) provides hooks for querying runtime capabilities. These are static for the server's lifetime, so `staleTime: Infinity` prevents unnecessary refetches.

@@ -30,6 +30,14 @@ data: {"type":"text_delta","delta":" I help?"}
 data: {"type":"done"}
 ```
 
+When `DORKOS_RELAY_ENABLED=true`, `POST /messages` returns `202` immediately with a receipt instead of opening an SSE stream directly:
+
+```json
+{ "messageId": "msg_abc123", "traceId": "trace_xyz456" }
+```
+
+The response chunks then arrive via the session sync SSE connection as `relay_message` events.
+
 ## Event Types
 
 ### Text Events
@@ -65,12 +73,12 @@ data: {"type":"done"}
 
 ### Relay Events
 
-When `DORKOS_RELAY_ENABLED` is true, the SSE stream includes additional event types:
+When `DORKOS_RELAY_ENABLED=true`, the SSE stream includes additional event types:
 
 <TypeTable type={{
-  "relay_message": { type: "{ streamEvent: StreamEvent, messageId: string }", description: "Relay response chunk containing a nested StreamEvent from the message bus" },
+  "relay_message": { type: "{ streamEvent: StreamEvent, messageId: string }", description: "Relay response chunk containing a nested StreamEvent" },
   "relay_receipt": { type: "{ messageId: string, traceId: string }", description: "Delivery confirmation for a Relay-routed message" },
-  "message_delivered": { type: "{ messageId: string, subject: string }", description: "Message delivery notification from the Relay transport" },
+  "message_delivered": { type: "{ messageId: string, subject: string }", description: "Message delivery notification" },
 }} />
 
 ## Responding to Interactive Events
@@ -78,7 +86,7 @@ When `DORKOS_RELAY_ENABLED` is true, the SSE stream includes additional event ty
 <Tabs items={["Tool Approval", "Question Response"]}>
 
 <Tab value="Tool Approval">
-When `approval_required` is received, the client must approve or deny:
+When `approval_required` is received, approve or deny before the stream continues:
 
 ```bash
 # Approve
@@ -93,7 +101,7 @@ Content-Type: application/json
 ```
 
 <Callout type="warn">
-  Failing to respond to an `approval_required` event will block the agent. The SSE stream remains open until the tool call is approved or denied.
+  Failing to respond to an `approval_required` event blocks the agent. The SSE stream stays open until the tool call is resolved.
 </Callout>
 </Tab>
 
@@ -111,7 +119,7 @@ Content-Type: application/json
 
 ## Session Sync Protocol
 
-Clients can subscribe to real-time session changes via a persistent SSE connection:
+Subscribe to real-time session changes via a persistent SSE connection:
 
 ```
 GET /api/sessions/:id/stream
@@ -125,22 +133,20 @@ GET /api/sessions/:id/stream
 }} />
 
 <Callout type="info">
-  When a `sync_update` is received, clients should re-fetch message history. The `GET /api/sessions/:id/messages` endpoint supports ETag caching (`If-None-Match` / `304`) for efficient polling.
+  When a `sync_update` is received, re-fetch message history. `GET /api/sessions/:id/messages` supports ETag caching (`If-None-Match` / `304`) for efficient polling.
 </Callout>
 
-<Callout type="info">
-  When Relay is enabled, the SSE stream also carries `relay_message`, `relay_receipt`, and `message_delivered` events alongside standard sync events.
-</Callout>
+When Relay is enabled, the sync stream also carries `relay_message`, `relay_receipt`, and `message_delivered` events.
 
-## Session Locking
+## Session Write Coordination
 
-The `POST /api/sessions/:id/messages` endpoint uses session locking to prevent concurrent writes.
+`POST /api/sessions/:id/messages` prevents concurrent writes via client IDs.
 
 <TypeTable type={{
-  "X-Client-Id": { type: "string", description: "Client identifier header sent with each message request" },
+  "X-Client-Id": { type: "string", description: "Client identifier sent with each message request" },
 }} />
 
-- If a session is locked by another client, the server returns `409` with `{ error: "Session locked", code: "SESSION_LOCKED", lockedBy, lockedAt }`
+- If another client holds the write lock, the server returns `409` with `{ error: "Session locked", code: "SESSION_LOCKED", lockedBy, lockedAt }`
 - Locks auto-expire after 5 minutes
 - Locks are released when SSE connections close
 
@@ -151,31 +157,31 @@ The `POST /api/sessions/:id/messages` endpoint uses session locking to prevent c
 <Step>
 ### Open the SSE connection
 
-Client sends `POST /api/sessions/:id/messages` with message content. The response is a `text/event-stream`.
+Send `POST /api/sessions/:id/messages` with message content. The response is `Content-Type: text/event-stream`.
 </Step>
 
 <Step>
 ### Process streamed events
 
-Server streams events as they arrive from the Claude Agent SDK. The client processes each event and updates its UI in real time.
+The server streams events as they arrive from the Claude Agent SDK. Update your UI in real time.
 </Step>
 
 <Step>
 ### Handle interactive events
 
-If `approval_required` or `question_prompt` events arrive, the client must respond via the appropriate endpoint before the stream continues.
+If `approval_required` or `question_prompt` arrive, respond via the appropriate endpoint before the stream continues.
 </Step>
 
 <Step>
 ### Stream completes
 
-On the `done` event, the message stream ends. The client can now send another message or close the connection.
+On `done`, the message stream ends. Send another message or close the connection.
 </Step>
 
 <Step>
 ### Subscribe for ongoing sync
 
-For real-time updates (including changes from other clients or CLI), open a persistent SSE connection via `GET /api/sessions/:id/stream`.
+For real-time updates from other clients or CLI writes, open a persistent connection via `GET /api/sessions/:id/stream`.
 </Step>
 
 </Steps>
@@ -187,7 +193,7 @@ For real-time updates (including changes from other clients or CLI), open a pers
     Build custom clients using the Transport interface or REST API.
   </Card>
   <Card title="Tool Approval" href="/docs/guides/tool-approval">
-    Learn how the tool approval flow works and how to configure permission modes.
+    How tool approval flows work and how to configure permission modes.
   </Card>
   <Card title="API Reference" href="/docs/api">
     Full interactive API documentation with request and response schemas.

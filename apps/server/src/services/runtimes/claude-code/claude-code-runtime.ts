@@ -7,13 +7,7 @@
  *
  * @module services/runtimes/claude-code/claude-code-runtime
  */
-import {
-  query,
-  type Options,
-  type SDKMessage,
-  type McpServerConfig,
-} from '@anthropic-ai/claude-agent-sdk';
-import type { Response } from 'express';
+import type { McpServerConfig } from '@anthropic-ai/claude-agent-sdk';
 import type {
   StreamEvent,
   PermissionMode,
@@ -29,43 +23,21 @@ import type {
   SessionOpts,
   MessageOpts,
   SseResponse,
+  AgentRegistryPort,
+  RelayPort,
 } from '@dorkos/shared/agent-runtime';
 import { SESSIONS } from '../../../config/constants.js';
 import { SessionLockManager } from './session-lock.js';
-import { createCanUseTool } from './interactive-handlers.js';
-import { type AgentSession, createToolState } from './agent-types.js';
-import { mapSdkMessage } from './sdk-event-mapper.js';
-import { makeUserPrompt, resolveClaudeCliPath } from './sdk-utils.js';
-import { buildSystemPromptAppend } from './context-builder.js';
-import { resolveToolConfig, buildAllowedTools } from './tool-filter.js';
-import { validateBoundary } from '../../../lib/boundary.js';
+import type { AgentSession } from './agent-types.js';
+import { resolveClaudeCliPath } from './sdk-utils.js';
 import { logger } from '../../../lib/logger.js';
 import { DEFAULT_CWD } from '../../../lib/resolve-root.js';
-import { readManifest } from '@dorkos/shared/manifest';
-import { isRelayEnabled } from '../../relay/relay-state.js';
-import { isPulseEnabled } from '../../pulse/pulse-state.js';
-import { configManager } from '../../core/config-manager.js';
 import { TranscriptReader } from './transcript-reader.js';
 import { SessionBroadcaster } from './session-broadcaster.js';
 import { CommandRegistryService } from './command-registry.js';
-import type { MeshCore } from '@dorkos/mesh';
+import { executeSdkQuery } from './message-sender.js';
 
 export { buildTaskEvent } from './build-task-event.js';
-
-const RESUME_FAILURE_PATTERNS = [
-  'query closed before response',
-  'session not found',
-  'no such file',
-  'enoent',
-  'process exited with code',
-];
-
-/** Detect whether an error indicates a failed SDK session resume. */
-function isResumeFailure(err: unknown): boolean {
-  if (!(err instanceof Error)) return false;
-  const msg = err.message.toLowerCase();
-  return RESUME_FAILURE_PATTERNS.some((p) => msg.includes(p));
-}
 
 const DEFAULT_MODELS: ModelOption[] = [
   {
@@ -111,7 +83,8 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   // Internal services (previously standalone singletons)
   private readonly transcriptReader: TranscriptReader;
   private readonly broadcaster: SessionBroadcaster;
-  private commandRegistry: CommandRegistryService | null = null;
+  private commandRegistries = new Map<string, CommandRegistryService>();
+  private static readonly MAX_COMMAND_REGISTRIES = 50;
 
   // Session management
   private sessions = new Map<string, AgentSession>();
@@ -123,7 +96,7 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   private readonly claudeCliPath: string | undefined;
   private mcpServerFactory: (() => Record<string, McpServerConfig>) | null = null;
   private cachedModels: ModelOption[] | null = null;
-  private meshCore: MeshCore | null = null;
+  private meshCore: AgentRegistryPort | null = null;
 
   constructor(cwd?: string) {
     this.cwd = cwd ?? DEFAULT_CWD;
@@ -146,16 +119,16 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   // ---------------------------------------------------------------------------
 
   /**
-   * Set the MeshCore instance for agent manifest resolution and peer agent context.
+   * Set the agent registry for agent manifest resolution and peer agent context.
    *
-   * @param meshCore - The MeshCore instance from server startup
+   * @param meshCore - An AgentRegistryPort implementation (e.g. MeshCore)
    */
-  setMeshCore(meshCore: MeshCore): void {
+  setMeshCore(meshCore: AgentRegistryPort): void {
     this.meshCore = meshCore;
   }
 
   /** Inject a Relay core instance for Relay-aware context building. */
-  setRelay(relay: unknown): void {
+  setRelay(relay: RelayPort): void {
     // SessionBroadcaster uses RelayCore for relay subscription fan-in
     if (relay && typeof relay === 'object') {
       this.broadcaster.setRelay(relay as Parameters<SessionBroadcaster['setRelay']>[0]);
@@ -283,214 +256,24 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     }
 
     const session = this.sessions.get(sessionId)!;
-    session.lastActivity = Date.now();
-    session.eventQueue = [];
 
-    // Use opts.cwd if explicitly provided (e.g., CCA passes Mesh context dir),
-    // fall through empty strings from stale bindings, then fall back to default.
-    const effectiveCwd = opts?.cwd || session.cwd || this.cwd;
-    try {
-      await validateBoundary(effectiveCwd);
-    } catch {
-      yield {
-        type: 'error',
-        data: { message: `Directory boundary violation: ${effectiveCwd}` },
-      };
-      return;
-    }
-
-    // Stamp agent last_seen_at when a message is dispatched
-    const meshAgent = this.meshCore?.getByPath(effectiveCwd);
-    const meshAgentId = meshAgent?.id;
-    if (this.meshCore && meshAgentId) {
-      this.meshCore.updateLastSeen(meshAgentId, 'message_sent');
-    }
-
-    // Load agent manifest for per-agent tool filtering
-    let manifest: Awaited<ReturnType<typeof readManifest>> | null = null;
-    try {
-      manifest = await readManifest(effectiveCwd);
-    } catch {
-      // No manifest found — all tools inherit global defaults
-    }
-
-    const globalConfig = configManager.get('agentContext') ?? {
-      pulseTools: true,
-      relayTools: true,
-      meshTools: true,
-      adapterTools: true,
-    };
-
-    const toolConfig = resolveToolConfig(manifest?.enabledToolGroups, {
-      relayEnabled: isRelayEnabled(),
-      pulseEnabled: isPulseEnabled(),
-      globalConfig,
-    });
-
-    const baseAppend = await buildSystemPromptAppend(effectiveCwd, this.meshCore, toolConfig);
-    // Concatenate caller-supplied append (e.g. Pulse scheduler context) after the base
-    const systemPromptAppend = opts?.systemPromptAppend
-      ? `${baseAppend}\n\n${opts.systemPromptAppend}`
-      : baseAppend;
-
-    const sdkOptions: Options = {
-      cwd: effectiveCwd,
-      includePartialMessages: true,
-      settingSources: ['project', 'user'],
-      systemPrompt: {
-        type: 'preset',
-        preset: 'claude_code',
-        append: systemPromptAppend,
-      },
-      ...(this.claudeCliPath ? { pathToClaudeCodeExecutable: this.claudeCliPath } : {}),
-    };
-
-    if (session.hasStarted) {
-      sdkOptions.resume = session.sdkSessionId;
-    }
-
-    // CWD resolution chain: opts.cwd (from caller) -> session.cwd (from creation) -> this.cwd (default)
-    const cwdSource = opts?.cwd ? 'opts.cwd' : session.cwd ? 'session.cwd' : 'default';
-    logger.debug('[sendMessage]', {
-      session: sessionId,
-      permissionMode: session.permissionMode,
-      hasStarted: session.hasStarted,
-      resume: session.hasStarted ? session.sdkSessionId : 'N/A',
-      effectiveCwd,
-      cwdSource,
-      'opts.cwd': opts?.cwd || '(empty)',
-      'session.cwd': session.cwd || '(empty)',
-    });
-
-    sdkOptions.permissionMode =
-      session.permissionMode === 'bypassPermissions' ||
-      session.permissionMode === 'plan' ||
-      session.permissionMode === 'acceptEdits'
-        ? session.permissionMode
-        : 'default';
-    if (session.permissionMode === 'bypassPermissions') {
-      sdkOptions.allowDangerouslySkipPermissions = true;
-    }
-
-    if (session.model) {
-      sdkOptions.model = session.model;
-    }
-
-    // Inject MCP tool servers — create fresh instances per query to avoid
-    // "Already connected to a transport" errors from reused Protocol objects.
-    if (this.mcpServerFactory) {
-      sdkOptions.mcpServers = this.mcpServerFactory();
-    }
-
-    // Apply per-agent MCP tool filtering (undefined = no filter = all tools available)
-    const allowedTools = buildAllowedTools(toolConfig);
-    if (allowedTools) {
-      sdkOptions.allowedTools = [...(sdkOptions.allowedTools ?? []), ...allowedTools];
-    }
-
-    sdkOptions.canUseTool = createCanUseTool(session, logger.debug.bind(logger));
-
-    const agentQuery = query({ prompt: makeUserPrompt(content), options: sdkOptions });
-    session.activeQuery = agentQuery;
-
-    // Non-blocking model fetch on first invocation
-    if (!this.cachedModels) {
-      agentQuery
-        .supportedModels()
-        .then((models) => {
-          this.cachedModels = models.map((m) => ({
-            value: m.value,
-            displayName: m.displayName,
-            description: m.description,
-          }));
-          logger.debug('[sendMessage] cached supported models', {
-            count: this.cachedModels.length,
-          });
-        })
-        .catch((err) => {
-          logger.debug('[sendMessage] failed to fetch supported models', { err });
-        });
-    }
-
-    let emittedDone = false;
-    const toolState = createToolState();
-
-    try {
-      const sdkIterator = agentQuery[Symbol.asyncIterator]();
-      let pendingSdkPromise: Promise<{
-        sdk: true;
-        result: IteratorResult<SDKMessage>;
-      }> | null = null;
-
-      while (true) {
-        while (session.eventQueue.length > 0) {
-          const queuedEvent = session.eventQueue.shift()!;
-          if (queuedEvent.type === 'done') emittedDone = true;
-          yield queuedEvent;
-        }
-
-        const queuePromise = new Promise<'queue'>((resolve) => {
-          session.eventQueueNotify = () => resolve('queue');
-        });
-
-        if (!pendingSdkPromise) {
-          pendingSdkPromise = sdkIterator
-            .next()
-            .then((result) => ({ sdk: true as const, result }));
-        }
-
-        const winner = await Promise.race([queuePromise, pendingSdkPromise]);
-
-        if (winner === 'queue') {
-          continue;
-        }
-
-        pendingSdkPromise = null;
-        const { result } = winner;
-        if (result.done) break;
-
-        const prevSdkId = session.sdkSessionId;
-        for await (const event of mapSdkMessage(result.value, session, sessionId, toolState)) {
-          if (event.type === 'done') {
-            emittedDone = true;
-            if (this.meshCore && meshAgentId) {
-              this.meshCore.updateLastSeen(meshAgentId, 'response_complete');
-            }
+    yield* executeSdkQuery(sessionId, content, session, {
+      cwd: this.cwd,
+      sessionCwd: session.cwd,
+      claudeCliPath: this.claudeCliPath,
+      meshCore: this.meshCore,
+      mcpServerFactory: this.mcpServerFactory,
+      onModelsReceived: !this.cachedModels
+        ? (models) => {
+            this.cachedModels = models;
+            logger.debug('[sendMessage] cached supported models', {
+              count: models.length,
+            });
           }
-          yield event;
-        }
-        // Update reverse index if sdk-event-mapper assigned a new SDK session ID
-        if (session.sdkSessionId !== prevSdkId) {
-          this.sdkSessionIndex.delete(prevSdkId);
-          this.sdkSessionIndex.set(session.sdkSessionId, sessionId);
-        }
-      }
-    } catch (err) {
-      if (session.hasStarted && isResumeFailure(err)) {
-        logger.warn('[sendMessage] resume failed for stale session, retrying as new', {
-          session: sessionId,
-          error: err instanceof Error ? err.message : String(err),
-        });
-        session.hasStarted = false;
-        yield* this.sendMessage(sessionId, content, opts);
-        return;
-      }
-      yield {
-        type: 'error',
-        data: {
-          message: err instanceof Error ? err.message : 'SDK error',
-        },
-      };
-    } finally {
-      session.activeQuery = undefined;
-    }
-
-    if (!emittedDone) {
-      yield {
-        type: 'done',
-        data: { sessionId },
-      };
-    }
+        : undefined,
+      sdkSessionIndex: this.sdkSessionIndex,
+      sessionMapKey: sessionId,
+    }, opts);
   }
 
   // ---------------------------------------------------------------------------
@@ -564,20 +347,22 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   /**
    * Watch a session for new content and invoke the callback on each event.
    *
-   * Note: Routes typically use `getSessionBroadcaster().registerClient()` directly
-   * rather than this method. This method exists to satisfy the AgentRuntime interface.
+   * Delegates to SessionBroadcaster.registerCallback() which starts a file watcher,
+   * optionally subscribes to relay messages, and invokes the callback on sync_update events.
    *
-   * @returns Unsubscribe function
+   * @param sessionId - Session UUID to watch
+   * @param projectDir - Project directory for transcript lookup
+   * @param callback - Called with each new stream event
+   * @param clientId - Optional client identifier for relay subscription
+   * @returns Unsubscribe function — call to stop watching
    */
   watchSession(
-    _sessionId: string,
-    _projectDir: string,
-    _callback: (event: StreamEvent) => void,
-    _clientId?: string
+    sessionId: string,
+    projectDir: string,
+    callback: (event: StreamEvent) => void,
+    clientId?: string
   ): () => void {
-    // Routes access the internal broadcaster via getSessionBroadcaster().
-    // This is a no-op stub satisfying the AgentRuntime interface contract.
-    return () => {};
+    return this.broadcaster.registerCallback(sessionId, projectDir, callback, clientId);
   }
 
   // ---------------------------------------------------------------------------
@@ -586,8 +371,7 @@ export class ClaudeCodeRuntime implements AgentRuntime {
 
   /** Attempt to acquire an exclusive write lock for a session. */
   acquireLock(sessionId: string, clientId: string, res: SseResponse): boolean {
-    // SseResponse is a minimal interface compatible with Express Response
-    return this.lockManager.acquireLock(sessionId, clientId, res as Response);
+    return this.lockManager.acquireLock(sessionId, clientId, res);
   }
 
   /** Release the lock held by a specific client. */
@@ -618,12 +402,20 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   // Commands — delegated to CommandRegistryService
   // ---------------------------------------------------------------------------
 
-  /** Return the command registry for the default CWD. */
-  async getCommands(forceRefresh?: boolean): Promise<CommandRegistry> {
-    if (!this.commandRegistry) {
-      this.commandRegistry = new CommandRegistryService(this.cwd);
+  /** Return the command registry for the given CWD (defaults to server CWD). */
+  async getCommands(forceRefresh?: boolean, cwd?: string): Promise<CommandRegistry> {
+    const root = cwd || this.cwd;
+    let registry = this.commandRegistries.get(root);
+    if (!registry) {
+      // Evict oldest entry if cache is full
+      if (this.commandRegistries.size >= ClaudeCodeRuntime.MAX_COMMAND_REGISTRIES) {
+        const oldest = this.commandRegistries.keys().next().value!;
+        this.commandRegistries.delete(oldest);
+      }
+      registry = new CommandRegistryService(root);
+      this.commandRegistries.set(root, registry);
     }
-    return this.commandRegistry.getCommands(forceRefresh);
+    return registry.getCommands(forceRefresh);
   }
 
   // ---------------------------------------------------------------------------

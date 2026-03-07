@@ -8,7 +8,7 @@ import { isRelayEnabled } from '../../relay/relay-state.js';
 import { isPulseEnabled } from '../../pulse/pulse-state.js';
 import { configManager } from '../../core/config-manager.js';
 import type { ResolvedToolConfig } from './tool-filter.js';
-import type { MeshCore } from '@dorkos/mesh';
+import type { AgentRegistryPort } from '@dorkos/shared/agent-runtime';
 
 const RELAY_TOOLS_CONTEXT = `<relay_tools>
 DorkOS Relay is a pub/sub message bus for inter-agent communication.
@@ -191,12 +191,12 @@ function buildPulseToolsBlock(toolConfig?: ResolvedToolConfig): string {
  * Build the `<peer_agents>` context block with a summary of registered agents.
  *
  * Uses `listWithPaths()` for lightweight agent data including project paths.
- * Returns an empty string when MeshCore is unavailable or no agents are registered.
+ * Returns an empty string when the agent registry is unavailable or no agents are registered.
  *
- * @param meshCore - Optional MeshCore instance for agent registry access
+ * @param meshCore - Optional agent registry port for agent data access
  */
 async function buildPeerAgentsBlock(
-  meshCore: MeshCore | null | undefined,
+  meshCore: AgentRegistryPort | null | undefined,
 ): Promise<string> {
   if (!meshCore) return '';
   try {
@@ -219,12 +219,12 @@ async function buildPeerAgentsBlock(
  * `Is git repo: false`).
  *
  * @param cwd - Working directory for the session
- * @param meshCore - Optional MeshCore instance for peer agents block
+ * @param meshCore - Optional agent registry port for peer agents block
  * @param toolConfig - Optional resolved tool config for agent-aware block gating
  */
 export async function buildSystemPromptAppend(
   cwd: string,
-  meshCore?: MeshCore | null,
+  meshCore?: AgentRegistryPort | null,
   toolConfig?: ResolvedToolConfig,
 ): Promise<string> {
   const results = await Promise.allSettled([

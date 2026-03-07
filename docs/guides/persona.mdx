@@ -11,7 +11,7 @@ Persona injection lets you append custom text to Claude's system prompt for ever
 
 ## How It Works
 
-When a directory has an agent with persona text configured, DorkOS injects two XML blocks into the system prompt:
+When a directory has an agent with persona text configured and `personaEnabled` set to `true`, DorkOS injects two XML blocks into the system prompt:
 
 ```xml
 <agent_identity>
@@ -29,7 +29,7 @@ Never modify frontend code without asking first.
 </agent_persona>
 ```
 
-The `<agent_identity>` block is always included when an agent exists — it gives Claude basic awareness of which agent it is. The `<agent_persona>` block is only included when persona text exists and the toggle is enabled.
+The `<agent_identity>` block is always included when an agent exists — it gives Claude basic awareness of which agent it is. The `<agent_persona>` block is only included when persona text exists **and** `personaEnabled` is `true`.
 
 ## Configuring a Persona
 
@@ -90,7 +90,7 @@ You are docs-bot, responsible for documentation quality.
 
 The `personaEnabled` field (default: `true`) controls whether the `<agent_persona>` block is injected. The `<agent_identity>` block is always injected when an agent exists, regardless of this toggle.
 
-This is useful when you want to temporarily disable persona injection without deleting the text — for example, to compare Claude's behavior with and without the persona.
+Disabling the toggle is useful when you want to compare Claude's behavior with and without the persona — the text is preserved, injection stops.
 
 ## Limits
 

@@ -118,7 +118,7 @@ function handleAskUserQuestion(session, toolUseId, input) {
     const timeout = setTimeout(() => {
       session.pendingInteractions.delete(toolUseId);
       resolve({ behavior: 'deny', message: 'User did not respond within 10 minutes' });
-    }, INTERACTION_TIMEOUT_MS);
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
 
     session.pendingInteractions.set(toolUseId, {
       type: 'question',
@@ -129,7 +129,9 @@ function handleAskUserQuestion(session, toolUseId, input) {
         resolve({ behavior: 'allow', updatedInput: { ...input, answers } });
       },
       reject: () => {
-        /* deny on cancel */
+        clearTimeout(timeout);
+        session.pendingInteractions.delete(toolUseId);
+        resolve({ behavior: 'deny', message: 'Interaction cancelled' });
       },
       timeout,
     });
@@ -184,7 +186,7 @@ Full walkthrough for `permissionMode: 'default'`.
 
 **1. SDK triggers `canUseTool`**
 
-For any tool that is not `AskUserQuestion`, when the session's `permissionMode` is `'default'`, the `canUseTool` callback calls `handleToolApproval`.
+For any tool that is not `AskUserQuestion`, and is not in the auto-approved sets (read-only Claude Code tools and DorkOS agent tools), when the session's `permissionMode` is `'default'`, the `createCanUseTool` callback calls `handleToolApproval`. Read-only tools (`Read`, `Grep`, `Glob`, `LS`, `NotebookRead`, `WebSearch`, `WebFetch`) and DorkOS agent tools (`mcp__dorkos__*`) are always auto-approved regardless of permission mode.
 
 **2. `handleToolApproval` creates the event and deferred promise**
 
@@ -205,7 +207,7 @@ function handleToolApproval(session, toolUseId, toolName, input) {
     const timeout = setTimeout(() => {
       session.pendingInteractions.delete(toolUseId);
       resolve({ behavior: 'deny', message: 'Tool approval timed out after 10 minutes' });
-    }, INTERACTION_TIMEOUT_MS);
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
 
     session.pendingInteractions.set(toolUseId, {
       type: 'approval',
@@ -215,12 +217,14 @@ function handleToolApproval(session, toolUseId, toolName, input) {
         session.pendingInteractions.delete(toolUseId);
         resolve(
           approved
-            ? { behavior: 'allow' }
+            ? { behavior: 'allow', updatedInput: input }
             : { behavior: 'deny', message: 'User denied tool execution' }
         );
       },
       reject: () => {
-        /* deny on cancel */
+        clearTimeout(timeout);
+        session.pendingInteractions.delete(toolUseId);
+        resolve({ behavior: 'deny', message: 'Interaction cancelled' });
       },
       timeout,
     });
@@ -315,7 +319,7 @@ Create a handler function following the deferred promise pattern, and wire it in
 // apps/server/src/services/runtimes/claude-code/interactive-handlers.ts
 
 function handleMyNewInteractive(
-  session: AgentSession,
+  session: InteractiveSession,
   toolUseId: string,
   input: Record<string, unknown>
 ): Promise<PermissionResult> {
@@ -332,7 +336,7 @@ function handleMyNewInteractive(
     const timeout = setTimeout(() => {
       session.pendingInteractions.delete(toolUseId);
       resolve({ behavior: 'deny', message: 'Timed out' });
-    }, INTERACTION_TIMEOUT_MS);
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
 
     session.pendingInteractions.set(toolUseId, {
       type: 'my_new_type', // Add to PendingInteraction type union
@@ -353,18 +357,21 @@ function handleMyNewInteractive(
 }
 ```
 
-Then add to `canUseTool`:
+Then wire into `createCanUseTool` in `interactive-handlers.ts`:
 
 ```typescript
-sdkOptions.canUseTool = async (toolName, input, context) => {
-  if (toolName === 'AskUserQuestion') {
-    /* ... */
-  }
-  if (toolName === 'MyNewTool') {
-    return handleMyNewInteractive(session, context.toolUseID, input);
-  }
-  // ...
-};
+// In the canUseTool callback returned by createCanUseTool:
+if (toolName === 'AskUserQuestion') {
+  return handleAskUserQuestion(session, context.toolUseID, input);
+}
+if (toolName === 'MyNewTool') {
+  return handleMyNewInteractive(session, context.toolUseID, input);
+}
+// ... read-only / DorkOS auto-allow ...
+if (session.permissionMode === 'default') {
+  return handleToolApproval(session, context.toolUseID, toolName, input);
+}
+return { behavior: 'allow', updatedInput: input };
 ```
 
 ### Step 3: Add transport method
@@ -383,12 +390,12 @@ export interface Transport {
 }
 ```
 
-Add a resolver method to the runtime (e.g., `ClaudeCodeRuntime`):
+Add a resolver method to `ClaudeCodeRuntime`:
 
 ```typescript
 // services/runtimes/claude-code/claude-code-runtime.ts
 submitMyNewResult(sessionId: string, toolCallId: string, result: MyResult): boolean {
-  const session = this.sessions.get(sessionId);
+  const session = this.activeSessions.get(sessionId);
   const pending = session?.pendingInteractions.get(toolCallId);
   if (!pending || pending.type !== 'my_new_type') return false;
   pending.resolve(result);
@@ -471,7 +478,7 @@ interface PendingInteraction {
 }
 ```
 
-The `pendingInteractions` Map on each `AgentSession` holds all currently blocked interactions. Multiple can be pending simultaneously if the SDK calls `canUseTool` concurrently.
+The `pendingInteractions` Map on each session holds all currently blocked interactions. Multiple can be pending simultaneously if the SDK calls `canUseTool` concurrently.
 
 ### Event Queue + Promise.race
 
@@ -489,7 +496,7 @@ Generator loop iteration:
 
 ### Timeout Handling
 
-Every deferred promise includes a 10-minute timeout (`INTERACTION_TIMEOUT_MS = 10 * 60 * 1000`). If the user does not respond, the timeout fires, removes the interaction from `pendingInteractions`, and resolves the promise with `{ behavior: 'deny' }`. This prevents the SDK from hanging indefinitely.
+Every deferred promise includes a 10-minute timeout (`SESSIONS.INTERACTION_TIMEOUT_MS = 10 * 60 * 1000`, defined in `apps/server/src/config/constants.ts`). If the user does not respond, the timeout fires, removes the interaction from `pendingInteractions`, and resolves the promise with `{ behavior: 'deny' }`. This prevents the SDK from hanging indefinitely.
 
 The timeout is cleared whenever the interaction is resolved normally (user responds or interaction is cancelled).
 
@@ -553,14 +560,10 @@ Wrap the component in `TransportProvider` with the mock transport, then simulate
 
 ### Testing the Deferred Promise
 
-To test `handleAskUserQuestion` or `handleToolApproval` directly, you can construct a minimal `AgentSession` object with an empty `pendingInteractions` Map and `eventQueue` array, call the handler, then resolve the pending interaction and assert the returned `PermissionResult`:
+To test `handleAskUserQuestion` or `handleToolApproval` directly, construct a minimal `InteractiveSession` object (the handler interface, exported from `interactive-handlers.ts`) with an empty `pendingInteractions` Map and `eventQueue` array, call the handler, then resolve the pending interaction and assert the returned `PermissionResult`:
 
 ```typescript
-const session: AgentSession = {
-  sdkSessionId: 'test',
-  lastActivity: Date.now(),
-  permissionMode: 'default',
-  hasStarted: true,
+const session: InteractiveSession = {
   pendingInteractions: new Map(),
   eventQueue: [],
 };

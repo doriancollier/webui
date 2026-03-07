@@ -73,14 +73,6 @@ import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
 
 const app = createApp();
 
-// Attach mock sessionBroadcaster to app.locals (needed by GET /:id/stream)
-const mockSessionBroadcaster = {
-  registerClient: vi.fn(),
-  deregisterClient: vi.fn(),
-  shutdown: vi.fn(),
-};
-app.locals.sessionBroadcaster = mockSessionBroadcaster;
-
 /** Valid UUID for session ID params (routes validate UUID format). */
 const SESSION_ID = '00000000-0000-4000-8000-000000000001';
 

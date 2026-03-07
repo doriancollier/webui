@@ -5,7 +5,7 @@ description: Create custom clients using the DorkOS Transport interface
 
 # Building Integrations
 
-DorkOS uses a hexagonal (ports & adapters) architecture centered on the **Transport** interface. You can build custom clients by implementing this interface or by using the REST/SSE API directly.
+DorkOS uses a hexagonal (ports & adapters) architecture centered on the **Transport** interface. Build custom clients by implementing this interface or by calling the REST/SSE API directly.
 
 ## The Transport Interface
 
@@ -13,26 +13,47 @@ The Transport interface (`packages/shared/src/transport.ts`) defines all client-
 
 ```typescript
 interface Transport {
+  // Sessions
   createSession(opts: CreateSessionRequest): Promise<Session>;
   listSessions(cwd?: string): Promise<Session[]>;
   getSession(id: string, cwd?: string): Promise<Session>;
   updateSession(id: string, opts: UpdateSessionRequest, cwd?: string): Promise<Session>;
   getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }>;
   sendMessage(sessionId, content, onEvent, signal?, cwd?): Promise<void>;
+
+  // Tool interaction
   approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
   denyTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
   submitAnswers(sessionId, toolCallId, answers): Promise<{ ok: boolean }>;
   getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }>;
+
+  // Filesystem & git
   browseDirectory(dirPath?, showHidden?): Promise<BrowseDirectoryResponse>;
   getDefaultCwd(): Promise<{ path: string }>;
-  getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
   listFiles(cwd: string): Promise<FileListResponse>;
   getGitStatus(cwd?: string): Promise<GitStatusResponse | GitStatusError>;
+
+  // Commands & config
+  getCommands(refresh?: boolean, cwd?: string): Promise<CommandRegistry>;
   health(): Promise<HealthResponse>;
-  getCapabilities(): Promise<{ capabilities: Record<string, RuntimeCapabilities>; defaultRuntime: string }>;
   getConfig(): Promise<ServerConfig>;
+  updateConfig(patch: Record<string, unknown>): Promise<void>;
+
+  // Runtime
+  getModels(): Promise<ModelOption[]>;
+  getCapabilities(): Promise<{ capabilities: Record<string, RuntimeCapabilities>; defaultRuntime: string }>;
+
+  // Tunnel
+  startTunnel(): Promise<{ url: string }>;
+  stopTunnel(): Promise<void>;
+
+  // Admin
+  resetAllData(confirm: string): Promise<{ message: string }>;
+  restartServer(): Promise<{ message: string }>;
 }
 ```
+
+The full interface also covers Pulse, Relay, Mesh, and agent identity operations. See `packages/shared/src/transport.ts` for the complete definition.
 
 ## Built-in Implementations
 
@@ -44,22 +65,20 @@ interface Transport {
 - Standard `fetch()` for CRUD operations
 - Server-Sent Events for streaming in `sendMessage()`
 - Parses SSE events into `StreamEvent` objects
-- Includes `X-Client-Id` header for session locking
+- Includes `X-Client-Id` header for session write coordination
 </Tab>
 
 <Tab value="DirectTransport">
 **DirectTransport** is used by the Obsidian plugin and calls service instances directly in the same process:
 
 - No HTTP, no port binding, no network serialization
-- Iterates `AsyncGenerator<StreamEvent>` from the Agent SDK
+- Iterates `AsyncGenerator<StreamEvent>` from the Claude Agent SDK
 - Lower latency, ideal for embedded contexts
 </Tab>
 
 </Tabs>
 
 ## Building a Custom Client
-
-Choose the approach that best fits your platform and requirements:
 
 <Tabs items={["REST/SSE API", "Custom Transport", "React Integration"]}>
 
@@ -103,7 +122,6 @@ class MyCustomTransport implements Transport {
   }
 
   async sendMessage(sessionId, content, onEvent, signal, cwd) {
-    // Connect to your backend
     // Call onEvent() for each StreamEvent
   }
 
@@ -112,12 +130,12 @@ class MyCustomTransport implements Transport {
 ```
 
 <Callout type="warn">
-  All methods in the Transport interface must be implemented. TypeScript will report compile-time errors for any missing methods.
+  All methods in the Transport interface must be implemented. TypeScript will report compile-time errors for any missing methods. The interface is large — see the source for the complete list.
 </Callout>
 </Tab>
 
 <Tab value="React Integration">
-If building a React app, inject your Transport via context:
+Inject your Transport via context:
 
 ```typescript
 import { TransportProvider } from '@dorkos/shared';
@@ -133,7 +151,7 @@ function App() {
 }
 ```
 
-All DorkOS hooks (`useSessions`, `useChatSession`, etc.) consume the Transport from context, so your custom implementation powers the entire UI automatically.
+All DorkOS hooks (`useSessions`, `useChatSession`, etc.) consume the Transport from context, so your implementation powers the entire UI automatically.
 </Tab>
 
 </Tabs>
@@ -154,6 +172,9 @@ Events emitted during message streaming:
   "done": { type: "StreamEvent", description: "Message stream complete" },
   "session_status": { type: "StreamEvent", description: "Session state changed" },
   "task_update": { type: "StreamEvent", description: "Task list updated" },
+  "relay_message": { type: "StreamEvent (Relay)", description: "Relay response chunk — contains a nested StreamEvent. Only emitted when DORKOS_RELAY_ENABLED=true" },
+  "relay_receipt": { type: "StreamEvent (Relay)", description: "Delivery confirmation when a message is routed through Relay. Only emitted when DORKOS_RELAY_ENABLED=true" },
+  "message_delivered": { type: "StreamEvent (Relay)", description: "Message delivery notification from the Relay transport. Only emitted when DORKOS_RELAY_ENABLED=true" },
 }} />
 
 ## Next Steps

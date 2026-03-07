@@ -126,12 +126,7 @@ describe('Sessions Routes — Relay Integration', () => {
     app = createApp();
     mockRelayCore = createMockRelayCore();
 
-    // Attach mock session broadcaster
-    app.locals.sessionBroadcaster = {
-      registerClient: vi.fn(),
-      deregisterClient: vi.fn(),
-      shutdown: vi.fn(),
-    };
+    // Legacy sessionBroadcaster removed — route now uses runtime.watchSession()
   });
 
   describe('POST /api/sessions/:id/messages — Relay path', () => {

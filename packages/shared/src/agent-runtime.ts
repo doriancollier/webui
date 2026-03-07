@@ -16,12 +16,33 @@ import type {
   PermissionMode,
 } from './types.js';
 
-/**
- * Minimal SSE response interface — avoids importing express in the shared package.
- * Compatible with Express `Response` objects.
- */
+/** Minimal response interface for session locking — only needs close event detection. */
 export interface SseResponse {
-  on(event: string, cb: () => void): void;
+  on(event: 'close', cb: () => void): void;
+}
+
+/**
+ * Narrow port interface for agent registry operations.
+ * MeshCore satisfies this structurally — no `implements` clause needed.
+ */
+export interface AgentRegistryPort {
+  getByPath(cwd: string): { id: string; name?: string } | undefined;
+  updateLastSeen(agentId: string, event: string): void;
+  listWithPaths(): Array<{
+    id: string;
+    name: string;
+    projectPath: string;
+    icon?: string;
+    color?: string;
+  }>;
+}
+
+/**
+ * Narrow port interface for relay messaging operations.
+ * RelayCore satisfies this structurally — no `implements` clause needed.
+ */
+export interface RelayPort {
+  publish(subject: string, payload: unknown, options: unknown): Promise<unknown>;
 }
 
 /** Runtime capability flags — describes what a given backend supports. */
@@ -221,8 +242,9 @@ export interface AgentRuntime {
    * Return the command registry for this runtime.
    *
    * @param forceRefresh - If true, bypass the cache and re-scan
+   * @param cwd - Optional working directory for per-directory command resolution
    */
-  getCommands(forceRefresh?: boolean): Promise<CommandRegistry>;
+  getCommands(forceRefresh?: boolean, cwd?: string): Promise<CommandRegistry>;
 
   // --- Lifecycle ---
 
@@ -245,9 +267,9 @@ export interface AgentRuntime {
 
   // --- Dependency injection (optional) ---
 
-  /** Inject a MeshCore instance for peer-agent context and agent manifest resolution. */
-  setMeshCore?(meshCore: unknown): void;
+  /** Inject an agent registry for peer-agent context and agent manifest resolution. */
+  setMeshCore?(meshCore: AgentRegistryPort): void;
 
-  /** Inject a Relay core instance for Relay-aware context building. */
-  setRelay?(relay: unknown): void;
+  /** Inject a relay instance for Relay-aware context building. */
+  setRelay?(relay: RelayPort): void;
 }

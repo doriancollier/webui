@@ -58,6 +58,8 @@ src/
 │   │   ├── relay/       # Relay messaging hooks (useRelayMessages, useRelayAdapters, etc.)
 │   │   ├── mesh/        # Mesh discovery hooks (useRegisteredAgents, useDiscoverAgents, etc.)
 │   │   ├── discovery/   # Shared discovery scan state (Zustand store + useDiscoveryScan hook)
+│   │   ├── runtime/     # Runtime capabilities (useRuntimeCapabilities, useDefaultCapabilities)
+│   │   ├── tunnel/      # Tunnel state hooks
 │   │   └── binding/     # Adapter-agent binding hooks (useBindings, useCreateBinding, etc.)
 │   ├── features/        # Complete user-facing functionality
 │   │   ├── chat/        # ChatPanel, MessageList, streaming, useChatSession
@@ -247,66 +249,65 @@ apps/server/src/
 │   ├── mesh.ts
 │   ├── agents.ts
 │   ├── models.ts
-│   └── discovery.ts
-├── services/                    # Business logic (domain-grouped)
-│   ├── core/                    # Core orchestration services
-│   │   ├── agent-manager.ts     # Claude Agent SDK session management
-│   │   ├── agent-types.ts       # AgentSession, ToolState interfaces
-│   │   ├── sdk-event-mapper.ts  # SDK → DorkOS event transformation
-│   │   ├── tool-filter.ts       # Per-agent MCP tool filtering
-│   │   ├── context-builder.ts   # Runtime context injection (XML blocks)
-│   │   ├── interactive-handlers.ts # Tool approval, AskUserQuestion flows
-│   │   ├── stream-adapter.ts    # SSE helpers
-│   │   ├── command-registry.ts  # Slash command scanning
-│   │   ├── openapi-registry.ts  # Auto-generated OpenAPI spec
+│   ├── capabilities.ts
+│   ├── discovery.ts
+│   └── admin.ts
+├── services/
+│   ├── core/                    # Shared infrastructure services
+│   │   ├── runtime-registry.ts  # Registry of AgentRuntime instances (keyed by type)
 │   │   ├── config-manager.ts    # Persistent user config (~/.dork/config.json)
+│   │   ├── stream-adapter.ts    # SSE helpers (initSSEStream, sendSSEEvent, endSSEStream)
+│   │   ├── openapi-registry.ts  # Auto-generated OpenAPI spec from Zod schemas
 │   │   ├── file-lister.ts       # Directory file listing
 │   │   ├── git-status.ts        # Git status/branch info
 │   │   ├── tunnel-manager.ts    # ngrok tunnel lifecycle
-│   │   ├── update-checker.ts    # npm registry version check
-│   │   └── mcp-tools/           # MCP tool server (split by domain)
-│   │       ├── index.ts          # Tool server factory + registration
-│   │       ├── core-tools.ts     # ping, get_server_info, get_session_count
-│   │       ├── pulse-tools.ts    # Schedule CRUD tools
-│   │       ├── relay-tools.ts    # Message send/inbox tools
-│   │       ├── trace-tools.ts    # Delivery trace tools
-│   │       ├── mesh-tools.ts     # Agent discovery/registry tools
-│   │       ├── adapter-tools.ts  # Adapter management tools
-│   │       └── binding-tools.ts  # Adapter-agent binding tools
-│   ├── session/                 # Session data services
-│   │   ├── transcript-reader.ts # JSONL transcript file reading
-│   │   ├── transcript-parser.ts # JSONL → HistoryMessage parsing
-│   │   ├── session-broadcaster.ts # Cross-client SSE sync
-│   │   ├── session-lock.ts      # Concurrent write prevention
-│   │   ├── build-task-event.ts  # TaskUpdateEvent construction
-│   │   └── task-reader.ts       # Task state from JSONL
+│   │   └── update-checker.ts    # npm registry version check (1-hour cache)
+│   ├── runtimes/                # Agent backend implementations
+│   │   └── claude-code/         # ClaudeCodeRuntime — the only current backend
+│   │       ├── claude-code-runtime.ts  # Implements AgentRuntime interface
+│   │       ├── agent-types.ts          # AgentSession, ToolState interfaces
+│   │       ├── sdk-event-mapper.ts     # SDK message → StreamEvent mapper
+│   │       ├── context-builder.ts      # Runtime context for systemPrompt (XML blocks)
+│   │       ├── tool-filter.ts          # Per-agent MCP tool filtering
+│   │       ├── interactive-handlers.ts # Tool approval & AskUserQuestion flows
+│   │       ├── message-sender.ts       # Extracted send-message logic
+│   │       ├── command-registry.ts     # Slash command discovery
+│   │       ├── transcript-reader.ts    # JSONL session reader (single source of truth)
+│   │       ├── transcript-parser.ts    # JSONL line → HistoryMessage parser
+│   │       ├── session-broadcaster.ts  # Cross-client session sync via chokidar
+│   │       ├── session-lock.ts         # Session write locks with auto-expiry
+│   │       ├── build-task-event.ts     # TaskUpdateEvent builder
+│   │       ├── task-reader.ts          # Task state parser from JSONL
+│   │       ├── sdk-utils.ts            # makeUserPrompt(), resolveClaudeCliPath()
+│   │       ├── mcp-tools/              # In-process MCP tool server for Claude Agent SDK
+│   │       └── index.ts                # Barrel export for ClaudeCodeRuntime
 │   ├── pulse/                   # Pulse scheduler services
-│   │   ├── pulse-store.ts       # SQLite + JSON schedule storage
-│   │   ├── scheduler-service.ts # Cron engine with overrun protection
+│   │   ├── pulse-store.ts       # SQLite + JSON schedule/run state
+│   │   ├── scheduler-service.ts # Cron engine (croner) with overrun protection
 │   │   ├── pulse-presets.ts     # Default schedule presets
-│   │   └── pulse-state.ts       # Feature flag holder
+│   │   └── pulse-state.ts       # DORKOS_PULSE_ENABLED feature flag holder
 │   ├── relay/                   # Relay messaging services
-│   │   ├── adapter-manager.ts   # Adapter lifecycle management
-│   │   ├── binding-store.ts     # Adapter-agent binding persistence
-│   │   ├── binding-router.ts    # Inbound message routing
-│   │   ├── trace-store.ts       # Message delivery tracing (SQLite)
-│   │   ├── relay-state.ts       # Feature flag holder
-│   │   ├── adapter-factory.ts   # Adapter instance creation
-│   │   ├── adapter-config.ts    # Adapter configuration
-│   │   ├── adapter-error.ts     # Adapter error types
-│   │   └── subject-resolver.ts  # Message subject resolution
-│   ├── mesh/                    # Mesh discovery services
-│   │   └── mesh-state.ts        # Subsystem state tracking
+│   │   ├── adapter-manager.ts   # Server-side adapter lifecycle management
+│   │   ├── adapter-factory.ts   # Adapter instantiation from config
+│   │   ├── adapter-config.ts    # Config load/save/watch, sensitive field masking
+│   │   ├── adapter-error.ts     # AdapterError typed error class
+│   │   ├── binding-store.ts     # JSON-backed adapter-agent binding store
+│   │   ├── binding-router.ts    # relay.human.> → relay.agent.{sessionId} routing
+│   │   ├── trace-store.ts       # SQLite delivery trace storage (message_traces table)
+│   │   ├── relay-state.ts       # DORKOS_RELAY_ENABLED feature flag holder
+│   │   └── subject-resolver.ts  # Subject pattern resolution helpers
+│   ├── mesh/                    # Mesh state
+│   │   └── mesh-state.ts        # Internal state tracking (Mesh is always-on)
 │   └── discovery/               # Agent discovery (delegates to @dorkos/mesh unified scanner)
 ├── lib/             # Shared utilities
-│   ├── sdk-utils.ts
-│   ├── resolve-root.ts
-│   ├── boundary.ts
-│   └── dork-home.ts
+│   ├── resolve-root.ts  # DEFAULT_CWD (prefers DORKOS_DEFAULT_CWD, falls back to repo root)
+│   ├── boundary.ts      # Directory boundary validation (403 for out-of-boundary paths)
+│   ├── dork-home.ts     # resolveDorkHome() — single source of truth for data directory
+│   └── feature-flag.ts  # Generic feature flag helpers
 └── middleware/
 ```
 
-Routes stay flat regardless — they are thin HTTP handlers that delegate to services.
+Routes are thin HTTP handlers — they delegate to services. Routes obtain the active runtime via `runtimeRegistry.getDefault()`, never referencing `ClaudeCodeRuntime` directly.
 
 ## Import Patterns
 

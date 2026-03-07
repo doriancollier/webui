@@ -1,6 +1,6 @@
 ---
 title: Tool Approval
-description: Understanding how tool approval works in DorkOS
+description: Control what actions Claude takes during a session
 ---
 
 import { Steps, Step } from 'fumadocs-ui/components/steps'
@@ -9,100 +9,89 @@ import { Cards, Card } from 'fumadocs-ui/components/card'
 
 # Tool Approval
 
-DorkOS gives you control over what actions Claude can take during a conversation. When tool approval is enabled, Claude will pause and ask for your permission before running certain operations.
-
-## What is Tool Approval?
-
-Tool approval is a safety feature that lets you review and approve (or deny) actions before Claude executes them. When Claude wants to use a tool — like reading a file, running a command, or modifying code — DorkOS will show you what Claude is planning to do and wait for your decision.
+DorkOS gives you control over what Claude does during a session. When tool approval is active, Claude pauses before running operations and waits for your decision.
 
 ## How It Works
 
-### Approving Tools
+When Claude wants to use a tool — reading a file, running a command, writing code — a tool approval card appears in the chat. The card shows:
 
-When Claude needs to use a tool, you'll see a tool approval card appear in the chat. This card shows:
-
-- **Tool name** — The specific operation Claude wants to perform
-- **Tool input** — The parameters or arguments for the tool (like file paths, search terms, or command arguments)
-- **Approve and Deny buttons** — Your decision controls
+- **Tool name** — the specific operation Claude wants to perform
+- **Tool input** — parameters for the tool (file paths, search terms, command arguments)
+- **Approve and Deny buttons** — your decision controls
 
 <Steps>
   <Step>
     **Review** the tool name and input to understand what Claude is about to do.
   </Step>
   <Step>
-    **Click Approve** to allow the action. Claude will execute the tool and continue with your task.
+    **Click Approve** to allow the action. Claude executes the tool and continues.
   </Step>
   <Step>
-    **Or click Deny** to reject the tool call. Claude will receive a denial message and choose a different approach.
+    **Or click Deny** to reject the tool call. Claude receives a denial and chooses a different approach.
   </Step>
 </Steps>
 
 <Callout type="info">
-Tool approvals have a **10-minute timeout**. If you don't respond, the tool call is automatically denied and Claude continues with a different approach. This prevents sessions from hanging indefinitely.
+Tool approvals have a **10-minute timeout**. If you don't respond, the tool call is automatically denied and Claude continues with a different approach.
 </Callout>
 
-### Denying Tools
-
-If you don't want Claude to perform a specific action, click **Deny**. You can explain in your next message why you denied the action, or ask Claude to try something else.
+If you deny a tool call, you can explain why in your next message or ask Claude to try a different approach.
 
 ## Question Prompts
 
-Some tools need more than just approval — they need answers from you. When Claude uses the `AskUserQuestion` tool, you'll see an interactive question prompt instead of a simple approve/deny choice.
+Some tools need more than a yes/no — they need answers. When Claude uses the `AskUserQuestion` tool, you'll see an interactive question prompt instead of an approval card.
 
-Question prompts show:
-- **The question** — What Claude needs to know
-- **Answer options** — Pre-defined choices you can select
-- **Other option** — A free-text field if none of the options fit
+Question prompts support three response types:
 
-Types of questions:
-- **Single-select questions** — Choose one option from a list (radio buttons)
-- **Multi-select questions** — Choose multiple options (checkboxes)
+- **Single-select** — choose one option from a list
+- **Multi-select** — choose multiple options
+- **Free-text ("Other")** — type a custom answer when none of the options fit
 
 <Steps>
-  <Step>Read the question carefully.</Step>
-  <Step>Select one or more options, or enter your own answer in the "Other" field.</Step>
+  <Step>Read the question.</Step>
+  <Step>Select one or more options, or type a custom answer in the "Other" field.</Step>
   <Step>Click **Submit** to send your answers back to Claude.</Step>
 </Steps>
 
-Your answers are injected into the tool's input, and Claude continues with your selections incorporated into its reasoning.
+Your answers are injected into the tool's input. Claude continues with your selections incorporated into its reasoning.
 
 ## Permission Modes
 
-DorkOS supports different permission modes that control when tool approval is required:
+DorkOS supports two permission modes, set when you start a session:
 
-- **Default mode** — Every tool call requires approval (maximum control)
-- **Auto-approve mode** — Tools run automatically without approval (faster, less control)
+- **Default mode** — every tool call requires approval
+- **Auto-approve mode** — tools run without interruption
 
-The permission mode is set when you start a new session. You can see the current mode in the session info.
+The current mode is visible in the session info panel.
 
 ## Common Scenarios
 
 ### File Operations
 
-When Claude wants to read, write, or modify files, you'll see tool calls like `Read`, `Write`, and `Edit`. Review the file paths carefully to ensure Claude is working with the right files.
+`Read`, `Write`, and `Edit` tool calls appear when Claude accesses your files. Check the file paths carefully — Claude should be working in the right location.
 
 ### Search Operations
 
-Tools like `Grep` and `Glob` search for files or content. Check the search patterns to make sure Claude is searching in the right places.
+`Grep` and `Glob` calls search for files or content. Review the search patterns to confirm Claude is looking where you expect.
 
 ### Command Execution
 
-The `Bash` tool runs terminal commands. Always review the command to ensure it's safe and does what you expect.
+The `Bash` tool runs terminal commands. Always review the command before approving.
 
 <Callout type="warn">
-Always review `Bash` tool calls carefully before approving. Terminal commands can modify files, install packages, or run network operations. When in doubt, deny and ask Claude to explain.
+Review `Bash` tool calls carefully. Terminal commands can modify files, install packages, or make network requests. When in doubt, deny and ask Claude to explain its intent.
 </Callout>
 
 ### Web Access
 
-Tools like `WebFetch` and `WebSearch` access the internet. Review the URLs or search queries to ensure they're appropriate.
+`WebFetch` and `WebSearch` calls access the internet. Review the URLs or search queries before approving.
 
 ## Tips
 
-- **Review carefully**: Tool inputs can be long or complex. Take time to read through the parameters to understand exactly what Claude is doing.
-- **Deny when uncertain**: If you're not sure what a tool does or why Claude wants to use it, it's safer to deny and ask Claude to explain.
-- **Context matters**: Sometimes Claude will explain why it needs a tool before asking for approval. Read the full assistant message.
-- **Question prompts are flexible**: When presented with options, you can always choose "Other" and provide a custom answer.
+- **Read the full input.** Tool inputs can be long. Understanding the parameters before approving is worth the extra few seconds.
+- **Deny when uncertain.** If you're not sure why Claude wants a tool, deny it and ask. Claude will explain.
+- **Check context first.** Claude often explains what it's about to do before requesting a tool. Read the assistant message before reviewing the approval card.
+- **"Other" is always available.** In question prompts, you can always provide a free-text answer if the pre-defined options don't fit.
 
 ## Next Steps
 
@@ -114,6 +103,6 @@ Tools like `WebFetch` and `WebSearch` access the internet. Review the URLs or se
     Create custom commands that guide Claude through common tasks.
   </Card>
   <Card title="Sessions" href="/docs/concepts/sessions">
-    Understand how DorkOS stores and manages conversation sessions.
+    How DorkOS stores and manages conversation sessions.
   </Card>
 </Cards>

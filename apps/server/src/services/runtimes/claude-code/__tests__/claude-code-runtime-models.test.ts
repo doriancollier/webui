@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: vi.fn(),
 }));
-vi.mock('../../../lib/logger.js', () => ({
+vi.mock('../../../../lib/logger.js', () => ({
   logger: {
     info: vi.fn(),
     warn: vi.fn(),
@@ -21,8 +21,8 @@ const { contextBuilderFactory } = vi.hoisted(() => ({
     buildSystemPromptAppend: vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>'),
   }),
 }));
-vi.mock('../../runtimes/claude-code/context-builder.js', contextBuilderFactory);
-vi.mock('../../../lib/boundary.js', () => ({
+vi.mock('../context-builder.js', contextBuilderFactory);
+vi.mock('../../../../lib/boundary.js', () => ({
   validateBoundary: vi.fn().mockResolvedValue('/mock/path'),
   getBoundary: vi.fn().mockReturnValue('/mock/boundary'),
   initBoundary: vi.fn().mockResolvedValue('/mock/boundary'),
@@ -36,15 +36,15 @@ vi.mock('../../../lib/boundary.js', () => ({
   },
 }));
 
-describe('AgentManager.getSupportedModels', () => {
-  let ClaudeCodeRuntime: typeof import('../../runtimes/claude-code/claude-code-runtime.js').ClaudeCodeRuntime;
+describe('ClaudeCodeRuntime.getSupportedModels', () => {
+  let ClaudeCodeRuntime: typeof import('../claude-code-runtime.js').ClaudeCodeRuntime;
 
   beforeEach(async () => {
     vi.resetModules();
     vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
       query: vi.fn(),
     }));
-    const mod = await import('../../runtimes/claude-code/claude-code-runtime.js');
+    const mod = await import('../claude-code-runtime.js');
     ClaudeCodeRuntime = mod.ClaudeCodeRuntime;
   });
 

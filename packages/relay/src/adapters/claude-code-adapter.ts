@@ -111,7 +111,7 @@ export interface ClaudeCodeAdapterConfig {
  * adding a compile-time dependency from `@dorkos/relay` to `@dorkos/shared` for
  * types that are not relevant to the adapter's narrow concerns.
  */
-export interface AgentManagerLike {
+export interface AgentRuntimeLike {
   ensureSession(
     sessionId: string,
     opts: { permissionMode: string; cwd?: string; hasStarted?: boolean },
@@ -152,7 +152,7 @@ export interface PulseStoreLike {
 
 /** Dependencies injected into ClaudeCodeAdapter. */
 export interface ClaudeCodeAdapterDeps {
-  agentManager: AgentManagerLike;
+  agentManager: AgentRuntimeLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
   /**

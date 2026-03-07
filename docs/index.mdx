@@ -1,24 +1,24 @@
 ---
 title: DorkOS Documentation
-description: Web-based interface and REST/SSE API for Claude Code
+description: The operating system for autonomous AI agents — scheduling, communication, and coordination.
 ---
 
 import { Cards, Card } from 'fumadocs-ui/components/card'
 
 # DorkOS
 
-A web-based chat interface and REST/SSE API for [Claude Code](https://docs.anthropic.com/en/docs/agents-and-tools/claude-code/overview), built on the Claude Agent SDK.
+The operating system for autonomous AI agents. DorkOS gives Claude Code a scheduling engine, a messaging layer, and a discoverable agent network — so your agents can work independently, reach you when they need to, and coordinate across projects.
 
-DorkOS gives you a browser UI for Claude Code sessions — with real-time streaming, tool approval flows, slash command discovery, and multi-client sync. Use it standalone via npm, embed it in Obsidian, or build your own client against the API.
+Built on the Claude Agent SDK. Open source. Runs on your machine.
 
 ## Get Started
 
 <Cards>
   <Card title="Installation" href="/docs/getting-started/installation">
-    Install via npm, Obsidian, or clone for self-hosting.
+    Install via npm, Homebrew, Obsidian plugin, or clone for self-hosting.
   </Card>
   <Card title="Quickstart" href="/docs/getting-started/quickstart">
-    Go from zero to your first Claude Code conversation in 5 minutes.
+    Launch DorkOS and open your first session in under two minutes.
   </Card>
   <Card title="Configuration" href="/docs/getting-started/configuration">
     Environment variables, config file, and CLI flags.
@@ -31,37 +31,52 @@ Task-oriented walkthroughs for common workflows.
 
 <Cards>
   <Card title="CLI Usage" href="/docs/guides/cli-usage">
-    Command-line flags, subcommands, and config management.
+    Flags, subcommands, and config management from the terminal.
   </Card>
   <Card title="Obsidian Plugin" href="/docs/guides/obsidian-plugin">
-    Use DorkOS as an Obsidian sidebar panel.
+    Run DorkOS as an Obsidian sidebar panel — query agents without leaving your notes.
   </Card>
   <Card title="Tool Approval" href="/docs/guides/tool-approval">
-    Understand and configure tool approval flows.
+    Configure tool approval flows and permission modes.
   </Card>
   <Card title="Slash Commands" href="/docs/guides/slash-commands">
-    Discover and create custom slash commands.
+    Discover and create custom slash commands from `.claude/commands/`.
   </Card>
   <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
-    Access DorkOS remotely via ngrok tunnels.
+    Access DorkOS from any device via ngrok tunnel.
   </Card>
   <Card title="Keyboard Shortcuts" href="/docs/guides/keyboard-shortcuts">
-    Navigate the UI efficiently with hotkeys.
+    Navigate the interface with hotkeys.
+  </Card>
+  <Card title="Pulse Scheduler" href="/docs/guides/pulse-scheduler">
+    Schedule agents on a cron — independently, not tied to your terminal.
   </Card>
   <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
-    Send messages between agents via subject-based pub/sub.
+    Connect agents to Telegram, webhooks, and each other.
+  </Card>
+  <Card title="Relay Observability" href="/docs/guides/relay-observability">
+    Track message delivery, inspect traces, and debug failures.
   </Card>
   <Card title="Agent Discovery" href="/docs/guides/agent-discovery">
     Register, discover, and monitor agents with Mesh.
   </Card>
-  <Card title="Pulse Scheduler" href="/docs/guides/pulse-scheduler">
-    Autonomous cron-based agent jobs.
+  <Card title="Agent Coordination" href="/docs/guides/agent-coordination">
+    Patterns for coordinating multiple agents with Relay, Mesh, and Pulse.
+  </Card>
+  <Card title="Agent Identity" href="/docs/guides/agents">
+    Give your projects a name, color, and icon — think in agents, not file paths.
+  </Card>
+  <Card title="Persona Injection" href="/docs/guides/persona">
+    Shape Claude's behavior per-project with custom system prompt context.
+  </Card>
+  <Card title="Building Relay Adapters" href="/docs/guides/building-relay-adapters">
+    Create custom adapters to connect agents to any external channel.
   </Card>
 </Cards>
 
 ## Concepts
 
-Understand how DorkOS works under the hood.
+How DorkOS works under the hood.
 
 <Cards>
   <Card title="Architecture" href="/docs/concepts/architecture">
@@ -74,7 +89,7 @@ Understand how DorkOS works under the hood.
     The Transport abstraction that decouples UI from backend.
   </Card>
   <Card title="Relay" href="/docs/concepts/relay">
-    The subject-based pub/sub message bus architecture.
+    Subject-based messaging between agents and external channels.
   </Card>
   <Card title="Mesh" href="/docs/concepts/mesh">
     Agent discovery, registry, and network topology.
@@ -92,9 +107,6 @@ Build custom clients or connect DorkOS to your workflow.
   <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
     Wire format, event types, and connection lifecycle.
   </Card>
-  <Card title="Building Relay Adapters" href="/docs/guides/building-relay-adapters">
-    Create custom adapters for external channels.
-  </Card>
   <Card title="API Reference" href="/docs/api">
     Interactive OpenAPI documentation for all endpoints.
   </Card>
@@ -102,7 +114,7 @@ Build custom clients or connect DorkOS to your workflow.
 
 ## Self-Hosting
 
-Run DorkOS on your own infrastructure.
+Run DorkOS on your own machine or server.
 
 <Cards>
   <Card title="Deployment" href="/docs/self-hosting/deployment">
@@ -114,8 +126,6 @@ Run DorkOS on your own infrastructure.
 </Cards>
 
 ## Contributing
-
-Help improve DorkOS.
 
 <Cards>
   <Card title="Development Setup" href="/docs/contributing/development-setup">

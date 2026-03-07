@@ -240,11 +240,22 @@ interface CatalogEntry {
 interface CatalogInstance {
   id: string;
   enabled: boolean;
-  status: AdapterStatus;
+  status: AdapterStatus;          // Runtime state including id, type, displayName (added by AdapterManager)
+  config?: Record<string, unknown>; // Masked config — password fields replaced with '***'
 }
 ```
 
-This allows the UI to show both "available adapter types" and "running instances" in a single view.
+This allows the UI to show both "available adapter types" and "running instances" in a single view. The `config` field is masked by `maskSensitiveFields()` before being returned.
+
+## Config File Hot-Reload
+
+`AdapterManager.initialize()` watches `~/.dork/relay/adapters.json` via chokidar. When the file changes externally (e.g., manually edited), `reload()` is called automatically:
+
+1. Adapters no longer in the config (or now disabled) are stopped via `registry.unregister(id)`.
+2. Newly enabled adapters are started via `registry.register(adapter)`.
+3. Changed configs trigger a stop + restart of the affected adapter instance.
+
+The API-driven path (`PATCH /api/relay/adapters/:id/config`) calls `updateConfig()` directly, which merges the patch with password field preservation and restarts the adapter in-place. Both paths ultimately converge on the same `register()`/`unregister()` lifecycle.
 
 ## AdapterManagerDeps
 
@@ -252,21 +263,20 @@ This allows the UI to show both "available adapter types" and "running instances
 
 ```typescript
 interface AdapterManagerDeps {
-  runtime: ClaudeCodeAgentManagerLike;  // (formerly agentManager)
+  agentManager: ClaudeCodeAgentRuntimeLike;
   traceStore: TraceStoreLike;
   pulseStore?: PulseStoreLike;
   /** Optional RelayCore for binding subsystem initialization */
   relayCore?: RelayCoreLike;
-  /** Optional MeshCore for enriching AdapterContext with agent info */
-  meshCore?: {
-    getAgent(id: string): { manifest: Record<string, unknown> } | undefined;
-  };
+  /** Optional MeshCore for CWD resolution via getProjectPath(agentId) */
+  meshCore?: AdapterMeshCoreLike;
 }
 ```
 
-- `runtime` and `traceStore` are required. `pulseStore` is optional but needed for Pulse-aware adapters (e.g., ClaudeCodeAdapter schedule dispatching).
+- `agentManager` and `traceStore` are required. `pulseStore` is optional but needed for Pulse-aware adapters (e.g., `ClaudeCodeAdapter` schedule dispatching).
 - When `relayCore` is provided, `AdapterManager` initializes the full binding subsystem (`BindingStore` + `BindingRouter`) during `initialize()`. When omitted, the binding subsystem is skipped and binding API endpoints return 503.
-- `meshCore` is optional; when provided, the adapter context passed to each adapter's `deliver()` call is enriched with agent manifest data for the resolved agent.
+- `meshCore` is optional; when provided, `buildContext()` resolves the agent's `projectPath` via `meshCore.getProjectPath(agentId)` and enriches the `AdapterContext` passed to each adapter's `deliver()` call.
+- `AdapterMeshCoreLike` requires only `getProjectPath(agentId: string): string | undefined`.
 
 ## Adapter-Agent Bindings
 

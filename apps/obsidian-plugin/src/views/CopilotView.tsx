@@ -9,9 +9,11 @@ import { DirectTransport } from '@dorkos/client/lib/direct-transport';
 import { createObsidianAdapter } from '../lib/obsidian-adapter';
 import { ObsidianProvider } from '../contexts/ObsidianContext';
 import { ObsidianApp } from '../components/ObsidianApp';
-import { ClaudeCodeRuntime } from '@dorkos/server/services/agent-manager';
-import { TranscriptReader } from '@dorkos/server/services/transcript-reader';
-import { CommandRegistryService } from '@dorkos/server/services/command-registry';
+import {
+  ClaudeCodeRuntime,
+  TranscriptReader,
+  CommandRegistryService,
+} from '@dorkos/server/services/runtimes/claude-code';
 import type CopilotPlugin from '../main';
 // Vite extracts this to styles.css which Obsidian auto-loads
 import '../styles/plugin.css';

@@ -353,7 +353,6 @@ router.get('/:id/stream', async (req, res) => {
   const cwd = (req.query.cwd as string) || vaultRoot;
   if (!(await assertBoundary(cwd, res))) return;
   const clientId = req.query.clientId as string | undefined;
-  const sessionBroadcaster = req.app.locals.sessionBroadcaster;
 
   initSSEStream(res);
 
@@ -363,13 +362,18 @@ router.get('/:id/stream', async (req, res) => {
   const runtime = runtimeRegistry.getDefault();
   const internalSessionId = runtime.getInternalSessionId(sessionId) ?? sessionId;
 
-  // Register with broadcaster (clientId enables relay subscription fan-in)
-  sessionBroadcaster.registerClient(internalSessionId, cwd, res, clientId);
+  // Send initial connection event
+  sendSSEEvent(res, { type: 'sync_connected', data: { sessionId } });
 
-  // The broadcaster handles:
-  // - Sending sync_connected event
-  // - Auto-deregistering on disconnect (res.on('close'))
-  // - Broadcasting sync_update events when JSONL changes
+  // Watch session via runtime interface — callback writes events to SSE stream
+  const unsubscribe = runtime.watchSession(
+    internalSessionId,
+    cwd,
+    (event) => sendSSEEvent(res, event),
+    clientId,
+  );
+
+  res.on('close', () => unsubscribe());
 });
 
 export default router;

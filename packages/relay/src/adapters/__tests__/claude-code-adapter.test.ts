@@ -3,7 +3,7 @@ import type { RelayEnvelope, TraceSpan } from '@dorkos/shared/relay-schemas';
 import type { StreamEvent } from '@dorkos/shared/types';
 import { ClaudeCodeAdapter } from '../claude-code-adapter.js';
 import type {
-  AgentManagerLike,
+  AgentRuntimeLike,
   AgentSessionStoreLike,
   TraceStoreLike,
   PulseStoreLike,
@@ -13,7 +13,7 @@ import type { RelayPublisher, AdapterContext } from '../../types.js';
 
 // === Mock factories ===
 
-function createMockAgentManager(): AgentManagerLike {
+function createMockAgentManager(): AgentRuntimeLike {
   return {
     ensureSession: vi.fn(),
     sendMessage: vi.fn().mockReturnValue(
@@ -98,7 +98,7 @@ function createPulseEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope 
 // === Test suite ===
 
 describe('ClaudeCodeAdapter', () => {
-  let agentManager: AgentManagerLike;
+  let agentManager: AgentRuntimeLike;
   let traceStore: TraceStoreLike;
   let pulseStore: PulseStoreLike;
   let deps: ClaudeCodeAdapterDeps;
@@ -175,7 +175,7 @@ describe('ClaudeCodeAdapter', () => {
       });
     })();
 
-    const hangingManager: AgentManagerLike = {
+    const hangingManager: AgentRuntimeLike = {
       ensureSession: vi.fn(),
       sendMessage: vi.fn().mockReturnValue(hangingStream),
       getSdkSessionId: vi.fn().mockReturnValue(undefined),
@@ -533,7 +533,7 @@ describe('ClaudeCodeAdapter', () => {
         callOrder.push('second:end');
       })();
 
-      const serializedManager: AgentManagerLike = {
+      const serializedManager: AgentRuntimeLike = {
         ensureSession: vi.fn(),
         sendMessage: vi.fn()
           .mockReturnValueOnce(hangingStream)
@@ -591,7 +591,7 @@ describe('ClaudeCodeAdapter', () => {
         yield { type: 'done', data: {} } as StreamEvent;
       })();
 
-      const parallelManager: AgentManagerLike = {
+      const parallelManager: AgentRuntimeLike = {
         ensureSession: vi.fn(),
         sendMessage: vi.fn()
           .mockReturnValueOnce(streamForA)

@@ -33,8 +33,6 @@ This project uses [Motion](https://motion.dev/) (version 12.x, formerly Framer M
 Use for simple entrance animations when components mount.
 
 ```typescript
-'use client'
-
 import { motion } from 'motion/react'
 
 export function FadeIn({ children }: { children: React.ReactNode }) {
@@ -55,8 +53,6 @@ export function FadeIn({ children }: { children: React.ReactNode }) {
 Combines opacity and vertical translation for polished entrance effects.
 
 ```typescript
-'use client'
-
 import { motion } from 'motion/react'
 
 export function FadeInUp({ children }: { children: React.ReactNode }) {
@@ -77,8 +73,6 @@ export function FadeInUp({ children }: { children: React.ReactNode }) {
 Add hover and tap feedback for better user experience.
 
 ```typescript
-'use client'
-
 import { motion } from 'motion/react'
 
 export function AnimatedButton({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
@@ -100,8 +94,6 @@ export function AnimatedButton({ children, ...props }: React.ButtonHTMLAttribute
 Items appear sequentially with a delay between each.
 
 ```typescript
-'use client'
-
 import { motion } from 'motion/react'
 
 const containerVariants = {
@@ -141,8 +133,6 @@ export function StaggeredList({ items }: { items: { id: string; name: string }[]
 Use `AnimatePresence` to animate components when they unmount.
 
 ```typescript
-'use client'
-
 import { AnimatePresence, motion } from 'motion/react'
 
 interface ModalProps {
@@ -190,8 +180,6 @@ export function Modal({ isOpen, onClose, children }: ModalProps) {
 Define variants once, reuse across components.
 
 ```typescript
-'use client'
-
 import { motion } from 'motion/react'
 
 // Define once, use anywhere
@@ -531,28 +519,19 @@ const fadeIn = {
 ```
 
 ```typescript
-// ❌ Don't ignore accessibility (prefers-reduced-motion)
-export function AnimatedCard() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    />  // Always animates, even if user prefers reduced motion
-  )
-}
+// ✅ Reduced motion is handled globally — no per-component work required
+// App.tsx wraps everything in:
+// <MotionConfig reducedMotion="user">
+// This automatically disables transform/layout animations when the user has
+// prefers-reduced-motion: reduce set in their OS settings.
+// You do not need to call useReducedMotion() in individual components.
 
-// ✅ Respect user preferences with CSS or useReducedMotion
+// If you need to conditionally adjust non-motion behavior based on the setting:
 import { useReducedMotion } from 'motion/react'
 
 export function AnimatedCard() {
   const shouldReduceMotion = useReducedMotion()
-
-  return (
-    <motion.div
-      initial={shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-    />
-  )
+  // Use only when you need to customize non-Motion behavior (e.g., skip a delay)
 }
 ```
 
@@ -560,19 +539,9 @@ export function AnimatedCard() {
 
 ### Animation doesn't play on mount
 
-**Cause**: Component is server-rendered and needs `'use client'` directive.
+**Cause**: The component might not have mounted yet, or `initial` and `animate` are identical.
 
-**Fix**: Add `'use client'` at the top of the file:
-
-```typescript
-'use client'
-
-import { motion } from 'motion/react'
-
-export function AnimatedComponent() {
-  return <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} />
-}
-```
+**Fix**: Ensure `initial` and `animate` have different values. DorkOS is a Vite SPA — there is no server rendering, so `'use client'` directives and SSR-related fixes do not apply here.
 
 ### Exit animation doesn't work
 
@@ -659,11 +628,11 @@ const item = {
 <motion.div layout layoutId="unique-id" />
 ```
 
-### "Warning: useLayoutEffect does nothing on the server"
+### `willChange` usage warnings in console
 
-**Cause**: Motion component rendered on server without `'use client'`.
+**Cause**: `will-change: transform` set on too many elements simultaneously.
 
-**Fix**: Add `'use client'` directive to the file using Motion components.
+**Fix**: Only add `will-change` to elements that are actively animating on a timer or user interaction loop. Remove it after the animation completes when possible.
 
 ## Performance Best Practices
 
@@ -693,37 +662,22 @@ Add `will-change` to elements that animate frequently:
 
 ### 3. Reduce Motion for Accessibility
 
-Respect user preferences with CSS or `useReducedMotion`:
+`<MotionConfig reducedMotion="user">` in `App.tsx` handles this globally for all Motion animations. Additionally, `index.css` collapses all CSS `animation-duration` and `transition-duration` to `0.01ms` under `@media (prefers-reduced-motion: reduce)`, covering any non-Motion CSS animations.
 
-```typescript
-// CSS approach in globals.css (already included)
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
-  }
-}
-
-// React hook approach
-import { useReducedMotion } from 'motion/react'
-
-const shouldReduceMotion = useReducedMotion()
-
-<motion.div
-  animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-/>
-```
+No per-component `useReducedMotion` calls are needed unless you need to gate non-animation behavior on that preference.
 
 ### 4. Animation Duration Guidelines
 
 Follow the Calm Tech design system:
 
-| Animation Type     | Duration  | Example                       |
-| ------------------ | --------- | ----------------------------- |
-| Micro-interactions | 100-150ms | Button hover, checkbox toggle |
-| Component entrance | 200-300ms | Modal open, card fade in      |
-| Page transitions   | 300-500ms | Route change, drawer slide    |
+| Animation Type          | Duration  | Example                                   |
+| ----------------------- | --------- | ----------------------------------------- |
+| Micro-interactions      | 100-150ms | Button hover, checkbox toggle             |
+| Component entrance      | 200-300ms | Modal open, card fade in                  |
+| In-page page transitions | 150ms    | Command palette sub-menu x-axis slide     |
+| Drawer/overlay slide    | 200ms     | Embedded sidebar, floating toggle button  |
 
-Faster animations feel more responsive; slower animations can feel laggy.
+Faster animations feel more responsive; slower animations can feel laggy. Prefer spring physics (`type: 'spring'`) over duration-based easing for interactive elements — the spring self-terminates based on stiffness/damping rather than a fixed time.
 
 ## References
 

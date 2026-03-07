@@ -44,19 +44,19 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 |---|---|---|---|
 | `project-structure.md` | 2026-03-06 | Claude | Added eslint-config and icons packages |
 | `architecture.md` | 2026-03-06 | Claude | SDK confinement, dorkHome lint refs |
-| `design-system.md` | 2026-02-17 | Claude | Fixed pre-FSD component paths |
+| `design-system.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
 | `api-reference.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `configuration.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
-| `interactive-tools.md` | 2026-03-06 | Claude | Updated file paths for runtime abstraction |
-| `keyboard-shortcuts.md` | 2026-02-17 | Claude | Fixed pre-FSD paths |
+| `interactive-tools.md` | 2026-03-06 | Claude | Fixed INTERACTION_TIMEOUT_MS constant ref, reject implementations, auto-approve logic, InteractiveSession type |
+| `keyboard-shortcuts.md` | 2026-03-06 | Claude | Fixed useInteractiveShortcuts location (shared/model, not features/chat), corrected PaletteFooter shortcut table |
 | `obsidian-plugin-development.md` | 2026-03-06 | Claude | Updated sdk-utils paths for runtime abstraction |
 | `data-fetching.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
-| `state-management.md` | 2026-02-17 | Claude | Full rewrite for DorkOS stack |
-| `animations.md` | 2026-02-17 | Claude | Fixed path references |
-| `styling-theming.md` | 2026-02-17 | Claude | Fixed path references |
-| `parallel-execution.md` | 2026-02-17 | Claude | Current |
-| `relay-adapters.md` | 2026-02-17 | Claude | Current |
-| `adapter-catalog.md` | 2026-02-17 | Claude | Current |
+| `state-management.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
+| `animations.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
+| `styling-theming.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
+| `parallel-execution.md` | 2026-03-06 | Claude | Reviewed — no stale patterns found |
+| `relay-adapters.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
+| `adapter-catalog.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
 | `browser-testing.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `environment-variables.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 
@@ -66,7 +66,16 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 
 | MDX File | Description | Source Patterns |
 |---|---|---|
+| `docs/index.mdx` | Docs landing page | `apps/site/` |
+| `docs/changelog.mdx` | Product changelog | `packages/cli/package.json` |
+| `docs/getting-started/installation.mdx` | Install guide | `packages/cli/` |
+| `docs/getting-started/quickstart.mdx` | Quickstart guide | `packages/cli/\|apps/client/` |
 | `docs/getting-started/configuration.mdx` | User-facing config guide | `config-manager\|config-schema\|packages/cli/` |
+| `docs/concepts/architecture.mdx` | Architecture concepts overview | `apps/server/src/services/\|transport.ts` |
+| `docs/concepts/sessions.mdx` | Session model concepts | `transcript-reader\|apps/server/src/routes/sessions` |
+| `docs/concepts/transport.mdx` | Transport interface concepts | `transport.ts\|direct-transport\|http-transport` |
+| `docs/concepts/relay.mdx` | Relay messaging concepts | `packages/relay/\|apps/server/src/services/relay/` |
+| `docs/concepts/mesh.mdx` | Mesh agent discovery concepts | `packages/mesh/\|apps/server/src/services/mesh/` |
 | `docs/integrations/sse-protocol.mdx` | SSE wire format reference | `apps/server/src/routes/sessions\|stream-adapter\|session-broadcaster` |
 | `docs/integrations/building-integrations.mdx` | Transport interface for custom clients | `transport.ts\|direct-transport\|http-transport` |
 | `docs/self-hosting/deployment.mdx` | Production deployment guide | `packages/cli/\|config-manager` |
@@ -77,12 +86,32 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/guides/cli-usage.mdx` | CLI usage guide | `packages/cli/` |
 | `docs/guides/tunnel-setup.mdx` | Tunnel/ngrok setup | `tunnel-manager` |
 | `docs/guides/slash-commands.mdx` | Slash command authoring | `command-registry\|.claude/commands/` |
+| `docs/guides/keyboard-shortcuts.mdx` | Keyboard shortcuts reference | `use-interactive-shortcuts\|use-global-palette` |
+| `docs/guides/tool-approval.mdx` | Tool approval user guide | `interactive-handlers\|apps/client/src/layers/features/chat/` |
+| `docs/guides/agents.mdx` | Agent identity guide | `routes/agents\|manifest\|agent.json` |
+| `docs/guides/agent-discovery.mdx` | Agent discovery guide | `packages/mesh/\|unified-scanner` |
+| `docs/guides/agent-coordination.mdx` | Multi-agent coordination guide | `packages/relay/\|packages/mesh/` |
+| `docs/guides/pulse-scheduler.mdx` | Pulse scheduler guide | `services/pulse/\|pulse-store` |
+| `docs/guides/relay-messaging.mdx` | Relay messaging guide | `packages/relay/\|services/relay/` |
+| `docs/guides/relay-observability.mdx` | Relay observability guide | `trace-store\|relay-metrics` |
+| `docs/guides/building-relay-adapters.mdx` | Relay adapter authoring guide | `packages/relay/src/adapters/\|adapter-manager` |
+| `docs/guides/obsidian-plugin.mdx` | Obsidian plugin user guide | `apps/obsidian-plugin/` |
+| `docs/guides/persona.mdx` | Agent persona configuration | `manifest\|context-builder\|personaEnabled` |
 
 ### External Docs Maintenance
 
 | MDX File | Last Reviewed | Reviewer | Notes |
 |---|---|---|---|
+| `docs/index.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/changelog.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/getting-started/installation.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/getting-started/quickstart.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/getting-started/configuration.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
+| `docs/concepts/architecture.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/concepts/sessions.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/concepts/transport.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/concepts/relay.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/concepts/mesh.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/integrations/sse-protocol.mdx` | 2026-02-17 | Claude | Written from scratch |
 | `docs/integrations/building-integrations.mdx` | 2026-03-06 | Claude | Added getCapabilities() to Transport listing |
 | `docs/self-hosting/deployment.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
@@ -93,3 +122,14 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/guides/cli-usage.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `docs/guides/tunnel-setup.mdx` | 2026-02-17 | Claude | Written from scratch |
 | `docs/guides/slash-commands.mdx` | 2026-02-17 | Claude | Written from scratch |
+| `docs/guides/keyboard-shortcuts.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/tool-approval.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/agents.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/agent-discovery.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/agent-coordination.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/pulse-scheduler.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/relay-messaging.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/relay-observability.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/building-relay-adapters.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/obsidian-plugin.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/persona.mdx` | 2026-03-06 | Claude | Added to coverage map |

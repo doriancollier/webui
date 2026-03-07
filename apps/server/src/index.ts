@@ -271,12 +271,10 @@ async function start() {
   // Finalize app: API 404 catch-all, error handler, and SPA serving
   finalizeApp(app);
 
-  // SessionBroadcaster is owned by the runtime — configure relay and attach to app.locals
-  const sessionBroadcaster = claudeRuntime.getSessionBroadcaster();
+  // SessionBroadcaster is owned by the runtime — configure relay injection
   if (relayCore) {
-    sessionBroadcaster.setRelay(relayCore);
+    claudeRuntime.getSessionBroadcaster().setRelay(relayCore);
   }
-  app.locals.sessionBroadcaster = sessionBroadcaster;
 
   const host = env.DORKOS_HOST;
   app.listen(PORT, host, () => {

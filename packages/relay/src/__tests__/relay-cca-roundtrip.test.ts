@@ -14,7 +14,7 @@ import * as os from 'node:os';
 import { RelayCore } from '../relay-core.js';
 import { ClaudeCodeAdapter } from '../adapters/claude-code-adapter.js';
 import type {
-  AgentManagerLike,
+  AgentRuntimeLike,
   TraceStoreLike,
 } from '../adapters/claude-code-adapter.js';
 import type { RelayPublisher, AdapterRegistryLike, AdapterContext, DeliveryResult } from '../types.js';
@@ -55,7 +55,7 @@ function createMockTraceStore(): TraceStoreLike {
   };
 }
 
-function createMockAgentManager(): AgentManagerLike {
+function createMockAgentManager(): AgentRuntimeLike {
   return {
     ensureSession: vi.fn(),
     sendMessage: vi.fn().mockReturnValue(
@@ -76,7 +76,7 @@ describe('relay → CCA round-trip', () => {
   let tmpDir: string;
   let relay: RelayCore;
   let cca: ClaudeCodeAdapter;
-  let agentManager: AgentManagerLike;
+  let agentManager: AgentRuntimeLike;
   let traceStore: TraceStoreLike;
 
   beforeEach(async () => {

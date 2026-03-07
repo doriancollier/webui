@@ -5,19 +5,60 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- `AgentRuntime` interface (`packages/shared/src/agent-runtime.ts`) and `RuntimeRegistry` abstraction (`services/core/runtime-registry.ts`) — decouples DorkOS from the Claude Agent SDK; all routes obtain the active runtime via `runtimeRegistry.getDefault()`
+- `GET /api/capabilities` endpoint returning `RuntimeCapabilities` flags for all registered runtimes
+- `useRuntimeCapabilities` and `useDefaultCapabilities` client hooks (`entities/runtime/`)
+- `relay_dispatch` MCP tool for fire-and-poll async delegation — agents publish to `relay.agent.*` and return immediately with `{ messageId, inboxSubject }` for polling
+- `relay_unregister_endpoint` MCP tool for cleaning up dispatch inboxes after completion
+- `relay_query` progress accumulation — returns incremental CCA progress in a `progress[]` array
+- Endpoint types (`EndpointType` union with `inferEndpointType()`) for subject-based inbox classification
+- Dispatch inbox TTL sweeper in `RelayCore` — auto-expires dispatch inboxes after 30 minutes
+- Unified discovery scanner in `packages/mesh/src/discovery/unified-scanner.ts` — replaces two separate implementations (`discovery-scanner.ts` and `discovery-engine.ts`) with a single BFS scanner supporting 21 exclude patterns, symlink cycle detection, and configurable timeout
+- `entities/discovery/` FSD entity with Zustand store and `useDiscoveryScan` hook — scan results persist across views without re-scanning
+- `/chat:self-test` slash command for systematic browser-based stack validation
+- Per-package ESLint configs with `@dorkos/eslint-config` shared workspace package providing `base`, `react`, `node`, and `test` presets; enables per-package Turborepo lint caching
+- SDK import confinement lint rule — bans `@anthropic-ai/claude-agent-sdk` imports outside `services/runtimes/claude-code/`
+
+### Changed
+
+- Renamed 6 MCP tools to follow `domain_verb_noun` convention: `list_schedules` → `pulse_list_schedules`, `create_schedule` → `pulse_create_schedule`, `update_schedule` → `pulse_update_schedule`, `delete_schedule` → `pulse_delete_schedule`, `get_run_history` → `pulse_get_run_history`, `agent_get_current` → `get_current_agent`
+- Replaced text branding with DorkOS logo in sidebar footer
+- `relay_list_endpoints` enriched with `type` and `expiresAt` metadata
+- Discovery route defaults to home directory boundary instead of project root; fixes onboarding scan scanning the wrong root
+
+### Fixed
+
+- Resolve SSE delivery pipeline causing 40-50% message freezes — stabilize EventSource lifecycle, add subscribe-first handshake, ensure CCA always publishes `done` event on SDK generator throw, buffer messages for pending subscribers
+- Apply SSE backpressure handling to session broadcaster relay writes (`subscribeToRelay()` and `broadcastUpdate()`)
+- Make `sendSSEEvent` async with drain backpressure handling to prevent SSE freeze
+- Strip `<relay_context>` wrapper from user messages in transcript parser so relay-routed messages appear in history reload
+- Translate agent session ID to SDK session ID in SSE stream registration to prevent 503 floods
+- Add client-side staleness detector (15s timeout) to recover from lost `done` events
+- Merge PATCH response into TanStack Query cache instead of replacing it
+- Remove acted candidates (approved/denied) from the discovery list in Mesh panel
+- Export Mesh health thresholds as constants to eliminate fragile hardcoded test values
+
+---
+
 ## [0.8.0] - 2026-03-04
 
 > Agent-centric control, enhanced discovery UX, and critical infrastructure hardening
 
 ### Added
 
-- Per-agent tool filtering and cascade disable — configure which tools each agent can access
-- Add relay_query blocking MCP tool for inter-agent communication
-- Rebuild command palette with preview panel, fuzzy search, and sub-menu navigation for agent discovery
-- Migrate sidebar to Shadcn Sidebar component with agent-centric layout
-- Add tool context injection with configurable toggles throughout the interface
-- Enable Mesh always-on mode for continuous agent discovery and visibility
-- Enhance UI primitives with responsive touch targets and sizing variants
+- Per-agent tool filtering via `enabledToolGroups` in `AgentManifest` — configure which tool domains each agent can access; cascade disable propagates to dependent tools
+- `relay_query` blocking MCP tool for synchronous inter-agent request/reply
+- `get_current_agent` MCP tool returning agent identity for the session's working directory
+- `CapabilitiesTab` in agent settings dialog with per-agent Tool Groups toggles showing 3-state display (inherited/overridden)
+- Command palette rebuilt with Fuse.js fuzzy search, agent preview panel, Slack bucket frecency, sub-menu drill-down, and spring animations (`features/command-palette/`)
+- Shadcn Sidebar component migration for agent-centric sidebar layout
+- Tool context injection into SDK system prompt with global and per-agent configurable toggles
+- Mesh always-on mode — no environment variable required for continuous agent discovery
+- Responsive touch targets and explicit size variants for shared UI primitives
 
 ### Changed
 
@@ -33,7 +74,7 @@ All notable changes to DorkOS are documented here. This project follows [Semanti
 - Clean up command palette cmdk prop usage and @ filtering logic
 - Enforce file-first write-through storage pattern for agent identity (ADR-0043)
 - Improve onboarding step completion logic to handle rapid user interactions
-- Register relay_query in tool filter and add test coverage
+- Register `relay_query` in tool filter and add test coverage
 
 ---
 

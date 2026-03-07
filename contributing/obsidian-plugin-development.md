@@ -612,10 +612,10 @@ See `contributing/architecture.md` > "Electron Compatibility Layer" for details 
 ### Package Scripts
 
 ```bash
-# From the monorepo root (via Turborepo):
-turbo run build --filter=obsidian-plugin
+# From the monorepo root:
+turbo build --filter=@dorkos/obsidian-plugin
 
-# Or from apps/obsidian-plugin/:
+# From apps/obsidian-plugin/:
 pnpm build
 ```
 
@@ -791,19 +791,18 @@ dorkos/                               # Turborepo monorepo root
 │       ├── transport.ts              # Transport interface (the "port")
 │       └── types.ts                  # Shared type definitions (@dorkos/shared)
 ├── apps/
-│   ├── client/src/                   # Shared React components (@dorkos/client)
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   │   ├── use-chat-session.ts   # Chat streaming (uses useTransport)
-│   │   │   ├── use-sessions.ts       # Session CRUD (uses useTransport)
-│   │   │   └── use-commands.ts       # Command palette (uses useTransport)
-│   │   ├── contexts/
-│   │   │   └── TransportContext.tsx   # React Context for Transport DI
-│   │   ├── lib/
-│   │   │   ├── http-transport.ts     # HTTP/SSE transport (standalone web)
-│   │   │   ├── direct-transport.ts   # In-process transport (Obsidian plugin)
-│   │   │   └── platform.ts           # Platform adapter (embedded detection)
-│   │   ├── stores/
+│   ├── client/src/
+│   │   ├── layers/
+│   │   │   ├── shared/
+│   │   │   │   ├── lib/
+│   │   │   │   │   ├── http-transport.ts      # HTTP/SSE transport (standalone web)
+│   │   │   │   │   ├── direct-transport.ts    # In-process transport (Obsidian plugin)
+│   │   │   │   │   └── platform.ts            # Platform adapter (embedded detection)
+│   │   │   │   └── model/
+│   │   │   │       └── TransportContext.tsx   # React Context for Transport DI
+│   │   │   └── features/
+│   │   │       └── chat/
+│   │   │           └── model/use-chat-session.ts  # Chat streaming
 │   │   ├── App.tsx
 │   │   ├── main.tsx                  # Standalone entry (HttpTransport)
 │   │   └── index.css
@@ -815,15 +814,8 @@ dorkos/                               # Turborepo monorepo root
 │   │       ├── main.ts               # Plugin entry (onload/onunload)
 │   │       ├── views/
 │   │       │   └── CopilotView.tsx   # ItemView — creates services, mounts React
-│   │       ├── contexts/
-│   │       │   └── ObsidianContext.tsx # Obsidian API provider
-│   │       ├── components/
-│   │       │   ├── ContextBar.tsx    # Active file + context chips
-│   │       │   └── ObsidianApp.tsx   # Plugin wrapper (auto-session, compact layout)
-│   │       ├── lib/
-│   │       │   └── obsidian-adapter.ts # Platform adapter for Obsidian
-│   │       └── styles/
-│   │           └── plugin.css        # Obsidian theme bridge + text selection fix
+│   │       └── components/
+│   │           └── ObsidianApp.tsx   # Plugin wrapper (auto-session, compact layout)
 │   └── server/src/
 │       ├── services/
 │       │   ├── core/
@@ -936,7 +928,7 @@ If you don't see "main.js module loaded", the error is in module evaluation (top
 
 ### Development Workflow
 
-1. Run the build from the monorepo root (`turbo run build --filter=obsidian-plugin`) or from `apps/obsidian-plugin/` (`pnpm build`)
+1. Run `turbo build --filter=@dorkos/obsidian-plugin` from the monorepo root, or `pnpm build` from `apps/obsidian-plugin/`
 2. Restart Obsidian or use the Hot Reload plugin
 3. Open dev console (`Cmd+Option+I`) before enabling the plugin
 4. Check console for errors

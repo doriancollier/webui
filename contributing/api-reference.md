@@ -9,18 +9,24 @@ Start the server and visit:
 
 ## How Schemas Work
 
-All request/response types are defined as **Zod schemas** in `packages/shared/src/schemas.ts`. This single file is the source of truth for:
+Request/response types are defined as **Zod schemas** in `packages/shared/src/`. Three schema files cover different domains:
 
-1. **TypeScript types** - via `z.infer<typeof Schema>` (compile-time)
-2. **Runtime validation** - via `schema.safeParse(data)` in route handlers
-3. **OpenAPI spec** - auto-generated via `@asteasolutions/zod-to-openapi`
+- `schemas.ts` — Sessions, commands, health, pulse, models, capabilities
+- `relay-schemas.ts` — Relay envelopes, adapters, bindings, catalog
+- `mesh-schemas.ts` — Agent manifests, discovery, topology, access control
 
-Types in `packages/shared/src/types.ts` are re-exported from `schemas.ts`, so all existing imports continue to work.
+Each schema serves three roles:
+
+1. **TypeScript types** — via `z.infer<typeof Schema>` (compile-time)
+2. **Runtime validation** — via `schema.safeParse(data)` in route handlers
+3. **OpenAPI spec** — auto-generated via `@asteasolutions/zod-to-openapi` in `services/core/openapi-registry.ts`
+
+Types in `packages/shared/src/types.ts` re-export from `schemas.ts`, so existing `import { Session } from '@dorkos/shared/types'` imports continue to work.
 
 ## Adding a New Endpoint
 
-1. **Define schemas** in `packages/shared/src/schemas.ts` for request/response shapes
-2. **Register the path** in `apps/server/src/services/openapi-registry.ts` with tags, request schema, and response schemas
+1. **Define schemas** in the appropriate `packages/shared/src/` file (`schemas.ts`, `relay-schemas.ts`, or `mesh-schemas.ts`) for request/response shapes
+2. **Register the path** in `apps/server/src/services/core/openapi-registry.ts` with tags, request schema, and response schemas
 3. **Add validation** in the route handler using `Schema.safeParse(req.body)`:
 
 ```typescript
@@ -166,17 +172,19 @@ The `warnings` field is only present when the patch includes keys listed in `SEN
 
 ## Pulse Scheduler (`routes/pulse.ts`)
 
-Feature-flag guarded via `pulse-state.ts`.
+Feature-flag guarded via `DORKOS_PULSE_ENABLED`. Router is mounted at `/api/pulse`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/api/schedules` | List all schedules |
-| POST | `/api/schedules` | Create a schedule |
-| PATCH | `/api/schedules/:id` | Update a schedule |
-| DELETE | `/api/schedules/:id` | Delete a schedule |
-| POST | `/api/schedules/:id/trigger` | Trigger a schedule run |
-| GET | `/api/runs` | Get run history |
-| POST | `/api/runs/:id/cancel` | Cancel an active run |
+| GET | `/api/pulse/schedules` | List all schedules |
+| POST | `/api/pulse/schedules` | Create a schedule |
+| PATCH | `/api/pulse/schedules/:id` | Update a schedule |
+| DELETE | `/api/pulse/schedules/:id` | Delete a schedule |
+| POST | `/api/pulse/schedules/:id/trigger` | Trigger a schedule run |
+| GET | `/api/pulse/runs` | Get run history |
+| GET | `/api/pulse/runs/:id` | Get a specific run |
+| POST | `/api/pulse/runs/:id/cancel` | Cancel an active run |
+| GET | `/api/pulse/presets` | List default schedule presets |
 
 Schedules support an optional `agentId` field for agent-linked scheduling. When `agentId` is set, the schedule's CWD is resolved from the agent's registered project path via MeshCore.
 
@@ -884,21 +892,23 @@ No feature flag required — always mounted.
 
 **Responses:**
 
-- `200` - Array of model descriptors:
+- `200` - `{ models: ModelOption[] }`:
 
 ```json
-[
-  {
-    "id": "claude-opus-4-5",
-    "name": "Claude Opus 4.5",
-    "description": "Most capable model for complex tasks"
-  },
-  {
-    "id": "claude-sonnet-4-5",
-    "name": "Claude Sonnet 4.5",
-    "description": "Balanced performance and speed"
-  }
-]
+{
+  "models": [
+    {
+      "id": "claude-opus-4-5",
+      "name": "Claude Opus 4.5",
+      "description": "Most capable model for complex tasks"
+    },
+    {
+      "id": "claude-sonnet-4-5",
+      "name": "Claude Sonnet 4.5",
+      "description": "Balanced performance and speed"
+    }
+  ]
+}
 ```
 
 ## Capabilities Endpoint

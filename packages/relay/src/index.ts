@@ -111,7 +111,7 @@ export { ClaudeCodeAdapter, CLAUDE_CODE_MANIFEST } from './adapters/claude-code-
 export type {
   ClaudeCodeAdapterConfig,
   ClaudeCodeAdapterDeps,
-  AgentManagerLike as ClaudeCodeAgentManagerLike,
+  AgentRuntimeLike as ClaudeCodeAgentRuntimeLike,
   AgentSessionStoreLike,
   TraceStoreLike,
   PulseStoreLike,

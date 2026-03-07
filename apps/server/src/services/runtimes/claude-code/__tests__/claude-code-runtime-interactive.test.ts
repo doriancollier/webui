@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
   query: vi.fn(),
 }));
-vi.mock('../../../lib/boundary.js', () => ({
+vi.mock('../../../../lib/boundary.js', () => ({
   validateBoundary: vi.fn().mockResolvedValue('/mock/path'),
   getBoundary: vi.fn().mockReturnValue('/mock/boundary'),
   initBoundary: vi.fn().mockResolvedValue('/mock/boundary'),
@@ -28,18 +28,18 @@ const { contextBuilderFactory, toolFilterFactory } = vi.hoisted(() => ({
     buildAllowedTools: vi.fn().mockReturnValue(undefined),
   }),
 }));
-vi.mock('../../runtimes/claude-code/context-builder.js', contextBuilderFactory);
-vi.mock('../../runtimes/claude-code/tool-filter.js', toolFilterFactory);
+vi.mock('../context-builder.js', contextBuilderFactory);
+vi.mock('../tool-filter.js', toolFilterFactory);
 vi.mock('@dorkos/shared/manifest', async () => ({
   readManifest: vi.fn().mockResolvedValue(null),
 }));
-vi.mock('../../relay/relay-state.js', () => ({
+vi.mock('../../../relay/relay-state.js', () => ({
   isRelayEnabled: vi.fn().mockReturnValue(false),
 }));
-vi.mock('../../pulse/pulse-state.js', () => ({
+vi.mock('../../../pulse/pulse-state.js', () => ({
   isPulseEnabled: vi.fn().mockReturnValue(false),
 }));
-vi.mock('../config-manager.js', () => ({
+vi.mock('../../../core/config-manager.js', () => ({
   configManager: {
     get: vi.fn().mockReturnValue({
       pulseTools: true,
@@ -68,7 +68,7 @@ vi.mock('fs', async (importOriginal) => {
   };
 });
 
-import { ClaudeCodeRuntime } from '../../runtimes/claude-code/claude-code-runtime.js';
+import { ClaudeCodeRuntime } from '../claude-code-runtime.js';
 import { query } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
 

@@ -19,8 +19,6 @@ DorkOS runs in several modes. Pick the install method that fits your workflow.
 
 <Tab value="One-liner (Recommended)">
 
-The fastest way to get started. A single command that checks your environment, installs DorkOS, and optionally runs the setup wizard.
-
 <Steps>
 <Step>
 
@@ -30,7 +28,7 @@ The fastest way to get started. A single command that checks your environment, i
 curl -fsSL https://dorkos.ai/install | bash
 ```
 
-The install script checks for Node.js 18+, installs DorkOS via npm, and optionally runs the setup wizard.
+Checks for Node.js 18+, installs DorkOS via npm, and optionally runs the setup wizard.
 
 </Step>
 <Step>
@@ -41,7 +39,7 @@ The install script checks for Node.js 18+, installs DorkOS via npm, and optional
 export ANTHROPIC_API_KEY="your-key-here"
 ```
 
-To persist this, add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
+Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist across sessions.
 
 </Step>
 <Step>
@@ -58,7 +56,7 @@ The server starts on port 4242 and opens your browser automatically.
 </Steps>
 
 <Callout type="info">
-  **CI/Automation:** Use `--no-prompt` to skip interactive prompts:
+  **CI/Automation:** Skip interactive prompts with `--no-prompt`:
   ```bash
   curl -fsSL https://dorkos.ai/install | bash -s -- --no-prompt
   ```
@@ -68,8 +66,6 @@ The server starts on port 4242 and opens your browser automatically.
 </Tab>
 
 <Tab value="npm">
-
-Install the `dorkos` package globally with your preferred package manager.
 
 <Steps>
 <Step>
@@ -101,7 +97,7 @@ bun add -g dorkos
 export ANTHROPIC_API_KEY="your-key-here"
 ```
 
-To persist this, add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
+Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.) to persist across sessions.
 
 </Step>
 <Step>
@@ -127,14 +123,14 @@ The server starts on port 4242 and opens your browser automatically.
 </Steps>
 
 <Callout type="info">
-  You can pass flags to customize startup: `dorkos --port 8080 --dir ~/projects/my-app`. Run `dorkos --help` for all options.
+  Pass flags to customize startup: `dorkos --port 8080 --dir ~/projects/my-app`. Run `dorkos --help` for all options.
 </Callout>
 
 </Tab>
 
 <Tab value="Homebrew">
 
-Install via Homebrew on macOS or Linux. Homebrew handles Node.js as a dependency automatically.
+Install via Homebrew on macOS or Linux. Node.js is handled as a dependency.
 
 <Steps>
 <Step>
@@ -153,8 +149,6 @@ brew install dorkos-ai/tap/dorkos
 ```bash
 export ANTHROPIC_API_KEY="your-key-here"
 ```
-
-To persist this, add it to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.).
 
 </Step>
 <Step>
@@ -176,14 +170,14 @@ dorkos
 
 <Tab value="Obsidian Plugin">
 
-Run DorkOS directly inside [Obsidian](https://obsidian.md/) as a sidebar panel, with full access to your vault files.
+Run DorkOS directly inside [Obsidian](https://obsidian.md/) as a sidebar panel. Query agents without leaving your notes.
 
 <Steps>
 <Step>
 
 ### Open Obsidian settings
 
-Go to **Settings** then **Community Plugins** and make sure community plugins are enabled.
+Go to **Settings** → **Community Plugins** and make sure community plugins are enabled.
 
 </Step>
 <Step>
@@ -210,7 +204,7 @@ Open the DorkOS plugin settings and enter your Anthropic API key.
 </Steps>
 
 <Callout type="warn">
-  The Obsidian plugin requires Node.js 18+ installed on your system. It uses the same Claude Agent SDK as the CLI but runs in-process via the DirectTransport adapter.
+  The Obsidian plugin requires Node.js 18+ installed on your system. It runs the same Claude Agent SDK as the CLI but in-process via the DirectTransport adapter — no network hop.
 </Callout>
 
 </Tab>
@@ -234,20 +228,12 @@ cd dorkos
 
 ### Install dependencies
 
-```bash tab="npm"
-npm install
-```
-
 ```bash tab="pnpm"
 pnpm install
 ```
 
-```bash tab="yarn"
-yarn install
-```
-
-```bash tab="bun"
-bun install
+```bash tab="npm"
+npm install
 ```
 
 </Step>
@@ -267,16 +253,16 @@ ANTHROPIC_API_KEY=your-key-here
 ### Start the development server
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
-This starts both the Express API server and Vite dev server. The interface is available at [http://localhost:3000](http://localhost:3000) with hot module replacement.
+Starts the Express API server and Vite dev server concurrently. The interface is available at [http://localhost:4241](http://localhost:4241) with hot module replacement.
 
 </Step>
 </Steps>
 
 <Callout type="info">
-  For production builds, run `npm run build` then `npm start` to serve the compiled app on port 4242.
+  For production builds, run `pnpm build` then `pnpm start` to serve the compiled app on port 4242.
 </Callout>
 
 </Tab>
@@ -311,7 +297,7 @@ yarn global add dorkos@latest
 bun add -g dorkos@latest
 ```
 
-DorkOS checks for new versions on startup and shows a notification when an update is available. You can check your current version at any time:
+DorkOS checks for updates on startup. Check your current version at any time:
 
 ```bash
 dorkos --version
@@ -329,18 +315,16 @@ brew upgrade dorkos
 
 <Tab value="Obsidian Plugin">
 
-Obsidian handles plugin updates automatically. To check manually, go to **Settings** then **Community Plugins**, find DorkOS in your installed plugins, and click **Update** if available.
+Obsidian handles plugin updates automatically. To check manually, go to **Settings** → **Community Plugins**, find DorkOS, and click **Update** if available.
 
 </Tab>
 
 <Tab value="Self-Hosted">
 
-Pull the latest changes and rebuild:
-
 ```bash
 git pull origin main
-npm install
-npm run build
+pnpm install
+pnpm build
 ```
 
 </Tab>
@@ -349,4 +333,4 @@ npm run build
 
 ## Next Steps
 
-You are ready to start using DorkOS. Head to the [Quickstart](/docs/getting-started/quickstart) guide to walk through your first conversation, or check out [Configuration](/docs/getting-started/configuration) to customize your setup.
+Head to the [Quickstart](/docs/getting-started/quickstart) to open your first session, or [Configuration](/docs/getting-started/configuration) to customize your setup.

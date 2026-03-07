@@ -16,7 +16,7 @@ DorkOS uses Server-Sent Events (SSE) for real-time streaming. Reverse proxy conf
 <Tabs items={["Caddy (Recommended)", "nginx"]}>
 
 <Tab value="Caddy (Recommended)">
-Caddy automatically handles HTTPS certificates and has good SSE support out of the box.
+Caddy handles HTTPS certificates automatically and has good SSE support out of the box.
 
 ```
 dorkos.example.com {
@@ -26,7 +26,7 @@ dorkos.example.com {
 }
 ```
 
-The `flush_interval -1` setting disables response buffering, which is required for SSE streams to work correctly.
+`flush_interval -1` disables response buffering, which is required for SSE streams.
 </Tab>
 
 <Tab value="nginx">
@@ -46,13 +46,12 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # SSE support: disable buffering and set long timeouts
+        # Required for SSE: disable buffering and set long timeouts
         proxy_buffering off;
         proxy_cache off;
         proxy_read_timeout 86400s;
         proxy_send_timeout 86400s;
 
-        # Required for SSE
         proxy_set_header Connection '';
         chunked_transfer_encoding off;
     }
@@ -64,14 +63,12 @@ server {
 
 ## Key SSE Settings (nginx)
 
-These settings are critical for SSE to function correctly through nginx:
-
 <TypeTable type={{
   "proxy_buffering off": { type: "directive", description: "Disables response buffering so SSE events are sent immediately" },
-  "proxy_cache off": { type: "directive", description: "Disables caching since SSE streams should never be cached" },
+  "proxy_cache off": { type: "directive", description: "Disables caching — SSE streams must never be cached" },
   "proxy_read_timeout 86400s": { type: "directive", description: "24-hour timeout for long-lived SSE connections" },
   "Connection ''": { type: "header", description: "Empty connection header prevents premature connection close" },
-  "chunked_transfer_encoding off": { type: "directive", description: "Disables chunked encoding since SSE uses its own framing" },
+  "chunked_transfer_encoding off": { type: "directive", description: "Disables chunked encoding — SSE uses its own framing" },
 }} />
 
 ## Common Issues
@@ -81,9 +78,9 @@ These settings are critical for SSE to function correctly through nginx:
 <Step>
 ### SSE events arrive in batches instead of real-time
 
-**Cause**: Response buffering is enabled in the reverse proxy.
+**Cause**: Response buffering is enabled in the proxy.
 
-**Fix**: Ensure `proxy_buffering off` (nginx) or `flush_interval -1` (Caddy).
+**Fix**: Set `proxy_buffering off` (nginx) or `flush_interval -1` (Caddy).
 </Step>
 
 <Step>
@@ -91,13 +88,13 @@ These settings are critical for SSE to function correctly through nginx:
 
 **Cause**: Default proxy timeout is too short for SSE.
 
-**Fix**: Increase `proxy_read_timeout` to at least `3600s` (1 hour).
+**Fix**: Increase `proxy_read_timeout` to at least `3600s`.
 </Step>
 
 <Step>
 ### 502 Bad Gateway on long requests
 
-**Cause**: The upstream timeout is shorter than the Claude response time.
+**Cause**: Upstream timeout is shorter than the Claude response time.
 
 **Fix**: Increase both `proxy_read_timeout` and `proxy_send_timeout`.
 </Step>
@@ -109,7 +106,7 @@ These settings are critical for SSE to function correctly through nginx:
 <Tabs items={["Caddy (Automatic)", "nginx + certbot"]}>
 
 <Tab value="Caddy (Automatic)">
-Caddy handles Let's Encrypt automatically. Just point your domain's DNS to the server and Caddy obtains and renews certificates with no additional configuration.
+Point your domain's DNS to the server and Caddy obtains and renews certificates automatically — no additional configuration needed.
 
 ```
 dorkos.example.com {
@@ -121,8 +118,6 @@ dorkos.example.com {
 </Tab>
 
 <Tab value="nginx + certbot">
-Install certbot and request a certificate:
-
 ```bash
 sudo certbot --nginx -d dorkos.example.com
 ```
@@ -136,12 +131,12 @@ Certbot modifies your nginx config to add SSL directives and sets up automatic r
 
 <Cards>
   <Card title="Deployment" href="/docs/self-hosting/deployment">
-    Production deployment guide with systemd, environment variables, and health checks.
+    Production deployment with systemd, environment variables, and health checks.
   </Card>
   <Card title="Tunnel Setup" href="/docs/guides/tunnel-setup">
-    Alternative remote access via ngrok without a reverse proxy.
+    Remote access via ngrok without a reverse proxy.
   </Card>
   <Card title="SSE Protocol" href="/docs/integrations/sse-protocol">
-    Full SSE protocol reference for understanding the streaming wire format.
+    Full SSE protocol reference for the streaming wire format.
   </Card>
 </Cards>

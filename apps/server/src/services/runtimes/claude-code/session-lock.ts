@@ -1,4 +1,4 @@
-import type { Response } from 'express';
+import type { SseResponse } from '@dorkos/shared/agent-runtime';
 import { SESSIONS } from '../../../config/constants.js';
 
 interface SessionLock {
@@ -20,7 +20,7 @@ export class SessionLockManager {
    * Attempt to acquire a lock on a session for a specific client.
    * Returns true if the lock was acquired, false if the session is locked by another client.
    */
-  acquireLock(sessionId: string, clientId: string, res: Response): boolean {
+  acquireLock(sessionId: string, clientId: string, res: SseResponse): boolean {
     const existing = this.locks.get(sessionId);
     if (existing) {
       const expired = Date.now() - existing.acquiredAt > existing.ttl;

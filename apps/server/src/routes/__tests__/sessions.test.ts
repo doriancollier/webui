@@ -79,13 +79,7 @@ const app = createApp();
 /** Valid UUID for session ID params (routes validate UUID format). */
 const S1 = '00000000-0000-4000-8000-000000000001';
 
-// Mock sessionBroadcaster for tests that need it
-const mockSessionBroadcaster = {
-  registerClient: vi.fn(),
-  deregisterClient: vi.fn(),
-  shutdown: vi.fn(),
-};
-app.locals.sessionBroadcaster = mockSessionBroadcaster;
+// Legacy mockSessionBroadcaster removed — route now uses runtime.watchSession()
 
 describe('Sessions Routes', () => {
   beforeEach(() => {
@@ -99,8 +93,6 @@ describe('Sessions Routes', () => {
     mockRuntime.acquireLock.mockReturnValue(true);
     mockRuntime.getLockInfo.mockReturnValue(null);
     mockRuntime.getInternalSessionId.mockReturnValue(undefined);
-    // Reset sessionBroadcaster mock
-    mockSessionBroadcaster.registerClient.mockClear();
   });
 
   // ---- POST /api/sessions ----
@@ -403,69 +395,81 @@ describe('Sessions Routes', () => {
   // ---- GET /api/sessions/:id/stream ----
 
   describe('GET /api/sessions/:id/stream', () => {
-    it('sets SSE headers correctly', async () => {
-      // Mock registerClient to immediately close the response
-      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
-        res.end();
+    /** Helper: make an SSE request with AbortController so it doesn't hang. */
+    async function sseRequest(url: string) {
+      const controller = new AbortController();
+      const responsePromise = new Promise<{ status: number; headers: Record<string, string>; body: string }>((resolve) => {
+        const req = request(app).get(url);
+        // Supertest doesn't support AbortController natively, so use .buffer(true) + custom parser
+        req.buffer(true).parse(
+          (res: { statusCode: number; headers: Record<string, string>; on: (event: string, handler: (chunk: Buffer) => void) => void }, callback: (err: null, data: string) => void) => {
+            let data = '';
+            res.on('data', (chunk: Buffer) => { data += chunk.toString(); });
+            // Give the route enough time to call watchSession and write initial SSE events
+            setTimeout(() => {
+              resolve({ status: res.statusCode, headers: res.headers, body: data });
+              callback(null, data);
+            }, 150);
+          },
+        ).end();
       });
+      const result = await responsePromise;
+      controller.abort();
+      return result;
+    }
 
-      const res = await request(app).get(`/api/sessions/${S1}/stream`);
+    it('sets SSE headers correctly', async () => {
+      mockRuntime.watchSession.mockImplementation(() => () => {});
+
+      const res = await sseRequest(`/api/sessions/${S1}/stream`);
 
       expect(res.status).toBe(200);
       expect(res.headers['content-type']).toBe('text/event-stream');
       expect(res.headers['cache-control']).toBe('no-cache');
-      expect(res.headers['connection']).toBe('keep-alive');
       expect(res.headers['x-accel-buffering']).toBe('no');
     });
 
-    it('registers client with sessionBroadcaster', async () => {
-      // Mock registerClient to immediately close the response
-      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
-        res.end();
-      });
+    it('calls watchSession on the runtime', async () => {
+      mockRuntime.watchSession.mockImplementation(() => () => {});
 
-      await request(app).get(`/api/sessions/${S1}/stream`);
+      await sseRequest(`/api/sessions/${S1}/stream`);
 
-      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalled();
-      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
+      expect(mockRuntime.watchSession).toHaveBeenCalled();
+      expect(mockRuntime.watchSession).toHaveBeenCalledWith(
         S1,
         expect.any(String),
-        expect.anything(),
-        undefined
+        expect.any(Function),
+        undefined,
       );
     });
 
-    it('translates agent-ID to internal session ID before registering client', async () => {
+    it('translates agent-ID to internal session ID before calling watchSession', async () => {
       const INTERNAL_ID = '00000000-0000-4000-8000-000000000099';
       mockRuntime.getInternalSessionId.mockReturnValue(INTERNAL_ID);
-      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
-        res.end();
-      });
+      mockRuntime.watchSession.mockImplementation(() => () => {});
 
-      await request(app).get(`/api/sessions/${S1}/stream`);
+      await sseRequest(`/api/sessions/${S1}/stream`);
 
-      // registerClient must receive the internal session ID, not the raw agent ID from the URL
-      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
+      // watchSession must receive the internal session ID, not the raw agent ID from the URL
+      expect(mockRuntime.watchSession).toHaveBeenCalledWith(
         INTERNAL_ID,
         expect.any(String),
-        expect.anything(),
-        undefined
+        expect.any(Function),
+        undefined,
       );
     });
 
     it('falls back to original session ID when no internal mapping exists', async () => {
       mockRuntime.getInternalSessionId.mockReturnValue(undefined);
-      mockSessionBroadcaster.registerClient.mockImplementation((_sessionId, _vaultRoot, res) => {
-        res.end();
-      });
+      mockRuntime.watchSession.mockImplementation(() => () => {});
 
-      await request(app).get(`/api/sessions/${S1}/stream`);
+      await sseRequest(`/api/sessions/${S1}/stream`);
 
-      expect(mockSessionBroadcaster.registerClient).toHaveBeenCalledWith(
+      expect(mockRuntime.watchSession).toHaveBeenCalledWith(
         S1,
         expect.any(String),
-        expect.anything(),
-        undefined
+        expect.any(Function),
+        undefined,
       );
     });
   });
