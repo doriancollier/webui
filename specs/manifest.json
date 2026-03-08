@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 102,
+  "nextNumber": 103,
   "specs": [
     {
       "number": 1,
@@ -708,6 +708,13 @@
       "title": "Fix streamdown Render Truncation of []-Containing Inline Code",
       "created": "2026-03-07",
       "status": "ideation"
+    },
+    {
+      "number": 102,
+      "slug": "fix-chat-streaming-history-consistency",
+      "title": "Fix Chat UI Streaming vs History Inconsistencies",
+      "created": "2026-03-08",
+      "status": "specified"
     }
   ]
 }

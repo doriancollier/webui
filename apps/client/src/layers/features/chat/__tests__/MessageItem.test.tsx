@@ -341,6 +341,64 @@ describe('MessageItem', () => {
     const el = container.firstElementChild;
     expect(el?.className).toContain('pt-4');
   });
+
+  it('renders text parts adjacent to tool call without orphaned standalone rendering', () => {
+    // Purpose: Verifies that text parts immediately following a tool_call part
+    // are rendered as part of the natural parts flow, not isolated at a
+    // different DOM depth. This guards against the regression where a
+    // text_delta('Done') appearing after a tool_result SSE event created
+    // a floating element visually detached from the surrounding text.
+    //
+    // autoHideToolCalls is false (set in beforeEach), so the completed
+    // tool call renders its ToolCallCard in the parts list.
+    const msg = {
+      id: '1',
+      role: 'assistant' as const,
+      content: 'DoneSome response text',
+      parts: [
+        {
+          type: 'tool_call' as const,
+          toolCallId: 'tc-1',
+          toolName: 'TodoWrite',
+          input: '{}',
+          status: 'complete' as const,
+        },
+        { type: 'text' as const, text: 'Done' },
+        { type: 'text' as const, text: 'Some response text' },
+      ],
+      timestamp: new Date().toISOString(),
+    };
+
+    const { container } = render(
+      <MessageItem message={msg} sessionId="test-session" grouping={onlyGrouping} />
+    );
+
+    // Both text parts should be present in the DOM
+    expect(screen.getAllByTestId('streamdown').length).toBeGreaterThanOrEqual(1);
+
+    // 'Done' text content should appear in the rendered output
+    const allText = container.textContent ?? '';
+    expect(allText).toContain('Done');
+    expect(allText).toContain('Some response text');
+
+    // The tool call card for 'TodoWrite' should render (tool name appears in card)
+    expect(allText).toContain('TodoWrite');
+
+    // All three parts should produce exactly 3 child elements in the parts container.
+    // The parts container is the flex-col div wrapping the message parts.
+    // Look for the content wrapper that holds tool call cards and text segments.
+    // It should have children for: ToolCallCard, StreamingText(Done), StreamingText(Some response text)
+    const streamdownElements = container.querySelectorAll('[data-testid="streamdown"]');
+    // At least the two text parts should produce streamdown elements
+    expect(streamdownElements.length).toBeGreaterThanOrEqual(2);
+
+    // The 'Done' text should appear in a streamdown element, not as a bare text node
+    // at the top level of the document
+    const doneInStreamdown = Array.from(streamdownElements).some(
+      (el) => el.textContent === 'Done'
+    );
+    expect(doneInStreamdown).toBe(true);
+  });
 });
 
 describe('Auto-hide tool calls', () => {

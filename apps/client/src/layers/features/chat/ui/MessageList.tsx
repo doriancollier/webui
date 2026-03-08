@@ -99,6 +99,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   });
 
   const isTouchActiveRef = useRef(false);
+  const isUserScrollingRef = useRef(false);
+  const clearScrollIntentTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Track scroll position and report to parent
   const handleScroll = useCallback(() => {
@@ -107,10 +109,16 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
     const isAtBottom = distanceFromBottom < 200;
-    const changed = isAtBottomRef.current !== isAtBottom;
-    isAtBottomRef.current = isAtBottom;
+
+    // Only disengage auto-scroll when the user has explicitly scrolled up.
+    // Layout reflow events from TanStack Virtual measurement also fire the
+    // scroll event — gating behind isUserScrollingRef prevents these from
+    // spuriously flipping the flag.
+    const newValue = isAtBottom || isUserScrollingRef.current ? isAtBottom : isAtBottomRef.current;
+    const changed = isAtBottomRef.current !== newValue;
+    isAtBottomRef.current = newValue;
     if (changed) {
-      onScrollStateChange?.({ isAtBottom, distanceFromBottom });
+      onScrollStateChange?.({ isAtBottom: newValue, distanceFromBottom });
     }
   }, [onScrollStateChange]);
 
@@ -119,19 +127,38 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     if (!container) return;
     const onTouchStart = () => {
       isTouchActiveRef.current = true;
+      // Mark user scroll intent on touch
+      isUserScrollingRef.current = true;
+      if (clearScrollIntentTimerRef.current) clearTimeout(clearScrollIntentTimerRef.current);
+      clearScrollIntentTimerRef.current = setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 150);
     };
     const onTouchEnd = () => {
       isTouchActiveRef.current = false;
     };
+    const onWheel = () => {
+      // wheel only fires for user-initiated scroll, never for programmatic scrollTop assignment
+      isUserScrollingRef.current = true;
+      if (clearScrollIntentTimerRef.current) clearTimeout(clearScrollIntentTimerRef.current);
+      clearScrollIntentTimerRef.current = setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 150);
+    };
+
     container.addEventListener('scroll', handleScroll, { passive: true });
     container.addEventListener('touchstart', onTouchStart, { passive: true });
     container.addEventListener('touchend', onTouchEnd, { passive: true });
     container.addEventListener('touchcancel', onTouchEnd, { passive: true });
+    container.addEventListener('wheel', onWheel, { passive: true });
+
     return () => {
       container.removeEventListener('scroll', handleScroll);
       container.removeEventListener('touchstart', onTouchStart);
       container.removeEventListener('touchend', onTouchEnd);
       container.removeEventListener('touchcancel', onTouchEnd);
+      container.removeEventListener('wheel', onWheel);
+      if (clearScrollIntentTimerRef.current) clearTimeout(clearScrollIntentTimerRef.current);
     };
   }, [handleScroll]);
 
@@ -171,11 +198,15 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     const observer = new ResizeObserver(() => {
       if (isAtBottomRef.current && !isTouchActiveRef.current) {
         cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = requestAnimationFrame(() => {
-          const scrollEl = parentRef.current;
-          if (scrollEl) {
-            scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
-          }
+        // queueMicrotask lets the virtualizer finish measurement before the RAF
+        // fires, reducing the window where scrollHeight fluctuates mid-scroll.
+        queueMicrotask(() => {
+          rafIdRef.current = requestAnimationFrame(() => {
+            const scrollEl = parentRef.current;
+            if (scrollEl) {
+              scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
+            }
+          });
         });
       }
     });

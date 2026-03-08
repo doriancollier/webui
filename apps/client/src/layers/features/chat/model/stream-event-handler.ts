@@ -193,7 +193,10 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
             existing.answers = {};
           }
         }
-        updateAssistantMessage(assistantId);
+        // Defer re-render by one microtask so the immediately-following
+        // text_delta('Done') event can batch into the same React flush,
+        // preventing an orphaned 'Done' text part from appearing.
+        queueMicrotask(() => updateAssistantMessage(assistantId));
         break;
       }
       case 'approval_required': {

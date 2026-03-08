@@ -308,4 +308,120 @@ describe('MessageList', () => {
     render(<MessageList ref={ref} sessionId="test-session" messages={messages} />);
     expect(() => ref.current?.scrollToBottom()).not.toThrow();
   });
+
+  it('does not disengage auto-scroll when scroll fires without wheel/touch', () => {
+    const onScrollStateChange = vi.fn();
+    const messages: ChatMessage[] = [
+      {
+        id: '1',
+        role: 'user' as const,
+        content: 'Hi',
+        parts: [{ type: 'text' as const, text: 'Hi' }],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const { container } = render(
+      <MessageList
+        sessionId="test"
+        messages={messages}
+        onScrollStateChange={onScrollStateChange}
+      />
+    );
+
+    const scrollEl = container.querySelector('[data-testid="message-list"]') as HTMLElement;
+
+    // Simulate scrollHeight > clientHeight + scrollTop (would compute distanceFromBottom > 200)
+    // by setting scroll properties before firing the event
+    Object.defineProperty(scrollEl, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(scrollEl, 'scrollTop', { value: 0, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 200, configurable: true });
+
+    // Fire a scroll event with NO preceding wheel/touchstart — simulates layout reflow
+    scrollEl.dispatchEvent(new Event('scroll', { bubbles: true }));
+
+    // onScrollStateChange should not report isAtBottom:false because no user intent was signaled
+    const calls = onScrollStateChange.mock.calls;
+    const reportedFalse = calls.some(([state]) => state.isAtBottom === false);
+    expect(reportedFalse).toBe(false);
+  });
+
+  it('disengages auto-scroll when wheel event precedes scroll', () => {
+    const onScrollStateChange = vi.fn();
+    const messages: ChatMessage[] = [
+      {
+        id: '1',
+        role: 'user' as const,
+        content: 'Hi',
+        parts: [{ type: 'text' as const, text: 'Hi' }],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const { container } = render(
+      <MessageList
+        sessionId="test"
+        messages={messages}
+        onScrollStateChange={onScrollStateChange}
+      />
+    );
+
+    const scrollEl = container.querySelector('[data-testid="message-list"]') as HTMLElement;
+
+    // Simulate user scrolling: wheel event first sets the intent flag
+    scrollEl.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+
+    // Mutate scroll position to simulate being scrolled up (distanceFromBottom > 200)
+    Object.defineProperty(scrollEl, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(scrollEl, 'scrollTop', { value: 0, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 200, configurable: true });
+
+    scrollEl.dispatchEvent(new Event('scroll', { bubbles: true }));
+
+    // onScrollStateChange should report isAtBottom:false because user intent was present
+    expect(onScrollStateChange).toHaveBeenCalledWith(
+      expect.objectContaining({ isAtBottom: false })
+    );
+  });
+
+  it('clears user-scroll intent after 150ms debounce', () => {
+    vi.useFakeTimers();
+    const onScrollStateChange = vi.fn();
+    const messages: ChatMessage[] = [
+      {
+        id: '1',
+        role: 'user' as const,
+        content: 'Hi',
+        parts: [{ type: 'text' as const, text: 'Hi' }],
+        timestamp: new Date().toISOString(),
+      },
+    ];
+    const { container } = render(
+      <MessageList
+        sessionId="test"
+        messages={messages}
+        onScrollStateChange={onScrollStateChange}
+      />
+    );
+
+    const scrollEl = container.querySelector('[data-testid="message-list"]') as HTMLElement;
+
+    // User scrolls via wheel
+    scrollEl.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+
+    // Advance timers past the 150ms debounce to clear intent flag
+    vi.advanceTimersByTime(200);
+
+    // Now fire a scroll event — intent flag should be cleared; should not disengage
+    Object.defineProperty(scrollEl, 'scrollHeight', { value: 1000, configurable: true });
+    Object.defineProperty(scrollEl, 'scrollTop', { value: 0, configurable: true });
+    Object.defineProperty(scrollEl, 'clientHeight', { value: 200, configurable: true });
+    scrollEl.dispatchEvent(new Event('scroll', { bubbles: true }));
+
+    // Should not report false after debounce cleared the flag
+    const callsAfterDebounce = onScrollStateChange.mock.calls.filter(
+      ([state]) => state.isAtBottom === false
+    );
+    expect(callsAfterDebounce.length).toBe(0);
+
+    vi.useRealTimers();
+  });
 });
