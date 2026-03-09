@@ -1,10 +1,6 @@
 export interface PlatformAdapter {
   /** Whether running inside Obsidian */
   isEmbedded: boolean;
-  /** Get current session ID */
-  getSessionId: () => string | null;
-  /** Set current session ID */
-  setSessionId: (id: string | null) => void;
   /** Open a file by path (no-op in standalone) */
   openFile: (path: string) => Promise<void>;
 }
@@ -12,13 +8,6 @@ export interface PlatformAdapter {
 // Default: standalone web adapter
 const webAdapter: PlatformAdapter = {
   isEmbedded: false,
-  getSessionId: () => new URLSearchParams(location.search).get('session'),
-  setSessionId: (id) => {
-    const url = new URL(location.href);
-    if (id) url.searchParams.set('session', id);
-    else url.searchParams.delete('session');
-    history.replaceState(null, '', url);
-  },
   openFile: async () => {},
 };
 

@@ -165,11 +165,7 @@ describe('RunHistoryPanel', () => {
 
     // Different cwd — should set directory first (with preserveSession option)
     expect(mockSetSelectedCwd).toHaveBeenCalledWith('/other/dir', { preserveSession: true });
-
-    // Session is set via setTimeout(0) — wait for it
-    await waitFor(() => {
-      expect(mockSetActiveSession).toHaveBeenCalledWith('session-xyz');
-    });
+    expect(mockSetActiveSession).toHaveBeenCalledWith('session-xyz');
   });
 
   it('shows loading state', () => {

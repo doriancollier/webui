@@ -91,4 +91,24 @@ describe('useDirectoryState', () => {
     const { result } = renderHook(() => useDirectoryState());
     expect(result.current[0]).toBe('/default/path');
   });
+
+  it('preserveSession: true skips session clearing in standalone', () => {
+    const { result } = renderHook(() => useDirectoryState());
+    act(() => {
+      result.current[1]('/new/path', { preserveSession: true });
+    });
+    expect(mockSetUrlDir).toHaveBeenCalledWith('/new/path');
+    expect(mockSetStoreDir).toHaveBeenCalledWith('/new/path');
+    expect(mockSetSessionId).not.toHaveBeenCalled();
+  });
+
+  it('preserveSession: true skips session clearing in embedded', () => {
+    mockIsEmbedded = true;
+    const { result } = renderHook(() => useDirectoryState());
+    act(() => {
+      result.current[1]('/new/path', { preserveSession: true });
+    });
+    expect(mockSetStoreDir).toHaveBeenCalledWith('/new/path');
+    expect(mockSetSessionId).not.toHaveBeenCalled();
+  });
 });

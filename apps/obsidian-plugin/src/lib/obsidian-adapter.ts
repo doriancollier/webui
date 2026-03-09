@@ -5,8 +5,6 @@ import { useAppStore } from '@dorkos/client/stores/app-store';
 export function createObsidianAdapter(app: App): PlatformAdapter {
   return {
     isEmbedded: true,
-    getSessionId: () => useAppStore.getState().sessionId,
-    setSessionId: (id) => useAppStore.getState().setSessionId(id),
     openFile: async (path: string) => {
       const file = app.vault.getAbstractFileByPath(path);
       if (file instanceof TFile) {

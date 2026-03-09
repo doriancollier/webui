@@ -15,14 +15,11 @@ describe('platform adapter', () => {
 
     const custom = {
       isEmbedded: true,
-      getSessionId: () => 'test-session',
-      setSessionId: vi.fn(),
       openFile: vi.fn(),
     };
 
     setPlatformAdapter(custom);
     expect(getPlatform().isEmbedded).toBe(true);
-    expect(getPlatform().getSessionId()).toBe('test-session');
   });
 
   it('web adapter openFile is a no-op', async () => {

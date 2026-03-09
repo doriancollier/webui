@@ -277,12 +277,9 @@ export function RunHistoryPanel({ scheduleId, scheduleCwd }: Props) {
   const handleNavigateToRun = useCallback(
     (sessionId: string) => {
       if (scheduleCwd && scheduleCwd !== selectedCwd) {
-        setSelectedCwd(scheduleCwd);
-        // setSelectedCwd clears sessionId internally — defer session set
-        setTimeout(() => setActiveSession(sessionId), 0);
-      } else {
-        setActiveSession(sessionId);
+        setSelectedCwd(scheduleCwd, { preserveSession: true });
       }
+      setActiveSession(sessionId);
     },
     [scheduleCwd, selectedCwd, setSelectedCwd, setActiveSession]
   );
