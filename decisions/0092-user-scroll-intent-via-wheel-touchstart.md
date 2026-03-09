@@ -1,7 +1,7 @@
 ---
 number: 92
 title: Gate Auto-Scroll Disengagement Behind User Scroll Intent via wheel/touchstart
-status: draft
+status: proposed
 created: 2026-03-08
 spec: fix-chat-streaming-history-consistency
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: fix-chat-streaming-history-consistency)
+Proposed
 
 ## Context
 

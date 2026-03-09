@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 95,
+  "nextNumber": 97,
   "decisions": [
     {
       "number": 94,
@@ -15,7 +15,7 @@
       "number": 93,
       "slug": "queuemicrotask-for-sse-event-batching",
       "title": "Defer tool_result Re-Render via queueMicrotask to Batch Adjacent SSE Events",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-08",
       "extractedFrom": "fix-chat-streaming-history-consistency",
       "specSlug": "fix-chat-streaming-history-consistency"
@@ -24,7 +24,7 @@
       "number": 92,
       "slug": "user-scroll-intent-via-wheel-touchstart",
       "title": "Gate Auto-Scroll Disengagement Behind User Scroll Intent via wheel/touchstart",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-08",
       "extractedFrom": "fix-chat-streaming-history-consistency",
       "specSlug": "fix-chat-streaming-history-consistency"
