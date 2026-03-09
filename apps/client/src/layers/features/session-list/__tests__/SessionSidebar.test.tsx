@@ -279,7 +279,9 @@ describe('SessionSidebar', () => {
 
   it('renders SidebarFooterBar with branding and settings', () => {
     renderWithQuery(<SessionSidebar />);
-    expect(screen.getByText('DorkOS by Dorkian')).toBeDefined();
+    // Branding is now a DorkLogo SVG inside a link to dorkos.ai
+    const brandLink = screen.getByRole('link');
+    expect(brandLink.getAttribute('href')).toBe('https://dorkos.ai');
     expect(screen.getByLabelText('Settings')).toBeDefined();
   });
 

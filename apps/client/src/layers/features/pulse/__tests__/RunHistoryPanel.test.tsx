@@ -163,8 +163,8 @@ describe('RunHistoryPanel', () => {
     const row = screen.getByTitle('Completed').closest('[class*="cursor-pointer"]');
     fireEvent.click(row!);
 
-    // Different cwd — should set directory first
-    expect(mockSetSelectedCwd).toHaveBeenCalledWith('/other/dir');
+    // Different cwd — should set directory first (with preserveSession option)
+    expect(mockSetSelectedCwd).toHaveBeenCalledWith('/other/dir', { preserveSession: true });
 
     // Session is set via setTimeout(0) — wait for it
     await waitFor(() => {

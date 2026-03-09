@@ -59,12 +59,13 @@ describe('AgentCard', () => {
     expect(screen.getByText('Copilot')).toBeTruthy();
   });
 
-  it('shows git remote when provided', () => {
+  it('does not render git remote (removed from UI)', () => {
     const candidate = createCandidate({ gitRemote: 'https://github.com/dork-labs/dorkos.git' });
 
     render(<AgentCard candidate={candidate} selected={false} onToggle={vi.fn()} />);
 
-    expect(screen.getByText('dork-labs/dorkos')).toBeTruthy();
+    // Git remote display was removed from the AgentCard component
+    expect(screen.queryByText('dork-labs/dorkos')).toBeNull();
   });
 
   it('does not render git remote when null', () => {
@@ -85,8 +86,8 @@ describe('AgentCard', () => {
     expect(onToggle).toHaveBeenCalledTimes(1);
   });
 
-  it('shows Registered badge when hasDorkManifest is true', () => {
-    const candidate = createCandidate({ hasDorkManifest: true });
+  it('shows Registered badge when strategy is dork-manifest', () => {
+    const candidate = createCandidate({ strategy: 'dork-manifest' });
 
     render(<AgentCard candidate={candidate} selected={false} onToggle={vi.fn()} />);
 
@@ -121,16 +122,28 @@ describe('AgentCard', () => {
     expect(inlineSvg).toBeNull();
   });
 
-  it('formats unknown markers as-is', () => {
-    const candidate = createCandidate({ markers: ['custom-marker'] });
+  it('formats unknown capabilities as-is', () => {
+    const candidate = createCandidate({
+      hints: {
+        suggestedName: 'my-app',
+        detectedRuntime: 'claude-code' as const,
+        inferredCapabilities: ['custom-marker'],
+      },
+    });
 
     render(<AgentCard candidate={candidate} selected={false} onToggle={vi.fn()} />);
 
     expect(screen.getByText('custom-marker')).toBeTruthy();
   });
 
-  it('formats .dork marker as DorkOS', () => {
-    const candidate = createCandidate({ markers: ['.dork'] });
+  it('formats .dork capability as DorkOS', () => {
+    const candidate = createCandidate({
+      hints: {
+        suggestedName: 'my-app',
+        detectedRuntime: 'claude-code' as const,
+        inferredCapabilities: ['.dork'],
+      },
+    });
 
     render(<AgentCard candidate={candidate} selected={false} onToggle={vi.fn()} />);
 
