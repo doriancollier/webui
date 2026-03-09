@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Eliminate ghost messages via per-message correlation IDs
 - Improve message history retrieval and error handling in session routes
 - Resolve streaming vs history inconsistencies via queueMicrotask and scroll-intent tracking
 - Prevent relay-mode polling storm and tool-call spinner regression

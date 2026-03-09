@@ -416,6 +416,10 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       return { success: true, durationMs: Date.now() - startTime };
     }
 
+    // Extract correlationId so it can be echoed in every response chunk,
+    // enabling the client to filter late-arriving events from previous messages.
+    const correlationId = payloadObj?.correlationId as string | undefined;
+
     // Format prompt with relay context metadata
     const content = extractPayloadContent(envelope.payload);
     const prompt = this.formatPromptWithContext(content, envelope, agentId, ccaSessionKey);
@@ -471,8 +475,8 @@ export class ClaudeCodeAdapter implements RelayAdapter {
               await this.publishDispatchProgress(envelope, stepCounter, 'tool_result', text, ccaSessionKey);
             }
           } else {
-            // relay.agent.*, relay.human.* — existing raw event streaming (unchanged)
-            await this.publishResponse(envelope, event, ccaSessionKey);
+            // relay.agent.*, relay.human.* — existing raw event streaming
+            await this.publishResponse(envelope, event, ccaSessionKey, correlationId);
           }
         }
       }
@@ -489,7 +493,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
       // Always send terminal done if not already sent
       if (!streamedDone && envelope.replyTo && this.relay) {
         try {
-          await this.publishResponse(envelope, { type: 'done', data: { sessionId: ccaSessionKey } }, ccaSessionKey);
+          await this.publishResponse(envelope, { type: 'done', data: { sessionId: ccaSessionKey } }, ccaSessionKey, correlationId);
         } catch {
           // Best-effort — if this also fails, client will timeout
           log.warn('[CCA] Failed to publish terminal done event');
@@ -868,11 +872,13 @@ export class ClaudeCodeAdapter implements RelayAdapter {
    * @param originalEnvelope - The original incoming envelope
    * @param event - The StreamEvent to publish as a response
    * @param fromId - The session or run ID to use as the sender
+   * @param correlationId - Optional correlation ID to echo for client-side event filtering
    */
   private async publishResponse(
     originalEnvelope: RelayEnvelope,
     event: StreamEvent,
     fromId: string,
+    correlationId?: string,
   ): Promise<void> {
     if (!this.relay || !originalEnvelope.replyTo) return;
     const opts: PublishOptions = {
@@ -881,7 +887,9 @@ export class ClaudeCodeAdapter implements RelayAdapter {
         hopCount: originalEnvelope.budget.hopCount + 1,
       },
     };
-    const result = await this.relay.publish(originalEnvelope.replyTo, event, opts);
+    // Wrap event with correlationId so client can filter stale events
+    const payload = correlationId ? { ...event, correlationId } : event;
+    const result = await this.relay.publish(originalEnvelope.replyTo, payload, opts);
     if (result.deliveredTo === 0 && event.type !== 'done') {
       (this.deps.logger ?? console).warn(
         `[CCA] publishResponse delivered to 0 subscribers: subject=${originalEnvelope.replyTo}, eventType=${event.type}`,

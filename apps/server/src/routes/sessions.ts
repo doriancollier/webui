@@ -178,6 +178,7 @@ router.patch('/:id', async (req, res) => {
  * @param clientId - Client identifier (from X-Client-Id header)
  * @param content - User message text
  * @param cwd - Optional working directory
+ * @param correlationId - Optional per-message correlation ID for relay event filtering
  */
 async function publishViaRelay(
   relayCore: RelayCore,
@@ -185,6 +186,7 @@ async function publishViaRelay(
   clientId: string,
   content: string,
   cwd?: string,
+  correlationId?: string,
 ): Promise<{ messageId: string; traceId: string }> {
   const consoleEndpoint = `relay.human.console.${clientId}`;
 
@@ -201,7 +203,7 @@ async function publishViaRelay(
 
   const publishResult = await relayCore.publish(
     `relay.agent.${sessionId}`,
-    { content, cwd },
+    { content, cwd, correlationId },
     {
       from: consoleEndpoint,
       replyTo: consoleEndpoint,
@@ -228,7 +230,7 @@ router.post('/:id/messages', async (req, res) => {
   if (!parsed.success) {
     return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
   }
-  const { content, cwd } = parsed.data;
+  const { content, cwd, correlationId } = parsed.data;
 
   // Read X-Client-Id header, or generate UUID if missing
   const clientId = (req.headers['x-client-id'] as string) || crypto.randomUUID();
@@ -251,7 +253,7 @@ router.post('/:id/messages', async (req, res) => {
   const relayCore = req.app.locals.relayCore as RelayCore | undefined;
   if (isRelayEnabled() && relayCore) {
     try {
-      const receipt = await publishViaRelay(relayCore, sessionId, clientId, content, cwd);
+      const receipt = await publishViaRelay(relayCore, sessionId, clientId, content, cwd, correlationId);
       return res.status(202).json(receipt);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Relay publish failed';

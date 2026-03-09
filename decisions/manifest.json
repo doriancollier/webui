@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 94,
+  "nextNumber": 95,
   "decisions": [
+    {
+      "number": 94,
+      "slug": "per-message-correlation-id-for-relay-event-filtering",
+      "title": "Per-Message Correlation ID for Relay Event Filtering",
+      "status": "accepted",
+      "created": "2026-03-08",
+      "extractedFrom": "fix-relay-ghost-messages",
+      "specSlug": "fix-relay-ghost-messages"
+    },
     {
       "number": 93,
       "slug": "queuemicrotask-for-sse-event-batching",

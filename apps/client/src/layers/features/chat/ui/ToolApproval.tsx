@@ -11,6 +11,8 @@ interface ToolApprovalProps {
   input: string;
   /** Whether this is the active shortcut target */
   isActive?: boolean;
+  /** Called after user approves or denies, to optimistically clear waiting state */
+  onDecided?: () => void;
 }
 
 export interface ToolApprovalHandle {
@@ -19,7 +21,7 @@ export interface ToolApprovalHandle {
 }
 
 export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(function ToolApproval(
-  { sessionId, toolCallId, toolName, input, isActive = false },
+  { sessionId, toolCallId, toolName, input, isActive = false, onDecided },
   ref
 ) {
   const transport = useTransport();
@@ -32,12 +34,13 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
     try {
       await transport.approveTool(sessionId, toolCallId);
       setDecided('approved');
+      onDecided?.();
     } catch (err) {
       console.error('Approval failed:', err);
     } finally {
       setResponding(false);
     }
-  }, [responding, decided, transport, sessionId, toolCallId]);
+  }, [responding, decided, transport, sessionId, toolCallId, onDecided]);
 
   const handleDeny = useCallback(async () => {
     if (responding || decided) return;
@@ -45,12 +48,13 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
     try {
       await transport.denyTool(sessionId, toolCallId);
       setDecided('denied');
+      onDecided?.();
     } catch (err) {
       console.error('Deny failed:', err);
     } finally {
       setResponding(false);
     }
-  }, [responding, decided, transport, sessionId, toolCallId]);
+  }, [responding, decided, transport, sessionId, toolCallId, onDecided]);
 
   useImperativeHandle(
     ref,

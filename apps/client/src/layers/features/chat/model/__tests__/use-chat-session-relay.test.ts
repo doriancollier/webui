@@ -18,8 +18,10 @@ vi.mock('@/layers/entities/relay', () => ({
 import { useRelayEnabled } from '@/layers/entities/relay';
 const mockUseRelayEnabled = vi.mocked(useRelayEnabled);
 
-// Mock crypto.randomUUID for deterministic IDs
-const mockUUID = vi.fn(() => 'test-uuid-1');
+// Mock crypto.randomUUID for deterministic IDs.
+// Default implementation returns sequential UUIDs for test isolation.
+let uuidCounter = 0;
+const mockUUID = vi.fn(() => `test-uuid-${++uuidCounter}`);
 vi.stubGlobal('crypto', { randomUUID: mockUUID });
 
 // Mock EventSource since jsdom doesn't provide it
@@ -71,6 +73,34 @@ function createWrapper(transport: Transport) {
   };
 }
 
+/**
+ * Helper: start handleSubmit and emit stream_ready during the waitForStreamReady poll.
+ *
+ * handleSubmit resets streamReadyRef before polling, so stream_ready must be emitted
+ * AFTER the reset. This helper starts the submit, emits stream_ready, then awaits completion.
+ * For fake-timer tests, pass `advanceTimers: true` to advance by 50ms so the poll fires.
+ */
+async function submitWithStreamReady(
+  result: { current: ReturnType<typeof useChatSession> },
+  es: MockEventSource,
+  options?: { advanceTimers?: boolean },
+) {
+  const submitPromise = result.current.handleSubmit();
+  // Emit stream_ready so the waitForStreamReady poll resolves
+  es.emit('stream_ready', {});
+  if (options?.advanceTimers) {
+    // Advance fake timers past the 50ms poll interval so setInterval fires
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+      await submitPromise;
+    });
+  } else {
+    await act(async () => {
+      await submitPromise;
+    });
+  }
+}
+
 describe('useChatSession relay protocol', () => {
   let mockTransport: Transport;
 
@@ -80,7 +110,9 @@ describe('useChatSession relay protocol', () => {
     (globalThis as Record<string, unknown>).EventSource = MockEventSource;
     mockTransport = createMockTransport();
     mockUseRelayEnabled.mockReturnValue(false);
-    mockUUID.mockReturnValue('test-uuid-1');
+    // Reset counter so UUIDs are deterministic per test: test-uuid-1, test-uuid-2, ...
+    uuidCounter = 0;
+    mockUUID.mockImplementation(() => `test-uuid-${++uuidCounter}`);
   });
 
   afterEach(() => {
@@ -100,24 +132,19 @@ describe('useChatSession relay protocol', () => {
       wrapper: createWrapper(mockTransport),
     });
 
-    // Emit stream_ready so handleSubmit doesn't wait for the 5s timeout
-    act(() => {
-      const es = MockEventSource.instances[0];
-      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
-    });
+    const es = MockEventSource.instances[0];
 
     // Set input
     act(() => {
       result.current.setInput('hello relay');
     });
 
-    // Submit
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
+    // Submit — stream_ready emitted during the waitForStreamReady poll
+    await submitWithStreamReady(result, es!);
 
     expect(mockTransport.sendMessageRelay).toHaveBeenCalledWith('session-1', 'hello relay', {
       clientId: 'test-uuid-1',
+      correlationId: expect.any(String),
     });
     expect(mockTransport.sendMessage).not.toHaveBeenCalled();
   });
@@ -152,18 +179,13 @@ describe('useChatSession relay protocol', () => {
       wrapper: createWrapper(mockTransport),
     });
 
-    act(() => {
-      const es = MockEventSource.instances[0];
-      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
-    });
+    const es = MockEventSource.instances[0];
 
     act(() => {
       result.current.setInput('optimistic msg');
     });
 
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
+    await submitWithStreamReady(result, es!);
 
     expect(result.current.messages).toHaveLength(1);
     expect(result.current.messages[0]).toEqual(
@@ -187,20 +209,19 @@ describe('useChatSession relay protocol', () => {
       wrapper: createWrapper(mockTransport),
     });
 
-    act(() => {
-      const es = MockEventSource.instances[0];
-      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
-    });
+    const es = MockEventSource.instances[0];
 
     act(() => {
       result.current.setInput('streaming check');
     });
 
-    // Start submit without awaiting completion
-    let submitPromise: Promise<void>;
-    act(() => {
-      submitPromise = result.current.handleSubmit();
-    });
+    // Start submit — handleSubmit resets streamReadyRef and polls via setInterval(50ms).
+    // We emit stream_ready to unblock the poll, then let microtasks flush so
+    // sendMessageRelay is called (capturing the resolveSend callback).
+    const submitPromise = result.current.handleSubmit();
+    es?.emit('stream_ready', {});
+    // Flush microtasks to let waitForStreamReady resolve and sendMessageRelay be called
+    await act(async () => { await new Promise((r) => setTimeout(r, 100)); });
 
     // Status should be streaming while the relay call is in flight
     expect(result.current.status).toBe('streaming');
@@ -208,7 +229,7 @@ describe('useChatSession relay protocol', () => {
     // Now resolve the send
     await act(async () => {
       resolveSend({ messageId: 'msg-1', traceId: 'trace-1' });
-      await submitPromise!;
+      await submitPromise;
     });
 
     // Relay path keeps status as 'streaming' — done event arrives via EventSource
@@ -225,18 +246,13 @@ describe('useChatSession relay protocol', () => {
       wrapper: createWrapper(mockTransport),
     });
 
-    act(() => {
-      const es = MockEventSource.instances[0];
-      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
-    });
+    const es = MockEventSource.instances[0];
 
     act(() => {
       result.current.setInput('will fail');
     });
 
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
+    await submitWithStreamReady(result, es!);
 
     expect(result.current.status).toBe('error');
     expect(result.current.error).toBe('Relay delivery failed');
@@ -253,39 +269,20 @@ describe('useChatSession relay protocol', () => {
       wrapper: createWrapper(mockTransport),
     });
 
-    // Emit stream_ready so handleSubmit doesn't block on the 5s wait
-    act(() => {
-      const es = MockEventSource.instances[0];
-      es?.emit('stream_ready', { clientId: 'test-uuid-1' });
-    });
+    const es = MockEventSource.instances[0];
 
-    // Submit a message to enter streaming state, which triggers EventSource creation
+    // Submit a message to enter streaming state
     act(() => {
       result.current.setInput('test relay events');
     });
 
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
+    await submitWithStreamReady(result, es!);
 
-    // After submit resolves, status is 'streaming' on relay path.
-    // The EventSource subscription is controlled by the !isStreaming condition,
-    // so the relay_message listener is set up when not streaming.
-    // Wait for the EventSource to be created (happens when streaming ends
-    // or on mount when not streaming).
-
-    // The EventSource is created by the useEffect when isStreaming becomes false.
-    // Since relay path keeps streaming=true, we need to simulate the done event
-    // to transition back to idle, which will create a new EventSource with relay listeners.
-
-    // Find the EventSource that was created before streaming started (on mount)
-    // or find the one that has relay_message listeners
+    // Find the EventSource that has relay_message listeners
     const esWithRelay = MockEventSource.instances.find(
       (es) => es.listeners['relay_message']?.length > 0
     );
 
-    // The initial mount creates an EventSource before submit.
-    // That one should have relay_message listener since relay is enabled.
     if (esWithRelay) {
       act(() => {
         esWithRelay.emit('relay_message', {
@@ -301,8 +298,6 @@ describe('useChatSession relay protocol', () => {
         expect(assistantMessages.length).toBeGreaterThan(0);
       });
     } else {
-      // If no EventSource has relay_message listeners yet, verify the setup is correct
-      // The EventSource with relay listeners is created when isStreaming is false
       expect(MockEventSource.instances.length).toBeGreaterThan(0);
     }
   });
@@ -322,18 +317,11 @@ describe('useChatSession relay protocol', () => {
     expect(MockEventSource.instances).toHaveLength(1);
     const originalEs = MockEventSource.instances[0];
 
-    // Emit stream_ready
-    act(() => {
-      originalEs.emit('stream_ready', { clientId: 'test-uuid-1' });
-    });
-
     // Submit — sets isStreaming=true
     act(() => {
       result.current.setInput('hello');
     });
-    await act(async () => {
-      await result.current.handleSubmit();
-    });
+    await submitWithStreamReady(result, originalEs);
 
     // Status is still 'streaming' on relay path
     expect(result.current.status).toBe('streaming');
@@ -420,16 +408,11 @@ describe('useChatSession relay protocol', () => {
         wrapper: createWrapper(mockTransport),
       });
 
-      act(() => {
-        const es = MockEventSource.instances[0];
-        es?.emit('stream_ready', {});
-      });
+      const es = MockEventSource.instances[0];
 
       act(() => { result.current.setInput('test'); });
 
-      await act(async () => {
-        await result.current.handleSubmit();
-      });
+      await submitWithStreamReady(result, es!, { advanceTimers: true });
 
       // Status is streaming on relay path — we haven't received a done event
       expect(result.current.status).toBe('streaming');
@@ -457,16 +440,11 @@ describe('useChatSession relay protocol', () => {
         wrapper: createWrapper(mockTransport),
       });
 
-      act(() => {
-        const es = MockEventSource.instances[0];
-        es?.emit('stream_ready', {});
-      });
+      const es = MockEventSource.instances[0];
 
       act(() => { result.current.setInput('test'); });
 
-      await act(async () => {
-        await result.current.handleSubmit();
-      });
+      await submitWithStreamReady(result, es!, { advanceTimers: true });
 
       expect(result.current.status).toBe('streaming');
 
@@ -498,12 +476,9 @@ describe('useChatSession relay protocol', () => {
 
       const es = MockEventSource.instances[0];
 
-      act(() => { es?.emit('stream_ready', {}); });
       act(() => { result.current.setInput('test'); });
 
-      await act(async () => {
-        await result.current.handleSubmit();
-      });
+      await submitWithStreamReady(result, es!, { advanceTimers: true });
 
       expect(result.current.status).toBe('streaming');
 
@@ -623,8 +598,9 @@ describe('useChatSession relay protocol', () => {
         wrapper: createWrapper(mockTransport),
       });
 
+      // Flush initial query + allow timers to settle
       await act(async () => {
-        await Promise.resolve();
+        await vi.advanceTimersByTimeAsync(100);
       });
 
       const callCountAfterMount = vi.mocked(mockTransport.getMessages).mock.calls.length;
@@ -640,17 +616,6 @@ describe('useChatSession relay protocol', () => {
 
   // ---------------------------------------------------------------------------
   // Bug 2: tool call spinner stuck after streaming completes (regression)
-  // Root cause: in relay mode the relay EventSource emits sync_update during
-  // streaming → invalidateQueries → getMessages refetch → if historySeededRef
-  // is still false (empty session on mount), the first-seed branch fires and
-  // overwrites messages state with history. The history assistant message has a
-  // different id than the streaming assistant message, so subsequent
-  // updateAssistantMessage calls (from tool_call_end) become no-ops.
-  // Result: the history-loaded assistant message retains status 'running'
-  // even after the stream completes.
-  // Fix: guard the sync_update invalidation with isStreamingRef so it doesn't
-  // trigger a state-clobbering refetch mid-stream, OR sweep any remaining
-  // 'running' tool calls to 'complete' in the done handler.
   // ---------------------------------------------------------------------------
   describe('tool call spinner regression in relay mode (Bug 2)', () => {
     /** Wrap a stream event payload in the relay_message envelope format. */
@@ -671,9 +636,8 @@ describe('useChatSession relay protocol', () => {
       });
 
       const es = MockEventSource.instances[0];
-      act(() => { es?.emit('stream_ready', {}); });
       act(() => { result.current.setInput('use TodoWrite'); });
-      await act(async () => { await result.current.handleSubmit(); });
+      await submitWithStreamReady(result, es!);
 
       // Emit tool lifecycle events in order
       act(() => {
@@ -701,7 +665,7 @@ describe('useChatSession relay protocol', () => {
       mockUseRelayEnabled.mockReturnValue(true);
 
       // Assign distinct UUIDs so we can track which message is which:
-      // call 1 → clientIdRef (hook init), call 2 → user message, call 3 → assistantIdRef
+      // call 1 -> clientIdRef (hook init), call 2 -> user message, call 3 -> assistantIdRef
       mockUUID
         .mockReturnValueOnce('client-id-1')
         .mockReturnValueOnce('streaming-user-id')
@@ -712,10 +676,9 @@ describe('useChatSession relay protocol', () => {
         traceId: 'trace-1',
       });
 
-      // Initial mount returns empty → historySeededRef stays false.
+      // Initial mount returns empty -> historySeededRef stays false.
       // After sync_update invalidation: returns stale history with a DIFFERENT
       // assistant id and the tool call still in 'running' state.
-      // This simulates the JSONL being partially written when sync_update fires.
       vi.mocked(mockTransport.getMessages)
         .mockResolvedValueOnce({ messages: [] })
         .mockResolvedValue({
@@ -752,9 +715,8 @@ describe('useChatSession relay protocol', () => {
       await act(async () => { await Promise.resolve(); });
 
       const es = MockEventSource.instances[0];
-      act(() => { es?.emit('stream_ready', {}); });
       act(() => { result.current.setInput('use TodoWrite'); });
-      await act(async () => { await result.current.handleSubmit(); });
+      await submitWithStreamReady(result, es!);
 
       // tool_call_start: streaming assistant message created (id='streaming-assistant-id'),
       // tool call pushed to currentPartsRef with status 'running'
@@ -791,6 +753,420 @@ describe('useChatSession relay protocol', () => {
       const toolCall = assistantMsg?.toolCalls?.find((tc) => tc.toolCallId === 'tc-todo');
       expect(toolCall, 'tool call should exist in the visible assistant message').toBeDefined();
       expect(toolCall?.status).toBe('complete');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Task 1.3: Synchronous state reset tests
+  // Covers streamReadyRef reset (task 1.1) and statusRef sync guard (task 1.2)
+  // ---------------------------------------------------------------------------
+  describe('synchronous state resets (task 1.3)', () => {
+    it('resets streamReadyRef before each relay send, forcing waitForStreamReady poll', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      const es = MockEventSource.instances[0];
+
+      // --- First message ---
+      act(() => {
+        result.current.setInput('message one');
+      });
+      await submitWithStreamReady(result, es!);
+
+      expect(mockTransport.sendMessageRelay).toHaveBeenCalledTimes(1);
+
+      // Complete the first message by emitting done
+      act(() => {
+        es?.emit('relay_message', { payload: { type: 'done', data: {} } });
+      });
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      // --- Second message ---
+      act(() => {
+        result.current.setInput('message two');
+      });
+
+      // Start the second submit. If streamReadyRef were not reset, waitForStreamReady
+      // would resolve immediately without needing a stream_ready event.
+      // By requiring stream_ready to be emitted, we verify the reset happened.
+      const submitPromise = result.current.handleSubmit();
+
+      // Without the reset fix, sendMessageRelay would already be called here because
+      // streamReadyRef would still be true. With the fix, it must wait for stream_ready.
+      // Give microtasks a chance to settle without emitting stream_ready.
+      await act(async () => {
+        await new Promise((r) => setTimeout(r, 0));
+      });
+
+      // sendMessageRelay should NOT have been called yet for the second message
+      // because we haven't emitted stream_ready
+      expect(mockTransport.sendMessageRelay).toHaveBeenCalledTimes(1);
+
+      // Now emit stream_ready to unblock the poll
+      es?.emit('stream_ready', {});
+
+      await act(async () => {
+        await submitPromise;
+      });
+
+      // Now the second message should have been sent
+      expect(mockTransport.sendMessageRelay).toHaveBeenCalledTimes(2);
+    });
+
+    it('sets statusRef synchronously so sync_update is blocked immediately after setStatus', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+
+      // Use a deferred sendMessageRelay so we can observe state mid-submit
+      let resolveSend!: (value: { messageId: string; traceId: string }) => void;
+      vi.mocked(mockTransport.sendMessageRelay).mockImplementation(
+        () => new Promise((resolve) => { resolveSend = resolve; })
+      );
+
+      // Return empty messages initially, then stale history on refetch
+      vi.mocked(mockTransport.getMessages)
+        .mockResolvedValueOnce({ messages: [] })
+        .mockResolvedValue({
+          messages: [{
+            id: 'stale-1',
+            role: 'assistant' as const,
+            content: 'stale content',
+            parts: [{ type: 'text' as const, text: 'stale content' }],
+            timestamp: new Date().toISOString(),
+          }],
+        });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      // Wait for initial getMessages
+      await act(async () => { await Promise.resolve(); });
+
+      const es = MockEventSource.instances[0];
+
+      act(() => {
+        result.current.setInput('test statusRef sync');
+      });
+
+      // Start submit — this sets status to streaming and statusRef synchronously
+      const submitPromise = result.current.handleSubmit();
+      es?.emit('stream_ready', {});
+      await act(async () => { await new Promise((r) => setTimeout(r, 100)); });
+
+      // Status should be streaming
+      expect(result.current.status).toBe('streaming');
+
+      // Fire sync_update — with the synchronous statusRef fix, this should be blocked
+      act(() => {
+        es?.emit('sync_update', {});
+      });
+
+      // Flush any pending queries
+      await act(async () => { await Promise.resolve(); });
+
+      // getMessages should only have been called once (initial mount), NOT again
+      // from sync_update, because statusRef.current === 'streaming' blocks invalidation
+      expect(vi.mocked(mockTransport.getMessages)).toHaveBeenCalledTimes(1);
+
+      // Clean up
+      await act(async () => {
+        resolveSend({ messageId: 'msg-1', traceId: 'trace-1' });
+        await submitPromise;
+      });
+    });
+
+    it('blocks sync_update invalidation when statusRef is streaming', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+      vi.mocked(mockTransport.getMessages)
+        .mockResolvedValueOnce({ messages: [] })
+        .mockResolvedValue({ messages: [] });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      // Wait for initial getMessages
+      await act(async () => { await Promise.resolve(); });
+      const initialCallCount = vi.mocked(mockTransport.getMessages).mock.calls.length;
+
+      const es = MockEventSource.instances[0];
+
+      act(() => {
+        result.current.setInput('streaming msg');
+      });
+
+      await submitWithStreamReady(result, es!);
+
+      // Now in streaming state
+      expect(result.current.status).toBe('streaming');
+
+      // Emit sync_update — should be blocked by the streaming guard
+      act(() => {
+        es?.emit('sync_update', {});
+      });
+
+      await act(async () => { await Promise.resolve(); });
+
+      // No additional getMessages calls after initial mount
+      expect(vi.mocked(mockTransport.getMessages).mock.calls.length).toBe(initialCallCount);
+
+      // Complete streaming by emitting done
+      act(() => {
+        es?.emit('relay_message', { payload: { type: 'done', data: {} } });
+      });
+
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      // Now sync_update SHOULD trigger invalidation since we're idle
+      act(() => {
+        es?.emit('sync_update', {});
+      });
+
+      await act(async () => { await Promise.resolve(); });
+
+      // getMessages should have been called again after idle
+      expect(vi.mocked(mockTransport.getMessages).mock.calls.length).toBeGreaterThan(initialCallCount);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Task 3.1: Correlation ID unit tests
+  // Covers client-side correlationId generation, filtering, and backward compat
+  // ---------------------------------------------------------------------------
+  describe('correlation ID filtering (task 3.1)', () => {
+    /** Wrap a stream event payload in the relay_message envelope format with optional correlationId. */
+    function relayEventWithCorrelation(
+      type: string,
+      data: unknown,
+      correlationId?: string,
+    ) {
+      return {
+        payload: { type, data },
+        ...(correlationId ? { correlationId } : {}),
+      };
+    }
+
+    it('sends correlationId to transport.sendMessageRelay', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      const es = MockEventSource.instances[0];
+
+      act(() => {
+        result.current.setInput('test correlation');
+      });
+
+      await submitWithStreamReady(result, es!);
+
+      // Verify correlationId was passed to sendMessageRelay as a string
+      expect(mockTransport.sendMessageRelay).toHaveBeenCalledWith(
+        'session-1',
+        'test correlation',
+        expect.objectContaining({
+          clientId: expect.any(String),
+          correlationId: expect.any(String),
+        }),
+      );
+
+      // Verify the correlationId is not empty
+      const callArgs = vi.mocked(mockTransport.sendMessageRelay).mock.calls[0];
+      const options = callArgs[2] as { correlationId?: string };
+      expect(options.correlationId).toBeTruthy();
+    });
+
+    it('discards relay_message events with mismatched correlationId', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      const es = MockEventSource.instances[0];
+
+      act(() => {
+        result.current.setInput('msg');
+      });
+
+      await submitWithStreamReady(result, es!);
+
+      // Capture the actual correlationId that was sent
+      const callArgs = vi.mocked(mockTransport.sendMessageRelay).mock.calls[0];
+      const actualCorrelationId = (callArgs[2] as { correlationId?: string }).correlationId!;
+      expect(actualCorrelationId).toBeTruthy();
+
+      // Status is streaming after submit
+      expect(result.current.status).toBe('streaming');
+
+      // Emit a relay_message with MISMATCHED correlationId (from a previous message)
+      act(() => {
+        es?.emit(
+          'relay_message',
+          relayEventWithCorrelation('text_delta', { text: 'stale text' }, 'old-correlation'),
+        );
+      });
+
+      // The stale event should be discarded — no assistant messages should appear
+      const assistantMsgsAfterStale = result.current.messages.filter(
+        (m) => m.role === 'assistant',
+      );
+      expect(assistantMsgsAfterStale).toHaveLength(0);
+
+      // Now emit a relay_message with MATCHING correlationId
+      act(() => {
+        es?.emit(
+          'relay_message',
+          relayEventWithCorrelation('text_delta', { text: 'valid text' }, actualCorrelationId),
+        );
+      });
+
+      // The valid event should be processed — an assistant message should appear
+      await waitFor(() => {
+        const assistantMsgs = result.current.messages.filter(
+          (m) => m.role === 'assistant',
+        );
+        expect(assistantMsgs.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('passes through relay_message events without correlationId for backward compat', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+
+      mockUUID
+        .mockReturnValueOnce('client-id-1')
+        .mockReturnValueOnce('user-msg-id')
+        .mockReturnValueOnce('assistant-id')
+        .mockReturnValueOnce('my-correlation');
+
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      const es = MockEventSource.instances[0];
+
+      act(() => {
+        result.current.setInput('backward compat test');
+      });
+
+      await submitWithStreamReady(result, es!);
+
+      // Emit a relay_message WITHOUT correlationId — should pass through
+      act(() => {
+        es?.emit(
+          'relay_message',
+          relayEventWithCorrelation('text_delta', { text: 'no correlation' }),
+        );
+      });
+
+      // The event should be processed — an assistant message should appear
+      await waitFor(() => {
+        const assistantMsgs = result.current.messages.filter(
+          (m) => m.role === 'assistant',
+        );
+        expect(assistantMsgs.length).toBeGreaterThan(0);
+      });
+    });
+
+    it('updates correlationIdRef on each new message, filtering late events from prior messages', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'msg-1',
+        traceId: 'trace-1',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      const es = MockEventSource.instances[0];
+
+      // --- Send Message 1 ---
+      act(() => {
+        result.current.setInput('first message');
+      });
+      await submitWithStreamReady(result, es!);
+
+      // Capture the correlationId for message 1
+      const msg1CallArgs = vi.mocked(mockTransport.sendMessageRelay).mock.calls[0];
+      const corrMsg1 = (msg1CallArgs[2] as { correlationId?: string }).correlationId!;
+
+      // Complete Message 1 with matching correlationId
+      act(() => {
+        es?.emit(
+          'relay_message',
+          relayEventWithCorrelation('done', {}, corrMsg1),
+        );
+      });
+      await waitFor(() => expect(result.current.status).toBe('idle'));
+
+      // --- Send Message 2 ---
+      act(() => {
+        result.current.setInput('second message');
+      });
+      await submitWithStreamReady(result, es!);
+
+      // Capture the correlationId for message 2
+      const msg2CallArgs = vi.mocked(mockTransport.sendMessageRelay).mock.calls[1];
+      const corrMsg2 = (msg2CallArgs[2] as { correlationId?: string }).correlationId!;
+
+      // Verify message 1 and 2 have different correlationIds
+      expect(corrMsg1).not.toBe(corrMsg2);
+
+      // Late-arriving event from Message 1 — should be discarded
+      act(() => {
+        es?.emit(
+          'relay_message',
+          relayEventWithCorrelation('text_delta', { text: 'ghost from msg 1' }, corrMsg1),
+        );
+      });
+
+      // No assistant text from the ghost event
+      const assistantMsgs = result.current.messages.filter((m) => m.role === 'assistant');
+      const hasGhostText = assistantMsgs.some((m) =>
+        m.parts?.some((p) => p.type === 'text' && p.text.includes('ghost from msg 1')),
+      );
+      expect(hasGhostText).toBe(false);
+
+      // Valid event for Message 2 — should be accepted
+      act(() => {
+        es?.emit(
+          'relay_message',
+          relayEventWithCorrelation('text_delta', { text: 'valid msg 2' }, corrMsg2),
+        );
+      });
+
+      await waitFor(() => {
+        const msgs = result.current.messages.filter((m) => m.role === 'assistant');
+        expect(msgs.some((m) =>
+          m.parts?.some((p) => p.type === 'text' && p.text.includes('valid msg 2')),
+        )).toBe(true);
+      });
     });
   });
 });

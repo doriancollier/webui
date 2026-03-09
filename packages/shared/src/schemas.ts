@@ -111,6 +111,7 @@ export const SendMessageRequestSchema = z
   .object({
     content: z.string().min(1, 'content is required'),
     cwd: z.string().optional(),
+    correlationId: z.string().uuid().optional(),
   })
   .openapi('SendMessageRequest');
 

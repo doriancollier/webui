@@ -804,6 +804,39 @@ SchedulerService → relay.publish('relay.system.pulse.{scheduleId}')
 
 Every `relay.publish()` records a `TraceSpan` in SQLite via `TraceStore` (in `apps/server/src/services/relay/trace-store.ts`). Spans are updated on delivery completion with status and timing. API: `GET /api/relay/messages/:id/trace`, `GET /api/relay/trace/metrics`.
 
+### Relay Correlation IDs
+
+When relay mode is enabled, each client message includes a `correlationId` (UUID) that threads through the full relay pipeline to prevent late-arriving response events from contaminating subsequent messages:
+
+1. **Client generation**: `useChatSession.handleSubmit()` generates `crypto.randomUUID()` and stores it in `correlationIdRef.current`
+2. **Request sending**: Client passes `correlationId` in POST body to `/api/sessions/:id/messages`
+3. **Server relay publish**: Route extracts `correlationId` and includes it in the relay envelope payload to `relay.agent.{sessionId}`
+4. **Adapter echo**: `ClaudeCodeAdapter.handleAgentMessage()` extracts the correlation ID and echoes it in every response chunk published to the reply subject
+5. **SessionBroadcaster**: Includes `correlationId` in SSE `relay_message` event data (top-level field)
+6. **Client filtering**: `relay_message` listener compares incoming `correlationId` against `correlationIdRef.current` and discards events with mismatched IDs
+
+**Backward compatibility:** The `correlationId` field is optional everywhere. Events without a `correlationId` pass through unfiltered (safe for non-relay clients or older servers).
+
+**Implementation flow:**
+```
+Client: correlationId = crypto.randomUUID()
+  → POST /api/sessions/:id/messages { content, correlationId }
+    → relay.publish(relayEnvelope { payload: { content, correlationId } })
+      → ClaudeCodeAdapter receives envelope
+        → For each response chunk: relay.publish(replyTo { ...chunk, correlationId })
+          → SessionBroadcaster includes correlationId in SSE relay_message event
+            → Client: if (envelope.correlationId !== correlationIdRef.current) discard
+```
+
+**Files involved:**
+- `packages/shared/src/schemas.ts` — `SendMessageRequestSchema` includes optional `correlationId: z.string().uuid()`
+- `packages/shared/src/transport.ts` — `Transport.sendMessageRelay()` accepts optional `correlationId` in options
+- `apps/client/src/layers/shared/lib/http-transport.ts` — Includes `correlationId` in POST body when provided
+- `apps/server/src/routes/sessions.ts` — `publishViaRelay()` forwards `correlationId` to relay envelope payload
+- `packages/relay/src/adapters/claude-code-adapter.ts` — Extracts and echoes `correlationId` in all `publishResponse()` calls
+- `apps/server/src/services/runtimes/claude-code/session-broadcaster.ts` — Includes `correlationId` in SSE `relay_message` events
+- `apps/client/src/layers/features/chat/model/use-chat-session.ts` — Generates UUID, passes to transport, filters incoming events by ID
+
 ## Mesh
 
 The Mesh subsystem (`packages/mesh/src/`) provides agent discovery, registration, and lifecycle management. It enables DorkOS to detect and coordinate with other AI coding agents running on the same machine or network.

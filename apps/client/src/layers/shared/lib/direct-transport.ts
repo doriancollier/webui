@@ -340,7 +340,7 @@ export class DirectTransport implements Transport {
   async sendMessageRelay(
     _sessionId: string,
     _content: string,
-    _options?: { clientId?: string },
+    _options?: { clientId?: string; correlationId?: string },
   ): Promise<{ messageId: string; traceId: string }> {
     throw new Error('Relay is not supported in embedded mode');
   }

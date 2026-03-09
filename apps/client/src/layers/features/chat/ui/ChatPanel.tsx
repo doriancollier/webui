@@ -69,6 +69,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     isWaitingForUser,
     waitingType,
     activeInteraction,
+    markToolCallResponded,
   } = useChatSession(sessionId, {
     transformContent,
     onTaskEvent: handleTaskEventWithCelebrations,
@@ -449,6 +450,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             activeToolCallId={activeInteraction?.toolCallId ?? null}
             onToolRef={handleToolRef}
             focusedOptionIndex={focusedOptionIndex}
+            onToolDecided={markToolCallResponded}
           />
         )}
 

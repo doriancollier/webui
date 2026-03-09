@@ -94,6 +94,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const abortRef = useRef<AbortController | null>(null);
   const currentPartsRef = useRef<MessagePart[]>([]);
   const assistantIdRef = useRef<string>('');
+  const correlationIdRef = useRef<string>('');
   const assistantCreatedRef = useRef(false);
   const historySeededRef = useRef(false);
   const streamStartTimeRef = useRef<number | null>(null);
@@ -258,7 +259,18 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
 
     eventSource.addEventListener('relay_message', (event: MessageEvent) => {
       try {
-        const envelope = JSON.parse(event.data) as { payload: { type: string; data: unknown } };
+        const envelope = JSON.parse(event.data) as {
+          payload: { type: string; data: unknown };
+          correlationId?: string;
+        };
+        // Discard late-arriving events from previous messages
+        if (
+          correlationIdRef.current &&
+          envelope.correlationId &&
+          envelope.correlationId !== correlationIdRef.current
+        ) {
+          return;
+        }
         // Reset staleness timer on every relay event — stream is still active
         resetStalenessTimer();
         streamEventHandler(envelope.payload.type, envelope.payload.data, assistantIdRef.current);
@@ -333,6 +345,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setStatus('streaming');
+    statusRef.current = 'streaming'; // Sync ref immediately — closes the timing window where sync_update could invalidate stale history
     setError(null);
     currentPartsRef.current = [];
     const streamStart = Date.now();
@@ -353,14 +366,18 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         : userMessage.content;
 
       if (relayEnabled) {
-        // Wait for SSE stream_ready handshake (5s timeout, best-effort).
-        // This ensures the relay subscription is active before the POST triggers SDK events.
-        if (!streamReadyRef.current) {
-          await waitForStreamReady(streamReadyRef, 5000);
-        }
+        // Generate a per-message correlation ID so the relay_message listener can
+        // discard late-arriving events from previous messages.
+        const correlationId = crypto.randomUUID();
+        correlationIdRef.current = correlationId;
+        // Force per-message handshake — reset so waitForStreamReady polls for a fresh stream_ready event.
+        // Without this, streamReadyRef stays true after the first message and all subsequent sends skip the handshake.
+        streamReadyRef.current = false;
+        await waitForStreamReady(streamReadyRef, 5000);
         // Relay path: POST returns 202 receipt, response chunks arrive via EventSource
         await transport.sendMessageRelay(sessionId, finalContent, {
           clientId: clientIdRef.current,
+          correlationId,
         });
         // Start the staleness detector — if the `done` event is lost, this fires after
         // DONE_STALENESS_MS of silence and polls the backend to recover gracefully.
@@ -407,6 +424,33 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     setStatus('idle');
   }, []);
 
+  /** Optimistically mark a tool call as responded (approved/denied/answered). */
+  const markToolCallResponded = useCallback(
+    (toolCallId: string) => {
+      const part = currentPartsRef.current.find(
+        (p) => p.type === 'tool_call' && p.toolCallId === toolCallId
+      );
+      if (part && part.type === 'tool_call') {
+        part.status = 'running';
+        const parts = currentPartsRef.current.map((p) => ({ ...p }));
+        const derived = deriveFromParts(parts);
+        setMessages((prev) =>
+          prev.map((m) =>
+            m.id === assistantIdRef.current
+              ? {
+                  ...m,
+                  content: derived.content,
+                  toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : [],
+                  parts,
+                }
+              : m
+          )
+        );
+      }
+    },
+    [] // Refs are stable
+  );
+
   const isLoadingHistory = historyQuery.isLoading;
 
   const pendingInteractions = useMemo(() => {
@@ -436,5 +480,6 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     isWaitingForUser,
     waitingType,
     activeInteraction,
+    markToolCallResponded,
   };
 }

@@ -84,6 +84,8 @@ interface MessageItemProps {
   onToolRef?: (handle: InteractiveToolHandle | null) => void;
   /** Index of keyboard-focused option in QuestionPrompt */
   focusedOptionIndex?: number;
+  /** Called when user approves/denies a tool or answers a question */
+  onToolDecided?: (toolCallId: string) => void;
 }
 
 function formatTime(timestamp: string): string {
@@ -103,6 +105,7 @@ export function MessageItem({
   activeToolCallId,
   onToolRef,
   focusedOptionIndex = -1,
+  onToolDecided,
 }: MessageItemProps) {
   const isUser = message.role === 'user';
   const { showTimestamps, expandToolCalls, autoHideToolCalls } = useAppStore();
@@ -234,6 +237,7 @@ export function MessageItem({
                   toolName={part.toolName}
                   input={part.input || ''}
                   isActive={isActive}
+                  onDecided={onToolDecided ? () => onToolDecided(part.toolCallId) : undefined}
                 />
               );
             }

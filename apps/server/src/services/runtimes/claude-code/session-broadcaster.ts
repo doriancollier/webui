@@ -321,6 +321,10 @@ export class SessionBroadcaster {
     unsubFn = this.relay!.subscribe(subject, (envelope) => {
       const payload = envelope.payload as Record<string, unknown> | null | undefined;
       const isDone = typeof payload === 'object' && payload !== null && payload['type'] === 'done';
+      const correlationId =
+        typeof payload === 'object' && payload !== null
+          ? (payload['correlationId'] as string | undefined)
+          : undefined;
 
       if (isDone) {
         logger.debug('[SSE] done event queued for client %s', clientId);
@@ -330,6 +334,7 @@ export class SessionBroadcaster {
         messageId: envelope.id,
         payload: envelope.payload,
         subject: envelope.subject,
+        ...(correlationId ? { correlationId } : {}),
       })}\n\n`;
       queue.push(eventData);
       void flush();

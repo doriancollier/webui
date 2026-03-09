@@ -433,7 +433,7 @@ export class HttpTransport implements Transport {
   async sendMessageRelay(
     sessionId: string,
     content: string,
-    options?: { clientId?: string },
+    options?: { clientId?: string; correlationId?: string },
   ): Promise<{ messageId: string; traceId: string }> {
     const res = await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
       method: 'POST',
@@ -441,7 +441,10 @@ export class HttpTransport implements Transport {
         'Content-Type': 'application/json',
         'X-Client-Id': options?.clientId ?? this.clientId,
       },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({
+        content,
+        ...(options?.correlationId ? { correlationId: options.correlationId } : {}),
+      }),
     });
     if (res.status !== 202 && !res.ok) {
       const error = await res.json().catch(() => ({ error: res.statusText }));
