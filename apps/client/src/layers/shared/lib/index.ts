@@ -6,7 +6,7 @@
 export { cn } from './utils';
 export { getPlatform, setPlatformAdapter, type PlatformAdapter } from './platform';
 export { fuzzyMatch } from './fuzzy-match';
-export { HttpTransport } from './http-transport';
+export { HttpTransport } from './transport';
 export { DirectTransport, type DirectTransportServices } from './direct-transport';
 export { getToolLabel } from './tool-labels';
 export { ToolArgumentsDisplay } from './tool-arguments-formatter';

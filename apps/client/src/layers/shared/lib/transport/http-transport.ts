@@ -1,0 +1,448 @@
+/**
+ * HTTP Transport — implements the Transport interface for standalone web clients.
+ * Domain-specific methods are delegated to factory-produced objects (pulse, relay, mesh).
+ *
+ * @module shared/lib/transport/http-transport
+ */
+import type {
+  Session,
+  CreateSessionRequest,
+  UpdateSessionRequest,
+  BrowseDirectoryResponse,
+  CommandRegistry,
+  FileListResponse,
+  HealthResponse,
+  HistoryMessage,
+  StreamEvent,
+  TaskItem,
+  ServerConfig,
+  ModelOption,
+  GitStatusResponse,
+  GitStatusError,
+  SessionLockedError,
+  PulseSchedule,
+  PulseRun,
+  CreateScheduleInput,
+  UpdateScheduleRequest,
+  ListRunsQuery,
+  PulsePreset,
+} from '@dorkos/shared/types';
+import type { Transport, AdapterListItem } from '@dorkos/shared/transport';
+import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
+import type {
+  TraceSpan,
+  DeliveryMetrics,
+  CatalogEntry,
+  RelayConversation,
+  AdapterBinding,
+  CreateBindingRequest,
+} from '@dorkos/shared/relay-schemas';
+import type {
+  AgentManifest,
+  AgentPathEntry,
+  DiscoveryCandidate,
+  DenialRecord,
+  AgentHealth,
+  MeshStatus,
+  TopologyView,
+  UpdateAccessRuleRequest,
+  CrossNamespaceRule,
+  TransportScanOptions,
+  TransportScanEvent,
+} from '@dorkos/shared/mesh-schemas';
+import { fetchJSON, buildQueryString } from './http-client';
+import { parseSSEStream } from './sse-parser';
+import { createPulseMethods } from './pulse-methods';
+import { createRelayMethods } from './relay-methods';
+import { createMeshMethods } from './mesh-methods';
+
+export class HttpTransport implements Transport {
+  private readonly clientId: string;
+  private readonly etagCache = new Map<string, string>();
+  private readonly messageCache = new Map<string, { messages: HistoryMessage[] }>();
+
+  // Delegated method declarations — satisfied at runtime via Object.assign
+  declare listSchedules: () => Promise<PulseSchedule[]>;
+  declare createSchedule: (opts: CreateScheduleInput) => Promise<PulseSchedule>;
+  declare updateSchedule: (id: string, opts: UpdateScheduleRequest) => Promise<PulseSchedule>;
+  declare deleteSchedule: (id: string) => Promise<{ success: boolean }>;
+  declare triggerSchedule: (id: string) => Promise<{ runId: string }>;
+  declare listRuns: (opts?: Partial<ListRunsQuery>) => Promise<PulseRun[]>;
+  declare getRun: (id: string) => Promise<PulseRun>;
+  declare cancelRun: (id: string) => Promise<{ success: boolean }>;
+  declare getPulsePresets: () => Promise<PulsePreset[]>;
+
+  declare listRelayMessages: (filters?: {
+    subject?: string;
+    status?: string;
+    from?: string;
+    cursor?: string;
+    limit?: number;
+  }) => Promise<{ messages: unknown[]; nextCursor?: string }>;
+  declare getRelayMessage: (id: string) => Promise<unknown>;
+  declare sendRelayMessage: (opts: {
+    subject: string;
+    payload: unknown;
+    from: string;
+    replyTo?: string;
+  }) => Promise<{ messageId: string; deliveredTo: number }>;
+  declare listRelayEndpoints: () => Promise<unknown[]>;
+  declare registerRelayEndpoint: (subject: string) => Promise<unknown>;
+  declare unregisterRelayEndpoint: (subject: string) => Promise<{ success: boolean }>;
+  declare readRelayInbox: (
+    subject: string,
+    opts?: { status?: string; cursor?: string; limit?: number },
+  ) => Promise<{ messages: unknown[]; nextCursor?: string }>;
+  declare getRelayMetrics: () => Promise<unknown>;
+  declare listRelayDeadLetters: (filters?: { endpointHash?: string }) => Promise<unknown[]>;
+  declare listRelayConversations: () => Promise<{ conversations: RelayConversation[] }>;
+  declare sendMessageRelay: (
+    sessionId: string,
+    content: string,
+    options?: { clientId?: string; correlationId?: string },
+  ) => Promise<{ messageId: string; traceId: string }>;
+  declare getRelayTrace: (
+    messageId: string,
+  ) => Promise<{ traceId: string; spans: TraceSpan[] }>;
+  declare getRelayDeliveryMetrics: () => Promise<DeliveryMetrics>;
+  declare listRelayAdapters: () => Promise<AdapterListItem[]>;
+  declare toggleRelayAdapter: (id: string, enabled: boolean) => Promise<{ ok: boolean }>;
+  declare getAdapterCatalog: () => Promise<CatalogEntry[]>;
+  declare addRelayAdapter: (
+    type: string,
+    id: string,
+    config: Record<string, unknown>,
+  ) => Promise<{ ok: boolean }>;
+  declare removeRelayAdapter: (id: string) => Promise<{ ok: boolean }>;
+  declare updateRelayAdapterConfig: (
+    id: string,
+    config: Record<string, unknown>,
+  ) => Promise<{ ok: boolean }>;
+  declare testRelayAdapterConnection: (
+    type: string,
+    config: Record<string, unknown>,
+  ) => Promise<{ ok: boolean; error?: string }>;
+  declare getBindings: () => Promise<AdapterBinding[]>;
+  declare createBinding: (input: CreateBindingRequest) => Promise<AdapterBinding>;
+  declare deleteBinding: (id: string) => Promise<void>;
+
+  declare listMeshAgentPaths: () => Promise<{ agents: AgentPathEntry[] }>;
+  declare discoverMeshAgents: (
+    roots: string[],
+    maxDepth?: number,
+  ) => Promise<{ candidates: DiscoveryCandidate[] }>;
+  declare listMeshAgents: (filters?: {
+    runtime?: string;
+    capability?: string;
+  }) => Promise<{ agents: AgentManifest[] }>;
+  declare getMeshAgent: (id: string) => Promise<AgentManifest>;
+  declare registerMeshAgent: (
+    path: string,
+    overrides?: Partial<AgentManifest>,
+    approver?: string,
+  ) => Promise<AgentManifest>;
+  declare updateMeshAgent: (
+    id: string,
+    updates: Partial<AgentManifest>,
+  ) => Promise<AgentManifest>;
+  declare unregisterMeshAgent: (id: string) => Promise<{ success: boolean }>;
+  declare denyMeshAgent: (
+    path: string,
+    reason?: string,
+    denier?: string,
+  ) => Promise<{ success: boolean }>;
+  declare listDeniedMeshAgents: () => Promise<{ denied: DenialRecord[] }>;
+  declare clearMeshDenial: (path: string) => Promise<{ success: boolean }>;
+  declare getMeshStatus: () => Promise<MeshStatus>;
+  declare getMeshAgentHealth: (id: string) => Promise<AgentHealth>;
+  declare sendMeshHeartbeat: (
+    id: string,
+    event?: string,
+  ) => Promise<{ success: boolean }>;
+  declare getMeshTopology: (namespace?: string) => Promise<TopologyView>;
+  declare updateMeshAccessRule: (body: UpdateAccessRuleRequest) => Promise<CrossNamespaceRule>;
+  declare getMeshAgentAccess: (agentId: string) => Promise<{ agents: AgentManifest[] }>;
+  declare getAgentByPath: (path: string) => Promise<AgentManifest | null>;
+  declare resolveAgents: (
+    paths: string[],
+  ) => Promise<Record<string, AgentManifest | null>>;
+  declare createAgent: (
+    path: string,
+    name?: string,
+    description?: string,
+    runtime?: string,
+  ) => Promise<AgentManifest>;
+  declare updateAgentByPath: (
+    path: string,
+    updates: Partial<AgentManifest>,
+  ) => Promise<AgentManifest>;
+
+  constructor(private baseUrl: string) {
+    this.clientId = crypto.randomUUID();
+    Object.assign(
+      this,
+      createPulseMethods(baseUrl),
+      createRelayMethods(baseUrl, () => this.clientId),
+      createMeshMethods(baseUrl),
+    );
+  }
+
+  // --- Session Management ---
+
+  createSession(opts: CreateSessionRequest): Promise<Session> {
+    return fetchJSON<Session>(this.baseUrl, '/sessions', {
+      method: 'POST',
+      body: JSON.stringify(opts),
+    });
+  }
+
+  listSessions(cwd?: string): Promise<Session[]> {
+    const qs = buildQueryString({ cwd });
+    return fetchJSON<Session[]>(this.baseUrl, `/sessions${qs}`);
+  }
+
+  getSession(id: string, cwd?: string): Promise<Session> {
+    const qs = buildQueryString({ cwd });
+    return fetchJSON<Session>(this.baseUrl, `/sessions/${id}${qs}`);
+  }
+
+  updateSession(id: string, opts: UpdateSessionRequest, cwd?: string): Promise<Session> {
+    const qs = buildQueryString({ cwd });
+    return fetchJSON<Session>(this.baseUrl, `/sessions/${id}${qs}`, {
+      method: 'PATCH',
+      body: JSON.stringify(opts),
+    });
+  }
+
+  // --- Message History (ETag caching) ---
+
+  async getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }> {
+    const qs = buildQueryString({ cwd });
+    const url = `/sessions/${sessionId}/messages${qs}`;
+
+    const headers: HeadersInit = { 'Content-Type': 'application/json' };
+    const cachedEtag = this.etagCache.get(sessionId);
+    if (cachedEtag) {
+      headers['If-None-Match'] = cachedEtag;
+    }
+
+    const res = await fetch(`${this.baseUrl}${url}`, { headers });
+
+    if (res.status === 304) {
+      const cached = this.messageCache.get(sessionId);
+      if (cached) return cached;
+      throw new Error('304 received but no cached response available');
+    }
+
+    if (!res.ok) {
+      const error = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(error.error || `HTTP ${res.status}`);
+    }
+
+    const data = await res.json();
+    const etag = res.headers.get('ETag');
+    if (etag) {
+      this.etagCache.set(sessionId, etag);
+      this.messageCache.set(sessionId, data);
+    }
+
+    return data;
+  }
+
+  // --- Message Streaming (SSE) ---
+
+  async sendMessage(
+    sessionId: string,
+    content: string,
+    onEvent: (event: StreamEvent) => void,
+    signal?: AbortSignal,
+    cwd?: string,
+  ): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/sessions/${sessionId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Client-Id': this.clientId,
+      },
+      body: JSON.stringify({ content, ...(cwd && { cwd }) }),
+      signal,
+    });
+
+    if (!response.ok) {
+      if (response.status === 409) {
+        const errorData = (await response.json().catch(() => null)) as SessionLockedError | null;
+        if (errorData && errorData.code === 'SESSION_LOCKED') {
+          const error = new Error('Session locked') as Error & SessionLockedError;
+          error.code = 'SESSION_LOCKED';
+          error.lockedBy = errorData.lockedBy;
+          error.lockedAt = errorData.lockedAt;
+          throw error;
+        }
+      }
+      throw new Error(`HTTP ${response.status}`);
+    }
+
+    const reader = response.body!.getReader();
+    for await (const event of parseSSEStream<StreamEvent['data']>(reader)) {
+      onEvent({ type: event.type, data: event.data } as StreamEvent);
+    }
+  }
+
+  // --- Tool Approval ---
+
+  approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }> {
+    return fetchJSON<{ ok: boolean }>(this.baseUrl, `/sessions/${sessionId}/approve`, {
+      method: 'POST',
+      body: JSON.stringify({ toolCallId }),
+    });
+  }
+
+  denyTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }> {
+    return fetchJSON<{ ok: boolean }>(this.baseUrl, `/sessions/${sessionId}/deny`, {
+      method: 'POST',
+      body: JSON.stringify({ toolCallId }),
+    });
+  }
+
+  submitAnswers(
+    sessionId: string,
+    toolCallId: string,
+    answers: Record<string, string>,
+  ): Promise<{ ok: boolean }> {
+    return fetchJSON<{ ok: boolean }>(this.baseUrl, `/sessions/${sessionId}/submit-answers`, {
+      method: 'POST',
+      body: JSON.stringify({ toolCallId, answers }),
+    });
+  }
+
+  // --- Tasks ---
+
+  async getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }> {
+    try {
+      const qs = buildQueryString({ cwd });
+      return await fetchJSON<{ tasks: TaskItem[] }>(
+        this.baseUrl,
+        `/sessions/${sessionId}/tasks${qs}`,
+      );
+    } catch {
+      return { tasks: [] };
+    }
+  }
+
+  // --- Directory & File Operations ---
+
+  browseDirectory(dirPath?: string, showHidden?: boolean): Promise<BrowseDirectoryResponse> {
+    const qs = buildQueryString({ path: dirPath, showHidden: showHidden || undefined });
+    return fetchJSON<BrowseDirectoryResponse>(this.baseUrl, `/directory${qs}`);
+  }
+
+  getDefaultCwd(): Promise<{ path: string }> {
+    return fetchJSON<{ path: string }>(this.baseUrl, '/directory/default');
+  }
+
+  listFiles(cwd: string): Promise<FileListResponse> {
+    const params = new URLSearchParams({ cwd });
+    return fetchJSON<FileListResponse>(this.baseUrl, `/files?${params}`);
+  }
+
+  getGitStatus(cwd?: string): Promise<GitStatusResponse | GitStatusError> {
+    const qs = buildQueryString({ dir: cwd });
+    return fetchJSON<GitStatusResponse | GitStatusError>(this.baseUrl, `/git/status${qs}`);
+  }
+
+  // --- Commands & Status ---
+
+  getCommands(refresh = false, cwd?: string): Promise<CommandRegistry> {
+    const qs = buildQueryString({ refresh: refresh || undefined, cwd });
+    return fetchJSON<CommandRegistry>(this.baseUrl, `/commands${qs}`);
+  }
+
+  // --- Config & Health ---
+
+  health(): Promise<HealthResponse> {
+    return fetchJSON<HealthResponse>(this.baseUrl, '/health');
+  }
+
+  getConfig(): Promise<ServerConfig> {
+    return fetchJSON<ServerConfig>(this.baseUrl, '/config');
+  }
+
+  async updateConfig(patch: Record<string, unknown>): Promise<void> {
+    await fetchJSON<void>(this.baseUrl, '/config', {
+      method: 'PATCH',
+      body: JSON.stringify(patch),
+    });
+  }
+
+  getModels(): Promise<ModelOption[]> {
+    return fetchJSON<{ models: ModelOption[] }>(this.baseUrl, '/models').then((r) => r.models);
+  }
+
+  getCapabilities(): Promise<{
+    capabilities: Record<string, RuntimeCapabilities>;
+    defaultRuntime: string;
+  }> {
+    return fetchJSON(this.baseUrl, '/capabilities');
+  }
+
+  // --- Tunnel Management ---
+
+  startTunnel(): Promise<{ url: string }> {
+    return fetchJSON<{ url: string }>(this.baseUrl, '/tunnel/start', { method: 'POST' });
+  }
+
+  async stopTunnel(): Promise<void> {
+    await fetchJSON<{ ok: boolean }>(this.baseUrl, '/tunnel/stop', { method: 'POST' });
+  }
+
+  // --- Admin Operations ---
+
+  async resetAllData(confirm: string): Promise<{ message: string }> {
+    const res = await fetch(`${this.baseUrl}/admin/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ confirm }),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+    return res.json();
+  }
+
+  async restartServer(): Promise<{ message: string }> {
+    const res = await fetch(`${this.baseUrl}/admin/restart`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text);
+    }
+    return res.json();
+  }
+
+  // --- Discovery Scan (SSE) ---
+
+  async scan(
+    options: TransportScanOptions,
+    onEvent: (event: TransportScanEvent) => void,
+    signal?: AbortSignal,
+  ): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/discovery/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(options),
+      signal,
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(body.error ?? `HTTP ${response.status}`);
+    }
+
+    const reader = response.body!.getReader();
+    for await (const event of parseSSEStream<TransportScanEvent['data']>(reader)) {
+      onEvent({ type: event.type, data: event.data } as TransportScanEvent);
+    }
+  }
+}

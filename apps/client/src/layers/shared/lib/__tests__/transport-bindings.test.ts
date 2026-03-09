@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { HttpTransport } from '../http-transport';
+import { HttpTransport } from '../transport';
 import { DirectTransport } from '../direct-transport';
 
 const BASE_URL = 'http://localhost:4242/api';
