@@ -1019,6 +1019,37 @@ Upload files to a session's working directory for agent access. Files are stored
 - `400` — Missing `cwd`, no files provided, file too large, or MIME type not allowed
 - `403` — `cwd` is outside the configured directory boundary
 
+### GET /api/uploads/:filename
+
+Serve an uploaded file by filename. Used by the client to render image thumbnails in chat history.
+
+**Path parameters:**
+
+| Parameter  | Type   | Description                                           |
+| ---------- | ------ | ----------------------------------------------------- |
+| `filename` | string | Sanitized filename (as returned by POST upload)       |
+
+**Query parameters:**
+
+| Parameter | Type   | Required | Description                                    |
+| --------- | ------ | -------- | ---------------------------------------------- |
+| `cwd`     | string | Yes      | Working directory where files were uploaded     |
+
+**Success response (200):** File content with appropriate MIME type.
+
+**Error responses:**
+
+- `400` — Missing `cwd` query parameter
+- `403` — `cwd` is outside the configured directory boundary, or resolved path escapes upload directory
+- `404` — File not found in the upload directory
+- `500` — Internal server error
+
+**Security:**
+
+- `path.basename()` strips directory components from the filename parameter
+- Resolved path is validated to stay within `{cwd}/.dork/.temp/uploads/`
+- Directory boundary validation via `validateBoundary(cwd)`
+
 ## Validation Errors
 
 Invalid requests return HTTP 400 with a structured error body:

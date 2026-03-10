@@ -1,8 +1,22 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach } from 'vitest';
+import { describe, it, expect, vi, afterEach, beforeAll, afterAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { FileChipBar } from '../ui/FileChipBar';
 import type { PendingFile } from '../model/use-file-upload';
+
+// Mock URL.createObjectURL / revokeObjectURL for jsdom
+const originalCreateObjectURL = URL.createObjectURL;
+const originalRevokeObjectURL = URL.revokeObjectURL;
+
+beforeAll(() => {
+  URL.createObjectURL = vi.fn(() => 'blob:mock-thumbnail-url');
+  URL.revokeObjectURL = vi.fn();
+});
+
+afterAll(() => {
+  URL.createObjectURL = originalCreateObjectURL;
+  URL.revokeObjectURL = originalRevokeObjectURL;
+});
 
 afterEach(() => {
   cleanup();
@@ -107,5 +121,50 @@ describe('FileChipBar', () => {
 
     fireEvent.click(removeButtons[1]);
     expect(onRemove).toHaveBeenCalledWith('second');
+  });
+
+  it('renders an image thumbnail for image files', () => {
+    const files = [
+      createPendingFile({
+        id: 'img-1',
+        file: new File(['pixels'], 'photo.png', { type: 'image/png' }),
+      }),
+    ];
+
+    const { container } = render(<FileChipBar files={files} onRemove={vi.fn()} />);
+
+    // Thumbnail has alt="" (decorative — filename text provides context), so query by element
+    const img = container.querySelector('img');
+    expect(img).toBeInTheDocument();
+    expect(img).toHaveAttribute('src', 'blob:mock-thumbnail-url');
+  });
+
+  it('does not render a thumbnail for non-image files', () => {
+    const files = [
+      createPendingFile({
+        id: 'doc-1',
+        file: new File(['text'], 'readme.md', { type: 'text/markdown' }),
+      }),
+    ];
+
+    const { container } = render(<FileChipBar files={files} onRemove={vi.fn()} />);
+
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('shows spinner instead of thumbnail during upload of an image', () => {
+    const files = [
+      createPendingFile({
+        id: 'img-uploading',
+        file: new File(['pixels'], 'photo.jpg', { type: 'image/jpeg' }),
+        status: 'uploading',
+        progress: 60,
+      }),
+    ];
+
+    const { container } = render(<FileChipBar files={files} onRemove={vi.fn()} />);
+
+    expect(container.querySelector('img')).toBeNull();
+    expect(screen.getByText('60%')).toBeInTheDocument();
   });
 });

@@ -130,3 +130,44 @@ describe('POST /api/uploads', () => {
     expect(validateBoundary).toHaveBeenCalledWith('/test/project');
   });
 });
+
+describe('GET /api/uploads/:filename', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns 400 when cwd query param is missing', async () => {
+    const res = await request(app).get('/api/uploads/test.png');
+
+    expect(res.status).toBe(400);
+    expect(res.body.error).toMatch(/cwd/i);
+  });
+
+  it('returns 404 for nonexistent file', async () => {
+    const res = await request(app).get('/api/uploads/missing.png?cwd=/test/project');
+
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('File not found');
+  });
+
+  it('returns 403 when cwd fails boundary validation', async () => {
+    vi.mocked(validateBoundary).mockRejectedValueOnce(
+      new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
+    );
+
+    const res = await request(app).get('/api/uploads/test.png?cwd=/etc/passwd');
+
+    expect(res.status).toBe(403);
+    expect(res.body.code).toBe('OUTSIDE_BOUNDARY');
+  });
+
+  it('strips directory traversal via path.basename and returns 404', async () => {
+    const res = await request(app).get(
+      '/api/uploads/..%2F..%2Fetc%2Fpasswd?cwd=/test/project',
+    );
+
+    // path.basename strips traversal, resulting in just "passwd" which won't exist
+    expect(res.status).toBe(404);
+    expect(res.body.error).toBe('File not found');
+  });
+});

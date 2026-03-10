@@ -1,3 +1,4 @@
+import path from 'path';
 import { Router } from 'express';
 import multer from 'multer';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
@@ -54,6 +55,44 @@ router.post('/', async (req, res) => {
           mimeType: f.mimetype,
         })),
       });
+    });
+  } catch (err) {
+    if (err instanceof BoundaryError) {
+      return res.status(403).json({ error: err.message, code: err.code });
+    }
+    throw err;
+  }
+});
+
+/**
+ * Serve an uploaded file by filename.
+ *
+ * Requires `cwd` query parameter to locate the upload directory.
+ * Uses `path.basename()` to prevent directory traversal and validates
+ * the resolved path stays within the upload directory.
+ */
+router.get('/:filename', async (req, res) => {
+  try {
+    const cwd = req.query.cwd;
+    if (!cwd || typeof cwd !== 'string') {
+      return res.status(400).json({ error: 'Missing required parameter: cwd' });
+    }
+
+    const validatedCwd = await validateBoundary(cwd);
+    const filename = path.basename(req.params.filename);
+    const filePath = path.join(uploadHandler.getUploadDir(validatedCwd), filename);
+
+    const resolvedPath = path.resolve(filePath);
+    const uploadDir = path.resolve(uploadHandler.getUploadDir(validatedCwd));
+    if (!resolvedPath.startsWith(uploadDir + path.sep) && resolvedPath !== uploadDir) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    res.sendFile(resolvedPath, (err) => {
+      if (err && !res.headersSent) {
+        const status = (err as NodeJS.ErrnoException).code === 'ENOENT' ? 404 : 500;
+        res.status(status).json({ error: status === 404 ? 'File not found' : 'Internal error' });
+      }
     });
   } catch (err) {
     if (err instanceof BoundaryError) {

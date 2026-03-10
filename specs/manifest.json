@@ -763,7 +763,7 @@
       "slug": "file-upload-chat-visibility",
       "title": "File Upload Chat History Visibility",
       "created": "2026-03-10",
-      "status": "ideation"
+      "status": "implemented"
     }
   ]
 }

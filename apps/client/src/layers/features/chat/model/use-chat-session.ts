@@ -387,6 +387,14 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         ? await options.transformContent(userMessage.content)
         : userMessage.content;
 
+      // Update optimistic message with file prefix so pills render immediately
+      // rather than waiting for the JSONL transcript refresh after streaming.
+      if (finalContent !== userMessage.content) {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === userMessage.id ? { ...m, content: finalContent } : m))
+        );
+      }
+
       if (relayEnabled) {
         // Generate a per-message correlation ID so the relay_message listener can
         // discard late-arriving events from previous messages.

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- File upload chat visibility with optimistic rendering
 - Right-aligned user message bubbles with grouped stacking
 
 ### Changed

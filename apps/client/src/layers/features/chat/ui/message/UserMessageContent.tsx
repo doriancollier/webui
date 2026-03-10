@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import type { ChatMessage } from '../../model/use-chat-session';
 import { cn } from '@/layers/shared/lib';
+import { parseFilePrefix } from '../../lib/parse-file-prefix';
+import { FileAttachmentList } from './FileAttachmentList';
 
 /**
  * Renders user message content based on messageType.
@@ -9,6 +11,7 @@ import { cn } from '@/layers/shared/lib';
  */
 export function UserMessageContent({ message }: { message: ChatMessage }) {
   const [compactionExpanded, setCompactionExpanded] = useState(false);
+  const parsed = useMemo(() => parseFilePrefix(message.content), [message.content]);
 
   if (message.messageType === 'command') {
     return (
@@ -39,5 +42,12 @@ export function UserMessageContent({ message }: { message: ChatMessage }) {
     );
   }
 
-  return <div className="break-words whitespace-pre-wrap">{message.content}</div>;
+  return (
+    <div>
+      {parsed.files.length > 0 && <FileAttachmentList files={parsed.files} />}
+      {parsed.textContent && (
+        <div className="break-words whitespace-pre-wrap">{parsed.textContent}</div>
+      )}
+    </div>
+  );
 }

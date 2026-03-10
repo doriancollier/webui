@@ -23,7 +23,7 @@ export const messageItem = tv({
         content: 'font-[var(--msg-user-font-weight)]',
       },
       assistant: {
-        root: 'w-full px-[var(--msg-padding-x)] hover:bg-muted/20',
+        root: 'w-full px-[var(--msg-padding-x)] py-[var(--msg-padding-y)] rounded-msg hover:bg-muted',
         content: 'max-w-[var(--msg-content-max-width)] flex-1 font-[var(--msg-assistant-font-weight)]',
       },
     },
