@@ -137,6 +137,22 @@ describe('AgentIdentityChip', () => {
     expect(screen.getByLabelText('Configure agent')).toBeInTheDocument();
   });
 
+  it('renders agent emoji when agent is configured', () => {
+    render(
+      <AgentIdentityChip agent={mockAgent} visual={mockVisual} isStreaming={false} />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.getByText('🤖')).toBeInTheDocument();
+  });
+
+  it('does not render emoji when agent is null', () => {
+    render(
+      <AgentIdentityChip agent={null} visual={mockVisual} isStreaming={false} />,
+      { wrapper: Wrapper },
+    );
+    expect(screen.queryByText('🤖')).not.toBeInTheDocument();
+  });
+
   it('renders chevron icon', () => {
     render(
       <AgentIdentityChip agent={mockAgent} visual={mockVisual} isStreaming={false} />,

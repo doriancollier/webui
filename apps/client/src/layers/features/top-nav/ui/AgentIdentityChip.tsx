@@ -59,11 +59,11 @@ export function AgentIdentityChip({ agent, visual, isStreaming }: AgentIdentityC
             />
           )}
 
-          {/* Agent name with slide transition on agent switch */}
+          {/* Agent emoji + name with slide transition on agent switch */}
           <AnimatePresence mode="wait">
             <motion.span
               key={agent?.id ?? 'no-agent'}
-              className={`max-w-[160px] truncate text-sm ${
+              className={`flex items-center gap-1 max-w-[160px] text-sm ${
                 agent ? 'font-medium' : 'text-muted-foreground'
               }`}
               initial={{ opacity: 0, y: -3 }}
@@ -71,7 +71,10 @@ export function AgentIdentityChip({ agent, visual, isStreaming }: AgentIdentityC
               exit={{ opacity: 0, y: 3 }}
               transition={{ duration: 0.12 }}
             >
-              {agent?.name ?? 'No agent'}
+              {agent && visual.emoji && (
+                <span className="text-xs leading-none">{visual.emoji}</span>
+              )}
+              <span className="truncate">{agent?.name ?? 'No agent'}</span>
             </motion.span>
           </AnimatePresence>
 
