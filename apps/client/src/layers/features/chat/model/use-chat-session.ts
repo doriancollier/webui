@@ -209,6 +209,10 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     const history = historyQuery.data.messages;
 
     if (!historySeededRef.current && history.length > 0) {
+      // Don't seed during streaming — server history is incomplete and would
+      // overwrite optimistic messages (e.g. create-on-first-message sessionId change).
+      // Seeding defers until streaming completes and this effect re-runs.
+      if (isStreaming) return;
       historySeededRef.current = true;
       setMessages(history.map(mapHistoryMessage));
       return;

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prevent message loss during streaming and model selector flicker
 ---
 
 ## [0.9.1] - 2026-03-10

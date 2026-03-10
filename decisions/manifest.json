@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 106,
+  "nextNumber": 107,
   "decisions": [
+    {
+      "number": 106,
+      "slug": "convergence-effect-for-optimistic-query-state",
+      "title": "Convergence Effect for Optimistic TanStack Query State",
+      "status": "draft",
+      "created": "2026-03-10",
+      "extractedFrom": "fix-chat-streaming-and-model-selector-bugs",
+      "specSlug": "fix-chat-streaming-and-model-selector-bugs"
+    },
     {
       "number": 103,
       "slug": "optional-api-key-auth-for-mcp",

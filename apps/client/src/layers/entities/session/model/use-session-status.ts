@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import type {
@@ -86,9 +86,8 @@ export function useSessionStatus(
           ['session', sessionId, selectedCwd],
           (old: Session | undefined) => ({ ...old, ...updated })
         );
-        // Clear optimistic overrides — server data is now authoritative
-        if (opts.model) setLocalModel(null);
-        if (opts.permissionMode) setLocalPermissionMode(null);
+        // Optimistic state cleared by convergence effect below, not here.
+        // This eliminates the render gap between setQueryData and useQuery re-render.
         return updated;
       } catch {
         // Revert optimistic state on failure
@@ -98,6 +97,17 @@ export function useSessionStatus(
     },
     [transport, sessionId, selectedCwd, queryClient]
   );
+
+  // Convergence effect: clear optimistic overrides once server data confirms the value.
+  // This eliminates the render gap where localModel is null but session?.model is stale.
+  useEffect(() => {
+    if (localModel !== null && session?.model === localModel) {
+      setLocalModel(null);
+    }
+    if (localPermissionMode !== null && session?.permissionMode === localPermissionMode) {
+      setLocalPermissionMode(null);
+    }
+  }, [session?.model, session?.permissionMode, localModel, localPermissionMode]);
 
   return { ...statusData, updateSession };
 }

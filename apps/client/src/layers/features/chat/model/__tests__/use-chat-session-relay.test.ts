@@ -1169,4 +1169,78 @@ describe('useChatSession relay protocol', () => {
       });
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Task 1.3: History seeding during streaming
+  // Regression test for the streaming guard added to the history seed effect.
+  // When sessionId changes mid-stream (create-on-first-message), the seed effect
+  // must NOT overwrite optimistic messages with stale/incomplete server history.
+  // ---------------------------------------------------------------------------
+  describe('history seeding during streaming', () => {
+    it('does not overwrite optimistic messages when historySeededRef resets mid-stream', async () => {
+      mockUseRelayEnabled.mockReturnValue(true);
+
+      // First getMessages returns empty (initial mount), second returns the user message
+      // (refetch after sessionId change would bring back server history)
+      vi.mocked(mockTransport.getMessages)
+        .mockResolvedValueOnce({ messages: [] })
+        .mockResolvedValue({
+          messages: [
+            {
+              id: 'msg-1',
+              role: 'user' as const,
+              content: 'hello',
+              parts: [{ type: 'text' as const, text: 'hello' }],
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        });
+
+      vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
+        messageId: 'relay-1',
+        traceId: 'trace-1',
+      });
+
+      const { result } = renderHook(() => useChatSession('session-1'), {
+        wrapper: createWrapper(mockTransport),
+      });
+
+      // Wait for initial empty getMessages to resolve
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const es = MockEventSource.instances[0];
+
+      // User sends message -> optimistic message added to state
+      act(() => {
+        result.current.setInput('hello');
+      });
+
+      await submitWithStreamReady(result, es!);
+
+      // Status should be streaming after relay submit
+      expect(result.current.status).toBe('streaming');
+
+      // The optimistic user message should be present
+      expect(result.current.messages).toContainEqual(
+        expect.objectContaining({ role: 'user', content: 'hello' })
+      );
+
+      // Simulate sync_update which would trigger a refetch — but the streaming
+      // guard in the seed effect should prevent overwriting optimistic messages
+      act(() => {
+        es?.emit('sync_update', {});
+      });
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // The optimistic user message must still be present (not overwritten by seed)
+      expect(result.current.messages).toContainEqual(
+        expect.objectContaining({ role: 'user', content: 'hello' })
+      );
+    });
+  });
 });

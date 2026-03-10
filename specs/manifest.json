@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 113,
+  "nextNumber": 115,
   "specs": [
     {
       "number": 1,
@@ -785,6 +785,21 @@
       "title": "Update Top Nav — Agent Identity, Command Palette Trigger, 10x Elevation",
       "created": "2026-03-10",
       "status": "specified"
+    },
+    {
+      "number": 113,
+      "slug": "fix-chat-streaming-and-model-selector-bugs",
+      "title": "Fix Chat Streaming & Model Selector Bugs",
+      "created": "2026-03-10",
+      "status": "specified"
+    },
+    {
+      "number": 114,
+      "slug": "hide-scrollbars-when-idle",
+      "title": "Hide Scrollbars When Idle",
+      "created": "2026-03-10",
+      "status": "ideation"
     }
-  ]
+  ],
+  "nextNumber": 115
 }
