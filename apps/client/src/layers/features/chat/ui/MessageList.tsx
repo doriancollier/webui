@@ -13,6 +13,7 @@ import type { PermissionMode } from '@dorkos/shared/types';
 import { MessageItem } from './message';
 import type { InteractiveToolHandle } from './message';
 import { InferenceIndicator } from './InferenceIndicator';
+import { ScrollArea } from '@/layers/shared/ui';
 
 export function computeGrouping(messages: ChatMessage[]): MessageGrouping[] {
   let groupIndex = 0;
@@ -79,7 +80,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   },
   ref
 ) {
-  const parentRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   const [historyCount, setHistoryCount] = useState<number | null>(null);
   const isAtBottomRef = useRef(true);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -94,7 +95,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
 
   const virtualizer = useVirtualizer({
     count: messages.length,
-    getScrollElement: () => parentRef.current,
+    getScrollElement: () => viewportRef.current,
     estimateSize: () => 80,
     overscan: 5,
     measureElement: (el) => el?.getBoundingClientRect().height ?? 80,
@@ -106,7 +107,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
 
   // Track scroll position and report to parent
   const handleScroll = useCallback(() => {
-    const container = parentRef.current;
+    const container = viewportRef.current;
     if (!container) return;
     const distanceFromBottom =
       container.scrollHeight - container.scrollTop - container.clientHeight;
@@ -125,7 +126,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   }, [onScrollStateChange]);
 
   useEffect(() => {
-    const container = parentRef.current;
+    const container = viewportRef.current;
     if (!container) return;
     const onTouchStart = () => {
       isTouchActiveRef.current = true;
@@ -168,7 +169,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   // sidebar tabs), the virtualizer loses its scroll position. Detect
   // visibility changes and scroll to bottom when re-shown.
   useEffect(() => {
-    const container = parentRef.current;
+    const container = viewportRef.current;
     if (!container || messages.length === 0) return;
     let wasHidden = false;
     const observer = new IntersectionObserver(
@@ -179,7 +180,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
           wasHidden = false;
           // Small delay so the virtualizer can re-measure after layout
           requestAnimationFrame(() => {
-            const scrollEl = parentRef.current;
+            const scrollEl = viewportRef.current;
             if (scrollEl) {
               scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
             }
@@ -204,7 +205,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
         // fires, reducing the window where scrollHeight fluctuates mid-scroll.
         queueMicrotask(() => {
           rafIdRef.current = requestAnimationFrame(() => {
-            const scrollEl = parentRef.current;
+            const scrollEl = viewportRef.current;
             if (scrollEl) {
               scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
             }
@@ -224,7 +225,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   useEffect(() => {
     if (messages.length > 0 && isAtBottomRef.current && !isTouchActiveRef.current) {
       requestAnimationFrame(() => {
-        const scrollEl = parentRef.current;
+        const scrollEl = viewportRef.current;
         if (scrollEl) {
           scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
         }
@@ -233,7 +234,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   }, [messages.length]);
 
   const scrollToBottom = useCallback(() => {
-    const scrollEl = parentRef.current;
+    const scrollEl = viewportRef.current;
     if (scrollEl) {
       scrollEl.scrollTop = scrollEl.scrollHeight - scrollEl.clientHeight;
     }
@@ -248,7 +249,13 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   );
 
   return (
-    <div ref={parentRef} data-testid="message-list" className="chat-scroll-area h-full overflow-y-auto pt-12">
+    <ScrollArea
+      type="scroll"
+      className="chat-scroll-area h-full"
+      viewportClassName="pt-12"
+      viewportRef={viewportRef}
+      data-testid="message-list"
+    >
       <div
         ref={contentRef}
         style={{
@@ -305,6 +312,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
           />
         </div>
       </div>
-    </div>
+    </ScrollArea>
   );
 });

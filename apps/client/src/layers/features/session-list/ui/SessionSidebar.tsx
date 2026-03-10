@@ -22,6 +22,7 @@ import { AgentHeader } from './AgentHeader';
 import { AgentContextChips } from './AgentContextChips';
 import { SidebarFooterBar } from './SidebarFooterBar';
 import { Plus } from 'lucide-react';
+import { ScrollArea } from '@/layers/shared/ui';
 import { ProgressCard, useOnboarding } from '@/layers/features/onboarding';
 import type { Session } from '@dorkos/shared/types';
 
@@ -130,7 +131,8 @@ export function SessionSidebar() {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent data-testid="session-list">
+      <SidebarContent data-testid="session-list" className="!overflow-hidden">
+        <ScrollArea type="scroll" className="h-full">
         <motion.div layout>
         {groupedSessions.length > 0 ? (
           <>
@@ -165,6 +167,7 @@ export function SessionSidebar() {
           </div>
         )}
         </motion.div>
+        </ScrollArea>
       </SidebarContent>
 
       <SidebarFooter className="border-t p-3">

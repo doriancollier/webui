@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Auto-hide scrollbars in sidebar and message list
+- Auto-hide scrollbars in sidebar and message list
 - Display agent emoji in identity chip
 - Add agent identity chip and command palette trigger to header
 - Always-editable input with message queuing during streaming

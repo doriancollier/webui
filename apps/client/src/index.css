@@ -315,28 +315,11 @@ body {
   height: 100dvh;
 }
 
-/* Custom scrollbar styling */
+/* Thin scrollbar for non-ScrollArea elements (code blocks, dialogs, etc.)
+   ScrollArea components hide native scrollbars and render their own. */
 * {
   scrollbar-width: thin;
   scrollbar-color: hsl(var(--border)) transparent;
-}
-
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--border));
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
 }
 
 @media (max-width: 767px) {
@@ -510,6 +493,15 @@ body {
 .msg-assistant div:has(> div > [data-streamdown='table']):hover > div:first-child:not(:has(table)) {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* Radix ScrollArea injects a `display:table` wrapper inside the Viewport to
+   handle horizontal sizing. This causes measurement oscillation with TanStack
+   Virtual's absolute-positioned items, resulting in jerky scrolling. Override
+   to block layout for virtualized scroll containers. */
+.chat-scroll-area [data-slot="scroll-area-viewport"] > div {
+  display: block !important;
+  min-width: unset !important;
 }
 
 /* Command palette list: capped height, overflow delegated to Radix ScrollArea */
