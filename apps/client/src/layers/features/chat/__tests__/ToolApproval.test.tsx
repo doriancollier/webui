@@ -54,7 +54,7 @@ describe('ToolApproval', () => {
       const { container } = render(<ToolApproval {...baseProps} isActive={true} />);
       const wrapper = container.firstElementChild as HTMLElement;
       expect(wrapper.className).toContain('ring-2');
-      expect(wrapper.className).toContain('ring-amber-500/30');
+      expect(wrapper.className).toContain('ring-status-warning/30');
     });
 
     it('does not have ring-2 class when isActive is false', () => {

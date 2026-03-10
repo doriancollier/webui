@@ -1,8 +1,9 @@
-import { useState, useImperativeHandle, useCallback, forwardRef } from 'react';
+import { useState, useImperativeHandle, useCallback } from 'react';
 import { Check, X, Shield } from 'lucide-react';
 import { useTransport } from '@/layers/shared/model';
 import { ToolArgumentsDisplay, cn } from '@/layers/shared/lib';
 import { Kbd } from '@/layers/shared/ui';
+import { approvalState } from './message/message-variants';
 
 interface ToolApprovalProps {
   sessionId: string;
@@ -13,6 +14,8 @@ interface ToolApprovalProps {
   isActive?: boolean;
   /** Called after user approves or denies, to optimistically clear waiting state */
   onDecided?: () => void;
+  /** React 19 ref-as-prop for imperative approve/deny control */
+  ref?: React.Ref<ToolApprovalHandle>;
 }
 
 export interface ToolApprovalHandle {
@@ -20,10 +23,20 @@ export interface ToolApprovalHandle {
   deny: () => void;
 }
 
-export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(function ToolApproval(
-  { sessionId, toolCallId, toolName, input, isActive = false, onDecided },
-  ref
-) {
+/**
+ * Tool approval card rendered when the agent requests permission to use a tool.
+ *
+ * Supports imperative control via `ref` (approve/deny) for keyboard shortcut integration.
+ */
+export function ToolApproval({
+  sessionId,
+  toolCallId,
+  toolName,
+  input,
+  isActive = false,
+  onDecided,
+  ref,
+}: ToolApprovalProps) {
   const transport = useTransport();
   const [responding, setResponding] = useState(false);
   const [decided, setDecided] = useState<'approved' | 'denied' | null>(null);
@@ -72,11 +85,10 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
   if (decided) {
     return (
       <div
-        className={`my-1 rounded border px-3 py-2 text-sm transition-colors duration-200 ${
-          decided === 'approved'
-            ? 'border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-            : 'border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400'
-        }`}
+        className={cn(
+          'my-1 rounded border px-3 py-2 text-sm transition-colors duration-200',
+          approvalState({ state: decided === 'approved' ? 'approved' : 'denied' })
+        )}
         data-testid="tool-approval-decided"
         data-decision={decided}
       >
@@ -89,13 +101,14 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
   return (
     <div
       className={cn(
-        'my-1 rounded border border-amber-500/20 bg-amber-500/10 p-3 text-sm transition-all duration-200',
-        isActive && 'ring-2 ring-amber-500/30'
+        'my-1 rounded border p-3 text-sm transition-all duration-200',
+        approvalState({ state: 'pending' }),
+        isActive && 'ring-2 ring-status-warning/30'
       )}
       data-testid="tool-approval"
     >
       <div className="mb-2 flex items-center gap-2">
-        <Shield className="size-(--size-icon-md) text-amber-500" />
+        <Shield className="size-(--size-icon-md) text-status-warning" />
         <span className="font-semibold">Tool approval required</span>
       </div>
       <div className="mb-2 font-mono text-xs">{toolName}</div>
@@ -108,7 +121,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
         <button
           onClick={handleApprove}
           disabled={responding}
-          className="flex items-center gap-1 rounded bg-emerald-600 px-3 py-1 text-xs text-white transition-colors hover:bg-emerald-700 disabled:opacity-50 max-md:py-2"
+          className="flex items-center gap-1 rounded bg-status-success px-3 py-1 text-xs text-white transition-colors hover:opacity-90 disabled:opacity-50 max-md:py-2"
         >
           <Check className="size-(--size-icon-xs)" /> Approve
           {isActive && <Kbd className="ml-1.5">Enter</Kbd>}
@@ -116,7 +129,7 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
         <button
           onClick={handleDeny}
           disabled={responding}
-          className="flex items-center gap-1 rounded bg-red-600 px-3 py-1 text-xs text-white transition-colors hover:bg-red-700 disabled:opacity-50 max-md:py-2"
+          className="flex items-center gap-1 rounded bg-status-error px-3 py-1 text-xs text-white transition-colors hover:opacity-90 disabled:opacity-50 max-md:py-2"
         >
           <X className="size-(--size-icon-xs)" /> Deny
           {isActive && <Kbd className="ml-1.5">Esc</Kbd>}
@@ -124,4 +137,4 @@ export const ToolApproval = forwardRef<ToolApprovalHandle, ToolApprovalProps>(fu
       </div>
     </div>
   );
-});
+}

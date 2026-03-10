@@ -129,7 +129,8 @@ describe('MessageItem', () => {
     const { container } = render(
       <MessageItem message={msg} sessionId="test-session" grouping={onlyGrouping} />
     );
-    const contentDiv = container.querySelector('.max-w-\\[80ch\\]');
+    const messageItemEl = container.querySelector('[data-testid="message-item"]');
+    const contentDiv = messageItemEl?.querySelector('.min-w-0');
     const children = Array.from(contentDiv!.children);
     // First child: text part "Before tool"
     expect(children[0].textContent).toContain('Before tool');
@@ -272,7 +273,7 @@ describe('MessageItem', () => {
     const { container } = render(
       <MessageItem message={msg} sessionId="test-session" grouping={grouping} />
     );
-    const divider = container.querySelector('.bg-border\\/20');
+    const divider = container.querySelector('.bg-\\[var\\(--msg-divider-color\\)\\]');
     expect(divider).not.toBeNull();
   });
 
@@ -288,7 +289,7 @@ describe('MessageItem', () => {
     const { container } = render(
       <MessageItem message={msg} sessionId="test-session" grouping={grouping} />
     );
-    const divider = container.querySelector('.bg-border\\/20');
+    const divider = container.querySelector('.bg-\\[var\\(--msg-divider-color\\)\\]');
     expect(divider).toBeNull();
   });
 
@@ -305,8 +306,8 @@ describe('MessageItem', () => {
     );
     const el = container.querySelector('.msg-assistant');
     expect(el).not.toBeNull();
-    // max-w-[80ch] is on the parent content container (applies to text + tool calls)
-    const contentContainer = container.querySelector('.max-w-\\[80ch\\]');
+    // content container uses TV slot class (max-w-[var(--msg-content-max-width)])
+    const contentContainer = container.querySelector('.min-w-0.flex-1');
     expect(contentContainer).not.toBeNull();
     expect(contentContainer?.querySelector('.msg-assistant')).not.toBeNull();
   });
@@ -323,8 +324,8 @@ describe('MessageItem', () => {
       <MessageItem message={msg} sessionId="test-session" grouping={middleGrouping} />
     );
     const el = container.firstElementChild;
-    expect(el?.className).toContain('pt-0.5');
-    expect(el?.className).toContain('pb-0.5');
+    expect(el?.className).toContain('pt-[var(--msg-padding-y-mid)]');
+    expect(el?.className).toContain('pb-[var(--msg-padding-y-mid)]');
   });
 
   it('applies larger spacing for first-in-group messages', () => {
@@ -339,7 +340,7 @@ describe('MessageItem', () => {
       <MessageItem message={msg} sessionId="test-session" grouping={firstGrouping} />
     );
     const el = container.firstElementChild;
-    expect(el?.className).toContain('pt-4');
+    expect(el?.className).toContain('pt-[var(--msg-padding-y-start)]');
   });
 
   it('new user message has initial scale 0.97', () => {

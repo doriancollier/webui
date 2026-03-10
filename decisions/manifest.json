@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 97,
+  "nextNumber": 100,
   "decisions": [
+    {
+      "number": 99,
+      "slug": "message-context-for-prop-drilling-elimination",
+      "title": "MessageContext for Prop Drilling Elimination",
+      "status": "draft",
+      "created": "2026-03-09",
+      "extractedFrom": "chat-message-theming",
+      "specSlug": "chat-message-theming"
+    },
+    {
+      "number": 98,
+      "slug": "semantic-status-tokens-for-tool-state-colors",
+      "title": "Semantic Status Tokens for Tool State Colors",
+      "status": "draft",
+      "created": "2026-03-09",
+      "extractedFrom": "chat-message-theming",
+      "specSlug": "chat-message-theming"
+    },
+    {
+      "number": 97,
+      "slug": "adopt-tailwind-variants-for-multi-slot-components",
+      "title": "Adopt tailwind-variants for Multi-Slot Feature Components",
+      "status": "draft",
+      "created": "2026-03-09",
+      "extractedFrom": "chat-message-theming",
+      "specSlug": "chat-message-theming"
+    },
     {
       "number": 94,
       "slug": "per-message-correlation-id-for-relay-event-filtering",

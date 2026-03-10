@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Check, X, ChevronDown } from 'lucide-react';
 import type { ToolCallState } from '../model/use-chat-session';
-import { getToolLabel, ToolArgumentsDisplay } from '@/layers/shared/lib';
+import { getToolLabel, ToolArgumentsDisplay, cn } from '@/layers/shared/lib';
+import { toolStatus } from './message/message-variants';
 
 interface ToolCallCardProps {
   toolCall: ToolCallState;
@@ -13,10 +14,14 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
   const [expanded, setExpanded] = useState(defaultExpanded);
 
   const statusIcon = {
-    pending: <Loader2 className="size-(--size-icon-xs) animate-spin" />,
-    running: <Loader2 className="size-(--size-icon-xs) animate-spin text-blue-500" />,
-    complete: <Check className="size-(--size-icon-xs) text-green-500" />,
-    error: <X className="size-(--size-icon-xs) text-red-500" />,
+    pending: (
+      <Loader2 className={cn('size-(--size-icon-xs) animate-spin', toolStatus({ status: 'pending' }))} />
+    ),
+    running: (
+      <Loader2 className={cn('size-(--size-icon-xs) animate-spin', toolStatus({ status: 'running' }))} />
+    ),
+    complete: <Check className={cn('size-(--size-icon-xs)', toolStatus({ status: 'complete' }))} />,
+    error: <X className={cn('size-(--size-icon-xs)', toolStatus({ status: 'error' }))} />,
   }[toolCall.status];
 
   return (

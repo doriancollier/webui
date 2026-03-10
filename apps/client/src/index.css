@@ -89,6 +89,28 @@
   --color-sidebar-primary: hsl(var(--sidebar-primary));
   --color-sidebar-foreground: hsl(var(--sidebar-foreground));
   --color-sidebar: hsl(var(--sidebar));
+  --color-surface: hsl(var(--surface));
+
+  /* Status colors */
+  --color-status-success: hsl(var(--status-success));
+  --color-status-success-bg: hsl(var(--status-success-bg));
+  --color-status-success-border: hsl(var(--status-success-border));
+  --color-status-success-fg: hsl(var(--status-success-fg));
+  --color-status-error: hsl(var(--status-error));
+  --color-status-error-bg: hsl(var(--status-error-bg));
+  --color-status-error-border: hsl(var(--status-error-border));
+  --color-status-error-fg: hsl(var(--status-error-fg));
+  --color-status-warning: hsl(var(--status-warning));
+  --color-status-warning-bg: hsl(var(--status-warning-bg));
+  --color-status-warning-border: hsl(var(--status-warning-border));
+  --color-status-warning-fg: hsl(var(--status-warning-fg));
+  --color-status-info: hsl(var(--status-info));
+  --color-status-info-bg: hsl(var(--status-info-bg));
+  --color-status-info-border: hsl(var(--status-info-border));
+  --color-status-info-fg: hsl(var(--status-info-fg));
+  --color-status-pending: hsl(var(--status-pending));
+  --color-status-pending-bg: hsl(var(--status-pending-bg));
+  --color-status-pending-fg: hsl(var(--status-pending-fg));
 }
 
 :root {
@@ -114,12 +136,86 @@
   --radius: 0.5rem;
   --user-msg: 0 0% 91%;
 
-  /* Sidebar — subtly distinct from main background */
-  --sidebar: 0 0% 96%;
+  /* === Status tokens === */
+  --status-success: 152 69% 31%;
+  --status-success-bg: 152 69% 96%;
+  --status-success-border: 152 69% 80%;
+  --status-success-fg: 152 69% 31%;
+
+  --status-error: 0 72% 51%;
+  --status-error-bg: 0 72% 96%;
+  --status-error-border: 0 72% 80%;
+  --status-error-fg: 0 72% 41%;
+
+  --status-warning: 38 92% 50%;
+  --status-warning-bg: 38 92% 96%;
+  --status-warning-border: 38 92% 80%;
+  --status-warning-fg: 38 92% 40%;
+
+  --status-info: 217 91% 60%;
+  --status-info-bg: 217 91% 96%;
+  --status-info-border: 217 91% 80%;
+  --status-info-fg: 217 91% 40%;
+
+  --status-pending: 0 0% 45%;
+  --status-pending-bg: 0 0% 96%;
+  --status-pending-fg: 0 0% 32%;
+
+  /* === Message tokens === */
+  --msg-assistant-bg: transparent;
+  --msg-system-bg: 0 0% 96%;
+  --msg-command-fg: var(--muted-foreground);
+  --msg-compaction-fg: 0 0% 32%;
+
+  /* === Typography tokens === */
+  --msg-user-font-weight: 400;
+  --msg-user-line-height: 1.6;
+  --msg-assistant-font-weight: 300;
+  --msg-assistant-line-height: 1.75;
+  --msg-timestamp-color: hsl(var(--muted-foreground) / 0.6);
+
+  /* === Spacing tokens (density-aware) === */
+  --msg-padding-x: 1rem;
+  --msg-padding-y-start: 1rem;
+  --msg-padding-y-mid: 0.125rem;
+  --msg-padding-y-end: 0.75rem;
+  --msg-gap: 0.75rem;
+  --msg-leading-width: 1rem;
+  --msg-content-max-width: 80ch;
+
+  /* === Shape tokens === */
+  --msg-radius: 0;
+  --msg-tool-radius: var(--radius);
+  --msg-divider-color: hsl(var(--border) / 0.2);
+
+  /* === Motion tokens === */
+  --msg-enter-y: 8px;
+  --msg-enter-scale-user: 0.97;
+  --msg-enter-stiffness: 320;
+  --msg-enter-damping: 28;
+  --msg-tool-expand-duration: 300ms;
+  --msg-tool-expand-easing: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* === Interactive state tokens === */
+  --msg-hover-user: hsl(var(--user-msg) / 0.9);
+  --msg-hover-assistant: hsl(var(--muted) / 0.2);
+  --msg-actions-opacity-default: 0;
+  --msg-actions-opacity-hover: 1;
+
+  /* === Elevation tokens === */
+  --msg-tool-shadow: none;
+  --msg-tool-shadow-hover: 0 1px 3px hsl(0 0% 0% / 0.08);
+  --msg-tool-border: hsl(var(--border) / 0.6);
+
+  /* Secondary surface — same as sidebar, for use outside the sidebar */
+  --surface: 0 0% 94%;
+
+  /* Sidebar — distinct from main background */
+  --sidebar: 0 0% 94%;
   --sidebar-foreground: 0 0% 9%;
   --sidebar-primary: 0 0% 9%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 92%;
+  --sidebar-accent: 0 0% 90%;
   --sidebar-accent-foreground: 0 0% 9%;
   --sidebar-border: 0 0% 83%;
   --sidebar-ring: 217 91% 60%;
@@ -147,12 +243,46 @@
   --ring: 213 94% 68%;
   --user-msg: 0 0% 15%;
 
-  /* Sidebar — subtly distinct from main background */
-  --sidebar: 0 0% 6%;
+  --status-success: 152 69% 55%;
+  --status-success-bg: 152 69% 12%;
+  --status-success-border: 152 69% 25%;
+  --status-success-fg: 152 69% 55%;
+
+  --status-error: 0 72% 60%;
+  --status-error-bg: 0 72% 12%;
+  --status-error-border: 0 72% 25%;
+  --status-error-fg: 0 72% 60%;
+
+  --status-warning: 38 92% 60%;
+  --status-warning-bg: 38 92% 12%;
+  --status-warning-border: 38 92% 25%;
+  --status-warning-fg: 38 92% 50%;
+
+  --status-info: 213 94% 68%;
+  --status-info-bg: 213 94% 12%;
+  --status-info-border: 213 94% 25%;
+  --status-info-fg: 213 94% 68%;
+
+  --status-pending: 0 0% 55%;
+  --status-pending-bg: 0 0% 12%;
+  --status-pending-fg: 0 0% 64%;
+
+  --msg-assistant-bg: transparent;
+  --msg-system-bg: 0 0% 9%;
+  --msg-command-fg: var(--muted-foreground);
+  --msg-compaction-fg: 0 0% 64%;
+
+  --msg-tool-shadow-hover: 0 1px 3px hsl(0 0% 0% / 0.3);
+
+  /* Secondary surface — same as sidebar, for use outside the sidebar */
+  --surface: 0 0% 8%;
+
+  /* Sidebar — distinct from main background */
+  --sidebar: 0 0% 8%;
   --sidebar-foreground: 0 0% 93%;
   --sidebar-primary: 0 0% 93%;
   --sidebar-primary-foreground: 0 0% 9%;
-  --sidebar-accent: 0 0% 12%;
+  --sidebar-accent: 0 0% 13%;
   --sidebar-accent-foreground: 0 0% 93%;
   --sidebar-border: 0 0% 25%;
   --sidebar-ring: 213 94% 68%;
@@ -467,6 +597,26 @@ body {
   --color-input: var(--background-modifier-form-field);
   --color-ring: var(--interactive-accent);
   --color-user-msg: var(--background-secondary-alt);
+
+  --color-status-success: #16a34a;
+  --color-status-success-bg: rgba(22, 163, 74, 0.1);
+  --color-status-success-border: rgba(22, 163, 74, 0.2);
+  --color-status-success-fg: #16a34a;
+  --color-status-error: #dc2626;
+  --color-status-error-bg: rgba(220, 38, 38, 0.1);
+  --color-status-error-border: rgba(220, 38, 38, 0.2);
+  --color-status-error-fg: #dc2626;
+  --color-status-warning: #f59e0b;
+  --color-status-warning-bg: rgba(245, 158, 11, 0.1);
+  --color-status-warning-border: rgba(245, 158, 11, 0.2);
+  --color-status-warning-fg: #f59e0b;
+  --color-status-info: #3b82f6;
+  --color-status-info-bg: rgba(59, 130, 246, 0.1);
+  --color-status-info-border: rgba(59, 130, 246, 0.2);
+  --color-status-info-fg: #3b82f6;
+  --color-status-pending: #737373;
+  --color-status-pending-bg: rgba(115, 115, 115, 0.1);
+  --color-status-pending-fg: #737373;
 
   color: var(--text-normal);
   background-color: var(--background-secondary);
