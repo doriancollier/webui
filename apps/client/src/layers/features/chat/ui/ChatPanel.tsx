@@ -23,7 +23,7 @@ import { useCelebrations } from '../model/use-celebrations';
 import type { TaskUpdateEvent } from '@dorkos/shared/types';
 
 interface ChatPanelProps {
-  sessionId: string;
+  sessionId: string | null;
   /** Optional transform applied to message content before sending to server */
   transformContent?: (content: string) => string | Promise<string>;
 }
@@ -32,7 +32,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const [, setSessionId] = useSessionId();
   const messageListRef = useRef<MessageListHandle>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
-  const taskState = useTaskState(sessionId);
+  const taskState = useTaskState(sessionId ?? '');
   const celebrations = useCelebrations();
   const enableNotificationSound = useAppStore((s) => s.enableNotificationSound);
 
@@ -75,7 +75,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       }
     }, [enableNotificationSound]),
   });
-  const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
+  const { permissionMode } = useSessionStatus(sessionId ?? '', sessionStatus, status === 'streaming');
 
   const { handleToolRef, focusedOptionIndex } = useToolShortcuts(activeInteraction);
   const { isAtBottom, hasNewMessages, scrollToBottom, handleScrollStateChange } =
@@ -143,7 +143,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
           <MessageList
             ref={messageListRef}
             messages={messages}
-            sessionId={sessionId}
+            sessionId={sessionId!}
             status={status}
             isTextStreaming={isTextStreaming}
             onScrollStateChange={handleScrollStateChange}
@@ -222,7 +222,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         sessionBusy={sessionBusy}
         stop={stop}
         setInput={setInput}
-        sessionId={sessionId}
+        sessionId={sessionId ?? ''}
         sessionStatus={sessionStatus}
       />
     </div>

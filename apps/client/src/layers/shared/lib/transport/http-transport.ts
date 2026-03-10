@@ -6,7 +6,6 @@
  */
 import type {
   Session,
-  CreateSessionRequest,
   UpdateSessionRequest,
   BrowseDirectoryResponse,
   CommandRegistry,
@@ -188,13 +187,6 @@ export class HttpTransport implements Transport {
   }
 
   // --- Session Management ---
-
-  createSession(opts: CreateSessionRequest): Promise<Session> {
-    return fetchJSON<Session>(this.baseUrl, '/sessions', {
-      method: 'POST',
-      body: JSON.stringify(opts),
-    });
-  }
 
   listSessions(cwd?: string): Promise<Session[]> {
     const qs = buildQueryString({ cwd });

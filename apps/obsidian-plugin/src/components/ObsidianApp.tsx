@@ -1,8 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 import { TFile } from 'obsidian';
 import { App } from '@dorkos/client/App';
 import { useAppStore } from '@dorkos/client/stores/app-store';
-import { useTransport } from '@dorkos/client/contexts/TransportContext';
 import { useObsidian } from '../contexts/ObsidianContext';
 import { useActiveFile } from '../hooks/use-active-file';
 import { useFileOpener } from '../hooks/use-file-opener';
@@ -10,20 +9,9 @@ import { ContextBar } from './ContextBar';
 
 export function ObsidianApp() {
   const { app } = useObsidian();
-  const transport = useTransport();
   const activeFile = useActiveFile();
-  const { contextFiles, addContextFile, removeContextFile, setSessionId } = useAppStore();
+  const { contextFiles, addContextFile, removeContextFile } = useAppStore();
   const { openFile } = useFileOpener();
-  const autoCreatedRef = useRef(false);
-
-  // Auto-create session on mount
-  useEffect(() => {
-    if (autoCreatedRef.current) return;
-    autoCreatedRef.current = true;
-    transport.createSession({ permissionMode: 'default' }).then((session) => {
-      setSessionId(session.id);
-    });
-  }, [transport, setSessionId]);
 
   const transformContent = useCallback(
     async (content: string): Promise<string> => {

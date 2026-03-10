@@ -5,7 +5,6 @@ import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, Mesh
 import type {
   StreamEvent,
   Session,
-  CreateSessionRequest,
   UpdateSessionRequest,
   BrowseDirectoryResponse,
   HealthResponse,
@@ -62,21 +61,6 @@ export interface DirectTransportServices {
 
 export class DirectTransport implements Transport {
   constructor(private services: DirectTransportServices) {}
-
-  async createSession(opts: CreateSessionRequest): Promise<Session> {
-    const id = crypto.randomUUID();
-    const permissionMode = opts.permissionMode ?? 'default';
-    this.services.runtime.ensureSession(id, { permissionMode, cwd: opts.cwd });
-    const now = new Date().toISOString();
-    return {
-      id,
-      title: `Session ${id.slice(0, 8)}`,
-      createdAt: now,
-      updatedAt: now,
-      permissionMode,
-      cwd: opts.cwd,
-    };
-  }
 
   async listSessions(cwd?: string): Promise<Session[]> {
     return this.services.transcriptReader.listSessions(cwd || this.services.vaultRoot);

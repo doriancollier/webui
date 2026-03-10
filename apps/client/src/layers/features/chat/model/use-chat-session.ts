@@ -4,6 +4,7 @@ import type { SessionStatusEvent, MessagePart, HistoryMessage, TaskUpdateEvent }
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import { useRelayEnabled } from '@/layers/entities/relay';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
+import { insertOptimisticSession } from '@/layers/entities/session';
 import type { ChatMessage, ChatSessionOptions } from './chat-types';
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
 
@@ -78,7 +79,7 @@ function mapHistoryMessage(m: HistoryMessage): ChatMessage {
   };
 }
 
-export function useChatSession(sessionId: string, options: ChatSessionOptions = {}) {
+export function useChatSession(sessionId: string | null, options: ChatSessionOptions = {}) {
   const transport = useTransport();
   const queryClient = useQueryClient();
   const selectedCwd = useAppStore((s) => s.selectedCwd);
@@ -167,7 +168,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         setEstimatedTokens,
         setStreamStartTime,
         setIsTextStreaming,
-        sessionId,
+        sessionId: sessionId ?? '',
         onTaskEventRef,
         onSessionIdChangeRef,
         onStreamingDoneRef,
@@ -179,9 +180,10 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   // Load message history from SDK transcript via TanStack Query with adaptive polling
   const historyQuery = useQuery({
     queryKey: ['messages', sessionId, selectedCwd],
-    queryFn: () => transport.getMessages(sessionId, selectedCwd ?? undefined),
+    queryFn: () => transport.getMessages(sessionId!, selectedCwd ?? undefined),
     staleTime: QUERY_TIMING.MESSAGE_STALE_TIME_MS,
     refetchOnWindowFocus: false,
+    enabled: sessionId !== null,
     refetchInterval: () => {
       if (isStreaming || relayEnabled) return false;
       return isTabVisible
@@ -190,10 +192,14 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
     },
   });
 
-  // Reset history seed flag when session or cwd changes
+  // Reset history seed flag when session or cwd changes.
+  // Don't clear messages during streaming — preserves state during
+  // create-on-first-message (null → clientId) and done redirect (clientId → sdkId).
   useEffect(() => {
     historySeededRef.current = false;
-    setMessages([]);
+    if (statusRef.current !== 'streaming') {
+      setMessages([]);
+    }
   }, [sessionId, selectedCwd]);
 
   // Seed local messages state from history (initial load + polling updates)
@@ -224,18 +230,19 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   // completed but the `done` event was lost. Transitions to idle and refreshes messages.
   // Uses statusRef to read current status without adding it as a dep (avoids timer churn).
   const resetStalenessTimer = useCallback(() => {
-    if (!relayEnabled) return;
+    if (!relayEnabled || !sessionId) return;
     if (stalenessTimerRef.current) clearTimeout(stalenessTimerRef.current);
+    const capturedSessionId = sessionId;
     stalenessTimerRef.current = setTimeout(async () => {
       stalenessTimerRef.current = null;
       // Only act if still streaming — a `done` event may have arrived in the meantime
       if (statusRef.current !== 'streaming') return;
       try {
-        await transport.getSession(sessionId, selectedCwdRef.current ?? undefined);
+        await transport.getSession(capturedSessionId, selectedCwdRef.current ?? undefined);
         // Successful response: backend session exists and is no longer actively streaming.
         // Transition to idle and refresh message history.
         setStatus('idle');
-        queryClient.invalidateQueries({ queryKey: ['messages', sessionId, selectedCwdRef.current] });
+        queryClient.invalidateQueries({ queryKey: ['messages', capturedSessionId, selectedCwdRef.current] });
       } catch {
         // Session not found or network error — leave streaming state unchanged
       }
@@ -333,6 +340,21 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || status === 'streaming') return;
 
+    // Create session on first message if no active session
+    let targetSessionId = sessionId;
+    if (!targetSessionId) {
+      targetSessionId = crypto.randomUUID();
+      const now = new Date().toISOString();
+      insertOptimisticSession(queryClient, selectedCwdRef.current, {
+        id: targetSessionId,
+        title: `Session ${targetSessionId.slice(0, 8)}`,
+        createdAt: now,
+        updatedAt: now,
+        permissionMode: 'default',
+      });
+      onSessionIdChangeRef.current?.(targetSessionId);
+    }
+
     const userContent = input.trim();
     const userMessage: ChatMessage = {
       id: crypto.randomUUID(),
@@ -375,7 +397,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
         streamReadyRef.current = false;
         await waitForStreamReady(streamReadyRef, 5000);
         // Relay path: POST returns 202 receipt, response chunks arrive via EventSource
-        await transport.sendMessageRelay(sessionId, finalContent, {
+        await transport.sendMessageRelay(targetSessionId, finalContent, {
           clientId: clientIdRef.current,
           correlationId,
         });
@@ -386,7 +408,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       } else {
         // Legacy path: POST streams SSE inline
         await transport.sendMessage(
-          sessionId,
+          targetSessionId,
           finalContent,
           (event) => streamEventHandler(event.type, event.data, assistantIdRef.current),
           abortController.signal,
@@ -414,7 +436,7 @@ export function useChatSession(sessionId: string, options: ChatSessionOptions = 
       setIsTextStreaming(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: stable refs for transport/options/cwd
-  }, [input, status, sessionId, relayEnabled, streamEventHandler]);
+  }, [input, status, sessionId, relayEnabled, streamEventHandler, queryClient]);
 
   const stop = useCallback(() => {
     abortRef.current?.abort();

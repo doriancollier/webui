@@ -10,7 +10,6 @@ import { OpenAPIRegistry, OpenApiGeneratorV31 } from '@asteasolutions/zod-to-ope
 import { env } from '../../env.js';
 import {
   SessionSchema,
-  CreateSessionRequestSchema,
   UpdateSessionRequestSchema,
   SendMessageRequestSchema,
   ApprovalRequestSchema,
@@ -68,28 +67,6 @@ registry.registerPath({
 });
 
 // --- Sessions ---
-
-registry.registerPath({
-  method: 'post',
-  path: '/api/sessions',
-  tags: ['Sessions'],
-  summary: 'Create a new session',
-  request: {
-    body: {
-      content: { 'application/json': { schema: CreateSessionRequestSchema } },
-    },
-  },
-  responses: {
-    200: {
-      description: 'Created session',
-      content: { 'application/json': { schema: SessionSchema } },
-    },
-    400: {
-      description: 'Validation error',
-      content: { 'application/json': { schema: ErrorResponseSchema } },
-    },
-  },
-});
 
 registry.registerPath({
   method: 'get',

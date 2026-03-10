@@ -3,7 +3,7 @@
  *
  * @module entities/session
  */
-export { useSessions } from './model/use-sessions';
+export { useSessions, insertOptimisticSession } from './model/use-sessions';
 export { useSessionId } from './model/use-session-id';
 export { useSessionStatus } from './model/use-session-status';
 export type { SessionStatusData } from './model/use-session-status';

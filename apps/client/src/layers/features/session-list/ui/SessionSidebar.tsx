@@ -1,7 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef, useContext } from 'react';
 import { motion } from 'motion/react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useTransport, useAppStore, useIsMobile } from '@/layers/shared/model';
+import { useAppStore, useIsMobile } from '@/layers/shared/model';
 import { groupSessionsByTime, TIMING } from '@/layers/shared/lib';
 import {
   SidebarContent,
@@ -27,13 +26,13 @@ import { ProgressCard, useOnboarding } from '@/layers/features/onboarding';
 import type { Session } from '@dorkos/shared/types';
 
 export function SessionSidebar() {
-  const transport = useTransport();
-  const queryClient = useQueryClient();
   const { sessions, activeSessionId, setActiveSession } = useSessions();
   const { setSidebarOpen, setPulseOpen, setPickerOpen, setAgentDialogOpen, setOnboardingStep } =
     useAppStore();
   const isMobile = useIsMobile();
   const [justCreatedId, setJustCreatedId] = useState<string | null>(null);
+  // Suppresses auto-select after user intentionally clicks "New session"
+  const intentionallyNullRef = useRef(false);
   const [selectedCwd] = useDirectoryState();
   const pulseEnabled = usePulseEnabled();
   const { unviewedCount, clearBadge } = useCompletedRunBadge(pulseEnabled);
@@ -43,29 +42,28 @@ export function SessionSidebar() {
   // Null when rendered in embedded mode (no SidebarProvider); used to close the mobile Sheet.
   const sidebarCtx = useContext(SidebarContext);
 
-  // Auto-select most recent session when directory changes and no session is active
+  // Auto-select most recent session when directory changes and no session is active.
+  // Skip when the user intentionally cleared the session via "New session" button.
   useEffect(() => {
+    if (intentionallyNullRef.current) {
+      intentionallyNullRef.current = false;
+      return;
+    }
     if (!activeSessionId && sessions.length > 0) {
       setActiveSession(sessions[0].id);
     }
   }, [activeSessionId, sessions, setActiveSession]);
 
-  const createMutation = useMutation({
-    mutationFn: () =>
-      transport.createSession({ permissionMode: 'default', cwd: selectedCwd ?? undefined }),
-    onSuccess: (session) => {
-      queryClient.invalidateQueries({ queryKey: ['sessions', selectedCwd] });
-      setActiveSession(session.id);
-      setJustCreatedId(session.id);
-      setTimeout(() => setJustCreatedId(null), TIMING.NEW_SESSION_HIGHLIGHT_MS);
-      if (isMobile) {
-        setTimeout(() => {
-          setSidebarOpen(false);
-          sidebarCtx?.setOpenMobile(false);
-        }, TIMING.SIDEBAR_AUTO_CLOSE_MS);
-      }
-    },
-  });
+  const handleNewSession = useCallback(() => {
+    intentionallyNullRef.current = true;
+    setActiveSession(null);
+    if (isMobile) {
+      setTimeout(() => {
+        setSidebarOpen(false);
+        sidebarCtx?.setOpenMobile(false);
+      }, TIMING.SIDEBAR_AUTO_CLOSE_MS);
+    }
+  }, [setActiveSession, isMobile, setSidebarOpen, sidebarCtx]);
 
   const handleSessionClick = useCallback(
     (sessionId: string) => {
@@ -122,8 +120,7 @@ export function SessionSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
+              onClick={handleNewSession}
               className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
             >
               <Plus className="size-(--size-icon-sm)" />

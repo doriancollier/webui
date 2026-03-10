@@ -165,21 +165,6 @@ describe('Sessions Routes — Boundary Validation', () => {
     });
   });
 
-  describe('POST / (create session)', () => {
-    it('rejects cwd outside boundary with 403', async () => {
-      vi.mocked(validateBoundary).mockRejectedValueOnce(
-        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY'),
-      );
-
-      const res = await request(app)
-        .post('/api/sessions')
-        .send({ cwd: '/etc/shadow' });
-
-      expect(res.status).toBe(403);
-      expect(res.body.code).toBe('OUTSIDE_BOUNDARY');
-    });
-  });
-
   describe('GET / (list sessions)', () => {
     it('rejects cwd outside boundary with 403', async () => {
       vi.mocked(validateBoundary).mockRejectedValueOnce(

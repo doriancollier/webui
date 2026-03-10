@@ -96,41 +96,6 @@ describe('Sessions Routes', () => {
     mockRuntime.getInternalSessionId.mockReturnValue(undefined);
   });
 
-  // ---- POST /api/sessions ----
-
-  describe('POST /api/sessions', () => {
-    it('creates a session with default permissionMode', async () => {
-      const res = await request(app).post('/api/sessions').send({});
-
-      expect(res.status).toBe(200);
-      expect(res.body.id).toBeDefined();
-      expect(res.body.title).toBe('New Session');
-      expect(res.body.permissionMode).toBe('default');
-      expect(mockRuntime.ensureSession).toHaveBeenCalledWith(res.body.id, {
-        permissionMode: 'default',
-      });
-    });
-
-    it('creates a session with bypassPermissions permissionMode', async () => {
-      const res = await request(app)
-        .post('/api/sessions')
-        .send({ permissionMode: 'bypassPermissions' });
-
-      expect(res.status).toBe(200);
-      expect(res.body.permissionMode).toBe('bypassPermissions');
-      expect(mockRuntime.ensureSession).toHaveBeenCalledWith(res.body.id, {
-        permissionMode: 'bypassPermissions',
-      });
-    });
-
-    it('returns timestamps on created session', async () => {
-      const res = await request(app).post('/api/sessions').send({});
-
-      expect(res.body.createdAt).toBeDefined();
-      expect(res.body.updatedAt).toBeDefined();
-    });
-  });
-
   // ---- GET /api/sessions ----
 
   describe('GET /api/sessions', () => {
@@ -548,17 +513,6 @@ describe('Sessions Routes', () => {
   // ---- Boundary Enforcement ----
 
   describe('boundary enforcement', () => {
-    it('POST /api/sessions rejects cwd outside boundary with 403', async () => {
-      vi.mocked(validateBoundary).mockRejectedValueOnce(
-        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
-      );
-
-      const res = await request(app).post('/api/sessions').send({ cwd: '/etc/shadow' });
-
-      expect(res.status).toBe(403);
-      expect(res.body.code).toBe('OUTSIDE_BOUNDARY');
-    });
-
     it('GET /api/sessions rejects cwd outside boundary with 403', async () => {
       vi.mocked(validateBoundary).mockRejectedValueOnce(
         new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
@@ -609,8 +563,8 @@ describe('Sessions Routes', () => {
       );
 
       const res = await request(app)
-        .post('/api/sessions')
-        .send({ cwd: '/home/user/project\0/../../etc' });
+        .get('/api/sessions')
+        .query({ cwd: '/home/user/project\0/../../etc' });
 
       expect(res.status).toBe(403);
       expect(res.body.code).toBe('NULL_BYTE');

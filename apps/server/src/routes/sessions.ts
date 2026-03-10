@@ -2,7 +2,6 @@ import { Router } from 'express';
 import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { initSSEStream, sendSSEEvent, endSSEStream } from '../services/core/stream-adapter.js';
 import {
-  CreateSessionRequestSchema,
   UpdateSessionRequestSchema,
   SendMessageRequestSchema,
   ApprovalRequestSchema,
@@ -18,36 +17,6 @@ import type { RelayCore } from '@dorkos/relay';
 const vaultRoot = DEFAULT_CWD;
 
 const router = Router();
-
-// POST /api/sessions - Create new session
-// Sends an initial message to the SDK to generate the session JSONL file,
-// then returns the session metadata.
-router.post('/', async (req, res) => {
-  const parsed = CreateSessionRequestSchema.safeParse(req.body);
-  if (!parsed.success) {
-    return res.status(400).json({ error: 'Invalid request', details: parsed.error.format() });
-  }
-  const { permissionMode = 'default', cwd } = parsed.data;
-
-  if (!(await assertBoundary(cwd, res))) return;
-
-  // Use SDK's query() with a no-op prompt to establish the session.
-  // The SDK will create the JSONL file and assign a session ID.
-  // We need to send a real first message, so we'll just create an in-memory
-  // session entry and let the first POST /messages call create the JSONL.
-  const sessionId = crypto.randomUUID();
-  const runtime = runtimeRegistry.getDefault();
-  runtime.ensureSession(sessionId, { permissionMode, cwd });
-
-  res.json({
-    id: sessionId,
-    title: `New Session`,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-    permissionMode,
-    cwd,
-  });
-});
 
 // GET /api/sessions - List all sessions from SDK transcripts
 router.get('/', async (req, res) => {

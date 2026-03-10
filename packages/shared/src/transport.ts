@@ -9,7 +9,6 @@
  */
 import type {
   Session,
-  CreateSessionRequest,
   UpdateSessionRequest,
   BrowseDirectoryResponse,
   CommandRegistry,
@@ -52,8 +51,6 @@ export interface AdapterListItem {
 }
 
 export interface Transport {
-  /** Create a new Claude agent session. */
-  createSession(opts: CreateSessionRequest): Promise<Session>;
   /** List all sessions, optionally scoped to a working directory. */
   listSessions(cwd?: string): Promise<Session[]>;
   /** Get metadata for a single session by ID. */

@@ -71,32 +71,6 @@ describe('useSessions', () => {
     expect(result.current.isLoading).toBe(true);
   });
 
-  it('createSession mutation sets active session on success', async () => {
-    const newSession = {
-      id: 'new-1',
-      title: 'New Session',
-      createdAt: '2024-01-01',
-      updatedAt: '2024-01-01',
-      permissionMode: 'default' as const,
-    };
-    const transport = createMockTransport({
-      createSession: vi.fn().mockResolvedValue(newSession),
-      listSessions: vi.fn().mockResolvedValue([newSession]),
-    });
-
-    const { result } = renderHook(() => useSessions(), { wrapper: createWrapper(transport) });
-
-    await waitFor(() => {
-      expect(result.current.isLoading).toBe(false);
-    });
-
-    result.current.createSession.mutate({ permissionMode: 'default' });
-
-    await waitFor(() => {
-      expect(mockSetSessionId).toHaveBeenCalledWith('new-1');
-    });
-  });
-
   it('exposes setActiveSession', async () => {
     const transport = createMockTransport();
 

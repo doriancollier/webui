@@ -6,7 +6,7 @@ import { motion, AnimatePresence, MotionConfig } from 'motion/react';
 import { PanelLeft } from 'lucide-react';
 import { PermissionBanner, DialogHost } from '@/layers/widgets/app-layout';
 import { SessionSidebar } from '@/layers/features/session-list';
-import { ChatPanel, ChatEmptyState } from '@/layers/features/chat';
+import { ChatPanel } from '@/layers/features/chat';
 import { useOnboarding, OnboardingFlow } from '@/layers/features/onboarding';
 import {
   Toaster,
@@ -162,25 +162,10 @@ export function App({ transformContent, embedded }: AppProps = {}) {
               </AnimatePresence>
 
               <main className="h-full flex-1 overflow-hidden">
-                <AnimatePresence mode="wait">
-                  {activeSessionId ? (
-                    <motion.div
-                      key={activeSessionId}
-                      className="h-full"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.15, ease: 'easeInOut' }}
-                    >
-                      <ChatPanel
-                        sessionId={activeSessionId}
-                        transformContent={transformContent}
-                      />
-                    </motion.div>
-                  ) : (
-                    <ChatEmptyState />
-                  )}
-                </AnimatePresence>
+                <ChatPanel
+                  sessionId={activeSessionId}
+                  transformContent={transformContent}
+                />
               </main>
             </div>
           </div>
@@ -216,7 +201,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
               <div data-testid="app-shell" className="bg-background text-foreground flex h-dvh flex-col">
                 <PermissionBanner sessionId={activeSessionId} />
                 <SidebarProvider open={sidebarOpen} onOpenChange={setSidebarOpen} className="flex-1 overflow-hidden" style={{ "--sidebar-width": "20rem" } as React.CSSProperties}>
-                  <Sidebar>
+                  <Sidebar variant="floating">
                     <SessionSidebar />
                   </Sidebar>
                   <SidebarInset className="overflow-hidden">
@@ -224,25 +209,10 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                       <SidebarTrigger className="-ml-0.5" />
                     </header>
                     <main className="flex-1 overflow-hidden">
-                      <AnimatePresence mode="wait">
-                        {activeSessionId ? (
-                          <motion.div
-                            key={activeSessionId}
-                            className="h-full"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.15, ease: 'easeInOut' }}
-                          >
-                            <ChatPanel
-                              sessionId={activeSessionId}
-                              transformContent={transformContent}
-                            />
-                          </motion.div>
-                        ) : (
-                          <ChatEmptyState />
-                        )}
-                      </AnimatePresence>
+                      <ChatPanel
+                        sessionId={activeSessionId}
+                        transformContent={transformContent}
+                      />
                     </main>
                   </SidebarInset>
                 </SidebarProvider>

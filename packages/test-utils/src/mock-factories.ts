@@ -92,7 +92,6 @@ const mockAgent: AgentManifest = {
 export function createMockTransport(overrides: Partial<Transport> = {}): Transport {
   return {
     listSessions: vi.fn().mockResolvedValue([]),
-    createSession: vi.fn(),
     getSession: vi.fn(),
     getMessages: vi.fn().mockResolvedValue({ messages: [] }),
     getTasks: vi.fn().mockResolvedValue({ tasks: [] }),

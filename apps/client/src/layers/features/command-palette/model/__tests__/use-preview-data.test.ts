@@ -54,7 +54,6 @@ vi.mock('@/layers/entities/session', () => ({
   useSessions: () => ({
     sessions: mockSessions,
     isLoading: false,
-    createSession: { mutate: vi.fn(), isPending: false },
     activeSessionId: null,
     setActiveSession: vi.fn(),
   }),

@@ -1,11 +1,25 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import { QUERY_TIMING } from '@/layers/shared/lib';
 import { useSessionId } from './use-session-id';
-import type { CreateSessionRequest } from '@dorkos/shared/types';
+import type { Session } from '@dorkos/shared/types';
+
+/**
+ * Insert an optimistic session into the query cache.
+ * Called by useChatSession when creating a session on first message.
+ */
+export function insertOptimisticSession(
+  queryClient: ReturnType<typeof useQueryClient>,
+  selectedCwd: string | null,
+  session: Session,
+) {
+  queryClient.setQueryData<Session[]>(
+    ['sessions', selectedCwd],
+    (old) => [session, ...(old ?? [])],
+  );
+}
 
 export function useSessions() {
-  const queryClient = useQueryClient();
   const [activeSessionId, setActiveSession] = useSessionId();
   const transport = useTransport();
   const { selectedCwd } = useAppStore();
@@ -17,19 +31,9 @@ export function useSessions() {
     enabled: selectedCwd !== null,
   });
 
-  const createSession = useMutation({
-    mutationFn: (opts: CreateSessionRequest) =>
-      transport.createSession({ ...opts, cwd: selectedCwd ?? undefined }),
-    onSuccess: (session) => {
-      queryClient.invalidateQueries({ queryKey: ['sessions', selectedCwd] });
-      setActiveSession(session.id);
-    },
-  });
-
   return {
     sessions: sessionsQuery.data ?? [],
     isLoading: sessionsQuery.isLoading,
-    createSession,
     activeSessionId,
     setActiveSession,
   };
