@@ -9,16 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- File upload chat visibility with optimistic rendering
-- Right-aligned user message bubbles with grouped stacking
-
 ### Changed
 
 ### Fixed
 
-- Pass cwd from client in relay message POST body
-- Forward ?dir= cwd from payload in handleAgentMessage
-- Use currentColor for sidebar logo to support light/dark mode
+---
+
+## [0.9.1] - 2026-03-10
+
+> Chat UX refinements — file attachments rendered inline, message bubbles right-aligned, and relay directory fixes
+
+### Added
+
+- See attached files as inline thumbnails and styled chips in chat message bubbles
+- Distinguish your messages at a glance with right-aligned chat bubbles
+
+### Fixed
+
+- Fix relay messages losing working directory context
+- Fix agent messages running in wrong directory when sent via relay
+- Fix sidebar logo color not adapting to light/dark mode
+
 ---
 
 ## [0.9.0] - 2026-03-09
@@ -344,7 +355,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/dork-labs/dorkos/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/dork-labs/dorkos/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/dork-labs/dorkos/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/dork-labs/dorkos/compare/v0.6.0...v0.7.0

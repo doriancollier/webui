@@ -1,0 +1,35 @@
+---
+title: DorkOS 0.9.1
+description: Chat UX refinements — file attachments rendered inline, message bubbles right-aligned, and relay directory fixes
+date: 2026-03-10
+author: DorkOS Team
+category: release
+tags: [release, chat, file-upload, ux]
+---
+
+DorkOS 0.9.1 refines the chat experience with inline file attachments and right-aligned message bubbles, plus critical relay directory fixes.
+
+## Highlights
+
+**Inline File Attachments** — Uploaded files now appear as image thumbnails and styled file chips directly inside chat message bubbles. Optimistic rendering ensures pills show immediately after upload, not after the response stream starts.
+
+**Right-Aligned User Bubbles** — Your messages are now visually distinct with right-aligned bubbles and grouped stacking, making conversations easier to scan.
+
+## All Changes
+
+### Added
+
+- See attached files as inline thumbnails and styled chips in chat message bubbles
+- Distinguish your messages at a glance with right-aligned chat bubbles
+
+### Fixed
+
+- Fix relay messages losing working directory context
+- Fix agent messages running in wrong directory when sent via relay
+- Fix sidebar logo color not adapting to light/dark mode
+
+## Install / Update
+
+```
+npm install -g dorkos@0.9.1
+```
