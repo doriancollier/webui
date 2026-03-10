@@ -365,22 +365,29 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     };
     this.deps.traceStore.insertSpan(span);
 
-    // Resolve agent working directory from authoritative context only.
-    // When context is undefined (no Mesh agent), do NOT override with
-    // process.cwd() — let the session's stored CWD (set by BindingRouter
-    // from binding.projectPath) take precedence via AgentManager fallback.
+    // Resolve agent working directory.
+    // Priority: relay payload cwd (from ?dir= URL param via web client)
+    //   > Mesh agent context directory (for registered agents)
+    // No server-default fallback — for web sessions, undefined defers to
+    // the session's stored CWD or the SDK's own process.cwd() default.
+    const payloadCwd =
+      typeof envelope.payload === 'object' && envelope.payload !== null
+        ? ((envelope.payload as Record<string, unknown>).cwd as string | undefined)
+        : undefined;
     const agentCwd = context?.agent?.directory;
+    const effectiveCwd = payloadCwd ?? agentCwd;
     const log = this.deps.logger ?? console;
     log.debug?.(
       `[CCA] handleAgentMessage agentId=${agentId} ccaSessionKey=${ccaSessionKey}, ` +
+      `payloadCwd=${payloadCwd ?? '(none)'}, ` +
       `context.agent.directory=${context?.agent?.directory ?? '(none)'}, ` +
-      `resolvedCwd=${agentCwd ?? '(deferred to session)'}`,
+      `resolvedCwd=${effectiveCwd ?? '(deferred to session)'}`,
     );
 
     this.deps.agentManager.ensureSession(ccaSessionKey, {
       permissionMode: 'default',
       hasStarted: true,
-      ...(agentCwd ? { cwd: agentCwd } : {}),
+      ...(effectiveCwd ? { cwd: effectiveCwd } : {}),
     });
 
     this.deps.traceStore.updateSpan(envelope.id, {
@@ -437,7 +444,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     const isInboxReplyTo = envelope.replyTo?.startsWith('relay.inbox.');
 
     const eventStream = this.deps.agentManager.sendMessage(ccaSessionKey, prompt, {
-      ...(agentCwd ? { cwd: agentCwd } : {}),
+      ...(effectiveCwd ? { cwd: effectiveCwd } : {}),
     });
 
     let eventCount = 0;

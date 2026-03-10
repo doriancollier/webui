@@ -293,6 +293,60 @@ describe('ClaudeCodeAdapter', () => {
     );
   });
 
+  it('passes cwd from relay payload to ensureSession and sendMessage when no agent context', async () => {
+    // Purpose: Validates the bug fix — relay payload cwd must be extracted and
+    // forwarded even when context.agent.directory is undefined (web client sessions).
+    await adapter.start(relay);
+    const envelope = createTestEnvelope({
+      payload: { content: 'Run pwd', cwd: '/my/project', correlationId: 'corr-123' },
+    });
+
+    const result = await adapter.deliver(envelope.subject, envelope, undefined /* no context */);
+
+    expect(result.success).toBe(true);
+    expect(agentManager.ensureSession).toHaveBeenCalledWith(
+      'session-abc',
+      expect.objectContaining({ cwd: '/my/project' }),
+    );
+    const sendArgs = vi.mocked(agentManager.sendMessage).mock.calls[0];
+    expect(sendArgs[2]).toEqual(expect.objectContaining({ cwd: '/my/project' }));
+  });
+
+  it('prefers payload cwd over agent context directory', async () => {
+    // Purpose: Validates fallback precedence — payload cwd wins over Mesh agent context.
+    await adapter.start(relay);
+    const envelope = createTestEnvelope({
+      payload: { content: 'Run pwd', cwd: '/payload/path', correlationId: 'corr-456' },
+    });
+    const context: AdapterContext = {
+      agent: { directory: '/mesh/agent/path', runtime: 'claude-code' },
+    };
+
+    await adapter.deliver(envelope.subject, envelope, context);
+
+    expect(agentManager.ensureSession).toHaveBeenCalledWith(
+      'session-abc',
+      expect.objectContaining({ cwd: '/payload/path' }),
+    );
+  });
+
+  it('falls back to agent context directory when payload has no cwd', async () => {
+    // Purpose: Ensures Mesh agent routing is not regressed — when payload cwd is absent,
+    // context.agent.directory still wins.
+    await adapter.start(relay);
+    const envelope = createTestEnvelope(); // payload: { content: 'Run the budget report' } — no cwd
+    const context: AdapterContext = {
+      agent: { directory: '/projects/myapp', runtime: 'claude-code' },
+    };
+
+    await adapter.deliver(envelope.subject, envelope, context);
+
+    expect(agentManager.ensureSession).toHaveBeenCalledWith(
+      'session-abc',
+      expect.objectContaining({ cwd: '/projects/myapp' }),
+    );
+  });
+
   // === Pulse message delivery ===
 
   it('handles Pulse dispatch messages — validates payload, updates PulseStore lifecycle', async () => {

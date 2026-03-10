@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 108,
+  "nextNumber": 110,
   "specs": [
     {
       "number": 1,
@@ -750,6 +750,20 @@
       "title": "MCP Server — Expose DorkOS Tools to External Agents",
       "created": "2026-03-09",
       "status": "specified"
+    },
+    {
+      "number": 108,
+      "slug": "fix-relay-cwd-passthrough",
+      "title": "Fix Relay CWD Passthrough in handleAgentMessage",
+      "created": "2026-03-10",
+      "status": "specified"
+    },
+    {
+      "number": 109,
+      "slug": "file-upload-chat-visibility",
+      "title": "File Upload Chat History Visibility",
+      "created": "2026-03-10",
+      "status": "ideation"
     }
   ]
 }
