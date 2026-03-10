@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Use currentColor for sidebar logo to support light/dark mode
 ---
 
 ## [0.9.0] - 2026-03-09

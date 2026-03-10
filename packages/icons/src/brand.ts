@@ -19,6 +19,7 @@ export const LOGO_COLORS = {
   default: '#1A1A1A',
   white: '#FFFFFF',
   orange: '#CE2021',
+  current: 'currentColor',
 } as const
 
 export type LogoVariant = keyof typeof LOGO_COLORS

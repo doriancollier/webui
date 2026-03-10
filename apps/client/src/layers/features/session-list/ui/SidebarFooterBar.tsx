@@ -34,7 +34,7 @@ export function SidebarFooterBar() {
         rel="noopener noreferrer"
         className="text-muted-foreground/50 hover:text-muted-foreground transition-colors duration-150"
       >
-        <DorkLogo size={60} className="opacity-50 transition-opacity duration-150 hover:opacity-100" />
+        <DorkLogo variant="current" size={60} />
       </a>
       <div className="ml-auto flex items-center gap-0.5">
         <button
