@@ -409,6 +409,13 @@ After creating/updating a guide, update `contributing/INDEX.md` with:
   - The change affects core project conventions
   - The change should be visible to all AI assistants
 
+  **CLAUDE.md update rules** (file must stay under ~200 lines):
+  - Express new content as principles, decision frameworks, or pointers — never as encyclopedic lists
+  - When adding content, trim or compress existing content to stay within the line budget
+  - Don't document what agents can discover by reading source code (hook names, route handlers, schema fields)
+  - Prefer "X follows the Y pattern — see `path/to/file`" over spelling out every detail
+  - Vision, quality standards, and design mentors at the top; technical reference at the bottom
+
 - [ ] **4.5** Update UI documentation pages if the change affects harness components:
 
   **When to update**: Changes to commands, agents, skills, or rules require updating the Claude Code harness UI page

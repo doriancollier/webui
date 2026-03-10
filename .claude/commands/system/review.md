@@ -430,6 +430,11 @@ Execute these steps sequentially. This is an **interactive review** - ask questi
 - [ ] Code patterns are current
 - [ ] Developer guide references are valid
 - [ ] Examples work correctly
+- [ ] **Line count is under 200 lines** — CLAUDE.md is a vision + principles document, not an encyclopedia
+- [ ] Content expresses principles and decision frameworks, not step-by-step explicit instructions
+- [ ] Nothing is documented that agents can discover by reading source code (e.g., listing every hook name, every route handler, every Zod schema)
+- [ ] No encyclopedic lists — if a section lists more than ~5 items, it should be a pattern description or a pointer to the source file instead
+- [ ] Vision, quality standards, and decision-making filters appear before technical reference
 
 ### For UI Documentation Pages (`apps/client/src/`)
 
