@@ -123,7 +123,7 @@ export function SessionSidebar() {
       </SidebarHeader>
 
       <SidebarContent data-testid="session-list" className="!overflow-hidden">
-        <ScrollArea type="scroll" className="h-full">
+        <ScrollArea type="scroll" className="h-full" viewportClassName="[&>div]:!block">
         <motion.div layout>
         {groupedSessions.length > 0 ? (
           <>

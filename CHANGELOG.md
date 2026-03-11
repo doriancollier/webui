@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Override Radix ScrollArea table layout to prevent content overflow
+- Add right padding to prevent content touching edge
 - Make queued messages visible by using explicit motion entry animations
 - Prevent message loss during streaming and model selector flicker
 ---
