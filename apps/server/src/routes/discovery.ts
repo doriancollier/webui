@@ -32,7 +32,8 @@ export function createDiscoveryRouter(meshCore: MeshCore): Router {
     if (!data) return;
 
     // Default to boundary (home dir) instead of DEFAULT_CWD
-    const roots = data.roots ?? (data.root ? [data.root] : [getBoundary()]);
+    const roots =
+      data.roots && data.roots.length > 0 ? data.roots : data.root ? [data.root] : [getBoundary()];
 
     // Validate each root against boundary
     for (const root of roots) {

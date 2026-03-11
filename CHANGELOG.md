@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Handle empty roots array in scan endpoint
 ---
 
 ## [0.10.0] - 2026-03-11
