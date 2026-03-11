@@ -88,18 +88,18 @@ describe('SchedulesView', () => {
   });
 
   it('shows empty state when no schedules exist', () => {
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('No schedules configured')).toBeInTheDocument();
   });
 
   it('shows disabled state when toolStatus is disabled-by-agent', () => {
-    render(<SchedulesView toolStatus="disabled-by-agent" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="disabled-by-agent" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('Pulse disabled for this agent')).toBeInTheDocument();
   });
 
   it('does not render schedule list when toolStatus is disabled-by-server', () => {
     // disabled-by-server skips queries — data defaults to empty
-    render(<SchedulesView toolStatus="disabled-by-server" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="disabled-by-server" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('No schedules configured')).toBeInTheDocument();
   });
 
@@ -107,7 +107,7 @@ describe('SchedulesView', () => {
     mockSchedules.mockReturnValue({
       data: [makeSchedule({ id: 's1', name: 'Deploy Bot', status: 'active', enabled: true })],
     });
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('Deploy Bot')).toBeInTheDocument();
   });
@@ -124,7 +124,7 @@ describe('SchedulesView', () => {
         }),
       ],
     });
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('Upcoming')).toBeInTheDocument();
     expect(screen.getByText('Nightly Sync')).toBeInTheDocument();
   });
@@ -141,7 +141,7 @@ describe('SchedulesView', () => {
         }),
       ],
     });
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('in 2h')).toBeInTheDocument();
   });
 
@@ -150,19 +150,19 @@ describe('SchedulesView', () => {
       data: [makeSchedule({ id: 's1', name: 'Active Job', status: 'active', enabled: true })],
     });
     mockActiveRunCount.mockReturnValue({ data: 3 });
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('3 running')).toBeInTheDocument();
   });
 
   it('Open Pulse button calls setPulseOpen(true) in empty state', () => {
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     const btn = screen.getByText(/Open Pulse/);
     fireEvent.click(btn);
     expect(mockSetPulseOpen).toHaveBeenCalledWith(true);
   });
 
   it('Open Pulse button calls setPulseOpen(true) in disabled-by-agent state', () => {
-    render(<SchedulesView toolStatus="disabled-by-agent" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="disabled-by-agent" agentId={null} />, { wrapper: Wrapper });
     const btn = screen.getByText(/Open Pulse/);
     fireEvent.click(btn);
     expect(mockSetPulseOpen).toHaveBeenCalledWith(true);
@@ -175,10 +175,35 @@ describe('SchedulesView', () => {
         makeSchedule({ id: 's2', name: 'Paused Task', status: 'paused', enabled: false }),
       ],
     });
-    render(<SchedulesView toolStatus="enabled" />, { wrapper: Wrapper });
+    render(<SchedulesView toolStatus="enabled" agentId={null} />, { wrapper: Wrapper });
     expect(screen.getByText('Active')).toBeInTheDocument();
     expect(screen.getByText('Upcoming')).toBeInTheDocument();
     expect(screen.getByText('Running Task')).toBeInTheDocument();
     expect(screen.getByText('Paused Task')).toBeInTheDocument();
+  });
+
+  it('filters schedules by agentId when provided', () => {
+    mockSchedules.mockReturnValue({
+      data: [
+        makeSchedule({ id: 's1', name: 'Agent A Task', agentId: 'agent-a' }),
+        makeSchedule({ id: 's2', name: 'Agent B Task', agentId: 'agent-b' }),
+        makeSchedule({ id: 's3', name: 'Unassigned Task', agentId: null }),
+      ],
+    });
+    render(<SchedulesView toolStatus="enabled" agentId="agent-a" />, { wrapper: Wrapper });
+    expect(screen.getByText('Agent A Task')).toBeInTheDocument();
+    expect(screen.queryByText('Agent B Task')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unassigned Task')).not.toBeInTheDocument();
+  });
+
+  it('shows empty state when agentId is provided but no schedules match', () => {
+    mockSchedules.mockReturnValue({
+      data: [
+        makeSchedule({ id: 's1', name: 'Other Agent Task', agentId: 'agent-b' }),
+      ],
+    });
+    render(<SchedulesView toolStatus="enabled" agentId="agent-a" />, { wrapper: Wrapper });
+    expect(screen.getByText('No schedules configured')).toBeInTheDocument();
+    expect(screen.queryByText('Other Agent Task')).not.toBeInTheDocument();
   });
 });

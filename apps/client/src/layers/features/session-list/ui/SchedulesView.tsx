@@ -14,14 +14,21 @@ import type { ChipState } from '@/layers/entities/agent';
 interface SchedulesViewProps {
   /** Per-agent Pulse chip state from useAgentToolStatus */
   toolStatus: ChipState;
+  /** When non-null, only show schedules assigned to this agent. */
+  agentId: string | null;
 }
 
 /** Read-only schedule summary for the sidebar Schedules tab. */
-export function SchedulesView({ toolStatus }: SchedulesViewProps) {
+export function SchedulesView({ toolStatus, agentId }: SchedulesViewProps) {
   const setPulseOpen = useAppStore((s) => s.setPulseOpen);
   const enabled = toolStatus !== 'disabled-by-server';
-  const { data: schedules = [] } = useSchedules(enabled);
+  const { data: allSchedules = [] } = useSchedules(enabled);
   const { data: activeRunCount = 0 } = useActiveRunCount(enabled);
+
+  // Filter to only schedules assigned to the selected agent
+  const schedules = agentId
+    ? allSchedules.filter((s) => s.agentId === agentId)
+    : allSchedules;
 
   if (toolStatus === 'disabled-by-agent') {
     return (

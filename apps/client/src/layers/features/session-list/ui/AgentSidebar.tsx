@@ -10,9 +10,13 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarRail,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  Kbd,
 } from '@/layers/shared/ui';
 import { usePulseEnabled, useCompletedRunBadge, useActiveRunCount } from '@/layers/entities/pulse';
-import { useAgentToolStatus } from '@/layers/entities/agent';
+import { useAgentToolStatus, useCurrentAgent } from '@/layers/entities/agent';
 import { toast } from 'sonner';
 import { useSessions } from '@/layers/entities/session';
 import { SidebarFooterBar } from './SidebarFooterBar';
@@ -106,6 +110,7 @@ export function AgentSidebar() {
 
   const { sidebarActiveTab, setSidebarActiveTab } = useAppStore();
   const selectedCwd = useAppStore((s) => s.selectedCwd);
+  const { data: currentAgent } = useCurrentAgent(selectedCwd);
   const toolStatus = useAgentToolStatus(selectedCwd);
   const pulseToolEnabled = toolStatus.pulse !== 'disabled-by-server';
   const { data: activeRunCount = 0 } = useActiveRunCount(pulseToolEnabled);
@@ -151,18 +156,40 @@ export function AgentSidebar() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen, visibleTabs, setSidebarActiveTab]);
 
+  // Cmd/Ctrl+Shift+N → new session (global, works regardless of sidebar state)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'N') {
+        e.preventDefault();
+        handleNewSession();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [handleNewSession]);
+
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+
   return (
     <>
       <SidebarHeader className="border-b p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleNewSession}
-              className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
-            >
-              <Plus className="size-(--size-icon-sm)" />
-              New session
-            </SidebarMenuButton>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <SidebarMenuButton
+                  onClick={handleNewSession}
+                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
+                >
+                  <Plus className="size-(--size-icon-sm)" />
+                  New session
+                </SidebarMenuButton>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                New session <Kbd>{isMac ? '⇧⌘N' : 'Ctrl+Shift+N'}</Kbd>
+              </TooltipContent>
+            </Tooltip>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
@@ -197,7 +224,7 @@ export function AgentSidebar() {
           aria-labelledby="sidebar-tab-schedules"
           className={cn(sidebarActiveTab !== 'schedules' && 'hidden')}
         >
-          <SchedulesView toolStatus={toolStatus.pulse} />
+          <SchedulesView toolStatus={toolStatus.pulse} agentId={currentAgent?.id ?? null} />
         </div>
 
         {/* Connections view */}

@@ -192,8 +192,13 @@ export class AdapterManager {
   listAdapters(): Array<{ config: AdapterConfig; status: AdapterStatus }> {
     return this.configs.map((config) => {
       const adapter = this.registry.get(config.id);
-      const status: AdapterStatus = adapter?.getStatus() ?? defaultAdapterStatus();
       const manifest = this.manifests.get(config.type);
+      const status = {
+        id: config.id,
+        type: config.type,
+        displayName: manifest?.displayName ?? config.type,
+        ...(adapter?.getStatus() ?? defaultAdapterStatus()),
+      };
       const maskedConfig = {
         ...config,
         config: maskSensitiveFields(
@@ -211,8 +216,13 @@ export class AdapterManager {
     if (!config) return undefined;
 
     const adapter = this.registry.get(id);
-    const status: AdapterStatus = adapter?.getStatus() ?? defaultAdapterStatus();
     const manifest = this.manifests.get(config.type);
+    const status = {
+      id: config.id,
+      type: config.type,
+      displayName: manifest?.displayName ?? config.type,
+      ...(adapter?.getStatus() ?? defaultAdapterStatus()),
+    };
     const maskedConfig = {
       ...config,
       config: maskSensitiveFields(
