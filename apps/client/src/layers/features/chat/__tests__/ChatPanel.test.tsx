@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import React from 'react';
 import { describe, it, expect, vi, afterEach, beforeEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { STORAGE_KEYS } from '@/layers/shared/lib/constants';
@@ -63,7 +64,28 @@ vi.mock('@/layers/entities/session/model/use-session-id', () => ({
 
 // Mock useSessionStatus
 vi.mock('@/layers/entities/session/model/use-session-status', () => ({
-  useSessionStatus: () => ({ permissionMode: 'default' }),
+  useSessionStatus: () => ({
+    permissionMode: 'default',
+    cwd: null,
+    model: null,
+    costUsd: null,
+    contextPercent: null,
+    updateSession: vi.fn(),
+  }),
+}));
+
+// Mock TanStack Query — ChatStatusSection uses useQuery and useQueryClient
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: vi.fn(() => ({ data: undefined })),
+  useQueryClient: vi.fn(() => ({ invalidateQueries: vi.fn() })),
+}));
+
+// Mock useTransport — ChatStatusSection fetches config via transport
+vi.mock('@/layers/shared/model/TransportContext', () => ({
+  useTransport: vi.fn(() => ({
+    getConfig: vi.fn().mockResolvedValue({}),
+    updateConfig: vi.fn().mockResolvedValue(undefined),
+  })),
 }));
 
 // Mock useDirectoryState
@@ -71,17 +93,28 @@ vi.mock('@/layers/entities/session/model/use-directory-state', () => ({
   useDirectoryState: () => ['/test/dir', vi.fn()],
 }));
 
-// Mock useAppStore
+// Mock useAppStore — supports both selector call and no-selector (destructure) call patterns
 const mockShowShortcutChips = vi.fn(() => true);
 vi.mock('@/layers/shared/model/app-store', () => ({
-  useAppStore: (selector: (s: Record<string, unknown>) => unknown) => {
+  useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
       showShortcutChips: mockShowShortcutChips(),
       setIsStreaming: vi.fn(),
       setIsWaitingForUser: vi.fn(),
       setActiveForm: vi.fn(),
+      showStatusBarCwd: false,
+      showStatusBarPermission: false,
+      showStatusBarModel: false,
+      showStatusBarCost: false,
+      showStatusBarContext: false,
+      showStatusBarGit: false,
+      showStatusBarSound: false,
+      showStatusBarTunnel: false,
+      showStatusBarVersion: false,
+      enableNotificationSound: false,
+      setEnableNotificationSound: vi.fn(),
     };
-    return selector(state);
+    return selector ? selector(state) : state;
   },
 }));
 
@@ -98,8 +131,22 @@ vi.mock('../ui/ShortcutChips', () => ({
   ShortcutChips: vi.fn(() => <div data-testid="shortcut-chips">ShortcutChips</div>),
 }));
 
-vi.mock('@/layers/features/status/ui/StatusLine', () => ({
-  StatusLine: vi.fn(() => <div data-testid="status-line">StatusLine</div>),
+vi.mock('@/layers/features/status', () => ({
+  StatusLine: Object.assign(vi.fn(() => <div data-testid="status-line">StatusLine</div>), {
+    Item: vi.fn(({ visible, children }: { visible: boolean; children: React.ReactNode }) =>
+      visible ? <>{children}</> : null
+    ),
+  }),
+  CwdItem: vi.fn(() => null),
+  GitStatusItem: vi.fn(() => null),
+  PermissionModeItem: vi.fn(() => null),
+  ModelItem: vi.fn(() => null),
+  CostItem: vi.fn(() => null),
+  ContextItem: vi.fn(() => null),
+  NotificationSoundItem: vi.fn(() => null),
+  TunnelItem: vi.fn(() => null),
+  VersionItem: vi.fn(() => null),
+  useGitStatus: vi.fn(() => ({ data: undefined })),
 }));
 
 vi.mock('../ui/TaskListPanel', () => ({

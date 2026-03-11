@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Convert StatusLine to compound component with Context
+
 ### Fixed
 
 - Override Radix ScrollArea table layout to prevent content overflow

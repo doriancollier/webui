@@ -806,7 +806,21 @@
       "title": "Switch Agent via Identity Chip Click",
       "created": "2026-03-10",
       "status": "specification"
+    },
+    {
+      "number": 116,
+      "slug": "statusline-compound-component",
+      "title": "StatusLine Compound Component",
+      "created": "2026-03-10",
+      "status": "draft"
+    },
+    {
+      "number": 117,
+      "slug": "sidebar-tabbed-views",
+      "title": "Sidebar Tabbed Views — Sessions, Schedules, Connections",
+      "created": "2026-03-10",
+      "status": "specified"
     }
   ],
-  "nextNumber": 116
+  "nextNumber": 118
 }

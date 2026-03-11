@@ -1,12 +1,26 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { PanInfo } from 'motion/react';
 import type { SessionStatusEvent } from '@dorkos/shared/types';
-import { useIsMobile, useAppStore } from '@/layers/shared/model';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useIsMobile, useAppStore, useTransport } from '@/layers/shared/model';
 import { STORAGE_KEYS, TIMING } from '@/layers/shared/lib';
+import { useSessionStatus } from '@/layers/entities/session';
 import { ShortcutChips } from './ShortcutChips';
 import { DragHandle } from './DragHandle';
-import { StatusLine } from '@/layers/features/status';
+import {
+  StatusLine,
+  CwdItem,
+  GitStatusItem,
+  PermissionModeItem,
+  ModelItem,
+  CostItem,
+  ContextItem,
+  NotificationSoundItem,
+  TunnelItem,
+  VersionItem,
+  useGitStatus,
+} from '@/layers/features/status';
 
 interface ChatStatusSectionProps {
   sessionId: string;
@@ -21,6 +35,9 @@ const VELOCITY_THRESHOLD = 500;
 /**
  * Mobile gesture UI (drag handle, swipe hint, collapsible status) and
  * desktop status bar (shortcut chips + status line).
+ *
+ * Owns all data fetching for the status bar and composes the compound
+ * StatusLine API. The StatusLine component itself is presentation-only.
  */
 export function ChatStatusSection({
   sessionId,
@@ -29,7 +46,45 @@ export function ChatStatusSection({
   onChipClick,
 }: ChatStatusSectionProps) {
   const isMobile = useIsMobile();
-  const showShortcutChips = useAppStore((s) => s.showShortcutChips);
+
+  // All status bar data hooks — moved here from StatusLine
+  const status = useSessionStatus(sessionId, sessionStatus, isStreaming);
+  const {
+    showShortcutChips,
+    showStatusBarCwd,
+    showStatusBarPermission,
+    showStatusBarModel,
+    showStatusBarCost,
+    showStatusBarContext,
+    showStatusBarGit,
+    showStatusBarSound,
+    showStatusBarTunnel,
+    showStatusBarVersion,
+    enableNotificationSound,
+    setEnableNotificationSound,
+  } = useAppStore();
+  const { data: gitStatus } = useGitStatus(status.cwd);
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+  const { data: serverConfig } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => transport.getConfig(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const dismissedVersions = useMemo(
+    () => serverConfig?.dismissedUpgradeVersions ?? [],
+    [serverConfig?.dismissedUpgradeVersions]
+  );
+
+  const handleDismissVersion = useCallback(
+    async (version: string) => {
+      const updated = [...dismissedVersions, version];
+      await transport.updateConfig({ ui: { dismissedUpgradeVersions: updated } });
+      queryClient.invalidateQueries({ queryKey: ['config'] });
+    },
+    [dismissedVersions, transport, queryClient]
+  );
 
   // Mobile-only gesture state
   const [collapsed, setCollapsed] = useState(false);
@@ -63,6 +118,68 @@ export function ChatStatusSection({
       setCollapsed(false);
     }
   };
+
+  // Extracted to avoid duplicating the full JSX tree across mobile/desktop branches
+  const statusLineContent = (
+    <StatusLine sessionId={sessionId} isStreaming={isStreaming}>
+      <StatusLine.Item itemKey="cwd" visible={showStatusBarCwd && !!status.cwd}>
+        {status.cwd && <CwdItem cwd={status.cwd} />}
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="git" visible={showStatusBarGit}>
+        <GitStatusItem data={gitStatus} />
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="permission" visible={showStatusBarPermission}>
+        <PermissionModeItem
+          mode={status.permissionMode}
+          onChangeMode={(mode) => status.updateSession({ permissionMode: mode })}
+        />
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="model" visible={showStatusBarModel}>
+        <ModelItem
+          model={status.model}
+          onChangeModel={(model) => status.updateSession({ model })}
+        />
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="cost" visible={showStatusBarCost && status.costUsd !== null}>
+        {status.costUsd !== null && <CostItem costUsd={status.costUsd} />}
+      </StatusLine.Item>
+      <StatusLine.Item
+        itemKey="context"
+        visible={showStatusBarContext && status.contextPercent !== null}
+      >
+        {status.contextPercent !== null && <ContextItem percent={status.contextPercent} />}
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="sound" visible={showStatusBarSound}>
+        <NotificationSoundItem
+          enabled={enableNotificationSound}
+          onToggle={() => setEnableNotificationSound(!enableNotificationSound)}
+        />
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="tunnel" visible={showStatusBarTunnel && !!serverConfig?.tunnel}>
+        {/*
+         * serverConfig?.tunnel is safe here: visible guard ensures this only renders
+         * when tunnel exists, but JSX children are evaluated eagerly so we use optional
+         * chaining to avoid crashes when serverConfig is undefined during loading.
+         */}
+        {serverConfig?.tunnel && <TunnelItem tunnel={serverConfig.tunnel} />}
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="version" visible={showStatusBarVersion && !!serverConfig}>
+        {serverConfig && (
+          <VersionItem
+            version={serverConfig.version}
+            latestVersion={serverConfig.latestVersion}
+            isDevMode={serverConfig.isDevMode}
+            isDismissed={
+              serverConfig.latestVersion
+                ? dismissedVersions.includes(serverConfig.latestVersion)
+                : false
+            }
+            onDismiss={handleDismissVersion}
+          />
+        )}
+      </StatusLine.Item>
+    </StatusLine>
+  );
 
   if (isMobile) {
     return (
@@ -101,11 +218,7 @@ export function ChatStatusSection({
               style={{ touchAction: 'pan-y' }}
             >
               {showShortcutChips && <ShortcutChips onChipClick={onChipClick} />}
-              <StatusLine
-                sessionId={sessionId}
-                sessionStatus={sessionStatus}
-                isStreaming={isStreaming}
-              />
+              {statusLineContent}
             </motion.div>
           )}
         </AnimatePresence>
@@ -118,11 +231,7 @@ export function ChatStatusSection({
       <AnimatePresence>
         {showShortcutChips && <ShortcutChips onChipClick={onChipClick} />}
       </AnimatePresence>
-      <StatusLine
-        sessionId={sessionId}
-        sessionStatus={sessionStatus}
-        isStreaming={isStreaming}
-      />
+      {statusLineContent}
     </>
   );
 }
