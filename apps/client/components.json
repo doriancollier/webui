@@ -9,11 +9,15 @@
     "baseColor": "zinc",
     "cssVariables": true
   },
+  "iconLibrary": "radix",
   "aliases": {
     "components": "@/layers/shared/ui",
     "utils": "@/layers/shared/lib/utils",
     "ui": "@/layers/shared/ui",
     "lib": "@/layers/shared/lib",
     "hooks": "@/layers/shared/lib"
+  },
+  "registries": {
+    "@aceternity": "https://ui.aceternity.com/registry/{name}.json"
   }
 }
