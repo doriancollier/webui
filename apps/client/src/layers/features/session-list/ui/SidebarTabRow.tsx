@@ -122,7 +122,7 @@ export function SidebarTabRow({
                 {isActive && (
                   <motion.div
                     layoutId="sidebar-tab-indicator"
-                    className="bg-foreground absolute right-0 bottom-[-7px] left-0 h-0.5 rounded-full"
+                    className="bg-brand absolute right-0 bottom-[-7px] left-0 h-0.5 rounded-full"
                     transition={{ type: 'spring', stiffness: 280, damping: 32 }}
                   />
                 )}

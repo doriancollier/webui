@@ -80,6 +80,8 @@
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
   --color-user-msg: hsl(var(--user-msg));
+  --color-brand: hsl(var(--brand));
+  --color-brand-foreground: hsl(var(--brand-foreground));
   --radius: var(--radius);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
   --color-sidebar-border: hsl(var(--sidebar-border));
@@ -142,9 +144,11 @@
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 83%;
   --input: 0 0% 83%;
-  --ring: 217 91% 60%;
+  --ring: 24 90% 44%;
   --radius: 0.5rem;
   --user-msg: 0 0% 91%;
+  --brand: 24 90% 44%;
+  --brand-foreground: 0 0% 100%;
 
   /* === Status tokens === */
   --status-success: 152 69% 31%;
@@ -229,7 +233,7 @@
   --sidebar-accent: 0 0% 90%;
   --sidebar-accent-foreground: 0 0% 9%;
   --sidebar-border: 0 0% 83%;
-  --sidebar-ring: 217 91% 60%;
+  --sidebar-ring: 24 90% 44%;
 }
 
 .dark {
@@ -251,8 +255,10 @@
   --destructive-foreground: 0 0% 98%;
   --border: 0 0% 25%;
   --input: 0 0% 25%;
-  --ring: 213 94% 68%;
+  --ring: 24 88% 55%;
   --user-msg: 0 0% 15%;
+  --brand: 24 88% 55%;
+  --brand-foreground: 0 0% 100%;
 
   --status-success: 152 69% 55%;
   --status-success-bg: 152 69% 12%;
@@ -296,7 +302,7 @@
   --sidebar-accent: 0 0% 13%;
   --sidebar-accent-foreground: 0 0% 93%;
   --sidebar-border: 0 0% 25%;
-  --sidebar-ring: 213 94% 68%;
+  --sidebar-ring: 24 88% 55%;
 }
 
 *:where(:not(.copilot-view-content *)) {

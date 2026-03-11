@@ -63,11 +63,24 @@ Tokens are defined as HSL custom properties in `:root`/`.dark` in `apps/client/s
 | `text-muted-foreground` | `0 0% 64%`  | Labels, metadata               |
 | `border-border`      | `0 0% 25%`     | Card borders, inputs           |
 
-### Accent
+### Brand Accent
 
-One accent color, used sparingly: **blue** (HSL `217 91% 60%` light / `213 94% 68%` dark). Used for focus rings (`ring`), active links, and the send button.
+One brand color, used with purpose: **orange** (HSL `24 90% 44%` light / `24 88% 55%` dark). Derived from the DorkOS brand palette (`#E85D04`), slightly adjusted for AA contrast.
 
-Everything else is grayscale. Color should mean something. If everything is colored, nothing is.
+**Where brand orange appears:**
+- Focus rings (`--ring`) — every `focus-visible` interaction carries the brand
+- `HoverBorderGradient` — the onboarding CTA, the first branded moment users see
+- `brand` button variant — opt-in for exceptional CTAs (`<Button variant="brand">`)
+- Sidebar active tab indicator — subtle brand presence in navigation
+- Assistant message links and inline code — via `--ring`
+
+**Where gray stays:**
+- `--primary` — default buttons, switches, badges, selections (the quiet workhorse)
+- `--accent` — hover backgrounds in menus, dropdowns
+- `--secondary` — user message tint
+- All structural surfaces — backgrounds, cards, borders, muted
+
+**Usage rule:** Orange means interaction or action. If you're adding it to a static, structural element — stop. The brand lives in moments of engagement, not in decoration. Like a single red chair in a white room.
 
 ---
 
@@ -264,7 +277,7 @@ The sidebar uses a custom tab bar (`SidebarTabRow`, not Radix Tabs) for switchin
 | Tab bar height | Auto (`py-1.5`) |
 | Tab button padding | `p-2` |
 | Tab icon size | `--size-icon-sm` |
-| Sliding indicator | `h-0.5 rounded-full bg-foreground` |
+| Sliding indicator | `h-0.5 rounded-full bg-brand` |
 | Indicator animation | Spring: stiffness 280, damping 32 |
 | Schedules badge | `text-[10px] size-4 bg-green-500` (numeric count) |
 | Connections dot | `size-1.5 rounded-full` (status indicator) |
@@ -336,7 +349,7 @@ Subtle. 150ms transition. Background opacity shift of 2-3%.
 
 ### Focus
 
-Visible focus rings for keyboard navigation. Blue outline, 2px offset.
+Visible focus rings for keyboard navigation. Brand orange outline, 2px offset.
 
 ```css
 :focus-visible {
