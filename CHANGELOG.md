@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Remove CronPresets and CronVisualBuilder (replaced by ScheduleBuilder)
 - Update CreateScheduleDialog tests for ScheduleBuilder
 - Replace CronPresets + CronVisualBuilder with ScheduleBuilder
 - Delete AgentCombobox, replaced by AgentPicker
