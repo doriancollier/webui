@@ -1,6 +1,7 @@
 import { ArrowLeft, Inbox } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from '@/layers/shared/model';
+import { resolveSubjectLabelLocal } from '../lib/resolve-label';
 import { MessageRow } from './MessageRow';
 
 interface InboxViewProps {
@@ -23,7 +24,10 @@ export function InboxView({ subject, onBack }: InboxViewProps) {
         <button type="button" onClick={onBack} className="rounded p-1 hover:bg-muted">
           <ArrowLeft className="size-4" />
         </button>
-        <span className="font-mono text-sm">{subject}</span>
+        <div className="min-w-0">
+          <span className="text-sm font-medium">{resolveSubjectLabelLocal(subject)}</span>
+          <p className="truncate font-mono text-xs text-muted-foreground">{subject}</p>
+        </div>
       </div>
 
       {isLoading ? (

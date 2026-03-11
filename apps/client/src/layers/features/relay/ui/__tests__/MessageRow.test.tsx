@@ -44,7 +44,7 @@ describe('MessageRow', () => {
   it('renders message subject and status badge', () => {
     render(<MessageRow message={baseMessage} />);
 
-    expect(screen.getByText('relay.agent.test')).toBeInTheDocument();
+    expect(screen.getByText('Agent (test)')).toBeInTheDocument();
     expect(screen.getByText('Delivered')).toBeInTheDocument();
   });
 
@@ -232,7 +232,7 @@ describe('MessageRow', () => {
       // but only if there is no content/text/message/body field.
       // {} stringifies to "{}" — under 80 chars, so it renders as is.
       // We just verify the component does not crash.
-      expect(screen.getByText('relay.agent.test')).toBeInTheDocument();
+      expect(screen.getByText('Agent (test)')).toBeInTheDocument();
     });
 
     it('hides preview when message is expanded', () => {
@@ -255,7 +255,7 @@ describe('MessageRow', () => {
       render(<MessageRow message={message} />);
 
       // Should not crash and subject should still render
-      expect(screen.getByText('relay.agent.test')).toBeInTheDocument();
+      expect(screen.getByText('Agent (test)')).toBeInTheDocument();
     });
   });
 

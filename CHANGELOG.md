@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Humanize raw IDs and technical jargon across Relay/Mesh UI
+
 ### Fixed
 
 - Resolve createRequire duplicate declaration in server bundle

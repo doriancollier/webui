@@ -5,6 +5,8 @@ import { Badge } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
 import { MessageTrace } from './MessageTrace';
 import { getStatusBorderColor } from '../lib/status-colors';
+import { resolveSubjectLabelLocal } from '../lib/resolve-label';
+import { formatTimeAgo } from '../lib/format-time';
 
 interface MessageRowProps {
   message: Record<string, unknown>;
@@ -16,17 +18,6 @@ const STATUS_CONFIG: Record<string, { icon: React.ElementType; className: string
   failed: { icon: AlertTriangle, className: 'text-destructive', label: 'Failed' },
   dead_letter: { icon: MailX, className: 'text-amber-500', label: 'Dead Letter' },
 };
-
-function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 const PREVIEW_MAX_LENGTH = 80;
 
@@ -72,8 +63,8 @@ export function MessageRow({ message }: MessageRowProps) {
       >
         <div className="flex items-center gap-2">
           <StatusIcon className={cn('size-4 shrink-0', config.className)} />
-          <span className="min-w-0 flex-1 truncate font-mono text-sm">
-            {message.subject as string}
+          <span className="min-w-0 flex-1 truncate text-sm">
+            {resolveSubjectLabelLocal(message.subject as string)}
           </span>
           <span className="shrink-0 text-xs text-muted-foreground">
             {message.from as string}

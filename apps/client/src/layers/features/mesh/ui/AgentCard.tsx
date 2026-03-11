@@ -60,19 +60,18 @@ export function AgentCard({ agent, onEdit, onUnregister }: AgentCardProps) {
       {expanded && (
         <div className="mt-2 ml-7 space-y-1 text-xs text-muted-foreground">
           {agent.description && <div>{agent.description}</div>}
-          <div className="font-mono text-[10px]">ID: {agent.id}</div>
           <div>
             Registered {new Date(agent.registeredAt).toLocaleDateString()} by{' '}
             {agent.registeredBy}
           </div>
           <div>
-            Response mode: {agent.behavior.responseMode}
+            Mode: {agent.behavior.responseMode === 'always' ? 'Always respond' : agent.behavior.responseMode}
             {agent.behavior.escalationThreshold !== undefined &&
-              ` | Escalation: ${agent.behavior.escalationThreshold}`}
+              ` | Escalation threshold: ${agent.behavior.escalationThreshold}`}
           </div>
           <div>
-            Max hops: {agent.budget.maxHopsPerMessage} | Max calls/hr:{' '}
-            {agent.budget.maxCallsPerHour}
+            Relay depth: {agent.budget.maxHopsPerMessage} hops | Rate limit:{' '}
+            {agent.budget.maxCallsPerHour}/hr
           </div>
         </div>
       )}

@@ -3,22 +3,11 @@ import { useRelayEndpoints } from '@/layers/entities/relay';
 import { cn } from '@/layers/shared/lib';
 import { getStatusDotColor } from '../lib/status-colors';
 import { resolveSubjectLabelLocal } from '../lib/resolve-label';
+import { formatTimeAgo } from '../lib/format-time';
 
 interface EndpointListProps {
   enabled: boolean;
   onSelectEndpoint?: (subject: string) => void;
-}
-
-/** Format an ISO timestamp as a relative time string. */
-function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 /** List of registered relay endpoints with health indicators and card layout. */

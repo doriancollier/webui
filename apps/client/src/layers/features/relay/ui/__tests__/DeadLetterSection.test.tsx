@@ -186,13 +186,12 @@ describe('DeadLetterSection', () => {
       expect(screen.getByText('5m ago')).toBeInTheDocument();
     });
 
-    it('expands a row to reveal envelope and endpoint hash', () => {
+    it('expands a row to reveal envelope detail', () => {
       render(<DeadLetterSection />);
       fireEvent.click(screen.getByText('Dead Letters'));
       // Row button = the summary row
       fireEvent.click(screen.getByText('Agent (test)'));
       expect(screen.getByText('Envelope')).toBeInTheDocument();
-      expect(screen.getByText('endpoint-hash-1')).toBeInTheDocument();
     });
 
     it('collapses a row when clicked again', () => {

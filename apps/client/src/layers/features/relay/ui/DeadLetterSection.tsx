@@ -4,6 +4,8 @@ import { Badge } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
 import { useDeadLetters } from '@/layers/entities/relay';
 import type { DeadLetter } from '@/layers/entities/relay';
+import { resolveSubjectLabelLocal } from '../lib/resolve-label';
+import { formatTimeAgo } from '../lib/format-time';
 
 /** Map of rejection reason codes to display label and badge variant. */
 const REASON_CONFIG: Record<string, { label: string; className: string }> = {
@@ -19,18 +21,6 @@ const DEFAULT_REASON_CONFIG = {
   className: 'bg-muted text-muted-foreground',
 };
 
-/** Resolve a relay subject string to a human-readable label. */
-function resolveLabel(subject: string): string {
-  if (subject === 'relay.system.console') return 'System Console';
-  if (subject.startsWith('relay.system.pulse.')) return 'Pulse Scheduler';
-  if (subject.startsWith('relay.human.console.')) return 'Your Browser Session';
-  if (subject.startsWith('relay.agent.')) {
-    const id = subject.slice('relay.agent.'.length);
-    return `Agent (${id.slice(0, 7)})`;
-  }
-  return subject;
-}
-
 /** Extract a short preview string from an envelope payload. */
 function extractPreview(payload: unknown): string {
   if (!payload || typeof payload !== 'object') return '';
@@ -42,25 +32,13 @@ function extractPreview(payload: unknown): string {
 /** Build a human-readable summary line for a dead letter envelope. */
 function buildSummary(envelope: Record<string, unknown>): string {
   const subject = typeof envelope.subject === 'string' ? envelope.subject : '';
-  const label = subject ? resolveLabel(subject) : '';
+  const label = subject ? resolveSubjectLabelLocal(subject) : '';
   const preview = extractPreview(envelope.payload);
 
   if (preview && label) return `"${preview}" → ${label}`;
   if (preview) return `"${preview}"`;
   if (label) return label;
   return '';
-}
-
-/** Format an ISO timestamp as a relative time string. */
-function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
 }
 
 interface DeadLetterRowProps {
@@ -99,9 +77,6 @@ function DeadLetterRow({ item }: DeadLetterRowProps) {
           <pre className="mt-1 max-h-32 overflow-auto rounded bg-muted p-2 font-mono text-xs">
             {JSON.stringify(item.envelope, null, 2)}
           </pre>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Endpoint: <span className="font-mono">{item.endpointHash}</span>
-          </p>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
 import { getStatusDotColor, getStatusTextColor, getStatusBorderColor } from '../lib/status-colors';
+import { formatTimeAgo } from '../lib/format-time';
 import { MessageTrace } from './MessageTrace';
 import type { RelayConversation } from '@dorkos/shared/relay-schemas';
 
@@ -15,17 +16,6 @@ const STATUS_LABELS: Record<RelayConversation['status'], string> = {
   failed: 'Failed',
   pending: 'Pending',
 };
-
-function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const seconds = Math.floor(diff / 1000);
-  if (seconds < 60) return `${seconds}s ago`;
-  const minutes = Math.floor(seconds / 60);
-  if (minutes < 60) return `${minutes}m ago`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}h ago`;
-  return `${Math.floor(hours / 24)}d ago`;
-}
 
 function formatTime(dateStr: string): string {
   return new Date(dateStr).toLocaleTimeString([], {
@@ -184,9 +174,9 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
                           <dd className="font-mono">{conversation.traceId.slice(0, 12)}&hellip;</dd>
                         </>
                       )}
-                      <dt className="text-muted-foreground">From (raw)</dt>
+                      <dt className="text-muted-foreground">Source</dt>
                       <dd className="truncate font-mono">{conversation.from.raw}</dd>
-                      <dt className="text-muted-foreground">To (raw)</dt>
+                      <dt className="text-muted-foreground">Destination</dt>
                       <dd className="truncate font-mono">{conversation.to.raw}</dd>
                     </dl>
                   </motion.div>
