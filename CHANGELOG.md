@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Enable Enter and Cmd+Enter in agent sub-menu
 - Override Radix ScrollArea table layout to prevent content overflow
 - Add right padding to prevent content touching edge
 - Make queued messages visible by using explicit motion entry animations

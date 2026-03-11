@@ -201,6 +201,8 @@ export function CommandPaletteDialog() {
     setSubMenuAgent(agent);
     setPages((prev) => [...prev, 'agent-actions']);
     setSearch('');
+    // Reset selected value so cmdk auto-selects the first sub-menu item ("open-here")
+    setSelectedValue('');
     setStaggerKey((k) => k + 1);
   }, []);
 
@@ -300,6 +302,16 @@ export function CommandPaletteDialog() {
                 url.searchParams.set('dir', selectedAgent.projectPath);
                 window.open(url.toString(), '_blank');
                 recordUsage(selectedAgent.id);
+                closePalette();
+                return;
+              }
+              // Cmd+Enter (or Ctrl+Enter) on agent sub-menu opens in new tab
+              if (e.key === 'Enter' && (e.metaKey || e.ctrlKey) && page === 'agent-actions' && subMenuAgent) {
+                e.preventDefault();
+                const url = new URL(window.location.href);
+                url.searchParams.set('dir', subMenuAgent.projectPath);
+                window.open(url.toString(), '_blank');
+                recordUsage(subMenuAgent.id);
                 closePalette();
                 return;
               }

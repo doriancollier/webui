@@ -33,10 +33,16 @@ export function PaletteFooter({ page, hasAgentSelected }: PaletteFooterProps) {
           Open
         </span>
       )}
-      {!page && hasAgentSelected && (
+      {((!page && hasAgentSelected) || page === 'agent-actions') && (
         <span className="inline-flex items-center gap-1">
           <kbd className={KBD_CLASS}>{modKey}Enter</kbd>
           New Tab
+        </span>
+      )}
+      {page === 'agent-actions' && (
+        <span className="inline-flex items-center gap-1">
+          <kbd className={KBD_CLASS}>Enter</kbd>
+          Select
         </span>
       )}
       {page && (
