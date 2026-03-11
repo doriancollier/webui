@@ -9,13 +9,15 @@ This guide covers data fetching patterns in DorkOS. The client uses TanStack Que
 | Concept                | Location                                                           |
 | ---------------------- | ------------------------------------------------------------------ |
 | Transport interface    | `packages/shared/src/transport.ts`                                 |
-| HttpTransport          | `apps/client/src/layers/shared/lib/http-transport.ts`              |
+| HttpTransport          | `apps/client/src/layers/shared/lib/transport/http-transport.ts`    |
 | DirectTransport        | `apps/client/src/layers/shared/lib/direct-transport.ts`            |
 | TransportContext       | `apps/client/src/layers/shared/model/TransportContext.tsx`         |
 | Session entity hooks   | `apps/client/src/layers/entities/session/`                         |
 | Command entity hooks   | `apps/client/src/layers/entities/command/`                         |
 | Agent entity hooks     | `apps/client/src/layers/entities/agent/`                           |
 | Runtime entity hooks   | `apps/client/src/layers/entities/runtime/`                         |
+| Relay entity hooks     | `apps/client/src/layers/entities/relay/`                           |
+| Binding entity hooks   | `apps/client/src/layers/entities/binding/`                         |
 | Chat feature hooks     | `apps/client/src/layers/features/chat/model/use-chat-session.ts`  |
 | Express routes         | `apps/server/src/routes/`                                          |
 | Zod schemas            | `packages/shared/src/schemas.ts`                                   |
@@ -503,6 +505,126 @@ export function useDeliveryMetrics() {
     refetchInterval: 30_000,
   });
 }
+```
+
+### useAdapterEvents
+
+Fetches lifecycle events for a specific adapter instance with 5-second polling. Disabled when `adapterId` is null. Used by `AdapterEventLog` to display real-time adapter activity.
+
+```typescript
+// apps/client/src/layers/entities/relay/model/use-adapter-events.ts
+import { useQuery } from '@tanstack/react-query';
+import { useTransport } from '@/layers/shared/model';
+import type { AdapterEvent } from '@dorkos/shared/transport';
+
+export function useAdapterEvents(adapterId: string | null) {
+  const transport = useTransport();
+  return useQuery<{ events: AdapterEvent[] }>({
+    queryKey: ['relay', 'adapters', adapterId, 'events'],
+    queryFn: () => transport.getAdapterEvents(adapterId!),
+    enabled: !!adapterId,
+    refetchInterval: 5_000,
+  });
+}
+```
+
+Also exports `AdapterEventMetadata` — a typed interface for parsed event metadata used by the `AdapterEventLog` UI component.
+
+## Binding Entity Hooks
+
+Adapter-agent bindings represent routing rules that connect Relay adapters to DorkOS agents. The binding entity layer (`entities/binding/`) provides hooks for the full CRUD lifecycle.
+
+### Query Key Pattern
+
+Bindings use a simple constant for query keys (contrast with the factory pattern used by agent entity hooks):
+
+```typescript
+// apps/client/src/layers/entities/binding/model/use-bindings.ts
+export const BINDINGS_QUERY_KEY = ['relay', 'bindings'] as const;
+```
+
+All mutation hooks import this constant and call `queryClient.invalidateQueries({ queryKey: [...BINDINGS_QUERY_KEY] })` on success, ensuring the binding list stays fresh after any CRUD operation.
+
+### useBindings
+
+Fetches all configured adapter-agent bindings.
+
+```typescript
+// apps/client/src/layers/entities/binding/model/use-bindings.ts
+export function useBindings() {
+  const transport = useTransport();
+  return useQuery({
+    queryKey: [...BINDINGS_QUERY_KEY],
+    queryFn: () => transport.getBindings(),
+  });
+}
+```
+
+### useCreateBinding
+
+Creates a new adapter-agent binding. Invalidates the bindings cache on success.
+
+```typescript
+// apps/client/src/layers/entities/binding/model/use-create-binding.ts
+export function useCreateBinding() {
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateBindingRequest) => transport.createBinding(input),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...BINDINGS_QUERY_KEY] });
+    },
+  });
+}
+```
+
+### useUpdateBinding
+
+Updates mutable fields on an existing binding (`sessionStrategy`, `label`, `chatId`, `channelType`). Invalidates the bindings cache on success.
+
+```typescript
+// apps/client/src/layers/entities/binding/model/use-update-binding.ts
+export function useUpdateBinding() {
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, updates }: {
+      id: string;
+      updates: Partial<Pick<AdapterBinding, 'sessionStrategy' | 'label' | 'chatId' | 'channelType'>>;
+    }) => transport.updateBinding(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...BINDINGS_QUERY_KEY] });
+    },
+  });
+}
+```
+
+### useDeleteBinding
+
+Deletes a binding by ID. Invalidates the bindings cache on success.
+
+```typescript
+// apps/client/src/layers/entities/binding/model/use-delete-binding.ts
+export function useDeleteBinding() {
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => transport.deleteBinding(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [...BINDINGS_QUERY_KEY] });
+    },
+  });
+}
+```
+
+### Usage Pattern
+
+Feature components compose multiple binding hooks. For example, `BindingList` in `features/relay/ui/`:
+
+```typescript
+const { data: bindings = [], isLoading } = useBindings();
+const { mutate: deleteBinding } = useDeleteBinding();
+const { mutate: updateBinding } = useUpdateBinding();
 ```
 
 ## References

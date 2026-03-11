@@ -851,6 +851,7 @@ interface AdapterManagerDeps {
   pulseStore?: PulseStoreLike;              // Optional — needed for ClaudeCodeAdapter schedule dispatching
   relayCore?: RelayCoreLike;               // Optional — enables binding subsystem (BindingStore + BindingRouter)
   meshCore?: AdapterMeshCoreLike;          // Optional — resolves agent CWD via getProjectPath(agentId)
+  eventRecorder?: AdapterEventRecorder;    // Optional — records adapter lifecycle events for the UI
 }
 ```
 

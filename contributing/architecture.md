@@ -53,8 +53,11 @@ Transport
   listRelayAdapters / toggleRelayAdapter / getAdapterCatalog
   addRelayAdapter / removeRelayAdapter / updateRelayAdapterConfig / testRelayAdapterConnection
 
+  -- Relay Adapter Events --
+  getAdapterEvents(adapterId, limit?)
+
   -- Relay Bindings --
-  getBindings / createBinding / deleteBinding
+  getBindings / createBinding / deleteBinding / updateBinding
 
   -- Mesh Agent Discovery --
   discoverMeshAgents / listMeshAgents / getMeshAgent
@@ -130,7 +133,7 @@ DirectTransport({ runtime, transcriptReader, commandRegistry, vaultRoot: repoRoo
 
 ## Transport Implementations
 
-### HttpTransport (`apps/client/src/layers/shared/lib/http-transport.ts`)
+### HttpTransport (`apps/client/src/layers/shared/lib/transport/http-transport.ts`)
 
 Communicates with the Express server over HTTP and SSE:
 
@@ -139,6 +142,14 @@ Communicates with the Express server over HTTP and SSE:
 - Parses `text/event-stream` lines into `StreamEvent` objects
 - `uploadFiles` uses XHR with `FormData` for progress tracking
 - Constructor takes `baseUrl` (defaults to `/api`)
+
+Domain-specific methods (Relay, Pulse, Mesh) are delegated to factory-produced objects to keep concerns separated:
+
+- `createRelayMethods(baseUrl, getClientId)` — Relay bus, adapters, bindings, events
+- `createPulseMethods(baseUrl)` — Pulse schedules and runs
+- `createMeshMethods(baseUrl)` — Mesh discovery, registry, topology
+
+HttpTransport uses `Object.assign(this, createRelayMethods(...))` at construction time. Each factory lives in its own file under `transport/` and handles HTTP serialization for its domain. This keeps the Transport interface unified while allowing independent testability of domain methods.
 
 ### DirectTransport (`apps/client/src/layers/shared/lib/direct-transport.ts`)
 
@@ -150,6 +161,8 @@ Calls service instances directly in the same process:
 - `uploadFiles` copies files to disk via Node.js `fs` (no HTTP)
 - `createSession` generates UUIDs via `crypto.randomUUID()`
 - Respects `AbortSignal` for cancellation
+
+**Scope limitation:** DirectTransport currently implements only session, message, tool, task, and agent APIs. Relay, Mesh, and Pulse methods are not available in DirectTransport (Obsidian plugin mode) — these features require server-side state and are scoped for the standalone web client.
 
 ## Data Flow
 
@@ -311,7 +324,11 @@ packages/
     transport.ts            -- Transport interface (the "port", includes getCapabilities)
     types.ts                -- Shared type definitions
     manifest.ts             -- Agent manifest I/O (readManifest, writeManifest, removeManifest)
-    relay-schemas.ts        -- Zod schemas for Relay (envelopes, budgets, adapters, bindings)
+    relay-schemas.ts        -- Facade re-exporting from 4 focused sub-modules (backward compatible)
+    relay-envelope-schemas.ts -- Envelopes, budgets, payloads, signals, HTTP API request/query schemas
+    relay-access-schemas.ts   -- Access control rules (allow/deny by subject pattern)
+    relay-adapter-schemas.ts  -- Adapters, catalogs, bindings, HTTP request schemas
+    relay-trace-schemas.ts    -- Delivery traces, metrics, reliability configuration
     mesh-schemas.ts         -- Zod schemas for Mesh (AgentManifest, health, topology, lifecycle)
     config-schema.ts        -- UserConfigSchema with defaults and sensitive key list
 
@@ -336,12 +353,16 @@ packages/
     subject-matcher.ts      -- NATS-style subject and wildcard matching
     endpoint-registry.ts    -- Maildir endpoint registration + hash computation
     adapters/
-      claude-code-adapter.ts -- Routes relay.agent.> and relay.system.pulse.> to ClaudeCodeRuntime
-      telegram-adapter.ts   -- Telegram Bot API via grammY (long polling / webhook)
+      claude-code/          -- Routes relay.agent.> and relay.system.pulse.> to ClaudeCodeRuntime
+                               (modular: claude-code-adapter.ts, agent-handler.ts, pulse-handler.ts, queue.ts, publish.ts)
+      telegram/             -- Telegram Bot API via grammY (modular: telegram-adapter.ts, inbound.ts, outbound.ts, webhook.ts)
       webhook-adapter.ts    -- Generic HTTP POST with HMAC-SHA256 verification
 
   mesh/src/
-    mesh-core.ts            -- MeshCore class (discovery + registry entry point)
+    mesh-core.ts            -- Thin coordinator composing discovery, agent management, and denial modules
+    mesh-discovery.ts       -- Discovery & registration logic (discover, register, registerByPath)
+    mesh-agent-management.ts -- Agent list/get/update/unregister, health, topology operations
+    mesh-denial.ts          -- Denial list operations (deny, undeny, list)
     discovery/              -- Unified discovery system
       unified-scanner.ts    -- BFS async generator with detection strategies, symlink support
       types.ts              -- ScanEvent, UnifiedScanOptions, UNIFIED_EXCLUDE_PATTERNS
@@ -367,8 +388,14 @@ apps/
         app-store.ts        -- Zustand UI state store
         use-theme.ts        -- Theme hook (+ 7 other hooks)
       lib/
-        http-transport.ts   -- HTTP/SSE adapter
-        direct-transport.ts -- In-process adapter
+        direct-transport.ts -- In-process adapter (Obsidian plugin)
+        transport/
+          http-transport.ts -- HTTP/SSE adapter
+          relay-methods.ts  -- createRelayMethods() factory
+          pulse-methods.ts  -- createPulseMethods() factory
+          mesh-methods.ts   -- createMeshMethods() factory
+          http-client.ts    -- fetchJSON, buildQueryString helpers
+          sse-parser.ts     -- parseSSEStream helper
         utils.ts            -- cn() utility
     components/
       App.tsx               -- Main app shell
@@ -854,7 +881,7 @@ Client: correlationId = crypto.randomUUID()
 - `packages/shared/src/transport.ts` — `Transport.sendMessageRelay()` accepts optional `correlationId` in options
 - `apps/client/src/layers/shared/lib/http-transport.ts` — Includes `correlationId` in POST body when provided
 - `apps/server/src/routes/sessions.ts` — `publishViaRelay()` forwards `correlationId` to relay envelope payload
-- `packages/relay/src/adapters/claude-code-adapter.ts` — Extracts and echoes `correlationId` in all `publishResponse()` calls
+- `packages/relay/src/adapters/claude-code/claude-code-adapter.ts` — Extracts and echoes `correlationId` in all `publishResponse()` calls
 - `apps/server/src/services/runtimes/claude-code/session-broadcaster.ts` — Includes `correlationId` in SSE `relay_message` events
 - `apps/client/src/layers/features/chat/model/use-chat-session.ts` — Generates UUID, passes to transport, filters incoming events by ID
 
@@ -866,7 +893,10 @@ The Mesh subsystem (`packages/mesh/src/`) provides agent discovery, registration
 
 | Module | Purpose |
 |--------|---------|
-| `mesh-core.ts` | Main entry point composing discovery, registry, denial list, and Relay bridge |
+| `mesh-core.ts` | Thin coordinator delegating to extracted modules (discovery, agent management, denial) |
+| `mesh-discovery.ts` | Discovery & registration logic (`discover`, `register`, `registerByPath`) |
+| `mesh-agent-management.ts` | Agent CRUD, health computation, topology operations |
+| `mesh-denial.ts` | Denial list operations (`deny`, `undeny`, `list`) |
 | `discovery/unified-scanner.ts` | Unified BFS async generator with detection strategies (claude-code, cursor, copilot, dork-manifest) |
 | `agent-registry.ts` | SQLite-backed persistent registry of known agents (via `@dorkos/db` Drizzle instance) |
 | `denial-list.ts` | SQLite-backed denial list preventing re-discovery of denied paths |

@@ -43,20 +43,20 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 | Guide | Last Reviewed | Reviewer | Notes |
 |---|---|---|---|
 | `project-structure.md` | 2026-03-06 | Claude | Added eslint-config and icons packages |
-| `architecture.md` | 2026-03-09 | Claude | Added Transport.uploadFiles(), upload-handler, mcp-server, mcp middleware |
+| `architecture.md` | 2026-03-11 | Claude | Updated: relay schema split (4 modules + facade), mesh extraction (3 modules), transport factories, adapter paths, DirectTransport limitations |
 | `design-system.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
 | `api-reference.md` | 2026-03-09 | Claude | Added POST /api/uploads endpoint documentation |
 | `configuration.md` | 2026-03-09 | Claude | Added uploads config section (maxFileSize, maxFiles, allowedTypes) |
 | `interactive-tools.md` | 2026-03-06 | Claude | Fixed INTERACTION_TIMEOUT_MS constant ref, reject implementations, auto-approve logic, InteractiveSession type |
 | `keyboard-shortcuts.md` | 2026-03-06 | Claude | Fixed useInteractiveShortcuts location (shared/model, not features/chat), corrected PaletteFooter shortcut table |
 | `obsidian-plugin-development.md` | 2026-03-06 | Claude | Updated sdk-utils paths for runtime abstraction |
-| `data-fetching.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
+| `data-fetching.md` | 2026-03-11 | Claude | Added useAdapterEvents hook, full binding entity section (4 hooks), updated key files table |
 | `state-management.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
 | `animations.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
 | `styling-theming.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
 | `parallel-execution.md` | 2026-03-06 | Claude | Reviewed — no stale patterns found |
-| `relay-adapters.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
-| `adapter-catalog.md` | 2026-03-06 | Claude | Reviewed — no content changes required |
+| `relay-adapters.md` | 2026-03-11 | Claude | Added eventRecorder field to AdapterManagerDeps |
+| `adapter-catalog.md` | 2026-03-11 | Claude | Fixed 4 stale adapter file paths (flat files → subdirectories) |
 | `browser-testing.md` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `environment-variables.md` | 2026-03-09 | Claude | Added MCP_API_KEY env var |
 
@@ -110,7 +110,7 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/concepts/architecture.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/concepts/sessions.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/concepts/transport.mdx` | 2026-03-09 | Claude | Added uploadFiles to Transport method tables |
-| `docs/concepts/relay.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/concepts/relay.mdx` | 2026-03-11 | Claude | Reviewed — conceptually accurate, no updates needed |
 | `docs/concepts/mesh.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/integrations/sse-protocol.mdx` | 2026-02-17 | Claude | Written from scratch |
 | `docs/integrations/building-integrations.mdx` | 2026-03-09 | Claude | Added uploadFiles() to Transport interface listing |
@@ -128,8 +128,8 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/guides/agent-discovery.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/guides/agent-coordination.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/guides/pulse-scheduler.mdx` | 2026-03-06 | Claude | Added to coverage map |
-| `docs/guides/relay-messaging.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/relay-messaging.mdx` | 2026-03-11 | Claude | Reviewed — may need new API entries for adapter events/binding updates |
 | `docs/guides/relay-observability.mdx` | 2026-03-06 | Claude | Added to coverage map |
-| `docs/guides/building-relay-adapters.mdx` | 2026-03-06 | Claude | Added to coverage map |
+| `docs/guides/building-relay-adapters.mdx` | 2026-03-11 | Claude | Reviewed — interface listing and examples still accurate |
 | `docs/guides/obsidian-plugin.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/guides/persona.mdx` | 2026-03-06 | Claude | Added to coverage map |

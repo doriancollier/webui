@@ -37,7 +37,7 @@ An `AdapterManifest` describes an adapter type's identity, configuration shape, 
 
 ### Example Manifest
 
-From `packages/relay/src/adapters/telegram-adapter.ts`:
+From `packages/relay/src/adapters/telegram/telegram-adapter.ts`:
 
 ```typescript
 export const TELEGRAM_MANIFEST: AdapterManifest = {
@@ -205,7 +205,7 @@ Three adapters ship with DorkOS. Their manifests are defined as static constants
 
 ### Telegram (`TELEGRAM_MANIFEST`)
 
-- **File**: `packages/relay/src/adapters/telegram-adapter.ts`
+- **File**: `packages/relay/src/adapters/telegram/telegram-adapter.ts`
 - **Category**: `messaging`
 - **Multi-instance**: No
 - **Config fields**: `token` (password), `mode` (select: polling/webhook), `webhookUrl` (url, conditional), `webhookPort` (number, conditional)
@@ -213,7 +213,7 @@ Three adapters ship with DorkOS. Their manifests are defined as static constants
 
 ### Webhook (`WEBHOOK_MANIFEST`)
 
-- **File**: `packages/relay/src/adapters/webhook-adapter.ts`
+- **File**: `packages/relay/src/adapters/webhook/webhook-adapter.ts`
 - **Category**: `automation`
 - **Multi-instance**: Yes
 - **Config fields**: `inbound.subject` (text), `inbound.secret` (password), `outbound.url` (url), `outbound.secret` (password), `outbound.headers` (textarea)
@@ -221,7 +221,7 @@ Three adapters ship with DorkOS. Their manifests are defined as static constants
 
 ### Claude Code (`CLAUDE_CODE_MANIFEST`)
 
-- **File**: `packages/relay/src/adapters/claude-code-adapter.ts`
+- **File**: `packages/relay/src/adapters/claude-code/claude-code-adapter.ts`
 - **Category**: `internal`
 - **Multi-instance**: No
 - **Config fields**: `maxConcurrent` (number, default 3), `defaultTimeoutMs` (number, default 300000)
