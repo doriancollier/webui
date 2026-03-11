@@ -72,6 +72,9 @@ interface AppState {
   globalPaletteInitialSearch: string | null;
   openGlobalPaletteWithSearch: (text: string) => void;
   clearGlobalPaletteInitialSearch: () => void;
+  shortcutsPanelOpen: boolean;
+  setShortcutsPanelOpen: (open: boolean) => void;
+  toggleShortcutsPanel: () => void;
 
   sessionId: string | null;
   setSessionId: (id: string | null) => void;
@@ -237,6 +240,9 @@ export const useAppStore = create<AppState>()(
       openGlobalPaletteWithSearch: (text) =>
         set({ globalPaletteOpen: true, globalPaletteInitialSearch: text }),
       clearGlobalPaletteInitialSearch: () => set({ globalPaletteInitialSearch: null }),
+      shortcutsPanelOpen: false,
+      setShortcutsPanelOpen: (open) => set({ shortcutsPanelOpen: open }),
+      toggleShortcutsPanel: () => set((s) => ({ shortcutsPanelOpen: !s.shortcutsPanelOpen })),
 
       sessionId: null,
       setSessionId: (id) => set({ sessionId: id }),

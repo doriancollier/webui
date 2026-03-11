@@ -4,7 +4,7 @@
  * @module shared/lib
  */
 export { cn } from './utils';
-export { getPlatform, setPlatformAdapter, type PlatformAdapter } from './platform';
+export { getPlatform, setPlatformAdapter, isMac, type PlatformAdapter } from './platform';
 export { fuzzyMatch } from './fuzzy-match';
 export { HttpTransport } from './transport';
 export { DirectTransport, type DirectTransportServices } from './direct-transport';
@@ -59,3 +59,12 @@ export {
 } from './constants';
 export type { FileEntry } from './file-types';
 export { createChannel, type Channel } from './broadcast-channel';
+export {
+  SHORTCUTS,
+  SHORTCUT_GROUP_LABELS,
+  SHORTCUT_GROUP_ORDER,
+  formatShortcutKey,
+  getShortcutsGrouped,
+  type ShortcutDef,
+  type ShortcutGroup,
+} from './shortcuts';

@@ -20,3 +20,6 @@ export function setPlatformAdapter(adapter: PlatformAdapter) {
 export function getPlatform(): PlatformAdapter {
   return currentAdapter;
 }
+
+/** Whether the current platform is macOS/iOS (used for shortcut display). */
+export const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);

@@ -1,7 +1,7 @@
 import { useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
 import { MessageSquare, Clock, Plug2 } from 'lucide-react';
-import { cn } from '@/layers/shared/lib';
+import { cn, isMac } from '@/layers/shared/lib';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/layers/shared/ui';
 
 type SidebarTab = 'sessions' | 'schedules' | 'connections';
@@ -38,7 +38,6 @@ export function SidebarTabRow({
   visibleTabs,
 }: SidebarTabRowProps) {
   const tabListRef = useRef<HTMLDivElement>(null);
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
   const modKey = isMac ? '\u2318' : 'Ctrl+';
 
   const handleKeyDown = useCallback(

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppStore, useFavicon, useDocumentTitle } from '@/layers/shared/model';
+import { isMac } from '@/layers/shared/lib';
 import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entities/session';
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
 import { motion, AnimatePresence, MotionConfig } from 'motion/react';
@@ -23,6 +24,7 @@ import {
 } from '@/layers/shared/ui';
 import { Kbd } from '@/layers/shared/ui/kbd';
 import { CommandPaletteDialog } from '@/layers/features/command-palette';
+import { ShortcutsPanel, useShortcutsPanel } from '@/layers/features/shortcuts';
 
 interface AppProps {
   /** Optional transform applied to message content before sending to server */
@@ -58,6 +60,8 @@ export function App({ transformContent, embedded }: AppProps = {}) {
     agentEmoji: currentAgent ? agentVisual.emoji : undefined,
     pulseBadgeCount,
   });
+
+  useShortcutsPanel(); // Register ? key handler
 
   // First-run onboarding detection
   const { shouldShowOnboarding } = useOnboarding();
@@ -98,8 +102,6 @@ export function App({ transformContent, embedded }: AppProps = {}) {
     target.addEventListener('keydown', handleToggle as EventListener);
     return () => target.removeEventListener('keydown', handleToggle as EventListener);
   }, [embedded, toggleSidebar]);
-
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
   // Embedded mode: overlay sidebar (absolute positioning, scoped to container)
   if (embedded) {
@@ -172,6 +174,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
             </div>
           </div>
           <CommandPaletteDialog />
+          <ShortcutsPanel />
           <Toaster />
         </MotionConfig>
       </TooltipProvider>
@@ -252,6 +255,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
         </AnimatePresence>
         <DialogHost />
         <CommandPaletteDialog />
+        <ShortcutsPanel />
         <Toaster />
       </MotionConfig>
     </TooltipProvider>

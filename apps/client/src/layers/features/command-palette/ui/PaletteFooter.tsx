@@ -1,3 +1,5 @@
+import { isMac } from '@/layers/shared/lib';
+
 interface PaletteFooterProps {
   /** Current cmdk page (undefined for root) */
   page: string | undefined;
@@ -18,7 +20,6 @@ const KBD_CLASS = 'bg-muted rounded px-1 py-0.5 font-mono text-[10px]' as const;
  * @param hasAgentSelected - Whether an agent item is currently selected
  */
 export function PaletteFooter({ page, hasAgentSelected }: PaletteFooterProps) {
-  const isMac = typeof navigator !== 'undefined' && navigator.platform?.includes('Mac');
   const modKey = isMac ? '\u2318' : 'Ctrl';
 
   return (

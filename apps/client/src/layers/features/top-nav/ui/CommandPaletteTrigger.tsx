@@ -1,11 +1,9 @@
 import { Search } from 'lucide-react';
 import { motion } from 'motion/react';
 import { useAppStore } from '@/layers/shared/model';
+import { isMac } from '@/layers/shared/lib';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/layers/shared/ui';
 import { Kbd } from '@/layers/shared/ui/kbd';
-
-const isMac =
-  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
 /**
  * Search icon button that opens the global command palette.

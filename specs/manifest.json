@@ -820,7 +820,14 @@
       "title": "Sidebar Tabbed Views — Sessions, Schedules, Connections",
       "created": "2026-03-10",
       "status": "specified"
+    },
+    {
+      "number": 118,
+      "slug": "shortcut-discoverability",
+      "title": "Keyboard Shortcut Discoverability",
+      "created": "2026-03-11",
+      "status": "specification"
     }
   ],
-  "nextNumber": 118
+  "nextNumber": 119
 }

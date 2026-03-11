@@ -1,6 +1,6 @@
 import { useMemo, useCallback, useEffect, useRef, useContext } from 'react';
 import { useAppStore, useIsMobile } from '@/layers/shared/model';
-import { cn, groupSessionsByTime, TIMING } from '@/layers/shared/lib';
+import { cn, groupSessionsByTime, TIMING, formatShortcutKey, SHORTCUTS } from '@/layers/shared/lib';
 import {
   SidebarContent,
   SidebarContext,
@@ -10,9 +10,6 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarRail,
-  Tooltip,
-  TooltipTrigger,
-  TooltipContent,
   Kbd,
 } from '@/layers/shared/ui';
 import { usePulseEnabled, useCompletedRunBadge, useActiveRunCount } from '@/layers/entities/pulse';
@@ -169,27 +166,23 @@ export function AgentSidebar() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleNewSession]);
 
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
-
   return (
     <>
       <SidebarHeader className="border-b p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <SidebarMenuButton
-                  onClick={handleNewSession}
-                  className="border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
-                >
-                  <Plus className="size-(--size-icon-sm)" />
-                  New session
-                </SidebarMenuButton>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                New session <Kbd>{isMac ? '⇧⌘N' : 'Ctrl+Shift+N'}</Kbd>
-              </TooltipContent>
-            </Tooltip>
+            <SidebarMenuButton
+              onClick={handleNewSession}
+              className="group border-border text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center justify-between gap-1.5 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98] disabled:opacity-50"
+            >
+              <span className="flex items-center gap-1.5">
+                <Plus className="size-(--size-icon-sm)" />
+                New session
+              </span>
+              <Kbd className="shrink-0 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                {formatShortcutKey(SHORTCUTS.NEW_SESSION)}
+              </Kbd>
+            </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>

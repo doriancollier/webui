@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 108,
+  "nextNumber": 109,
   "decisions": [
+    {
+      "number": 108,
+      "slug": "centralized-shortcut-registry",
+      "title": "Centralized Shortcut Registry as Single Source of Truth",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "shortcut-discoverability",
+      "specSlug": "shortcut-discoverability"
+    },
     {
       "number": 107,
       "slug": "css-hidden-toggle-for-sidebar-view-persistence",

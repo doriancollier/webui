@@ -1,6 +1,7 @@
 import { FolderOpen, ExternalLink, Plus, MessageSquare } from 'lucide-react';
 import { CommandGroup, CommandItem, CommandShortcut } from '@/layers/shared/ui';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
+import { isMac } from '@/layers/shared/lib';
 
 interface SessionMetadata {
   id: string;
@@ -35,7 +36,6 @@ export function AgentSubMenu({
   onNewSession,
   recentSessions,
 }: AgentSubMenuProps) {
-  const isMac = typeof navigator !== 'undefined' && navigator.platform?.includes('Mac');
   const modKey = isMac ? '\u2318' : 'Ctrl+';
 
   return (

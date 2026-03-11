@@ -77,10 +77,12 @@ interface UseInteractiveShortcutsOptions {
 
 ### Navigation
 
-| Key                  | Action               |
-| -------------------- | -------------------- |
-| `Cmd+K` / `Ctrl+K`  | Open command palette |
-| `Cmd+B` / `Ctrl+B`  | Toggle sidebar (Shadcn built-in `SIDEBAR_KEYBOARD_SHORTCUT`) |
+| Key                            | Action               |
+| ------------------------------ | -------------------- |
+| `Cmd+K` / `Ctrl+K`            | Open command palette |
+| `Cmd+B` / `Ctrl+B`            | Toggle sidebar (Shadcn built-in `SIDEBAR_KEYBOARD_SHORTCUT`) |
+| `Cmd+Shift+N` / `Ctrl+Shift+N` | New session         |
+| `?`                            | Open keyboard shortcuts panel |
 
 ### Command Palette
 
@@ -294,6 +296,24 @@ Key details:
 - **Hidden on mobile:** `hidden md:inline-flex` ensures hints only show on screens >= 768px. Mobile users tap buttons directly.
 - **Non-interactive:** `pointer-events-none select-none` prevents the hint from interfering with click targets.
 - **Styled to match shadcn/ui:** Uses `bg-muted`, `text-muted-foreground`, `border`, `font-mono` for a consistent appearance with the design system.
+
+## Shortcut Registry
+
+All shortcuts are defined in `apps/client/src/layers/shared/lib/shortcuts.ts` as a centralized `SHORTCUTS` constant. Adding a new shortcut to the registry automatically makes it appear in:
+
+- The `?` shortcuts reference panel
+- The command palette (if a feature item references it)
+- Inline button hints (if the button uses `formatShortcutKey`)
+
+The registry is the single source of truth. Do not define shortcut display strings inline.
+
+### Adding a New Shortcut to the Registry
+
+1. Add a new entry to the `SHORTCUTS` object in `shortcuts.ts` with `id`, `key`, `label`, and `group`
+2. The `key` uses a normalized format: `mod+` for Cmd/Ctrl, `shift+`, `alt+`, `ctrl+`
+3. The shortcut automatically appears in the `?` reference panel (grouped by `group`)
+4. Use `formatShortcutKey(SHORTCUTS.YOUR_SHORTCUT)` in UI to display the platform-appropriate key string
+5. Use `import { isMac } from '@/layers/shared/lib'` instead of inline `navigator.platform` checks
 
 ## Adding Shortcuts for a New Interactive Tool
 
