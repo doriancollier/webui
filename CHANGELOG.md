@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.11.0] - 2026-03-11
+
+> Shortcut discoverability, design system refinements, and UX fixes
+
+### Added
+
 - Add centralized shortcut registry and discoverability panel
 - Add design system showcase playground
 - Integrate brand orange into client design system
@@ -24,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter schedules by agent and show adapter display names
 - Handle empty roots array in scan endpoint
 - Fix toast notifications rendering with transparent backgrounds
+
 ---
 
 ## [0.10.0] - 2026-03-11
@@ -399,7 +412,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/dork-labs/dorkos/compare/v0.10.0...v0.11.0
+[0.10.0]: https://github.com/dork-labs/dorkos/compare/v0.9.1...v0.10.0
 [0.9.1]: https://github.com/dork-labs/dorkos/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/dork-labs/dorkos/compare/v0.8.0...v0.9.0
 [0.8.0]: https://github.com/dork-labs/dorkos/compare/v0.7.0...v0.8.0
