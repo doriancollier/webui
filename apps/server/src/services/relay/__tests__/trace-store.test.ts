@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { sql } from 'drizzle-orm';
 import { TraceStore } from '../trace-store.js';
 import { createTestDb } from '@dorkos/test-utils';
@@ -141,6 +141,71 @@ describe('TraceStore', () => {
 
   it('close is a no-op and does not throw', () => {
     expect(() => store.close()).not.toThrow();
+  });
+
+  // -------------------------------------------------------------------------
+  // Adapter events
+  // -------------------------------------------------------------------------
+
+  describe('adapter events', () => {
+    it('insertAdapterEvent persists an event with correct metadata', () => {
+      store.insertAdapterEvent('telegram-1', 'adapter.connected', 'Connected to relay');
+      const events = store.getAdapterEvents('telegram-1');
+      expect(events).toHaveLength(1);
+      expect(events[0].subject).toBe('adapter.connected');
+      const metadata = JSON.parse(events[0].metadata!);
+      expect(metadata.adapterId).toBe('telegram-1');
+      expect(metadata.eventType).toBe('adapter.connected');
+      expect(metadata.message).toBe('Connected to relay');
+    });
+
+    it('getAdapterEvents filters by adapterId', () => {
+      store.insertAdapterEvent('telegram-1', 'adapter.connected', 'Connected');
+      store.insertAdapterEvent('webhook-1', 'adapter.connected', 'Connected');
+      store.insertAdapterEvent('telegram-1', 'adapter.error', 'Error occurred');
+
+      const telegramEvents = store.getAdapterEvents('telegram-1');
+      expect(telegramEvents).toHaveLength(2);
+      expect(
+        telegramEvents.every((e) => {
+          const m = JSON.parse(e.metadata!);
+          return m.adapterId === 'telegram-1';
+        }),
+      ).toBe(true);
+    });
+
+    it('getAdapterEvents returns events ordered most-recent first', () => {
+      // Use fake timers with distinct timestamps to guarantee stable ordering
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+      store.insertAdapterEvent('telegram-1', 'adapter.connected', 'First');
+
+      vi.setSystemTime(new Date('2026-01-01T00:00:01.000Z'));
+      store.insertAdapterEvent('telegram-1', 'adapter.error', 'Second');
+
+      vi.setSystemTime(new Date('2026-01-01T00:00:02.000Z'));
+      store.insertAdapterEvent('telegram-1', 'adapter.disconnected', 'Third');
+
+      vi.useRealTimers();
+
+      const events = store.getAdapterEvents('telegram-1');
+      expect(events[0].subject).toBe('adapter.disconnected'); // Most recent first
+      expect(events[1].subject).toBe('adapter.error');
+      expect(events[2].subject).toBe('adapter.connected');
+    });
+
+    it('getAdapterEvents respects limit parameter', () => {
+      for (let i = 0; i < 10; i++) {
+        store.insertAdapterEvent('telegram-1', 'adapter.connected', `Event ${i}`);
+      }
+      const events = store.getAdapterEvents('telegram-1', 3);
+      expect(events).toHaveLength(3);
+    });
+
+    it('getAdapterEvents returns empty array for unknown adapterId', () => {
+      const events = store.getAdapterEvents('nonexistent');
+      expect(events).toHaveLength(0);
+    });
   });
 
   // -------------------------------------------------------------------------

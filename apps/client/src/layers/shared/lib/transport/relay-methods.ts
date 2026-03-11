@@ -3,7 +3,7 @@
  *
  * @module shared/lib/transport/relay-methods
  */
-import type { AdapterListItem } from '@dorkos/shared/transport';
+import type { AdapterListItem, AdapterEvent } from '@dorkos/shared/transport';
 import type {
   TraceSpan,
   DeliveryMetrics,
@@ -181,6 +181,12 @@ export function createRelayMethods(baseUrl: string, getClientId: () => string) {
       });
     },
 
+    /** Fetch adapter lifecycle events by adapter instance ID. */
+    getAdapterEvents(adapterId: string, limit?: number): Promise<{ events: AdapterEvent[] }> {
+      const qs = buildQueryString({ limit });
+      return fetchJSON(baseUrl, `/relay/adapters/${encodeURIComponent(adapterId)}/events${qs}`);
+    },
+
     // --- Relay Bindings ---
 
     getBindings(): Promise<AdapterBinding[]> {
@@ -200,6 +206,16 @@ export function createRelayMethods(baseUrl: string, getClientId: () => string) {
       await fetchJSON<{ ok: boolean }>(baseUrl, `/relay/bindings/${encodeURIComponent(id)}`, {
         method: 'DELETE',
       });
+    },
+
+    updateBinding(
+      id: string,
+      updates: Partial<Pick<AdapterBinding, 'sessionStrategy' | 'label' | 'chatId' | 'channelType'>>,
+    ): Promise<AdapterBinding> {
+      return fetchJSON<{ binding: AdapterBinding }>(baseUrl, `/relay/bindings/${encodeURIComponent(id)}`, {
+        method: 'PATCH',
+        body: JSON.stringify(updates),
+      }).then((r) => r.binding);
     },
   };
 }

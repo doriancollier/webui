@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { MoreVertical, Settings, Trash2 } from 'lucide-react';
+import { Activity, ChevronRight, MoreVertical, Settings, Trash2 } from 'lucide-react';
 import { Badge } from '@/layers/shared/ui/badge';
 import { Button } from '@/layers/shared/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/layers/shared/ui/collapsible';
 import { Switch } from '@/layers/shared/ui/switch';
 import {
   DropdownMenu,
@@ -19,16 +20,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/layers/shared/ui/alert-dialog';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from '@/layers/shared/ui/sheet';
 import { cn } from '@/layers/shared/lib';
 import type { AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-schemas';
+import { getCategoryColorClasses } from '../lib/category-colors';
 import { getStatusBorderColor } from '../lib/status-colors';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  messaging: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  automation: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
-  internal: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200',
-  custom: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
-};
+import { AdapterEventLog } from './AdapterEventLog';
 
 interface AdapterCardProps {
   instance: CatalogInstance;
@@ -41,6 +43,7 @@ interface AdapterCardProps {
 /** Displays a configured adapter instance with status, toggle, and kebab menu actions. */
 export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemove }: AdapterCardProps) {
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
+  const [eventsSheetOpen, setEventsSheetOpen] = useState(false);
   const borderColor = getStatusBorderColor(instance.status.state);
   const isBuiltinClaude = manifest.type === 'claude-code' && manifest.builtin;
   const displayName = instance.status.displayName || instance.id;
@@ -65,7 +68,7 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
               <span className="text-sm font-medium">{displayName}</span>
               <Badge
                 variant="secondary"
-                className={CATEGORY_COLORS[manifest.category] ?? ''}
+                className={getCategoryColorClasses(manifest.category)}
               >
                 {manifest.category}
               </Badge>
@@ -85,9 +88,26 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
               {instance.status.errorCount > 0 && ` | Errors: ${instance.status.errorCount}`}
             </div>
             {instance.status.lastError && (
-              <div className="mt-1 max-w-[200px] truncate text-xs text-red-500">
-                {instance.status.lastError}
-              </div>
+              <Collapsible>
+                <div className="mt-1 flex items-center gap-1">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600"
+                      aria-label="Toggle full error message"
+                    >
+                      <ChevronRight className="size-3 transition-transform data-[state=open]:rotate-90" />
+                      <span className="max-w-[200px] truncate">
+                        {instance.status.lastError}
+                      </span>
+                    </button>
+                  </CollapsibleTrigger>
+                </div>
+                <CollapsibleContent>
+                  <div className="mt-1 rounded-md bg-red-50 p-2 font-mono text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
+                    {instance.status.lastError}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
         </div>
@@ -102,6 +122,10 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setEventsSheetOpen(true)}>
+                <Activity className="mr-2 size-3.5" />
+                Events
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={onConfigure}>
                 <Settings className="mr-2 size-3.5" />
                 Configure
@@ -139,6 +163,17 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Sheet open={eventsSheetOpen} onOpenChange={setEventsSheetOpen}>
+        <SheetContent className="flex flex-col sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Events: {displayName}</SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden">
+            <AdapterEventLog adapterId={instance.id} />
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 }

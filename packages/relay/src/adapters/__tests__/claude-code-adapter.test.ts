@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { RelayEnvelope, TraceSpan } from '@dorkos/shared/relay-schemas';
 import type { StreamEvent } from '@dorkos/shared/types';
-import { ClaudeCodeAdapter } from '../claude-code-adapter.js';
+import { ClaudeCodeAdapter } from '../claude-code/index.js';
 import type {
   AgentRuntimeLike,
   AgentSessionStoreLike,
   TraceStoreLike,
   PulseStoreLike,
   ClaudeCodeAdapterDeps,
-} from '../claude-code-adapter.js';
+} from '../claude-code/index.js';
 import type { RelayPublisher, AdapterContext } from '../../types.js';
 
 // === Mock factories ===

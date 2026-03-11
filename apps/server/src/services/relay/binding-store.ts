@@ -121,6 +121,29 @@ export class BindingStore {
   }
 
   /**
+   * Update an existing binding's mutable fields.
+   *
+   * @param id - The binding UUID to update
+   * @param updates - Fields to update (sessionStrategy, label, chatId, channelType)
+   * @returns The updated binding, or undefined if not found
+   */
+  async update(
+    id: string,
+    updates: Partial<Pick<AdapterBinding, 'sessionStrategy' | 'label' | 'chatId' | 'channelType'>>,
+  ): Promise<AdapterBinding | undefined> {
+    const existing = this.bindings.get(id);
+    if (!existing) return undefined;
+    const updated: AdapterBinding = {
+      ...existing,
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    };
+    this.bindings.set(id, updated);
+    await this.save();
+    return updated;
+  }
+
+  /**
    * Resolve the best matching binding for an inbound message.
    *
    * Uses most-specific-first scoring:

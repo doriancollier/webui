@@ -12,11 +12,11 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { RelayCore } from '../relay-core.js';
-import { ClaudeCodeAdapter } from '../adapters/claude-code-adapter.js';
+import { ClaudeCodeAdapter } from '../adapters/claude-code/index.js';
 import type {
   AgentRuntimeLike,
   TraceStoreLike,
-} from '../adapters/claude-code-adapter.js';
+} from '../adapters/claude-code/index.js';
 import type { RelayPublisher, AdapterRegistryLike, AdapterContext, DeliveryResult } from '../types.js';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import type { StreamEvent } from '@dorkos/shared/types';

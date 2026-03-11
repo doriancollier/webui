@@ -50,6 +50,11 @@ export interface AdapterMeshCoreLike {
   getProjectPath(agentId: string): string | undefined;
 }
 
+/** Interface for recording adapter lifecycle events. */
+export interface AdapterEventRecorder {
+  insertAdapterEvent(adapterId: string, eventType: string, message: string): void;
+}
+
 /** Dependencies for constructing runtime adapters. */
 export interface AdapterManagerDeps {
   agentManager: ClaudeCodeAgentRuntimeLike;
@@ -59,6 +64,8 @@ export interface AdapterManagerDeps {
   relayCore?: RelayCoreLike;
   /** Optional MeshCore for enriching AdapterContext with agent CWD resolution */
   meshCore?: AdapterMeshCoreLike;
+  /** Optional recorder for adapter lifecycle events */
+  eventRecorder?: AdapterEventRecorder;
 }
 
 /** Server-side adapter lifecycle manager. */
@@ -152,6 +159,11 @@ export class AdapterManager {
       if (!newConfig || !newConfig.enabled) {
         try {
           await this.registry.unregister(id);
+          this.deps.eventRecorder?.insertAdapterEvent(
+            id,
+            'adapter.disconnected',
+            'Disconnected from relay',
+          );
         } catch (err) {
           logger.warn(`[AdapterManager] Failed to unregister adapter '${id}':`, err);
         }
@@ -172,7 +184,14 @@ export class AdapterManager {
 
     const adapter = await this.buildAdapter(config);
     if (adapter) {
-      await this.registry.register(adapter);
+      try {
+        await this.registry.register(adapter);
+        this.deps.eventRecorder?.insertAdapterEvent(id, 'adapter.connected', 'Connected to relay');
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        this.deps.eventRecorder?.insertAdapterEvent(id, 'adapter.error', message);
+        throw err;
+      }
     }
   }
 
@@ -184,6 +203,7 @@ export class AdapterManager {
     config.enabled = false;
     await saveAdapterConfig(this.configPath, this.configs);
     await this.registry.unregister(id);
+    this.deps.eventRecorder?.insertAdapterEvent(id, 'adapter.disconnected', 'Disconnected from relay');
   }
 
   /**
@@ -437,7 +457,14 @@ export class AdapterManager {
       if (adapter) {
         try {
           await this.registry.register(adapter);
+          this.deps.eventRecorder?.insertAdapterEvent(
+            config.id,
+            'adapter.connected',
+            'Connected to relay',
+          );
         } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.deps.eventRecorder?.insertAdapterEvent(config.id, 'adapter.error', message);
           logger.warn(`[AdapterManager] Failed to start adapter '${config.id}':`, err);
         }
       }

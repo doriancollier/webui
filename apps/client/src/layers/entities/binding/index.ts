@@ -6,3 +6,4 @@
 export { useBindings } from './model/use-bindings';
 export { useCreateBinding } from './model/use-create-binding';
 export { useDeleteBinding } from './model/use-delete-binding';
+export { useUpdateBinding } from './model/use-update-binding';

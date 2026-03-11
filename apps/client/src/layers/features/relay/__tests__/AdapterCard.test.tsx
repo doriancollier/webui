@@ -316,4 +316,73 @@ describe('AdapterCard', () => {
       expect(removeItem.getAttribute('data-disabled')).not.toBeNull();
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Error Collapsible tests
+  // -------------------------------------------------------------------------
+
+  it('renders Collapsible trigger when lastError is set', () => {
+    render(<AdapterCard {...defaultProps({ instance: errorInstance })} />);
+    const trigger = screen.getByRole('button', { name: 'Toggle full error message' });
+    expect(trigger).toBeTruthy();
+  });
+
+  it('shows truncated error preview by default', () => {
+    render(<AdapterCard {...defaultProps({ instance: errorInstance })} />);
+    const trigger = screen.getByRole('button', { name: 'Toggle full error message' });
+    expect(trigger.textContent).toContain('Connection timed out');
+    const collapsibleContent = document.querySelector('[data-slot="collapsible-content"]');
+    expect(collapsibleContent?.getAttribute('data-state')).toBe('closed');
+  });
+
+  it('shows full error text when trigger is clicked', async () => {
+    render(<AdapterCard {...defaultProps({ instance: errorInstance })} />);
+    const trigger = screen.getByRole('button', { name: 'Toggle full error message' });
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    await waitFor(() => {
+      const collapsibleContent = document.querySelector('[data-slot="collapsible-content"]');
+      expect(collapsibleContent?.getAttribute('data-state')).toBe('open');
+    });
+  });
+
+  it('collapses error text when trigger is clicked again', async () => {
+    render(<AdapterCard {...defaultProps({ instance: errorInstance })} />);
+    const trigger = screen.getByRole('button', { name: 'Toggle full error message' });
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    await waitFor(() => {
+      const collapsibleContent = document.querySelector('[data-slot="collapsible-content"]');
+      expect(collapsibleContent?.getAttribute('data-state')).toBe('open');
+    });
+
+    await act(async () => {
+      fireEvent.click(trigger);
+    });
+
+    await waitFor(() => {
+      const collapsibleContent = document.querySelector('[data-slot="collapsible-content"]');
+      expect(collapsibleContent?.getAttribute('data-state')).toBe('closed');
+    });
+  });
+
+  it('trigger is a button element with correct aria attributes for keyboard access', () => {
+    render(<AdapterCard {...defaultProps({ instance: errorInstance })} />);
+    const trigger = screen.getByRole('button', { name: 'Toggle full error message' });
+
+    expect(trigger.tagName).toBe('BUTTON');
+    expect(trigger.getAttribute('aria-expanded')).toBe('false');
+    expect(trigger.getAttribute('aria-controls')).toBeTruthy();
+  });
+
+  it('does not render Collapsible when lastError is null', () => {
+    render(<AdapterCard {...defaultProps()} />);
+    expect(screen.queryByRole('button', { name: 'Toggle full error message' })).toBeNull();
+  });
 });

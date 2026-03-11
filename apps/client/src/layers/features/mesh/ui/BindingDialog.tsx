@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -38,6 +38,12 @@ const SESSION_STRATEGIES: { value: SessionStrategy; label: string; description: 
   },
 ];
 
+/** Initial values for edit mode pre-population. */
+export interface BindingDialogInitialValues {
+  sessionStrategy: SessionStrategy;
+  label: string;
+}
+
 export interface BindingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -45,16 +51,20 @@ export interface BindingDialogProps {
   adapterName: string;
   /** Human-readable name of the target agent. */
   agentName: string;
-  /** Called with the user's configuration when Create Binding is clicked. */
+  /** Called with the user's configuration when the confirm button is clicked. */
   onConfirm: (opts: { sessionStrategy: SessionStrategy; label: string }) => void;
+  /** When set to 'edit', the dialog shows "Save Changes" instead of "Create Binding". */
+  mode?: 'create' | 'edit';
+  /** Pre-populate fields when editing an existing binding. */
+  initialValues?: BindingDialogInitialValues;
 }
 
 /**
- * Modal dialog for configuring a new adapter-agent binding.
+ * Modal dialog for configuring or editing an adapter-agent binding.
  *
- * Appears when the user drags from an adapter node to an agent node on the
- * topology canvas. Shows adapter/agent names, session strategy selector with
- * descriptions, and an optional label input.
+ * In create mode (default), appears when the user drags from an adapter node
+ * to an agent node on the topology canvas. In edit mode, pre-populates fields
+ * with the existing binding's values.
  */
 export function BindingDialog({
   open,
@@ -62,17 +72,30 @@ export function BindingDialog({
   adapterName,
   agentName,
   onConfirm,
+  mode = 'create',
+  initialValues,
 }: BindingDialogProps) {
-  const [strategy, setStrategy] = useState<SessionStrategy>('per-chat');
-  const [label, setLabel] = useState('');
+  const [strategy, setStrategy] = useState<SessionStrategy>(initialValues?.sessionStrategy ?? 'per-chat');
+  const [label, setLabel] = useState(initialValues?.label ?? '');
 
+  // Sync state when initialValues change (e.g. selecting a different binding to edit)
+  useEffect(() => {
+    if (initialValues) {
+      setStrategy(initialValues.sessionStrategy);
+      setLabel(initialValues.label);
+    }
+  }, [initialValues]);
+
+  const isEdit = mode === 'edit';
   const selectedStrategy = SESSION_STRATEGIES.find((s) => s.value === strategy);
 
   function handleConfirm() {
     onConfirm({ sessionStrategy: strategy, label });
-    // Reset state for the next time the dialog opens
-    setStrategy('per-chat');
-    setLabel('');
+    // Reset state for the next time the dialog opens (create mode only)
+    if (!isEdit) {
+      setStrategy('per-chat');
+      setLabel('');
+    }
   }
 
   function handleCancel() {
@@ -83,16 +106,16 @@ export function BindingDialog({
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
       <ResponsiveDialogContent className="max-h-[85vh] max-w-md gap-0 p-0">
         <ResponsiveDialogHeader className="border-b px-4 py-3">
-          <ResponsiveDialogTitle>Create Binding</ResponsiveDialogTitle>
+          <ResponsiveDialogTitle>{isEdit ? 'Edit Binding' : 'Create Binding'}</ResponsiveDialogTitle>
           <ResponsiveDialogDescription className="sr-only">
-            Configure how the adapter connects to the agent
+            {isEdit ? 'Modify the binding configuration' : 'Configure how the adapter connects to the agent'}
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
 
         <div className="space-y-5 overflow-y-auto px-4 py-5">
           {/* Adapter → Agent summary */}
           <p className="text-sm text-muted-foreground">
-            Connect{' '}
+            {isEdit ? 'Binding:' : 'Connect'}{' '}
             <span className="font-medium text-foreground">{adapterName}</span>
             {' '}to{' '}
             <span className="font-medium text-foreground">{agentName}</span>
@@ -135,7 +158,7 @@ export function BindingDialog({
             Cancel
           </Button>
           <Button size="sm" onClick={handleConfirm}>
-            Create Binding
+            {isEdit ? 'Save Changes' : 'Create Binding'}
           </Button>
         </ResponsiveDialogFooter>
       </ResponsiveDialogContent>

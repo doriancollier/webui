@@ -1,16 +1,8 @@
 /**
  * Main entry point for the Relay message bus.
  *
- * Composes all sub-modules (EndpointRegistry, SubscriptionRegistry,
- * MaildirStore, SqliteIndex, DeadLetterQueue, AccessControl, SignalEmitter,
- * DeliveryPipeline, AdapterDelivery, WatcherManager, budget-enforcer)
- * into a single cohesive API surface.
- *
- * The publish pipeline validates subjects, checks access control, builds
- * envelopes with budget constraints, delivers to matching endpoints via
- * Maildir, and indexes in SQLite. Push delivery via chokidar watches
- * registered endpoints' `new/` directories and dispatches to subscriber
- * handlers automatically.
+ * Thin facade composing publish, subscription, and endpoint management
+ * sub-modules into a single cohesive API surface.
  *
  * @module relay/relay-core
  */
@@ -18,28 +10,40 @@ import * as path from 'node:path';
 import * as os from 'node:os';
 import fs from 'node:fs';
 import chokidar, { type FSWatcher } from 'chokidar';
-import { monotonicFactory } from 'ulidx';
 import { createDb, runMigrations } from '@dorkos/db';
-import { validateSubject, matchesPattern } from './subject-matcher.js';
-import { createDefaultBudget } from './budget-enforcer.js';
-import { EndpointRegistry, hashSubject } from './endpoint-registry.js';
+import { EndpointRegistry } from './endpoint-registry.js';
 import { SubscriptionRegistry } from './subscription-registry.js';
 import { MaildirStore } from './maildir-store.js';
 import { SqliteIndex } from './sqlite-index.js';
 import { DeadLetterQueue } from './dead-letter-queue.js';
 import { AccessControl } from './access-control.js';
 import { SignalEmitter } from './signal-emitter.js';
-import { checkRateLimit, DEFAULT_RATE_LIMIT_CONFIG } from './rate-limiter.js';
+import { DEFAULT_RATE_LIMIT_CONFIG } from './rate-limiter.js';
 import { CircuitBreakerManager, DEFAULT_CB_CONFIG } from './circuit-breaker.js';
 import { DEFAULT_BP_CONFIG } from './backpressure.js';
 import { DeliveryPipeline } from './delivery-pipeline.js';
 import { AdapterDelivery } from './adapter-delivery.js';
 import { WatcherManager } from './watcher-manager.js';
-import type { RelayEnvelope, Signal } from '@dorkos/shared/relay-schemas';
 import { ReliabilityConfigSchema } from '@dorkos/shared/relay-schemas';
 import { inferEndpointType } from './types.js';
+import { RelayPublishPipeline } from './relay-publish.js';
+import { executeSubscribe, executeSignal, executeOnSignal } from './relay-subscriptions.js';
+import {
+  executeRegisterEndpoint,
+  executeUnregisterEndpoint,
+  executeListEndpoints,
+  executeGetMessage,
+  executeListMessages,
+  executeReadInbox,
+  executeGetDeadLetters,
+  executeAddAccessRule,
+  executeRemoveAccessRule,
+  executeListAccessRules,
+  executeRebuildIndex,
+  executeGetMetrics,
+} from './relay-endpoint-management.js';
+import type { Signal, RelayAccessRule } from '@dorkos/shared/relay-schemas';
 import type {
-  RateLimitConfig,
   BackpressureConfig,
   RelayOptions,
   PublishOptions,
@@ -50,10 +54,15 @@ import type {
   RelayMetrics,
   AdapterRegistryLike,
   AdapterContext,
-  DeliveryResult,
-  TraceStoreLike,
 } from './types.js';
 import type { DeadLetterEntry, ListDeadOptions } from './dead-letter-queue.js';
+import type { IndexedMessage } from './sqlite-index.js';
+import type { PublishResult } from './relay-publish.js';
+import type { SubscriptionDeps } from './relay-subscriptions.js';
+import type { EndpointManagementDeps } from './relay-endpoint-management.js';
+
+// Re-export public types from sub-modules
+export type { PublishResult } from './relay-publish.js';
 
 // === Constants ===
 
@@ -65,46 +74,9 @@ import type { DeadLetterEntry, ListDeadOptions } from './dead-letter-queue.js';
  * only reached in standalone or test usage.
  */
 const DEFAULT_DATA_DIR = path.join(os.homedir(), '.dork', 'relay');
-
-/** Default TTL: 1 hour in milliseconds. */
 const DEFAULT_TTL_MS = 3_600_000;
-
-/** Default maximum hop count. */
 const DEFAULT_MAX_HOPS = 5;
-
-/** Default call budget per message. */
 const DEFAULT_CALL_BUDGET = 10;
-
-// === Types ===
-
-/** Fully resolved options with no optional fields. */
-interface ResolvedOptions {
-  dataDir: string;
-  maxHops: number;
-  defaultTtlMs: number;
-  defaultCallBudget: number;
-}
-
-/** Result of a publish operation. */
-export interface PublishResult {
-  /** The ULID message ID assigned to the published envelope. */
-  messageId: string;
-
-  /** Number of endpoints the message was delivered to. */
-  deliveredTo: number;
-
-  /** Endpoints that rejected the message, with structured reasons. */
-  rejected?: Array<{
-    endpointHash: string;
-    reason: 'backpressure' | 'circuit_open' | 'rate_limited' | 'budget_exceeded';
-  }>;
-
-  /** Per-endpoint pressure ratios for proactive signaling (0.0-1.0). */
-  mailboxPressure?: Record<string, number>;
-
-  /** Result from adapter delivery, if attempted. */
-  adapterResult?: DeliveryResult;
-}
 
 // === RelayCore ===
 
@@ -135,104 +107,103 @@ export interface PublishResult {
  * ```
  */
 export class RelayCore {
-  private readonly endpointRegistry: EndpointRegistry;
+  private readonly publishPipeline: RelayPublishPipeline;
+  private readonly subscriptionDeps: SubscriptionDeps;
+  private readonly endpointDeps: EndpointManagementDeps;
   private readonly subscriptionRegistry: SubscriptionRegistry;
-  private readonly maildirStore: MaildirStore;
-  private readonly sqliteIndex: SqliteIndex;
-  private readonly deadLetterQueue: DeadLetterQueue;
-  private readonly accessControl: AccessControl;
-  private readonly signalEmitter: SignalEmitter;
   private readonly deliveryPipeline: DeliveryPipeline;
-  private readonly adapterDelivery: AdapterDelivery;
-  private readonly watcherManager: WatcherManager;
-  private readonly generateUlid = monotonicFactory();
-  private readonly opts: ResolvedOptions;
-  private rateLimitConfig: RateLimitConfig;
-  private circuitBreaker: CircuitBreakerManager;
-  private backpressureConfig: BackpressureConfig;
+  private readonly signalEmitter: SignalEmitter;
+  private readonly sqliteIndex: SqliteIndex;
+  private readonly accessControl: AccessControl;
   private readonly configPath: string;
   private configWatcher: FSWatcher | null = null;
+  private circuitBreaker: CircuitBreakerManager;
+  private backpressureConfig: BackpressureConfig;
   private readonly dispatchInboxTtlMs: number;
   private readonly ttlSweepIntervalMs: number;
   private ttlSweepInterval?: ReturnType<typeof setInterval>;
   private closed = false;
   private readonly adapterRegistry?: AdapterRegistryLike;
-  private readonly traceStore?: TraceStoreLike;
-  private adapterContextBuilder?: (subject: string) => AdapterContext | undefined;
 
   constructor(options?: RelayOptions) {
     const dataDir = options?.dataDir ?? DEFAULT_DATA_DIR;
-    this.opts = {
-      dataDir,
-      maxHops: options?.maxHops ?? DEFAULT_MAX_HOPS,
-      defaultTtlMs: options?.defaultTtlMs ?? DEFAULT_TTL_MS,
-      defaultCallBudget: options?.defaultCallBudget ?? DEFAULT_CALL_BUDGET,
-    };
-
-    // Ensure data directory exists before any sub-module tries to read/write files
     fs.mkdirSync(dataDir, { recursive: true });
 
     const mailboxesDir = path.join(dataDir, 'mailboxes');
-
-    this.endpointRegistry = new EndpointRegistry(dataDir);
+    const endpointRegistry = new EndpointRegistry(dataDir);
     this.subscriptionRegistry = new SubscriptionRegistry(dataDir);
-    this.maildirStore = new MaildirStore({ rootDir: mailboxesDir });
+    const maildirStore = new MaildirStore({ rootDir: mailboxesDir });
 
-    // Use injected Drizzle db when provided; otherwise create a standalone one
     if (options?.db) {
       this.sqliteIndex = new SqliteIndex(options.db);
     } else {
-      // Legacy/test path: create standalone database for this relay instance
       const dbPath = path.join(dataDir, 'index.db');
       const legacyDb = createDb(dbPath);
       runMigrations(legacyDb);
       this.sqliteIndex = new SqliteIndex(legacyDb);
     }
-    this.deadLetterQueue = new DeadLetterQueue({
-      maildirStore: this.maildirStore,
+
+    const deadLetterQueue = new DeadLetterQueue({
+      maildirStore,
       sqliteIndex: this.sqliteIndex,
       rootDir: mailboxesDir,
     });
     this.accessControl = new AccessControl(dataDir);
     this.signalEmitter = new SignalEmitter();
-    this.rateLimitConfig = {
-      ...DEFAULT_RATE_LIMIT_CONFIG,
-      ...options?.reliability?.rateLimit,
-    };
-    this.circuitBreaker = new CircuitBreakerManager(options?.reliability?.circuitBreaker);
-    this.backpressureConfig = {
-      ...DEFAULT_BP_CONFIG,
-      ...options?.reliability?.backpressure,
-    };
 
-    // Compose extracted sub-modules
+    const rateLimitConfig = { ...DEFAULT_RATE_LIMIT_CONFIG, ...options?.reliability?.rateLimit };
+    this.circuitBreaker = new CircuitBreakerManager(options?.reliability?.circuitBreaker);
+    this.backpressureConfig = { ...DEFAULT_BP_CONFIG, ...options?.reliability?.backpressure };
+
     this.deliveryPipeline = new DeliveryPipeline(
       {
         sqliteIndex: this.sqliteIndex,
-        maildirStore: this.maildirStore,
+        maildirStore,
         subscriptionRegistry: this.subscriptionRegistry,
         circuitBreaker: this.circuitBreaker,
         signalEmitter: this.signalEmitter,
-        deadLetterQueue: this.deadLetterQueue,
+        deadLetterQueue,
       },
       this.backpressureConfig,
     );
-    this.adapterDelivery = new AdapterDelivery(
-      options?.adapterRegistry,
-      this.sqliteIndex,
+    const adapterDelivery = new AdapterDelivery(options?.adapterRegistry, this.sqliteIndex);
+    const watcherManager = new WatcherManager(
+      maildirStore, this.subscriptionRegistry, this.sqliteIndex, this.circuitBreaker,
     );
-    this.watcherManager = new WatcherManager(
-      this.maildirStore,
-      this.subscriptionRegistry,
-      this.sqliteIndex,
-      this.circuitBreaker,
+    watcherManager.setWasDispatched((id) => this.deliveryPipeline.wasDispatched(id));
+
+    // Build publish pipeline
+    this.publishPipeline = new RelayPublishPipeline(
+      {
+        endpointRegistry,
+        subscriptionRegistry: this.subscriptionRegistry,
+        maildirStore,
+        sqliteIndex: this.sqliteIndex,
+        accessControl: this.accessControl,
+        deadLetterQueue,
+        deliveryPipeline: this.deliveryPipeline,
+        adapterDelivery,
+        adapterRegistry: options?.adapterRegistry,
+        traceStore: options?.traceStore,
+      },
+      {
+        maxHops: options?.maxHops ?? DEFAULT_MAX_HOPS,
+        defaultTtlMs: options?.defaultTtlMs ?? DEFAULT_TTL_MS,
+        defaultCallBudget: options?.defaultCallBudget ?? DEFAULT_CALL_BUDGET,
+      },
+      rateLimitConfig,
+      options?.adapterContextBuilder,
     );
 
-    // Wire dedup guard: WatcherManager skips messages that the synchronous
-    // delivery fast-path in DeliveryPipeline already dispatched to handlers.
-    this.watcherManager.setWasDispatched((id) => this.deliveryPipeline.wasDispatched(id));
+    this.subscriptionDeps = {
+      subscriptionRegistry: this.subscriptionRegistry,
+      signalEmitter: this.signalEmitter,
+    };
+    this.endpointDeps = {
+      endpointRegistry, maildirStore, sqliteIndex: this.sqliteIndex,
+      deadLetterQueue, accessControl: this.accessControl, watcherManager,
+    };
 
-    // Config hot-reload: load from disk then watch for changes
     this.configPath = path.join(dataDir, 'config.json');
     this.loadReliabilityConfig();
     this.startConfigWatcher();
@@ -241,296 +212,67 @@ export class RelayCore {
     this.ttlSweepIntervalMs = options?.ttlSweepIntervalMs ?? 5 * 60 * 1000;
     this.startTtlSweeper();
 
-    // Wire optional trace store for delivery span recording
-    if (options?.traceStore) {
-      this.traceStore = options.traceStore;
-    }
-
-    // Wire adapter registry — set this as the RelayPublisher for inbound messages
     if (options?.adapterRegistry) {
       this.adapterRegistry = options.adapterRegistry;
       this.adapterRegistry.setRelay(this);
-    }
-    if (options?.adapterContextBuilder) {
-      this.adapterContextBuilder = options.adapterContextBuilder;
     }
   }
 
   /**
    * Set the adapter context builder callback.
    *
-   * Called after construction when the builder depends on services
-   * initialized after RelayCore (e.g., AdapterManager with Mesh integration).
-   *
    * @param builder - Callback that enriches AdapterContext for a given subject
    */
   setAdapterContextBuilder(builder: (subject: string) => AdapterContext | undefined): void {
-    this.adapterContextBuilder = builder;
+    this.publishPipeline.setAdapterContextBuilder(builder);
   }
 
   // --- Publish ---
 
-  /**
-   * Publish a message to a subject.
-   *
-   * Pipeline:
-   * 1. Validate subject
-   * 2. Check access control (from -> subject)
-   * 3. Rate limit check (per-sender sliding window, before fan-out)
-   * 4. Build envelope with ULID ID, budget, and payload
-   * 5. Find all registered endpoints matching the subject
-   * 6. For each endpoint: enforce budget, deliver via Maildir, index in SQLite
-   * 7. If no endpoints match, reject to dead letter queue
-   *
-   * @param subject - The target subject for the message
-   * @param payload - The message payload (any JSON-serializable value)
-   * @param options - Publish options including sender, replyTo, and budget overrides
-   * @returns A PublishResult with the message ID and delivery count
-   * @throws If the subject is invalid or access is denied
-   */
-  async publish(
-    subject: string,
-    payload: unknown,
-    options: PublishOptions,
-  ): Promise<PublishResult> {
+  /** Publish a message to a subject. Delegates to {@link RelayPublishPipeline}. */
+  async publish(subject: string, payload: unknown, options: PublishOptions): Promise<PublishResult> {
     this.assertOpen();
-
-    // 1. Validate subject
-    const validation = validateSubject(subject);
-    if (!validation.valid) {
-      throw new Error(`Invalid subject: ${validation.reason.message}`);
-    }
-
-    // 2. Access control check
-    const accessResult = this.accessControl.checkAccess(options.from, subject);
-    if (!accessResult.allowed) {
-      throw new Error(
-        `Access denied: ${options.from} -> ${subject}` +
-          (accessResult.matchedRule
-            ? ` (rule: ${accessResult.matchedRule.from} -> ${accessResult.matchedRule.to})`
-            : ''),
-      );
-    }
-
-    // 3. Rate limit check (per-sender, before fan-out)
-    if (this.rateLimitConfig.enabled) {
-      const windowStartIso = new Date(
-        Date.now() - this.rateLimitConfig.windowSecs * 1000,
-      ).toISOString();
-      const countInWindow = this.sqliteIndex.countSenderInWindow(
-        options.from,
-        windowStartIso,
-      );
-      const rateLimitResult = checkRateLimit(options.from, countInWindow, this.rateLimitConfig);
-      if (!rateLimitResult.allowed) {
-        return {
-          messageId: '',
-          deliveredTo: 0,
-          rejected: [{ endpointHash: '*', reason: 'rate_limited' }],
-        };
-      }
-    }
-
-    // 4. Build envelope
-    const messageId = this.generateUlid();
-    const budget = createDefaultBudget({
-      maxHops: this.opts.maxHops,
-      ttl: Date.now() + this.opts.defaultTtlMs,
-      callBudgetRemaining: this.opts.defaultCallBudget,
-      ...options.budget,
-    });
-    const envelope: RelayEnvelope = {
-      id: messageId,
-      subject,
-      from: options.from,
-      replyTo: options.replyTo,
-      budget,
-      createdAt: new Date().toISOString(),
-      payload,
-    };
-
-    // 5. Find matching Maildir endpoints
-    const matchingEndpoints = this.findMatchingEndpoints(subject);
-
-    // 6. Deliver to Maildir endpoints (may be empty — that's OK)
-    let deliveredTo = 0;
-    const rejected: PublishResult['rejected'] = [];
-    const mailboxPressure: Record<string, number> = {};
-
-    for (const endpoint of matchingEndpoints) {
-      const result = await this.deliveryPipeline.deliverToEndpoint(endpoint, envelope);
-      if (result.delivered) deliveredTo++;
-      if (result.rejected) rejected.push(result.rejected);
-      if (result.pressure !== undefined) mailboxPressure[endpoint.hash] = result.pressure;
-    }
-
-    // 7. Deliver to matching adapter (unified fan-out — always attempted)
-    let adapterResult: DeliveryResult | null = null;
-    if (this.adapterRegistry) {
-      adapterResult = await this.adapterDelivery.deliver(
-        subject,
-        envelope,
-        this.adapterContextBuilder,
-      );
-      if (adapterResult?.success) deliveredTo++;
-    }
-
-    // 7b. Dispatch to matching subscription handlers (direct fast-path).
-    // When Maildir endpoints exist, subscriptions are already dispatched via
-    // dispatchToSubscribers() inside deliverToEndpoint(). This block only
-    // fires when there are NO matching Maildir endpoints, enabling
-    // BindingRouter and other subscribers to intercept messages published
-    // to subjects with no registered endpoint (e.g., relay.human.telegram.*).
-    let subscriberCount = 0;
-    if (matchingEndpoints.length === 0) {
-      const subscribers = this.subscriptionRegistry.getSubscribers(subject);
-      for (const handler of subscribers) {
-        try {
-          await handler(envelope);
-          subscriberCount++;
-        } catch {
-          // Subscription handler errors are non-fatal for publish()
-        }
-      }
-      deliveredTo += subscriberCount;
-    }
-
-    // 8. Buffer for late subscribers when no subscription handlers matched.
-    // This catches the subscribe-first race: response chunks published before
-    // the SSE client's relay subscription is registered are held in memory
-    // and drained when the subscription arrives (see SubscriptionRegistry).
-    if (subscriberCount === 0 && matchingEndpoints.length === 0) {
-      this.subscriptionRegistry.bufferForPendingSubscriber(subject, envelope);
-    }
-
-    // 9. Dead-letter only when NO delivery targets matched at all
-    // Reliability rejections (backpressure, circuit_open) are NOT dead-lettered
-    if (deliveredTo === 0 && matchingEndpoints.length === 0 && subscriberCount === 0) {
-      const subjectHash = hashSubject(subject);
-      await this.maildirStore.ensureMaildir(subjectHash);
-
-      const reason = adapterResult?.error
-        ? `adapter delivery failed: ${adapterResult.error}`
-        : 'no matching endpoints or adapters';
-      await this.deadLetterQueue.reject(subjectHash, envelope, reason);
-    }
-
-    // 10. Record trace span for delivery tracking
-    if (this.traceStore) {
-      try {
-        this.traceStore.insertSpan({
-          messageId,
-          traceId: messageId,
-          subject,
-          status: deliveredTo > 0 ? 'delivered' : 'failed',
-          metadata: {
-            deliveredTo,
-            rejectedCount: rejected.length,
-            hasAdapterResult: !!adapterResult,
-            durationMs: Date.now() - new Date(envelope.createdAt).getTime(),
-          },
-        });
-      } catch {
-        // Trace insertion is best-effort — never fail a publish for tracing
-      }
-    }
-
-    return {
-      messageId,
-      deliveredTo,
-      ...(rejected.length > 0 && { rejected }),
-      ...(Object.keys(mailboxPressure).length > 0 && { mailboxPressure }),
-      ...(adapterResult && { adapterResult }),
-    };
+    return this.publishPipeline.publish(subject, payload, options);
   }
 
   // --- Subscribe ---
 
-  /**
-   * Subscribe to messages matching a pattern.
-   *
-   * The handler will be invoked for every new message that arrives
-   * at any endpoint whose subject matches the given pattern. Pattern
-   * matching uses NATS-style wildcards (`*` and `>`).
-   *
-   * @param pattern - A subject pattern, possibly with wildcards
-   * @param handler - Callback invoked with matching envelopes
-   * @returns An Unsubscribe function to remove this subscription
-   */
+  /** Subscribe to messages matching a pattern. */
   subscribe(pattern: string, handler: MessageHandler): Unsubscribe {
     this.assertOpen();
-    return this.subscriptionRegistry.subscribe(pattern, handler);
+    return executeSubscribe(pattern, handler, this.subscriptionDeps);
   }
 
-  // --- Signals ---
-
-  /**
-   * Emit an ephemeral signal (never touches disk).
-   *
-   * @param subject - A concrete subject for the signal
-   * @param signalData - The signal payload
-   */
+  /** Emit an ephemeral signal (never touches disk). */
   signal(subject: string, signalData: Signal): void {
     this.assertOpen();
-    this.signalEmitter.emit(subject, signalData);
+    executeSignal(subject, signalData, this.subscriptionDeps);
   }
 
-  /**
-   * Subscribe to ephemeral signals matching a pattern.
-   *
-   * @param pattern - A subject pattern, possibly with wildcards
-   * @param handler - Callback invoked for matching signals
-   * @returns An Unsubscribe function to remove this subscription
-   */
+  /** Subscribe to ephemeral signals matching a pattern. */
   onSignal(pattern: string, handler: SignalHandler): Unsubscribe {
     this.assertOpen();
-    return this.signalEmitter.subscribe(pattern, handler);
+    return executeOnSignal(pattern, handler, this.subscriptionDeps);
   }
 
   // --- Endpoint Management ---
 
-  /**
-   * Register a new message endpoint (creates Maildir directories).
-   *
-   * Also starts a chokidar watcher on the endpoint's `new/` directory
-   * to enable push delivery to subscription handlers.
-   *
-   * @param subject - The hierarchical subject for this endpoint
-   * @returns The registered EndpointInfo
-   */
+  /** Register a new message endpoint (creates Maildir directories). */
   async registerEndpoint(subject: string): Promise<EndpointInfo> {
     this.assertOpen();
-    const info = await this.endpointRegistry.registerEndpoint(subject);
-    await this.maildirStore.ensureMaildir(info.hash);
-    await this.watcherManager.startWatcher(info);
-    return info;
+    return executeRegisterEndpoint(subject, this.endpointDeps);
   }
 
-  /**
-   * Unregister an endpoint and stop its watcher.
-   *
-   * @param subject - The subject of the endpoint to unregister
-   * @returns `true` if the endpoint was found and removed
-   */
+  /** Unregister an endpoint and stop its watcher. */
   async unregisterEndpoint(subject: string): Promise<boolean> {
     this.assertOpen();
-    const endpoint = this.endpointRegistry.getEndpoint(subject);
-    if (endpoint) {
-      await this.watcherManager.stopWatcher(endpoint.hash);
-    }
-    return this.endpointRegistry.unregisterEndpoint(subject);
+    return executeUnregisterEndpoint(subject, this.endpointDeps);
   }
 
-  // --- Query Facade ---
-
-  /**
-   * List all registered endpoints.
-   *
-   * @returns Array of EndpointInfo objects
-   */
+  /** List all registered endpoints. */
   listEndpoints(): EndpointInfo[] {
     this.assertOpen();
-    return this.endpointRegistry.listEndpoints();
+    return executeListEndpoints(this.endpointDeps);
   }
 
   /** Returns the configured dispatch inbox TTL in milliseconds. */
@@ -538,228 +280,104 @@ export class RelayCore {
     return this.dispatchInboxTtlMs;
   }
 
-  /**
-   * Get a single message from the index by ID.
-   *
-   * @param id - The ULID of the message
-   * @returns The indexed message, or null if not found
-   */
-  getMessage(id: string): import('./sqlite-index.js').IndexedMessage | null {
+  /** Get a single message from the index by ID. */
+  getMessage(id: string): IndexedMessage | null {
     this.assertOpen();
-    return this.sqliteIndex.getMessage(id);
+    return executeGetMessage(id, this.endpointDeps);
   }
 
-  /**
-   * Query messages with optional filters and cursor-based pagination.
-   *
-   * @param filters - Optional query filters (subject, status, from, cursor, limit)
-   * @returns Object with messages array and optional nextCursor
-   */
+  /** Query messages with optional filters and cursor-based pagination. */
   listMessages(filters?: {
-    subject?: string;
-    status?: string;
-    from?: string;
-    cursor?: string;
-    limit?: number;
-  }): { messages: import('./sqlite-index.js').IndexedMessage[]; nextCursor?: string } {
+    subject?: string; status?: string; from?: string; cursor?: string; limit?: number;
+  }): { messages: IndexedMessage[]; nextCursor?: string } {
     this.assertOpen();
-    return this.sqliteIndex.queryMessages({
-      subject: filters?.subject,
-      status: filters?.status,
-      sender: filters?.from,
-      cursor: filters?.cursor,
-      limit: filters?.limit,
-    });
+    return executeListMessages(filters, this.endpointDeps);
   }
 
-  /**
-   * Read inbox messages for a specific endpoint.
-   *
-   * @param subject - The endpoint subject to read inbox for
-   * @param options - Optional query filters (status, cursor, limit)
-   * @returns Object with messages array and optional nextCursor
-   * @throws If the endpoint is not found
-   */
+  /** Read inbox messages for a specific endpoint. */
   readInbox(
     subject: string,
     options?: { status?: string; cursor?: string; limit?: number },
-  ): { messages: import('./sqlite-index.js').IndexedMessage[]; nextCursor?: string } {
+  ): { messages: IndexedMessage[]; nextCursor?: string } {
     this.assertOpen();
-    const endpoint = this.endpointRegistry.getEndpoint(subject);
-    if (!endpoint) {
-      const error = new Error(`Endpoint not found: ${subject}`);
-      (error as Error & { code: string }).code = 'ENDPOINT_NOT_FOUND';
-      throw error;
-    }
-    return this.sqliteIndex.queryMessages({
-      endpointHash: endpoint.hash,
-      status: options?.status,
-      cursor: options?.cursor,
-      limit: options?.limit,
-    });
+    return executeReadInbox(subject, options, this.endpointDeps);
   }
 
-  // --- Dead Letter Queue ---
-
-  /**
-   * Get dead letters, optionally filtered by endpoint hash.
-   *
-   * @param options - Optional filtering options
-   * @returns Array of dead letter entries
-   */
+  /** Get dead letters, optionally filtered by endpoint hash. */
   async getDeadLetters(options?: ListDeadOptions): Promise<DeadLetterEntry[]> {
     this.assertOpen();
-    return this.deadLetterQueue.listDead(options);
+    return executeGetDeadLetters(options, this.endpointDeps);
   }
 
-  // --- Access Rule Management ---
-
-  /**
-   * Add an access control rule.
-   *
-   * Delegates to the internal {@link AccessControl} module, which
-   * persists the rule to `access-rules.json` on disk.
-   *
-   * @param rule - The access rule to add (from, to, action, priority)
-   */
-  addAccessRule(rule: import('@dorkos/shared/relay-schemas').RelayAccessRule): void {
+  /** Add an access control rule. */
+  addAccessRule(rule: RelayAccessRule): void {
     this.assertOpen();
-    this.accessControl.addRule(rule);
+    executeAddAccessRule(rule, this.endpointDeps);
   }
 
-  /**
-   * Remove the first access control rule matching the given patterns.
-   *
-   * @param from - The `from` pattern to match
-   * @param to - The `to` pattern to match
-   */
+  /** Remove the first access control rule matching the given patterns. */
   removeAccessRule(from: string, to: string): void {
     this.assertOpen();
-    this.accessControl.removeRule(from, to);
+    executeRemoveAccessRule(from, to, this.endpointDeps);
   }
 
-  /**
-   * List all access control rules, sorted by priority (highest first).
-   *
-   * @returns A shallow copy of the current rules array
-   */
-  listAccessRules(): import('@dorkos/shared/relay-schemas').RelayAccessRule[] {
+  /** List all access control rules, sorted by priority (highest first). */
+  listAccessRules(): RelayAccessRule[] {
     this.assertOpen();
-    return this.accessControl.listRules();
+    return executeListAccessRules(this.endpointDeps);
   }
 
-  // --- Index ---
-
-  /**
-   * Rebuild the SQLite index from Maildir files on disk.
-   *
-   * This is the recovery mechanism for index corruption. Drops all
-   * existing index data and re-scans all endpoint Maildir directories.
-   *
-   * @returns The number of messages re-indexed
-   */
+  /** Rebuild the SQLite index from Maildir files on disk. */
   async rebuildIndex(): Promise<number> {
     this.assertOpen();
-    const endpoints = this.endpointRegistry.listEndpoints();
-    const hashMap = new Map<string, string>();
-    for (const ep of endpoints) {
-      hashMap.set(ep.hash, ep.subject);
-    }
-    return this.sqliteIndex.rebuild(this.maildirStore, hashMap);
+    return executeRebuildIndex(this.endpointDeps);
   }
 
-  // --- Metrics ---
-
-  /**
-   * Get aggregate metrics from the SQLite index.
-   *
-   * @returns Relay metrics including total messages, counts by status and subject
-   */
+  /** Get aggregate metrics from the SQLite index. */
   getMetrics(): RelayMetrics {
     this.assertOpen();
-    return this.sqliteIndex.getMetrics();
+    return executeGetMetrics(this.endpointDeps);
   }
 
   // --- Lifecycle ---
 
-  /**
-   * Gracefully shut down the relay.
-   *
-   * Stops all chokidar watchers, closes the AccessControl watcher,
-   * removes all signal subscriptions, and closes the SQLite database
-   * (triggering a WAL checkpoint).
-   */
+  /** Gracefully shut down the relay. */
   async close(): Promise<void> {
     if (this.closed) return;
     this.closed = true;
 
-    // Stop TTL sweeper first to prevent sweep races during shutdown
     if (this.ttlSweepInterval) {
       clearInterval(this.ttlSweepInterval);
       this.ttlSweepInterval = undefined;
     }
 
-    // Clear all subscriptions and pending buffers to prevent leaked handlers/timers
     this.subscriptionRegistry.shutdown();
     this.subscriptionRegistry.clear();
-
-    // Clean up dedup timers to allow clean process exit
     this.deliveryPipeline.close();
+    await this.endpointDeps.watcherManager.closeAll();
 
-    // Stop all endpoint watchers
-    await this.watcherManager.closeAll();
-
-    // Stop config watcher
     if (this.configWatcher) {
       await this.configWatcher.close();
       this.configWatcher = null;
     }
 
-    // Close access control (stops its chokidar watcher)
     this.accessControl.close();
-
-    // Clear signal subscriptions
     this.signalEmitter.removeAllSubscriptions();
 
-    // Shut down adapter registry (graceful stop of all external adapters)
     if (this.adapterRegistry) {
       await this.adapterRegistry.shutdown();
     }
 
-    // Close SQLite (WAL checkpoint)
     this.sqliteIndex.close();
   }
 
   // --- Private Helpers ---
 
-  /**
-   * Find all registered endpoints whose subject matches the given target.
-   *
-   * Uses `matchesPattern(endpointSubject, targetSubject)` to support
-   * direct subject delivery. Also checks if the target is a concrete
-   * match or if the endpoint subject matches as a pattern.
-   *
-   * @param subject - The target subject to match against
-   */
-  private findMatchingEndpoints(subject: string): EndpointInfo[] {
-    const endpoints = this.endpointRegistry.listEndpoints();
-    return endpoints.filter((ep) => matchesPattern(ep.subject, subject));
-  }
-
-  /**
-   * Start the periodic TTL sweeper for dispatch inboxes.
-   *
-   * Runs every `ttlSweepIntervalMs`. Checks all registered endpoints;
-   * unregisters dispatch inboxes older than `dispatchInboxTtlMs`.
-   * Uses `.unref()` so the timer does not prevent process exit.
-   *
-   * Race safety: `unregisterEndpoint()` returns `false` gracefully for
-   * already-removed endpoints (e.g., caller cleaned up between sweeps).
-   */
+  /** Start the periodic TTL sweeper for dispatch inboxes. */
   private startTtlSweeper(): void {
     this.ttlSweepInterval = setInterval(async () => {
       const now = Date.now();
-      for (const endpoint of this.endpointRegistry.listEndpoints()) {
+      for (const endpoint of this.endpointDeps.endpointRegistry.listEndpoints()) {
         if (inferEndpointType(endpoint.subject) === 'dispatch') {
           const age = now - new Date(endpoint.registeredAt).getTime();
           if (age > this.dispatchInboxTtlMs) {
@@ -768,18 +386,10 @@ export class RelayCore {
         }
       }
     }, this.ttlSweepIntervalMs);
-    // Don't prevent process exit if close() is not called
     this.ttlSweepInterval.unref();
   }
 
-  /**
-   * Load reliability configuration from the config file on disk.
-   *
-   * Reads `{dataDir}/config.json`, parses the `reliability` key with
-   * the Zod schema, and updates rate limit, circuit breaker, and
-   * backpressure configs. If the file doesn't exist or contains invalid
-   * JSON, the current settings are silently retained.
-   */
+  /** Load reliability configuration from disk (hot-reload safe). */
   private loadReliabilityConfig(): void {
     try {
       const raw = fs.readFileSync(this.configPath, 'utf-8');
@@ -787,23 +397,19 @@ export class RelayCore {
       const obj = json as Record<string, unknown>;
       const parsed = ReliabilityConfigSchema.safeParse(obj.reliability);
       if (parsed.success) {
-        this.rateLimitConfig = { ...DEFAULT_RATE_LIMIT_CONFIG, ...parsed.data.rateLimit };
+        this.publishPipeline.setRateLimitConfig({
+          ...DEFAULT_RATE_LIMIT_CONFIG, ...parsed.data.rateLimit,
+        });
         this.circuitBreaker.updateConfig({ ...DEFAULT_CB_CONFIG, ...parsed.data.circuitBreaker });
         this.backpressureConfig = { ...DEFAULT_BP_CONFIG, ...parsed.data.backpressure };
-        // Propagate updated backpressure config to the delivery pipeline
         this.deliveryPipeline.setBackpressureConfig(this.backpressureConfig);
       }
     } catch {
-      // File doesn't exist or is invalid — keep current config
+      // File doesn't exist or is invalid -- keep current config
     }
   }
 
-  /**
-   * Start a chokidar watcher on the config file for hot-reload.
-   *
-   * When `config.json` changes on disk (e.g., edited externally or by
-   * another process), the reliability configuration is reloaded automatically.
-   */
+  /** Start a chokidar watcher on the config file for hot-reload. */
   private startConfigWatcher(): void {
     this.configWatcher = chokidar.watch(this.configPath, {
       persistent: true,
@@ -814,11 +420,7 @@ export class RelayCore {
     this.configWatcher.on('add', () => this.loadReliabilityConfig());
   }
 
-  /**
-   * Assert that the relay has not been closed.
-   *
-   * @throws If close() has already been called
-   */
+  /** Assert that the relay has not been closed. */
   private assertOpen(): void {
     if (this.closed) {
       throw new Error('RelayCore has been closed');

@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { AdapterManifestSchema } from '@dorkos/shared/relay-schemas';
-import { TELEGRAM_MANIFEST } from '../adapters/telegram-adapter.js';
+import { TELEGRAM_MANIFEST } from '../adapters/telegram/index.js';
 import { WEBHOOK_MANIFEST } from '../adapters/webhook-adapter.js';
-import { CLAUDE_CODE_MANIFEST } from '../adapters/claude-code-adapter.js';
+import { CLAUDE_CODE_MANIFEST } from '../adapters/claude-code/index.js';
 
 describe('Built-in adapter manifests', () => {
   describe('TELEGRAM_MANIFEST', () => {

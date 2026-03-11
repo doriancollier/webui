@@ -205,6 +205,49 @@ export class TraceStore {
     };
   }
 
+  /**
+   * Record an adapter lifecycle event as a trace span.
+   *
+   * Uses the `metadata` JSON column to store `adapterId`, `eventType`,
+   * and `message` for structured querying.
+   *
+   * @param adapterId - The adapter instance ID
+   * @param eventType - The event type (e.g. 'adapter.connected')
+   * @param message - Human-readable event description
+   */
+  insertAdapterEvent(adapterId: string, eventType: string, message: string): void {
+    this.db
+      .insert(relayTraces)
+      .values({
+        id: ulid(),
+        messageId: ulid(), // Unique per event
+        traceId: adapterId, // Group by adapter
+        subject: eventType,
+        status: 'delivered' as const,
+        sentAt: new Date().toISOString(),
+        metadata: JSON.stringify({ adapterId, eventType, message }),
+      })
+      .run();
+  }
+
+  /**
+   * Get adapter events filtered by adapter ID, ordered by sentAt descending.
+   *
+   * Uses `json_extract()` on the metadata column to filter by adapterId.
+   *
+   * @param adapterId - The adapter instance ID
+   * @param limit - Maximum events to return (default 100)
+   */
+  getAdapterEvents(adapterId: string, limit = 100): TraceSpanRow[] {
+    return this.db
+      .select()
+      .from(relayTraces)
+      .where(sql`json_extract(${relayTraces.metadata}, '$.adapterId') = ${adapterId}`)
+      .orderBy(sql`${relayTraces.sentAt} DESC, ${relayTraces.id} DESC`)
+      .limit(limit)
+      .all();
+  }
+
   /** No-op — connection lifecycle is managed by the shared Db instance. */
   close(): void {
     // Intentionally empty: the consolidated db is closed by the server shutdown handler.

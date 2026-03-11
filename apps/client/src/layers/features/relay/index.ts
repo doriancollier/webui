@@ -15,3 +15,5 @@ export { AdapterSetupWizard } from './ui/AdapterSetupWizard';
 export { RelayHealthBar } from './ui/RelayHealthBar';
 export { DeadLetterSection } from './ui/DeadLetterSection';
 export { ComposeMessageDialog } from './ui/ComposeMessageDialog';
+export { AdapterEventLog } from './ui/AdapterEventLog';
+export { BindingList } from './ui/BindingList';

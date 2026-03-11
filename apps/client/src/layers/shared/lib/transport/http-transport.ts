@@ -28,7 +28,7 @@ import type {
   UploadResult,
   UploadProgress,
 } from '@dorkos/shared/types';
-import type { Transport, AdapterListItem, UploadFile } from '@dorkos/shared/transport';
+import type { Transport, AdapterListItem, AdapterEvent, UploadFile } from '@dorkos/shared/transport';
 import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type {
   TraceSpan,
@@ -123,9 +123,17 @@ export class HttpTransport implements Transport {
     type: string,
     config: Record<string, unknown>,
   ) => Promise<{ ok: boolean; error?: string }>;
+  declare getAdapterEvents: (
+    adapterId: string,
+    limit?: number,
+  ) => Promise<{ events: AdapterEvent[] }>;
   declare getBindings: () => Promise<AdapterBinding[]>;
   declare createBinding: (input: CreateBindingRequest) => Promise<AdapterBinding>;
   declare deleteBinding: (id: string) => Promise<void>;
+  declare updateBinding: (
+    id: string,
+    updates: Partial<Pick<AdapterBinding, 'sessionStrategy' | 'label' | 'chatId' | 'channelType'>>,
+  ) => Promise<AdapterBinding>;
 
   declare listMeshAgentPaths: () => Promise<{ agents: AgentPathEntry[] }>;
   declare discoverMeshAgents: (

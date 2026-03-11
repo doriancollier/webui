@@ -18,6 +18,7 @@ import { InboxView } from './InboxView';
 import { AdapterCard } from './AdapterCard';
 import { CatalogCard } from './CatalogCard';
 import { AdapterSetupWizard } from './AdapterSetupWizard';
+import { BindingList } from './BindingList';
 import { RelayHealthBar } from './RelayHealthBar';
 
 interface WizardState {
@@ -167,7 +168,7 @@ function AdaptersTab({ enabled }: AdaptersTabProps) {
   );
 }
 
-/** Main Relay panel — tabs for Activity Feed, Endpoints, and Adapters, with disabled/loading states. */
+/** Main Relay panel — tabs for Activity Feed, Endpoints, Bindings, and Adapters, with disabled/loading states. */
 export function RelayPanel() {
   const relayEnabled = useRelayEnabled();
   const [selectedEndpoint, setSelectedEndpoint] = useState<string | null>(null);
@@ -205,6 +206,7 @@ export function RelayPanel() {
       <TabsList className="mx-4 mt-3 shrink-0">
         <TabsTrigger value="activity">Activity</TabsTrigger>
         <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
+        <TabsTrigger value="bindings">Bindings</TabsTrigger>
         <TabsTrigger value="adapters">Adapters</TabsTrigger>
       </TabsList>
 
@@ -227,6 +229,10 @@ export function RelayPanel() {
             ) : (
               <EndpointList enabled={relayEnabled} onSelectEndpoint={setSelectedEndpoint} />
             )}
+          </TabsContent>
+
+          <TabsContent value="bindings" className="h-full">
+            <BindingList />
           </TabsContent>
 
           <TabsContent value="adapters" className="h-full">

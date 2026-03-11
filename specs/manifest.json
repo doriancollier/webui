@@ -827,7 +827,14 @@
       "title": "Keyboard Shortcut Discoverability",
       "created": "2026-03-11",
       "status": "specification"
+    },
+    {
+      "number": 119,
+      "slug": "relay-adapter-dx",
+      "title": "Relay Adapter DX Improvements",
+      "created": "2026-03-11",
+      "status": "ideation"
     }
   ],
-  "nextNumber": 119
+  "nextNumber": 120
 }

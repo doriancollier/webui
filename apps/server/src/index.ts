@@ -178,6 +178,7 @@ async function start() {
         pulseStore,
         relayCore,
         meshCore, // meshCore is now available
+        eventRecorder: traceStore,
       });
       await adapterManager.initialize();
       relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));

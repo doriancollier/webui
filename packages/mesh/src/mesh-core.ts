@@ -1,48 +1,38 @@
 /**
- * MeshCore — main entry point for the @dorkos/mesh package.
+ * MeshCore — thin coordinator for the @dorkos/mesh package.
  *
- * Composes the discovery engine, agent registry, denial list, manifest
- * reader/writer, and optional Relay bridge into a single cohesive API
- * for agent discovery, registration, and lifecycle management.
+ * Composes sub-modules for discovery, agent management, and denial into
+ * a single cohesive class API. All business logic lives in the sub-modules;
+ * this file wires dependencies and delegates method calls.
  *
  * @module mesh/mesh-core
  */
-import path from 'path';
 import os from 'os';
 import { monotonicFactory } from 'ulidx';
 import type { Db } from '@dorkos/db';
 import type {
-  AgentManifest,
-  AgentRuntime,
-  AgentHealth,
-  AgentHealthStatus,
-  DenialRecord,
-  DiscoveryCandidate,
-  MeshInspect,
-  MeshStatus,
+  AgentManifest, AgentRuntime, AgentHealth, AgentHealthStatus,
+  DenialRecord, DiscoveryCandidate, MeshInspect, MeshStatus,
 } from '@dorkos/shared/mesh-schemas';
 import type { RelayCore, SignalEmitter } from '@dorkos/relay';
 import type { DiscoveryStrategy } from './discovery-strategy.js';
 import { AgentRegistry } from './agent-registry.js';
-import type { AgentRegistryEntry } from './agent-registry.js';
 import { DenialList } from './denial-list.js';
 import { RelayBridge } from './relay-bridge.js';
 import { TopologyManager } from './topology.js';
 import type { TopologyView, CrossNamespaceRule } from './topology.js';
-import { resolveNamespace } from './namespace-resolver.js';
+import type { ScanEvent, UnifiedScanOptions } from './discovery/types.js';
 import { ClaudeCodeStrategy } from './strategies/claude-code-strategy.js';
 import { CursorStrategy } from './strategies/cursor-strategy.js';
 import { CodexStrategy } from './strategies/codex-strategy.js';
-import { unifiedScan } from './discovery/unified-scanner.js';
-import type { ScanEvent, UnifiedScanOptions } from './discovery/types.js';
-import { readManifest, writeManifest, removeManifest } from './manifest.js';
 import { reconcile } from './reconciler.js';
 import type { ReconcileResult } from './reconciler.js';
-
-/** Default registrar identifier when none is provided. */
-const DEFAULT_REGISTRAR = 'mesh';
-
-// === Types ===
+import * as discovery from './mesh-discovery.js';
+import type { DiscoveryDeps } from './mesh-discovery.js';
+import * as agentMgmt from './mesh-agent-management.js';
+import type { AgentManagementDeps } from './mesh-agent-management.js';
+import * as denial from './mesh-denial.js';
+import type { DenialDeps } from './mesh-denial.js';
 
 /** Options for creating a MeshCore instance. */
 export interface MeshOptions {
@@ -60,577 +50,165 @@ export interface MeshOptions {
   logger?: import('@dorkos/shared/logger').Logger;
 }
 
-// === MeshCore ===
-
 /**
  * Unified entry point for the Mesh agent discovery and registry system.
  *
  * Composes discovery strategies, SQLite-backed persistence, manifest I/O,
  * and optional Relay endpoint registration into a high-level lifecycle API.
- *
- * @example
- * ```typescript
- * const mesh = new MeshCore({ dataDir: '/tmp/mesh-test' });
- *
- * // Discover agents
- * for await (const candidate of mesh.discover(['/projects'])) {
- *   const manifest = await mesh.register(candidate);
- *   console.log('Registered:', manifest.name);
- * }
- *
- * // List all agents
- * const agents = mesh.list();
- *
- * mesh.close();
- * ```
  */
 export class MeshCore {
-  private readonly registry: AgentRegistry;
-  private readonly denialList: DenialList;
+  private readonly discoveryDeps: DiscoveryDeps;
+  private readonly agentDeps: AgentManagementDeps;
+  private readonly denialDeps: DenialDeps;
   private readonly relayBridge: RelayBridge;
-  private readonly topology: TopologyManager;
-  private readonly strategies: DiscoveryStrategy[];
   private readonly defaultScanRoot: string;
-  private readonly signalEmitter: SignalEmitter | undefined;
   private readonly logger: import('@dorkos/shared/logger').Logger;
-  private readonly generateUlid = monotonicFactory();
   private reconcileTimer: ReturnType<typeof setInterval> | null = null;
-  private onUnregisterCallbacks: Array<(agentId: string) => void> = [];
+  private readonly onUnregisterCallbacks: Array<(agentId: string) => void> = [];
 
-  /**
-   * Create a new MeshCore instance.
-   *
-   * @param options - Configuration options
-   */
+  /** @param options - Configuration options */
   constructor(options: MeshOptions) {
-    this.registry = new AgentRegistry(options.db);
-    this.denialList = new DenialList(options.db);
-    this.relayBridge = new RelayBridge(options.relayCore, options.signalEmitter);
-    this.topology = new TopologyManager(this.registry, this.relayBridge, options.relayCore);
-    this.defaultScanRoot = options.defaultScanRoot ?? os.homedir();
-    this.signalEmitter = options.signalEmitter;
-    this.logger = options.logger ?? console;
-    this.strategies = options.strategies ?? [
-      new ClaudeCodeStrategy(),
-      new CursorStrategy(),
-      new CodexStrategy(),
+    const registry = new AgentRegistry(options.db);
+    const denialList = new DenialList(options.db);
+    const relayBridge = new RelayBridge(options.relayCore, options.signalEmitter);
+    const topology = new TopologyManager(registry, relayBridge, options.relayCore);
+    const defaultScanRoot = options.defaultScanRoot ?? os.homedir();
+    const logger = options.logger ?? console;
+    const strategies = options.strategies ?? [
+      new ClaudeCodeStrategy(), new CursorStrategy(), new CodexStrategy(),
     ];
+
+    this.relayBridge = relayBridge;
+    this.defaultScanRoot = defaultScanRoot;
+    this.logger = logger;
+    this.discoveryDeps = { registry, denialList, relayBridge, strategies, defaultScanRoot, logger, generateUlid: monotonicFactory() };
+    this.agentDeps = { registry, relayBridge, topology, signalEmitter: options.signalEmitter, logger, onUnregisterCallbacks: this.onUnregisterCallbacks };
+    this.denialDeps = { denialList };
   }
 
-  // --- Discovery ---
+  // --- Discovery & Registration ---
 
-  /**
-   * Scan root directories for agent candidates.
-   *
-   * Yields all `ScanEvent` types: `candidate`, `auto-import`, `progress`, and `complete`.
-   * Auto-import events are upserted into the registry automatically before being yielded.
-   * Already-registered and denied paths are skipped automatically.
-   *
-   * @param roots - Root directories to scan
-   * @param options - Scan configuration (maxDepth, timeout, followSymlinks, extraExcludes)
-   * @returns Async generator of ScanEvent objects
-   */
-  async *discover(
-    roots: string[],
-    options?: Omit<UnifiedScanOptions, 'root'>,
-  ): AsyncGenerator<ScanEvent> {
-    for (const root of roots) {
-      for await (const event of unifiedScan(
-        { ...options, root, logger: options?.logger ?? this.logger },
-        this.strategies,
-        this.registry,
-        this.denialList,
-      )) {
-        if (event.type === 'auto-import') {
-          // Auto-import: upsert into registry before yielding
-          await this.upsertAutoImported(event.data.manifest, event.data.path);
-        }
-        yield event;
-      }
-    }
+  /** Scan root directories for agent candidates. */
+  async *discover(roots: string[], options?: Omit<UnifiedScanOptions, 'root'>): AsyncGenerator<ScanEvent> {
+    yield* discovery.discover(roots, this.discoveryDeps, options);
   }
 
-  // --- Registration ---
-
-  /**
-   * Register a discovered candidate as a full agent.
-   *
-   * Generates a ULID, merges candidate hints with optional overrides,
-   * writes `.dork/agent.json`, inserts into the registry, and registers
-   * a Relay endpoint if RelayCore is available.
-   *
-   * @param candidate - A DiscoveryCandidate yielded from discover()
-   * @param overrides - Optional manifest field overrides
-   * @param approver - Identifier of the entity approving registration (default: "mesh")
-   * @param scanRoot - Root directory for namespace derivation (default: options.defaultScanRoot)
-   * @returns The created AgentManifest
-   */
-  async register(
-    candidate: DiscoveryCandidate,
-    overrides?: Partial<AgentManifest>,
-    approver = DEFAULT_REGISTRAR,
-    scanRoot?: string,
-  ): Promise<AgentManifest> {
-    const id = this.generateUlid();
-    const now = new Date().toISOString();
-    const effectiveScanRoot = scanRoot ?? this.defaultScanRoot;
-    const namespace = resolveNamespace(candidate.path, effectiveScanRoot, overrides?.namespace);
-
-    const manifest: AgentManifest = {
-      id,
-      name: overrides?.name ?? candidate.hints.suggestedName,
-      description: overrides?.description ?? candidate.hints.description ?? '',
-      runtime: overrides?.runtime ?? candidate.hints.detectedRuntime,
-      capabilities: overrides?.capabilities ?? candidate.hints.inferredCapabilities ?? [],
-      behavior: overrides?.behavior ?? { responseMode: 'always' },
-      budget: overrides?.budget ?? { maxHopsPerMessage: 5, maxCallsPerHour: 100 },
-      namespace,
-      registeredAt: overrides?.registeredAt ?? now,
-      registeredBy: overrides?.registeredBy ?? approver,
-      persona: overrides?.persona,
-      personaEnabled: overrides?.personaEnabled ?? true,
-      color: overrides?.color,
-      icon: overrides?.icon,
-      enabledToolGroups: overrides?.enabledToolGroups ?? {},
-    };
-
-    return this.registerInternal(candidate.path, manifest, namespace, effectiveScanRoot);
+  /** Register a discovered candidate as a full agent. */
+  async register(candidate: DiscoveryCandidate, overrides?: Partial<AgentManifest>, approver?: string, scanRoot?: string): Promise<AgentManifest> {
+    return discovery.register(candidate, this.discoveryDeps, overrides, approver, scanRoot);
   }
 
-  /**
-   * Register an agent directly by project path without prior discovery.
-   *
-   * @param projectPath - Absolute path to the agent's project directory
-   * @param partial - Manifest fields to set (name, runtime are required)
-   * @param approver - Identifier of the entity approving registration (default: "mesh")
-   * @param scanRoot - Root directory for namespace derivation (default: options.defaultScanRoot)
-   * @returns The created AgentManifest
-   */
-  async registerByPath(
-    projectPath: string,
-    partial: Partial<AgentManifest> & { name: string; runtime: AgentRuntime },
-    approver = DEFAULT_REGISTRAR,
-    scanRoot?: string,
-  ): Promise<AgentManifest> {
-    const id = this.generateUlid();
-    const now = new Date().toISOString();
-    const effectiveScanRoot = scanRoot ?? this.defaultScanRoot;
-    const namespace = resolveNamespace(projectPath, effectiveScanRoot, partial.namespace);
-
-    const manifest: AgentManifest = {
-      id,
-      name: partial.name,
-      description: partial.description ?? '',
-      runtime: partial.runtime,
-      capabilities: partial.capabilities ?? [],
-      behavior: partial.behavior ?? { responseMode: 'always' },
-      budget: partial.budget ?? { maxHopsPerMessage: 5, maxCallsPerHour: 100 },
-      namespace,
-      registeredAt: partial.registeredAt ?? now,
-      registeredBy: partial.registeredBy ?? approver,
-      persona: partial.persona,
-      personaEnabled: partial.personaEnabled ?? true,
-      color: partial.color,
-      icon: partial.icon,
-      enabledToolGroups: partial.enabledToolGroups ?? {},
-    };
-
-    return this.registerInternal(projectPath, manifest, namespace, effectiveScanRoot);
+  /** Register an agent directly by project path without prior discovery. */
+  async registerByPath(projectPath: string, partial: Partial<AgentManifest> & { name: string; runtime: AgentRuntime }, approver?: string, scanRoot?: string): Promise<AgentManifest> {
+    return discovery.registerByPath(projectPath, partial, this.discoveryDeps, approver, scanRoot);
   }
 
   // --- Denial ---
 
-  /**
-   * Add a project path to the denial list.
-   *
-   * Denied paths are filtered from future discovery scans.
-   *
-   * @param filePath - Absolute path to the project directory to deny
-   * @param reason - Human-readable reason for denial (optional)
-   * @param denier - Identifier of the entity performing the denial (default: "mesh")
-   */
-  async deny(filePath: string, reason?: string, denier = DEFAULT_REGISTRAR): Promise<void> {
-    this.denialList.deny(filePath, 'manual', reason, denier);
+  /** Add a project path to the denial list. */
+  async deny(filePath: string, reason?: string, denier?: string): Promise<void> {
+    return denial.deny(this.denialDeps, filePath, reason, denier);
   }
 
-  /**
-   * Remove a project path from the denial list.
-   *
-   * @param filePath - Absolute path to clear from the denial list
-   */
+  /** Remove a project path from the denial list. */
   async undeny(filePath: string): Promise<void> {
-    this.denialList.clear(filePath);
+    return denial.undeny(this.denialDeps, filePath);
   }
 
-  // --- Listing Denials ---
-
-  /**
-   * List all denial records.
-   *
-   * @returns All denials ordered by denial date (newest first)
-   */
+  /** List all denial records. */
   listDenied(): DenialRecord[] {
-    return this.denialList.list();
+    return denial.listDenied(this.denialDeps);
   }
 
-  // --- Update ---
+  // --- Agent Management ---
 
-  /**
-   * Update mutable fields of a registered agent.
-   *
-   * ADR-0043: writes to `.dork/agent.json` first (canonical), then updates DB (cache).
-   * If the manifest file is missing, reconstructs from the DB entry before writing.
-   *
-   * @param agentId - The agent's ULID
-   * @param partial - Fields to update (name, description, capabilities, etc.)
-   * @returns The updated agent manifest, or undefined if not found
-   */
+  /** Update mutable fields of a registered agent (ADR-0043 write-through). */
   async update(agentId: string, partial: Partial<AgentManifest>): Promise<AgentManifest | undefined> {
-    const entry = this.registry.get(agentId);
-    if (!entry) return undefined;
-
-    // ADR-0043: read current manifest from disk, merge, write back
-    const diskManifest = await readManifest(entry.projectPath);
-    const base = diskManifest ?? this.toManifest(entry);
-    const merged: AgentManifest = { ...base, ...partial, id: agentId };
-    await writeManifest(entry.projectPath, merged);
-
-    // Then update DB cache
-    this.registry.update(agentId, partial);
-    const updatedEntry = this.registry.get(agentId);
-    if (!updatedEntry) return undefined;
-    return this.toManifest(updatedEntry);
+    return agentMgmt.update(this.agentDeps, agentId, partial);
   }
 
-  // --- Sync ---
-
-  /**
-   * Sync a single agent from its `.dork/agent.json` file into the DB.
-   *
-   * ADR-0043: enables immediate file→DB sync without waiting for the
-   * 5-minute periodic reconciler. Reuses the auto-import upsert pipeline.
-   *
-   * @param projectPath - Absolute path to the agent's project directory
-   * @returns true if the manifest was found and synced, false otherwise
-   */
+  /** Sync a single agent from its `.dork/agent.json` file into the DB. */
   async syncFromDisk(projectPath: string): Promise<boolean> {
-    const manifest = await readManifest(projectPath);
-    if (!manifest) return false;
-    await this.upsertAutoImported(manifest, projectPath);
-    return true;
+    return agentMgmt.syncFromDisk(projectPath, this.discoveryDeps);
   }
 
-  // --- Unregistration ---
-
-  /**
-   * Unregister an agent by ID.
-   *
-   * ADR-0043: deletes `.dork/agent.json` from disk, removes from the registry,
-   * and unregisters the Relay endpoint. Without file deletion, unregistered
-   * agents silently reappear on the next discovery scan.
-   *
-   * @param agentId - The ULID of the agent to unregister
-   */
+  /** Unregister an agent by ID (ADR-0043: deletes manifest, DB entry, Relay endpoint). */
   async unregister(agentId: string): Promise<void> {
-    const agent = this.registry.get(agentId);
-    if (!agent) return;
-
-    // ADR-0043: delete manifest file first to prevent re-discovery
-    await removeManifest(agent.projectPath);
-
-    const namespace = agent.namespace;
-    // Use namespace for subject when available, fall back to project basename
-    const subject = `relay.agent.${namespace || path.basename(agent.projectPath)}.${agent.id}`;
-    await this.relayBridge.unregisterAgent(subject, agent.id, agent.name);
-
-    this.registry.remove(agentId);
-
-    // Fire unregister callbacks (e.g., cascade-disable Pulse schedules)
-    for (const cb of this.onUnregisterCallbacks) {
-      try {
-        cb(agentId);
-      } catch (err) {
-        this.logger.warn('[Mesh] Unregister callback failed', { agentId, err });
-      }
-    }
-
-    // Clean up namespace rules if this was the last agent in the namespace
-    if (namespace) {
-      const remaining = this.registry.listByNamespace(namespace);
-      if (remaining.length === 0) {
-        this.relayBridge.cleanupNamespaceRules(namespace);
-      }
-    }
+    return agentMgmt.unregister(this.agentDeps, agentId);
   }
 
-  // --- Lifecycle Hooks ---
-
-  /**
-   * Register a callback to be invoked when an agent is unregistered.
-   *
-   * Callbacks are fire-and-forget: errors are logged but do not prevent
-   * the unregistration from completing.
-   *
-   * @param callback - Function called with the agentId after unregistration
-   */
+  /** Register a callback to be invoked when an agent is unregistered. */
   onUnregister(callback: (agentId: string) => void): void {
     this.onUnregisterCallbacks.push(callback);
   }
 
   // --- Query ---
 
-  /**
-   * List all registered agents, optionally filtered by runtime or capability.
-   *
-   * When `callerNamespace` is provided, uses TopologyManager for namespace-scoped
-   * filtering with invisible boundary enforcement. Pass '*' for admin view.
-   *
-   * @param filters - Optional runtime, capability, and/or callerNamespace filters
-   * @returns Array of agent manifests (projectPath stripped for public API)
-   */
+  /** List all registered agents, optionally filtered by runtime, capability, or namespace. */
   list(filters?: { runtime?: AgentRuntime; capability?: string; callerNamespace?: string }): AgentManifest[] {
-    if (filters?.callerNamespace) {
-      // Delegate to TopologyManager for namespace-scoped visibility
-      const view = this.topology.getTopology(filters.callerNamespace);
-      let agents = view.namespaces.flatMap((ns) => ns.agents);
-
-      // Apply runtime/capability filters on top of topology filtering
-      if (filters.runtime) {
-        agents = agents.filter((a) => a.runtime === filters.runtime);
-      }
-      if (filters.capability) {
-        agents = agents.filter((a) => a.capabilities.includes(filters.capability!));
-      }
-      return agents;
-    }
-
-    const entries = this.registry.list(filters);
-    return entries.map((entry) => this.toManifest(entry));
+    return agentMgmt.list(this.agentDeps, filters);
   }
 
-  /**
-   * List agents with computed health status included.
-   *
-   * Returns the same data as `list()` but each entry includes `healthStatus`,
-   * `lastSeenAt`, and `lastSeenEvent` fields for topology visualization.
-   *
-   * @param filters - Optional runtime or capability filters
-   * @returns Array of agent manifests with health fields
-   */
-  listWithHealth(
-    filters?: { runtime?: AgentRuntime; capability?: string },
-  ): (AgentManifest & { healthStatus: AgentHealthStatus; lastSeenAt: string | null; lastSeenEvent: string | null })[] {
-    const entries = this.registry.listWithHealth(filters);
-    return entries.map((entry) => this.toManifest(entry));
+  /** List agents with computed health status included. */
+  listWithHealth(filters?: { runtime?: AgentRuntime; capability?: string }): (AgentManifest & { healthStatus: AgentHealthStatus; lastSeenAt: string | null; lastSeenEvent: string | null })[] {
+    return agentMgmt.listWithHealth(this.agentDeps, filters);
   }
 
-  /**
-   * Get an agent manifest by ULID.
-   *
-   * @param agentId - The agent's ULID
-   * @returns The agent manifest, or undefined if not found
-   */
-  get(agentId: string): AgentManifest | undefined {
-    const entry = this.registry.get(agentId);
-    if (!entry) return undefined;
-    return this.toManifest(entry);
+  /** List registered agents with their project paths (lightweight view). */
+  listWithPaths(): Array<{ id: string; name: string; projectPath: string; icon?: string; color?: string }> {
+    return agentMgmt.listWithPaths(this.agentDeps);
   }
 
-  /**
-   * Get an agent manifest by project path.
-   *
-   * @param projectPath - Absolute path to the project directory
-   * @returns The agent manifest, or undefined if not found
-   */
-  getByPath(projectPath: string): AgentManifest | undefined {
-    const entry = this.registry.getByPath(projectPath);
-    if (!entry) return undefined;
-    return this.toManifest(entry);
-  }
+  /** Get an agent manifest by ULID. */
+  get(agentId: string): AgentManifest | undefined { return agentMgmt.get(this.agentDeps, agentId); }
 
-  /**
-   * Get the project path for a registered agent.
-   *
-   * @param agentId - The agent's ULID
-   * @returns The absolute project path, or undefined if not found
-   */
-  getProjectPath(agentId: string): string | undefined {
-    const entry = this.registry.get(agentId);
-    return entry?.projectPath;
-  }
+  /** Get an agent manifest by project path. */
+  getByPath(projectPath: string): AgentManifest | undefined { return agentMgmt.getByPath(this.agentDeps, projectPath); }
+
+  /** Get the project path for a registered agent. */
+  getProjectPath(agentId: string): string | undefined { return agentMgmt.getProjectPath(this.agentDeps, agentId); }
 
   // --- Topology ---
 
-  /**
-   * Get the topology view filtered by caller's namespace access.
-   *
-   * @param callerNamespace - The namespace of the requesting agent, or '*' for admin view
-   * @returns Topology view with accessible namespaces and cross-namespace rules
-   */
-  getTopology(callerNamespace: string): TopologyView {
-    return this.topology.getTopology(callerNamespace);
-  }
+  /** Get the topology view filtered by caller's namespace access. */
+  getTopology(callerNamespace: string): TopologyView { return agentMgmt.getTopology(this.agentDeps, callerNamespace); }
 
-  /**
-   * Get which agents a specific agent can reach.
-   *
-   * @param agentId - The ULID of the agent
-   * @returns Array of reachable agent manifests, or undefined if agent not found
-   */
-  getAgentAccess(agentId: string): AgentManifest[] | undefined {
-    return this.topology.getAgentAccess(agentId);
-  }
+  /** Get which agents a specific agent can reach. */
+  getAgentAccess(agentId: string): AgentManifest[] | undefined { return agentMgmt.getAgentAccess(this.agentDeps, agentId); }
 
-  /**
-   * Add a cross-namespace allow rule via Relay access control.
-   *
-   * @param sourceNamespace - The namespace to allow messages from
-   * @param targetNamespace - The namespace to allow messages to
-   */
-  allowCrossNamespace(sourceNamespace: string, targetNamespace: string): void {
-    this.topology.allowCrossNamespace(sourceNamespace, targetNamespace);
-  }
+  /** Add a cross-namespace allow rule via Relay access control. */
+  allowCrossNamespace(sourceNamespace: string, targetNamespace: string): void { agentMgmt.allowCrossNamespace(this.agentDeps, sourceNamespace, targetNamespace); }
 
-  /**
-   * Remove a cross-namespace allow rule (reverts to default-deny).
-   *
-   * @param sourceNamespace - Source namespace
-   * @param targetNamespace - Target namespace
-   */
-  denyCrossNamespace(sourceNamespace: string, targetNamespace: string): void {
-    this.topology.denyCrossNamespace(sourceNamespace, targetNamespace);
-  }
+  /** Remove a cross-namespace allow rule (reverts to default-deny). */
+  denyCrossNamespace(sourceNamespace: string, targetNamespace: string): void { agentMgmt.denyCrossNamespace(this.agentDeps, sourceNamespace, targetNamespace); }
 
-  /**
-   * List all cross-namespace access rules.
-   *
-   * @returns Array of cross-namespace rules extracted from Relay access control
-   */
-  listCrossNamespaceRules(): CrossNamespaceRule[] {
-    return this.topology.listCrossNamespaceRules();
-  }
+  /** List all cross-namespace access rules. */
+  listCrossNamespaceRules(): CrossNamespaceRule[] { return agentMgmt.listCrossNamespaceRules(this.agentDeps); }
 
   // --- Health & Observability ---
 
-  /**
-   * Update the last-seen timestamp and event for an agent.
-   *
-   * Captures the previous health status before the update and emits a
-   * `mesh.agent.lifecycle.health_changed` signal via the SignalEmitter if
-   * the status transitions (e.g. stale → active). When no SignalEmitter is
-   * configured the update still persists; signal emission is skipped silently.
-   *
-   * @param agentId - The agent's ULID
-   * @param event - Description of the triggering event (e.g. 'heartbeat', 'message_sent')
-   */
-  updateLastSeen(agentId: string, event: string): void {
-    const before = this.registry.getWithHealth(agentId);
-    const previousStatus: AgentHealthStatus | undefined = before?.healthStatus;
+  /** Update the last-seen timestamp and event for an agent. */
+  updateLastSeen(agentId: string, event: string): void { agentMgmt.updateLastSeen(this.agentDeps, agentId, event); }
 
-    this.registry.updateHealth(agentId, new Date().toISOString(), event);
+  /** Get the health status for a single agent. */
+  getAgentHealth(agentId: string): AgentHealth | undefined { return agentMgmt.getAgentHealth(this.agentDeps, agentId); }
 
-    if (this.signalEmitter && before !== undefined && previousStatus !== undefined) {
-      const after = this.registry.getWithHealth(agentId);
-      const currentStatus = after?.healthStatus;
-      if (currentStatus !== undefined && previousStatus !== currentStatus) {
-        const subject = 'mesh.agent.lifecycle.health_changed';
-        this.signalEmitter.emit(subject, {
-          type: 'progress',
-          state: 'health_changed',
-          endpointSubject: subject,
-          timestamp: new Date().toISOString(),
-          data: {
-            agentId,
-            agentName: before.name,
-            event: 'health_changed',
-            previousStatus,
-            currentStatus,
-            timestamp: new Date().toISOString(),
-          },
-        });
-      }
-    }
-  }
+  /** Get aggregate mesh status -- counts by health status plus runtime and project groupings. */
+  getStatus(): MeshStatus { return agentMgmt.getStatus(this.agentDeps); }
 
-  /**
-   * Get the health status for a single agent.
-   *
-   * @param agentId - The agent's ULID
-   * @returns AgentHealth snapshot, or undefined if the agent is not found
-   */
-  getAgentHealth(agentId: string): AgentHealth | undefined {
-    const entry = this.registry.getWithHealth(agentId);
-    if (!entry) return undefined;
-    return {
-      agentId: entry.id,
-      name: entry.name,
-      status: entry.healthStatus,
-      lastSeenAt: entry.lastSeenAt,
-      lastSeenEvent: entry.lastSeenEvent,
-      registeredAt: entry.registeredAt,
-      runtime: entry.runtime,
-      capabilities: entry.capabilities,
-    };
-  }
-
-  /**
-   * Get aggregate mesh status — counts by health status plus runtime and project groupings.
-   *
-   * @returns MeshStatus snapshot with live counts and groupings
-   */
-  getStatus(): MeshStatus {
-    // Single DB query — getAggregateStats() now computes health counts,
-    // runtime groupings, and project groupings in one pass.
-    const stats = this.registry.getAggregateStats();
-    return {
-      totalAgents: stats.totalAgents,
-      activeCount: stats.activeCount,
-      inactiveCount: stats.inactiveCount,
-      staleCount: stats.staleCount,
-      unreachableCount: stats.unreachableCount,
-      byRuntime: stats.byRuntime,
-      byProject: stats.byProject,
-    };
-  }
-
-  /**
-   * Get a detailed inspection of a single agent combining manifest, health, and relay info.
-   *
-   * @param agentId - The agent's ULID
-   * @returns MeshInspect snapshot, or undefined if the agent is not found
-   */
-  inspect(agentId: string): MeshInspect | undefined {
-    const entry = this.registry.get(agentId);
-    if (!entry) return undefined;
-
-    const health = this.getAgentHealth(agentId);
-    if (!health) return undefined;
-
-    const manifest = this.toManifest(entry);
-
-    // Derive relay subject using the same pattern as registration
-    const ns = entry.namespace || path.basename(entry.projectPath);
-    const relaySubject = `relay.agent.${ns}.${agentId}`;
-
-    return { agent: manifest, health, relaySubject };
-  }
+  /** Get a detailed inspection of a single agent combining manifest, health, and relay info. */
+  inspect(agentId: string): MeshInspect | undefined { return agentMgmt.inspect(this.agentDeps, agentId); }
 
   // --- Reconciliation ---
 
-  /**
-   * Run a one-shot anti-entropy reconciliation between filesystem and DB.
-   *
-   * @returns Summary of reconciliation actions taken
-   */
+  /** Run a one-shot anti-entropy reconciliation between filesystem and DB. */
   async reconcileOnStartup(): Promise<ReconcileResult> {
-    return reconcile(this.registry, this.relayBridge, this.defaultScanRoot);
+    return reconcile(this.discoveryDeps.registry, this.relayBridge, this.defaultScanRoot);
   }
 
   /**
    * Start periodic background reconciliation at the given interval.
-   *
-   * No-ops if already running. The timer is unref'd so it does not
-   * prevent the Node process from exiting.
+   * No-ops if already running. The timer is unref'd so it does not prevent process exit.
    *
    * @param intervalMs - Reconciliation interval in milliseconds (default: 5 minutes)
    */
@@ -638,7 +216,7 @@ export class MeshCore {
     if (this.reconcileTimer) return;
     this.reconcileTimer = setInterval(async () => {
       try {
-        await reconcile(this.registry, this.relayBridge, this.defaultScanRoot);
+        await reconcile(this.discoveryDeps.registry, this.relayBridge, this.defaultScanRoot);
       } catch (err) {
         this.logger.error('[Mesh] Periodic reconciliation failed:', err);
       }
@@ -646,9 +224,7 @@ export class MeshCore {
     this.reconcileTimer.unref();
   }
 
-  /**
-   * Stop periodic background reconciliation.
-   */
+  /** Stop periodic background reconciliation. */
   stopPeriodicReconciliation(): void {
     if (this.reconcileTimer) {
       clearInterval(this.reconcileTimer);
@@ -656,121 +232,8 @@ export class MeshCore {
     }
   }
 
-  /**
-   * No-op — the database lifecycle is managed by the caller.
-   *
-   * Retained for backward compatibility with existing call sites.
-   */
+  /** Retained for backward compatibility. Stops periodic reconciliation. */
   close(): void {
     this.stopPeriodicReconciliation();
   }
-
-  /**
-   * List registered agents with their project paths (lightweight view for onboarding/scheduling).
-   *
-   * Unlike `list()` which strips `projectPath`, this returns it so the client
-   * can target schedules at specific agent working directories.
-   */
-  listWithPaths(): Array<{ id: string; name: string; projectPath: string; icon?: string; color?: string }> {
-    return this.registry.list().map((e) => ({
-      id: e.id,
-      name: e.name,
-      projectPath: e.projectPath,
-      icon: e.icon,
-      color: e.color,
-    }));
-  }
-
-  // --- Private helpers ---
-
-  /**
-   * Strip internal registry fields (projectPath, namespace, scanRoot) from an entry.
-   *
-   * Works with both plain AgentRegistryEntry and health-enriched entries,
-   * preserving any additional fields (healthStatus, lastSeenAt, etc.).
-   *
-   * @param entry - Registry entry with internal fields
-   * @returns Clean object with internal fields removed
-   */
-  private toManifest<T extends AgentRegistryEntry>(entry: T): Omit<T, 'projectPath' | 'namespace' | 'scanRoot'> {
-    const { projectPath: _p, namespace: _n, scanRoot: _s, ...rest } = entry;
-    return rest;
-  }
-
-  /**
-   * Shared registration pipeline: write manifest, upsert DB, register Relay.
-   *
-   * Steps are ordered for safe rollback: if DB upsert fails the manifest file
-   * is removed; if Relay registration fails both the DB entry and manifest are
-   * removed (compensation pattern).
-   *
-   * @param projectPath - Absolute path to the agent's project directory
-   * @param manifest - The agent manifest to persist
-   * @param namespace - Resolved namespace string
-   * @param scanRoot - Root directory used for namespace derivation
-   * @returns The manifest (unchanged, for caller convenience)
-   */
-  private async registerInternal(
-    projectPath: string,
-    manifest: AgentManifest,
-    namespace: string,
-    scanRoot: string,
-  ): Promise<AgentManifest> {
-    // Step 1: Write manifest to disk (atomic tmp+rename)
-    await writeManifest(projectPath, manifest);
-
-    // Step 2: Upsert into DB (idempotent)
-    const entry: AgentRegistryEntry = {
-      ...manifest,
-      projectPath,
-      namespace,
-      scanRoot,
-    };
-    try {
-      this.registry.upsert(entry);
-    } catch (err) {
-      // Compensate: remove manifest file
-      await removeManifest(projectPath);
-      throw err;
-    }
-
-    // Step 3: Register with Relay
-    try {
-      await this.relayBridge.registerAgent(manifest, projectPath, namespace, scanRoot);
-    } catch (err) {
-      // Compensate: remove DB entry and manifest file
-      this.registry.remove(manifest.id);
-      await removeManifest(projectPath);
-      throw err;
-    }
-
-    return manifest;
-  }
-
-  /**
-   * Upsert an auto-imported agent manifest into the registry.
-   *
-   * Always syncs manifest data to the DB via idempotent upsert,
-   * handling both new and previously-registered agents.
-   */
-  private async upsertAutoImported(manifest: AgentManifest, projectPath: string): Promise<void> {
-    const namespace = resolveNamespace(
-      projectPath,
-      this.defaultScanRoot,
-      manifest.namespace,
-    );
-    const entry: AgentRegistryEntry = {
-      ...manifest,
-      projectPath,
-      namespace,
-      scanRoot: this.defaultScanRoot,
-    };
-
-    // Upsert handles both new and existing agents
-    this.registry.upsert(entry);
-
-    // Ensure Relay endpoint exists
-    await this.relayBridge.registerAgent(manifest, projectPath, namespace, this.defaultScanRoot);
-  }
-
 }

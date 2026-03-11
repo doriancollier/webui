@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import type { StreamEvent } from '@dorkos/shared/types';
-import { ClaudeCodeAdapter } from '../claude-code-adapter.js';
+import { ClaudeCodeAdapter } from '../claude-code/index.js';
 import type {
   AgentRuntimeLike,
   TraceStoreLike,
   ClaudeCodeAdapterDeps,
-} from '../claude-code-adapter.js';
+} from '../claude-code/index.js';
 import type { RelayPublisher } from '../../types.js';
 
 // === Mock factories ===

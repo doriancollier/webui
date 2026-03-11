@@ -1,4 +1,4 @@
-import type { Transport, AdapterListItem, UploadFile } from '@dorkos/shared/transport';
+import type { Transport, AdapterListItem, AdapterEvent, UploadFile } from '@dorkos/shared/transport';
 import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type { TraceSpan, DeliveryMetrics, CatalogEntry, AdapterBinding, CreateBindingRequest, RelayConversation } from '@dorkos/shared/relay-schemas';
 import type { AgentManifest, DiscoveryCandidate, DenialRecord, AgentHealth, MeshStatus, TopologyView, CrossNamespaceRule, UpdateAccessRuleRequest, TransportScanOptions, TransportScanEvent } from '@dorkos/shared/mesh-schemas';
@@ -370,6 +370,10 @@ export class DirectTransport implements Transport {
     throw new Error('Adapter management not supported in embedded mode');
   }
 
+  async getAdapterEvents(_adapterId: string, _limit?: number): Promise<{ events: AdapterEvent[] }> {
+    return { events: [] };
+  }
+
   // Relay bindings are not supported in embedded mode
   async getBindings(): Promise<AdapterBinding[]> {
     return [];
@@ -380,6 +384,13 @@ export class DirectTransport implements Transport {
   }
 
   async deleteBinding(_id: string): Promise<void> {
+    throw new Error('Relay bindings are not supported in embedded mode');
+  }
+
+  async updateBinding(
+    _id: string,
+    _updates: Partial<Pick<AdapterBinding, 'sessionStrategy' | 'label' | 'chatId' | 'channelType'>>,
+  ): Promise<AdapterBinding> {
     throw new Error('Relay bindings are not supported in embedded mode');
   }
 

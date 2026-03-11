@@ -22,3 +22,5 @@ export { useDeliveryMetrics } from './model/use-delivery-metrics';
 export { useDeadLetters } from './model/use-dead-letters';
 export type { DeadLetter } from './model/use-dead-letters';
 export { useRelayConversations } from './model/use-relay-conversations';
+export { useAdapterEvents } from './model/use-adapter-events';
+export type { AdapterEventMetadata } from './model/use-adapter-events';

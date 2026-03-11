@@ -477,6 +477,17 @@ export function createRelayRouter(
       }
     });
 
+    // GET /adapters/:id/events — Get adapter event log
+    router.get('/adapters/:id/events', (_req, res) => {
+      if (!traceStore) return res.status(404).json({ error: 'Tracing not available' });
+      const { id } = _req.params;
+      const limitParam = parseInt(_req.query.limit as string);
+      // Validate limit bounds (1-500) to prevent DoS
+      const limit = Number.isNaN(limitParam) ? 100 : Math.min(Math.max(limitParam, 1), 500);
+      const events = traceStore.getAdapterEvents(id, limit);
+      return res.json({ events });
+    });
+
     // --- Binding Management Routes ---
     router.get('/bindings', (_req, res) => {
       const bindingStore = adapterManager.getBindingStore();

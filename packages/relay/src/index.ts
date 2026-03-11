@@ -103,11 +103,11 @@ export type {
 export { AdapterRegistry } from './adapter-registry.js';
 
 // Adapter implementations
-export { TelegramAdapter, TELEGRAM_MANIFEST } from './adapters/telegram-adapter.js';
+export { TelegramAdapter, TELEGRAM_MANIFEST } from './adapters/telegram/index.js';
 export { WebhookAdapter, verifySignature, WEBHOOK_MANIFEST } from './adapters/webhook-adapter.js';
 
 // Built-in adapters
-export { ClaudeCodeAdapter, CLAUDE_CODE_MANIFEST } from './adapters/claude-code-adapter.js';
+export { ClaudeCodeAdapter, CLAUDE_CODE_MANIFEST } from './adapters/claude-code/index.js';
 export type {
   ClaudeCodeAdapterConfig,
   ClaudeCodeAdapterDeps,
@@ -115,7 +115,7 @@ export type {
   AgentSessionStoreLike,
   TraceStoreLike,
   PulseStoreLike,
-} from './adapters/claude-code-adapter.js';
+} from './adapters/claude-code/index.js';
 
 // Plugin loader
 export { loadAdapters, validateAdapterShape } from './adapter-plugin-loader.js';

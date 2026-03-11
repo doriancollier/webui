@@ -52,6 +52,15 @@ export interface AdapterListItem {
   status: AdapterStatus;
 }
 
+/** A lifecycle event recorded for an adapter instance. */
+export interface AdapterEvent {
+  id: string;
+  subject: string;
+  status: string;
+  sentAt: string;
+  metadata: string | null;
+}
+
 /**
  * Minimal file interface for upload — matches the browser File API.
  *
@@ -222,6 +231,8 @@ export interface Transport {
   updateRelayAdapterConfig(id: string, config: Record<string, unknown>): Promise<{ ok: boolean }>;
   /** Test connectivity for an adapter type and config without registering it. */
   testRelayAdapterConnection(type: string, config: Record<string, unknown>): Promise<{ ok: boolean; error?: string }>;
+  /** Fetch adapter lifecycle events by adapter instance ID. */
+  getAdapterEvents(adapterId: string, limit?: number): Promise<{ events: AdapterEvent[] }>;
 
   // --- Relay Bindings ---
 
@@ -231,6 +242,11 @@ export interface Transport {
   createBinding(input: CreateBindingRequest): Promise<AdapterBinding>;
   /** Delete an adapter-agent binding by ID. */
   deleteBinding(id: string): Promise<void>;
+  /** Update an existing binding's mutable fields (sessionStrategy, label, chatId, channelType). */
+  updateBinding(
+    id: string,
+    updates: Partial<Pick<AdapterBinding, 'sessionStrategy' | 'label' | 'chatId' | 'channelType'>>,
+  ): Promise<AdapterBinding>;
 
   // --- Mesh Agent Discovery ---
 

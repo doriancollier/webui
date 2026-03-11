@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { TelegramAdapter } from '../../adapters/telegram-adapter.js';
+import { TelegramAdapter } from '../../adapters/telegram/index.js';
 import type { RelayPublisher, AdapterStatus, Unsubscribe } from '../../types.js';
 
 // --- node:http mock ---

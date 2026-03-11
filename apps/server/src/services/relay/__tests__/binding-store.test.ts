@@ -129,6 +129,83 @@ describe('BindingStore', () => {
     });
   });
 
+  describe('update()', () => {
+    it('updates mutable fields and preserves immutable fields', async () => {
+      const binding = await store.create({
+        adapterId: 'telegram-1',
+        agentId: 'agent-1',
+        projectPath: '/project',
+        sessionStrategy: 'per-chat',
+      });
+      const updated = await store.update(binding.id, {
+        sessionStrategy: 'stateless',
+        label: 'test-label',
+      });
+      expect(updated).toBeDefined();
+      expect(updated!.sessionStrategy).toBe('stateless');
+      expect(updated!.label).toBe('test-label');
+      // updatedAt is refreshed (ISO 8601 format)
+      expect(typeof updated!.updatedAt).toBe('string');
+      expect(new Date(updated!.updatedAt).toISOString()).toBe(updated!.updatedAt);
+      // Original immutable fields preserved
+      expect(updated!.adapterId).toBe('telegram-1');
+      expect(updated!.agentId).toBe('agent-1');
+      expect(updated!.projectPath).toBe('/project');
+      expect(updated!.id).toBe(binding.id);
+      expect(updated!.createdAt).toBe(binding.createdAt);
+    });
+
+    it('returns undefined for non-existent binding', async () => {
+      const result = await store.update('nonexistent-id', { label: 'test' });
+      expect(result).toBeUndefined();
+    });
+
+    it('persists updates to disk', async () => {
+      const binding = await store.create({
+        adapterId: 'telegram-1',
+        agentId: 'agent-1',
+        projectPath: '/project',
+      });
+      vi.mocked(writeFile).mockClear();
+      vi.mocked(rename).mockClear();
+      await store.update(binding.id, { label: 'persisted-label' });
+      expect(writeFile).toHaveBeenCalled();
+      expect(rename).toHaveBeenCalled();
+    });
+
+    it('does not persist when binding not found', async () => {
+      vi.mocked(writeFile).mockClear();
+      vi.mocked(rename).mockClear();
+      await store.update('non-existent', { label: 'test' });
+      expect(writeFile).not.toHaveBeenCalled();
+    });
+
+    it('updates chatId and channelType fields', async () => {
+      const binding = await store.create({
+        adapterId: 'telegram-1',
+        agentId: 'agent-1',
+        projectPath: '/project',
+      });
+      const updated = await store.update(binding.id, {
+        chatId: '12345',
+        channelType: 'dm',
+      });
+      expect(updated!.chatId).toBe('12345');
+      expect(updated!.channelType).toBe('dm');
+    });
+
+    it('reflects update in getById', async () => {
+      const binding = await store.create({
+        adapterId: 'telegram-1',
+        agentId: 'agent-1',
+        projectPath: '/project',
+        label: 'old',
+      });
+      await store.update(binding.id, { label: 'new' });
+      expect(store.getById(binding.id)?.label).toBe('new');
+    });
+  });
+
   describe('resolve()', () => {
     it('returns undefined when no bindings exist for adapterId', () => {
       expect(store.resolve('unknown')).toBeUndefined();

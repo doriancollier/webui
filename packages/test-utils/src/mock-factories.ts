@@ -187,6 +187,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     removeRelayAdapter: vi.fn().mockResolvedValue({ ok: true }),
     updateRelayAdapterConfig: vi.fn().mockResolvedValue({ ok: true }),
     testRelayAdapterConnection: vi.fn().mockResolvedValue({ ok: true }),
+    getAdapterEvents: vi.fn().mockResolvedValue({ events: [] }),
     // Mesh
     listMeshAgentPaths: vi.fn().mockResolvedValue({ agents: [] }),
     discoverMeshAgents: vi.fn().mockResolvedValue({ candidates: [] }),
@@ -232,6 +233,16 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       updatedAt: new Date().toISOString(),
     }),
     deleteBinding: vi.fn().mockResolvedValue(undefined),
+    updateBinding: vi.fn().mockResolvedValue({
+      id: 'mock-binding-id',
+      adapterId: 'mock-adapter',
+      agentId: 'mock-agent',
+      projectPath: '/mock/agent',
+      sessionStrategy: 'per-chat',
+      label: 'updated',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }),
     updateConfig: vi.fn().mockResolvedValue(undefined),
     // Discovery
     scan: vi.fn().mockResolvedValue(undefined),
