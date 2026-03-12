@@ -11,6 +11,9 @@ export const SPRING: Transition = {
 /** Standard viewport trigger config — fires once at 20% visible. */
 export const VIEWPORT = { once: true, amount: 0.2 } as const
 
+/** Viewport config that replays the animation every time the element re-enters view. */
+export const VIEWPORT_REPEAT = { once: false, amount: 0.2 } as const
+
 /** Fade + slide up reveal for individual elements. */
 export const REVEAL: Variants = {
   hidden: { opacity: 0, y: 20 },

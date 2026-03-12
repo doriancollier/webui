@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { REVEAL, STAGGER, SPRING, VIEWPORT } from '../../lib/motion-variants'
+import { REVEAL, STAGGER, SPRING, VIEWPORT_REPEAT as VIEWPORT } from '../../lib/motion-variants'
 import { equationItems } from '../../lib/story-data'
 
 interface JustPromptsSectionProps {

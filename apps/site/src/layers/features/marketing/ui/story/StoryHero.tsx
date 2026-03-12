@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { REVEAL, STAGGER, VIEWPORT } from '../../lib/motion-variants'
+import { REVEAL, STAGGER, VIEWPORT_REPEAT as VIEWPORT } from '../../lib/motion-variants'
 
 interface StoryHeroProps {
   /** data-slide value used by PresentationShell for keyboard navigation. */
@@ -26,7 +26,7 @@ export function StoryHero({ slideId = 'hero' }: StoryHeroProps) {
           variants={REVEAL}
           className="mb-6 font-mono text-[9px] tracking-[0.2em] text-brand-orange uppercase"
         >
-          Origin Story
+          What If...
         </motion.div>
 
         <motion.p

@@ -710,9 +710,14 @@ button:hover .cursor-blink,
   font-size: calc(1em * 1.3);
 }
 
-/* Hide chrome in presentation mode */
+/* Hide chrome in presentation mode — targeting the wrapper divs inside the shell */
 [data-present='true'].presentation-shell [data-marketing-header],
 [data-present='true'].presentation-shell [data-marketing-footer] {
+  display: none;
+}
+
+/* Also hide the fixed-position header at the html level (belt-and-suspenders for position:fixed) */
+html[data-presentation-mode] header {
   display: none;
 }
 
@@ -721,30 +726,21 @@ button:hover .cursor-blink,
   display: none;
 }
 
-/* Progress dots */
-.presentation-dots {
+/* Progress line — fixed at the bottom of the viewport */
+.presentation-progress {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.08);
   z-index: 60;
 }
 
-.presentation-dots .dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--warm-gray-light);
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease;
-  padding: 0;
-}
-
-.presentation-dots .dot-active {
+.presentation-progress-bar {
+  height: 100%;
   background: var(--brand-orange);
+  transition: width 0.4s ease;
 }
 
 /* Cursor blink for terminal art (used in VillainSection -- included here for reuse) */

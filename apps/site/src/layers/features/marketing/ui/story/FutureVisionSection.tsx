@@ -1,7 +1,7 @@
 'use client'
 
 import { motion } from 'motion/react'
-import { REVEAL, STAGGER, VIEWPORT } from '../../lib/motion-variants'
+import { REVEAL, STAGGER, VIEWPORT_REPEAT as VIEWPORT } from '../../lib/motion-variants'
 import { futureCards } from '../../lib/story-data'
 import type { FutureCard } from '../../lib/story-data'
 

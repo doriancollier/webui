@@ -14,12 +14,26 @@ interface PresentationShellProps {
  * Wraps the story page. When ?present=true is in the URL:
  * - Switches to fixed full-screen scroll-snap layout
  * - Enables ArrowRight/Space (next) and ArrowLeft (prev) keyboard nav
- * - Renders progress dots in the bottom-right corner
+ * - Renders a progress line at the bottom of the screen
+ * - Hides the marketing header and footer
  */
 export function PresentationShell({ children }: PresentationShellProps) {
   const isPresent = usePresentationMode()
   const [currentIndex, setCurrentIndex] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Set a data attribute on <html> so global CSS can hide fixed-position chrome (header/footer)
+  useEffect(() => {
+    const html = document.documentElement
+    if (isPresent) {
+      html.dataset.presentationMode = 'true'
+    } else {
+      delete html.dataset.presentationMode
+    }
+    return () => {
+      delete html.dataset.presentationMode
+    }
+  }, [isPresent])
 
   // Track which section is in view via IntersectionObserver
   useEffect(() => {
@@ -51,10 +65,14 @@ export function PresentationShell({ children }: PresentationShellProps) {
 
     const scrollToIndex = (idx: number) => {
       const clamped = Math.max(0, Math.min(idx, PRESENTATION_SECTION_IDS.length - 1))
-      const target = containerRef.current?.querySelector(
+      const container = containerRef.current
+      if (!container) return
+      const target = container.querySelector<HTMLElement>(
         `[data-slide="${PRESENTATION_SECTION_IDS[clamped]}"]`,
       )
-      target?.scrollIntoView({ behavior: 'smooth' })
+      if (!target) return
+      // Use scrollTo with offsetTop — more reliable than scrollIntoView inside a fixed container
+      container.scrollTo({ top: target.offsetTop, behavior: 'smooth' })
     }
 
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,6 +89,8 @@ export function PresentationShell({ children }: PresentationShellProps) {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [isPresent, currentIndex])
 
+  const progressPct = ((currentIndex + 1) / PRESENTATION_SECTION_IDS.length) * 100
+
   return (
     <div
       ref={containerRef}
@@ -80,19 +100,12 @@ export function PresentationShell({ children }: PresentationShellProps) {
       {children}
 
       {isPresent && (
-        <nav className="presentation-dots" aria-label="Presentation navigation">
-          {PRESENTATION_SECTION_IDS.map((id, i) => (
-            <button
-              key={id}
-              className={i === currentIndex ? 'dot dot-active' : 'dot'}
-              aria-label={`Go to slide ${i + 1}`}
-              onClick={() => {
-                const target = containerRef.current?.querySelector(`[data-slide="${id}"]`)
-                target?.scrollIntoView({ behavior: 'smooth' })
-              }}
-            />
-          ))}
-        </nav>
+        <div className="presentation-progress" aria-hidden="true">
+          <div
+            className="presentation-progress-bar"
+            style={{ width: `${progressPct}%` }}
+          />
+        </div>
       )}
     </div>
   )

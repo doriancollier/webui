@@ -60,7 +60,7 @@ export {
 export type { BootCard, EvolutionStep, EquationItem, FutureCard } from './lib/story-data'
 
 // Motion
-export { SPRING, VIEWPORT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH } from './lib/motion-variants'
+export { SPRING, VIEWPORT, VIEWPORT_REPEAT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH } from './lib/motion-variants'
 
 // Hooks
 export { usePresentationMode } from './lib/use-presentation-mode'
