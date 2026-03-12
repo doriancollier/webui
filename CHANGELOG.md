@@ -53,6 +53,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Add missing Fumadocs frontmatter title to spec and plan docs
 - Fix LayoutGroup layout animation to eliminate timeline item jumps
 - Smooth layout animation and active step orange treatment on timeline slide
 - Replace pendingUserContent with optimistic messages in virtualizer

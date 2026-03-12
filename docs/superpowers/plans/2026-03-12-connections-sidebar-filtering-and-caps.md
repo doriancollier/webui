@@ -1,3 +1,7 @@
+---
+title: Connections Sidebar — Agent Filtering and List Caps Implementation Plan
+---
+
 # Connections Sidebar: Agent Filtering and List Caps Implementation Plan
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.

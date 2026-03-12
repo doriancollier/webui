@@ -1,3 +1,7 @@
+---
+title: Connections Sidebar — Agent Filtering and List Caps
+---
+
 # Connections Sidebar: Agent Filtering and List Caps
 
 **Date:** 2026-03-12

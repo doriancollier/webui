@@ -1,3 +1,7 @@
+---
+title: Design Spec — /story Page
+---
+
 # Design Spec: `/story` Page
 
 **Date:** 2026-03-12
