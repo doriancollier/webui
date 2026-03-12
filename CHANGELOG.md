@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Add /story page implementation plan
 - Add /story page design spec
 - Reconcile guides against relay removal, pulse presets, and ConnectionsView changes
 - Remove relay chat path from self-test command
