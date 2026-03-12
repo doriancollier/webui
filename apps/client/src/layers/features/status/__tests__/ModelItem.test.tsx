@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { TransportProvider } from '@/layers/shared/model';
+import { TooltipProvider } from '@/layers/shared/ui';
 import { createMockTransport } from '@dorkos/test-utils';
 import { ModelItem } from '../ui/ModelItem';
 
@@ -39,7 +40,9 @@ function createWrapper() {
   return function Wrapper({ children }: { children: React.ReactNode }) {
     return (
       <QueryClientProvider client={queryClient}>
-        <TransportProvider transport={transport}>{children}</TransportProvider>
+        <TransportProvider transport={transport}>
+          <TooltipProvider>{children}</TooltipProvider>
+        </TransportProvider>
       </QueryClientProvider>
     );
   };
@@ -60,5 +63,18 @@ describe('ModelItem', () => {
       { wrapper: createWrapper() },
     );
     expect(screen.getByText('Unknown')).toBeInTheDocument();
+  });
+
+  it('renders a disabled button when disabled=true', () => {
+    const { container } = render(
+      <ModelItem model="claude-opus-4-6" onChangeModel={vi.fn()} disabled />,
+      { wrapper: createWrapper() },
+    );
+    // The model trigger is rendered as a <button disabled> element in the disabled path.
+    // Use querySelector to target the disabled button directly rather than relying on
+    // getByRole (which would error if Radix tooltip internals add extra button elements).
+    const disabledButton = container.querySelector('button[disabled]');
+    expect(disabledButton).not.toBeNull();
+    expect(disabledButton).toBeDisabled();
   });
 });

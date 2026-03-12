@@ -6,6 +6,7 @@ import { renderHook, waitFor, act } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Transport } from '@dorkos/shared/transport';
+import type { SessionStatusEvent } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
 import { createMockTransport } from '@dorkos/test-utils';
 import { useSessionStatus } from '../model/use-session-status';
@@ -132,5 +133,69 @@ describe('useSessionStatus', () => {
     await waitFor(() => {
       expect(result.current.permissionMode).toBe('plan');
     });
+  });
+
+  it('does not use streamingStatus.model when isStreaming is false', async () => {
+    // Purpose: Regression for Bug #3 — after a stream, the stale streamingStatus.model
+    // must not override session.model, so model changes via PATCH are reflected immediately.
+    const transport = createMockTransport({
+      getSession: vi.fn().mockResolvedValue({
+        id: 's1',
+        model: 'claude-haiku-4-5-20251001',
+        permissionMode: 'default',
+      }),
+    });
+
+    const streamingStatus = { model: 'claude-sonnet-4-6' } as SessionStatusEvent;
+
+    const { result } = renderHook(
+      () => useSessionStatus('s1', streamingStatus, false),
+      { wrapper: createWrapper(transport) }
+    );
+
+    await waitFor(() => {
+      // session?.model should win; streamingStatus.model must NOT override it
+      expect(result.current.model).toBe('claude-haiku-4-5-20251001');
+    });
+  });
+
+  it('uses streamingStatus.model while isStreaming is true', async () => {
+    // Purpose: Verify the fix does not break live-streaming display of model name.
+    const transport = createMockTransport({
+      getSession: vi.fn().mockResolvedValue({
+        id: 's1',
+        model: 'claude-sonnet-4-5-20250929',
+        permissionMode: 'default',
+      }),
+    });
+
+    const streamingStatus = { model: 'claude-opus-4-6' } as SessionStatusEvent;
+
+    const { result } = renderHook(
+      () => useSessionStatus('s1', streamingStatus, true),
+      { wrapper: createWrapper(transport) }
+    );
+
+    // streamingStatus.model should be used during streaming (synchronous — no await needed)
+    expect(result.current.model).toBe('claude-opus-4-6');
+  });
+
+  it('updateSession is a no-op when sessionId is null', async () => {
+    // Purpose: Verify Bug A guard — when no session exists (null sessionId), updateSession
+    // must silently return without calling transport.updateSession.
+    const transport = createMockTransport({
+      updateSession: vi.fn(),
+    });
+
+    const { result } = renderHook(
+      () => useSessionStatus(null, null, false),
+      { wrapper: createWrapper(transport) }
+    );
+
+    await act(async () => {
+      await result.current.updateSession({ model: 'claude-haiku-4-5-20251001' });
+    });
+
+    expect(transport.updateSession).not.toHaveBeenCalled();
   });
 });

@@ -132,12 +132,14 @@ export function ChatStatusSection({
         <PermissionModeItem
           mode={status.permissionMode}
           onChangeMode={(mode) => status.updateSession({ permissionMode: mode })}
+          disabled={!sessionId}
         />
       </StatusLine.Item>
       <StatusLine.Item itemKey="model" visible={showStatusBarModel}>
         <ModelItem
           model={status.model}
           onChangeModel={(model) => status.updateSession({ model })}
+          disabled={!sessionId}
         />
       </StatusLine.Item>
       <StatusLine.Item itemKey="cost" visible={showStatusBarCost && status.costUsd !== null}>

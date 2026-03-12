@@ -8,6 +8,9 @@ import {
   ResponsiveDropdownMenuLabel,
   ResponsiveDropdownMenuRadioGroup,
   ResponsiveDropdownMenuRadioItem,
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
 } from '@/layers/shared/ui';
 
 const PERMISSION_MODES: {
@@ -40,22 +43,40 @@ const PERMISSION_MODES: {
 interface PermissionModeItemProps {
   mode: PermissionMode;
   onChangeMode: (mode: PermissionMode) => void;
+  /** When true, the selector is disabled and shows a tooltip explaining why. */
+  disabled?: boolean;
 }
 
-export function PermissionModeItem({ mode, onChangeMode }: PermissionModeItemProps) {
+export function PermissionModeItem({ mode, onChangeMode, disabled }: PermissionModeItemProps) {
   const current = PERMISSION_MODES.find((m) => m.value === mode) ?? PERMISSION_MODES[0];
   const Icon = current.icon;
   const isDangerous = mode === 'bypassPermissions';
 
+  const trigger = (
+    <button
+      disabled={disabled}
+      className={`hover:text-foreground inline-flex items-center gap-1 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-40 ${isDangerous ? 'text-red-500' : ''}`}
+    >
+      <Icon className="size-(--size-icon-xs)" />
+      <span>{current.label}</span>
+    </button>
+  );
+
+  if (disabled) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="inline-flex">{trigger}</span>
+        </TooltipTrigger>
+        <TooltipContent side="top">Send a message first</TooltipContent>
+      </Tooltip>
+    );
+  }
+
   return (
     <ResponsiveDropdownMenu>
       <ResponsiveDropdownMenuTrigger asChild>
-        <button
-          className={`hover:text-foreground inline-flex items-center gap-1 transition-colors duration-150 ${isDangerous ? 'text-red-500' : ''}`}
-        >
-          <Icon className="size-(--size-icon-xs)" />
-          <span>{current.label}</span>
-        </button>
+        {trigger}
       </ResponsiveDropdownMenuTrigger>
       <ResponsiveDropdownMenuContent side="top" align="start" className="w-56">
         <ResponsiveDropdownMenuLabel>Permission Mode</ResponsiveDropdownMenuLabel>

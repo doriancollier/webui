@@ -1,6 +1,7 @@
 import { useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
 import { useMessageQueue } from '../model/use-message-queue';
 import { useCommands } from '@/layers/entities/command';
@@ -32,6 +33,7 @@ interface ChatPanelProps {
 
 export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const [, setSessionId] = useSessionId();
+  const queryClient = useQueryClient();
   const messageListRef = useRef<MessageListHandle>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
   const taskState = useTaskState(sessionId);
@@ -82,6 +84,13 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     [taskState, celebrations]
   );
 
+  const handleSessionIdChange = useCallback((newId: string) => {
+    setSessionId(newId);
+    // Invalidate stale session metadata so the new key fetches immediately
+    // instead of waiting for TanStack Query's staleTime to expire.
+    queryClient.invalidateQueries({ queryKey: ['session', newId] });
+  }, [setSessionId, queryClient]);
+
   const {
     messages,
     pendingUserContent,
@@ -105,7 +114,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   } = useChatSession(sessionId, {
     transformContent: fileTransformContent,
     onTaskEvent: handleTaskEventWithCelebrations,
-    onSessionIdChange: setSessionId,
+    onSessionIdChange: handleSessionIdChange,
     onStreamingDone: useCallback(() => {
       if (enableNotificationSound) {
         playNotificationSound();

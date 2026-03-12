@@ -302,10 +302,20 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
             style={{ position: 'absolute', top: virtualizer.getTotalSize(), left: 0, width: '100%' }}
           >
             {pendingUserContent && (
-              <div className="flex justify-end px-4 py-1">
-                <div className="msg-user opacity-60" aria-label="Sending…">
-                  {pendingUserContent}
-                </div>
+              <div className="opacity-60" aria-label="Sending…">
+                <MessageItem
+                  message={{
+                    id: 'pending-user',
+                    role: 'user',
+                    content: pendingUserContent,
+                    parts: [{ type: 'text', text: pendingUserContent }],
+                    timestamp: '',
+                  }}
+                  grouping={{ position: 'only', groupIndex: groupings.length }}
+                  sessionId={sessionId}
+                  isNew={false}
+                  isStreaming={false}
+                />
               </div>
             )}
             <InferenceIndicator

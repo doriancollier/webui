@@ -292,6 +292,13 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       case 'done': {
         const doneData = data as { sessionId?: string };
         if (doneData.sessionId && doneData.sessionId !== sessionId) {
+          // Clear streaming state BEFORE triggering the remap so history becomes
+          // the sole source of truth. The streaming assistant message has a
+          // client-generated UUID that won't match the SDK-assigned UUID in history —
+          // without this clear, both copies render (ID-mismatch dedup failure).
+          currentPartsRef.current = [];
+          assistantCreatedRef.current = false;
+          setMessages([]);
           onSessionIdChangeRef.current?.(doneData.sessionId);
         }
         if (streamStartTimeRef.current) {

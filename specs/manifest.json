@@ -876,7 +876,14 @@
       "title": "Client Direct SSE — Remove Relay Message Path from Web Client",
       "created": "2026-03-12",
       "status": "ideation"
+    },
+    {
+      "number": 126,
+      "slug": "fix-chat-stream-remap-bugs",
+      "title": "Fix Chat UI Streaming Bugs — Duplicate Messages & Stale Model Display",
+      "created": "2026-03-12",
+      "status": "specified"
     }
   ],
-  "nextNumber": 126
+  "nextNumber": 127
 }

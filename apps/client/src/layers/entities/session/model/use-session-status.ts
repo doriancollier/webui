@@ -65,8 +65,11 @@ export function useSessionStatus(
     enabled: !!sessionId,
   });
 
-  // Priority: local optimistic > streaming live data > persisted session data > defaults
-  const model = localModel ?? streamingStatus?.model ?? session?.model ?? DEFAULT_MODEL;
+  // Priority: local optimistic > streaming live data (only while streaming) > persisted session data > defaults
+  // streamingStatus is never cleared after streaming ends, so streamingStatus?.model retains its
+  // last value and would permanently shadow session?.model (the PATCH-confirmed value). Gate it
+  // behind isStreaming so model changes via the dropdown are reflected immediately post-stream.
+  const model = localModel ?? (isStreaming ? streamingStatus?.model : null) ?? session?.model ?? DEFAULT_MODEL;
 
   // Context: prefer streaming max, fall back to known model context window
   const contextTokens = streamingStatus?.contextTokens ?? session?.contextTokens ?? null;
@@ -102,8 +105,9 @@ export function useSessionStatus(
         // Optimistic state cleared by convergence effect below, not here.
         // This eliminates the render gap between setQueryData and useQuery re-render.
         return updated;
-      } catch {
+      } catch (err) {
         // Revert optimistic state on failure
+        console.error('[useSessionStatus] updateSession failed for session', sessionId, err);
         if (opts.model) setLocalModel(null);
         if (opts.permissionMode) setLocalPermissionMode(null);
       }
