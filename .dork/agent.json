@@ -1,11 +1,9 @@
 {
   "id": "01KJXYKJYW4N8QGQ5W4GB6YM9J",
-  "name": "core",
-  "description": "This file provides guidance to AI Coding Agents when working with code and files in this repository.",
+  "name": "DorkOS",
+  "description": "",
   "runtime": "claude-code",
-  "capabilities": [
-    "code"
-  ],
+  "capabilities": [],
   "behavior": {
     "responseMode": "always"
   },
