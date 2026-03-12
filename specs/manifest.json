@@ -799,7 +799,7 @@
       "title": "Hide Scrollbars When Idle",
       "created": "2026-03-10",
       "status": "ideation"
-    }
+    },
     {
       "number": 115,
       "slug": "switch-agent-via-identity-chip",
@@ -855,7 +855,21 @@
       "title": "Topology Visualization Overhaul",
       "created": "2026-03-11",
       "status": "specification"
+    },
+    {
+      "number": 123,
+      "slug": "agent-sdk-simulation-testing",
+      "title": "Agent SDK Simulation & Testing Infrastructure",
+      "created": "2026-03-11",
+      "status": "ideation"
+    },
+    {
+      "number": 124,
+      "slug": "pulse-schedule-templates",
+      "title": "Pulse Schedule Preset Gallery",
+      "created": "2026-03-11",
+      "status": "specified"
     }
   ],
-  "nextNumber": 123
+  "nextNumber": 125
 }

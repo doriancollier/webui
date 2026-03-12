@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 116,
+  "nextNumber": 117,
   "decisions": [
+    {
+      "number": 116,
+      "slug": "entity-layer-zustand-store-for-cross-feature-coordination",
+      "title": "Entity-Layer Zustand Store for Cross-Feature FSD Coordination",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "pulse-schedule-templates",
+      "specSlug": "pulse-schedule-templates"
+    },
     {
       "number": 115,
       "slug": "pending-user-content-ephemeral-state-boundary",

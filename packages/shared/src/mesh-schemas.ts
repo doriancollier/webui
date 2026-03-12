@@ -246,7 +246,11 @@ export type DenyRequest = z.infer<typeof DenyRequestSchema>;
 export const UpdateAgentRequestSchema = AgentManifestSchema.pick({
   name: true,
   description: true,
+  runtime: true,
   capabilities: true,
+  behavior: true,
+  budget: true,
+  namespace: true,
   persona: true,
   personaEnabled: true,
   color: true,

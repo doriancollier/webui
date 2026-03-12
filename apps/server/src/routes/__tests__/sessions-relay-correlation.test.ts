@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { FakeAgentRuntime } from '@dorkos/test-utils';
 
 // Mock relay-state before importing app
 vi.mock('../../services/relay/relay-state.js', () => ({
@@ -34,47 +35,16 @@ vi.mock('../../lib/logger.js', () => ({
   initLogger: vi.fn(),
 }));
 
-// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
-const mockRuntime = vi.hoisted(() => ({
-  type: 'claude-code',
-  ensureSession: vi.fn(),
-  hasSession: vi.fn(() => false),
-  updateSession: vi.fn(() => true),
-  sendMessage: vi.fn(),
-  approveTool: vi.fn(),
-  submitAnswers: vi.fn(() => true),
-  listSessions: vi.fn(),
-  getSession: vi.fn(),
-  getMessageHistory: vi.fn(),
-  getSessionTasks: vi.fn().mockResolvedValue([]),
-  getSessionETag: vi.fn().mockResolvedValue(null),
-  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
-  watchSession: vi.fn(() => () => {}),
-  acquireLock: vi.fn(),
-  releaseLock: vi.fn(),
-  isLocked: vi.fn(() => false),
-  getLockInfo: vi.fn(),
-  getSupportedModels: vi.fn().mockResolvedValue([]),
-  getCapabilities: vi.fn(() => ({
-    type: 'claude-code',
-    supportsPermissionModes: true,
-    supportsToolApproval: true,
-    supportsCostTracking: true,
-    supportsResume: true,
-    supportsMcp: true,
-    supportsQuestionPrompt: true,
-  })),
-  getInternalSessionId: vi.fn(),
-  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
-  checkSessionHealth: vi.fn(),
-}));
+// Declared at module scope so the vi.mock factory closure can reference it.
+// Initialized in beforeEach so each test starts with a fresh spy instance.
+let fakeRuntime: FakeAgentRuntime;
 
 vi.mock('../../services/core/runtime-registry.js', () => ({
   runtimeRegistry: {
-    getDefault: vi.fn(() => mockRuntime),
-    get: vi.fn(() => mockRuntime),
+    getDefault: vi.fn(() => fakeRuntime),
+    get: vi.fn(() => fakeRuntime),
     getAllCapabilities: vi.fn(() => ({})),
-    getDefaultType: vi.fn(() => 'claude-code'),
+    getDefaultType: vi.fn(() => 'fake'),
   },
 }));
 
@@ -117,10 +87,11 @@ describe('POST /api/sessions/:id/messages — correlationId relay threading', ()
   let mockRelayCore: ReturnType<typeof createMockRelayCore>;
 
   beforeEach(() => {
+    fakeRuntime = new FakeAgentRuntime();
     vi.clearAllMocks();
-    mockRuntime.acquireLock.mockReturnValue(true);
-    mockRuntime.getLockInfo.mockReturnValue(null);
-    mockRuntime.getInternalSessionId.mockReturnValue(undefined);
+    fakeRuntime.acquireLock.mockReturnValue(true);
+    fakeRuntime.getLockInfo.mockReturnValue(null);
+    fakeRuntime.getInternalSessionId.mockReturnValue(undefined);
     vi.mocked(isRelayEnabled).mockReturnValue(true);
 
     app = createApp();

@@ -1,46 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FakeAgentRuntime } from '@dorkos/test-utils';
 
-// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
-const mockRuntime = vi.hoisted(() => ({
-  type: 'claude-code',
-  ensureSession: vi.fn(),
-  hasSession: vi.fn(() => false),
-  updateSession: vi.fn(() => true),
-  sendMessage: vi.fn(),
-  approveTool: vi.fn(),
-  submitAnswers: vi.fn(),
-  listSessions: vi.fn().mockResolvedValue([]),
-  getSession: vi.fn().mockResolvedValue(null),
-  getMessageHistory: vi.fn().mockResolvedValue([]),
-  getSessionTasks: vi.fn().mockResolvedValue([]),
-  getSessionETag: vi.fn().mockResolvedValue(null),
-  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
-  watchSession: vi.fn(() => () => {}),
-  acquireLock: vi.fn().mockReturnValue(true),
-  releaseLock: vi.fn(),
-  isLocked: vi.fn(() => false),
-  getLockInfo: vi.fn(),
-  getSupportedModels: vi.fn().mockResolvedValue([]),
-  getCapabilities: vi.fn(() => ({
-    type: 'claude-code',
-    supportsPermissionModes: true,
-    supportsToolApproval: true,
-    supportsCostTracking: true,
-    supportsResume: true,
-    supportsMcp: true,
-    supportsQuestionPrompt: true,
-  })),
-  getInternalSessionId: vi.fn(),
-  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
-  checkSessionHealth: vi.fn(),
-}));
+// Declared at module scope so the vi.mock factory closure can reference it.
+// Initialized in beforeEach so each test starts with a fresh spy instance.
+let fakeRuntime: FakeAgentRuntime;
 
 vi.mock('../../services/core/runtime-registry.js', () => ({
   runtimeRegistry: {
-    getDefault: vi.fn(() => mockRuntime),
-    get: vi.fn(() => mockRuntime),
+    getDefault: vi.fn(() => fakeRuntime),
+    get: vi.fn(() => fakeRuntime),
     getAllCapabilities: vi.fn(() => ({})),
-    getDefaultType: vi.fn(() => 'claude-code'),
+    getDefaultType: vi.fn(() => 'fake'),
   },
 }));
 
@@ -59,12 +29,13 @@ const app = createApp();
 const SESSION_ID = '00000000-0000-4000-8000-000000000001';
 
 beforeEach(() => {
+  fakeRuntime = new FakeAgentRuntime();
   vi.clearAllMocks();
 });
 
 describe('POST /api/sessions/:id/submit-answers', () => {
   it('returns 200 when pending question exists', async () => {
-    mockRuntime.submitAnswers.mockReturnValue(true);
+    fakeRuntime.submitAnswers.mockReturnValue(true);
 
     const res = await request(app)
       .post(`/api/sessions/${SESSION_ID}/submit-answers`)
@@ -72,13 +43,13 @@ describe('POST /api/sessions/:id/submit-answers', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(mockRuntime.submitAnswers).toHaveBeenCalledWith(SESSION_ID, 'tc-1', {
+    expect(fakeRuntime.submitAnswers).toHaveBeenCalledWith(SESSION_ID, 'tc-1', {
       '0': 'Option A',
     });
   });
 
   it('returns 404 when no pending question exists', async () => {
-    mockRuntime.submitAnswers.mockReturnValue(false);
+    fakeRuntime.submitAnswers.mockReturnValue(false);
 
     const res = await request(app)
       .post(`/api/sessions/${SESSION_ID}/submit-answers`)
@@ -109,7 +80,7 @@ describe('POST /api/sessions/:id/submit-answers', () => {
 
 describe('POST /api/sessions/:id/approve', () => {
   it('returns 200 when pending approval exists', async () => {
-    mockRuntime.approveTool.mockReturnValue(true);
+    fakeRuntime.approveTool.mockReturnValue(true);
 
     const res = await request(app)
       .post(`/api/sessions/${SESSION_ID}/approve`)
@@ -117,11 +88,11 @@ describe('POST /api/sessions/:id/approve', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(mockRuntime.approveTool).toHaveBeenCalledWith(SESSION_ID, 'tc-1', true);
+    expect(fakeRuntime.approveTool).toHaveBeenCalledWith(SESSION_ID, 'tc-1', true);
   });
 
   it('returns 404 when no pending approval exists', async () => {
-    mockRuntime.approveTool.mockReturnValue(false);
+    fakeRuntime.approveTool.mockReturnValue(false);
 
     const res = await request(app)
       .post(`/api/sessions/${SESSION_ID}/approve`)
@@ -134,7 +105,7 @@ describe('POST /api/sessions/:id/approve', () => {
 
 describe('POST /api/sessions/:id/deny', () => {
   it('returns 200 when pending approval exists', async () => {
-    mockRuntime.approveTool.mockReturnValue(true);
+    fakeRuntime.approveTool.mockReturnValue(true);
 
     const res = await request(app)
       .post(`/api/sessions/${SESSION_ID}/deny`)
@@ -142,6 +113,6 @@ describe('POST /api/sessions/:id/deny', () => {
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ ok: true });
-    expect(mockRuntime.approveTool).toHaveBeenCalledWith(SESSION_ID, 'tc-1', false);
+    expect(fakeRuntime.approveTool).toHaveBeenCalledWith(SESSION_ID, 'tc-1', false);
   });
 });

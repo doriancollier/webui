@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { FakeAgentRuntime } from '@dorkos/test-utils';
 
 // Mock boundary before importing app
 vi.mock('../../lib/boundary.js', () => ({
@@ -16,47 +17,16 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
-// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
-const mockRuntime = vi.hoisted(() => ({
-  type: 'claude-code',
-  ensureSession: vi.fn(),
-  hasSession: vi.fn(() => false),
-  updateSession: vi.fn().mockReturnValue(true),
-  sendMessage: vi.fn(),
-  approveTool: vi.fn(),
-  submitAnswers: vi.fn(() => true),
-  listSessions: vi.fn().mockResolvedValue([]),
-  getSession: vi.fn().mockResolvedValue({ id: 'test-id', title: 'Test' }),
-  getMessageHistory: vi.fn().mockResolvedValue([]),
-  getSessionTasks: vi.fn().mockResolvedValue([]),
-  getSessionETag: vi.fn().mockResolvedValue(null),
-  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
-  watchSession: vi.fn(() => () => {}),
-  acquireLock: vi.fn().mockReturnValue(true),
-  releaseLock: vi.fn(),
-  isLocked: vi.fn(() => false),
-  getLockInfo: vi.fn(),
-  getSupportedModels: vi.fn().mockResolvedValue([]),
-  getCapabilities: vi.fn(() => ({
-    type: 'claude-code',
-    supportsPermissionModes: true,
-    supportsToolApproval: true,
-    supportsCostTracking: true,
-    supportsResume: true,
-    supportsMcp: true,
-    supportsQuestionPrompt: true,
-  })),
-  getInternalSessionId: vi.fn(),
-  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
-  checkSessionHealth: vi.fn(),
-}));
+// Declared at module scope so the vi.mock factory closure can reference it.
+// Initialized in beforeEach so each test starts with a fresh spy instance.
+let fakeRuntime: FakeAgentRuntime;
 
 vi.mock('../../services/core/runtime-registry.js', () => ({
   runtimeRegistry: {
-    getDefault: vi.fn(() => mockRuntime),
-    get: vi.fn(() => mockRuntime),
+    getDefault: vi.fn(() => fakeRuntime),
+    get: vi.fn(() => fakeRuntime),
     getAllCapabilities: vi.fn(() => ({})),
-    getDefaultType: vi.fn(() => 'claude-code'),
+    getDefaultType: vi.fn(() => 'fake'),
   },
 }));
 
@@ -78,6 +48,9 @@ const SESSION_ID = '00000000-0000-4000-8000-000000000001';
 
 describe('Sessions Routes — Boundary Validation', () => {
   beforeEach(() => {
+    fakeRuntime = new FakeAgentRuntime();
+    // Provide sensible defaults so boundary-unrelated middleware doesn't fail
+    fakeRuntime.getSession.mockResolvedValue({ id: 'test-id', title: 'Test', createdAt: '', updatedAt: '', permissionMode: 'default' });
     vi.clearAllMocks();
   });
 

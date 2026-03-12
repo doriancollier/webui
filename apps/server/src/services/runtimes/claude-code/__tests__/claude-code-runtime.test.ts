@@ -1,4 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { wrapSdkQuery, sdkSimpleText, sdkToolCall, sdkError } from './sdk-scenarios.js';
 
 // Hoist shared mock functions so the test and ClaudeCodeRuntime share the same
 // vi.fn() instances for context-builder and tool-filter.
@@ -73,14 +74,6 @@ vi.mock('../../../../lib/boundary.js', () => ({
   },
 }));
 
-/** Wrap an async generator with stub SDK query methods so the mock matches the real shape. */
-function mockQueryResult(gen: AsyncGenerator) {
-  return Object.assign(gen, {
-    supportedModels: vi.fn().mockResolvedValue([]),
-    setPermissionMode: vi.fn().mockResolvedValue(undefined),
-  });
-}
-
 describe('ClaudeCodeRuntime', () => {
   let agentManager: InstanceType<typeof import('../claude-code-runtime.js').ClaudeCodeRuntime>;
 
@@ -118,7 +111,7 @@ describe('ClaudeCodeRuntime', () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
-        mockQueryResult((async function* () {
+        wrapSdkQuery((async function* () {
           yield {
             type: 'system',
             subtype: 'init',
@@ -176,56 +169,7 @@ describe('ClaudeCodeRuntime', () => {
 
       // Mock SDK to yield an init message and a text delta
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
-        mockQueryResult((async function* () {
-          yield {
-            type: 'system',
-            subtype: 'init',
-            session_id: 'sdk-session-123',
-            tools: [],
-            mcp_servers: [],
-            model: 'test',
-            permissionMode: 'default',
-            slash_commands: [],
-            output_style: 'text',
-            skills: [],
-            plugins: [],
-            cwd: '/test',
-            apiKeySource: 'user',
-            uuid: 'uuid-1',
-          };
-          yield {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_delta',
-              index: 0,
-              delta: { type: 'text_delta', text: 'Hello world' },
-            },
-            parent_tool_use_id: null,
-            uuid: 'uuid-2',
-            session_id: 'sdk-session-123',
-          };
-          yield {
-            type: 'result',
-            subtype: 'success',
-            duration_ms: 100,
-            duration_api_ms: 80,
-            is_error: false,
-            num_turns: 1,
-            result: 'Hello world',
-            stop_reason: 'end_turn',
-            total_cost_usd: 0.001,
-            usage: {
-              input_tokens: 10,
-              output_tokens: 5,
-              cache_read_input_tokens: 0,
-              cache_creation_input_tokens: 0,
-            },
-            modelUsage: {},
-            permission_denials: [],
-            uuid: 'uuid-3',
-            session_id: 'sdk-session-123',
-          };
-        })())
+        wrapSdkQuery(sdkSimpleText('Hello world'))
       );
 
       agentManager.ensureSession('s1', { permissionMode: 'default' });
@@ -247,74 +191,7 @@ describe('ClaudeCodeRuntime', () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
-        mockQueryResult((async function* () {
-          yield {
-            type: 'system',
-            subtype: 'init',
-            session_id: 'sdk-session-456',
-            tools: [],
-            mcp_servers: [],
-            model: 'test',
-            permissionMode: 'default',
-            slash_commands: [],
-            output_style: 'text',
-            skills: [],
-            plugins: [],
-            cwd: '/test',
-            apiKeySource: 'user',
-            uuid: 'uuid-1',
-          };
-          yield {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_start',
-              index: 0,
-              content_block: { type: 'tool_use', id: 'tc-1', name: 'Read', input: {} },
-            },
-            parent_tool_use_id: null,
-            uuid: 'uuid-2',
-            session_id: 'sdk-session-456',
-          };
-          yield {
-            type: 'stream_event',
-            event: {
-              type: 'content_block_delta',
-              index: 0,
-              delta: { type: 'input_json_delta', partial_json: '{"file":"test.ts"}' },
-            },
-            parent_tool_use_id: null,
-            uuid: 'uuid-3',
-            session_id: 'sdk-session-456',
-          };
-          yield {
-            type: 'stream_event',
-            event: { type: 'content_block_stop', index: 0 },
-            parent_tool_use_id: null,
-            uuid: 'uuid-4',
-            session_id: 'sdk-session-456',
-          };
-          yield {
-            type: 'result',
-            subtype: 'success',
-            duration_ms: 100,
-            duration_api_ms: 80,
-            is_error: false,
-            num_turns: 1,
-            result: '',
-            stop_reason: 'end_turn',
-            total_cost_usd: 0.001,
-            usage: {
-              input_tokens: 10,
-              output_tokens: 5,
-              cache_read_input_tokens: 0,
-              cache_creation_input_tokens: 0,
-            },
-            modelUsage: {},
-            permission_denials: [],
-            uuid: 'uuid-5',
-            session_id: 'sdk-session-456',
-          };
-        })())
+        wrapSdkQuery(sdkToolCall('Read', { file: 'test.ts' }, ''))
       );
 
       agentManager.ensureSession('s1', { permissionMode: 'default' });
@@ -340,7 +217,7 @@ describe('ClaudeCodeRuntime', () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
-        mockQueryResult((async function* () {
+        wrapSdkQuery((async function* () {
           yield {
             type: 'system',
             subtype: 'init',
@@ -404,12 +281,12 @@ describe('ClaudeCodeRuntime', () => {
         callCount++;
         if (callCount === 1) {
           // First call: simulate a stale session resume failure
-          return mockQueryResult((async function* () {
+          return wrapSdkQuery((async function* () {
             throw new Error('Query closed before response received');
           })());
         }
         // Second call: succeed normally
-        return mockQueryResult((async function* () {
+        return wrapSdkQuery((async function* () {
           yield {
             type: 'system',
             subtype: 'init',
@@ -468,11 +345,11 @@ describe('ClaudeCodeRuntime', () => {
       (mockedQuery as ReturnType<typeof vi.fn>).mockImplementation(() => {
         callCount++;
         if (callCount === 1) {
-          return mockQueryResult((async function* () {
+          return wrapSdkQuery((async function* () {
             throw new Error('Claude Code process exited with code 1');
           })());
         }
-        return mockQueryResult((async function* () {
+        return wrapSdkQuery((async function* () {
           yield {
             type: 'system',
             subtype: 'init',
@@ -524,7 +401,7 @@ describe('ClaudeCodeRuntime', () => {
       (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
-        mockQueryResult((async function* () {
+        wrapSdkQuery((async function* () {
           yield {
             type: 'system',
             subtype: 'init',
@@ -583,7 +460,7 @@ describe('ClaudeCodeRuntime', () => {
       (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
 
       (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
-        mockQueryResult((async function* () {
+        wrapSdkQuery((async function* () {
           throw new Error('API key not found');
         })())
       );
@@ -696,42 +573,7 @@ describe('ClaudeCodeRuntime', () => {
   describe('sendMessage() tool filtering', () => {
     /** SDK mock that yields init + result (minimal successful flow). */
     function mockSuccessFlow() {
-      return mockQueryResult(
-        (async function* () {
-          yield {
-            type: 'system',
-            subtype: 'init',
-            session_id: 'tf-session',
-            tools: [],
-            mcp_servers: [],
-            model: 'test',
-            permissionMode: 'default',
-            slash_commands: [],
-            output_style: 'text',
-            skills: [],
-            plugins: [],
-            cwd: '/test',
-            apiKeySource: 'user',
-            uuid: 'uuid-tf-1',
-          };
-          yield {
-            type: 'result',
-            subtype: 'success',
-            duration_ms: 100,
-            duration_api_ms: 80,
-            is_error: false,
-            num_turns: 1,
-            result: '',
-            stop_reason: 'end_turn',
-            total_cost_usd: 0.001,
-            usage: { input_tokens: 10, output_tokens: 5 },
-            modelUsage: {},
-            permission_denials: [],
-            uuid: 'uuid-tf-2',
-            session_id: 'tf-session',
-          };
-        })()
-      );
+      return wrapSdkQuery(sdkSimpleText(''));
     }
 
     it('calls resolveToolConfig with manifest enabledToolGroups', async () => {

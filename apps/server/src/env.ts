@@ -19,6 +19,8 @@ const serverEnvSchema = z.object({
   // Feature flags (boolean after transform)
   DORKOS_PULSE_ENABLED: boolFlag,
   DORKOS_RELAY_ENABLED: boolFlag,
+  // Test mode — TestModeRuntime is registered instead of ClaudeCodeRuntime
+  DORKOS_TEST_RUNTIME: z.string().optional().transform(v => v === 'true'),
   // Tunnel (ngrok integration — all optional)
   TUNNEL_ENABLED: boolFlag,
   TUNNEL_PORT: z.coerce.number().int().min(1).max(65535).optional(),

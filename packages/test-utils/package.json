@@ -30,10 +30,13 @@
     "@dorkos/typescript-config": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "@testing-library/react": "^16.0.0",
+    "@types/express": "^5.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/supertest": "^6.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "supertest": "^7.2.2",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
   }

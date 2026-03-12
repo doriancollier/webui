@@ -133,9 +133,10 @@ export function CapabilitiesTab({ agent, onUpdate }: CapabilitiesTabProps) {
   const [nsValue, setNsValue] = useState(agent.namespace ?? '');
   const nsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Sync local state only when a different agent is loaded (not on every server confirmation)
   useEffect(() => {
     setNsValue(agent.namespace ?? '');
-  }, [agent.namespace]);
+  }, [agent.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNsChange = useCallback(
     (value: string) => {

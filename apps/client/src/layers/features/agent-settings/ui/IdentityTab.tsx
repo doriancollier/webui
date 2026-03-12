@@ -39,10 +39,10 @@ export function IdentityTab({ agent, projectPath, onUpdate }: IdentityTabProps) 
   const [nameValue, setNameValue] = useState(agent.name);
   const nameTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync local state when agent prop changes (e.g. after server response)
+  // Sync local state only when a different agent is loaded (not on every server confirmation)
   useEffect(() => {
     setNameValue(agent.name);
-  }, [agent.name]);
+  }, [agent.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNameChange = useCallback(
     (value: string) => {
@@ -71,7 +71,7 @@ export function IdentityTab({ agent, projectPath, onUpdate }: IdentityTabProps) 
 
   useEffect(() => {
     setDescValue(agent.description);
-  }, [agent.description]);
+  }, [agent.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDescChange = useCallback(
     (value: string) => {

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { StreamEvent } from '@dorkos/shared/types';
+import { FakeAgentRuntime } from '@dorkos/test-utils';
 
 // Mock relay-state before importing app
 vi.mock('../../services/relay/relay-state.js', () => ({
@@ -35,47 +36,16 @@ vi.mock('../../lib/logger.js', () => ({
   initLogger: vi.fn(),
 }));
 
-// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
-const mockRuntime = vi.hoisted(() => ({
-  type: 'claude-code',
-  ensureSession: vi.fn(),
-  hasSession: vi.fn(() => false),
-  updateSession: vi.fn(() => true),
-  sendMessage: vi.fn(),
-  approveTool: vi.fn(),
-  submitAnswers: vi.fn(() => true),
-  listSessions: vi.fn(),
-  getSession: vi.fn(),
-  getMessageHistory: vi.fn(),
-  getSessionTasks: vi.fn().mockResolvedValue([]),
-  getSessionETag: vi.fn().mockResolvedValue(null),
-  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
-  watchSession: vi.fn(() => () => {}),
-  acquireLock: vi.fn(),
-  releaseLock: vi.fn(),
-  isLocked: vi.fn(() => false),
-  getLockInfo: vi.fn(),
-  getSupportedModels: vi.fn().mockResolvedValue([]),
-  getCapabilities: vi.fn(() => ({
-    type: 'claude-code',
-    supportsPermissionModes: true,
-    supportsToolApproval: true,
-    supportsCostTracking: true,
-    supportsResume: true,
-    supportsMcp: true,
-    supportsQuestionPrompt: true,
-  })),
-  getInternalSessionId: vi.fn(),
-  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
-  checkSessionHealth: vi.fn(),
-}));
+// Declared at module scope so the vi.mock factory closure can reference it.
+// Initialized in beforeEach so each test starts with a fresh spy instance.
+let fakeRuntime: FakeAgentRuntime;
 
 vi.mock('../../services/core/runtime-registry.js', () => ({
   runtimeRegistry: {
-    getDefault: vi.fn(() => mockRuntime),
-    get: vi.fn(() => mockRuntime),
+    getDefault: vi.fn(() => fakeRuntime),
+    get: vi.fn(() => fakeRuntime),
     getAllCapabilities: vi.fn(() => ({})),
-    getDefaultType: vi.fn(() => 'claude-code'),
+    getDefaultType: vi.fn(() => 'fake'),
   },
 }));
 
@@ -117,10 +87,11 @@ describe('Sessions Routes — Relay Integration', () => {
   let mockRelayCore: ReturnType<typeof createMockRelayCore>;
 
   beforeEach(() => {
+    fakeRuntime = new FakeAgentRuntime();
     vi.clearAllMocks();
-    mockRuntime.acquireLock.mockReturnValue(true);
-    mockRuntime.getLockInfo.mockReturnValue(null);
-    mockRuntime.getInternalSessionId.mockReturnValue(undefined);
+    fakeRuntime.acquireLock.mockReturnValue(true);
+    fakeRuntime.getLockInfo.mockReturnValue(null);
+    fakeRuntime.getInternalSessionId.mockReturnValue(undefined);
     vi.mocked(isRelayEnabled).mockReturnValue(false);
 
     app = createApp();
@@ -199,19 +170,19 @@ describe('Sessions Routes — Relay Integration', () => {
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
-      expect(mockRuntime.acquireLock).toHaveBeenCalledWith(
+      expect(fakeRuntime.acquireLock).toHaveBeenCalledWith(
         S1,
         'client-42',
         expect.anything(),
       );
-      expect(mockRuntime.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
+      expect(fakeRuntime.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
     });
 
     it('returns 409 when session is locked even in Relay path', async () => {
       vi.mocked(isRelayEnabled).mockReturnValue(true);
       app.locals.relayCore = mockRelayCore;
-      mockRuntime.acquireLock.mockReturnValue(false);
-      mockRuntime.getLockInfo.mockReturnValue({
+      fakeRuntime.acquireLock.mockReturnValue(false);
+      fakeRuntime.getLockInfo.mockReturnValue({
         clientId: 'other-client',
         acquiredAt: Date.now() - 60000,
       });
@@ -250,7 +221,7 @@ describe('Sessions Routes — Relay Integration', () => {
         .set('X-Client-Id', 'client-42')
         .send({ content: 'hello' });
 
-      expect(mockRuntime.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
+      expect(fakeRuntime.releaseLock).toHaveBeenCalledWith(S1, 'client-42');
     });
 
     it('ignores duplicate endpoint registration errors', async () => {
@@ -334,12 +305,12 @@ describe('Sessions Routes — Relay Integration', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      mockRuntime.sendMessage.mockImplementation(async function* () {
+      fakeRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      mockRuntime.getInternalSessionId.mockReturnValue(S1);
+      fakeRuntime.getInternalSessionId.mockReturnValue(S1);
 
       const res = await request(app)
         .post(`/api/sessions/${S1}/messages`)
@@ -372,12 +343,12 @@ describe('Sessions Routes — Relay Integration', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      mockRuntime.sendMessage.mockImplementation(async function* () {
+      fakeRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      mockRuntime.getInternalSessionId.mockReturnValue(S1);
+      fakeRuntime.getInternalSessionId.mockReturnValue(S1);
 
       const res = await request(app)
         .post(`/api/sessions/${S1}/messages`)

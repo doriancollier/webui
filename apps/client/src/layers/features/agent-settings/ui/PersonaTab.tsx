@@ -22,10 +22,10 @@ export function PersonaTab({ agent, onUpdate }: PersonaTabProps) {
   const [personaValue, setPersonaValue] = useState(agentAny.persona ?? '');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Sync local state when agent prop changes
+  // Sync local state only when a different agent is loaded (not on every server confirmation)
   useEffect(() => {
     setPersonaValue(agentAny.persona ?? '');
-  }, [agentAny.persona]);
+  }, [agent.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Cleanup timer on unmount
   useEffect(() => {

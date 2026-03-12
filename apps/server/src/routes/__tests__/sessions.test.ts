@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import type { StreamEvent } from '@dorkos/shared/types';
+import { FakeAgentRuntime } from '@dorkos/test-utils';
 
 // Mock boundary before importing app
 vi.mock('../../lib/boundary.js', () => ({
@@ -17,47 +18,17 @@ vi.mock('../../lib/boundary.js', () => ({
   },
 }));
 
-// Mock runtime that satisfies the AgentRuntime interface methods used by sessions.ts
-const mockRuntime = {
-  type: 'claude-code',
-  ensureSession: vi.fn(),
-  hasSession: vi.fn(() => false),
-  updateSession: vi.fn(() => true),
-  sendMessage: vi.fn(),
-  approveTool: vi.fn(),
-  submitAnswers: vi.fn(() => true),
-  listSessions: vi.fn(),
-  getSession: vi.fn(),
-  getMessageHistory: vi.fn(),
-  getSessionTasks: vi.fn().mockResolvedValue([]),
-  getSessionETag: vi.fn().mockResolvedValue(null),
-  readFromOffset: vi.fn().mockResolvedValue({ content: '', newOffset: 0 }),
-  watchSession: vi.fn(() => () => {}),
-  acquireLock: vi.fn(),
-  releaseLock: vi.fn(),
-  isLocked: vi.fn(() => false),
-  getLockInfo: vi.fn(),
-  getSupportedModels: vi.fn().mockResolvedValue([]),
-  getCapabilities: vi.fn(() => ({
-    type: 'claude-code',
-    supportsPermissionModes: true,
-    supportsToolApproval: true,
-    supportsCostTracking: true,
-    supportsResume: true,
-    supportsMcp: true,
-    supportsQuestionPrompt: true,
-  })),
-  getInternalSessionId: vi.fn(),
-  getCommands: vi.fn().mockResolvedValue({ commands: [], lastScanned: '' }),
-  checkSessionHealth: vi.fn(),
-};
+// fakeRuntime is declared at module scope so both the vi.mock factory and the
+// test body share the same instance. vi.hoisted() cannot reference the imported
+// FakeAgentRuntime because hoisting runs before ESM imports resolve.
+let fakeRuntime: FakeAgentRuntime;
 
 vi.mock('../../services/core/runtime-registry.js', () => ({
   runtimeRegistry: {
-    getDefault: vi.fn(() => mockRuntime),
-    get: vi.fn(() => mockRuntime),
+    getDefault: vi.fn(() => fakeRuntime),
+    get: vi.fn(() => fakeRuntime),
     getAllCapabilities: vi.fn(() => ({})),
-    getDefaultType: vi.fn(() => 'claude-code'),
+    getDefaultType: vi.fn(() => 'fake'),
   },
 }));
 
@@ -84,16 +55,17 @@ const S1 = '00000000-0000-4000-8000-000000000001';
 
 describe('Sessions Routes', () => {
   beforeEach(() => {
+    fakeRuntime = new FakeAgentRuntime();
     vi.clearAllMocks();
     // Default: return empty sessions list
-    mockRuntime.listSessions.mockResolvedValue([]);
-    mockRuntime.getSession.mockResolvedValue(null);
-    mockRuntime.getSessionETag.mockResolvedValue(null);
-    mockRuntime.getSessionTasks.mockResolvedValue([]);
+    fakeRuntime.listSessions.mockResolvedValue([]);
+    fakeRuntime.getSession.mockResolvedValue(null);
+    fakeRuntime.getSessionETag.mockResolvedValue(null);
+    fakeRuntime.getSessionTasks.mockResolvedValue([]);
     // Default: allow lock acquisition
-    mockRuntime.acquireLock.mockReturnValue(true);
-    mockRuntime.getLockInfo.mockReturnValue(null);
-    mockRuntime.getInternalSessionId.mockReturnValue(undefined);
+    fakeRuntime.acquireLock.mockReturnValue(true);
+    fakeRuntime.getLockInfo.mockReturnValue(null);
+    fakeRuntime.getInternalSessionId.mockReturnValue(undefined);
   });
 
   // ---- GET /api/sessions ----
@@ -103,7 +75,7 @@ describe('Sessions Routes', () => {
       const res = await request(app).get('/api/sessions');
       expect(res.status).toBe(200);
       expect(res.body).toEqual([]);
-      expect(mockRuntime.listSessions).toHaveBeenCalled();
+      expect(fakeRuntime.listSessions).toHaveBeenCalled();
     });
 
     it('returns sessions from runtime', async () => {
@@ -123,7 +95,7 @@ describe('Sessions Routes', () => {
           permissionMode: 'bypassPermissions' as const,
         },
       ];
-      mockRuntime.listSessions.mockResolvedValue(sessions);
+      fakeRuntime.listSessions.mockResolvedValue(sessions);
 
       const res = await request(app).get('/api/sessions');
       expect(res.status).toBe(200);
@@ -142,7 +114,7 @@ describe('Sessions Routes', () => {
         updatedAt: '2024-01-01',
         permissionMode: 'default' as const,
       };
-      mockRuntime.getSession.mockResolvedValue(session);
+      fakeRuntime.getSession.mockResolvedValue(session);
 
       const res = await request(app).get(`/api/sessions/${S1}`);
       expect(res.status).toBe(200);
@@ -179,12 +151,12 @@ describe('Sessions Routes', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      mockRuntime.sendMessage.mockImplementation(async function* () {
+      fakeRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      mockRuntime.getInternalSessionId.mockReturnValue(S1);
+      fakeRuntime.getInternalSessionId.mockReturnValue(S1);
 
       const res = await request(app)
         .post(`/api/sessions/${S1}/messages`)
@@ -211,7 +183,7 @@ describe('Sessions Routes', () => {
     });
 
     it('sends error event on runtime failure', async () => {
-      mockRuntime.sendMessage.mockImplementation(async function* () {
+      fakeRuntime.sendMessage.mockImplementation(async function* () {
         throw new Error('SDK failure');
       });
 
@@ -241,12 +213,12 @@ describe('Sessions Routes', () => {
         { type: 'done', data: { sessionId: S1 } },
       ];
 
-      mockRuntime.sendMessage.mockImplementation(async function* () {
+      fakeRuntime.sendMessage.mockImplementation(async function* () {
         for (const event of events) {
           yield event;
         }
       });
-      mockRuntime.getInternalSessionId.mockReturnValue(S1);
+      fakeRuntime.getInternalSessionId.mockReturnValue(S1);
 
       await request(app)
         .post(`/api/sessions/${S1}/messages`)
@@ -262,17 +234,17 @@ describe('Sessions Routes', () => {
           });
         });
 
-      expect(mockRuntime.acquireLock).toHaveBeenCalledWith(
+      expect(fakeRuntime.acquireLock).toHaveBeenCalledWith(
         S1,
         expect.any(String),
         expect.anything()
       );
-      expect(mockRuntime.releaseLock).toHaveBeenCalledWith(S1, expect.any(String));
+      expect(fakeRuntime.releaseLock).toHaveBeenCalledWith(S1, expect.any(String));
     });
 
     it('returns 409 when session is locked by another client', async () => {
-      mockRuntime.acquireLock.mockReturnValue(false);
-      mockRuntime.getLockInfo.mockReturnValue({
+      fakeRuntime.acquireLock.mockReturnValue(false);
+      fakeRuntime.getLockInfo.mockReturnValue({
         clientId: 'other-client',
         acquiredAt: Date.now() - 60000,
       });
@@ -289,7 +261,7 @@ describe('Sessions Routes', () => {
     });
 
     it('releases lock even when streaming errors', async () => {
-      mockRuntime.sendMessage.mockImplementation(async function* () {
+      fakeRuntime.sendMessage.mockImplementation(async function* () {
         throw new Error('SDK failure');
       });
 
@@ -307,8 +279,8 @@ describe('Sessions Routes', () => {
           });
         });
 
-      expect(mockRuntime.acquireLock).toHaveBeenCalled();
-      expect(mockRuntime.releaseLock).toHaveBeenCalled();
+      expect(fakeRuntime.acquireLock).toHaveBeenCalled();
+      expect(fakeRuntime.releaseLock).toHaveBeenCalled();
     });
   });
 
@@ -316,17 +288,17 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions/:id/approve', () => {
     it('approves pending tool call', async () => {
-      mockRuntime.approveTool.mockReturnValue(true);
+      fakeRuntime.approveTool.mockReturnValue(true);
 
       const res = await request(app).post(`/api/sessions/${S1}/approve`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
-      expect(mockRuntime.approveTool).toHaveBeenCalledWith(S1, 'tc1', true);
+      expect(fakeRuntime.approveTool).toHaveBeenCalledWith(S1, 'tc1', true);
     });
 
     it('returns 404 when no pending approval', async () => {
-      mockRuntime.approveTool.mockReturnValue(false);
+      fakeRuntime.approveTool.mockReturnValue(false);
 
       const res = await request(app).post(`/api/sessions/${S1}/approve`).send({ toolCallId: 'tc1' });
 
@@ -339,17 +311,17 @@ describe('Sessions Routes', () => {
 
   describe('POST /api/sessions/:id/deny', () => {
     it('denies pending tool call', async () => {
-      mockRuntime.approveTool.mockReturnValue(true);
+      fakeRuntime.approveTool.mockReturnValue(true);
 
       const res = await request(app).post(`/api/sessions/${S1}/deny`).send({ toolCallId: 'tc1' });
 
       expect(res.status).toBe(200);
       expect(res.body).toEqual({ ok: true });
-      expect(mockRuntime.approveTool).toHaveBeenCalledWith(S1, 'tc1', false);
+      expect(fakeRuntime.approveTool).toHaveBeenCalledWith(S1, 'tc1', false);
     });
 
     it('returns 404 when no pending approval', async () => {
-      mockRuntime.approveTool.mockReturnValue(false);
+      fakeRuntime.approveTool.mockReturnValue(false);
 
       const res = await request(app).post(`/api/sessions/${S1}/deny`).send({ toolCallId: 'tc1' });
 
@@ -385,7 +357,7 @@ describe('Sessions Routes', () => {
     }
 
     it('sets SSE headers correctly', async () => {
-      mockRuntime.watchSession.mockImplementation(() => () => {});
+      fakeRuntime.watchSession.mockImplementation(() => () => {});
 
       const res = await sseRequest(`/api/sessions/${S1}/stream`);
 
@@ -396,12 +368,12 @@ describe('Sessions Routes', () => {
     });
 
     it('calls watchSession on the runtime', async () => {
-      mockRuntime.watchSession.mockImplementation(() => () => {});
+      fakeRuntime.watchSession.mockImplementation(() => () => {});
 
       await sseRequest(`/api/sessions/${S1}/stream`);
 
-      expect(mockRuntime.watchSession).toHaveBeenCalled();
-      expect(mockRuntime.watchSession).toHaveBeenCalledWith(
+      expect(fakeRuntime.watchSession).toHaveBeenCalled();
+      expect(fakeRuntime.watchSession).toHaveBeenCalledWith(
         S1,
         expect.any(String),
         expect.any(Function),
@@ -411,13 +383,13 @@ describe('Sessions Routes', () => {
 
     it('translates agent-ID to internal session ID before calling watchSession', async () => {
       const INTERNAL_ID = '00000000-0000-4000-8000-000000000099';
-      mockRuntime.getInternalSessionId.mockReturnValue(INTERNAL_ID);
-      mockRuntime.watchSession.mockImplementation(() => () => {});
+      fakeRuntime.getInternalSessionId.mockReturnValue(INTERNAL_ID);
+      fakeRuntime.watchSession.mockImplementation(() => () => {});
 
       await sseRequest(`/api/sessions/${S1}/stream`);
 
       // watchSession must receive the internal session ID, not the raw agent ID from the URL
-      expect(mockRuntime.watchSession).toHaveBeenCalledWith(
+      expect(fakeRuntime.watchSession).toHaveBeenCalledWith(
         INTERNAL_ID,
         expect.any(String),
         expect.any(Function),
@@ -426,12 +398,12 @@ describe('Sessions Routes', () => {
     });
 
     it('falls back to original session ID when no internal mapping exists', async () => {
-      mockRuntime.getInternalSessionId.mockReturnValue(undefined);
-      mockRuntime.watchSession.mockImplementation(() => () => {});
+      fakeRuntime.getInternalSessionId.mockReturnValue(undefined);
+      fakeRuntime.watchSession.mockImplementation(() => () => {});
 
       await sseRequest(`/api/sessions/${S1}/stream`);
 
-      expect(mockRuntime.watchSession).toHaveBeenCalledWith(
+      expect(fakeRuntime.watchSession).toHaveBeenCalledWith(
         S1,
         expect.any(String),
         expect.any(Function),
@@ -444,20 +416,20 @@ describe('Sessions Routes', () => {
 
   describe('session ID translation', () => {
     it('GET /messages uses internal session ID when available', async () => {
-      mockRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-123');
-      mockRuntime.getMessageHistory.mockResolvedValue([]);
+      fakeRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-123');
+      fakeRuntime.getMessageHistory.mockResolvedValue([]);
 
       await request(app).get(`/api/sessions/${S1}/messages`);
 
-      expect(mockRuntime.getInternalSessionId).toHaveBeenCalledWith(S1);
-      expect(mockRuntime.getMessageHistory).toHaveBeenCalledWith(
+      expect(fakeRuntime.getInternalSessionId).toHaveBeenCalledWith(S1);
+      expect(fakeRuntime.getMessageHistory).toHaveBeenCalledWith(
         expect.any(String),
         'sdk-uuid-123'
       );
     });
 
     it('returns 500 when getMessageHistory throws', async () => {
-      mockRuntime.getMessageHistory.mockRejectedValueOnce(new Error('I/O error'));
+      fakeRuntime.getMessageHistory.mockRejectedValueOnce(new Error('I/O error'));
 
       const res = await request(app)
         .get(`/api/sessions/${S1}/messages`)
@@ -468,20 +440,20 @@ describe('Sessions Routes', () => {
     });
 
     it('GET /messages falls back to URL session ID when not in runtime', async () => {
-      mockRuntime.getInternalSessionId.mockReturnValue(undefined);
-      mockRuntime.getMessageHistory.mockResolvedValue([]);
+      fakeRuntime.getInternalSessionId.mockReturnValue(undefined);
+      fakeRuntime.getMessageHistory.mockResolvedValue([]);
 
       await request(app).get(`/api/sessions/${S1}/messages`);
 
-      expect(mockRuntime.getMessageHistory).toHaveBeenCalledWith(
+      expect(fakeRuntime.getMessageHistory).toHaveBeenCalledWith(
         expect.any(String),
         S1
       );
     });
 
     it('GET /:id uses internal session ID for metadata lookup', async () => {
-      mockRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-456');
-      mockRuntime.getSession.mockResolvedValue({
+      fakeRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-456');
+      fakeRuntime.getSession.mockResolvedValue({
         id: 'sdk-uuid-456',
         title: 'Test',
         createdAt: '2026-01-01',
@@ -492,18 +464,18 @@ describe('Sessions Routes', () => {
       const res = await request(app).get(`/api/sessions/${S1}`);
 
       expect(res.status).toBe(200);
-      expect(mockRuntime.getSession).toHaveBeenCalledWith(
+      expect(fakeRuntime.getSession).toHaveBeenCalledWith(
         expect.any(String),
         'sdk-uuid-456'
       );
     });
 
     it('GET /:id/tasks uses internal session ID', async () => {
-      mockRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-789');
+      fakeRuntime.getInternalSessionId.mockReturnValue('sdk-uuid-789');
 
       await request(app).get(`/api/sessions/${S1}/tasks`);
 
-      expect(mockRuntime.getSessionTasks).toHaveBeenCalledWith(
+      expect(fakeRuntime.getSessionTasks).toHaveBeenCalledWith(
         expect.any(String),
         'sdk-uuid-789'
       );

@@ -94,7 +94,11 @@ function StatusLineRoot({ sessionId: _sessionId, isStreaming: _isStreaming, chil
           >
             <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 px-1 pt-2 text-xs whitespace-nowrap sm:justify-start">
               <AnimatePresence initial={false} mode="popLayout">
-                {children}
+                {React.Children.map(children, (child) => {
+                  if (!React.isValidElement(child)) return child;
+                  const itemKey = (child.props as { itemKey?: string }).itemKey;
+                  return itemKey ? React.cloneElement(child, { key: itemKey }) : child;
+                })}
               </AnimatePresence>
             </div>
           </motion.div>

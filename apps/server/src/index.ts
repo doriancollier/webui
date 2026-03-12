@@ -80,10 +80,16 @@ async function start() {
   const resolvedBoundary = await initBoundary(boundaryConfig);
   logger.info(`[Boundary] Directory boundary: ${resolvedBoundary}`);
 
-  // --- Create ClaudeCodeRuntime and register in RuntimeRegistry ---
-  claudeRuntime = new ClaudeCodeRuntime(env.DORKOS_DEFAULT_CWD);
-  runtimeRegistry.register(claudeRuntime);
-  logger.info('[Runtime] ClaudeCodeRuntime registered as default');
+  // --- Register runtime: TestModeRuntime in test mode, ClaudeCodeRuntime otherwise ---
+  if (env.DORKOS_TEST_RUNTIME) {
+    const { TestModeRuntime } = await import('./services/runtimes/test-mode/test-mode-runtime.js');
+    runtimeRegistry.register(new TestModeRuntime());
+    logger.info('[TestMode] TestModeRuntime registered — no real Claude API calls will be made');
+  } else {
+    claudeRuntime = new ClaudeCodeRuntime(env.DORKOS_DEFAULT_CWD);
+    runtimeRegistry.register(claudeRuntime);
+    logger.info('[Runtime] ClaudeCodeRuntime registered as default');
+  }
 
   // Initialize Pulse scheduler if enabled
   const schedulerConfig = configManager.get('scheduler');
@@ -148,7 +154,10 @@ async function start() {
     logger.info('[Mesh] MeshCore initialized');
 
     // Provide MeshCore to runtime for per-session manifest lookup and peer agents context
-    claudeRuntime.setMeshCore(meshCore);
+    // Only ClaudeCodeRuntime exposes setMeshCore — skip in test mode.
+    if (claudeRuntime) {
+      claudeRuntime.setMeshCore(meshCore);
+    }
 
     // Run startup reconciliation (non-fatal)
     try {
@@ -169,7 +178,8 @@ async function start() {
 
   // Phase C: adapter manager — now meshCore is available for CWD resolution.
   // Must run after meshCore init so buildContext() can call meshCore.getProjectPath().
-  if (relayEnabled && relayCore && adapterRegistry && traceStore) {
+  // AdapterManager requires ClaudeCodeRuntime (agentManager) — skipped in test mode.
+  if (relayEnabled && relayCore && adapterRegistry && traceStore && claudeRuntime) {
     try {
       const adapterConfigPath = path.join(dorkHome, 'relay', 'adapters.json');
       adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
@@ -199,30 +209,32 @@ async function start() {
     });
   }
 
-  // Register MCP tool server factory — creates fresh instances per query() call
-  // to avoid "Already connected to a transport" errors from reused Protocol objects.
-  const mcpToolDeps = {
-    transcriptReader: claudeRuntime.getTranscriptReader(),
-    defaultCwd: env.DORKOS_DEFAULT_CWD ?? process.cwd(),
-    ...(pulseStore && { pulseStore }),
-    ...(relayCore && { relayCore }),
-    ...(adapterManager && { adapterManager }),
-    ...(adapterManager && { bindingStore: adapterManager.getBindingStore() }),
-    ...(traceStore && { traceStore }),
-    ...(meshCore && { meshCore }),
-  };
-  claudeRuntime.setMcpServerFactory(() => ({ dorkos: createDorkOsToolServer(mcpToolDeps) }));
-
   const app = createApp();
 
-  // Mount external MCP server at /mcp (protocol endpoint, not REST API)
-  // Stateless mode: each POST creates a fresh McpServer + transport (per SDK docs).
-  app.use('/mcp', validateMcpOrigin, mcpApiKeyAuth, createMcpRouter(() => createExternalMcpServer(mcpToolDeps)));
-  const mcpAuthMode = env.MCP_API_KEY ? 'auth: API key' : 'auth: none';
-  logger.info(`[MCP] External MCP server mounted at /mcp (stateless, ${mcpAuthMode})`);
+  // Register MCP tool server factory — only available with ClaudeCodeRuntime.
+  // In test mode claudeRuntime is null so the MCP server and /mcp route are skipped.
+  if (claudeRuntime) {
+    const mcpToolDeps = {
+      transcriptReader: claudeRuntime.getTranscriptReader(),
+      defaultCwd: env.DORKOS_DEFAULT_CWD ?? process.cwd(),
+      ...(pulseStore && { pulseStore }),
+      ...(relayCore && { relayCore }),
+      ...(adapterManager && { adapterManager }),
+      ...(adapterManager && { bindingStore: adapterManager.getBindingStore() }),
+      ...(traceStore && { traceStore }),
+      ...(meshCore && { meshCore }),
+    };
+    claudeRuntime.setMcpServerFactory(() => ({ dorkos: createDorkOsToolServer(mcpToolDeps) }));
 
-  // Mount Pulse routes if enabled
-  if (pulseEnabled && pulseStore) {
+    const mcpAuthMode = env.MCP_API_KEY ? 'auth: API key' : 'auth: none';
+    // Mount external MCP server at /mcp (protocol endpoint, not REST API)
+    // Stateless mode: each POST creates a fresh McpServer + transport (per SDK docs).
+    app.use('/mcp', validateMcpOrigin, mcpApiKeyAuth, createMcpRouter(() => createExternalMcpServer(mcpToolDeps)));
+    logger.info(`[MCP] External MCP server mounted at /mcp (stateless, ${mcpAuthMode})`);
+  }
+
+  // Mount Pulse routes if enabled — Pulse requires ClaudeCodeRuntime as SchedulerAgentManager.
+  if (pulseEnabled && pulseStore && claudeRuntime) {
     schedulerService = new SchedulerService(pulseStore, claudeRuntime, {
       maxConcurrentRuns: schedulerConfig.maxConcurrentRuns,
       retentionCount: schedulerConfig.retentionCount,
@@ -282,8 +294,8 @@ async function start() {
   // Finalize app: API 404 catch-all, error handler, and SPA serving
   finalizeApp(app);
 
-  // SessionBroadcaster is owned by the runtime — configure relay injection
-  if (relayCore) {
+  // SessionBroadcaster is owned by ClaudeCodeRuntime — configure relay injection when available.
+  if (relayCore && claudeRuntime) {
     claudeRuntime.getSessionBroadcaster().setRelay(relayCore);
   }
 
@@ -298,13 +310,15 @@ async function start() {
     logger.info('[Pulse] Scheduler started');
   }
 
-  // Run session health check periodically
-  healthCheckInterval = setInterval(
-    () => {
-      claudeRuntime!.checkSessionHealth();
-    },
-    INTERVALS.HEALTH_CHECK_MS
-  );
+  // Run session health check periodically — only ClaudeCodeRuntime needs this.
+  if (claudeRuntime) {
+    healthCheckInterval = setInterval(
+      () => {
+        claudeRuntime!.checkSessionHealth();
+      },
+      INTERVALS.HEALTH_CHECK_MS
+    );
+  }
 
   // Start ngrok tunnel if enabled
   if (env.TUNNEL_ENABLED) {

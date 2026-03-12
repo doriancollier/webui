@@ -18,6 +18,7 @@ import { generateOpenAPISpec } from './services/core/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
 import { tunnelManager } from './services/core/tunnel-manager.js';
+import { testControlRouter } from './routes/test-control.js';
 import { env } from './env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -86,6 +87,13 @@ export function createApp() {
   app.use('/api/models', modelRoutes);
   app.use('/api/capabilities', capabilitiesRoutes);
   app.use('/api/uploads', uploadRoutes);
+
+  // Test control routes — only mounted when DORKOS_TEST_RUNTIME=true.
+  // The router is always imported (safe: no vitest/SDK deps), but routes are
+  // only reachable when the env var is set, so production is unaffected.
+  if (env.DORKOS_TEST_RUNTIME) {
+    app.use('/api/test', testControlRouter);
+  }
 
   // OpenAPI spec + interactive docs
   const spec = generateOpenAPISpec();
