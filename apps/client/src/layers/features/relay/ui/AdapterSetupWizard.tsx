@@ -11,16 +11,33 @@ import {
 import { Button } from '@/layers/shared/ui/button';
 import { Input } from '@/layers/shared/ui/input';
 import { Label } from '@/layers/shared/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/layers/shared/ui/select';
 import { Loader2, CheckCircle2, XCircle, AlertTriangle, Info } from 'lucide-react';
+import { toast } from 'sonner';
 import { ConfigFieldGroup } from './ConfigFieldInput';
 import {
   useAddAdapter,
   useUpdateAdapterConfig,
   useTestAdapterConnection,
 } from '@/layers/entities/relay';
-import type { AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-schemas';
+import { useRegisteredAgents } from '@/layers/entities/mesh';
+import { useCreateBinding } from '@/layers/entities/binding';
+import type { AdapterManifest, CatalogInstance, SessionStrategy } from '@dorkos/shared/relay-schemas';
 
-type WizardStep = 'configure' | 'test' | 'confirm';
+type WizardStep = 'configure' | 'test' | 'confirm' | 'bind';
+
+/** Options for the session strategy selector. */
+const SESSION_STRATEGIES: { value: SessionStrategy; label: string }[] = [
+  { value: 'per-chat', label: 'Per Chat' },
+  { value: 'per-user', label: 'Per User' },
+  { value: 'stateless', label: 'Stateless' },
+];
 
 interface AdapterSetupWizardProps {
   open: boolean;
@@ -87,7 +104,7 @@ function generateDefaultId(manifest: AdapterManifest): string {
   return manifest.type;
 }
 
-/** AdapterSetupWizard provides a three-step dialog for adding or editing adapter instances. */
+/** AdapterSetupWizard provides a four-step dialog for adding or editing adapter instances. */
 export function AdapterSetupWizard({
   open,
   onOpenChange,
@@ -99,6 +116,9 @@ export function AdapterSetupWizard({
   const [adapterId, setAdapterId] = useState(() =>
     existingInstance?.id ?? generateDefaultId(manifest),
   );
+  const [label, setLabel] = useState(() =>
+    (existingInstance?.config?.label as string | undefined) ?? '',
+  );
   const [values, setValues] = useState<Record<string, unknown>>(() =>
     initializeValues(manifest, existingInstance?.config),
   );
@@ -106,9 +126,18 @@ export function AdapterSetupWizard({
   const [setupStepIndex, setSetupStepIndex] = useState(0);
   const [idError, setIdError] = useState('');
 
+  // Bind step state — tracks the newly created adapter ID and binding config.
+  const [createdAdapterId, setCreatedAdapterId] = useState('');
+  const [bindAgentId, setBindAgentId] = useState('');
+  const [bindStrategy, setBindStrategy] = useState<SessionStrategy>('per-chat');
+
   const addAdapter = useAddAdapter();
   const updateConfig = useUpdateAdapterConfig();
   const testConnection = useTestAdapterConnection();
+  const createBinding = useCreateBinding();
+  const { data: agentsData } = useRegisteredAgents();
+
+  const agentOptions = agentsData?.agents ?? [];
 
   const hasSetupSteps = manifest.setupSteps && manifest.setupSteps.length > 0;
 
@@ -174,14 +203,24 @@ export function AdapterSetupWizard({
       }
       setStep('test');
       // Auto-start the connection test.
-      testConnection.mutate({
-        type: manifest.type,
-        config: unflattenConfig(values as Record<string, unknown>),
-      });
+      testConnection.mutate(
+        {
+          type: manifest.type,
+          config: unflattenConfig(values as Record<string, unknown>),
+        },
+        {
+          onSuccess: (result) => {
+            // Auto-populate label from Telegram bot username when user hasn't set one.
+            if (result.botUsername && !label) {
+              setLabel(`@${result.botUsername}`);
+            }
+          },
+        },
+      );
     } else if (step === 'test') {
       setStep('confirm');
     }
-  }, [step, hasSetupSteps, manifest, visibleFields, setupStepIndex, validate, values, testConnection]);
+  }, [step, hasSetupSteps, manifest, visibleFields, setupStepIndex, validate, values, testConnection, label]);
 
   const handleBack = useCallback(() => {
     if (step === 'test') {
@@ -189,25 +228,38 @@ export function AdapterSetupWizard({
       testConnection.reset();
     } else if (step === 'confirm') {
       setStep('test');
+    } else if (step === 'bind') {
+      // Back from bind step closes the wizard — the adapter was already saved.
+      onOpenChange(false);
     } else if (step === 'configure' && hasSetupSteps && setupStepIndex > 0) {
       setSetupStepIndex((i) => i - 1);
     }
-  }, [step, hasSetupSteps, setupStepIndex, testConnection]);
+  }, [step, hasSetupSteps, setupStepIndex, testConnection, onOpenChange]);
 
   const handleSave = useCallback(() => {
-    const config = unflattenConfig(values as Record<string, unknown>);
+    const adapterConfig = unflattenConfig(values as Record<string, unknown>);
+    // Include label in config so the server can extract and store it.
+    const configWithLabel = label ? { ...adapterConfig, label } : adapterConfig;
     if (isEditMode && existingInstance) {
       updateConfig.mutate(
-        { id: existingInstance.id, config },
+        { id: existingInstance.id, config: configWithLabel },
         {
           onSuccess: () => onOpenChange(false),
         },
       );
     } else {
       addAdapter.mutate(
-        { type: manifest.type, id: adapterId, config },
+        { type: manifest.type, id: adapterId, config: configWithLabel },
         {
-          onSuccess: () => onOpenChange(false),
+          onSuccess: () => {
+            // Fire success toast then advance to the bind step.
+            const displayLabel = label || adapterId;
+            toast.success(`${manifest.displayName} adapter added`, {
+              description: displayLabel ? `"${displayLabel}" is ready to use.` : undefined,
+            });
+            setCreatedAdapterId(adapterId);
+            setStep('bind');
+          },
           onError: (error) => {
             // Handle duplicate ID by sending user back to configure step.
             if (error.message?.includes('duplicate') || error.message?.includes('exists')) {
@@ -219,7 +271,27 @@ export function AdapterSetupWizard({
         },
       );
     }
-  }, [values, isEditMode, existingInstance, updateConfig, addAdapter, manifest.type, adapterId, onOpenChange]);
+  }, [values, isEditMode, existingInstance, updateConfig, addAdapter, manifest, adapterId, label, onOpenChange]);
+
+  const handleBind = useCallback(() => {
+    if (!bindAgentId) return;
+    createBinding.mutate(
+      {
+        adapterId: createdAdapterId,
+        agentId: bindAgentId,
+        projectPath: '',
+        sessionStrategy: bindStrategy,
+        label: '',
+      },
+      {
+        onSuccess: () => onOpenChange(false),
+      },
+    );
+  }, [bindAgentId, createdAdapterId, bindStrategy, createBinding, onOpenChange]);
+
+  const handleSkipBind = useCallback(() => {
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   const handleOpenChange = useCallback(
     (nextOpen: boolean) => {
@@ -229,6 +301,10 @@ export function AdapterSetupWizard({
         setSetupStepIndex(0);
         setErrors({});
         setIdError('');
+        setLabel('');
+        setCreatedAdapterId('');
+        setBindAgentId('');
+        setBindStrategy('per-chat');
         testConnection.reset();
       }
       onOpenChange(nextOpen);
@@ -237,6 +313,7 @@ export function AdapterSetupWizard({
   );
 
   const isSaving = addAdapter.isPending || updateConfig.isPending;
+  const isBinding = createBinding.isPending;
   const currentSetupStep = hasSetupSteps && manifest.setupSteps
     ? manifest.setupSteps[setupStepIndex]
     : undefined;
@@ -252,12 +329,13 @@ export function AdapterSetupWizard({
             {step === 'configure' && (currentSetupStep?.description ?? 'Configure the adapter settings.')}
             {step === 'test' && 'Testing connection to the adapter.'}
             {step === 'confirm' && 'Review your configuration before saving.'}
+            {step === 'bind' && 'Optionally bind this adapter to an agent.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Step indicator */}
-          <StepIndicator current={step} />
+          {/* Step indicator — edit mode only shows 3 steps (no bind). */}
+          <StepIndicator current={step} showBindStep={!isEditMode} />
 
           <AnimatePresence mode="wait">
             <motion.div
@@ -275,6 +353,8 @@ export function AdapterSetupWizard({
                   adapterId={adapterId}
                   onAdapterIdChange={setAdapterId}
                   idError={idError}
+                  label={label}
+                  onLabelChange={setLabel}
                   fields={visibleFields}
                   values={values}
                   errors={errors}
@@ -308,12 +388,23 @@ export function AdapterSetupWizard({
                   values={values}
                 />
               )}
+
+              {/* Bind step */}
+              {step === 'bind' && (
+                <BindStep
+                  agentOptions={agentOptions}
+                  agentId={bindAgentId}
+                  onAgentIdChange={setBindAgentId}
+                  strategy={bindStrategy}
+                  onStrategyChange={setBindStrategy}
+                />
+              )}
             </motion.div>
           </AnimatePresence>
         </div>
 
         <DialogFooter>
-          {step !== 'configure' && (
+          {step !== 'configure' && step !== 'bind' && (
             <Button variant="outline" onClick={handleBack} disabled={isSaving}>
               Back
             </Button>
@@ -340,6 +431,17 @@ export function AdapterSetupWizard({
               {isEditMode ? 'Save Changes' : 'Add Adapter'}
             </Button>
           )}
+          {step === 'bind' && (
+            <>
+              <Button variant="ghost" onClick={handleSkipBind} disabled={isBinding}>
+                Skip
+              </Button>
+              <Button onClick={handleBind} disabled={!bindAgentId || isBinding}>
+                {isBinding && <Loader2 className="mr-2 size-4 animate-spin" />}
+                Bind to Agent
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -350,18 +452,20 @@ export function AdapterSetupWizard({
 // Sub-components
 // ---------------------------------------------------------------------------
 
-const STEPS: WizardStep[] = ['configure', 'test', 'confirm'];
+const STEPS: WizardStep[] = ['configure', 'test', 'confirm', 'bind'];
 const STEP_LABELS: Record<WizardStep, string> = {
   configure: 'Configure',
   test: 'Test',
   confirm: 'Confirm',
+  bind: 'Bind',
 };
 
-function StepIndicator({ current }: { current: WizardStep }) {
-  const currentIndex = STEPS.indexOf(current);
+function StepIndicator({ current, showBindStep }: { current: WizardStep; showBindStep: boolean }) {
+  const visibleSteps = showBindStep ? STEPS : STEPS.filter((s) => s !== 'bind');
+  const currentIndex = visibleSteps.indexOf(current);
   return (
     <div className="flex items-center gap-2" role="navigation" aria-label="Wizard steps">
-      {STEPS.map((s, i) => (
+      {visibleSteps.map((s, i) => (
         <div key={s} className="flex items-center gap-2">
           {i > 0 && <div className="h-px w-4 bg-border" />}
           <span
@@ -384,6 +488,8 @@ interface ConfigureStepProps {
   adapterId: string;
   onAdapterIdChange: (id: string) => void;
   idError: string;
+  label: string;
+  onLabelChange: (label: string) => void;
   fields: AdapterManifest['configFields'];
   values: Record<string, unknown>;
   errors: Record<string, string>;
@@ -397,6 +503,8 @@ function ConfigureStep({
   adapterId,
   onAdapterIdChange,
   idError,
+  label,
+  onLabelChange,
   fields,
   values,
   errors,
@@ -430,6 +538,19 @@ function ConfigureStep({
           {idError && <p className="text-xs text-red-500">{idError}</p>}
         </div>
       )}
+
+      <div className="space-y-2">
+        <Label htmlFor="adapter-label">Name (optional)</Label>
+        <Input
+          id="adapter-label"
+          placeholder={manifest.displayName}
+          value={label}
+          onChange={(e) => onLabelChange(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          A friendly name to identify this adapter instance.
+        </p>
+      </div>
 
       <ConfigFieldGroup
         fields={fields}
@@ -513,6 +634,63 @@ function ConfirmStep({ manifest, adapterId, isEditMode, values }: ConfirmStepPro
           </div>
         );
       })}
+    </div>
+  );
+}
+
+interface BindStepProps {
+  agentOptions: { id: string; name: string }[];
+  agentId: string;
+  onAgentIdChange: (id: string) => void;
+  strategy: SessionStrategy;
+  onStrategyChange: (strategy: SessionStrategy) => void;
+}
+
+function BindStep({
+  agentOptions,
+  agentId,
+  onAgentIdChange,
+  strategy,
+  onStrategyChange,
+}: BindStepProps) {
+  return (
+    <div className="space-y-4">
+      <p className="text-sm text-muted-foreground">
+        Bind this adapter to an agent so incoming messages are routed automatically. You can skip
+        this and bind later from the Bindings tab.
+      </p>
+
+      <div className="space-y-2">
+        <Label htmlFor="bind-agent">Agent</Label>
+        <Select value={agentId} onValueChange={onAgentIdChange}>
+          <SelectTrigger id="bind-agent" className="w-full">
+            <SelectValue placeholder="Select an agent" />
+          </SelectTrigger>
+          <SelectContent>
+            {agentOptions.map((agent) => (
+              <SelectItem key={agent.id} value={agent.id}>
+                {agent.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="bind-strategy">Session Strategy</Label>
+        <Select value={strategy} onValueChange={(v) => onStrategyChange(v as SessionStrategy)}>
+          <SelectTrigger id="bind-strategy" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {SESSION_STRATEGIES.map((s) => (
+              <SelectItem key={s.value} value={s.value}>
+                {s.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </div>
   );
 }

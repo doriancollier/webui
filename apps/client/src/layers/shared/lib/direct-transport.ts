@@ -374,6 +374,11 @@ export class DirectTransport implements Transport {
     return { events: [] };
   }
 
+  // Observed chats are server-only — not available in embedded mode
+  async getObservedChats(_adapterId: string): Promise<[]> {
+    return [];
+  }
+
   // Relay bindings are not supported in embedded mode
   async getBindings(): Promise<AdapterBinding[]> {
     return [];

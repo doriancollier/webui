@@ -29,10 +29,12 @@ interface WizardState {
 
 interface AdaptersTabProps {
   enabled: boolean;
+  /** Called when the user clicks "Bind" on an adapter with no bindings. */
+  onBindClick?: () => void;
 }
 
 /** Renders configured adapter instances and available adapter types from the catalog. */
-function AdaptersTab({ enabled }: AdaptersTabProps) {
+function AdaptersTab({ enabled, onBindClick }: AdaptersTabProps) {
   const { data: catalog = [], isLoading } = useAdapterCatalog(enabled);
   const { mutate: toggleAdapter } = useToggleAdapter();
   const { mutate: removeAdapter } = useRemoveAdapter();
@@ -125,6 +127,7 @@ function AdaptersTab({ enabled }: AdaptersTabProps) {
                 onToggle={(newEnabled) => toggleAdapter({ id: instance.id, enabled: newEnabled })}
                 onConfigure={() => openWizardForConfigure(manifest, instance.id)}
                 onRemove={() => removeAdapter(instance.id)}
+                onBindClick={onBindClick}
               />
             ))}
           </div>
@@ -236,7 +239,10 @@ export function RelayPanel() {
           </TabsContent>
 
           <TabsContent value="adapters" className="h-full">
-            <AdaptersTab enabled={relayEnabled} />
+            <AdaptersTab
+              enabled={relayEnabled}
+              onBindClick={() => setActiveTab('bindings')}
+            />
           </TabsContent>
         </motion.div>
       </AnimatePresence>

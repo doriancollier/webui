@@ -11,6 +11,7 @@ import type {
   RelayConversation,
   AdapterBinding,
   CreateBindingRequest,
+  ObservedChat,
 } from '@dorkos/shared/relay-schemas';
 import { fetchJSON, buildQueryString } from './http-client';
 
@@ -174,7 +175,7 @@ export function createRelayMethods(baseUrl: string, getClientId: () => string) {
     testRelayAdapterConnection(
       type: string,
       config: Record<string, unknown>,
-    ): Promise<{ ok: boolean; error?: string }> {
+    ): Promise<{ ok: boolean; error?: string; botUsername?: string }> {
       return fetchJSON(baseUrl, '/relay/adapters/test', {
         method: 'POST',
         body: JSON.stringify({ type, config }),
@@ -185,6 +186,14 @@ export function createRelayMethods(baseUrl: string, getClientId: () => string) {
     getAdapterEvents(adapterId: string, limit?: number): Promise<{ events: AdapterEvent[] }> {
       const qs = buildQueryString({ limit });
       return fetchJSON(baseUrl, `/relay/adapters/${encodeURIComponent(adapterId)}/events${qs}`);
+    },
+
+    /** Get observed chats for an adapter (for chatId picker). */
+    getObservedChats(adapterId: string): Promise<ObservedChat[]> {
+      return fetchJSON<{ chats: ObservedChat[] }>(
+        baseUrl,
+        `/relay/adapters/${encodeURIComponent(adapterId)}/chats`,
+      ).then((r) => r.chats);
     },
 
     // --- Relay Bindings ---

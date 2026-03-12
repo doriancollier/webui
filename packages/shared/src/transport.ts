@@ -30,7 +30,7 @@ import type {
   UploadResult,
   UploadProgress,
 } from './types.js';
-import type { AdapterConfig, AdapterStatus, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest } from './relay-schemas.js';
+import type { AdapterConfig, AdapterStatus, TraceSpan, DeliveryMetrics, CatalogEntry, RelayConversation, AdapterBinding, CreateBindingRequest, ObservedChat } from './relay-schemas.js';
 import type {
   AgentManifest,
   AgentPathEntry,
@@ -230,9 +230,14 @@ export interface Transport {
   /** Update the config for an existing relay adapter. */
   updateRelayAdapterConfig(id: string, config: Record<string, unknown>): Promise<{ ok: boolean }>;
   /** Test connectivity for an adapter type and config without registering it. */
-  testRelayAdapterConnection(type: string, config: Record<string, unknown>): Promise<{ ok: boolean; error?: string }>;
+  testRelayAdapterConnection(
+    type: string,
+    config: Record<string, unknown>,
+  ): Promise<{ ok: boolean; error?: string; botUsername?: string }>;
   /** Fetch adapter lifecycle events by adapter instance ID. */
   getAdapterEvents(adapterId: string, limit?: number): Promise<{ events: AdapterEvent[] }>;
+  /** Get observed chats for an adapter (for chatId picker). */
+  getObservedChats(adapterId: string): Promise<ObservedChat[]>;
 
   // --- Relay Bindings ---
 

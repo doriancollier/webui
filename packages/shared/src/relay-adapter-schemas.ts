@@ -86,6 +86,8 @@ export const AdapterConfigSchema = z
       .regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
     type: AdapterTypeSchema,
     enabled: z.boolean().default(true),
+    /** User-facing label to distinguish multiple instances of the same adapter type. */
+    label: z.string().optional(),
     /** Built-in adapter flag — when true, adapter is loaded from @dorkos/relay */
     builtin: z.boolean().optional(),
     /** Plugin source — required when type is 'plugin' */
@@ -212,6 +214,8 @@ export const CatalogInstanceSchema = z
   .object({
     id: z.string(),
     enabled: z.boolean(),
+    /** User-facing label to distinguish multiple instances of the same adapter type. */
+    label: z.string().optional(),
     status: AdapterStatusSchema,
     config: z.record(z.string(), z.unknown()).optional(),
   })
@@ -273,6 +277,32 @@ export const BindingResponseSchema = z
   })
   .openapi('BindingResponse');
 
+// === Observed Chats ===
+
+/**
+ * A chat observed by an adapter, derived from trace metadata.
+ *
+ * Used by the BindingDialog chatId picker to show real chats
+ * the adapter has seen in trace data.
+ */
+export const ObservedChatSchema = z
+  .object({
+    chatId: z.string(),
+    displayName: z.string().optional(),
+    channelType: ChannelTypeSchema.optional(),
+    lastMessageAt: z.string().datetime(),
+    messageCount: z.number(),
+  })
+  .openapi('ObservedChat');
+
+export type ObservedChat = z.infer<typeof ObservedChatSchema>;
+
+export const ObservedChatsResponseSchema = z
+  .object({
+    chats: z.array(ObservedChatSchema),
+  })
+  .openapi('ObservedChatsResponse');
+
 // === Adapter HTTP Request Schemas ===
 
 export const AdapterTestRequestSchema = z
@@ -293,6 +323,8 @@ export const AdapterCreateRequestSchema = z
       .regex(/^[a-z0-9-]+$/, 'Must be lowercase alphanumeric with hyphens'),
     config: z.record(z.string(), z.unknown()),
     enabled: z.boolean().optional(),
+    /** User-facing label to distinguish multiple instances of the same adapter type. */
+    label: z.string().optional(),
   })
   .openapi('AdapterCreateRequest');
 

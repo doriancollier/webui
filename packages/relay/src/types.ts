@@ -309,7 +309,7 @@ export interface RelayAdapter {
    * heavier `start()`/`stop()` cycle, avoiding side-effects like Telegram's
    * 409 Conflict when a polling session lingers.
    */
-  testConnection?(): Promise<{ ok: boolean; error?: string }>;
+  testConnection?(): Promise<{ ok: boolean; error?: string; botUsername?: string }>;
 }
 
 /**

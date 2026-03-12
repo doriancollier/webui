@@ -6,6 +6,7 @@
  */
 import { Router } from 'express';
 import express from 'express';
+import { z } from 'zod';
 import type { RelayCore, WebhookAdapter, DeadLetterEntry } from '@dorkos/relay';
 import {
   SendMessageRequestSchema,
@@ -16,6 +17,8 @@ import {
   AdapterTestRequestSchema,
   AdapterCreateRequestSchema,
   AdapterConfigUpdateSchema,
+  SessionStrategySchema,
+  ChannelTypeSchema,
 } from '@dorkos/shared/relay-schemas';
 import { initSSEStream } from '../services/core/stream-adapter.js';
 import { DEFAULT_CWD } from '../lib/resolve-root.js';
@@ -428,9 +431,12 @@ export function createRelayRouter(
       if (!result.success) {
         return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
       }
-      const { type, id, config, enabled } = result.data;
+      const { type, id, config, enabled, label: topLabel } = result.data;
+      // The client may embed label inside config (Transport interface doesn't have a separate
+      // label param). Fall back to config.label if the top-level field wasn't provided.
+      const label = topLabel ?? (typeof config.label === 'string' ? config.label : undefined);
       try {
-        await adapterManager.addAdapter(type, id, config, enabled);
+        await adapterManager.addAdapter(type, id, config, enabled, label);
         return res.status(201).json({ ok: true, id });
       } catch (err) {
         if (err instanceof AdapterError) return sendAdapterError(res, err);
@@ -488,6 +494,16 @@ export function createRelayRouter(
       return res.json({ events });
     });
 
+    // GET /adapters/:id/chats — Observed chats from trace data
+    router.get('/adapters/:id/chats', (_req, res) => {
+      if (!traceStore) return res.status(404).json({ error: 'Tracing not available' });
+      const { id } = _req.params;
+      const limitParam = parseInt(_req.query.limit as string);
+      const limit = Number.isNaN(limitParam) ? 100 : Math.min(Math.max(limitParam, 1), 500);
+      const chats = traceStore.getObservedChats(id, limit);
+      return res.json({ chats });
+    });
+
     // --- Binding Management Routes ---
     router.get('/bindings', (_req, res) => {
       const bindingStore = adapterManager.getBindingStore();
@@ -517,6 +533,39 @@ export function createRelayRouter(
         const message = err instanceof Error ? err.message : 'Create failed';
         return res.status(500).json({ error: message });
       }
+    });
+
+    router.patch('/bindings/:id', async (req, res) => {
+      const bindingStore = adapterManager.getBindingStore();
+      if (!bindingStore) {
+        return res.status(503).json({ error: 'Binding subsystem not available' });
+      }
+
+      const UpdateBindingSchema = z.object({
+        sessionStrategy: SessionStrategySchema.optional(),
+        label: z.string().optional(),
+        chatId: z.string().optional().nullable(),
+        channelType: ChannelTypeSchema.optional().nullable(),
+      });
+
+      const result = UpdateBindingSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
+      }
+
+      // Convert null to undefined for clearing optional fields
+      const updates: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(result.data)) {
+        if (value !== undefined) {
+          updates[key] = value === null ? undefined : value;
+        }
+      }
+
+      const updated = await bindingStore.update(req.params.id, updates);
+      if (!updated) {
+        return res.status(404).json({ error: 'Binding not found' });
+      }
+      return res.json({ binding: updated });
     });
 
     router.delete('/bindings/:id', async (req, res) => {

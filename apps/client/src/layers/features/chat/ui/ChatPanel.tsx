@@ -34,7 +34,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const [, setSessionId] = useSessionId();
   const messageListRef = useRef<MessageListHandle>(null);
   const chatInputRef = useRef<ChatInputHandle>(null);
-  const taskState = useTaskState(sessionId ?? '');
+  const taskState = useTaskState(sessionId);
   const celebrations = useCelebrations();
   const enableNotificationSound = useAppStore((s) => s.enableNotificationSound);
   const [cwd] = useDirectoryState();
@@ -84,6 +84,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
 
   const {
     messages,
+    pendingUserContent,
     input,
     setInput,
     handleSubmit,
@@ -111,7 +112,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       }
     }, [enableNotificationSound]),
   });
-  const { permissionMode } = useSessionStatus(sessionId ?? '', sessionStatus, status === 'streaming');
+  const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
 
   const { handleToolRef, focusedOptionIndex } = useToolShortcuts(activeInteraction);
   const { isAtBottom, hasNewMessages, scrollToBottom, handleScrollStateChange } =
@@ -245,7 +246,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
               Loading conversation...
             </div>
           </div>
-        ) : messages.length === 0 ? (
+        ) : messages.length === 0 && !pendingUserContent ? (
           <div className="flex h-full items-center justify-center">
             <div className="text-center">
               <p className="text-muted-foreground text-base">Start a conversation</p>
@@ -269,6 +270,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             onToolRef={handleToolRef}
             focusedOptionIndex={focusedOptionIndex}
             onToolDecided={markToolCallResponded}
+            pendingUserContent={pendingUserContent}
           />
         )}
 
@@ -290,7 +292,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         </AnimatePresence>
 
         <AnimatePresence>
-          {!isAtBottom && messages.length > 0 && !isLoadingHistory && (
+          {!isAtBottom && (messages.length > 0 || !!pendingUserContent) && !isLoadingHistory && (
             <motion.button
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}

@@ -667,6 +667,7 @@ describe('Adapter routes', () => {
         'wh-new',
         { inbound: { subject: 'relay.webhook.new', secret: 'secret-long-enough' } },
         undefined,
+        undefined,
       );
     });
 
@@ -870,6 +871,12 @@ describe('Adapter routes', () => {
         getById: vi.fn((id: string) => (id === 'b-1' ? mockBinding : undefined)),
         create: vi.fn().mockResolvedValue(mockBinding),
         delete: vi.fn().mockResolvedValue(true),
+        update: vi.fn().mockImplementation(
+          (id: string, updates: Record<string, unknown>) =>
+            id === 'b-1'
+              ? Promise.resolve({ ...mockBinding, ...updates, updatedAt: '2026-01-02T00:00:00.000Z' })
+              : Promise.resolve(undefined),
+        ),
       };
     }
 
@@ -933,6 +940,73 @@ describe('Adapter routes', () => {
       });
     });
 
+    describe('PATCH /api/relay/bindings/:id', () => {
+      it('returns 200 with updated binding for sessionStrategy change', async () => {
+        const mockStore = createMockBindingStore();
+        vi.mocked(adapterManager.getBindingStore).mockReturnValue(mockStore as never);
+
+        const res = await request(app).patch('/api/relay/bindings/b-1').send({
+          sessionStrategy: 'stateless',
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.binding.sessionStrategy).toBe('stateless');
+        expect(mockStore.update).toHaveBeenCalledWith('b-1', { sessionStrategy: 'stateless' });
+      });
+
+      it('returns 200 with updated binding for label change', async () => {
+        const mockStore = createMockBindingStore();
+        vi.mocked(adapterManager.getBindingStore).mockReturnValue(mockStore as never);
+
+        const res = await request(app).patch('/api/relay/bindings/b-1').send({
+          label: 'New label',
+        });
+        expect(res.status).toBe(200);
+        expect(res.body.binding.label).toBe('New label');
+      });
+
+      it('returns 400 for invalid session strategy value', async () => {
+        const mockStore = createMockBindingStore();
+        vi.mocked(adapterManager.getBindingStore).mockReturnValue(mockStore as never);
+
+        const res = await request(app).patch('/api/relay/bindings/b-1').send({
+          sessionStrategy: 'invalid',
+        });
+        expect(res.status).toBe(400);
+        expect(res.body.error).toBe('Validation failed');
+      });
+
+      it('returns 404 for non-existent binding ID', async () => {
+        const mockStore = createMockBindingStore();
+        vi.mocked(adapterManager.getBindingStore).mockReturnValue(mockStore as never);
+
+        const res = await request(app).patch('/api/relay/bindings/nonexistent').send({
+          label: 'Updated',
+        });
+        expect(res.status).toBe(404);
+        expect(res.body.error).toBe('Binding not found');
+      });
+
+      it('returns 503 when binding store unavailable', async () => {
+        const res = await request(app).patch('/api/relay/bindings/b-1').send({
+          label: 'Updated',
+        });
+        expect(res.status).toBe(503);
+        expect(res.body.error).toBe('Binding subsystem not available');
+      });
+
+      it('clears optional fields when null values sent', async () => {
+        const mockStore = createMockBindingStore();
+        vi.mocked(adapterManager.getBindingStore).mockReturnValue(mockStore as never);
+
+        const res = await request(app).patch('/api/relay/bindings/b-1').send({
+          chatId: null,
+        });
+        expect(res.status).toBe(200);
+        // null should be converted to undefined for clearing
+        expect(mockStore.update).toHaveBeenCalledWith('b-1', { chatId: undefined });
+      });
+    });
+
     describe('DELETE /api/relay/bindings/:id', () => {
       it('returns 404 when binding not found', async () => {
         const mockStore = createMockBindingStore();
@@ -952,6 +1026,144 @@ describe('Adapter routes', () => {
         expect(res.body.ok).toBe(true);
       });
     });
+  });
+});
+
+describe('Observed chats route', () => {
+  let app: express.Application;
+  let relayCore: ReturnType<typeof createMockRelayCore>;
+  let adapterManager: ReturnType<typeof createMockAdapterManager>;
+
+  beforeEach(() => {
+    relayCore = createMockRelayCore();
+    adapterManager = createMockAdapterManager();
+    app = express();
+    app.use(express.json());
+  });
+
+  it('returns aggregated chats from trace data', () => {
+    const mockTraceStore = {
+      getObservedChats: vi.fn().mockReturnValue([
+        { chatId: '111', displayName: 'Alice', channelType: 'dm', lastMessageAt: '2026-03-10T12:00:00.000Z', messageCount: 2 },
+        { chatId: '222', displayName: 'Dev Team', channelType: 'group', lastMessageAt: '2026-03-10T11:00:00.000Z', messageCount: 1 },
+      ]),
+      getSpanByMessageId: vi.fn(),
+      getTrace: vi.fn(),
+      getMetrics: vi.fn(),
+      getAdapterEvents: vi.fn(),
+    };
+    app.use(
+      '/api/relay',
+      createRelayRouter(
+        relayCore as unknown as RelayCore,
+        adapterManager as unknown as AdapterManager,
+        mockTraceStore as never,
+      ),
+    );
+
+    return request(app)
+      .get('/api/relay/adapters/telegram-1/chats')
+      .expect(200)
+      .then((res) => {
+        expect(res.body.chats).toHaveLength(2);
+        expect(res.body.chats[0].chatId).toBe('111');
+        expect(res.body.chats[0].messageCount).toBe(2);
+        expect(res.body.chats[1].chatId).toBe('222');
+        expect(mockTraceStore.getObservedChats).toHaveBeenCalledWith('telegram-1', 100);
+      });
+  });
+
+  it('returns empty array when no traces exist for the adapter', () => {
+    const mockTraceStore = {
+      getObservedChats: vi.fn().mockReturnValue([]),
+      getSpanByMessageId: vi.fn(),
+      getTrace: vi.fn(),
+      getMetrics: vi.fn(),
+      getAdapterEvents: vi.fn(),
+    };
+    app.use(
+      '/api/relay',
+      createRelayRouter(
+        relayCore as unknown as RelayCore,
+        adapterManager as unknown as AdapterManager,
+        mockTraceStore as never,
+      ),
+    );
+
+    return request(app)
+      .get('/api/relay/adapters/nonexistent/chats')
+      .expect(200)
+      .then((res) => {
+        expect(res.body.chats).toEqual([]);
+      });
+  });
+
+  it('respects the limit query parameter', () => {
+    const mockTraceStore = {
+      getObservedChats: vi.fn().mockReturnValue([]),
+      getSpanByMessageId: vi.fn(),
+      getTrace: vi.fn(),
+      getMetrics: vi.fn(),
+      getAdapterEvents: vi.fn(),
+    };
+    app.use(
+      '/api/relay',
+      createRelayRouter(
+        relayCore as unknown as RelayCore,
+        adapterManager as unknown as AdapterManager,
+        mockTraceStore as never,
+      ),
+    );
+
+    return request(app)
+      .get('/api/relay/adapters/telegram-1/chats?limit=10')
+      .expect(200)
+      .then(() => {
+        expect(mockTraceStore.getObservedChats).toHaveBeenCalledWith('telegram-1', 10);
+      });
+  });
+
+  it('clamps limit to valid range', () => {
+    const mockTraceStore = {
+      getObservedChats: vi.fn().mockReturnValue([]),
+      getSpanByMessageId: vi.fn(),
+      getTrace: vi.fn(),
+      getMetrics: vi.fn(),
+      getAdapterEvents: vi.fn(),
+    };
+    app.use(
+      '/api/relay',
+      createRelayRouter(
+        relayCore as unknown as RelayCore,
+        adapterManager as unknown as AdapterManager,
+        mockTraceStore as never,
+      ),
+    );
+
+    return request(app)
+      .get('/api/relay/adapters/telegram-1/chats?limit=9999')
+      .expect(200)
+      .then(() => {
+        expect(mockTraceStore.getObservedChats).toHaveBeenCalledWith('telegram-1', 500);
+      });
+  });
+
+  it('returns 404 when trace store is unavailable', () => {
+    // No traceStore passed — should 404
+    app.use(
+      '/api/relay',
+      createRelayRouter(
+        relayCore as unknown as RelayCore,
+        adapterManager as unknown as AdapterManager,
+      ),
+    );
+
+    return request(app)
+      .get('/api/relay/adapters/telegram-1/chats')
+      .expect(404)
+      .then((res) => {
+        expect(res.body.error).toBe('Tracing not available');
+      });
   });
 });
 

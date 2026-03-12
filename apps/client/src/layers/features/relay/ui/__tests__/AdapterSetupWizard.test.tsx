@@ -320,6 +320,165 @@ describe('AdapterSetupWizard', () => {
     });
   });
 
+  it('label input renders on configure step', () => {
+    const { Wrapper } = createWrapper();
+    render(
+      <AdapterSetupWizard
+        open={true}
+        onOpenChange={vi.fn()}
+        manifest={baseManifest}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    expect(screen.getByLabelText(/name \(optional\)/i)).toBeInTheDocument();
+    // Placeholder should be the manifest displayName
+    expect(screen.getByLabelText(/name \(optional\)/i)).toHaveAttribute('placeholder', 'Slack');
+  });
+
+  it('label is included in addAdapter config when provided', async () => {
+    const { Wrapper, mockTransport } = createWrapper();
+    mockTransport.testRelayAdapterConnection = vi.fn().mockResolvedValue({ ok: true });
+    mockTransport.addRelayAdapter = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <AdapterSetupWizard
+        open={true}
+        onOpenChange={vi.fn()}
+        manifest={baseManifest}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    // Fill required fields and set label
+    fireEvent.change(screen.getByLabelText(/api token/i), { target: { value: 'my-token' } });
+    fireEvent.change(screen.getByLabelText(/name \(optional\)/i), { target: { value: 'My Slack Bot' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /skip/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /skip/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /add adapter/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /add adapter/i }));
+
+    await waitFor(() => {
+      expect(mockTransport.addRelayAdapter).toHaveBeenCalledWith(
+        'slack',
+        'slack',
+        expect.objectContaining({ token: 'my-token', label: 'My Slack Bot' }),
+      );
+    });
+  });
+
+  it('label is omitted from addAdapter config when empty', async () => {
+    const { Wrapper, mockTransport } = createWrapper();
+    mockTransport.testRelayAdapterConnection = vi.fn().mockResolvedValue({ ok: true });
+    mockTransport.addRelayAdapter = vi.fn().mockResolvedValue({ ok: true });
+
+    render(
+      <AdapterSetupWizard
+        open={true}
+        onOpenChange={vi.fn()}
+        manifest={baseManifest}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    fireEvent.change(screen.getByLabelText(/api token/i), { target: { value: 'my-token' } });
+    // Leave label empty
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /skip/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /skip/i }));
+
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /add adapter/i })).toBeInTheDocument();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /add adapter/i }));
+
+    await waitFor(() => {
+      expect(mockTransport.addRelayAdapter).toHaveBeenCalledWith(
+        'slack',
+        'slack',
+        expect.not.objectContaining({ label: expect.anything() }),
+      );
+    });
+  });
+
+  it('auto-label populates from botUsername when label is empty', async () => {
+    const { Wrapper, mockTransport } = createWrapper();
+    mockTransport.testRelayAdapterConnection = vi
+      .fn()
+      .mockResolvedValue({ ok: true, botUsername: 'mybot' });
+
+    render(
+      <AdapterSetupWizard
+        open={true}
+        onOpenChange={vi.fn()}
+        manifest={baseManifest}
+        existingInstance={existingInstance}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    // Leave label empty and proceed to test step
+    fireEvent.change(screen.getByLabelText(/api token/i), { target: { value: 'token' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    // After test succeeds, label should be auto-populated
+    await waitFor(() => {
+      expect(screen.getByText('Connection successful')).toBeInTheDocument();
+    });
+
+    // Navigate back to configure to verify label was set
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/name \(optional\)/i)).toHaveValue('@mybot');
+    });
+  });
+
+  it('user-set label is not overwritten by auto-label', async () => {
+    const { Wrapper, mockTransport } = createWrapper();
+    mockTransport.testRelayAdapterConnection = vi
+      .fn()
+      .mockResolvedValue({ ok: true, botUsername: 'autobot' });
+
+    render(
+      <AdapterSetupWizard
+        open={true}
+        onOpenChange={vi.fn()}
+        manifest={baseManifest}
+        existingInstance={existingInstance}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    // Set a label before testing
+    fireEvent.change(screen.getByLabelText(/name \(optional\)/i), {
+      target: { value: 'My Custom Name' },
+    });
+    fireEvent.change(screen.getByLabelText(/api token/i), { target: { value: 'token' } });
+    fireEvent.click(screen.getByRole('button', { name: /continue/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Connection successful')).toBeInTheDocument();
+    });
+
+    // Navigate back to confirm label wasn't overwritten
+    fireEvent.click(screen.getByRole('button', { name: /back/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/name \(optional\)/i)).toHaveValue('My Custom Name');
+    });
+  });
+
   it('save calls updateConfig mutation in edit mode', async () => {
     const { Wrapper, mockTransport } = createWrapper();
     mockTransport.testRelayAdapterConnection = vi.fn().mockResolvedValue({ ok: true });

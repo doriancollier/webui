@@ -14,11 +14,14 @@ const mockDeleteBinding = vi.fn();
 const mockUseDeleteBinding = vi.fn();
 const mockUpdateBinding = vi.fn();
 const mockUseUpdateBinding = vi.fn();
+const mockCreateBinding = vi.fn();
+const mockUseCreateBinding = vi.fn();
 
 vi.mock('@/layers/entities/binding', () => ({
   useBindings: (...args: unknown[]) => mockUseBindings(...args),
   useDeleteBinding: (...args: unknown[]) => mockUseDeleteBinding(...args),
   useUpdateBinding: (...args: unknown[]) => mockUseUpdateBinding(...args),
+  useCreateBinding: (...args: unknown[]) => mockUseCreateBinding(...args),
 }));
 
 const mockUseAdapterCatalog = vi.fn();
@@ -47,7 +50,20 @@ vi.mock('@/layers/features/mesh/ui/BindingDialog', () => ({
         <button
           data-testid="dialog-confirm"
           onClick={() =>
-            (props.onConfirm as (opts: { sessionStrategy: string; label: string }) => void)({
+            (
+              props.onConfirm as (values: {
+                adapterId: string;
+                agentId: string;
+                projectPath: string;
+                sessionStrategy: string;
+                label: string;
+                chatId?: string;
+                channelType?: string;
+              }) => void
+            )({
+              adapterId: 'telegram-1',
+              agentId: 'agent-alpha',
+              projectPath: '/projects/alpha',
               sessionStrategy: 'per-user',
               label: 'Updated',
             })
@@ -132,6 +148,7 @@ beforeEach(() => {
   vi.clearAllMocks();
 
   mockUseBindings.mockReturnValue({ data: [], isLoading: false });
+  mockUseCreateBinding.mockReturnValue({ mutate: mockCreateBinding });
   mockUseDeleteBinding.mockReturnValue({ mutate: mockDeleteBinding });
   mockUseUpdateBinding.mockReturnValue({ mutate: mockUpdateBinding });
   mockUseAdapterCatalog.mockReturnValue({ data: [], isLoading: false });
@@ -419,8 +436,178 @@ describe('BindingList', () => {
 
       expect(mockUpdateBinding).toHaveBeenCalledWith({
         id: 'binding-1',
-        updates: { sessionStrategy: 'per-user', label: 'Updated' },
+        updates: {
+          sessionStrategy: 'per-user',
+          label: 'Updated',
+          chatId: undefined,
+          channelType: undefined,
+        },
       });
+    });
+  });
+
+  describe('New Binding button', () => {
+    it('renders "New Binding" button above the binding list', () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding()],
+        isLoading: false,
+      });
+      render(<BindingList />);
+      expect(screen.getByRole('button', { name: /New Binding/i })).toBeInTheDocument();
+    });
+
+    it('renders "New Binding" button above the empty state', () => {
+      render(<BindingList />);
+      expect(screen.getByRole('button', { name: /New Binding/i })).toBeInTheDocument();
+    });
+
+    it('opens BindingDialog in create mode when "New Binding" is clicked', async () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding()],
+        isLoading: false,
+      });
+      render(<BindingList />);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /New Binding/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('binding-dialog')).toBeInTheDocument();
+        expect(screen.getByTestId('dialog-mode')).toHaveTextContent('create');
+      });
+    });
+
+    it('calls createBinding when create dialog is confirmed', async () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding()],
+        isLoading: false,
+      });
+      render(<BindingList />);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /New Binding/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('dialog-confirm')).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('dialog-confirm'));
+      });
+
+      expect(mockCreateBinding).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionStrategy: 'per-user', label: 'Updated' }),
+      );
+    });
+
+    it('closes create dialog after confirm', async () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding()],
+        isLoading: false,
+      });
+      render(<BindingList />);
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /New Binding/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('binding-dialog')).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('dialog-confirm'));
+      });
+
+      await waitFor(() => {
+        expect(screen.queryByTestId('binding-dialog')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('duplicate action', () => {
+    it('shows "Add similar binding" in the kebab menu', async () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding()],
+        isLoading: false,
+      });
+      render(<BindingList />);
+
+      await openKebabMenu();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('menuitem', { name: /Add similar binding/i }),
+        ).toBeInTheDocument();
+      });
+    });
+
+    it('opens BindingDialog in create mode with pre-filled values (chatId cleared)', async () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding({ chatId: '12345', channelType: 'dm', label: 'Original' })],
+        isLoading: false,
+      });
+      render(<BindingList />);
+
+      await openKebabMenu();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('menuitem', { name: /Add similar binding/i }),
+        ).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('menuitem', { name: /Add similar binding/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('binding-dialog')).toBeInTheDocument();
+        expect(screen.getByTestId('dialog-mode')).toHaveTextContent('create');
+      });
+
+      // Verify initialValues passed: chatId should be omitted (undefined), not carried over
+      const callProps = mockBindingDialog.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+      const initialValues = callProps?.initialValues as Record<string, unknown> | undefined;
+      expect(initialValues?.adapterId).toBe('telegram-1');
+      expect(initialValues?.agentId).toBe('agent-alpha');
+      expect(initialValues?.label).toBe('Original');
+      expect(initialValues?.channelType).toBe('dm');
+      expect(initialValues?.chatId).toBeUndefined();
+    });
+
+    it('calls createBinding when duplicate dialog is confirmed', async () => {
+      mockUseBindings.mockReturnValue({
+        data: [makeBinding()],
+        isLoading: false,
+      });
+      render(<BindingList />);
+
+      await openKebabMenu();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole('menuitem', { name: /Add similar binding/i }),
+        ).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByRole('menuitem', { name: /Add similar binding/i }));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('dialog-confirm')).toBeInTheDocument();
+      });
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('dialog-confirm'));
+      });
+
+      expect(mockCreateBinding).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionStrategy: 'per-user', label: 'Updated' }),
+      );
     });
   });
 });

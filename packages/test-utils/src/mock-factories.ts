@@ -4,6 +4,7 @@ import type { Session, StreamEvent, CommandEntry, PulseSchedule, PulseRun } from
 import type { Transport } from '@dorkos/shared/transport';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import type { RelayAdapter, AdapterStatus } from '@dorkos/relay';
+import type { ObservedChat, AdapterBinding } from '@dorkos/shared/relay-schemas';
 
 export function createMockSession(overrides: Partial<Session> = {}): Session {
   return {
@@ -188,6 +189,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     updateRelayAdapterConfig: vi.fn().mockResolvedValue({ ok: true }),
     testRelayAdapterConnection: vi.fn().mockResolvedValue({ ok: true }),
     getAdapterEvents: vi.fn().mockResolvedValue({ events: [] }),
+    getObservedChats: vi.fn().mockResolvedValue([]),
     // Mesh
     listMeshAgentPaths: vi.fn().mockResolvedValue({ agents: [] }),
     discoverMeshAgents: vi.fn().mockResolvedValue({ candidates: [] }),
@@ -233,16 +235,17 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       updatedAt: new Date().toISOString(),
     }),
     deleteBinding: vi.fn().mockResolvedValue(undefined),
-    updateBinding: vi.fn().mockResolvedValue({
-      id: 'mock-binding-id',
+    updateBinding: vi.fn().mockImplementation(async (id: string, updates: Partial<AdapterBinding>) => ({
+      id,
       adapterId: 'mock-adapter',
       agentId: 'mock-agent',
       projectPath: '/mock/agent',
-      sessionStrategy: 'per-chat',
-      label: 'updated',
+      sessionStrategy: 'per-chat' as const,
+      label: '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-    }),
+      ...updates,
+    })),
     updateConfig: vi.fn().mockResolvedValue(undefined),
     // Discovery
     scan: vi.fn().mockResolvedValue(undefined),
@@ -276,6 +279,41 @@ export function signPayload(
   const message = `${ts}.${body}`;
   const signature = crypto.createHmac('sha256', secret).update(message).digest('hex');
   return { signature, timestamp: ts, nonce };
+}
+
+/**
+ * Create a mock ObservedChat with sensible defaults.
+ *
+ * @param overrides - Partial overrides for the chat fields
+ */
+export function createMockObservedChat(overrides: Partial<ObservedChat> = {}): ObservedChat {
+  return {
+    chatId: '12345',
+    displayName: 'Test Chat',
+    channelType: 'dm',
+    lastMessageAt: new Date().toISOString(),
+    messageCount: 5,
+    ...overrides,
+  };
+}
+
+/**
+ * Create a mock AdapterBinding with sensible defaults.
+ *
+ * @param overrides - Partial overrides for the binding fields
+ */
+export function createMockBinding(overrides: Partial<AdapterBinding> = {}): AdapterBinding {
+  return {
+    id: crypto.randomUUID(),
+    adapterId: 'telegram-1',
+    agentId: 'agent-1',
+    projectPath: '/home/user/project',
+    sessionStrategy: 'per-chat',
+    label: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    ...overrides,
+  };
 }
 
 /**

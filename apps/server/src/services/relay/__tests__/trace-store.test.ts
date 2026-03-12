@@ -209,6 +209,186 @@ describe('TraceStore', () => {
   });
 
   // -------------------------------------------------------------------------
+  // Observed chats
+  // -------------------------------------------------------------------------
+
+  describe('getObservedChats', () => {
+    it('returns empty array when no traces exist for adapter', () => {
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toEqual([]);
+    });
+
+    it('returns empty array for unknown adapterId', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '111', channelType: 'dm' },
+      });
+      const chats = store.getObservedChats('unknown-adapter');
+      expect(chats).toEqual([]);
+    });
+
+    it('returns aggregated chat from a single trace', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: {
+          adapterId: 'telegram-1',
+          chatId: '111',
+          channelType: 'dm',
+          displayName: 'Alice',
+        },
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(1);
+      expect(chats[0].chatId).toBe('111');
+      expect(chats[0].channelType).toBe('dm');
+      expect(chats[0].displayName).toBe('Alice');
+      expect(chats[0].messageCount).toBe(1);
+      expect(typeof chats[0].lastMessageAt).toBe('string');
+    });
+
+    it('groups multiple traces by chatId with correct message count', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '111', channelType: 'dm', displayName: 'Alice' },
+      });
+      store.insertSpan({
+        messageId: 'msg-002',
+        traceId: 'trace-002',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '111', channelType: 'dm', displayName: 'Alice' },
+      });
+      store.insertSpan({
+        messageId: 'msg-003',
+        traceId: 'trace-003',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '222', channelType: 'group', displayName: 'Dev Team' },
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(2);
+
+      const chat111 = chats.find((c) => c.chatId === '111');
+      expect(chat111?.messageCount).toBe(2);
+      expect(chat111?.displayName).toBe('Alice');
+      expect(chat111?.channelType).toBe('dm');
+
+      const chat222 = chats.find((c) => c.chatId === '222');
+      expect(chat222?.messageCount).toBe(1);
+      expect(chat222?.channelType).toBe('group');
+    });
+
+    it('filters by adapterId and excludes other adapters', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '111' },
+      });
+      store.insertSpan({
+        messageId: 'msg-002',
+        traceId: 'trace-002',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-2', chatId: '999' },
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(1);
+      expect(chats[0].chatId).toBe('111');
+    });
+
+    it('respects the limit parameter', () => {
+      for (let i = 0; i < 10; i++) {
+        store.insertSpan({
+          messageId: `msg-${i}`,
+          traceId: `trace-${i}`,
+          subject: 'relay.human.telegram',
+          metadata: { adapterId: 'telegram-1', chatId: String(i) },
+        });
+      }
+
+      const chats = store.getObservedChats('telegram-1', 3);
+      expect(chats).toHaveLength(3);
+    });
+
+    it('sorts by lastMessageAt descending', () => {
+      vi.useFakeTimers();
+
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: 'older-chat' },
+      });
+
+      vi.setSystemTime(new Date('2026-01-02T00:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-002',
+        traceId: 'trace-002',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: 'newer-chat' },
+      });
+
+      vi.useRealTimers();
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats[0].chatId).toBe('newer-chat');
+      expect(chats[1].chatId).toBe('older-chat');
+    });
+
+    it('skips rows with missing chatId in metadata', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1' }, // no chatId
+      });
+      store.insertSpan({
+        messageId: 'msg-002',
+        traceId: 'trace-002',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '111' },
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(1);
+      expect(chats[0].chatId).toBe('111');
+    });
+
+    it('handles rows with null metadata gracefully', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        // no metadata field
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toEqual([]);
+    });
+
+    it('ignores unknown channelType values', () => {
+      store.insertSpan({
+        messageId: 'msg-001',
+        traceId: 'trace-001',
+        subject: 'relay.human.telegram',
+        metadata: { adapterId: 'telegram-1', chatId: '111', channelType: 'invalid-type' },
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(1);
+      expect(chats[0].channelType).toBeUndefined();
+    });
+  });
+
+  // -------------------------------------------------------------------------
   // Anti-regression: ISO 8601 timestamps (not INTEGER Unix ms)
   // -------------------------------------------------------------------------
 
@@ -263,6 +443,159 @@ describe('TraceStore', () => {
       );
       expect(rows).toHaveLength(1);
       expect(typeof rows[0].sent_at).toBe('string');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Observed chats
+  // -------------------------------------------------------------------------
+
+  describe('getObservedChats', () => {
+    it('returns aggregated chats grouped by chatId', () => {
+      vi.useFakeTimers();
+
+      vi.setSystemTime(new Date('2026-03-10T10:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-oc-1',
+        traceId: 'trace-oc-1',
+        subject: 'relay.agent.session-1',
+        metadata: { adapterId: 'telegram-1', chatId: '111', channelType: 'dm', displayName: 'Alice' },
+      });
+
+      vi.setSystemTime(new Date('2026-03-10T11:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-oc-2',
+        traceId: 'trace-oc-2',
+        subject: 'relay.agent.session-2',
+        metadata: { adapterId: 'telegram-1', chatId: '111', channelType: 'dm', displayName: 'Alice' },
+      });
+
+      vi.setSystemTime(new Date('2026-03-10T12:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-oc-3',
+        traceId: 'trace-oc-3',
+        subject: 'relay.agent.session-3',
+        metadata: { adapterId: 'telegram-1', chatId: '222', channelType: 'group', displayName: 'Dev Team' },
+      });
+
+      vi.useRealTimers();
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(2);
+
+      const chat111 = chats.find((c) => c.chatId === '111');
+      expect(chat111).toBeDefined();
+      expect(chat111!.messageCount).toBe(2);
+      expect(chat111!.displayName).toBe('Alice');
+      expect(chat111!.channelType).toBe('dm');
+
+      const chat222 = chats.find((c) => c.chatId === '222');
+      expect(chat222).toBeDefined();
+      expect(chat222!.messageCount).toBe(1);
+      expect(chat222!.displayName).toBe('Dev Team');
+      expect(chat222!.channelType).toBe('group');
+    });
+
+    it('returns empty array when no traces exist for the adapter', () => {
+      const chats = store.getObservedChats('nonexistent');
+      expect(chats).toEqual([]);
+    });
+
+    it('sorts by lastMessageAt descending', () => {
+      vi.useFakeTimers();
+
+      vi.setSystemTime(new Date('2026-03-10T08:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-sort-1',
+        traceId: 'trace-sort-1',
+        subject: 'relay.agent.s1',
+        metadata: { adapterId: 'tg-1', chatId: 'old-chat' },
+      });
+
+      vi.setSystemTime(new Date('2026-03-10T12:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-sort-2',
+        traceId: 'trace-sort-2',
+        subject: 'relay.agent.s2',
+        metadata: { adapterId: 'tg-1', chatId: 'new-chat' },
+      });
+
+      vi.useRealTimers();
+
+      const chats = store.getObservedChats('tg-1');
+      expect(chats[0].chatId).toBe('new-chat');
+      expect(chats[1].chatId).toBe('old-chat');
+    });
+
+    it('respects the limit parameter', () => {
+      for (let i = 0; i < 5; i++) {
+        store.insertSpan({
+          messageId: `msg-lim-${i}`,
+          traceId: `trace-lim-${i}`,
+          subject: 'relay.agent.s1',
+          metadata: { adapterId: 'tg-limit', chatId: `chat-${i}` },
+        });
+      }
+
+      const chats = store.getObservedChats('tg-limit', 3);
+      expect(chats).toHaveLength(3);
+    });
+
+    it('filters by adapterId and ignores other adapters', () => {
+      store.insertSpan({
+        messageId: 'msg-filter-1',
+        traceId: 'trace-f1',
+        subject: 'relay.agent.s1',
+        metadata: { adapterId: 'telegram-1', chatId: '111' },
+      });
+      store.insertSpan({
+        messageId: 'msg-filter-2',
+        traceId: 'trace-f2',
+        subject: 'relay.agent.s2',
+        metadata: { adapterId: 'webhook-1', chatId: '222' },
+      });
+
+      const chats = store.getObservedChats('telegram-1');
+      expect(chats).toHaveLength(1);
+      expect(chats[0].chatId).toBe('111');
+    });
+
+    it('skips traces without chatId in metadata', () => {
+      store.insertSpan({
+        messageId: 'msg-no-chat',
+        traceId: 'trace-nc',
+        subject: 'relay.agent.s1',
+        metadata: { adapterId: 'tg-nc', eventType: 'adapter.connected', message: 'ok' },
+      });
+
+      const chats = store.getObservedChats('tg-nc');
+      expect(chats).toEqual([]);
+    });
+
+    it('updates lastMessageAt to most recent for grouped chats', () => {
+      vi.useFakeTimers();
+
+      vi.setSystemTime(new Date('2026-03-10T08:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-ts-1',
+        traceId: 'trace-ts-1',
+        subject: 'relay.agent.s1',
+        metadata: { adapterId: 'tg-ts', chatId: '111' },
+      });
+
+      vi.setSystemTime(new Date('2026-03-10T16:00:00.000Z'));
+      store.insertSpan({
+        messageId: 'msg-ts-2',
+        traceId: 'trace-ts-2',
+        subject: 'relay.agent.s2',
+        metadata: { adapterId: 'tg-ts', chatId: '111' },
+      });
+
+      vi.useRealTimers();
+
+      const chats = store.getObservedChats('tg-ts');
+      expect(chats).toHaveLength(1);
+      expect(chats[0].lastMessageAt).toBe('2026-03-10T16:00:00.000Z');
     });
   });
 });

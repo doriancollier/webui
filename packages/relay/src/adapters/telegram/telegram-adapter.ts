@@ -28,7 +28,7 @@ export const TELEGRAM_MANIFEST: AdapterManifest = {
   category: 'messaging',
   docsUrl: 'https://core.telegram.org/bots',
   builtin: true,
-  multiInstance: false,
+  multiInstance: true,
   configFields: [
     { key: 'token', label: 'Bot Token', type: 'password', required: true,
       placeholder: '123456789:ABCDefGHijklMNOpqrSTUvwxYZ',
@@ -88,11 +88,11 @@ export class TelegramAdapter implements RelayAdapter {
   }
 
   /** Validate the bot token without starting polling or webhook. */
-  async testConnection(): Promise<{ ok: boolean; error?: string }> {
+  async testConnection(): Promise<{ ok: boolean; error?: string; botUsername?: string }> {
     try {
       const bot = new Bot(this.config.token);
       await bot.init();
-      return { ok: true };
+      return { ok: true, botUsername: bot.botInfo.username };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
     }

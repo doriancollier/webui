@@ -19,8 +19,8 @@ describe('Built-in adapter manifests', () => {
       expect(TELEGRAM_MANIFEST.builtin).toBe(true);
     });
 
-    it('does not support multiple instances', () => {
-      expect(TELEGRAM_MANIFEST.multiInstance).toBe(false);
+    it('supports multiple instances', () => {
+      expect(TELEGRAM_MANIFEST.multiInstance).toBe(true);
     });
 
     it('has configFields keys matching TelegramAdapterConfig', () => {

@@ -118,7 +118,7 @@ export function AssistantMessageContent({ message }: { message: ChatMessage }) {
       {parts.map((part, i) => {
         if (part.type === 'text') {
           return (
-            <div key={`text-${i}`} className="msg-assistant">
+            <div key={(part as { _partId?: string })._partId ?? `text-${i}`} className="msg-assistant">
               <StreamingText
                 content={part.text}
                 isStreaming={isStreaming && i === lastTextPartIndex}

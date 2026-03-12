@@ -37,7 +37,14 @@ export interface TaskState {
 
 const MAX_VISIBLE = 10;
 
-export function useTaskState(sessionId: string): TaskState {
+/**
+ * Manages task state for a session, combining historical tasks from the API
+ * with real-time streaming updates.
+ *
+ * @param sessionId - The active session ID, or null when no session is selected.
+ *   When null, the initial task query is disabled and no API requests are made.
+ */
+export function useTaskState(sessionId: string | null): TaskState {
   const transport = useTransport();
   const selectedCwd = useAppStore((s) => s.selectedCwd);
   const [taskMap, setTaskMap] = useState<Map<string, TaskItem>>(new Map());
@@ -47,9 +54,10 @@ export function useTaskState(sessionId: string): TaskState {
   // Load historical tasks via TanStack Query (invalidated on sync_update)
   const { data: initialTasks } = useQuery({
     queryKey: ['tasks', sessionId, selectedCwd],
-    queryFn: () => transport.getTasks(sessionId, selectedCwd ?? undefined),
+    queryFn: () => transport.getTasks(sessionId!, selectedCwd ?? undefined),
     staleTime: 30_000,
     refetchOnWindowFocus: false,
+    enabled: !!sessionId,
   });
 
   // Reset taskMap when query data changes (initial load or sync invalidation)

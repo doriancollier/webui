@@ -59,6 +59,8 @@ interface MessageListProps {
   onToolRef?: (handle: InteractiveToolHandle | null) => void;
   focusedOptionIndex?: number;
   onToolDecided?: (toolCallId: string) => void;
+  /** Ephemeral pending user message shown immediately on submit, cleared when streaming begins or completes. */
+  pendingUserContent?: string | null;
 }
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(function MessageList(
@@ -77,6 +79,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     onToolRef,
     focusedOptionIndex,
     onToolDecided,
+    pendingUserContent,
   },
   ref
 ) {
@@ -293,10 +296,18 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
               </div>
             );
           })}
-          {/* Inference status indicator */}
+          {/* Pending user bubble + inference indicator — placed together so InferenceIndicator
+              naturally stacks below the pending bubble in document order */}
           <div
             style={{ position: 'absolute', top: virtualizer.getTotalSize(), left: 0, width: '100%' }}
           >
+            {pendingUserContent && (
+              <div className="flex justify-end px-4 py-1">
+                <div className="msg-user opacity-60" aria-label="Sending…">
+                  {pendingUserContent}
+                </div>
+              </div>
+            )}
             <InferenceIndicator
               status={status ?? 'idle'}
               streamStartTime={streamStartTime ?? null}

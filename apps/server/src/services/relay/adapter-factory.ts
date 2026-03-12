@@ -110,7 +110,7 @@ const CONNECTION_TEST_TIMEOUT_MS = 15_000;
  */
 export async function testAdapterConnection(
   adapter: RelayAdapter,
-): Promise<{ ok: boolean; error?: string }> {
+): Promise<{ ok: boolean; error?: string; botUsername?: string }> {
   try {
     // Prefer lightweight testConnection() -- avoids starting polling loops,
     // webhook servers, or other long-running processes that can cause

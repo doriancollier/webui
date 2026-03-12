@@ -11,6 +11,11 @@ import type {
 import { TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ToolCallState } from './chat-types';
 
+// Client-only streaming type — _partId is never serialized or sent over the wire.
+// It provides a stable React key for text parts during streaming, where the parts
+// array is rebuilt on every text_delta event.
+type StreamingTextPart = { type: 'text'; text: string; _partId: string };
+
 interface StreamEventDeps {
   currentPartsRef: React.MutableRefObject<MessagePart[]>;
   assistantCreatedRef: React.MutableRefObject<boolean>;
@@ -26,6 +31,7 @@ interface StreamEventDeps {
   setEstimatedTokens: (tokens: number) => void;
   setStreamStartTime: (time: number | null) => void;
   setIsTextStreaming: (streaming: boolean) => void;
+  setPendingUserContent: (content: string | null) => void;
   sessionId: string;
   onTaskEventRef: React.MutableRefObject<((event: TaskUpdateEvent) => void) | undefined>;
   onSessionIdChangeRef: React.MutableRefObject<((newSessionId: string) => void) | undefined>;
@@ -72,6 +78,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
     setEstimatedTokens,
     setStreamStartTime,
     setIsTextStreaming,
+    setPendingUserContent,
     sessionId,
     onTaskEventRef,
     onSessionIdChangeRef,
@@ -126,17 +133,27 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
   return function handleStreamEvent(type: string, data: unknown, assistantId: string) {
     switch (type) {
       case 'text_delta': {
+        // Clear the pending user bubble — first token confirms server receipt.
+        // React no-ops if the state is already null.
+        setPendingUserContent(null);
         const { text } = data as TextDelta;
         const parts = currentPartsRef.current;
         const lastPart = parts[parts.length - 1];
         if (lastPart && lastPart.type === 'text') {
-          // Immutable update — avoid mid-mutation reads under concurrent rendering
+          // Immutable update — avoid mid-mutation reads under concurrent rendering.
+          // The spread { ...lastPart, text: ... } preserves _partId automatically.
           currentPartsRef.current = [
             ...parts.slice(0, -1),
             { ...lastPart, text: lastPart.text + text },
           ];
         } else {
-          currentPartsRef.current = [...parts, { type: 'text', text }];
+          // NEW TEXT PART: assign _partId once at creation.
+          // parts.length is the stable position of this part in the array at the moment
+          // of creation — deterministic, cheap, and sufficient for key stability within
+          // a single streaming session.
+          const partId = `text-part-${parts.length}`;
+          const newPart: StreamingTextPart = { type: 'text', text, _partId: partId };
+          currentPartsRef.current = [...parts, newPart as MessagePart];
         }
         estimatedTokensRef.current += text.length / 4;
         setEstimatedTokens(estimatedTokensRef.current);

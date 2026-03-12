@@ -1,7 +1,52 @@
 {
   "version": 1,
-  "nextNumber": 111,
+  "nextNumber": 116,
   "decisions": [
+    {
+      "number": 115,
+      "slug": "pending-user-content-ephemeral-state-boundary",
+      "title": "Separate pendingUserContent Ephemeral State from JSONL-Sourced Messages Array",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "fix-chat-ui-reliability-bugs",
+      "specSlug": "fix-chat-ui-reliability-bugs"
+    },
+    {
+      "number": 114,
+      "slug": "client-only-part-id-for-streaming-key-stability",
+      "title": "Client-Only _partId Field for Stable React Keys in Streaming Text Parts",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "fix-chat-ui-reliability-bugs",
+      "specSlug": "fix-chat-ui-reliability-bugs"
+    },
+    {
+      "number": 113,
+      "slug": "observed-chats-from-trace-store",
+      "title": "Observed Chats Derived from Trace Store",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "adapter-binding-ux-overhaul",
+      "specSlug": "adapter-binding-ux-overhaul"
+    },
+    {
+      "number": 112,
+      "slug": "reactive-binding-from-message-log",
+      "title": "Reactive Binding Creation from Message Log",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "adapter-binding-ux-overhaul",
+      "specSlug": "adapter-binding-ux-overhaul"
+    },
+    {
+      "number": 111,
+      "slug": "top-level-adapter-label-field",
+      "title": "Top-Level Adapter Label Field",
+      "status": "draft",
+      "created": "2026-03-11",
+      "extractedFrom": "adapter-binding-ux-overhaul",
+      "specSlug": "adapter-binding-ux-overhaul"
+    },
     {
       "number": 110,
       "slug": "warning-level-api-version-checking",

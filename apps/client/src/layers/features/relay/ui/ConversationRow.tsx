@@ -1,14 +1,86 @@
-import { useState } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, Route } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
+import {
+  Button,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/layers/shared/ui';
+import { useRegisteredAgents } from '@/layers/entities/mesh';
+import { useCreateBinding } from '@/layers/entities/binding';
 import { getStatusDotColor, getStatusTextColor, getStatusBorderColor } from '../lib/status-colors';
 import { formatTimeAgo } from '../lib/format-time';
 import { MessageTrace } from './MessageTrace';
+import { BindingDialog, type BindingFormValues } from '@/layers/features/mesh/ui/BindingDialog';
 import type { RelayConversation } from '@dorkos/shared/relay-schemas';
 
 interface ConversationRowProps {
   conversation: RelayConversation;
+}
+
+/**
+ * Attempt to extract an adapterId from conversation metadata.
+ *
+ * Adapter ID may be embedded in the `payload` if the conversation carries
+ * relay trace metadata, or can be inferred from the source subject for known
+ * patterns (e.g., `relay.adapter.telegram-1.chat.123`).
+ *
+ * @param conversation - The relay conversation record
+ * @returns The adapter ID string, or empty string when unavailable
+ */
+function extractAdapterId(conversation: RelayConversation): string {
+  if (conversation.payload && typeof conversation.payload === 'object') {
+    const payload = conversation.payload as Record<string, unknown>;
+    if (typeof payload.adapterId === 'string') return payload.adapterId;
+  }
+  // Infer from subject pattern relay.adapter.<id>.* (not a current format — best-effort)
+  const match = conversation.from.raw.match(/^relay\.adapter\.([^.]+)/);
+  if (match) return match[1];
+  return '';
+}
+
+/**
+ * Attempt to extract a chatId from conversation metadata.
+ *
+ * Chat ID may be embedded in the `payload` if the conversation carries
+ * relay trace metadata.
+ *
+ * @param conversation - The relay conversation record
+ * @returns The chat ID string, or undefined when unavailable
+ */
+function extractChatId(conversation: RelayConversation): string | undefined {
+  if (conversation.payload && typeof conversation.payload === 'object') {
+    const payload = conversation.payload as Record<string, unknown>;
+    if (typeof payload.chatId === 'string') return payload.chatId;
+  }
+  return undefined;
+}
+
+/**
+ * Attempt to extract a channelType from conversation metadata.
+ *
+ * Channel type may be embedded in the `payload` if the conversation carries
+ * relay trace metadata.
+ *
+ * @param conversation - The relay conversation record
+ * @returns The channel type string, or undefined when unavailable
+ */
+function extractChannelType(
+  conversation: RelayConversation,
+): BindingFormValues['channelType'] | undefined {
+  if (conversation.payload && typeof conversation.payload === 'object') {
+    const payload = conversation.payload as Record<string, unknown>;
+    const ct = payload.channelType;
+    if (ct === 'dm' || ct === 'group' || ct === 'channel' || ct === 'thread') return ct;
+  }
+  return undefined;
 }
 
 const STATUS_LABELS: Record<RelayConversation['status'], string> = {
@@ -45,10 +117,56 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
   const [expanded, setExpanded] = useState(false);
   const [showTechnical, setShowTechnical] = useState(false);
   const [showTrace, setShowTrace] = useState(false);
+  const [routeAgentId, setRouteAgentId] = useState('');
+  const [routePopoverOpen, setRoutePopoverOpen] = useState(false);
+  const [bindingDialogOpen, setBindingDialogOpen] = useState(false);
+
+  const { data: agentsData } = useRegisteredAgents();
+  const agents = useMemo(() => agentsData?.agents ?? [], [agentsData]);
+  const { mutate: createBinding } = useCreateBinding();
 
   const dotColor = getStatusDotColor(conversation.status);
   const textColor = getStatusTextColor(conversation.status);
   const borderColor = getStatusBorderColor(conversation.status);
+
+  const handleQuickRoute = useCallback(() => {
+    const agent = agents.find((a) => a.id === routeAgentId);
+    if (!agent) return;
+    createBinding({
+      adapterId: extractAdapterId(conversation),
+      agentId: routeAgentId,
+      // AgentManifest has no projectPath field; leave empty for quick-route bindings.
+      // Users can refine this via the full BindingDialog ("More options...").
+      projectPath: '',
+      sessionStrategy: 'per-chat',
+      label: '',
+      chatId: extractChatId(conversation),
+      channelType: extractChannelType(conversation),
+    });
+    setRouteAgentId('');
+    setRoutePopoverOpen(false);
+  }, [agents, routeAgentId, conversation, createBinding]);
+
+  const handleRouteAdvanced = useCallback(() => {
+    setRoutePopoverOpen(false);
+    setBindingDialogOpen(true);
+  }, []);
+
+  const handleBindingDialogConfirm = useCallback(
+    (values: BindingFormValues) => {
+      createBinding({
+        adapterId: values.adapterId,
+        agentId: values.agentId,
+        projectPath: values.projectPath,
+        sessionStrategy: values.sessionStrategy,
+        label: values.label,
+        chatId: values.chatId,
+        channelType: values.channelType,
+      });
+      setBindingDialogOpen(false);
+    },
+    [createBinding],
+  );
 
   return (
     <div
@@ -59,14 +177,14 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
       )}
     >
       {/* Collapsed view — human-readable summary */}
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        className="w-full p-3"
-      >
-        <div className="flex items-start gap-2">
+      <div className="flex items-start gap-2 p-3">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="flex min-w-0 flex-1 items-start gap-2"
+        >
           <span className={cn('mt-1 size-2 shrink-0 rounded-full', dotColor)} />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 text-left">
             <div className="text-xs text-muted-foreground">
               <span className="inline-block w-8 font-medium">From</span>
               <span className="text-foreground">{conversation.from.label}</span>
@@ -86,11 +204,79 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
               </span>
             </div>
           </div>
-          <span className="shrink-0 text-xs text-muted-foreground">
+        </button>
+
+        <div className="flex shrink-0 items-center gap-1">
+          <span className="text-xs text-muted-foreground">
             {formatTimeAgo(conversation.sentAt)}
           </span>
+
+          {/* Route to Agent popover */}
+          <Popover open={routePopoverOpen} onOpenChange={setRoutePopoverOpen}>
+            <PopoverTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-1.5 text-xs"
+                onClick={(e) => e.stopPropagation()}
+                aria-label="Route to agent"
+              >
+                <Route className="mr-1 size-3" />
+                Route
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-64 space-y-3 p-3" align="end">
+              <p className="text-xs font-medium">Route to Agent</p>
+              <Select value={routeAgentId} onValueChange={setRouteAgentId}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Select agent" />
+                </SelectTrigger>
+                <SelectContent>
+                  {agents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="flex items-center justify-between">
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="h-6 px-0 text-xs"
+                  onClick={handleRouteAdvanced}
+                >
+                  More options...
+                </Button>
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  disabled={!routeAgentId}
+                  onClick={handleQuickRoute}
+                >
+                  Create Binding
+                </Button>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
-      </button>
+      </div>
+
+      {/* Full BindingDialog for advanced routing (More options...) */}
+      {bindingDialogOpen && (
+        <BindingDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setBindingDialogOpen(false); }}
+          mode="create"
+          initialValues={{
+            adapterId: extractAdapterId(conversation),
+            agentId: routeAgentId || undefined,
+            chatId: extractChatId(conversation),
+            channelType: extractChannelType(conversation),
+          }}
+          onConfirm={handleBindingDialogConfirm}
+        />
+      )}
 
       {/* Expanded view — payload + delivery details */}
       <AnimatePresence initial={false}>

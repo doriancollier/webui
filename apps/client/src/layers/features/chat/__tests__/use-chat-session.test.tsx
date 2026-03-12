@@ -163,7 +163,10 @@ describe('useChatSession', () => {
     expect(transport.sendMessage).not.toHaveBeenCalled();
   });
 
-  it('adds user message on submit and clears input', async () => {
+  it('sets pendingUserContent on submit and clears input', async () => {
+    // After the Bug 3 fix, user messages are no longer added optimistically to messages[].
+    // The JSONL transcript is the source of truth (ADR-0003). Immediate feedback comes via
+    // pendingUserContent, which is cleared once the stream completes or an error occurs.
     const sendMessage = createSendMessageMock([
       { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
     ]);
@@ -184,10 +187,11 @@ describe('useChatSession', () => {
     });
 
     expect(result.current.input).toBe('');
-    // With deferred assistant message creation, done without content creates no assistant message
-    expect(result.current.messages).toHaveLength(1);
-    expect(result.current.messages[0].role).toBe('user');
-    expect(result.current.messages[0].content).toBe('Hello');
+    // No optimistic user message in messages — user content comes from JSONL after stream
+    const userMessages = result.current.messages.filter((m) => m.role === 'user');
+    expect(userMessages).toHaveLength(0);
+    // pendingUserContent cleared after done event (stream completed without text_delta)
+    expect(result.current.pendingUserContent).toBeNull();
   });
 
   it('parses text_delta events into assistant message content', async () => {
@@ -476,12 +480,13 @@ describe('useChatSession', () => {
       await result.current.handleSubmit();
     });
 
-    // 2 history + 1 new user + 1 new assistant = 4
-    expect(result.current.messages).toHaveLength(4);
-    expect(result.current.messages[2].role).toBe('user');
-    expect(result.current.messages[2].content).toBe('New question');
-    expect(result.current.messages[3].role).toBe('assistant');
-    expect(result.current.messages[3].content).toBe('New reply');
+    // 2 history + 1 new assistant = 3 (no optimistic user message in messages)
+    // The user message comes from JSONL after stream — not re-fetched in this test mock.
+    expect(result.current.messages).toHaveLength(3);
+    expect(result.current.messages[2].role).toBe('assistant');
+    expect(result.current.messages[2].content).toBe('New reply');
+    // pendingUserContent cleared by text_delta
+    expect(result.current.pendingUserContent).toBeNull();
   });
 
   describe('deferred assistant message creation', () => {
@@ -522,9 +527,9 @@ describe('useChatSession', () => {
       // Wait for streaming status
       await waitFor(() => expect(result.current.status).toBe('streaming'));
 
-      // Assert only user message exists, no assistant message yet
-      expect(result.current.messages).toHaveLength(1);
-      expect(result.current.messages[0].role).toBe('user');
+      // No optimistic user message in messages — pending state is in pendingUserContent
+      expect(result.current.messages).toHaveLength(0);
+      expect(result.current.pendingUserContent).toBe('test');
       expect(result.current.status).toBe('streaming');
 
       // Clean up by stopping
@@ -553,10 +558,12 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // Assert assistant message was created with content from delta
-      expect(result.current.messages).toHaveLength(2);
-      expect(result.current.messages[1].role).toBe('assistant');
-      expect(result.current.messages[1].content).toBe('Hello from Claude');
+      // 1 assistant message (user comes from JSONL, not in messages during streaming)
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0].role).toBe('assistant');
+      expect(result.current.messages[0].content).toBe('Hello from Claude');
+      // pendingUserContent cleared on first text_delta
+      expect(result.current.pendingUserContent).toBeNull();
     });
 
     it('creates assistant message on first tool_call_start', async () => {
@@ -582,11 +589,11 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // Assert assistant message was created with toolCalls array
-      expect(result.current.messages).toHaveLength(2);
-      expect(result.current.messages[1].role).toBe('assistant');
-      expect(result.current.messages[1].toolCalls).toHaveLength(1);
-      expect(result.current.messages[1].toolCalls![0].toolName).toBe('Read');
+      // 1 assistant message (user comes from JSONL, not in messages during streaming)
+      expect(result.current.messages).toHaveLength(1);
+      expect(result.current.messages[0].role).toBe('assistant');
+      expect(result.current.messages[0].toolCalls).toHaveLength(1);
+      expect(result.current.messages[0].toolCalls![0].toolName).toBe('Read');
     });
 
     it('does not create duplicate assistant messages on subsequent events', async () => {
@@ -635,9 +642,10 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // Assert only user message exists, no assistant message
-      expect(result.current.messages).toHaveLength(1);
-      expect(result.current.messages[0].role).toBe('user');
+      // No optimistic user message — user content comes from JSONL after stream
+      // No assistant message — done with no content creates nothing
+      expect(result.current.messages).toHaveLength(0);
+      expect(result.current.pendingUserContent).toBeNull();
       expect(result.current.status).toBe('idle');
     });
   });

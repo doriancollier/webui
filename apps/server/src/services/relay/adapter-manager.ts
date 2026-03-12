@@ -296,7 +296,7 @@ export class AdapterManager {
   async testConnection(
     type: string,
     config: Record<string, unknown>,
-  ): Promise<{ ok: boolean; error?: string }> {
+  ): Promise<{ ok: boolean; error?: string; botUsername?: string }> {
     const manifest = this.manifests.get(type);
     if (!manifest) {
       return { ok: false, error: `Unknown adapter type: ${type}` };
@@ -324,6 +324,7 @@ export class AdapterManager {
     id: string,
     config: Record<string, unknown>,
     enabled = true,
+    label?: string,
   ): Promise<void> {
     if (this.configs.some((c) => c.id === id)) {
       throw new AdapterError(`Adapter with ID '${id}' already exists`, 'DUPLICATE_ID');
@@ -349,6 +350,7 @@ export class AdapterManager {
       type,
       enabled,
       builtin: manifest.builtin,
+      ...(label ? { label } : {}),
       config,
     } as AdapterConfig;
     this.configs.push(adapterConfig);
@@ -360,6 +362,26 @@ export class AdapterManager {
         await this.registry.register(adapter);
       }
     }
+  }
+
+  /**
+   * Update the user-facing label for an adapter instance.
+   *
+   * @param id - Adapter instance ID
+   * @param label - New label value, or empty string to clear the label
+   */
+  async updateAdapterLabel(id: string, label: string): Promise<void> {
+    const existing = this.configs.find((c) => c.id === id);
+    if (!existing) {
+      throw new AdapterError(`Adapter '${id}' not found`, 'NOT_FOUND');
+    }
+
+    if (label) {
+      existing.label = label;
+    } else {
+      delete existing.label;
+    }
+    await saveAdapterConfig(this.configPath, this.configs);
   }
 
   /** Remove an adapter instance, stop it if running, and persist the change. */
@@ -416,6 +438,11 @@ export class AdapterManager {
     );
 
     existing.config = mergedConfig;
+
+    // Promote label from config to top-level if present (client embeds it in config)
+    if (typeof mergedConfig.label === 'string' && mergedConfig.label) {
+      existing.label = mergedConfig.label;
+    }
     await saveAdapterConfig(this.configPath, this.configs);
 
     // Restart adapter if running
@@ -490,6 +517,7 @@ export class AdapterManager {
         .map((c) => ({
           id: c.id,
           enabled: c.enabled,
+          ...(c.label ? { label: c.label } : {}),
           status: {
             id: c.id,
             type: c.type,

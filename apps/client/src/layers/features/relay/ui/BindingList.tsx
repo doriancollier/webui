@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
-import { ArrowRight, Link2, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { ArrowRight, Copy, Link2, MoreVertical, Pencil, Plus, Trash2 } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -17,11 +17,11 @@ import {
   DropdownMenuTrigger,
   Skeleton,
 } from '@/layers/shared/ui';
-import { useBindings, useDeleteBinding, useUpdateBinding } from '@/layers/entities/binding';
+import { useBindings, useCreateBinding, useDeleteBinding, useUpdateBinding } from '@/layers/entities/binding';
 import { useAdapterCatalog } from '@/layers/entities/relay';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
-import type { AdapterBinding, SessionStrategy } from '@dorkos/shared/relay-schemas';
-import { BindingDialog } from '@/layers/features/mesh/ui/BindingDialog';
+import type { AdapterBinding } from '@dorkos/shared/relay-schemas';
+import { BindingDialog, type BindingFormValues } from '@/layers/features/mesh/ui/BindingDialog';
 
 /** Badge styling by session strategy value. */
 const STRATEGY_BADGE_LABELS: Record<string, string> = {
@@ -71,9 +71,10 @@ interface EditState {
   agentName: string;
 }
 
-/** Structured list of all adapter-agent bindings with edit and delete actions. */
+/** Structured list of all adapter-agent bindings with edit, duplicate, and delete actions. */
 export function BindingList() {
   const { data: bindings = [], isLoading } = useBindings();
+  const { mutate: createBinding } = useCreateBinding();
   const { mutate: deleteBinding } = useDeleteBinding();
   const { mutate: updateBinding } = useUpdateBinding();
   const adapterLookup = useAdapterLookup();
@@ -81,6 +82,8 @@ export function BindingList() {
 
   const [deleteTarget, setDeleteTarget] = useState<AdapterBinding | null>(null);
   const [editState, setEditState] = useState<EditState | null>(null);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [duplicateSource, setDuplicateSource] = useState<AdapterBinding | null>(null);
 
   const handleDelete = useCallback(
     (binding: AdapterBinding) => {
@@ -91,15 +94,67 @@ export function BindingList() {
   );
 
   const handleEditConfirm = useCallback(
-    (opts: { sessionStrategy: SessionStrategy; label: string }) => {
+    (values: BindingFormValues) => {
       if (!editState) return;
       updateBinding({
         id: editState.binding.id,
-        updates: { sessionStrategy: opts.sessionStrategy, label: opts.label },
+        updates: {
+          sessionStrategy: values.sessionStrategy,
+          label: values.label,
+          chatId: values.chatId ?? undefined,
+          channelType: values.channelType ?? undefined,
+        },
       });
       setEditState(null);
     },
     [editState, updateBinding],
+  );
+
+  const handleCreateConfirm = useCallback(
+    (values: BindingFormValues) => {
+      createBinding({
+        adapterId: values.adapterId,
+        agentId: values.agentId,
+        projectPath: values.projectPath,
+        sessionStrategy: values.sessionStrategy,
+        label: values.label,
+        chatId: values.chatId,
+        channelType: values.channelType,
+      });
+      setCreateDialogOpen(false);
+    },
+    [createBinding],
+  );
+
+  const handleDuplicateConfirm = useCallback(
+    (values: BindingFormValues) => {
+      createBinding({
+        adapterId: values.adapterId,
+        agentId: values.agentId,
+        projectPath: values.projectPath,
+        sessionStrategy: values.sessionStrategy,
+        label: values.label,
+        chatId: values.chatId,
+        channelType: values.channelType,
+      });
+      setDuplicateSource(null);
+    },
+    [createBinding],
+  );
+
+  const handleDuplicate = useCallback((binding: AdapterBinding) => {
+    setDuplicateSource(binding);
+  }, []);
+
+  /** Header shown above the list (and above the empty state). */
+  const listHeader = (
+    <div className="flex items-center justify-between px-4 py-2">
+      <h3 className="text-sm font-medium text-muted-foreground">Bindings</h3>
+      <Button variant="outline" size="sm" onClick={() => setCreateDialogOpen(true)}>
+        <Plus className="mr-1.5 size-3.5" />
+        New Binding
+      </Button>
+    </div>
   );
 
   if (isLoading) {
@@ -123,20 +178,35 @@ export function BindingList() {
 
   if (bindings.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
-        <Link2 className="size-10 text-muted-foreground/50" />
-        <div className="space-y-1">
-          <p className="text-sm font-medium">No bindings configured</p>
-          <p className="text-sm text-muted-foreground">
-            Create your first binding to route messages from adapters to agents.
-          </p>
+      <>
+        {listHeader}
+        <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+          <Link2 className="size-10 text-muted-foreground/50" />
+          <div className="space-y-1">
+            <p className="text-sm font-medium">No bindings configured</p>
+            <p className="text-sm text-muted-foreground">
+              Create your first binding to route messages from adapters to agents.
+            </p>
+          </div>
         </div>
-      </div>
+
+        {/* Create binding dialog (empty state) */}
+        {createDialogOpen && (
+          <BindingDialog
+            open={true}
+            onOpenChange={(open) => { if (!open) setCreateDialogOpen(false); }}
+            mode="create"
+            onConfirm={handleCreateConfirm}
+          />
+        )}
+      </>
     );
   }
 
   return (
     <>
+      {listHeader}
+
       <div className="space-y-2 p-4">
         {bindings.map((binding) => {
           const adapter = adapterLookup.get(binding.adapterId);
@@ -196,6 +266,10 @@ export function BindingList() {
                       <Pencil className="mr-2 size-3.5" />
                       Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDuplicate(binding)}>
+                      <Copy className="mr-2 size-3.5" />
+                      Add similar binding
+                    </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => setDeleteTarget(binding)}
                       className="text-red-600 focus:text-red-600"
@@ -244,8 +318,39 @@ export function BindingList() {
           initialValues={{
             sessionStrategy: editState.binding.sessionStrategy,
             label: editState.binding.label,
+            chatId: editState.binding.chatId,
+            channelType: editState.binding.channelType,
           }}
           onConfirm={handleEditConfirm}
+        />
+      )}
+
+      {/* Create binding dialog */}
+      {createDialogOpen && (
+        <BindingDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setCreateDialogOpen(false); }}
+          mode="create"
+          onConfirm={handleCreateConfirm}
+        />
+      )}
+
+      {/* Duplicate binding dialog — pre-fills all fields except chatId */}
+      {duplicateSource && (
+        <BindingDialog
+          open={true}
+          onOpenChange={(open) => { if (!open) setDuplicateSource(null); }}
+          mode="create"
+          initialValues={{
+            adapterId: duplicateSource.adapterId,
+            agentId: duplicateSource.agentId,
+            projectPath: duplicateSource.projectPath,
+            sessionStrategy: duplicateSource.sessionStrategy,
+            label: duplicateSource.label,
+            // chatId intentionally omitted — must differ for the new binding
+            channelType: duplicateSource.channelType,
+          }}
+          onConfirm={handleDuplicateConfirm}
         />
       )}
     </>

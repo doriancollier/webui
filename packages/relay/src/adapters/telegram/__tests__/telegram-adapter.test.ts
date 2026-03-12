@@ -88,6 +88,8 @@ vi.mock('grammy', () => {
       deleteWebhook: mockDeleteWebhook,
     };
 
+    botInfo = { username: 'test_bot' };
+
     on(_event: string, handler: (ctx: unknown) => Promise<void>) {
       capturedMessageHandler = handler;
     }
@@ -700,9 +702,9 @@ describe('TelegramAdapter', () => {
 
   // --- testConnection() ---
 
-  it('testConnection() returns ok when init succeeds', async () => {
+  it('testConnection() returns ok with botUsername when init succeeds', async () => {
     const result = await adapter.testConnection();
-    expect(result).toEqual({ ok: true });
+    expect(result).toEqual({ ok: true, botUsername: 'test_bot' });
   });
 
   it('testConnection() returns error when init fails', async () => {
@@ -1079,15 +1081,14 @@ describe('TelegramAdapter', () => {
 
     // Directly invoke the private handlePollingError method to simulate
     // repeated polling failures without needing timer orchestration.
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const adapterAny = adapter as any;
+    const adapterInternal = adapter as unknown as { handlePollingError: (err: Error) => void };
 
     // Call handlePollingError 5 times to exhaust RECONNECT_DELAYS (length=5)
     for (let i = 0; i < 5; i++) {
-      adapterAny.handlePollingError(new Error(`poll error ${i}`));
+      adapterInternal.handlePollingError(new Error(`poll error ${i}`));
     }
     // 6th call: reconnectAttempts is now 5, which >= RECONNECT_DELAYS.length
-    adapterAny.handlePollingError(new Error('final error'));
+    adapterInternal.handlePollingError(new Error('final error'));
 
     const status = adapter.getStatus();
     expect(status.lastError).toBe(

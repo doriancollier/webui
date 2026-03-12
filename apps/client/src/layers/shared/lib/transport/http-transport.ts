@@ -37,6 +37,7 @@ import type {
   RelayConversation,
   AdapterBinding,
   CreateBindingRequest,
+  ObservedChat,
 } from '@dorkos/shared/relay-schemas';
 import type {
   AgentManifest,
@@ -122,11 +123,12 @@ export class HttpTransport implements Transport {
   declare testRelayAdapterConnection: (
     type: string,
     config: Record<string, unknown>,
-  ) => Promise<{ ok: boolean; error?: string }>;
+  ) => Promise<{ ok: boolean; error?: string; botUsername?: string }>;
   declare getAdapterEvents: (
     adapterId: string,
     limit?: number,
   ) => Promise<{ events: AdapterEvent[] }>;
+  declare getObservedChats: (adapterId: string) => Promise<ObservedChat[]>;
   declare getBindings: () => Promise<AdapterBinding[]>;
   declare createBinding: (input: CreateBindingRequest) => Promise<AdapterBinding>;
   declare deleteBinding: (id: string) => Promise<void>;

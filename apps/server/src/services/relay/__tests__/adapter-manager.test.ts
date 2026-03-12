@@ -436,6 +436,37 @@ describe('AdapterManager', () => {
       expect(telegram!.instances[0].enabled).toBe(true);
       expect(telegram!.instances[0].status.state).toBe('connected');
     });
+
+    it('returns label in instances when adapter has a label', async () => {
+      const configWithLabel = JSON.stringify({
+        adapters: [
+          {
+            id: 'tg-main',
+            type: 'telegram',
+            enabled: true,
+            label: 'My Bot',
+            config: { token: 'bot-token-123', mode: 'polling' },
+          },
+        ],
+      });
+      vi.mocked(readFile).mockResolvedValue(configWithLabel);
+      await manager.initialize();
+
+      const catalog = manager.getCatalog();
+      const telegram = catalog.find((e) => e.manifest.type === 'telegram');
+
+      expect(telegram!.instances[0].label).toBe('My Bot');
+    });
+
+    it('does not include label key when adapter has no label', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      const catalog = manager.getCatalog();
+      const telegram = catalog.find((e) => e.manifest.type === 'telegram');
+
+      expect(telegram!.instances[0].label).toBeUndefined();
+    });
   });
 
   describe('maskSensitiveFields (via listAdapters)', () => {
@@ -849,16 +880,22 @@ describe('AdapterManager', () => {
     });
 
     it('rejects second instance of non-multiInstance type', async () => {
-      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      const configWithClaudeCode = JSON.stringify({
+        adapters: [
+          ...JSON.parse(VALID_CONFIG).adapters,
+          { id: 'cc-main', type: 'claude-code', enabled: false, config: {} },
+        ],
+      });
+      vi.mocked(readFile).mockResolvedValue(configWithClaudeCode);
       await manager.initialize();
 
-      // telegram is non-multiInstance, tg-main already exists
+      // claude-code is non-multiInstance, cc-main already exists
       await expect(
-        manager.addAdapter('telegram', 'tg-second', { token: 'tok', mode: 'polling' }),
+        manager.addAdapter('claude-code', 'cc-second', {}),
       ).rejects.toThrow(AdapterError);
 
       try {
-        await manager.addAdapter('telegram', 'tg-second', { token: 'tok', mode: 'polling' });
+        await manager.addAdapter('claude-code', 'cc-second', {});
       } catch (err) {
         expect((err as AdapterError).code).toBe('MULTI_INSTANCE_DENIED');
       }
@@ -880,6 +917,197 @@ describe('AdapterManager', () => {
       const whIds = adapters.filter((a) => a.config.type === 'webhook').map((a) => a.config.id);
       expect(whIds).toContain('wh-github');
       expect(whIds).toContain('wh-second');
+    });
+
+    it('allows second instance of multiInstance type (telegram)', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      // telegram is multiInstance, tg-main already exists
+      await expect(
+        manager.addAdapter('telegram', 'tg-second', { token: 'tok2', mode: 'polling' }),
+      ).resolves.not.toThrow();
+
+      const adapters = manager.listAdapters();
+      const tgIds = adapters.filter((a) => a.config.type === 'telegram').map((a) => a.config.id);
+      expect(tgIds).toContain('tg-main');
+      expect(tgIds).toContain('tg-second');
+    });
+
+    it('getCatalog() shows both Telegram instances under the telegram entry', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      await manager.addAdapter('telegram', 'tg-second', { token: 'tok2', mode: 'polling' });
+
+      const catalog = manager.getCatalog();
+      const telegram = catalog.find((e) => e.manifest.type === 'telegram');
+
+      expect(telegram).toBeDefined();
+      expect(telegram!.instances).toHaveLength(2);
+
+      const instanceIds = telegram!.instances.map((i) => i.id);
+      expect(instanceIds).toContain('tg-main');
+      expect(instanceIds).toContain('tg-second');
+    });
+
+    it('independent enable/disable works for each Telegram instance', async () => {
+      const twoTelegramConfig = JSON.stringify({
+        adapters: [
+          { id: 'tg-first', type: 'telegram', enabled: true, config: { token: 'tok1', mode: 'polling' } },
+          { id: 'tg-second', type: 'telegram', enabled: true, config: { token: 'tok2', mode: 'polling' } },
+        ],
+      });
+      vi.mocked(readFile).mockResolvedValue(twoTelegramConfig);
+      await manager.initialize();
+      vi.clearAllMocks();
+
+      // Disable only tg-first, tg-second should remain enabled
+      await manager.disable('tg-first');
+
+      expect(registry.unregister).toHaveBeenCalledWith('tg-first');
+      expect(registry.unregister).not.toHaveBeenCalledWith('tg-second');
+
+      const adapters = manager.listAdapters();
+      const first = adapters.find((a) => a.config.id === 'tg-first');
+      const second = adapters.find((a) => a.config.id === 'tg-second');
+      expect(first!.config.enabled).toBe(false);
+      expect(second!.config.enabled).toBe(true);
+    });
+
+    it('stores label at top-level when provided', async () => {
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ adapters: [] }));
+      await manager.initialize();
+      vi.clearAllMocks();
+
+      await manager.addAdapter(
+        'telegram',
+        'tg-labeled',
+        { token: 'tok', mode: 'polling' },
+        true,
+        '@MyBot',
+      );
+
+      // Label is stored in persisted config
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const saved = savedAdapters.find((a: { id: string }) => a.id === 'tg-labeled');
+      expect(saved.label).toBe('@MyBot');
+      // Adapter-specific config does NOT contain label
+      expect(saved.config.label).toBeUndefined();
+    });
+
+    it('does not include label in persisted config when omitted', async () => {
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ adapters: [] }));
+      await manager.initialize();
+      vi.clearAllMocks();
+
+      await manager.addAdapter('telegram', 'tg-nolabel', { token: 'tok', mode: 'polling' });
+
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const saved = savedAdapters.find((a: { id: string }) => a.id === 'tg-nolabel');
+      expect(saved.label).toBeUndefined();
+    });
+
+    it('label is NOT passed to the adapter constructor', async () => {
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ adapters: [] }));
+      await manager.initialize();
+      vi.clearAllMocks();
+
+      const { TelegramAdapter: TgMock } = await import('@dorkos/relay');
+      const capturedConfig: Record<string, unknown>[] = [];
+      vi.mocked(TgMock).mockImplementationOnce((id: string, cfg: Record<string, unknown>) => {
+        capturedConfig.push(cfg);
+        return {
+          id,
+          subjectPrefix: 'relay.human.telegram',
+          displayName: `Telegram (${id})`,
+          start: vi.fn().mockResolvedValue(undefined),
+          stop: vi.fn().mockResolvedValue(undefined),
+          deliver: vi.fn().mockResolvedValue({ success: true, durationMs: 0 }),
+          getStatus: vi.fn().mockReturnValue({
+            state: 'connected',
+            messageCount: { inbound: 0, outbound: 0 },
+            errorCount: 0,
+          }),
+          testConnection: vi.fn().mockResolvedValue({ ok: true }),
+        };
+      });
+
+      await manager.addAdapter(
+        'telegram',
+        'tg-test',
+        { token: 'tok', mode: 'polling' },
+        true,
+        '@ShouldNotPassThrough',
+      );
+
+      // The label should not appear in the config passed to the adapter constructor
+      // The config passed to the adapter is the adapter-specific config record
+      expect(capturedConfig[0]).not.toHaveProperty('label');
+    });
+  });
+
+  describe('updateAdapterLabel()', () => {
+    it('sets label on an existing adapter and persists', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+      vi.clearAllMocks();
+
+      await manager.updateAdapterLabel('tg-main', 'Production Bot');
+
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const saved = savedAdapters.find((a: { id: string }) => a.id === 'tg-main');
+      expect(saved.label).toBe('Production Bot');
+    });
+
+    it('clears label when empty string provided', async () => {
+      const configWithLabel = JSON.stringify({
+        adapters: [
+          {
+            id: 'tg-main',
+            type: 'telegram',
+            enabled: true,
+            label: 'Old Label',
+            config: { token: 'bot-token-123', mode: 'polling' },
+          },
+        ],
+      });
+      vi.mocked(readFile).mockResolvedValue(configWithLabel);
+      await manager.initialize();
+      vi.clearAllMocks();
+
+      await manager.updateAdapterLabel('tg-main', '');
+
+      const savedJson = vi.mocked(writeFile).mock.calls.at(-1)?.[1] as string;
+      const savedAdapters = JSON.parse(savedJson).adapters;
+      const saved = savedAdapters.find((a: { id: string }) => a.id === 'tg-main');
+      expect(saved.label).toBeUndefined();
+    });
+
+    it('label is reflected in getCatalog() after update', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      await manager.updateAdapterLabel('tg-main', 'Updated Label');
+
+      const catalog = manager.getCatalog();
+      const telegram = catalog.find((e) => e.manifest.type === 'telegram');
+      expect(telegram!.instances[0].label).toBe('Updated Label');
+    });
+
+    it('throws NOT_FOUND for unknown adapter ID', async () => {
+      vi.mocked(readFile).mockResolvedValue(VALID_CONFIG);
+      await manager.initialize();
+
+      try {
+        await manager.updateAdapterLabel('nonexistent', 'Some Label');
+      } catch (err) {
+        expect(err).toBeInstanceOf(AdapterError);
+        expect((err as AdapterError).code).toBe('NOT_FOUND');
+      }
     });
   });
 

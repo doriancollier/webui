@@ -36,8 +36,17 @@ export interface SessionStatusData {
   cwd: string | null;
 }
 
+/**
+ * Computes derived session status data from streaming events, API data, and
+ * optimistic local overrides.
+ *
+ * @param sessionId - The active session ID, or null when no session is selected.
+ *   When null, the session query is disabled and no API requests are made.
+ * @param streamingStatus - Live status events received during streaming.
+ * @param isStreaming - Whether a stream is currently active.
+ */
 export function useSessionStatus(
-  sessionId: string,
+  sessionId: string | null,
   streamingStatus: SessionStatusEvent | null,
   isStreaming: boolean
 ) {
@@ -51,8 +60,9 @@ export function useSessionStatus(
 
   const { data: session } = useQuery({
     queryKey: ['session', sessionId, selectedCwd],
-    queryFn: () => transport.getSession(sessionId, selectedCwd ?? undefined),
+    queryFn: () => transport.getSession(sessionId!, selectedCwd ?? undefined),
     staleTime: 30_000,
+    enabled: !!sessionId,
   });
 
   // Priority: local optimistic > streaming live data > persisted session data > defaults
@@ -76,6 +86,9 @@ export function useSessionStatus(
 
   const updateSession = useCallback(
     async (opts: UpdateSessionRequest) => {
+      // No-op when no session is active — the UI should only invoke this with a live session.
+      if (!sessionId) return;
+
       // Apply optimistic update immediately
       if (opts.model) setLocalModel(opts.model);
       if (opts.permissionMode) setLocalPermissionMode(opts.permissionMode);

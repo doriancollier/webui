@@ -9,7 +9,7 @@
  */
 import { eq, sql, count, relayTraces, type Db } from '@dorkos/db';
 import { ulid } from 'ulidx';
-import type { DeliveryMetrics } from '@dorkos/shared/relay-schemas';
+import type { DeliveryMetrics, ObservedChat, ChannelType } from '@dorkos/shared/relay-schemas';
 import { logger } from '../../lib/logger.js';
 
 /**
@@ -246,6 +246,70 @@ export class TraceStore {
       .orderBy(sql`${relayTraces.sentAt} DESC, ${relayTraces.id} DESC`)
       .limit(limit)
       .all();
+  }
+
+  /**
+   * Get observed chats for an adapter by querying trace metadata.
+   *
+   * Extracts unique chatId values from trace span metadata where the
+   * adapterId matches, groups by chatId, and returns aggregated results
+   * sorted by most recent message.
+   *
+   * @param adapterId - Adapter instance ID to filter by
+   * @param limit - Maximum number of chats to return (default 100)
+   */
+  getObservedChats(adapterId: string, limit = 100): ObservedChat[] {
+    const rows = this.db
+      .select({
+        metadata: relayTraces.metadata,
+        sentAt: relayTraces.sentAt,
+      })
+      .from(relayTraces)
+      .where(
+        sql`json_extract(${relayTraces.metadata}, '$.adapterId') = ${adapterId}`,
+      )
+      .all();
+
+    const VALID_CHANNEL_TYPES = new Set<ChannelType>(['dm', 'group', 'channel', 'thread']);
+
+    // Group by chatId in application code
+    const chatMap = new Map<string, ObservedChat>();
+
+    for (const row of rows) {
+      if (!row.metadata) continue;
+      try {
+        const meta = JSON.parse(row.metadata) as Record<string, unknown>;
+        const chatId = meta.chatId as string | undefined;
+        if (!chatId) continue;
+
+        const existing = chatMap.get(chatId);
+        if (existing) {
+          existing.messageCount++;
+          if (row.sentAt > existing.lastMessageAt) {
+            existing.lastMessageAt = row.sentAt;
+          }
+        } else {
+          const rawChannel = meta.channelType as string | undefined;
+          const channelType = rawChannel && VALID_CHANNEL_TYPES.has(rawChannel as ChannelType)
+            ? (rawChannel as ChannelType)
+            : undefined;
+          chatMap.set(chatId, {
+            chatId,
+            displayName: meta.displayName as string | undefined,
+            channelType,
+            lastMessageAt: row.sentAt,
+            messageCount: 1,
+          });
+        }
+      } catch {
+        // Skip malformed metadata
+      }
+    }
+
+    // Sort by lastMessageAt descending and limit
+    return Array.from(chatMap.values())
+      .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt))
+      .slice(0, limit);
   }
 
   /** No-op — connection lifecycle is managed by the shared Db instance. */

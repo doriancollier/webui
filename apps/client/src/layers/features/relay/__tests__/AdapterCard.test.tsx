@@ -7,6 +7,21 @@ import { AdapterCard } from '../ui/AdapterCard';
 import type { AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-schemas';
 
 // ---------------------------------------------------------------------------
+// Mock entity hooks — AdapterCard now calls useBindings and useRegisteredAgents
+// ---------------------------------------------------------------------------
+
+const mockUseBindings = vi.fn();
+const mockUseRegisteredAgents = vi.fn();
+
+vi.mock('@/layers/entities/binding', () => ({
+  useBindings: (...args: unknown[]) => mockUseBindings(...args),
+}));
+
+vi.mock('@/layers/entities/mesh', () => ({
+  useRegisteredAgents: (...args: unknown[]) => mockUseRegisteredAgents(...args),
+}));
+
+// ---------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------
 
@@ -117,6 +132,9 @@ async function openKebabMenu() {
 describe('AdapterCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default: no bindings, no agents — tests that need them override per-case
+    mockUseBindings.mockReturnValue({ data: [] });
+    mockUseRegisteredAgents.mockReturnValue({ data: { agents: [] } });
   });
 
   afterEach(() => {
@@ -384,5 +402,135 @@ describe('AdapterCard', () => {
   it('does not render Collapsible when lastError is null', () => {
     render(<AdapterCard {...defaultProps()} />);
     expect(screen.queryByRole('button', { name: 'Toggle full error message' })).toBeNull();
+  });
+
+  // -------------------------------------------------------------------------
+  // Label display tests (task 3.2)
+  // -------------------------------------------------------------------------
+
+  it('shows label as primary text when label is set', () => {
+    const labeledInstance: CatalogInstance = {
+      ...connectedInstance,
+      label: 'My Bot',
+    };
+    render(<AdapterCard {...defaultProps({ instance: labeledInstance })} />);
+    expect(screen.getByText('My Bot')).toBeTruthy();
+  });
+
+  it('shows adapter type displayName as secondary text when label is set', () => {
+    const labeledInstance: CatalogInstance = {
+      ...connectedInstance,
+      label: 'My Bot',
+    };
+    render(<AdapterCard {...defaultProps({ instance: labeledInstance })} />);
+    // Primary label shown, and secondary should be the status displayName
+    expect(screen.getByText('My Bot')).toBeTruthy();
+    expect(screen.getByText('Main Telegram')).toBeTruthy();
+  });
+
+  it('falls back to status displayName as primary when no label set', () => {
+    render(<AdapterCard {...defaultProps({ instance: connectedInstance })} />);
+    expect(screen.getByText('Main Telegram')).toBeTruthy();
+  });
+
+  it('does not show secondary text line when no label is set', () => {
+    // When there is no custom label, secondaryName is null so no duplicate line
+    render(<AdapterCard {...defaultProps({ instance: connectedInstance })} />);
+    // 'Main Telegram' should appear exactly once (as primary, not duplicated as secondary)
+    const elements = screen.getAllByText('Main Telegram');
+    expect(elements).toHaveLength(1);
+  });
+
+  // -------------------------------------------------------------------------
+  // Status dot tests (task 3.2)
+  // -------------------------------------------------------------------------
+
+  it('shows green status dot when connected with bindings', () => {
+    mockUseBindings.mockReturnValue({
+      data: [{ id: 'b1', adapterId: 'tg-main', agentId: 'agent-1', projectPath: '/p', sessionStrategy: 'per-chat', label: '', createdAt: '', updatedAt: '' }],
+    });
+    const { container } = render(<AdapterCard {...defaultProps()} />);
+    expect(container.querySelector('.bg-green-500')).toBeTruthy();
+  });
+
+  it('shows amber pulsing status dot when connected with no bindings', () => {
+    mockUseBindings.mockReturnValue({ data: [] });
+    const { container } = render(<AdapterCard {...defaultProps()} />);
+    expect(container.querySelector('.bg-amber-500')).toBeTruthy();
+    expect(container.querySelector('.animate-pulse')).toBeTruthy();
+  });
+
+  it('shows red status dot when adapter is in error state', () => {
+    const { container } = render(<AdapterCard {...defaultProps({ instance: errorInstance })} />);
+    expect(container.querySelector('.bg-red-500')).toBeTruthy();
+  });
+
+  it('shows gray status dot when adapter is disconnected', () => {
+    const { container } = render(<AdapterCard {...defaultProps({ instance: disabledInstance })} />);
+    expect(container.querySelector('.bg-gray-400')).toBeTruthy();
+  });
+
+  // -------------------------------------------------------------------------
+  // Bound agents display tests (task 3.2)
+  // -------------------------------------------------------------------------
+
+  it('shows bound agent names when bindings exist', () => {
+    mockUseBindings.mockReturnValue({
+      data: [{ id: 'b1', adapterId: 'tg-main', agentId: 'agent-1', projectPath: '/p', sessionStrategy: 'per-chat', label: '', createdAt: '', updatedAt: '' }],
+    });
+    mockUseRegisteredAgents.mockReturnValue({
+      data: { agents: [{ id: 'agent-1', name: 'Alpha Bot' }] },
+    });
+    render(<AdapterCard {...defaultProps()} />);
+    expect(screen.getByText(/Alpha Bot/)).toBeTruthy();
+  });
+
+  it('falls back to agentId when agent is not in registry', () => {
+    mockUseBindings.mockReturnValue({
+      data: [{ id: 'b1', adapterId: 'tg-main', agentId: 'agent-unknown', projectPath: '/p', sessionStrategy: 'per-chat', label: '', createdAt: '', updatedAt: '' }],
+    });
+    render(<AdapterCard {...defaultProps()} />);
+    expect(screen.getByText(/agent-unknown/)).toBeTruthy();
+  });
+
+  it('shows "No agent bound" text when connected with no bindings', () => {
+    mockUseBindings.mockReturnValue({ data: [] });
+    render(<AdapterCard {...defaultProps()} />);
+    expect(screen.getByText('No agent bound')).toBeTruthy();
+  });
+
+  it('does not show "No agent bound" when disconnected', () => {
+    mockUseBindings.mockReturnValue({ data: [] });
+    render(<AdapterCard {...defaultProps({ instance: disabledInstance })} />);
+    expect(screen.queryByText('No agent bound')).toBeNull();
+  });
+
+  it('shows "Bind" button when connected with no bindings and onBindClick provided', () => {
+    mockUseBindings.mockReturnValue({ data: [] });
+    const onBindClick = vi.fn();
+    render(<AdapterCard {...defaultProps({ onBindClick })} />);
+    expect(screen.getByRole('button', { name: 'Bind' })).toBeTruthy();
+  });
+
+  it('does not show "Bind" button when onBindClick not provided', () => {
+    mockUseBindings.mockReturnValue({ data: [] });
+    render(<AdapterCard {...defaultProps()} />);
+    expect(screen.queryByRole('button', { name: 'Bind' })).toBeNull();
+  });
+
+  it('calls onBindClick when "Bind" button is clicked', () => {
+    mockUseBindings.mockReturnValue({ data: [] });
+    const onBindClick = vi.fn();
+    render(<AdapterCard {...defaultProps({ onBindClick })} />);
+    fireEvent.click(screen.getByRole('button', { name: 'Bind' }));
+    expect(onBindClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not show "No agent bound" when bindings exist', () => {
+    mockUseBindings.mockReturnValue({
+      data: [{ id: 'b1', adapterId: 'tg-main', agentId: 'agent-1', projectPath: '/p', sessionStrategy: 'per-chat', label: '', createdAt: '', updatedAt: '' }],
+    });
+    render(<AdapterCard {...defaultProps()} />);
+    expect(screen.queryByText('No agent bound')).toBeNull();
   });
 });

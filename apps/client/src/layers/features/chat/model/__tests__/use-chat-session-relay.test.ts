@@ -168,7 +168,9 @@ describe('useChatSession relay protocol', () => {
     expect(mockTransport.sendMessageRelay).not.toHaveBeenCalled();
   });
 
-  it('adds user message optimistically on relay submit', async () => {
+  it('sets pendingUserContent on relay submit (ephemeral bubble, not in messages)', async () => {
+    // ADR-0003: JSONL is the source of truth. The optimistic user message is now an
+    // ephemeral string in pendingUserContent — never added to messages[] directly.
     mockUseRelayEnabled.mockReturnValue(true);
     vi.mocked(mockTransport.sendMessageRelay).mockResolvedValue({
       messageId: 'msg-1',
@@ -187,13 +189,9 @@ describe('useChatSession relay protocol', () => {
 
     await submitWithStreamReady(result, es!);
 
-    expect(result.current.messages).toHaveLength(1);
-    expect(result.current.messages[0]).toEqual(
-      expect.objectContaining({
-        role: 'user',
-        content: 'optimistic msg',
-      })
-    );
+    // User content is surfaced via pendingUserContent, not messages[]
+    expect(result.current.pendingUserContent).toBe('optimistic msg');
+    expect(result.current.messages.filter((m) => m.role === 'user')).toHaveLength(0);
   });
 
   it('sets status to streaming on relay submit', async () => {
@@ -1222,13 +1220,13 @@ describe('useChatSession relay protocol', () => {
       // Status should be streaming after relay submit
       expect(result.current.status).toBe('streaming');
 
-      // The optimistic user message should be present
-      expect(result.current.messages).toContainEqual(
-        expect.objectContaining({ role: 'user', content: 'hello' })
-      );
+      // The pending user content should be surfaced via pendingUserContent (not messages[])
+      // ADR-0003: JSONL is the source of truth — user content is ephemeral until confirmed.
+      expect(result.current.pendingUserContent).toBe('hello');
+      expect(result.current.messages.filter((m) => m.role === 'user')).toHaveLength(0);
 
       // Simulate sync_update which would trigger a refetch — but the streaming
-      // guard in the seed effect should prevent overwriting optimistic messages
+      // guard in the seed effect should prevent overwriting messages with stale history
       act(() => {
         es?.emit('sync_update', {});
       });
@@ -1237,10 +1235,10 @@ describe('useChatSession relay protocol', () => {
         await Promise.resolve();
       });
 
-      // The optimistic user message must still be present (not overwritten by seed)
-      expect(result.current.messages).toContainEqual(
-        expect.objectContaining({ role: 'user', content: 'hello' })
-      );
+      // Streaming guard must keep status as streaming (seed effect must not fire during stream)
+      expect(result.current.status).toBe('streaming');
+      // pendingUserContent must still be visible (not cleared by the sync_update refetch)
+      expect(result.current.pendingUserContent).toBe('hello');
     });
   });
 });

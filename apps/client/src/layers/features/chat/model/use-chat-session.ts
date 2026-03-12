@@ -86,6 +86,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const relayEnabled = useRelayEnabled();
   const clientIdRef = useRef(crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [pendingUserContent, setPendingUserContent] = useState<string | null>(null);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -168,6 +169,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         setEstimatedTokens,
         setStreamStartTime,
         setIsTextStreaming,
+        setPendingUserContent,
         sessionId: sessionId ?? '',
         onTaskEventRef,
         onSessionIdChangeRef,
@@ -368,15 +370,10 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
       onSessionIdChangeRef.current?.(targetSessionId);
     }
 
-    const userMessage: ChatMessage = {
-      id: crypto.randomUUID(),
-      role: 'user',
-      content,
-      parts: [{ type: 'text', text: content }],
-      timestamp: new Date().toISOString(),
-    };
-
-    setMessages((prev) => [...prev, userMessage]);
+    // Show a pending bubble immediately — provides visual feedback without adding to the
+    // JSONL-sourced messages array. Cleared on first text_delta or on stream completion/error.
+    // This avoids the optimistic dedup race (ADR-0003: JSONL is the source of truth).
+    setPendingUserContent(content);
     if (clearInput) setInput('');
     setStatus('streaming');
     statusRef.current = 'streaming'; // Sync ref immediately — closes the timing window where sync_update could invalidate stale history
@@ -398,14 +395,6 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
       const finalContent = transformContentRef.current
         ? await transformContentRef.current(content)
         : content;
-
-      // Update optimistic message with file prefix so pills render immediately
-      // rather than waiting for the JSONL transcript refresh after streaming.
-      if (finalContent !== content) {
-        setMessages((prev) =>
-          prev.map((m) => (m.id === userMessage.id ? { ...m, content: finalContent } : m))
-        );
-      }
 
       if (relayEnabled) {
         // Generate a per-message correlation ID so the relay_message listener can
@@ -435,9 +424,13 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
           abortController.signal,
           selectedCwd ?? undefined
         );
+        // Clear pending bubble after stream completes (text_delta clears it earlier if content arrived)
+        setPendingUserContent(null);
         setStatus('idle');
       }
     } catch (err) {
+      // Clear pending bubble on any error — must not linger if delivery fails
+      setPendingUserContent(null);
       if ((err as Error).name !== 'AbortError') {
         if ((err as { code?: string }).code === 'SESSION_LOCKED') {
           setSessionBusy(true);
@@ -526,6 +519,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
 
   return {
     messages,
+    pendingUserContent,
     input,
     setInput,
     handleSubmit,
