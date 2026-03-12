@@ -210,6 +210,10 @@ router.post('/:id/messages', async (req, res) => {
   const lockAcquired = runtime.acquireLock(sessionId, clientId, res);
   if (!lockAcquired) {
     const lockInfo = runtime.getLockInfo(sessionId);
+    logger.warn('[POST /messages] session locked', {
+      sessionId,
+      lockedBy: lockInfo?.clientId ?? 'unknown',
+    });
     return res.status(409).json({
       error: 'Session locked',
       code: 'SESSION_LOCKED',
@@ -221,11 +225,14 @@ router.post('/:id/messages', async (req, res) => {
   // Relay path: publish to message bus and return 202 receipt
   const relayCore = req.app.locals.relayCore as RelayCore | undefined;
   if (isRelayEnabled() && relayCore) {
+    logger.info('[POST /messages] relay path', { sessionId, contentLength: content.length });
     try {
       const receipt = await publishViaRelay(relayCore, sessionId, clientId, content, cwd, correlationId);
+      logger.debug('[POST /messages] relay published', { sessionId, messageId: receipt.messageId });
       return res.status(202).json(receipt);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Relay publish failed';
+      logger.warn('[POST /messages] relay publish failed', { sessionId, error: message });
       return res.status(500).json({ error: message });
     } finally {
       runtime.releaseLock(sessionId, clientId);
@@ -244,6 +251,8 @@ router.post('/:id/messages', async (req, res) => {
   // Guarantee lock release if client disconnects before try block
   res.on('close', releaseLockOnce);
 
+  logger.info('[POST /messages] SSE path', { sessionId, contentLength: content.length });
+
   initSSEStream(res);
 
   try {
@@ -254,6 +263,10 @@ router.post('/:id/messages', async (req, res) => {
       if (event.type === 'done') {
         const actualInternalId = runtime.getInternalSessionId(sessionId);
         if (actualInternalId && actualInternalId !== sessionId) {
+          logger.debug('[POST /messages] session ID remapped', {
+            sessionId,
+            internalId: actualInternalId,
+          });
           // Send a redirect hint so the client can update its session ID
           await sendSSEEvent(res, {
             type: 'done',
@@ -263,6 +276,10 @@ router.post('/:id/messages', async (req, res) => {
       }
     }
   } catch (err) {
+    logger.warn('[POST /messages] SSE stream error', {
+      sessionId,
+      error: err instanceof Error ? err.message : String(err),
+    });
     await sendSSEEvent(res, {
       type: 'error',
       data: { message: err instanceof Error ? err.message : 'Unknown error' },

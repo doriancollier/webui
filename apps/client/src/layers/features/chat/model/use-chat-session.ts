@@ -247,6 +247,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         await transport.getSession(capturedSessionId, selectedCwdRef.current ?? undefined);
         // Successful response: backend session exists and is no longer actively streaming.
         // Transition to idle and refresh message history.
+        console.warn('[chat] staleness timer fired — done event was lost, recovering', { sessionId: capturedSessionId });
         setStatus('idle');
         queryClient.invalidateQueries({ queryKey: ['messages', capturedSessionId, selectedCwdRef.current] });
       } catch {
@@ -282,13 +283,18 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
           envelope.correlationId &&
           envelope.correlationId !== correlationIdRef.current
         ) {
+          console.debug('[chat] discarding late relay event', {
+            type: envelope.payload.type,
+            expected: correlationIdRef.current,
+            received: envelope.correlationId,
+          });
           return;
         }
         // Reset staleness timer on every relay event — stream is still active
         resetStalenessTimer();
         streamEventHandler(envelope.payload.type, envelope.payload.data, assistantIdRef.current);
-      } catch {
-        // Ignore parse errors
+      } catch (err) {
+        console.warn('[chat] failed to parse relay_message event', err);
       }
     });
 
@@ -303,6 +309,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
 
     eventSource.onerror = () => {
       // EventSource auto-reconnects; reset ready state so we re-handshake
+      console.warn('[chat] relay SSE connection error — will reconnect', { sessionId });
       streamReadyRef.current = false;
     };
 

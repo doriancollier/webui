@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add structured debug logging across chat flow layers
 - Add smooth LOD transitions, adapter labels, and ghost node tests
 - Redesign AdapterCard with bindings display and CCA treatment
 - Add ghost adapter placeholder and binding edge metadata

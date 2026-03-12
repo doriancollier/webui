@@ -15,6 +15,7 @@ import {
 } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
 import type { MessageOpts, AgentRegistryPort } from '@dorkos/shared/agent-runtime';
+import type { McpServerEntry } from '@dorkos/shared/transport';
 import type { AgentSession } from './agent-types.js';
 import { createToolState } from './agent-types.js';
 import { createCanUseTool } from './interactive-handlers.js';
@@ -39,6 +40,7 @@ export interface MessageSenderOpts {
   onModelsReceived?: (
     models: Array<{ value: string; displayName: string; description: string }>
   ) => void;
+  onMcpStatusReceived?: (servers: McpServerEntry[]) => void;
   sdkSessionIndex: Map<string, string>;
   sessionMapKey: string;
 }
@@ -87,6 +89,7 @@ export async function* executeSdkQuery(
   try {
     await validateBoundary(effectiveCwd);
   } catch {
+    logger.warn('[sendMessage] boundary violation', { session: sessionId, effectiveCwd });
     yield {
       type: 'error',
       data: { message: `Directory boundary violation: ${effectiveCwd}` },
@@ -206,7 +209,40 @@ export async function* executeSdkQuery(
       });
   }
 
+  // Non-blocking MCP status snapshot — fires every query, overwrites cache
+  if (opts.onMcpStatusReceived) {
+    agentQuery
+      .mcpServerStatus()
+      .then((statuses) => {
+        opts.onMcpStatusReceived!(
+          statuses
+            .filter((s) => s.name !== 'dorkos')
+            .map((s) => ({
+              name: s.name,
+              type:
+                s.config?.type === 'sse' || s.config?.type === 'http'
+                  ? s.config.type
+                  : ('stdio' as const),
+              status: s.status,
+              error: s.error,
+              scope: s.scope,
+            })),
+        );
+      })
+      .catch((err) => {
+        logger.debug('[sendMessage] failed to fetch MCP server status', { err });
+      });
+  }
+
+  logger.info('[sendMessage] stream start', {
+    session: sessionId,
+    hasStarted: session.hasStarted,
+    effectiveCwd,
+  });
+
   let emittedDone = false;
+  let eventCount = 0;
+  const streamStart = Date.now();
   const toolState = createToolState();
 
   try {
@@ -251,6 +287,7 @@ export async function* executeSdkQuery(
             opts.meshCore.updateLastSeen(meshAgentId, 'response_complete');
           }
         }
+        eventCount++;
         yield event;
       }
       // Update reverse index if sdk-event-mapper assigned a new SDK session ID
@@ -269,6 +306,12 @@ export async function* executeSdkQuery(
       yield* executeSdkQuery(sessionId, content, session, opts, messageOpts);
       return;
     }
+    logger.warn('[sendMessage] stream error', {
+      session: sessionId,
+      error: err instanceof Error ? err.message : String(err),
+      durationMs: Date.now() - streamStart,
+      eventCount,
+    });
     yield {
       type: 'error',
       data: {
@@ -278,6 +321,12 @@ export async function* executeSdkQuery(
   } finally {
     session.activeQuery = undefined;
   }
+
+  logger.info('[sendMessage] stream done', {
+    session: sessionId,
+    durationMs: Date.now() - streamStart,
+    eventCount,
+  });
 
   if (!emittedDone) {
     yield {

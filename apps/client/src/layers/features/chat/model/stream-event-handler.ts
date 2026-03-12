@@ -186,6 +186,8 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         const existing = findToolCallPart(tc.toolCallId);
         if (existing && tc.input) {
           existing.input = (existing.input || '') + tc.input;
+        } else if (!existing) {
+          console.warn('[stream] tool_call_delta: unknown toolCallId', tc.toolCallId);
         }
         updateAssistantMessage(assistantId);
         break;
@@ -195,6 +197,8 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         const existing = findToolCallPart(tc.toolCallId);
         if (existing) {
           existing.status = 'complete';
+        } else {
+          console.warn('[stream] tool_call_end: unknown toolCallId', tc.toolCallId);
         }
         updateAssistantMessage(assistantId);
         break;
@@ -209,6 +213,8 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           if (existing.interactiveType === 'question' && !existing.answers) {
             existing.answers = {};
           }
+        } else {
+          console.warn('[stream] tool_result: unknown toolCallId', tc.toolCallId);
         }
         // Defer re-render by one microtask so the immediately-following
         // text_delta('Done') event can batch into the same React flush,
@@ -224,6 +230,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           existingA.input = approval.input;
           existingA.status = 'pending';
         } else {
+          // New tool call arriving directly as approval_required (no prior tool_call_start)
           currentPartsRef.current.push({
             type: 'tool_call',
             toolCallId: approval.toolCallId,
@@ -301,6 +308,10 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         isTextStreamingRef.current = false;
         setIsTextStreaming(false);
         setStatus('idle');
+        break;
+      }
+      default: {
+        console.warn('[stream] unknown event type:', type, data);
         break;
       }
     }
