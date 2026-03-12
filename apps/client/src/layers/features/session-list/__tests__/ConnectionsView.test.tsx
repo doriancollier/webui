@@ -22,6 +22,16 @@ vi.mock('@/layers/entities/mesh/model/use-mesh-agents', () => ({
   useRegisteredAgents: () => mockRegisteredAgents(),
 }));
 
+// Mock useAgentAccess
+const mockAgentAccess = vi.fn<() => { data: { agents: AgentManifest[] } | undefined; isLoading: boolean }>(() => ({
+  data: undefined,
+  isLoading: false,
+}));
+vi.mock('@/layers/entities/mesh/model/use-mesh-access', () => ({
+  useAgentAccess: () => mockAgentAccess(),
+  useUpdateAccessRule: vi.fn(),
+}));
+
 // Mock useBindings
 const mockBindings = vi.fn<() => { data: AdapterBinding[] }>(() => ({ data: [] }));
 vi.mock('@/layers/entities/binding/model/use-bindings', () => ({
@@ -137,6 +147,7 @@ describe('ConnectionsView', () => {
     mockRegisteredAgents.mockReturnValue({ data: { agents: [] } });
     mockBindings.mockReturnValue({ data: [] });
     mockMcpConfig.mockReturnValue({ data: { servers: [] } });
+    mockAgentAccess.mockReturnValue({ data: undefined, isLoading: false });
   });
 
   afterEach(() => {
@@ -243,5 +254,104 @@ describe('ConnectionsView', () => {
     mockBindings.mockReturnValue({ data: [makeBinding('a1', AGENT_ID)] });
     render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
     expect(screen.getByText('connected')).toBeInTheDocument();
+  });
+
+  describe('agent filtering via useAgentAccess', () => {
+    it('shows all agents when no agentId is provided', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: { agents: [makeAgent('ag1', 'Alpha'), makeAgent('ag2', 'Beta')] },
+      });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={null} />, { wrapper: Wrapper });
+      expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Beta')).toBeInTheDocument();
+    });
+
+    it('shows only reachable agents when agentId is set and access data is resolved', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: { agents: [makeAgent('ag1', 'Alpha'), makeAgent('ag2', 'Beta'), makeAgent('ag3', 'Gamma')] },
+      });
+      // Only ag1 and ag3 are reachable
+      mockAgentAccess.mockReturnValue({
+        data: { agents: [makeAgent('ag1', 'Alpha'), makeAgent('ag3', 'Gamma')] },
+        isLoading: false,
+      });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
+      expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.queryByText('Beta')).not.toBeInTheDocument();
+      expect(screen.getByText('Gamma')).toBeInTheDocument();
+    });
+
+    it('shows all agents while access query is loading (avoids flicker)', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: { agents: [makeAgent('ag1', 'Alpha'), makeAgent('ag2', 'Beta')] },
+      });
+      mockAgentAccess.mockReturnValue({ data: undefined, isLoading: true });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
+      expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Beta')).toBeInTheDocument();
+    });
+
+    it('shows all agents when access query returns an error (fail open)', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: { agents: [makeAgent('ag1', 'Alpha'), makeAgent('ag2', 'Beta')] },
+      });
+      // Error state: data is undefined, isLoading is false
+      mockAgentAccess.mockReturnValue({ data: undefined, isLoading: false });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
+      expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Beta')).toBeInTheDocument();
+    });
+  });
+
+  describe('agents cap (AGENT_CAP = 3)', () => {
+    it('shows all agents when count is at or below cap', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: {
+          agents: [makeAgent('ag1', 'Alpha'), makeAgent('ag2', 'Beta'), makeAgent('ag3', 'Gamma')],
+        },
+      });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={null} />, { wrapper: Wrapper });
+      expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Beta')).toBeInTheDocument();
+      expect(screen.getByText('Gamma')).toBeInTheDocument();
+      expect(screen.queryByText(/more agent/)).not.toBeInTheDocument();
+    });
+
+    it('shows only the first 3 agents and an overflow button when count exceeds cap', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: {
+          agents: [
+            makeAgent('ag1', 'Alpha'),
+            makeAgent('ag2', 'Beta'),
+            makeAgent('ag3', 'Gamma'),
+            makeAgent('ag4', 'Delta'),
+            makeAgent('ag5', 'Epsilon'),
+          ],
+        },
+      });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={null} />, { wrapper: Wrapper });
+      expect(screen.getByText('Alpha')).toBeInTheDocument();
+      expect(screen.getByText('Beta')).toBeInTheDocument();
+      expect(screen.getByText('Gamma')).toBeInTheDocument();
+      expect(screen.queryByText('Delta')).not.toBeInTheDocument();
+      expect(screen.queryByText('Epsilon')).not.toBeInTheDocument();
+      expect(screen.getByText('+ 2 more agents reachable →')).toBeInTheDocument();
+    });
+
+    it('overflow button opens Mesh panel', () => {
+      mockRegisteredAgents.mockReturnValue({
+        data: {
+          agents: [
+            makeAgent('ag1', 'Alpha'),
+            makeAgent('ag2', 'Beta'),
+            makeAgent('ag3', 'Gamma'),
+            makeAgent('ag4', 'Delta'),
+          ],
+        },
+      });
+      render(<ConnectionsView toolStatus={enabledToolStatus} agentId={null} />, { wrapper: Wrapper });
+      fireEvent.click(screen.getByText('+ 1 more agent reachable →'));
+      expect(mockSetMeshOpen).toHaveBeenCalledWith(true);
+    });
   });
 });

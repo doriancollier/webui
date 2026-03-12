@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useRelayAdapters } from '@/layers/entities/relay';
-import { useRegisteredAgents } from '@/layers/entities/mesh';
+import { useRegisteredAgents, useAgentAccess } from '@/layers/entities/mesh';
 import { useBindings } from '@/layers/entities/binding';
 import { useAppStore } from '@/layers/shared/model';
 import type { AgentToolStatus, ChipState } from '@/layers/entities/agent';
@@ -58,6 +58,13 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
   const { data: mcpConfig } = useMcpConfig(selectedCwd);
   const mcpServers = mcpConfig?.servers ?? [];
 
+  // Fetch agents reachable by the current agent. Only enabled when an agentId
+  // is present and mesh is not disabled-by-server.
+  const { data: accessData, isLoading: accessLoading } = useAgentAccess(
+    agentId ?? '',
+    meshEnabled && !!agentId,
+  );
+
   // Show only adapters that are either the built-in CCA (serves all agents) or
   // have a binding to the currently viewed agent.
   // Note: `builtin` means loaded from @dorkos/relay; only claude-code type serves all agents.
@@ -70,6 +77,20 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
     );
     return adapters.filter((a) => isCca(a) || boundAdapterIds.has(a.config.id));
   }, [adapters, bindings, agentId]);
+
+  // Filter agents to those reachable from the current agent. While loading or
+  // on error (data undefined), fall back to showing all agents to avoid flicker
+  // and fail-open gracefully.
+  const visibleAgents = useMemo(() => {
+    if (!agentId || accessLoading || !accessData) return agents;
+    const reachableIds = new Set(accessData.agents.map((a) => a.id));
+    return agents.filter((a) => reachableIds.has(a.id));
+  }, [agents, agentId, accessData, accessLoading]);
+
+  const AGENT_CAP = 3;
+
+  const cappedAgents = visibleAgents.slice(0, AGENT_CAP);
+  const agentOverflow = visibleAgents.length - AGENT_CAP;
 
   const showRelaySection = relayEnabled;
   const showMeshSection = meshEnabled;
@@ -138,13 +159,13 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
               <div className="px-3 py-2">
                 <p className="text-muted-foreground/60 text-sm">Mesh disabled for this agent</p>
               </div>
-            ) : agents.length === 0 ? (
+            ) : visibleAgents.length === 0 ? (
               <div className="px-3 py-2">
                 <p className="text-muted-foreground/60 text-sm">No agents registered</p>
               </div>
             ) : (
               <SidebarMenu>
-                {agents.map((agent) => (
+                {cappedAgents.map((agent) => (
                   <SidebarMenuItem key={agent.id}>
                     <SidebarMenuButton
                       onClick={() => setMeshOpen(true)}
@@ -157,6 +178,17 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
+            )}
+
+            {agentOverflow > 0 && (
+              <div className="px-3 py-1">
+                <button
+                  onClick={() => setMeshOpen(true)}
+                  className="text-muted-foreground hover:text-foreground text-xs transition-colors"
+                >
+                  + {agentOverflow} more {agentOverflow === 1 ? 'agent' : 'agents'} reachable →
+                </button>
+              </div>
             )}
 
             <div className="px-3 py-2">
