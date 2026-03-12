@@ -16,6 +16,15 @@ export { MarketingHeader } from './ui/MarketingHeader'
 export { MarketingFooter } from './ui/MarketingFooter'
 export { PulseAnimation } from './ui/PulseAnimation'
 
+// UI components — story page
+export { PresentationShell } from './ui/PresentationShell'
+export { StoryHero } from './ui/story/StoryHero'
+export { MondayMorningSection } from './ui/story/MondayMorningSection'
+export { HowItBuiltSection } from './ui/story/HowItBuiltSection'
+export { JustPromptsSection } from './ui/story/JustPromptsSection'
+export { CloseSection } from './ui/story/CloseSection'
+export { FutureVisionSection } from './ui/story/FutureVisionSection'
+
 // UI components — legacy (kept for potential reuse on other pages)
 export { Hero } from './ui/Hero'
 export { CredibilityBar } from './ui/CredibilityBar'
@@ -41,8 +50,20 @@ export { subsystems } from './lib/subsystems'
 export { timelineEntries } from './lib/timeline-entries'
 export { faqItems } from './lib/faq-items'
 
+// Data — story page
+export {
+  bootCards,
+  evolutionSteps,
+  equationItems,
+  futureCards,
+} from './lib/story-data'
+export type { BootCard, EvolutionStep, EquationItem, FutureCard } from './lib/story-data'
+
 // Motion
 export { SPRING, VIEWPORT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH } from './lib/motion-variants'
+
+// Hooks
+export { usePresentationMode } from './lib/use-presentation-mode'
 
 // Types
 export type { Project, PhilosophyItem, NavLink } from './lib/types'
