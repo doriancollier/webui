@@ -95,9 +95,27 @@ export function buildTopologyElements(
                 ? 'error'
                 : 'stopped',
           bindingCount: bindingCountByAdapter.get(adapter.config.id) ?? 0,
+          label: adapter.config.label,
         } satisfies AdapterNodeData,
       });
     }
+  }
+
+  // Ghost placeholder when relay is on but no external adapters exist.
+  if (relayEnabled && externalAdapters.length === 0) {
+    nodes.push({
+      id: 'ghost-adapter',
+      type: 'adapter',
+      position: { x: 0, y: 0 },
+      data: {
+        adapterName: 'Add Adapter',
+        adapterType: 'ghost',
+        adapterStatus: 'stopped',
+        bindingCount: 0,
+        isGhost: true,
+        onGhostClick: () => callbacks.onGhostClick?.(),
+      } satisfies AdapterNodeData,
+    });
   }
 
   // Always show namespace containers — teaches the concept before users scale up.

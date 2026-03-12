@@ -145,11 +145,13 @@ export function useTopologyHandlers({
     [setCenter, getZoom],
   );
 
-  /** Only allow connections from adapter nodes to agent nodes. */
+  /** Only allow connections from non-ghost adapter nodes to agent nodes. */
   const isValidConnection: IsValidConnection = useCallback(
     (connection: Edge | Connection) => {
       const sourceNode = rawNodes.find((n) => n.id === connection.source);
       const targetNode = rawNodes.find((n) => n.id === connection.target);
+      // Cannot connect from ghost adapter node
+      if ((sourceNode?.data as Record<string, unknown>)?.isGhost) return false;
       return sourceNode?.type === 'adapter' && targetNode?.type === 'agent';
     },
     [rawNodes],

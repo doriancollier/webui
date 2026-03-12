@@ -57,6 +57,8 @@ interface TopologyGraphProps {
   onGoToDiscovery?: () => void;
   /** Called when the Chat action is triggered from the NodeToolbar. */
   onOpenChat?: (projectPath: string) => void;
+  /** Called when the ghost adapter placeholder is clicked (opens adapter catalog). */
+  onOpenAdapterCatalog?: () => void;
 }
 
 /**
@@ -71,7 +73,7 @@ export function TopologyGraph(props: TopologyGraphProps) {
   );
 }
 
-function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, onOpenChat }: TopologyGraphProps) {
+function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, onOpenChat, onOpenAdapterCatalog }: TopologyGraphProps) {
   const { data: topology, isLoading, isError, refetch } = useTopology();
 
   const namespaces = topology?.namespaces;
@@ -92,6 +94,8 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
   onSelectAgentRef.current = onSelectAgent;
   const onOpenChatRef = useRef(onOpenChat);
   onOpenChatRef.current = onOpenChat;
+  const onOpenAdapterCatalogRef = useRef(onOpenAdapterCatalog);
+  onOpenAdapterCatalogRef.current = onOpenAdapterCatalog;
 
   /** Pre-compute binding counts per adapter for O(1) lookup in buildTopologyElements. */
   const bindingCountByAdapter = useMemo(() => {
@@ -122,6 +126,7 @@ function TopologyGraphInner({ onSelectAgent, onOpenSettings, onGoToDiscovery, on
         onOpenSettings: (id, path) => onOpenSettingsRef.current?.(id, path),
         onSelectAgent: (id, path) => onSelectAgentRef.current?.(id, path),
         onOpenChat: (path) => onOpenChatRef.current?.(path),
+        onGhostClick: () => onOpenAdapterCatalogRef.current?.(),
       },
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps

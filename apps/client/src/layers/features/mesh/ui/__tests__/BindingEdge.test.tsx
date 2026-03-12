@@ -148,4 +148,65 @@ describe('BindingEdge', () => {
       expect(onDelete).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('filter badges', () => {
+    it('renders chatId badge when present and selected', () => {
+      render(
+        <BindingEdge
+          {...BASE_EDGE_PROPS}
+          selected
+          data={{ chatId: '12345', sessionStrategy: 'per-chat' }}
+        />,
+      );
+      expect(screen.getByText('12345')).toBeInTheDocument();
+    });
+
+    it('renders channelType badge when present and selected', () => {
+      render(
+        <BindingEdge
+          {...BASE_EDGE_PROPS}
+          selected
+          data={{ channelType: 'private', sessionStrategy: 'per-chat' }}
+        />,
+      );
+      expect(screen.getByText('private')).toBeInTheDocument();
+    });
+
+    it('renders both chatId and channelType badges when both present', () => {
+      render(
+        <BindingEdge
+          {...BASE_EDGE_PROPS}
+          selected
+          data={{ chatId: '12345', channelType: 'group', sessionStrategy: 'per-chat' }}
+        />,
+      );
+      expect(screen.getByText('12345')).toBeInTheDocument();
+      expect(screen.getByText('group')).toBeInTheDocument();
+    });
+
+    it('does not render filter badges when neither chatId nor channelType present', () => {
+      render(
+        <BindingEdge
+          {...BASE_EDGE_PROPS}
+          selected
+          data={{ sessionStrategy: 'per-chat' }}
+        />,
+      );
+      // Only the session strategy label should be shown, no filter badges
+      expect(screen.getByText('per-chat')).toBeInTheDocument();
+      expect(screen.queryByText('12345')).not.toBeInTheDocument();
+    });
+
+    it('does not render filter badges when not selected or hovered', () => {
+      render(
+        <BindingEdge
+          {...BASE_EDGE_PROPS}
+          data={{ chatId: '12345', channelType: 'private' }}
+        />,
+      );
+      // Label (and badges) should not be visible at rest
+      expect(screen.queryByText('12345')).not.toBeInTheDocument();
+      expect(screen.queryByText('private')).not.toBeInTheDocument();
+    });
+  });
 });

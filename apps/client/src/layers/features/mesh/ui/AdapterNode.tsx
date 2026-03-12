@@ -1,9 +1,11 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { MessageSquare, Webhook, Bot, Plus } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
 import { Badge } from '@/layers/shared/ui/badge';
 import { useLodBand } from '../lib/use-lod-band';
+import { usePrefersReducedMotion } from '../lib/use-reduced-motion';
 
 /**
  * Data shape for adapter nodes in the React Flow topology graph.
@@ -25,6 +27,18 @@ export interface AdapterNodeData extends Record<string, unknown> {
 /** Dimensions used by the ELK layout engine for adapter nodes. */
 export const ADAPTER_NODE_WIDTH = 200;
 export const ADAPTER_NODE_HEIGHT = 100;
+
+/** Duration for LOD cross-fade animations (seconds). */
+const LOD_FADE_DURATION = 0.2;
+
+/** Duration for LOD width resize animation (seconds). */
+const LOD_RESIZE_DURATION = 0.25;
+
+/** Width per LOD band (px), matching the inner card widths. */
+const ADAPTER_BAND_WIDTHS: Record<string, number> = {
+  compact: 120,
+  default: ADAPTER_NODE_WIDTH,
+};
 
 const STATUS_COLORS: Record<string, string> = {
   running: 'bg-green-500',
@@ -48,9 +62,6 @@ function resolveStatusColor(status: string): string {
   return STATUS_COLORS[status] ?? 'bg-zinc-400';
 }
 
-/** CSS transition for smooth LOD crossfade. */
-const LOD_TRANSITION = 'transition-[opacity,transform] duration-200 ease-out';
-
 /** Compact pill rendered when zoom < 0.6 (~120x32px). */
 function AdapterCompactPill({
   d,
@@ -65,7 +76,6 @@ function AdapterCompactPill({
     <div
       className={cn(
         'flex w-[120px] items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 shadow-sm',
-        LOD_TRANSITION,
         selected && 'ring-2 ring-primary',
       )}
       aria-label={`Adapter: ${d.adapterName}, status ${d.adapterStatus}`}
@@ -73,42 +83,25 @@ function AdapterCompactPill({
       <Handle type="source" position={Position.Right} isConnectable />
       <span className={cn('size-2 shrink-0 rounded-full', statusColor)} />
       <PlatformIcon adapterType={d.adapterType} />
-      <span className="truncate text-xs font-medium">{d.adapterName}</span>
+      <span className="truncate text-xs font-medium">{d.label || d.adapterName}</span>
     </div>
   );
 }
 
-/** React Flow custom node representing a relay adapter in the topology graph. */
-function AdapterNodeInner({ data, selected }: NodeProps) {
-  const d = data as unknown as AdapterNodeData;
-  const statusColor = resolveStatusColor(d.adapterStatus);
-  const band = useLodBand();
-
-  // Ghost placeholder — dashed border, click-to-add
-  if (d.isGhost) {
-    return (
-      <div
-        className="flex items-center gap-2 rounded-lg border border-dashed border-muted-foreground/30 bg-card/40 px-3 py-2 opacity-40 transition-opacity hover:opacity-70"
-        style={{ width: ADAPTER_NODE_WIDTH, height: ADAPTER_NODE_HEIGHT }}
-        onClick={d.onGhostClick}
-        role="button"
-        aria-label="Add adapter"
-      >
-        <Plus className="size-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Add Adapter</span>
-      </div>
-    );
-  }
-
-  if (band === 'compact') {
-    return <AdapterCompactPill d={d} statusColor={statusColor} selected={selected} />;
-  }
-
+/** Default/expanded card rendered when zoom >= 0.6. */
+function AdapterDefaultCard({
+  d,
+  statusColor,
+  selected,
+}: {
+  d: AdapterNodeData;
+  statusColor: string;
+  selected?: boolean;
+}) {
   return (
     <div
       className={cn(
         'rounded-xl border bg-card p-4 shadow-soft hover:shadow-md',
-        LOD_TRANSITION,
         selected && 'ring-2 ring-primary',
       )}
       style={{ width: ADAPTER_NODE_WIDTH, minHeight: ADAPTER_NODE_HEIGHT }}
@@ -120,7 +113,16 @@ function AdapterNodeInner({ data, selected }: NodeProps) {
       <div className="flex items-center gap-2">
         <span className={cn('size-2.5 shrink-0 rounded-full', statusColor)} />
         <PlatformIcon adapterType={d.adapterType} />
-        <span className="truncate text-sm font-medium">{d.adapterName}</span>
+        <div className="flex min-w-0 flex-col">
+          <span className="truncate text-sm font-medium">
+            {d.label || d.adapterName}
+          </span>
+          {d.label && (
+            <span className="truncate text-xs text-muted-foreground">
+              {d.adapterName}
+            </span>
+          )}
+        </div>
         <Badge variant="outline" className="ml-auto shrink-0 text-[10px] text-muted-foreground">
           Adapter
         </Badge>
@@ -136,6 +138,60 @@ function AdapterNodeInner({ data, selected }: NodeProps) {
         )}
       </div>
     </div>
+  );
+}
+
+/** React Flow custom node representing a relay adapter in the topology graph. */
+function AdapterNodeInner({ data, selected }: NodeProps) {
+  const d = data as unknown as AdapterNodeData;
+  const statusColor = resolveStatusColor(d.adapterStatus);
+  const band = useLodBand();
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  // Ghost placeholder — dashed border, click-to-add (no LOD transition)
+  if (d.isGhost) {
+    return (
+      <div
+        className="flex items-center gap-2 rounded-lg border border-dashed border-muted-foreground/30 bg-card/40 px-3 py-2 opacity-40 transition-opacity hover:opacity-70"
+        style={{ width: ADAPTER_NODE_WIDTH, height: ADAPTER_NODE_HEIGHT }}
+        onClick={d.onGhostClick}
+        role="button"
+        aria-label="Add adapter"
+      >
+        <Plus className="size-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Add Adapter</span>
+      </div>
+    );
+  }
+
+  const content = band === 'compact'
+    ? <AdapterCompactPill d={d} statusColor={statusColor} selected={selected} />
+    : <AdapterDefaultCard d={d} statusColor={statusColor} selected={selected} />;
+
+  const bandKey = band === 'compact' ? 'compact' : 'default';
+
+  return (
+    <motion.div
+      animate={{ width: ADAPTER_BAND_WIDTHS[bandKey] }}
+      transition={{
+        width: {
+          duration: prefersReducedMotion ? 0 : LOD_RESIZE_DURATION,
+          ease: 'easeInOut',
+        },
+      }}
+    >
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.div
+          key={bandKey}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: prefersReducedMotion ? 0 : LOD_FADE_DURATION }}
+        >
+          {content}
+        </motion.div>
+      </AnimatePresence>
+    </motion.div>
   );
 }
 

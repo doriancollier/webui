@@ -1,9 +1,28 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { describe, it, expect, vi, beforeAll, beforeEach, afterEach } from 'vitest';
+import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+
+// ---------------------------------------------------------------------------
+// Mock matchMedia — required by usePrefersReducedMotion
+// ---------------------------------------------------------------------------
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation((query: string) => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+});
 
 // ---------------------------------------------------------------------------
 // Mock @xyflow/react — replaces flow primitives with simple HTML stubs so we
@@ -34,6 +53,9 @@ function makeMockProps(overrides: Partial<{
   adapterType: string;
   adapterStatus: 'running' | 'stopped' | 'error';
   bindingCount: number;
+  label: string;
+  isGhost: boolean;
+  onGhostClick: () => void;
 }> = {}) {
   return {
     id: 'adapter-test-1',
@@ -55,6 +77,11 @@ function makeMockProps(overrides: Partial<{
     selectable: true,
     deletable: true,
   } as unknown as Parameters<typeof AdapterNode>[0];
+}
+
+/** Finds the adapter card element by its aria-label. */
+function getCard(name = 'Telegram Bot', status = 'running') {
+  return screen.getByLabelText(`Adapter: ${name}, status ${status}`);
 }
 
 beforeEach(() => {
@@ -121,19 +148,15 @@ describe('AdapterNode', () => {
 
   describe('selection ring', () => {
     it('applies ring-2 ring-primary when selected', () => {
-      const { container } = render(
-        <AdapterNode {...makeMockProps()} selected />,
-      );
-      const card = container.firstChild as HTMLElement;
+      render(<AdapterNode {...makeMockProps()} selected />);
+      const card = getCard();
       expect(card.className).toMatch(/ring-2/);
       expect(card.className).toMatch(/ring-primary/);
     });
 
     it('does not apply ring when not selected', () => {
-      const { container } = render(
-        <AdapterNode {...makeMockProps()} selected={false} />,
-      );
-      const card = container.firstChild as HTMLElement;
+      render(<AdapterNode {...makeMockProps()} selected={false} />);
+      const card = getCard();
       expect(card.className).not.toMatch(/ring-2/);
     });
   });
@@ -145,9 +168,87 @@ describe('AdapterNode', () => {
     });
 
     it('applies ADAPTER_NODE_WIDTH as inline width', () => {
-      const { container } = render(<AdapterNode {...makeMockProps()} />);
-      const card = container.firstChild as HTMLElement;
+      render(<AdapterNode {...makeMockProps()} />);
+      const card = getCard();
       expect(card.style.width).toBe(`${ADAPTER_NODE_WIDTH}px`);
+    });
+  });
+
+  describe('adapter label', () => {
+    it('shows label as primary text when present', () => {
+      render(<AdapterNode {...makeMockProps({ label: '@support_bot' })} />);
+      expect(screen.getByText('@support_bot')).toBeInTheDocument();
+    });
+
+    it('shows adapter name as secondary text when label is present', () => {
+      render(<AdapterNode {...makeMockProps({ adapterName: 'Telegram Bot', label: '@support_bot' })} />);
+      expect(screen.getByText('@support_bot')).toBeInTheDocument();
+      expect(screen.getByText('Telegram Bot')).toBeInTheDocument();
+    });
+
+    it('shows adapter name as primary text when no label', () => {
+      render(<AdapterNode {...makeMockProps({ adapterName: 'Telegram Bot' })} />);
+      expect(screen.getByText('Telegram Bot')).toBeInTheDocument();
+    });
+
+    it('does not show secondary type text when no label', () => {
+      render(<AdapterNode {...makeMockProps({ adapterName: 'Telegram Bot' })} />);
+      // Only one element with the adapter name text — the primary text in the header.
+      // The footer also has the adapter type, but not the display name duplicated.
+      const elements = screen.getAllByText('Telegram Bot');
+      expect(elements).toHaveLength(1);
+    });
+  });
+
+  describe('ghost node', () => {
+    it('renders ghost node with "Add Adapter" text', () => {
+      render(<AdapterNode {...makeMockProps({
+        isGhost: true,
+        adapterName: 'Add Adapter',
+        adapterType: 'ghost',
+        adapterStatus: 'stopped',
+        bindingCount: 0,
+      })} />);
+      expect(screen.getByText('Add Adapter')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /add adapter/i })).toBeInTheDocument();
+    });
+
+    it('ghost node has no output handle', () => {
+      render(<AdapterNode {...makeMockProps({
+        isGhost: true,
+        adapterName: 'Add Adapter',
+        adapterType: 'ghost',
+        adapterStatus: 'stopped',
+        bindingCount: 0,
+      })} />);
+      expect(screen.queryByTestId('handle-right')).not.toBeInTheDocument();
+    });
+
+    it('ghost node click fires onGhostClick callback', () => {
+      const onGhostClick = vi.fn();
+      render(<AdapterNode {...makeMockProps({
+        isGhost: true,
+        adapterName: 'Add Adapter',
+        adapterType: 'ghost',
+        adapterStatus: 'stopped',
+        bindingCount: 0,
+        onGhostClick,
+      })} />);
+      fireEvent.click(screen.getByRole('button', { name: /add adapter/i }));
+      expect(onGhostClick).toHaveBeenCalledTimes(1);
+    });
+
+    it('ghost node applies ADAPTER_NODE_WIDTH and ADAPTER_NODE_HEIGHT', () => {
+      const { container } = render(<AdapterNode {...makeMockProps({
+        isGhost: true,
+        adapterName: 'Add Adapter',
+        adapterType: 'ghost',
+        adapterStatus: 'stopped',
+        bindingCount: 0,
+      })} />);
+      const ghost = container.firstChild as HTMLElement;
+      expect(ghost.style.width).toBe(`${ADAPTER_NODE_WIDTH}px`);
+      expect(ghost.style.height).toBe(`${ADAPTER_NODE_HEIGHT}px`);
     });
   });
 });

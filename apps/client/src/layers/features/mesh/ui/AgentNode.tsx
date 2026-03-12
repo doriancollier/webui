@@ -5,6 +5,7 @@ import {
   NodeToolbar,
   type NodeProps,
 } from '@xyflow/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { Zap, Clock, Settings, Heart, Copy, MessageCircle } from 'lucide-react';
 import { usePrefersReducedMotion } from '../lib/use-reduced-motion';
 import { useLodBand } from '../lib/use-lod-band';
@@ -53,8 +54,18 @@ function resolveBorderColor(d: AgentNodeData): string | undefined {
   return d.color ?? d.namespaceColor ?? undefined;
 }
 
-/** CSS transition classes for smooth LOD crossfades. */
-const LOD_TRANSITION = 'transition-[opacity,transform] duration-200 ease-out';
+/** Duration for LOD cross-fade animations (seconds). */
+const LOD_FADE_DURATION = 0.2;
+
+/** Duration for LOD width resize animation (seconds). */
+const LOD_RESIZE_DURATION = 0.25;
+
+/** Width per LOD band (px), matching the inner card widths. */
+const AGENT_BAND_WIDTHS: Record<string, number> = {
+  compact: 120,
+  default: 200,
+  expanded: 240,
+};
 
 /**
  * Shared card header used by both DefaultCard and ExpandedCard.
@@ -82,7 +93,7 @@ function CardHeader({
             <span className="absolute inset-0 animate-ping rounded-full bg-green-500 opacity-30" />
           )}
         </span>
-        <span className="truncate text-sm font-medium">
+        <span className="truncate text-sm font-medium text-foreground">
           {d.emoji ? `${d.emoji} ` : ''}
           {d.label}
         </span>
@@ -119,18 +130,17 @@ function CompactPill({ d, dotColor, selected }: { d: AgentNodeData; dotColor: st
     <div
       className={cn(
         'flex w-[120px] items-center gap-1.5 rounded-full border bg-card px-2.5 py-1 shadow-sm',
-        LOD_TRANSITION,
         selected && 'ring-2 ring-primary',
       )}
       style={borderColor ? { borderLeft: `3px solid ${borderColor}` } : undefined}
     >
-      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="target" position={Position.Left} className="bg-muted-foreground!" />
       <span className={`h-2 w-2 shrink-0 rounded-full ${dotColor}`} />
-      <span className="truncate text-xs font-medium">
+      <span className="truncate text-xs font-medium text-foreground">
         {d.emoji ? `${d.emoji} ` : ''}
         {d.label}
       </span>
-      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="bg-muted-foreground!" />
     </div>
   );
 }
@@ -155,12 +165,11 @@ function DefaultCard({
     <div
       className={cn(
         'w-[200px] rounded-lg border bg-card px-3 py-2 shadow-sm hover:shadow-md',
-        LOD_TRANSITION,
         selected && 'ring-2 ring-primary',
       )}
       style={borderColor ? { borderLeft: `3px solid ${borderColor}` } : undefined}
     >
-      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="target" position={Position.Left} className="bg-muted-foreground!" />
 
       <CardHeader d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} />
 
@@ -177,7 +186,7 @@ function DefaultCard({
         </div>
       )}
 
-      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="bg-muted-foreground!" />
     </div>
   );
 }
@@ -202,12 +211,11 @@ function ExpandedCard({
     <div
       className={cn(
         'w-[240px] rounded-lg border bg-card px-3 py-2 shadow-sm hover:shadow-md',
-        LOD_TRANSITION,
         selected && 'ring-2 ring-primary',
       )}
       style={borderColor ? { borderLeft: `3px solid ${borderColor}` } : undefined}
     >
-      <Handle type="target" position={Position.Left} className="!bg-muted-foreground" />
+      <Handle type="target" position={Position.Left} className="bg-muted-foreground!" />
 
       <CardHeader d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} />
 
@@ -254,7 +262,7 @@ function ExpandedCard({
         )}
       </div>
 
-      <Handle type="source" position={Position.Right} className="!bg-muted-foreground" />
+      <Handle type="source" position={Position.Right} className="bg-muted-foreground!" />
     </div>
   );
 }
@@ -285,7 +293,6 @@ function AgentNodeComponent({ data, selected, id }: NodeProps) {
   const d = data as unknown as AgentNodeData;
   const dotColor = STATUS_COLORS[d.healthStatus] ?? STATUS_COLORS.stale;
   const band = useLodBand();
-
   const prefersReducedMotion = usePrefersReducedMotion();
 
   const handleCopyId = useCallback(() => {
@@ -312,28 +319,39 @@ function AgentNodeComponent({ data, selected, id }: NodeProps) {
 
   const ariaLabel = `Agent: ${d.label}, status ${d.healthStatus}`;
 
+  let content: React.ReactNode;
   if (band === 'compact') {
-    return (
-      <div aria-label={ariaLabel}>
-        {toolbar}
-        <CompactPill d={d} dotColor={dotColor} selected={selected} />
-      </div>
-    );
-  }
-
-  if (band === 'expanded') {
-    return (
-      <div aria-label={ariaLabel}>
-        {toolbar}
-        <ExpandedCard d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} selected={selected} />
-      </div>
-    );
+    content = <CompactPill d={d} dotColor={dotColor} selected={selected} />;
+  } else if (band === 'expanded') {
+    content = <ExpandedCard d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} selected={selected} />;
+  } else {
+    content = <DefaultCard d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} selected={selected} />;
   }
 
   return (
     <div aria-label={ariaLabel}>
       {toolbar}
-      <DefaultCard d={d} dotColor={dotColor} prefersReducedMotion={prefersReducedMotion} selected={selected} />
+      <motion.div
+        animate={{ width: AGENT_BAND_WIDTHS[band] }}
+        transition={{
+          width: {
+            duration: prefersReducedMotion ? 0 : LOD_RESIZE_DURATION,
+            ease: 'easeInOut',
+          },
+        }}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.div
+            key={band}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: prefersReducedMotion ? 0 : LOD_FADE_DURATION }}
+          >
+            {content}
+          </motion.div>
+        </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

@@ -476,6 +476,220 @@ describe('buildTopologyElements', () => {
     });
   });
 
+  describe('adapter label passthrough', () => {
+    it('passes adapter label to node data', () => {
+      const labeledAdapter: AdapterListItem = {
+        config: { id: 'tg-1', type: 'telegram', enabled: true, label: '@support_bot', config: { token: 'test', mode: 'polling' } },
+        status: { id: 'tg-1', type: 'telegram', displayName: 'Telegram Bot', state: 'connected', messageCount: { inbound: 0, outbound: 0 }, errorCount: 0 },
+      };
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [labeledAdapter],
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const adapterNode = result.rawNodes.find((n) => n.id === 'adapter:tg-1');
+      expect((adapterNode?.data as Record<string, unknown>).label).toBe('@support_bot');
+    });
+
+    it('passes undefined label when adapter has no label', () => {
+      const unlabeledAdapter: AdapterListItem = {
+        config: { id: 'tg-1', type: 'telegram', enabled: true, config: { token: 'test', mode: 'polling' } },
+        status: { id: 'tg-1', type: 'telegram', displayName: 'Telegram Bot', state: 'connected', messageCount: { inbound: 0, outbound: 0 }, errorCount: 0 },
+      };
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [unlabeledAdapter],
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const adapterNode = result.rawNodes.find((n) => n.id === 'adapter:tg-1');
+      expect((adapterNode?.data as Record<string, unknown>).label).toBeUndefined();
+    });
+  });
+
+  describe('binding filter data', () => {
+    const adapter: AdapterListItem = {
+      config: { id: 'tg-1', type: 'telegram', enabled: true, config: { token: 'test', mode: 'polling' } },
+      status: {
+        id: 'tg-1',
+        type: 'telegram',
+        displayName: 'Telegram Bot',
+        state: 'connected',
+        messageCount: { inbound: 0, outbound: 0 },
+        errorCount: 0,
+      },
+    };
+
+    it('passes chatId and channelType to binding edge data', () => {
+      const filteredBinding = {
+        id: 'bind-filtered',
+        adapterId: 'tg-1',
+        agentId: 'agent-1',
+        projectPath: '/projects/builder',
+        sessionStrategy: 'per-chat' as const,
+        label: 'Support',
+        chatId: '12345',
+        channelType: 'dm' as const,
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      };
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [adapter],
+        [filteredBinding],
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const edge = result.rawEdges.find((e) => e.id === 'binding:bind-filtered');
+      const data = edge?.data as Record<string, unknown>;
+      expect(data.chatId).toBe('12345');
+      expect(data.channelType).toBe('dm');
+    });
+
+    it('does not pass chatId/channelType when not present on binding', () => {
+      const plainBinding = {
+        id: 'bind-plain',
+        adapterId: 'tg-1',
+        agentId: 'agent-1',
+        projectPath: '/projects/builder',
+        sessionStrategy: 'per-chat' as const,
+        label: '',
+        createdAt: '2026-01-01T00:00:00Z',
+        updatedAt: '2026-01-01T00:00:00Z',
+      };
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [adapter],
+        [plainBinding],
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const edge = result.rawEdges.find((e) => e.id === 'binding:bind-plain');
+      const data = edge?.data as Record<string, unknown>;
+      expect(data.chatId).toBeUndefined();
+      expect(data.channelType).toBeUndefined();
+    });
+  });
+
+  describe('ghost adapter placeholder', () => {
+    it('creates ghost node when relay is enabled and no external adapters exist', () => {
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [], // no adapters at all
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const ghostNodes = result.rawNodes.filter((n) => n.id === 'ghost-adapter');
+      expect(ghostNodes).toHaveLength(1);
+      expect((ghostNodes[0].data as Record<string, unknown>).isGhost).toBe(true);
+      expect((ghostNodes[0].data as Record<string, unknown>).adapterName).toBe('Add Adapter');
+    });
+
+    it('creates ghost node when only CCA adapters exist', () => {
+      const ccaAdapter: AdapterListItem = {
+        config: { id: 'cca-1', type: 'claude-code', enabled: true, config: {} },
+        status: {
+          id: 'cca-1',
+          type: 'claude-code',
+          displayName: 'Claude Code',
+          state: 'connected',
+          messageCount: { inbound: 0, outbound: 0 },
+          errorCount: 0,
+        },
+      };
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [ccaAdapter],
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const ghostNodes = result.rawNodes.filter((n) => n.id === 'ghost-adapter');
+      expect(ghostNodes).toHaveLength(1);
+    });
+
+    it('does NOT create ghost node when external adapters exist', () => {
+      const tgAdapter: AdapterListItem = {
+        config: { id: 'tg-1', type: 'telegram', enabled: true, config: { token: 'test', mode: 'polling' } },
+        status: {
+          id: 'tg-1',
+          type: 'telegram',
+          displayName: 'Telegram Bot',
+          state: 'connected',
+          messageCount: { inbound: 0, outbound: 0 },
+          errorCount: 0,
+        },
+      };
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [tgAdapter],
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const ghostNodes = result.rawNodes.filter((n) => n.id === 'ghost-adapter');
+      expect(ghostNodes).toHaveLength(0);
+    });
+
+    it('does NOT create ghost node when relay is disabled', () => {
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        false,
+        [],
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        emptyCallbacks(),
+      );
+      const ghostNodes = result.rawNodes.filter((n) => n.id === 'ghost-adapter');
+      expect(ghostNodes).toHaveLength(0);
+    });
+
+    it('fires onGhostClick callback when ghost node callback is invoked', () => {
+      const onGhostClick = vi.fn();
+      const result = buildTopologyElements(
+        singleNamespace,
+        noRules,
+        true,
+        [],
+        undefined,
+        emptyBindingCountByAdapter(),
+        vi.fn(),
+        { ...emptyCallbacks(), onGhostClick },
+      );
+      const ghostNode = result.rawNodes.find((n) => n.id === 'ghost-adapter');
+      const data = ghostNode?.data as Record<string, unknown>;
+      (data.onGhostClick as () => void)();
+      expect(onGhostClick).toHaveBeenCalledTimes(1);
+    });
+  });
+
   describe('callbacks', () => {
     it('injects onOpenSettings callback into agent node data', () => {
       const onOpenSettings = vi.fn();
