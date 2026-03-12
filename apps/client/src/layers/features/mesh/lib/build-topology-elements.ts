@@ -31,6 +31,8 @@ export interface AgentNodeCallbacks {
   onOpenSettings?: (agentId: string, projectPath: string) => void;
   onSelectAgent?: (agentId: string, projectPath: string) => void;
   onOpenChat?: (projectPath: string) => void;
+  /** Called when the ghost adapter placeholder is clicked. */
+  onGhostClick?: () => void;
 }
 
 /**
@@ -193,6 +195,8 @@ export function buildTopologyElements(
         data: {
           label: binding.label || undefined,
           sessionStrategy: binding.sessionStrategy,
+          chatId: binding.chatId || undefined,
+          channelType: binding.channelType || undefined,
           onDelete: handleDeleteBinding,
         } satisfies BindingEdgeData,
       });

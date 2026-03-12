@@ -21,6 +21,10 @@ export interface BindingEdgeData extends Record<string, unknown> {
   label?: string;
   /** Session strategy for the binding (per-chat, per-user, stateless). */
   sessionStrategy?: string;
+  /** Specific chat ID filter for this binding. */
+  chatId?: string;
+  /** Channel type filter (e.g., 'private', 'group', 'channel'). */
+  channelType?: string;
   /** Called with the edge ID when the delete button is clicked. */
   onDelete?: (edgeId: string) => void;
 }
@@ -92,19 +96,36 @@ function BindingEdgeInner({
               pointerEvents: 'all',
               transition: 'opacity 150ms ease-out',
             }}
-            className="nodrag nopan flex max-w-[100px] items-center gap-1 rounded-md bg-background/90 px-1.5 py-0.5 shadow-sm"
+            className="nodrag nopan flex max-w-[160px] flex-col items-center gap-0.5 rounded-md bg-background/90 px-1.5 py-0.5 shadow-sm"
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
           >
-            <span className="truncate text-[10px] text-muted-foreground">{displayLabel}</span>
-            {selected && d?.onDelete && (
-              <button
-                onClick={handleDelete}
-                className="ml-0.5 shrink-0 rounded-sm p-0.5 text-destructive/60 hover:bg-destructive/10 hover:text-destructive"
-                aria-label="Delete binding"
-              >
-                <X className="size-3" />
-              </button>
+            <div className="flex items-center gap-1">
+              <span className="truncate text-[10px] text-muted-foreground">{displayLabel}</span>
+              {selected && d?.onDelete && (
+                <button
+                  onClick={handleDelete}
+                  className="ml-0.5 shrink-0 rounded-sm p-0.5 text-destructive/60 hover:bg-destructive/10 hover:text-destructive"
+                  aria-label="Delete binding"
+                >
+                  <X className="size-3" />
+                </button>
+              )}
+            </div>
+            {/* Filter badges — only shown when chatId or channelType present */}
+            {(d?.chatId || d?.channelType) && (
+              <div className="flex items-center gap-1">
+                {d.chatId && (
+                  <span className="rounded bg-muted px-1 py-px text-[9px] text-muted-foreground">
+                    {d.chatId}
+                  </span>
+                )}
+                {d.channelType && (
+                  <span className="rounded bg-muted px-1 py-px text-[9px] text-muted-foreground">
+                    {d.channelType}
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </EdgeLabelRenderer>

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add ghost adapter placeholder and binding edge metadata
 - Implement adapter-binding UX overhaul
 - Add BaseRelayAdapter, compliance suite, API versioning, and adapter template
 - Add useUpdateBinding hook and BindingList component for managing adapter-agent bindings

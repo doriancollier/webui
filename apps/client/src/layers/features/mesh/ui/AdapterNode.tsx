@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Handle, Position, type NodeProps } from '@xyflow/react';
-import { MessageSquare, Webhook, Bot } from 'lucide-react';
+import { MessageSquare, Webhook, Bot, Plus } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
 import { Badge } from '@/layers/shared/ui/badge';
 import { useLodBand } from '../lib/use-lod-band';
@@ -14,6 +14,12 @@ export interface AdapterNodeData extends Record<string, unknown> {
   adapterType: string;
   adapterStatus: 'running' | 'stopped' | 'error';
   bindingCount: number;
+  /** User-facing label to distinguish multiple instances of the same adapter type. */
+  label?: string;
+  /** When true, renders as a dashed-border ghost placeholder. */
+  isGhost?: boolean;
+  /** Click handler for ghost node — opens the adapter setup wizard. */
+  onGhostClick?: () => void;
 }
 
 /** Dimensions used by the ELK layout engine for adapter nodes. */
@@ -77,6 +83,22 @@ function AdapterNodeInner({ data, selected }: NodeProps) {
   const d = data as unknown as AdapterNodeData;
   const statusColor = resolveStatusColor(d.adapterStatus);
   const band = useLodBand();
+
+  // Ghost placeholder — dashed border, click-to-add
+  if (d.isGhost) {
+    return (
+      <div
+        className="flex items-center gap-2 rounded-lg border border-dashed border-muted-foreground/30 bg-card/40 px-3 py-2 opacity-40 transition-opacity hover:opacity-70"
+        style={{ width: ADAPTER_NODE_WIDTH, height: ADAPTER_NODE_HEIGHT }}
+        onClick={d.onGhostClick}
+        role="button"
+        aria-label="Add adapter"
+      >
+        <Plus className="size-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">Add Adapter</span>
+      </div>
+    );
+  }
 
   if (band === 'compact') {
     return <AdapterCompactPill d={d} statusColor={statusColor} selected={selected} />;
