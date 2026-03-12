@@ -1,8 +1,9 @@
 'use client'
 
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { REVEAL, STAGGER, VIEWPORT_REPEAT as VIEWPORT } from '../../lib/motion-variants'
 import { evolutionSteps } from '../../lib/story-data'
+import { usePresentationContext } from '../../lib/presentation-context'
 
 interface HowItBuiltSectionProps {
   slideId?: string
@@ -10,6 +11,11 @@ interface HowItBuiltSectionProps {
 
 /** 4-step evolution timeline: LifeOS -> DorkOS -> Pulse -> Mesh. */
 export function HowItBuiltSection({ slideId = 'timeline' }: HowItBuiltSectionProps) {
+  const { isPresent, subStep } = usePresentationContext()
+
+  // In presentation mode, reveal steps one at a time. In normal scroll, show all.
+  const visibleSteps = isPresent ? evolutionSteps.slice(0, subStep + 1) : evolutionSteps
+
   return (
     <section
       className="flex min-h-screen flex-col justify-center bg-cream-primary px-8 py-16"
@@ -39,50 +45,57 @@ export function HowItBuiltSection({ slideId = 'timeline' }: HowItBuiltSectionPro
         </motion.div>
 
         {/* Timeline steps */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          variants={STAGGER}
-          className="flex flex-col gap-6"
-        >
-          {evolutionSteps.map((step) => (
-            <motion.div key={step.step} variants={REVEAL} className="flex gap-4">
-              {/* Step number */}
-              <div
-                className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-cream-white ${step.color === 'orange' ? 'bg-brand-orange' : 'bg-charcoal'}`}
+        <div className="flex flex-col gap-6">
+          <AnimatePresence initial={false}>
+            {visibleSteps.map((step) => (
+              <motion.div
+                key={step.step}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+                className="flex gap-4"
               >
-                {step.step}
-              </div>
-
-              {/* Content */}
-              <div className="min-w-0">
-                <div className={`mb-0.5 font-mono text-[9px] tracking-[0.1em] uppercase ${step.color === 'orange' ? 'text-brand-orange' : 'text-warm-gray'}`}>
-                  {step.product} &mdash; {step.duration}
+                {/* Step number */}
+                <div
+                  className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full font-mono text-[11px] font-bold text-cream-white ${step.color === 'orange' ? 'bg-brand-orange' : 'bg-charcoal'}`}
+                >
+                  {step.step}
                 </div>
-                <p className="mb-1 text-[14px] font-medium text-charcoal">{step.description}</p>
-                {step.ceiling && (
-                  <p className="font-mono text-[10px] text-warm-gray-light">
-                    Ceiling hit: {step.ceiling}
-                  </p>
-                )}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
 
-        {/* Footer quote */}
-        <motion.div
-          initial="hidden"
-          whileInView="visible"
-          viewport={VIEWPORT}
-          variants={REVEAL}
-          className="mt-8 border-t border-cream-tertiary pt-6"
-        >
-          <p className="text-[13px] italic leading-relaxed text-warm-gray">
-            &ldquo;Total calendar time from &lsquo;I want a to-do list&rsquo; to &lsquo;my agents coordinate while I sleep&rsquo; &mdash;&mdash; about two months of evenings.&rdquo;
-          </p>
-        </motion.div>
+                {/* Content */}
+                <div className="min-w-0">
+                  <div className={`mb-0.5 font-mono text-[9px] tracking-[0.1em] uppercase ${step.color === 'orange' ? 'text-brand-orange' : 'text-warm-gray'}`}>
+                    {step.product} &mdash; {step.duration}
+                  </div>
+                  <p className="mb-1 text-[14px] font-medium text-charcoal">{step.description}</p>
+                  {step.ceiling && (
+                    <p className="font-mono text-[10px] text-warm-gray-light">
+                      Ceiling hit: {step.ceiling}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+        </div>
+
+        {/* Footer quote — only shown when all steps are visible */}
+        <AnimatePresence>
+          {(!isPresent || subStep === evolutionSteps.length - 1) && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="mt-8 border-t border-cream-tertiary pt-6"
+            >
+              <p className="text-[13px] italic leading-relaxed text-warm-gray">
+                &ldquo;Total calendar time from &lsquo;I want a to-do list&rsquo; to &lsquo;my agents coordinate while I sleep&rsquo; &mdash;&mdash; about two months of evenings.&rdquo;
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </section>
   )

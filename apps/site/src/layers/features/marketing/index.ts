@@ -64,6 +64,7 @@ export { SPRING, VIEWPORT, VIEWPORT_REPEAT, REVEAL, STAGGER, SCALE_IN, DRAW_PATH
 
 // Hooks
 export { usePresentationMode } from './lib/use-presentation-mode'
+export { usePresentationContext } from './lib/presentation-context'
 
 // Types
 export type { Project, PhilosophyItem, NavLink } from './lib/types'
