@@ -1,0 +1,338 @@
+---
+title: Docker
+description: Run DorkOS in a Docker container with persistent data, custom configuration, and Docker Compose
+---
+
+# Docker
+
+Run DorkOS as a container. The official image bundles Node.js, the DorkOS CLI, and the built client — no host dependencies beyond Docker.
+
+## Quick Start
+
+```bash
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+Open [http://localhost:4242](http://localhost:4242).
+
+## Configuration
+
+Pass environment variables with `-e` or an env file. All [standard environment variables](/docs/self-hosting/deployment#environment-variables) are supported.
+
+<TypeTable type={{
+  "ANTHROPIC_API_KEY": { type: "string", description: "Claude API key (required)" },
+  "DORKOS_PORT": { type: "number", description: "Server port inside the container", default: "'4242'" },
+  "DORKOS_HOST": { type: "string", description: "Bind address — always 0.0.0.0 in Docker (set automatically by the image)", default: "'0.0.0.0'" },
+  "DORKOS_DEFAULT_CWD": { type: "string", description: "Default working directory for agent sessions", default: "'/workspace'" },
+  "DORKOS_BOUNDARY": { type: "string", description: "Directory boundary for file access", default: "Home directory" },
+  "NODE_ENV": { type: "string", description: "Set to 'production' for production mode", default: "'production'" },
+}} />
+
+### Custom port
+
+Map the host port to any container port:
+
+```bash
+docker run -d --name dorkos \
+  -p 8080:8080 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest --port 8080
+```
+
+### Environment file
+
+Keep secrets out of your shell history:
+
+```bash title=".env.dorkos"
+ANTHROPIC_API_KEY=your-key-here
+NODE_ENV=production
+```
+
+```bash
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  --env-file .env.dorkos \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+## Persistent Data
+
+DorkOS stores configuration and session data in `~/.dork/` inside the container. Mount a named volume or host directory to persist data across container restarts and upgrades.
+
+<Tabs items={["Named Volume (Recommended)", "Host Directory"]}>
+
+<Tab value="Named Volume (Recommended)">
+```bash
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+Docker manages the volume lifecycle. Inspect it with `docker volume inspect dorkos-data`.
+</Tab>
+
+<Tab value="Host Directory">
+```bash
+mkdir -p ~/.dork
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v ~/.dork:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+Useful for backup or inspection — the data directory is directly accessible on the host.
+</Tab>
+
+</Tabs>
+
+### Mounting a project directory
+
+To give agents access to a project on the host, bind-mount it and set the working directory:
+
+```bash
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -e DORKOS_DEFAULT_CWD=/workspace \
+  -e DORKOS_BOUNDARY=/workspace \
+  -v dorkos-data:/root/.dork \
+  -v ~/projects/my-app:/workspace \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+<Callout type="warn">
+  Set `DORKOS_BOUNDARY` to the mounted directory to restrict agent file access. Without it, agents can access the entire container filesystem.
+</Callout>
+
+## Docker Compose
+
+For production deployments or multi-service setups, use Docker Compose:
+
+```yaml title="docker-compose.yml"
+services:
+  dorkos:
+    image: ghcr.io/dork-labs/dorkos:latest
+    container_name: dorkos
+    restart: unless-stopped
+    ports:
+      - "4242:4242"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NODE_ENV=production
+    volumes:
+      - dorkos-data:/root/.dork
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4242/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  dorkos-data:
+```
+
+```bash
+docker compose up -d
+```
+
+### With a reverse proxy
+
+Add Caddy for automatic HTTPS:
+
+```yaml title="docker-compose.yml"
+services:
+  dorkos:
+    image: ghcr.io/dork-labs/dorkos:latest
+    container_name: dorkos
+    restart: unless-stopped
+    expose:
+      - "4242"
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - NODE_ENV=production
+    volumes:
+      - dorkos-data:/root/.dork
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4242/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+
+volumes:
+  dorkos-data:
+  caddy-data:
+  caddy-config:
+```
+
+```title="Caddyfile"
+dorkos.example.com {
+    reverse_proxy dorkos:4242 {
+        flush_interval -1
+    }
+}
+```
+
+<Callout type="info">
+  `flush_interval -1` disables response buffering, which is required for SSE streaming. See the [reverse proxy guide](/docs/self-hosting/reverse-proxy) for nginx configuration.
+</Callout>
+
+## Health Check
+
+```bash
+curl http://localhost:4242/api/health
+# { "status": "ok", "version": "0.8.0", "uptime": 12345 }
+```
+
+The health endpoint is unauthenticated and suitable for load balancer or container orchestrator use.
+
+## Building from Source
+
+If you need a custom image (e.g., for a fork or unreleased changes):
+
+<Steps>
+<Step>
+
+### Build the CLI tarball
+
+```bash
+git clone https://github.com/dork-labs/dorkos.git
+cd dorkos
+pnpm install
+pnpm docker:build
+```
+
+This builds the CLI package and creates the `dorkos:latest` image locally.
+
+</Step>
+<Step>
+
+### Run the local image
+
+```bash
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  dorkos:latest
+```
+
+</Step>
+</Steps>
+
+### From published npm (no clone needed)
+
+Build an image that installs directly from npm:
+
+```bash
+docker build -f Dockerfile.run \
+  --build-arg INSTALL_MODE=npm \
+  --build-arg DORKOS_VERSION=latest \
+  -t dorkos:npm .
+```
+
+## Updating
+
+<Steps>
+<Step>
+
+### Pull the latest image
+
+```bash
+docker pull ghcr.io/dork-labs/dorkos:latest
+```
+
+</Step>
+<Step>
+
+### Recreate the container
+
+```bash
+docker stop dorkos && docker rm dorkos
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+Or with Compose:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+</Step>
+</Steps>
+
+Data in the `dorkos-data` volume persists across updates.
+
+## Troubleshooting
+
+<Steps>
+
+<Step>
+### Port forwarding not working
+
+**Cause**: The server is binding to `localhost` inside the container.
+
+**Fix**: The official image sets `DORKOS_HOST=0.0.0.0` automatically. If you're using a custom image, ensure this variable is set.
+</Step>
+
+<Step>
+### Container exits immediately
+
+Check the logs:
+
+```bash
+docker logs dorkos
+```
+
+Common causes: missing `ANTHROPIC_API_KEY`, port already in use on the host, or insufficient memory.
+</Step>
+
+<Step>
+### Data lost after restart
+
+**Cause**: No volume mounted for `/root/.dork`.
+
+**Fix**: Add `-v dorkos-data:/root/.dork` to persist configuration and session data.
+</Step>
+
+</Steps>
+
+## Next Steps
+
+<Cards>
+  <Card title="Reverse Proxy" href="/docs/self-hosting/reverse-proxy">
+    Configure nginx or Caddy for HTTPS, domain routing, and SSE compatibility.
+  </Card>
+  <Card title="Deployment" href="/docs/self-hosting/deployment">
+    Environment variables, systemd, and production configuration.
+  </Card>
+  <Card title="Configuration" href="/docs/getting-started/configuration">
+    Full configuration reference for ports, directories, and persistent settings.
+  </Card>
+</Cards>

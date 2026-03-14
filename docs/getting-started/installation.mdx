@@ -1,6 +1,6 @@
 ---
 title: Installation
-description: Install DorkOS via one-liner, npm, Homebrew, Obsidian plugin, or self-hosted
+description: Install DorkOS via one-liner, npm, Homebrew, Docker, Obsidian plugin, or self-hosted
 ---
 
 # Installation
@@ -10,12 +10,12 @@ DorkOS runs in several modes. Pick the install method that fits your workflow.
 ## Prerequisites
 
 <Callout type="info">
-  All installation methods require [Node.js](https://nodejs.org/) 18 or later and a Claude API key from the [Anthropic Console](https://console.anthropic.com/).
+  All installation methods require a Claude API key from the [Anthropic Console](https://console.anthropic.com/). Non-Docker methods also require [Node.js](https://nodejs.org/) 18 or later.
 </Callout>
 
 ## Choose Your Install Method
 
-<Tabs items={['One-liner (Recommended)', 'npm', 'Homebrew', 'Obsidian Plugin', 'Self-Hosted']}>
+<Tabs items={['One-liner (Recommended)', 'npm', 'Homebrew', 'Docker', 'Obsidian Plugin', 'Self-Hosted']}>
 
 <Tab value="One-liner (Recommended)">
 
@@ -168,6 +168,39 @@ dorkos
 
 </Tab>
 
+<Tab value="Docker">
+
+Run DorkOS in a container. No Node.js installation required on the host — only [Docker](https://docs.docker.com/get-docker/).
+
+<Steps>
+<Step>
+
+### Pull and run
+
+```bash
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+</Step>
+<Step>
+
+### Open the interface
+
+Navigate to [http://localhost:4242](http://localhost:4242) in your browser.
+
+</Step>
+</Steps>
+
+<Callout type="info">
+  For persistent data, custom ports, Docker Compose, and production hardening, see the [Docker deployment guide](/docs/self-hosting/docker).
+</Callout>
+
+</Tab>
+
 <Tab value="Obsidian Plugin">
 
 Run DorkOS directly inside [Obsidian](https://obsidian.md/) as a sidebar panel. Query agents without leaving your notes.
@@ -271,7 +304,7 @@ Starts the Express API server and Vite dev server concurrently. The interface is
 
 ## Updating
 
-<Tabs items={['One-liner / npm', 'Homebrew', 'Obsidian Plugin', 'Self-Hosted']}>
+<Tabs items={['One-liner / npm', 'Homebrew', 'Docker', 'Obsidian Plugin', 'Self-Hosted']}>
 
 <Tab value="One-liner / npm">
 
@@ -310,6 +343,24 @@ dorkos --version
 ```bash
 brew upgrade dorkos
 ```
+
+</Tab>
+
+<Tab value="Docker">
+
+Pull the latest image and recreate the container:
+
+```bash
+docker pull ghcr.io/dork-labs/dorkos:latest
+docker stop dorkos && docker rm dorkos
+docker run -d --name dorkos \
+  -p 4242:4242 \
+  -e ANTHROPIC_API_KEY=your-key-here \
+  -v dorkos-data:/root/.dork \
+  ghcr.io/dork-labs/dorkos:latest
+```
+
+Data in the `dorkos-data` volume persists across updates.
 
 </Tab>
 

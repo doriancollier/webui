@@ -121,38 +121,7 @@ sudo systemctl start dorkos
 
 ## Docker Deployment
 
-<Callout type="warn">
-  Docker deployments must set `DORKOS_HOST=0.0.0.0`. Without it, the server binds to `localhost` inside the container and port forwarding will not work. The official `Dockerfile.run` sets this automatically.
-</Callout>
-
-### Build and Run
-
-From the repository root:
-
-```bash
-pnpm docker:build
-pnpm docker:run
-```
-
-Or directly with Docker:
-
-```bash
-docker build -f Dockerfile.run -t dorkos:local .
-docker run --rm -p 4242:4242 \
-  -e ANTHROPIC_API_KEY=your-key-here \
-  -e DORKOS_HOST=0.0.0.0 \
-  -e DORKOS_PORT=4242 \
-  dorkos:local
-```
-
-Custom port:
-
-```bash
-docker run --rm -p 8080:8080 \
-  -e ANTHROPIC_API_KEY=your-key-here \
-  -e DORKOS_HOST=0.0.0.0 \
-  dorkos:local --port 8080
-```
+For Docker-based deployments — including `docker run`, Docker Compose, persistent volumes, and reverse proxy setup — see the dedicated [Docker guide](/docs/self-hosting/docker).
 
 ## Health Check
 
