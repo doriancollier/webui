@@ -17,7 +17,7 @@ import type {
   DeliveryResult, TelegramAdapterConfig, Unsubscribe,
 } from '../../types.js';
 import { SUBJECT_PREFIX, handleInboundMessage } from './inbound.js';
-import { deliverMessage, handleTypingSignal } from './outbound.js';
+import { deliverMessage, handleTypingSignal, clearAllTypingIntervals } from './outbound.js';
 import { startWebhookMode, stopWebhookServer } from './webhook.js';
 
 /** Static adapter manifest for the Telegram built-in adapter. */
@@ -150,6 +150,7 @@ export class TelegramAdapter extends BaseRelayAdapter {
   protected async _stop(): Promise<void> {
     if (this.reconnectTimer) { clearTimeout(this.reconnectTimer); this.reconnectTimer = null; }
     if (this.signalUnsub) { this.signalUnsub(); this.signalUnsub = null; }
+    clearAllTypingIntervals();
 
     if (this.bot) {
       if (this.config.mode === 'webhook') {

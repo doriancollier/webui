@@ -60,7 +60,8 @@ oauth_config:
       - im:write
       - mpim:history
       - app_mentions:read
-      - users:read`;
+      - users:read
+      - reactions:write`;
 
 /** Slack's app creation URL with pre-filled manifest for one-click setup. */
 const SLACK_CREATE_APP_URL = `https://api.slack.com/apps?new_app=1&manifest_yaml=${encodeURIComponent(SLACK_APP_MANIFEST_YAML)}`;
@@ -87,7 +88,7 @@ export const SLACK_MANIFEST: AdapterManifest = {
         'Go to api.slack.com/apps \u2192 Create New App \u2192 From Scratch.\n\n' +
         '1. **Socket Mode** \u2014 Enable it (Settings \u2192 Socket Mode).\n' +
         '2. **Event Subscriptions** \u2014 Turn on Enable Events, then subscribe to bot events: message.channels, message.groups, message.im, app_mention.\n' +
-        '3. **OAuth & Permissions** \u2014 Add bot token scopes: channels:history, channels:read, chat:write, groups:history, groups:read, im:history, im:read, im:write, mpim:history, app_mentions:read, users:read. Then install the app to your workspace.\n' +
+        '3. **OAuth & Permissions** \u2014 Add bot token scopes: channels:history, channels:read, chat:write, groups:history, groups:read, im:history, im:read, im:write, mpim:history, app_mentions:read, users:read, reactions:write. Then install the app to your workspace.\n' +
         '4. **App-Level Token** \u2014 In Basic Information \u2192 App-Level Tokens, generate a token with the connections:write scope.\n\n' +
         '\u26a0\ufe0f Do NOT enable "Agents & AI Apps" \u2014 it adds user scopes that cause install failures on most workspaces.',
       fields: ['botToken', 'appToken', 'signingSecret'],
@@ -141,12 +142,39 @@ export const SLACK_MANIFEST: AdapterManifest = {
 4. Scroll to **App Credentials**
 5. Click **Show** next to **Signing Secret** and copy it`,
     },
+    {
+      key: 'streaming',
+      label: 'Stream Responses',
+      type: 'boolean',
+      required: false,
+      description:
+        'Show responses as they arrive (live editing). Disable to send a single message when complete.',
+      visibleByDefault: true,
+      helpMarkdown:
+        'When enabled, agent responses appear token-by-token in Slack via message editing. ' +
+        'When disabled, the full response is sent as a single message after the agent finishes.',
+    },
+    {
+      key: 'typingIndicator',
+      label: 'Typing Indicator',
+      type: 'select',
+      required: false,
+      description: 'Show a visual indicator while the agent is working.',
+      options: [
+        { label: 'None', value: 'none' },
+        { label: 'Emoji reaction', value: 'reaction' },
+      ],
+      visibleByDefault: true,
+      helpMarkdown:
+        'When set to "Emoji reaction", adds an :hourglass_flowing_sand: reaction to your message ' +
+        'while the agent is processing. Requires the `reactions:write` scope.',
+    },
   ],
   setupInstructions:
     '1. Create a Slack app at api.slack.com/apps (From Scratch, not From Manifest).\n' +
     '2. Enable Socket Mode (Settings \u2192 Socket Mode).\n' +
     '3. Enable Event Subscriptions and subscribe to bot events: message.channels, message.groups, message.im, app_mention.\n' +
-    '4. Add bot token scopes under OAuth & Permissions: channels:history, channels:read, chat:write, groups:history, groups:read, im:history, im:read, im:write, mpim:history, app_mentions:read, users:read.\n' +
+    '4. Add bot token scopes under OAuth & Permissions: channels:history, channels:read, chat:write, groups:history, groups:read, im:history, im:read, im:write, mpim:history, app_mentions:read, users:read, reactions:write.\n' +
     '5. Install the app to your workspace (OAuth & Permissions \u2192 Install).\n' +
     '6. Copy the Bot User OAuth Token (starts with xoxb-).\n' +
     '7. Generate an App-Level Token with connections:write scope (Basic Information \u2192 App-Level Tokens).\n' +
@@ -273,6 +301,8 @@ export class SlackAdapter extends BaseRelayAdapter {
       streamState: this.streamState,
       botUserId: this.botUserId,
       callbacks: this.makeOutboundCallbacks(),
+      streaming: this.config.streaming ?? true,
+      typingIndicator: this.config.typingIndicator ?? 'none',
     });
   }
 

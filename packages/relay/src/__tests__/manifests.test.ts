@@ -127,6 +127,23 @@ describe('Built-in adapter manifests', () => {
       expect(decoded).toContain('socket_mode_enabled: true');
     });
 
+    it('manifest URL includes reactions:write scope', () => {
+      const url = SLACK_MANIFEST.actionButton?.url ?? '';
+      const encoded = url.split('manifest_yaml=')[1] ?? '';
+      const decoded = decodeURIComponent(encoded);
+      expect(decoded).toContain('reactions:write');
+    });
+
+    it('has typingIndicator configField with select options', () => {
+      const field = SLACK_MANIFEST.configFields.find((f) => f.key === 'typingIndicator');
+      expect(field).toBeDefined();
+      expect(field?.type).toBe('select');
+      expect(field?.options).toEqual([
+        { label: 'None', value: 'none' },
+        { label: 'Emoji reaction', value: 'reaction' },
+      ]);
+    });
+
     it('manifest URL does not contain user scopes section', () => {
       const url = SLACK_MANIFEST.actionButton?.url ?? '';
       const encoded = url.split('manifest_yaml=')[1] ?? '';

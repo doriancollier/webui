@@ -128,7 +128,14 @@ export class BindingRouter {
 
       const sessionId = await this.resolveSession(binding, chatId, envelope);
 
-      await this.deps.relayCore.publish(`relay.agent.${sessionId}`, envelope.payload, {
+      // Enrich payload with binding's projectPath so the agent handler
+      // resolves CWD correctly (it reads payloadCwd from the payload).
+      const enrichedPayload =
+        binding.projectPath && envelope.payload && typeof envelope.payload === 'object'
+          ? { ...(envelope.payload as Record<string, unknown>), cwd: binding.projectPath }
+          : envelope.payload;
+
+      await this.deps.relayCore.publish(`relay.agent.${sessionId}`, enrichedPayload, {
         from: envelope.from,
         replyTo: envelope.replyTo,
         budget: envelope.budget,

@@ -83,6 +83,8 @@ export const SlackAdapterConfigSchema = z
     botToken: z.string().min(1),
     appToken: z.string().min(1),
     signingSecret: z.string().min(1),
+    streaming: z.boolean().default(true),
+    typingIndicator: z.enum(['none', 'reaction']).default('none'),
   })
   .openapi('SlackAdapterConfig');
 

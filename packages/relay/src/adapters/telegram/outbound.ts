@@ -23,6 +23,12 @@ import { extractChatId, SUBJECT_PREFIX, MAX_MESSAGE_LENGTH } from './inbound.js'
 /** Telegram sendChatAction type for typing indicator. */
 const TELEGRAM_TYPING_ACTION = 'typing' as const;
 
+/** Active typing intervals keyed by chatId. */
+const typingIntervals = new Map<number, ReturnType<typeof setInterval>>();
+
+/** Refresh interval for Telegram typing indicator (expires after 5s). */
+const TYPING_REFRESH_MS = 4_000;
+
 /** Options for delivering a Relay message to Telegram. */
 export interface TelegramDeliverOptions {
   adapterId: string;
@@ -150,9 +156,9 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
 /**
  * Handle a typing signal from the Relay and forward it to Telegram.
  *
- * Extracts the chat ID from the subject and sends a `typing` chat action
- * via the Telegram Bot API. Errors are silently swallowed — typing signals
- * are best-effort and non-critical.
+ * Sends an immediate `typing` chat action and sets up an interval to
+ * refresh it every 4 seconds (Telegram's indicator expires after 5s).
+ * Clears the interval when the signal state changes to non-active.
  *
  * @param bot - The grammy Bot instance, or null if not started
  * @param subject - The Relay subject the typing signal was emitted on
@@ -163,14 +169,53 @@ export async function handleTypingSignal(
   subject: string,
   state: string,
 ): Promise<void> {
-  if (!bot || state !== 'active') return;
+  if (!bot) return;
 
   const chatId = extractChatId(subject);
   if (chatId === null) return;
 
-  try {
-    await bot.api.sendChatAction(chatId, TELEGRAM_TYPING_ACTION);
-  } catch {
-    // Typing signals are best-effort — never throw on failure
+  if (state === 'active') {
+    // Clear any existing interval (idempotent)
+    clearTypingInterval(chatId);
+    // Send immediately
+    try {
+      await bot.api.sendChatAction(chatId, TELEGRAM_TYPING_ACTION);
+    } catch {
+      // Typing signals are best-effort
+    }
+    // Refresh every 4 seconds
+    const intervalId = setInterval(async () => {
+      try {
+        await bot.api.sendChatAction(chatId, TELEGRAM_TYPING_ACTION);
+      } catch {
+        clearTypingInterval(chatId);
+      }
+    }, TYPING_REFRESH_MS);
+    typingIntervals.set(chatId, intervalId);
+  } else {
+    clearTypingInterval(chatId);
   }
+}
+
+/**
+ * Clear the typing refresh interval for a specific chat.
+ *
+ * @param chatId - The Telegram chat ID to clear the interval for
+ */
+function clearTypingInterval(chatId: number): void {
+  const existing = typingIntervals.get(chatId);
+  if (existing !== undefined) {
+    clearInterval(existing);
+    typingIntervals.delete(chatId);
+  }
+}
+
+/**
+ * Clear all active typing intervals.
+ *
+ * Call on adapter stop to prevent leaked intervals.
+ */
+export function clearAllTypingIntervals(): void {
+  for (const interval of typingIntervals.values()) clearInterval(interval);
+  typingIntervals.clear();
 }

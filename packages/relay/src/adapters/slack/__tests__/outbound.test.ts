@@ -81,15 +81,20 @@ vi.mock('../../../lib/payload-utils.js', () => {
 
 const mockPostMessage = vi.fn().mockResolvedValue({ ts: 'msg-ts-1' });
 const mockChatUpdate = vi.fn().mockResolvedValue({ ts: 'msg-ts-1' });
+const mockReactionsAdd = vi.fn().mockResolvedValue({ ok: true });
+const mockReactionsRemove = vi.fn().mockResolvedValue({ ok: true });
 
 /**
- * Build a WebClient test double with only the chat.postMessage and chat.update
- * methods wired. The cast through `unknown` is intentional: the real WebClient
- * has dozens of API groups we don't need, and a partial stub is cleaner than
+ * Build a WebClient test double with chat and reactions methods wired.
+ * The cast through `unknown` is intentional: the real WebClient has dozens
+ * of API groups we don't need, and a partial stub is cleaner than
  * implementing the full interface.
  */
 function buildMockClient(): WebClient {
-  const stub = { chat: { postMessage: mockPostMessage, update: mockChatUpdate } };
+  const stub = {
+    chat: { postMessage: mockPostMessage, update: mockChatUpdate },
+    reactions: { add: mockReactionsAdd, remove: mockReactionsRemove },
+  };
   return stub as unknown as WebClient;
 }
 
@@ -125,6 +130,8 @@ function deliver(
   streamState: Map<string, ActiveStream>,
   callbacks: AdapterOutboundCallbacks,
   botUserId = 'UBOTID',
+  streaming = true,
+  typingIndicator: 'none' | 'reaction' = 'none',
 ) {
   return deliverMessage({
     adapterId: 'slack',
@@ -134,6 +141,8 @@ function deliver(
     streamState,
     botUserId,
     callbacks,
+    streaming,
+    typingIndicator,
   });
 }
 
@@ -241,9 +250,10 @@ describe('deliverMessage', () => {
       });
       await deliver('relay.human.slack.D123', delta, client, streamState, callbacks);
       expect(mockPostMessage).toHaveBeenCalledTimes(1);
-      expect(streamState.has('D123')).toBe(true);
-      expect(streamState.get('D123')?.accumulatedText).toBe('Hello');
-      expect(streamState.get('D123')?.messageTs).toBe('msg-ts-1');
+      // Stream key includes envelope.id for collision prevention
+      expect(streamState.has('D123:relay.agent.backend')).toBe(true);
+      expect(streamState.get('D123:relay.agent.backend')?.accumulatedText).toBe('Hello');
+      expect(streamState.get('D123:relay.agent.backend')?.messageTs).toBe('msg-ts-1');
     });
 
     it('updates existing stream on subsequent text_delta via chat.update after throttle window', async () => {
@@ -262,7 +272,7 @@ describe('deliverMessage', () => {
 
       expect(mockPostMessage).toHaveBeenCalledTimes(1);
       expect(mockChatUpdate).toHaveBeenCalledTimes(1);
-      expect(streamState.get('D123')?.accumulatedText).toBe('Hello world');
+      expect(streamState.get('D123:relay.agent.backend')?.accumulatedText).toBe('Hello world');
     });
 
     it('throttles chat.update when called within throttle window', async () => {
@@ -280,7 +290,7 @@ describe('deliverMessage', () => {
       expect(result.success).toBe(true);
       expect(mockChatUpdate).not.toHaveBeenCalled();
       // Text is still accumulated even though update was throttled
-      expect(streamState.get('D123')?.accumulatedText).toBe('Hello world');
+      expect(streamState.get('D123:relay.agent.backend')?.accumulatedText).toBe('Hello world');
     });
 
     it('uses chat.update with accumulated text on subsequent deltas', async () => {
@@ -299,6 +309,24 @@ describe('deliverMessage', () => {
       expect(mockChatUpdate).toHaveBeenCalledWith(
         expect.objectContaining({ channel: 'D123', ts: 'msg-ts-1', text: 'Part 1 Part 2' }),
       );
+    });
+
+    it('collapses consecutive newlines on intermediate updates', async () => {
+      const delta1 = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'Line 1\n\nLine 2' },
+      });
+      await deliver('relay.human.slack.D123', delta1, client, streamState, callbacks);
+
+      nowMs += 1_001;
+
+      const delta2 = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: '\n\nLine 3' },
+      });
+      await deliver('relay.human.slack.D123', delta2, client, streamState, callbacks);
+
+      // Intermediate update should collapse \n\n to \n
+      const updateCall = mockChatUpdate.mock.calls[0][0] as { text: string };
+      expect(updateCall.text).toBe('Line 1\nLine 2\nLine 3');
     });
 
     it('records error and returns failure when chat.update throws', async () => {
@@ -330,7 +358,7 @@ describe('deliverMessage', () => {
       const result = await deliver('relay.human.slack.D123', done, client, streamState, callbacks);
 
       expect(result.success).toBe(true);
-      expect(streamState.has('D123')).toBe(false);
+      expect(streamState.has('D123:relay.agent.backend')).toBe(false);
       expect(mockChatUpdate).toHaveBeenCalledWith(
         expect.objectContaining({ channel: 'D123', ts: 'msg-ts-1', text: 'Hi' }),
       );
@@ -364,7 +392,7 @@ describe('deliverMessage', () => {
           text: expect.stringContaining('[Error: Context exceeded]'),
         }),
       );
-      expect(streamState.has('D123')).toBe(false);
+      expect(streamState.has('D123:relay.agent.backend')).toBe(false);
       expect(callbacks.trackOutbound).toHaveBeenCalled();
     });
 
@@ -392,7 +420,7 @@ describe('deliverMessage', () => {
       const result = await deliver('relay.human.slack.D123', error, client, streamState, callbacks);
       expect(result.success).toBe(false);
       // Stream state is cleared even on failure
-      expect(streamState.has('D123')).toBe(false);
+      expect(streamState.has('D123:relay.agent.backend')).toBe(false);
     });
   });
 
@@ -439,6 +467,7 @@ describe('deliverMessage', () => {
         accumulatedText: 'stale',
         lastUpdateAt: nowMs - 6 * 60 * 1_000,
         startedAt: nowMs - 6 * 60 * 1_000,
+        streamId: 'stale-stream',
       });
 
       const envelope = createEnvelope('relay.human.slack.D123', { content: 'hi' });
@@ -455,6 +484,7 @@ describe('deliverMessage', () => {
         accumulatedText: 'recent',
         lastUpdateAt: nowMs - 1_000,
         startedAt: nowMs - 1_000,
+        streamId: 'recent-stream',
       });
 
       const envelope = createEnvelope('relay.human.slack.D123', { content: 'hi' });
@@ -464,11 +494,231 @@ describe('deliverMessage', () => {
     });
   });
 
+  describe('concurrent stream isolation', () => {
+    it('concurrent responses from different agents get independent stream state', async () => {
+      // Two agents respond to the same channel simultaneously
+      const deltaA = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'From A' },
+      });
+      // Override from to simulate different agent sessions
+      (deltaA as Record<string, unknown>).from = 'agent:session-1';
+
+      const deltaB = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'From B' },
+      });
+      (deltaB as Record<string, unknown>).from = 'agent:session-2';
+
+      await deliver('relay.human.slack.D123', deltaA, client, streamState, callbacks);
+      await deliver('relay.human.slack.D123', deltaB, client, streamState, callbacks);
+
+      // Two separate stream entries should exist
+      expect(streamState.size).toBe(2);
+      expect(mockPostMessage).toHaveBeenCalledTimes(2);
+
+      // Each stream has its own accumulated text
+      const entries = Array.from(streamState.values());
+      const texts = entries.map(e => e.accumulatedText).sort();
+      expect(texts).toEqual(['From A', 'From B']);
+    });
+  });
+
   describe('durationMs', () => {
     it('includes durationMs in all result paths', async () => {
       const envelope = createEnvelope('relay.human.slack.D123', { content: 'hi' });
       const result = await deliver('relay.human.slack.D123', envelope, client, streamState, callbacks);
       expect(typeof result.durationMs).toBe('number');
+    });
+  });
+
+  describe('typing indicator — emoji reaction', () => {
+    it('adds reaction on stream start when typingIndicator is reaction', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Hello' },
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      expect(mockReactionsAdd).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+    });
+
+    it('removes reaction on done', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Hello' },
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      const done = createEnvelope('relay.human.slack.D123', {
+        type: 'done',
+        data: {},
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', done, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      expect(mockReactionsRemove).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+    });
+
+    it('removes reaction on error', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Partial' },
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      const error = createEnvelope('relay.human.slack.D123', {
+        type: 'error',
+        data: { message: 'failed' },
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', error, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      expect(mockReactionsRemove).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+    });
+
+    it('does not add reaction when typingIndicator is none', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Hello' },
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', true, 'none');
+
+      expect(mockReactionsAdd).not.toHaveBeenCalled();
+    });
+
+    it('swallows reaction errors silently', async () => {
+      mockReactionsAdd.mockRejectedValueOnce(new Error('no_permission'));
+
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Hello' },
+        platformData: { ts: '1234.0001' },
+      });
+      const result = await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      // Delivery should still succeed even if reaction fails
+      expect(result.success).toBe(true);
+    });
+
+    it('does not add reaction when no threadTs available', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Hello' },
+        // No platformData — no threadTs
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', true, 'reaction');
+
+      // Reactions require a real message ts — should not be called without threadTs
+      expect(mockReactionsAdd).not.toHaveBeenCalled();
+    });
+
+    it('adds reaction on buffered mode stream start', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta',
+        data: { text: 'Hello' },
+        platformData: { ts: '1234.0001' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', false, 'reaction');
+
+      expect(mockReactionsAdd).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+      // Should not post message (buffered mode)
+      expect(mockPostMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('streaming toggle — buffered mode', () => {
+    it('accumulates text without posting when streaming is false', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'Hello' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', false);
+
+      expect(mockPostMessage).not.toHaveBeenCalled();
+      expect(mockChatUpdate).not.toHaveBeenCalled();
+      // Should have accumulated text in stream state
+      const entry = Array.from(streamState.values())[0];
+      expect(entry?.accumulatedText).toBe('Hello');
+      expect(entry?.messageTs).toBe(''); // No message posted
+    });
+
+    it('sends single message on done when streaming is false', async () => {
+      // Accumulate two deltas
+      const delta1 = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'Hello' },
+      });
+      await deliver('relay.human.slack.D123', delta1, client, streamState, callbacks, 'UBOTID', false);
+
+      const delta2 = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: ' world' },
+      });
+      await deliver('relay.human.slack.D123', delta2, client, streamState, callbacks, 'UBOTID', false);
+
+      // Now send done
+      const done = createEnvelope('relay.human.slack.D123', { type: 'done', data: {} });
+      await deliver('relay.human.slack.D123', done, client, streamState, callbacks, 'UBOTID', false);
+
+      // Should post once (not update) with complete text
+      expect(mockPostMessage).toHaveBeenCalledTimes(1);
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ channel: 'D123', text: 'Hello world' }),
+      );
+      expect(mockChatUpdate).not.toHaveBeenCalled();
+      expect(callbacks.trackOutbound).toHaveBeenCalled();
+    });
+
+    it('handles error in buffered mode by posting accumulated text + error', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'Partial' },
+      });
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks, 'UBOTID', false);
+
+      const error = createEnvelope('relay.human.slack.D123', {
+        type: 'error', data: { message: 'timeout' },
+      });
+      await deliver('relay.human.slack.D123', error, client, streamState, callbacks, 'UBOTID', false);
+
+      expect(mockPostMessage).toHaveBeenCalledTimes(1);
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining('Partial'),
+        }),
+      );
+      expect(mockPostMessage).toHaveBeenCalledWith(
+        expect.objectContaining({
+          text: expect.stringContaining('[Error: timeout]'),
+        }),
+      );
+      expect(mockChatUpdate).not.toHaveBeenCalled();
+    });
+
+    it('defaults to streaming mode (existing behavior preserved)', async () => {
+      const delta = createEnvelope('relay.human.slack.D123', {
+        type: 'text_delta', data: { text: 'Hello' },
+      });
+      // streaming defaults to true in deliver helper
+      await deliver('relay.human.slack.D123', delta, client, streamState, callbacks);
+
+      // Should post immediately (streaming mode)
+      expect(mockPostMessage).toHaveBeenCalledTimes(1);
     });
   });
 });

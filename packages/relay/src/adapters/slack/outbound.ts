@@ -7,6 +7,7 @@
  *
  * @module relay/adapters/slack-outbound
  */
+import { randomUUID } from 'node:crypto';
 import type { WebClient } from '@slack/web-api';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import type { AdapterOutboundCallbacks, DeliveryResult } from '../../types.js';
@@ -43,6 +44,8 @@ export interface ActiveStream {
   lastUpdateAt: number;
   /** Timestamp (ms) when the stream was created — used for TTL reaping. */
   startedAt: number;
+  /** Unique ID for this stream — used to detect async race conditions in handleDone. */
+  streamId: string;
 }
 
 /** Options for delivering a Relay message to Slack. */
@@ -54,6 +57,8 @@ export interface SlackDeliverOptions {
   streamState: Map<string, ActiveStream>;
   botUserId: string;
   callbacks: AdapterOutboundCallbacks;
+  streaming: boolean;
+  typingIndicator: 'none' | 'reaction';
 }
 
 // === Helpers ===
@@ -89,9 +94,9 @@ function resolveThreadTs(envelope: RelayEnvelope): string | undefined {
   if (!pd) return undefined;
 
   // threadTs takes precedence (already in a thread)
-  if (typeof pd.threadTs === 'string') return pd.threadTs;
+  if (typeof pd.threadTs === 'string' && pd.threadTs) return pd.threadTs;
   // ts of the original message (start a new thread)
-  if (typeof pd.ts === 'string') return pd.ts;
+  if (typeof pd.ts === 'string' && pd.ts) return pd.ts;
 
   return undefined;
 }
@@ -127,6 +132,60 @@ async function wrapSlackCall(
   }
 }
 
+/**
+ * Add a typing indicator reaction to the user's original message.
+ *
+ * Fire-and-forget — errors are silently swallowed since typing
+ * indicators are best-effort.
+ *
+ * @param client - Slack WebClient instance
+ * @param channelId - The Slack channel ID
+ * @param threadTs - The message timestamp to react to
+ * @param typingIndicator - The typing indicator mode
+ */
+function addTypingReaction(
+  client: WebClient,
+  channelId: string,
+  threadTs: string | undefined,
+  typingIndicator: 'none' | 'reaction',
+): void {
+  if (typingIndicator !== 'reaction' || !threadTs) return;
+  void client.reactions
+    .add({
+      channel: channelId,
+      name: 'hourglass_flowing_sand',
+      timestamp: threadTs,
+    })
+    .catch(() => {}); // Silently swallow errors
+}
+
+/**
+ * Remove the typing indicator reaction from the user's original message.
+ *
+ * Fire-and-forget — errors are silently swallowed since typing
+ * indicators are best-effort.
+ *
+ * @param client - Slack WebClient instance
+ * @param channelId - The Slack channel ID
+ * @param threadTs - The message timestamp to remove the reaction from
+ * @param typingIndicator - The typing indicator mode
+ */
+function removeTypingReaction(
+  client: WebClient,
+  channelId: string,
+  threadTs: string | undefined,
+  typingIndicator: 'none' | 'reaction',
+): void {
+  if (typingIndicator !== 'reaction' || !threadTs) return;
+  void client.reactions
+    .remove({
+      channel: channelId,
+      name: 'hourglass_flowing_sand',
+      timestamp: threadTs,
+    })
+    .catch(() => {}); // Silently swallow errors
+}
+
 // === Stream handlers ===
 
 /**
@@ -144,6 +203,9 @@ async function wrapSlackCall(
  * @param streamState - Per-channel active stream state map
  * @param callbacks - Callbacks to track delivery metrics
  * @param startTime - Timestamp (ms) for delivery duration calculation
+ * @param streaming - Whether to post/update in real time or buffer silently
+ * @param typingIndicator - Typing indicator mode for reaction add/remove
+ * @param streamKeyTs - Correlation ID for stream key (may be synthetic envelope ID)
  */
 async function handleTextDelta(
   channelId: string,
@@ -153,9 +215,33 @@ async function handleTextDelta(
   streamState: Map<string, ActiveStream>,
   callbacks: AdapterOutboundCallbacks,
   startTime: number,
+  streaming: boolean,
+  typingIndicator: 'none' | 'reaction',
+  streamKeyTs: string,
 ): Promise<DeliveryResult> {
-  const key = streamKey(channelId, threadTs);
+  const key = streamKey(channelId, streamKeyTs);
   const existing = streamState.get(key);
+
+  // Buffered mode: accumulate text without posting or updating
+  if (!streaming) {
+    if (existing) {
+      existing.accumulatedText += textChunk;
+    } else {
+      streamState.set(key, {
+        channelId,
+        threadTs: threadTs ?? '',
+        messageTs: '', // No message posted yet
+        accumulatedText: textChunk,
+        lastUpdateAt: 0,
+        startedAt: Date.now(),
+        streamId: randomUUID(),
+      });
+
+      // Add typing indicator reaction on stream start (fire-and-forget)
+      addTypingReaction(client, channelId, threadTs, typingIndicator);
+    }
+    return { success: true, durationMs: Date.now() - startTime };
+  }
 
   if (existing) {
     // Accumulate raw Markdown — converted to mrkdwn at send time
@@ -169,12 +255,19 @@ async function handleTextDelta(
     }
     existing.lastUpdateAt = now;
 
+    // Collapse consecutive newlines on intermediate updates to work around
+    // slackify-markdown inserting \n\n paragraph separation (Issue #40).
+    // The final flush in handleDone preserves full paragraph formatting.
+    const formatted = formatForPlatform(existing.accumulatedText, 'slack');
+    const streamText = formatted.replace(/\n{2,}/g, '\n');
+
     return wrapSlackCall(
-      () => client.chat.update({
-        channel: channelId,
-        ts: existing.messageTs,
-        text: truncateText(formatForPlatform(existing.accumulatedText, 'slack'), MAX_MESSAGE_LENGTH),
-      }),
+      () =>
+        client.chat.update({
+          channel: channelId,
+          ts: existing.messageTs,
+          text: truncateText(streamText, MAX_MESSAGE_LENGTH),
+        }),
       callbacks,
       startTime,
     );
@@ -197,7 +290,11 @@ async function handleTextDelta(
       accumulatedText: textChunk,
       lastUpdateAt: now,
       startedAt: now,
+      streamId: randomUUID(),
     });
+
+    // Add typing indicator reaction on stream start (fire-and-forget)
+    addTypingReaction(client, channelId, threadTs, typingIndicator);
 
     return { success: true, durationMs: now - startTime };
   } catch (err) {
@@ -217,11 +314,13 @@ async function handleTextDelta(
  * accumulated text, then removes the channel from streamState.
  *
  * @param channelId - The Slack channel ID
- * @param threadTs - Optional thread_ts for stream key lookup
+ * @param threadTs - Optional thread_ts for Slack API calls
  * @param client - Slack WebClient instance
  * @param streamState - Per-channel active stream state map
  * @param callbacks - Callbacks to track delivery metrics
  * @param startTime - Timestamp (ms) for delivery duration calculation
+ * @param typingIndicator - Typing indicator mode for reaction removal
+ * @param streamKeyTs - Correlation ID for stream key (may be synthetic envelope ID)
  */
 async function handleDone(
   channelId: string,
@@ -230,22 +329,52 @@ async function handleDone(
   streamState: Map<string, ActiveStream>,
   callbacks: AdapterOutboundCallbacks,
   startTime: number,
+  typingIndicator: 'none' | 'reaction',
+  streamKeyTs: string,
 ): Promise<DeliveryResult> {
-  const key = streamKey(channelId, threadTs);
+  const key = streamKey(channelId, streamKeyTs);
   const existing = streamState.get(key);
   streamState.delete(key);
+
+  // Remove typing indicator reaction (fire-and-forget)
+  if (existing?.threadTs) {
+    removeTypingReaction(client, channelId, existing.threadTs, typingIndicator);
+  }
 
   if (!existing) {
     // No active stream — nothing to finalize
     return { success: true, durationMs: Date.now() - startTime };
   }
 
+  // Buffered mode: post accumulated text as a new message
+  if (!existing.messageTs) {
+    return wrapSlackCall(
+      () =>
+        client.chat.postMessage({
+          channel: channelId,
+          text: truncateText(
+            formatForPlatform(existing.accumulatedText, 'slack'),
+            MAX_MESSAGE_LENGTH,
+          ),
+          ...(threadTs ? { thread_ts: threadTs } : {}),
+        }),
+      callbacks,
+      startTime,
+      true,
+    );
+  }
+
+  // Streaming mode: update existing message
   return wrapSlackCall(
-    () => client.chat.update({
-      channel: channelId,
-      ts: existing.messageTs,
-      text: truncateText(formatForPlatform(existing.accumulatedText, 'slack'), MAX_MESSAGE_LENGTH),
-    }),
+    () =>
+      client.chat.update({
+        channel: channelId,
+        ts: existing.messageTs,
+        text: truncateText(
+          formatForPlatform(existing.accumulatedText, 'slack'),
+          MAX_MESSAGE_LENGTH,
+        ),
+      }),
     callbacks,
     startTime,
     true,
@@ -260,11 +389,13 @@ async function handleDone(
  *
  * @param channelId - The Slack channel ID
  * @param errorMsg - The error message to display
- * @param threadTs - Optional thread_ts for stream key lookup and standalone posting
+ * @param threadTs - Optional thread_ts for Slack API calls
  * @param client - Slack WebClient instance
  * @param streamState - Per-channel active stream state map
  * @param callbacks - Callbacks to track delivery metrics
  * @param startTime - Timestamp (ms) for delivery duration calculation
+ * @param typingIndicator - Typing indicator mode for reaction removal
+ * @param streamKeyTs - Correlation ID for stream key (may be synthetic envelope ID)
  */
 async function handleError(
   channelId: string,
@@ -274,23 +405,47 @@ async function handleError(
   streamState: Map<string, ActiveStream>,
   callbacks: AdapterOutboundCallbacks,
   startTime: number,
+  typingIndicator: 'none' | 'reaction',
+  streamKeyTs: string,
 ): Promise<DeliveryResult> {
-  const key = streamKey(channelId, threadTs);
+  const key = streamKey(channelId, streamKeyTs);
   const existing = streamState.get(key);
   streamState.delete(key);
 
+  // Remove typing indicator reaction (fire-and-forget)
+  if (existing?.threadTs) {
+    removeTypingReaction(client, channelId, existing.threadTs, typingIndicator);
+  }
+
   if (existing) {
-    // Append error to accumulated text and update the message
     const finalText = truncateText(
       `${formatForPlatform(existing.accumulatedText, 'slack')}\n\n[Error: ${errorMsg}]`,
       MAX_MESSAGE_LENGTH,
     );
+
+    // Buffered mode: post as new message
+    if (!existing.messageTs) {
+      return wrapSlackCall(
+        () =>
+          client.chat.postMessage({
+            channel: channelId,
+            text: finalText,
+            ...(threadTs ? { thread_ts: threadTs } : {}),
+          }),
+        callbacks,
+        startTime,
+        true,
+      );
+    }
+
+    // Streaming mode: update existing message
     return wrapSlackCall(
-      () => client.chat.update({
-        channel: channelId,
-        ts: existing.messageTs,
-        text: finalText,
-      }),
+      () =>
+        client.chat.update({
+          channel: channelId,
+          ts: existing.messageTs,
+          text: finalText,
+        }),
       callbacks,
       startTime,
       true,
@@ -300,11 +455,12 @@ async function handleError(
   // No active stream — post standalone error message
   const text = truncateText(`[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH);
   return wrapSlackCall(
-    () => client.chat.postMessage({
-      channel: channelId,
-      text,
-      ...(threadTs ? { thread_ts: threadTs } : {}),
-    }),
+    () =>
+      client.chat.postMessage({
+        channel: channelId,
+        text,
+        ...(threadTs ? { thread_ts: threadTs } : {}),
+      }),
     callbacks,
     startTime,
     true,
@@ -365,8 +521,23 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
     };
   }
 
-  // Resolve thread_ts from the original inbound message's platformData
+  // Resolve thread_ts from the original inbound message's platformData.
+  // This is used for Slack API calls (thread_ts, reactions timestamp).
   const threadTs = resolveThreadTs(envelope);
+
+  // For stream key differentiation, use a value that is consistent across all
+  // events in a single agent response stream. Priority:
+  // 1. threadTs — real Slack timestamp (always present for messages from Slack users)
+  // 2. correlationId — shared across events from the same request
+  // 3. envelope.from — agent session ID (e.g. "agent:session-abc"), consistent
+  //    across all stream events from one response
+  // This prevents concurrent responses in the same channel from colliding
+  // on just the channelId.
+  const payloadObj = envelope.payload && typeof envelope.payload === 'object'
+    ? (envelope.payload as Record<string, unknown>)
+    : undefined;
+  const payloadCorrelationId = payloadObj?.correlationId as string | undefined;
+  const streamKeyTs = threadTs ?? payloadCorrelationId ?? envelope.from;
 
   // --- StreamEvent-aware delivery ---
   const eventType = detectStreamEventType(envelope.payload);
@@ -375,18 +546,48 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
     // text_delta: start or update streaming message
     const textChunk = extractTextDelta(envelope.payload);
     if (textChunk) {
-      return handleTextDelta(channelId, textChunk, threadTs, client, streamState, callbacks, startTime);
+      return handleTextDelta(
+        channelId,
+        textChunk,
+        threadTs,
+        client,
+        streamState,
+        callbacks,
+        startTime,
+        opts.streaming,
+        opts.typingIndicator,
+        streamKeyTs,
+      );
     }
 
     // error: append error text and finalize
     const errorMsg = extractErrorMessage(envelope.payload);
     if (errorMsg) {
-      return handleError(channelId, errorMsg, threadTs, client, streamState, callbacks, startTime);
+      return handleError(
+        channelId,
+        errorMsg,
+        threadTs,
+        client,
+        streamState,
+        callbacks,
+        startTime,
+        opts.typingIndicator,
+        streamKeyTs,
+      );
     }
 
     // done: finalize the stream
     if (eventType === 'done') {
-      return handleDone(channelId, threadTs, client, streamState, callbacks, startTime);
+      return handleDone(
+        channelId,
+        threadTs,
+        client,
+        streamState,
+        callbacks,
+        startTime,
+        opts.typingIndicator,
+        streamKeyTs,
+      );
     }
 
     // Silent events: skip without sending anything
@@ -401,11 +602,12 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
   const text = truncateText(mrkdwn, MAX_MESSAGE_LENGTH);
 
   return wrapSlackCall(
-    () => client.chat.postMessage({
-      channel: channelId,
-      text,
-      ...(threadTs ? { thread_ts: threadTs } : {}),
-    }),
+    () =>
+      client.chat.postMessage({
+        channel: channelId,
+        text,
+        ...(threadTs ? { thread_ts: threadTs } : {}),
+      }),
     callbacks,
     startTime,
     true,

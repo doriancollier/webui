@@ -168,7 +168,7 @@ describe('BindingRouter', () => {
     expect(mockAgentManager.createSession).toHaveBeenCalledWith('/agents/a');
     expect(mockRelayCore.publish).toHaveBeenCalledWith(
       'relay.agent.session-abc',
-      { text: 'hello' },
+      { text: 'hello', cwd: '/agents/a' },
       expect.objectContaining({ from: 'tg' }),
     );
   });

@@ -897,7 +897,14 @@
       "title": "Adapter Setup Experience",
       "created": "2026-03-14",
       "status": "ideation"
+    },
+    {
+      "number": 129,
+      "slug": "relay-adapter-streaming-fixes",
+      "title": "Relay Adapter Streaming Fixes & Enhancements",
+      "created": "2026-03-14",
+      "status": "draft"
     }
   ],
-  "nextNumber": 129
+  "nextNumber": 130
 }

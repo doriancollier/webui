@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Fix Slack streaming bugs and add streaming toggle + typing indicators
 - Add layered adapter documentation system with setup guides and per-field help
 - Unify discovery UI — shared CandidateCard, approve/skip model
 - Add Slack adapter with Socket Mode, streaming, and format conversion

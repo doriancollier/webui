@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 124,
+  "nextNumber": 127,
   "decisions": [
+    {
+      "number": 126,
+      "slug": "envelope-payload-enrichment-for-cwd-propagation",
+      "title": "Enrich Envelope Payload with Binding CWD in BindingRouter",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "relay-adapter-streaming-fixes",
+      "specSlug": "relay-adapter-streaming-fixes"
+    },
+    {
+      "number": 125,
+      "slug": "emoji-reaction-as-slack-typing-indicator",
+      "title": "Use Emoji Reaction as Slack Typing Indicator",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "relay-adapter-streaming-fixes",
+      "specSlug": "relay-adapter-streaming-fixes"
+    },
+    {
+      "number": 124,
+      "slug": "regex-workaround-for-slackify-markdown-paragraphs",
+      "title": "Regex Workaround for slackify-markdown Paragraph Breaks During Streaming",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "relay-adapter-streaming-fixes",
+      "specSlug": "relay-adapter-streaming-fixes"
+    },
     {
       "number": 123,
       "slug": "slack-manifest-url-for-one-click-app-creation",
