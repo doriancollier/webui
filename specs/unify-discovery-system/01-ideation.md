@@ -16,7 +16,7 @@ status: ideation
 
 ## 1) Intent & Assumptions
 
-- **Task brief:** Unify two separate agent discovery systems (onboarding SSE scan + mesh panel batch scan) into a single canonical implementation. Fix the critical bug where onboarding scans the wrong directory (project root instead of home). Eliminate DRY violations, make scan root resolution consistent, add SSE streaming to the Transport interface, and share scan state across features.
+- **Task brief:** Unify two separate agent discovery systems (onboarding SSE scan + mesh panel batch scan) into a single canonical implementation. Fix the critical bug where onboarding scans the wrong directory (project root instead of home). Eliminate DRY violations, make scan root resolution consistent, add SSE streaming to the Transport interface, and share scan state across features. Additionally, consolidate the three separate discovery UI experiences (onboarding checkbox selection, mesh "Discover Agents" button, mesh Discovery tab) into a single interaction model: per-agent approve/deny using `CandidateCard`. Delete the redundant `DiscoverAgentsSection` and onboarding `AgentCard`.
 
 - **Assumptions:**
   - The mesh `discovery-engine.ts` strategy pattern and the standalone `discovery-scanner.ts` can be merged into a new unified scanner

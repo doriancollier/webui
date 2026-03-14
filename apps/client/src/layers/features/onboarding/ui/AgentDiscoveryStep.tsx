@@ -1,15 +1,11 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Search, CheckSquare, Square } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
 import { useRegisterAgent } from '@/layers/entities/mesh';
-import { useDiscoveryScan, useDiscoveryStore } from '@/layers/entities/discovery';
+import { useDiscoveryScan, useDiscoveryStore, CandidateCard } from '@/layers/entities/discovery';
 import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
-import { AgentCard } from './AgentCard';
 import { NoAgentsFound } from './NoAgentsFound';
-
-/** Threshold for showing bulk selection controls. */
-const SELECT_ALL_THRESHOLD = 6;
 
 interface AgentDiscoveryStepProps {
   onStepComplete: () => void;
@@ -33,24 +29,21 @@ function sortCandidates(candidates: DiscoveryCandidate[]): DiscoveryCandidate[] 
 /**
  * Step 1 of onboarding — discovers AI agent projects on the user's machine.
  *
- * Auto-starts scanning on mount. Shows progressive results as they arrive
- * with staggered entrance animations. No agents are selected by default —
- * users opt in to registration.
+ * Auto-starts scanning on mount. Shows progressive results as they arrive.
+ * Users approve or skip each candidate individually; "Continue" advances
+ * once all visible candidates have been acted on.
  *
- * @param onStepComplete - Called when the user confirms or skips
+ * @param onStepComplete - Called when the user advances past this step
  */
 export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) {
   const { startScan } = useDiscoveryScan();
   const { candidates, isScanning, progress, error } = useDiscoveryStore();
   const registerAgent = useRegisterAgent();
-  const [selectedPaths, setSelectedPaths] = useState<Set<string> | null>(null);
+  // Tracks paths the user has explicitly approved or skipped
+  const [actedPaths, setActedPaths] = useState<Set<string>>(new Set());
   const [hasStarted, setHasStarted] = useState(false);
-  const [isRegistering, setIsRegistering] = useState(false);
   const reducedMotion = useReducedMotion();
   const autoStarted = useRef(false);
-
-  // All candidates selected by default until user interacts
-  const resolvedSelected = selectedPaths ?? new Set(candidates.map((c) => c.path));
 
   // Auto-start scan on mount
   useEffect(() => {
@@ -67,50 +60,41 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
     [candidates, isScanning],
   );
 
-  const handleToggle = useCallback((path: string) => {
-    setSelectedPaths((prev) => {
-      const current = prev ?? new Set(candidates.map((c) => c.path));
-      const next = new Set(current);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-  }, [candidates]);
-
-  const handleSelectAll = useCallback(() => {
-    setSelectedPaths(new Set(candidates.map((c) => c.path)));
-  }, [candidates]);
-
-  const handleDeselectAll = useCallback(() => {
-    setSelectedPaths(new Set());
+  const markActed = useCallback((path: string) => {
+    setActedPaths((prev) => new Set(prev).add(path));
   }, []);
 
+  const handleApprove = useCallback(
+    (candidate: DiscoveryCandidate) => {
+      // Mark acted immediately so the card exits; registration continues in background
+      markActed(candidate.path);
+      registerAgent.mutate({
+        path: candidate.path,
+        overrides: {
+          name: candidate.hints.suggestedName,
+          runtime: candidate.hints.detectedRuntime,
+          ...(candidate.hints.inferredCapabilities
+            ? { capabilities: candidate.hints.inferredCapabilities }
+            : {}),
+          ...(candidate.hints.description ? { description: candidate.hints.description } : {}),
+        },
+      });
+    },
+    [registerAgent, markActed],
+  );
+
+  const handleSkip = useCallback(
+    (candidate: DiscoveryCandidate) => {
+      markActed(candidate.path);
+    },
+    [markActed],
+  );
+
   const handleRescan = useCallback(() => {
-    setSelectedPaths(null);
+    setActedPaths(new Set());
     setHasStarted(true);
     startScan();
   }, [startScan]);
-
-  const handleConfirm = useCallback(async () => {
-    if (resolvedSelected.size === 0) {
-      // Skip without registering
-      onStepComplete();
-      return;
-    }
-    setIsRegistering(true);
-    const paths = Array.from(resolvedSelected);
-    try {
-      await Promise.all(paths.map((p) => registerAgent.mutateAsync({ path: p })));
-    } catch {
-      // Continue even if some registrations fail — agents can be registered later
-    } finally {
-      setIsRegistering(false);
-      onStepComplete();
-    }
-  }, [resolvedSelected, registerAgent, onStepComplete]);
 
   const handleAgentCreated = useCallback(() => {
     // After creating an agent via the no-results form, re-scan
@@ -120,8 +104,10 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
   const hasResults = candidates.length > 0;
   const scanComplete = hasStarted && !isScanning;
   const showNoResults = scanComplete && !hasResults;
-  const showBulkControls = !isScanning && candidates.length >= SELECT_ALL_THRESHOLD;
-  const allSelected = hasResults && resolvedSelected.size === candidates.length;
+  // "Continue" is primary when every visible candidate has been approved or skipped
+  const allActed = hasResults && candidates.every((c) => actedPaths.has(c.path));
+  // Only show unacted candidates — acted ones animate out via AnimatePresence
+  const pendingCandidates = displayCandidates.filter((c) => !actedPaths.has(c.path));
 
   return (
     <div className="flex min-h-0 w-full flex-1 flex-col items-center">
@@ -163,8 +149,8 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
       {/* Summary after scan */}
       {scanComplete && hasResults && (
         <p className="mt-4 shrink-0 text-center text-sm text-muted-foreground">
-          Found {candidates.length} project{candidates.length === 1 ? '' : 's'}. Select the ones
-          you want to register.
+          Found {candidates.length} project{candidates.length === 1 ? '' : 's'}. Approve or skip
+          each one.
         </p>
       )}
 
@@ -175,63 +161,18 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
         </div>
       )}
 
-      {/* Bulk selection controls */}
-      <AnimatePresence>
-        {showBulkControls && (
-          <motion.div
-            initial={reducedMotion ? false : { opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="mt-4 w-full shrink-0 overflow-hidden"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {resolvedSelected.size} of {candidates.length} selected
-              </span>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={allSelected ? handleDeselectAll : handleSelectAll}
-                className="gap-1.5 text-sm"
-              >
-                {allSelected ? (
-                  <>
-                    <Square className="size-3.5" />
-                    Deselect all
-                  </>
-                ) : (
-                  <>
-                    <CheckSquare className="size-3.5" />
-                    Select all
-                  </>
-                )}
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Agent cards list — scrollable when list is long */}
+      {/* Candidate cards — scrollable when list is long */}
       {hasResults && (
         <div className="mt-4 min-h-0 w-full flex-1 overflow-y-auto pr-1">
           <div className="space-y-3">
             <AnimatePresence mode="popLayout">
-              {displayCandidates.map((candidate) => (
-                <motion.div
+              {pendingCandidates.map((candidate) => (
+                <CandidateCard
                   key={candidate.path}
-                  layout={!reducedMotion}
-                  initial={reducedMotion ? false : { opacity: 0, y: 16 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -8 }}
-                  transition={{ duration: 0.25, ease: 'easeOut' }}
-                >
-                  <AgentCard
-                    candidate={candidate}
-                    selected={resolvedSelected.has(candidate.path)}
-                    onToggle={() => handleToggle(candidate.path)}
-                  />
-                </motion.div>
+                  candidate={candidate}
+                  onApprove={handleApprove}
+                  onSkip={handleSkip}
+                />
               ))}
             </AnimatePresence>
           </div>
@@ -250,20 +191,15 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
         </div>
       )}
 
-      {/* Action buttons — fixed at bottom */}
+      {/* Continue button — always visible once scan completes with results */}
       {scanComplete && hasResults && (
         <div className="mt-4 flex shrink-0 flex-col items-center gap-2 border-t pt-4">
           <Button
             size="lg"
-            onClick={handleConfirm}
-            disabled={isRegistering}
-            variant={resolvedSelected.size === 0 ? 'outline' : 'default'}
+            onClick={onStepComplete}
+            variant={allActed ? 'default' : 'outline'}
           >
-            {isRegistering
-              ? 'Registering...'
-              : resolvedSelected.size > 0
-                ? `Register ${resolvedSelected.size} agent${resolvedSelected.size === 1 ? '' : 's'}`
-                : 'Continue without registering'}
+            Continue
           </Button>
         </div>
       )}

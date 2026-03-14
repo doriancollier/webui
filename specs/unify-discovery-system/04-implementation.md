@@ -1,13 +1,13 @@
 # Implementation Summary: Unify Discovery System
 
 **Created:** 2026-03-06
-**Last Updated:** 2026-03-06
+**Last Updated:** 2026-03-13
 **Spec:** specs/unify-discovery-system/02-specification.md
 
 ## Progress
 
 **Status:** Complete
-**Tasks Completed:** 12 / 12
+**Tasks Completed:** 14 / 14
 
 ## Tasks Completed
 
@@ -45,9 +45,9 @@
 - `apps/server/src/routes/mesh.ts` - POST /discover filters ScanEvent for candidates
 - `apps/server/src/services/core/mcp-tools/mesh-tools.ts` - mesh_discover filters ScanEvent
 - `apps/client/src/layers/features/onboarding/ui/AgentDiscoveryStep.tsx` - Uses shared hook
-- `apps/client/src/layers/features/onboarding/ui/AgentCard.tsx` - Uses DiscoveryCandidate
 - `apps/client/src/layers/features/onboarding/ui/DiscoveryCelebration.tsx` - Uses DiscoveryCandidate
-- `apps/client/src/layers/features/mesh/ui/DiscoveryView.tsx` - Uses shared hook
+- `apps/client/src/layers/features/mesh/ui/DiscoveryView.tsx` - Uses shared CandidateCard from entities/discovery
+- `apps/client/src/layers/entities/discovery/ui/CandidateCard.tsx` - Shared CandidateCard component (approve/deny/skip)
 - `apps/client/src/layers/shared/lib/http-transport.ts` - scan() via SSE
 - `apps/client/src/layers/shared/lib/direct-transport.ts` - scan() stub for embedded mode
 
@@ -65,3 +65,20 @@ _(None yet)_
 ### Session 1
 
 All 12 tasks completed across 6 parallel batches. Fixed pre-existing Dirent type mismatch in unified-scanner.ts.
+
+### Session 2 - 2026-03-13
+
+UI consolidation phase — unified discovery UX across onboarding and mesh panel.
+
+- Task #10: [P2] Move CandidateCard to entities/discovery with onApprove/onDeny/onSkip props
+- Task #11: [P2] Update DiscoveryView to use shared CandidateCard from entities/discovery
+- Task #12: [P3] Rewrite AgentDiscoveryStep from checkbox model to approve/skip per agent
+- Task #13: [P3] Delete old onboarding AgentCard, use-spotlight, and old mesh CandidateCard
+- Task #14: [P4] Remove unused useDiscoverAgents hook, clean up test references
+
+**Files deleted:**
+- `apps/client/src/layers/features/onboarding/ui/AgentCard.tsx` — replaced by shared CandidateCard
+- `apps/client/src/layers/features/onboarding/lib/use-spotlight.ts` — only used by AgentCard
+- `apps/client/src/layers/features/onboarding/__tests__/AgentCard.test.tsx` — tests for deleted component
+- `apps/client/src/layers/features/mesh/ui/CandidateCard.tsx` — moved to entities/discovery
+- `apps/client/src/layers/entities/mesh/model/use-mesh-discover.ts` — replaced by SSE-based useDiscoveryScan

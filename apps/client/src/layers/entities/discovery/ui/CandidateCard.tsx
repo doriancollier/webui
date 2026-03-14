@@ -1,4 +1,5 @@
 import { Folder } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Badge } from '@/layers/shared/ui/badge';
 import {
   HoverCard,
@@ -8,6 +9,7 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from '@/layers/shared/ui';
+import { cn } from '@/layers/shared/lib';
 import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 
 // Human-readable descriptions for known detection strategies
@@ -42,15 +44,25 @@ function capabilityDescription(cap: string): string {
 interface CandidateCardProps {
   candidate: DiscoveryCandidate;
   onApprove: (candidate: DiscoveryCandidate) => void;
-  onDeny: (candidate: DiscoveryCandidate) => void;
+  onDeny?: (candidate: DiscoveryCandidate) => void;
+  onSkip?: (candidate: DiscoveryCandidate) => void;
+  className?: string;
 }
 
-/** Displays a discovered agent candidate with approve/deny actions. */
-export function CandidateCard({ candidate, onApprove, onDeny }: CandidateCardProps) {
+/** Displays a discovered agent candidate with approve, deny, and optional skip actions. */
+export function CandidateCard({ candidate, onApprove, onDeny, onSkip, className }: CandidateCardProps) {
   const { path, strategy, hints } = candidate;
 
   return (
-    <div className="flex items-start justify-between rounded-xl border p-4">
+    <motion.div
+      data-slot="candidate-card"
+      layout
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.15, ease: 'easeOut' }}
+      className={cn('flex items-start justify-between rounded-xl border p-4', className)}
+    >
       <div className="min-w-0 flex-1 space-y-2">
         {/* Name */}
         <p className="text-sm font-semibold leading-tight">
@@ -107,14 +119,25 @@ export function CandidateCard({ candidate, onApprove, onDeny }: CandidateCardPro
         >
           Approve
         </button>
-        <button
-          type="button"
-          onClick={() => onDeny(candidate)}
-          className="rounded-md bg-red-600/10 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:text-red-400"
-        >
-          Deny
-        </button>
+        {onSkip && (
+          <button
+            type="button"
+            onClick={() => onSkip(candidate)}
+            className="rounded-md px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            Skip
+          </button>
+        )}
+        {onDeny && (
+          <button
+            type="button"
+            onClick={() => onDeny(candidate)}
+            className="rounded-md bg-red-600/10 px-2.5 py-1 text-xs font-medium text-red-700 hover:bg-red-600/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:text-red-400"
+          >
+            Deny
+          </button>
+        )}
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,20 +1,16 @@
-import { lazy, Suspense, useState, useCallback, useMemo } from 'react';
-import { Loader2, Network, Radar, ShieldCheck, TriangleAlert, X } from 'lucide-react';
+import { lazy, Suspense, useState, useCallback } from 'react';
+import { Loader2, Network, ShieldCheck, TriangleAlert, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/layers/shared/ui';
 import { Badge } from '@/layers/shared/ui/badge';
 import {
   useRegisteredAgents,
-  useRegisterAgent,
   useDeniedAgents,
   useUnregisterAgent,
 } from '@/layers/entities/mesh';
 import type { AgentManifest, DenialRecord } from '@dorkos/shared/mesh-schemas';
 import { useDirectoryState } from '@/layers/entities/session';
 import { AgentDialog } from '@/layers/features/agent-settings';
-import { useDiscoveryScan, useDiscoveryStore } from '@/layers/entities/discovery';
-import { AgentCard as OnboardingAgentCard } from '@/layers/features/onboarding';
-import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { MeshStatsHeader } from './MeshStatsHeader';
 import { AgentHealthDetail } from './AgentHealthDetail';
 import { TopologyPanel } from './TopologyPanel';
@@ -140,118 +136,6 @@ function DeniedTab({ denied, isLoading }: DeniedTabProps) {
   );
 }
 
-// -- Discover Agents Section --
-
-interface DiscoverAgentsSectionProps {
-  registeredNames: Set<string>;
-}
-
-/** Inline discovery section using the shared discovery scanner. */
-function DiscoverAgentsSection({ registeredNames }: DiscoverAgentsSectionProps) {
-  const { startScan } = useDiscoveryScan();
-  const { candidates, isScanning, progress, error } = useDiscoveryStore();
-  const { mutate: registerAgent } = useRegisterAgent();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-
-  const toggleCandidate = useCallback((path: string) => {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) {
-        next.delete(path);
-      } else {
-        next.add(path);
-      }
-      return next;
-    });
-  }, []);
-
-  /** Check if a candidate is already registered by name or .dork manifest. */
-  const isRegistered = useCallback(
-    (c: DiscoveryCandidate) =>
-      registeredNames.has(c.hints.suggestedName) || c.strategy === 'dork-manifest',
-    [registeredNames],
-  );
-
-  const handleRegisterSelected = useCallback(() => {
-    for (const path of selected) {
-      const candidate = candidates.find((c) => c.path === path);
-      if (candidate && !isRegistered(candidate)) {
-        registerAgent({ path: candidate.path });
-      }
-    }
-    setSelected(new Set());
-  }, [selected, candidates, isRegistered, registerAgent]);
-
-  const unregisteredSelected = [...selected].filter((p) => {
-    const c = candidates.find((cand) => cand.path === p);
-    return c && !isRegistered(c);
-  });
-
-  return (
-    <div className="space-y-4 p-4">
-      <div className="flex items-center gap-3">
-        <button
-          type="button"
-          onClick={() => startScan()}
-          disabled={isScanning}
-          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-3 py-1.5 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-        >
-          {isScanning ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Radar className="size-4" />
-          )}
-          {isScanning ? 'Scanning...' : 'Scan'}
-        </button>
-
-        {progress && (
-          <span className="text-xs text-muted-foreground">
-            {progress.scannedDirs} dirs scanned, {progress.foundAgents} agents found
-          </span>
-        )}
-      </div>
-
-      {error && (
-        <p className="text-sm text-destructive">{error}</p>
-      )}
-
-      {!isScanning && candidates.length === 0 && progress && (
-        <div className="rounded-xl border border-dashed p-6 text-center">
-          <p className="text-sm font-medium">No agents found</p>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Try scanning from a different directory or check your project structure.
-          </p>
-        </div>
-      )}
-
-      {candidates.length > 0 && (
-        <>
-          <div className="space-y-2">
-            {candidates.map((c) => (
-              <OnboardingAgentCard
-                key={c.path}
-                candidate={c}
-                selected={selected.has(c.path)}
-                onToggle={() => toggleCandidate(c.path)}
-              />
-            ))}
-          </div>
-
-          {unregisteredSelected.length > 0 && (
-            <button
-              type="button"
-              onClick={handleRegisterSelected}
-              className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            >
-              Register {unregisteredSelected.length} agent{unregisteredSelected.length > 1 ? 's' : ''}
-            </button>
-          )}
-        </>
-      )}
-    </div>
-  );
-}
-
 // -- Main Panel --
 
 /** Main Mesh panel — progressive disclosure with Mode A (empty) and Mode B (populated). */
@@ -294,14 +178,6 @@ export function MeshPanel() {
       setSettingsOpen(true);
     },
     [],
-  );
-
-  const [showQuickDiscover, setShowQuickDiscover] = useState(false);
-
-  // Build a set of registered agent names for quick lookup
-  const registeredNames = useMemo(
-    () => new Set(agents.map((a) => a.name)),
-    [agents],
   );
 
   const hasAgents = agents.length > 0;
@@ -359,33 +235,7 @@ export function MeshPanel() {
           className="flex h-full flex-col"
         >
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col">
-            <div className="flex items-center justify-between">
-              <MeshStatsHeader />
-              <button
-                type="button"
-                onClick={() => setShowQuickDiscover((v) => !v)}
-                className="mr-3 mt-1 inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
-                aria-label="Discover Agents"
-              >
-                <Radar className="size-3.5" />
-                Discover Agents
-              </button>
-            </div>
-
-            <AnimatePresence initial={false}>
-              {showQuickDiscover && (
-                <motion.div
-                  key="quick-discover"
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className="overflow-hidden border-b"
-                >
-                  <DiscoverAgentsSection registeredNames={registeredNames} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <MeshStatsHeader />
 
             <TabsList className="mx-4 mt-3 shrink-0">
               <TabsTrigger value="topology">Topology</TabsTrigger>

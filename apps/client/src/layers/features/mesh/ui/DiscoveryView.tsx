@@ -1,10 +1,10 @@
 import { useState } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { ChevronDown, Loader2, Search, FolderSearch } from 'lucide-react';
 import { useMeshScanRoots, useRegisteredAgents, useRegisterAgent, useDenyAgent } from '@/layers/entities/mesh';
-import { useDiscoveryScan, useDiscoveryStore } from '@/layers/entities/discovery';
+import { useDiscoveryScan, useDiscoveryStore, CandidateCard } from '@/layers/entities/discovery';
 import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { ScanRootInput } from './ScanRootInput';
-import { CandidateCard } from './CandidateCard';
 
 const DETECTION_STRATEGIES = [
   { name: 'claude-code', signal: 'CLAUDE.md', label: 'Claude Code project' },
@@ -151,11 +151,12 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
         })()}
 
         {!isPending && visibleCandidates && visibleCandidates.length > 0 && (
-          <div className="space-y-2">
+          <AnimatePresence mode="popLayout">
             {visibleCandidates.map((c: DiscoveryCandidate) => (
               <CandidateCard
                 key={c.path}
                 candidate={c}
+                className="mb-2"
                 onApprove={(cand) =>
                   registerAgent(
                     {
@@ -175,7 +176,7 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
                 }
               />
             ))}
-          </div>
+          </AnimatePresence>
         )}
       </div>
     </div>

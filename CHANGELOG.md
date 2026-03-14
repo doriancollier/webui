@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Unify discovery UI — shared CandidateCard, approve/skip model
 - Add Slack adapter with Socket Mode, streaming, and format conversion
 
 ### Changed

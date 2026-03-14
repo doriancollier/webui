@@ -13,7 +13,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // ---------------------------------------------------------------------------
 
 const mockUseRegisteredAgents = vi.fn().mockReturnValue({ data: undefined, isLoading: false });
-const mockUseDiscoverAgents = vi.fn().mockReturnValue({ mutate: vi.fn(), data: undefined, isPending: false });
 const mockUseDeniedAgents = vi.fn().mockReturnValue({ data: undefined, isLoading: false });
 const mockUseUnregisterAgent = vi.fn().mockReturnValue({ mutate: vi.fn() });
 const mockUseMeshStatus = vi.fn().mockReturnValue({ data: undefined, isLoading: false });
@@ -27,7 +26,6 @@ const mockUseDenyAgent = vi.fn().mockReturnValue({ mutate: vi.fn() });
 vi.mock('@/layers/entities/mesh', () => ({
   useMeshEnabled: () => true,
   useRegisteredAgents: (...args: unknown[]) => mockUseRegisteredAgents(...args),
-  useDiscoverAgents: (...args: unknown[]) => mockUseDiscoverAgents(...args),
   useDeniedAgents: (...args: unknown[]) => mockUseDeniedAgents(...args),
   useUnregisterAgent: (...args: unknown[]) => mockUseUnregisterAgent(...args),
   useMeshStatus: (...args: unknown[]) => mockUseMeshStatus(...args),
@@ -147,7 +145,6 @@ function enableMeshModeB() {
 beforeEach(() => {
   vi.clearAllMocks();
   mockUseRegisteredAgents.mockReturnValue({ data: undefined, isLoading: false });
-  mockUseDiscoverAgents.mockReturnValue({ mutate: vi.fn(), data: undefined, isPending: false });
   mockUseDeniedAgents.mockReturnValue({ data: undefined, isLoading: false });
   mockUseUnregisterAgent.mockReturnValue({ mutate: vi.fn() });
   mockUseMeshStatus.mockReturnValue({ data: undefined, isLoading: false });

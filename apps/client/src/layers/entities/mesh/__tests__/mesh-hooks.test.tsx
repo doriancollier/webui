@@ -7,7 +7,6 @@ import type { Transport } from '@dorkos/shared/transport';
 import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { useRegisteredAgents } from '../model/use-mesh-agents';
-import { useDiscoverAgents } from '../model/use-mesh-discover';
 import { useRegisterAgent } from '../model/use-mesh-register';
 import { useDenyAgent } from '../model/use-mesh-deny';
 import { useUnregisterAgent } from '../model/use-mesh-unregister';
@@ -109,50 +108,7 @@ describe('useRegisteredAgents', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// useDiscoverAgents
-// ---------------------------------------------------------------------------
-describe('useDiscoverAgents', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
-  it('calls transport.discoverMeshAgents with roots and maxDepth', async () => {
-    const mockResult = { candidates: [{ path: '/agents/a1', name: 'A1' }] };
-    const transport = createMockTransport({
-      discoverMeshAgents: vi.fn().mockResolvedValue(mockResult),
-    });
-    const { Wrapper } = createWrapper(transport);
-
-    const { result } = renderHook(() => useDiscoverAgents(), { wrapper: Wrapper });
-
-    result.current.mutate({ roots: ['/agents'], maxDepth: 3 });
-
-    await waitFor(() => {
-      expect(result.current.isSuccess).toBe(true);
-    });
-
-    expect(transport.discoverMeshAgents).toHaveBeenCalledWith(['/agents'], 3);
-    expect(result.current.data).toEqual(mockResult);
-  });
-
-  it('exposes error state on transport failure', async () => {
-    const transport = createMockTransport({
-      discoverMeshAgents: vi.fn().mockRejectedValue(new Error('Discovery failed')),
-    });
-    const { Wrapper } = createWrapper(transport);
-
-    const { result } = renderHook(() => useDiscoverAgents(), { wrapper: Wrapper });
-
-    result.current.mutate({ roots: ['/agents'] });
-
-    await waitFor(() => {
-      expect(result.current.isError).toBe(true);
-    });
-
-    expect(result.current.error).toBeInstanceOf(Error);
-  });
-});
+// useDiscoverAgents tests removed — replaced by SSE-based useDiscoveryScan (entities/discovery).
 
 // ---------------------------------------------------------------------------
 // useRegisterAgent

@@ -11,6 +11,8 @@
 
 Unify the two separate agent discovery systems (onboarding SSE scan and mesh panel batch scan) into a single canonical implementation. Fix the critical bug where onboarding scans the wrong directory (project root instead of home directory), causing users to see "No agents found" on first run.
 
+Consolidate the three separate discovery UI experiences — the onboarding `AgentDiscoveryStep` (checkbox selection), the mesh panel's inline `DiscoverAgentsSection` (checkbox selection via "Discover Agents" button), and the mesh panel's `DiscoveryView` tab (approve/deny per-agent) — into a single discovery interaction model. One way to discover agents. The best way.
+
 ## Background / Problem Statement
 
 Two independent discovery scanners exist with overlapping functionality:
@@ -41,8 +43,21 @@ Two independent discovery scanners exist with overlapping functionality:
 - Scan results are not shared between onboarding and mesh panel — each maintains separate state
 - The Transport interface has `discoverMeshAgents()` (batch JSON) but no streaming scan method
 
+**UI duplication — three discovery experiences with different interaction models:**
+
+The mesh panel has *two* entirely separate discovery surfaces, plus onboarding has a third:
+
+1. **"Discover Agents" button** (inline `DiscoverAgentsSection` in `MeshPanel.tsx:143-253`) — Uses the onboarding `AgentCard` component with checkbox toggle. No deny action. Batch "Register N agents" button. Hidden behind a collapsible panel toggle.
+
+2. **"Discovery" tab** (`DiscoveryView.tsx` with `CandidateCard`) — Explicit Approve/Deny buttons per agent. Cards animate away after action. Denied agents appear in the "Denied" tab. Advanced scan configuration (roots, depth). HoverCard on runtime badge shows detection strategy. Per-capability tooltips.
+
+3. **Onboarding** (`AgentDiscoveryStep.tsx` with onboarding `AgentCard`) — All candidates auto-selected by default. Checkbox toggle to deselect. Batch confirm. No deny flow. Auto-starts on mount. Staggered entrance animations.
+
+This violates the core design principle: *"Say no to a thousand things."* Two discovery buttons in the same panel means the team couldn't commit to one approach. The checkbox model hides the deny concept entirely — you just "don't select" something, but nothing gets recorded in the denied list. The approve/deny model is more honest: it tells the user exactly what each action means.
+
 ## Goals
 
+### Backend Unification
 - Fix the onboarding scan to use the correct default root (boundary/home directory)
 - Consolidate to a single scanner implementation combining the best of both
 - Add `scan()` to the Transport interface for both HttpTransport and DirectTransport
@@ -50,6 +65,13 @@ Two independent discovery scanners exist with overlapping functionality:
 - Eliminate duplicate type definitions — use canonical `DiscoveryCandidate` from `@dorkos/shared/mesh-schemas`
 - Maintain SSE streaming for progressive results in all consumers
 - Keep `POST /api/mesh/discover` as a backward-compatible thin wrapper
+
+### UI Consolidation
+- **Delete `DiscoverAgentsSection`** and the "Discover Agents" button from the mesh panel — the Discovery tab is the single entry point
+- **Converge on the approve/deny interaction model** (`CandidateCard`) as the single discovery card — replaces the checkbox-selection `AgentCard` from onboarding
+- **Update onboarding** to use `CandidateCard` with approve/deny instead of checkbox selection — registering an agent to your mesh deserves a deliberate per-agent decision
+- **Eliminate the cross-feature import** of `AgentCard` from onboarding into mesh (`import { AgentCard as OnboardingAgentCard }`)
+- **Preserve streaming UX** — candidates appear progressively as discovered (from onboarding's existing pattern), with staggered entrance animations
 
 ## Non-Goals
 
@@ -59,6 +81,7 @@ Two independent discovery scanners exist with overlapping functionality:
 - Windows-specific developer directory paths
 - Per-root scan status in settings UI
 - Caching scan results with staleness tracking
+- A "select all / batch register" mode — per-agent approve/deny is the deliberate interaction model
 
 ## Technical Dependencies
 
@@ -444,27 +467,86 @@ export function useDiscoveryScan() {
 }
 ```
 
-### 7. UI Updates
+### 7. UI Consolidation — Single Discovery Experience
 
-**AgentDiscoveryStep.tsx** — Replace `useDiscoveryScan` import:
+The UI consolidation eliminates two of the three discovery surfaces and converges on a single interaction model.
 
-```diff
-- import { useDiscoveryScan, type ScanCandidate } from '../model/use-discovery-scan';
-+ import { useDiscoveryScan } from '@/layers/entities/discovery';
-+ import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
+#### 7a. Delete `DiscoverAgentsSection` and "Discover Agents" button
+
+Remove entirely from `MeshPanel.tsx`:
+- The `DiscoverAgentsSection` component (lines 143-253) — deleted
+- The `showQuickDiscover` state and toggle button (lines 299, 364-372)
+- The `AnimatePresence` wrapper for the inline panel (lines 375-388)
+- The `import { AgentCard as OnboardingAgentCard } from '@/layers/features/onboarding'` cross-feature import
+
+The Discovery tab and Mode A fullbleed are sufficient entry points. Users who have registered agents access discovery via the tab. Users with zero agents see the fullbleed discovery view automatically.
+
+#### 7b. Converge on approve/deny interaction model (`CandidateCard`)
+
+`CandidateCard` becomes the single discovery card used everywhere:
+
+1. **Move `CandidateCard` to `entities/discovery/`** — it's shared infrastructure, not a mesh-specific feature. The component itself is stateless and generic. New location: `apps/client/src/layers/entities/discovery/ui/CandidateCard.tsx`.
+
+2. **Enhance `CandidateCard` for streaming context:**
+   - Add staggered entrance animation (from onboarding's `AgentCard` pattern — `motion.div` with `initial={{ opacity: 0, y: 8 }}`)
+   - Keep HoverCard on runtime badge and per-capability Tooltips (these are superior to onboarding's plain badges)
+
+3. **Add a "Skip" action as alternative to "Deny"** — During onboarding, explicit denial may feel too aggressive for first-time users. Add a subtle "Skip" option that neither registers nor denies — just dismisses the card for this session. The `actedPaths` pattern from `DiscoveryView` handles this naturally (filter from visible list, but don't persist a denial record).
+
+Updated `CandidateCard` props:
+
+```typescript
+interface CandidateCardProps {
+  candidate: DiscoveryCandidate;
+  onApprove: (candidate: DiscoveryCandidate) => void;
+  onDeny?: (candidate: DiscoveryCandidate) => void;
+  onSkip?: (candidate: DiscoveryCandidate) => void;
+}
 ```
 
-The component's `startScan()` call changes to `scan()` (no arguments — server defaults to boundary). The `ScanCandidate` type is replaced with canonical `DiscoveryCandidate`. The candidate shape differs slightly — Scanner A's candidate has `name`, `markers`, `gitBranch`, `gitRemote`, `hasDorkManifest` while the canonical `DiscoveryCandidate` has `strategy`, `hints`, `discoveredAt`. The `AgentCard` component in onboarding needs updating to use the canonical shape.
+When `onDeny` is provided (mesh Discovery tab), show the red "Deny" button. When only `onSkip` is provided (onboarding), show a subtle "Skip" text button instead. When both are provided, show both. This lets the interaction adapt to context without requiring a mode prop or separate components.
 
-**DiscoveryView.tsx** — Replace `useDiscoverAgents`:
+#### 7c. Update onboarding `AgentDiscoveryStep`
+
+Replace the checkbox-selection model with per-agent approve/skip:
+
+```diff
+- import { AgentCard } from './AgentCard';
++ import { CandidateCard } from '@/layers/entities/discovery';
+```
+
+**Before:** All candidates auto-selected. User deselects unwanted ones. Clicks "Register N agents" to batch-confirm. "Continue without registering" skips all.
+
+**After:** Candidates stream in with staggered animation. Each card has "Approve" and "Skip" buttons. Approved agents register immediately (one-by-one, with a subtle success animation). Skipped cards dismiss. A "Continue" button appears when all candidates have been acted on (or at any time, to skip remaining).
+
+This is more honest — each agent gets a deliberate decision. It also removes the cognitive overhead of "wait, are the checked ones the ones being registered or the ones being skipped?"
+
+Changes to `AgentDiscoveryStep.tsx`:
+- Remove `selectedPaths` state (no more checkbox tracking)
+- Remove `handleToggle`, bulk select/deselect logic
+- Add `actedPaths` state (same pattern as `DiscoveryView`)
+- Replace `AgentCard` with `CandidateCard` in render
+- Replace batch "Register N agents" button with a "Continue" button that appears when all candidates have been acted on, or always visible as "Skip remaining & continue"
+- Keep auto-start scan on mount
+- Keep staggered entrance animations
+- Keep "No agents found" state with guided creation
+
+#### 7d. Delete onboarding `AgentCard`
+
+After convergence, the onboarding `AgentCard` component is no longer used:
+- Delete `apps/client/src/layers/features/onboarding/ui/AgentCard.tsx`
+- Remove from `apps/client/src/layers/features/onboarding/index.ts` barrel exports
+- Also delete `useSpotlight` hook if it was only used by `AgentCard`
+
+#### 7e. Update `DiscoveryView` hook imports
 
 ```diff
 - import { useDiscoverAgents, useMeshScanRoots, ... } from '@/layers/entities/mesh';
-+ import { useDiscoveryScan } from '@/layers/entities/discovery';
++ import { useDiscoveryScan, CandidateCard } from '@/layers/entities/discovery';
 + import { useMeshScanRoots, ... } from '@/layers/entities/mesh';
 ```
 
-The `discover()` mutation is replaced with `scan()` from the shared hook. Results come from the Zustand store (progressive) instead of a mutation response (batch). The UI already handles progressive display in the onboarding flow — the mesh panel gains the same capability.
+The `discover()` mutation is replaced with `scan()` from the shared hook. Results come from the Zustand store (progressive) instead of a mutation response (batch). `CandidateCard` import moves from local to `entities/discovery/`.
 
 ### 8. File Changes Summary
 
@@ -476,6 +558,7 @@ The `discover()` mutation is replaced with `scan()` from the shared hook. Result
 | `packages/mesh/src/discovery/index.ts` | Barrel exports |
 | `apps/client/src/layers/entities/discovery/model/discovery-store.ts` | Zustand store |
 | `apps/client/src/layers/entities/discovery/model/use-discovery-scan.ts` | Shared hook |
+| `apps/client/src/layers/entities/discovery/ui/CandidateCard.tsx` | Unified discovery card (moved from mesh feature) |
 | `apps/client/src/layers/entities/discovery/index.ts` | Barrel exports |
 
 **Files to DELETE:**
@@ -483,6 +566,9 @@ The `discover()` mutation is replaced with `scan()` from the shared hook. Result
 |------|--------|
 | `apps/server/src/services/discovery/discovery-scanner.ts` | Replaced by unified scanner |
 | `apps/client/src/layers/features/onboarding/model/use-discovery-scan.ts` | Replaced by shared hook |
+| `apps/client/src/layers/features/onboarding/ui/AgentCard.tsx` | Replaced by shared `CandidateCard` |
+| `apps/client/src/layers/features/mesh/ui/CandidateCard.tsx` | Moved to `entities/discovery/` |
+| `apps/client/src/layers/entities/mesh/model/use-mesh-discover.ts` | Replaced by shared hook |
 
 **Files to MODIFY:**
 | File | Change |
@@ -496,10 +582,10 @@ The `discover()` mutation is replaced with `scan()` from the shared hook. Result
 | `apps/client/src/layers/shared/lib/direct-transport.ts` | Implement `scan()` via direct import |
 | `apps/server/src/routes/discovery.ts` | Use unified scanner via meshCore, fix default root |
 | `apps/server/src/routes/mesh.ts` | Filter `ScanEvent` for `candidate` type in batch endpoint |
-| `apps/client/src/layers/features/onboarding/ui/AgentDiscoveryStep.tsx` | Use shared hook |
-| `apps/client/src/layers/features/onboarding/ui/AgentCard.tsx` | Use canonical `DiscoveryCandidate` type |
-| `apps/client/src/layers/features/mesh/ui/DiscoveryView.tsx` | Use shared hook |
-| `apps/client/src/layers/entities/mesh/model/use-mesh-discover.ts` | Delete (replaced by shared hook) |
+| `apps/client/src/layers/features/onboarding/ui/AgentDiscoveryStep.tsx` | Replace AgentCard with CandidateCard, remove checkbox model, use shared hook |
+| `apps/client/src/layers/features/onboarding/index.ts` | Remove `AgentCard` export |
+| `apps/client/src/layers/features/mesh/ui/MeshPanel.tsx` | Delete `DiscoverAgentsSection`, remove "Discover Agents" button, remove `OnboardingAgentCard` import |
+| `apps/client/src/layers/features/mesh/ui/DiscoveryView.tsx` | Use shared hook, import CandidateCard from entities/discovery |
 | `apps/client/src/layers/entities/mesh/index.ts` | Remove `useDiscoverAgents` export |
 | `apps/server/src/services/core/mcp-tools/mesh-tools.ts` | Filter `ScanEvent` for `candidate` type |
 | `@dorkos/test-utils` | Add `createMockTransport` scan method |
@@ -510,20 +596,36 @@ The `discover()` mutation is replaced with `scan()` from the shared hook. Result
 1. User starts DorkOS for the first time
 2. Clicks "Get Started" in the onboarding flow
 3. Scan auto-starts, searching from the home directory
-4. Agent cards appear progressively as they're discovered (staggered animation)
+4. Agent cards appear progressively as they're discovered (staggered entrance animation)
 5. Progress indicator shows "Scanned N directories, found M agents"
-6. User selects agents to register and continues
+6. Each card has **Approve** (green) and **Skip** (subtle) buttons — one agent at a time
+7. Approved agents register immediately with a subtle success indicator
+8. Skipped agents disappear from the list (no denial record — just session-local dismissal)
+9. A "Continue" button is always visible ("Skip remaining & continue") and becomes primary when all candidates have been acted on
+10. No "Select all" / batch mode — each agent deserves a deliberate decision
 
-### Mesh Panel (returning user)
-1. If the user already scanned during onboarding, results are immediately visible (Zustand store persists across navigation)
-2. User can trigger a new scan with configurable roots and depth
-3. Results now stream progressively (vs. previous batch mode)
-4. Advanced settings allow customizing scan roots
+### Mesh Panel — Mode A (zero agents)
+1. The fullbleed `DiscoveryView` is shown automatically — same card component, same interaction model
+2. Each card has **Approve** (green) and **Deny** (red) buttons
+3. Denied agents are persisted and appear in the "Denied" tab
+4. Advanced scan configuration available (roots, depth)
+
+### Mesh Panel — Mode B (has agents)
+1. The Discovery **tab** is the single entry point for new discovery — no "Discover Agents" button
+2. Same `CandidateCard` with Approve/Deny, same progressive streaming
+3. Results from onboarding are immediately visible if the Zustand store still holds them
 
 ### Shared State
 - Onboarding scan → results available in mesh panel without re-scan
 - Mesh panel scan → results available if user navigates back to onboarding
 - "Re-scan" in either UI clears and re-scans
+
+### Interaction Model Summary
+
+| Context | Approve | Reject | Effect |
+|---------|---------|--------|--------|
+| Onboarding | "Approve" (green) | "Skip" (subtle) | Approve registers immediately. Skip dismisses card (session-local). |
+| Mesh Discovery | "Approve" (green) | "Deny" (red) | Approve registers immediately. Deny persists a `DenialRecord`. |
 
 ## Testing Strategy
 
@@ -609,13 +711,20 @@ The `discover()` mutation is replaced with `scan()` from the shared hook. Result
 3. Implement `scan()` in HttpTransport (SSE parsing)
 4. Implement `scan()` in DirectTransport (direct scanner import)
 5. Create `entities/discovery/` with Zustand store and shared hook
-6. Update `AgentDiscoveryStep.tsx` to use shared hook and canonical types
-7. Update `DiscoveryView.tsx` to use shared hook (progressive instead of batch)
+6. Move `CandidateCard` from `features/mesh/ui/` to `entities/discovery/ui/` — add `onSkip` prop, add staggered entrance animation
+7. Update `DiscoveryView.tsx` to use shared hook and import CandidateCard from `entities/discovery/`
 8. Delete old `use-discovery-scan.ts` and `use-mesh-discover.ts`
 9. Update `createMockTransport()` with `scan` method
 10. Update client tests
 
-### Phase 3: Cleanup
+### Phase 3: UI Consolidation
+1. Update `AgentDiscoveryStep.tsx` — replace `AgentCard` with `CandidateCard`, remove checkbox selection model, use per-agent approve/skip
+2. Delete onboarding `AgentCard.tsx` and remove from barrel exports
+3. Delete `DiscoverAgentsSection` from `MeshPanel.tsx` — remove "Discover Agents" button, `showQuickDiscover` state, `OnboardingAgentCard` import
+4. Verify Discovery tab and Mode A fullbleed are the only discovery entry points
+5. Update onboarding and mesh panel tests
+
+### Phase 4: Cleanup
 1. Remove unused imports and type definitions
 2. Verify all tests pass
 3. Update documentation
