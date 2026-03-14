@@ -57,8 +57,11 @@ export function useOnboarding() {
         pendingSkipped.current.clear();
       });
     },
-    onError: () => {
-      toast.error('Failed to save onboarding progress');
+    onError: (_err, patch) => {
+      pendingCompleted.current.clear();
+      pendingSkipped.current.clear();
+      const keys = Object.keys(patch).join(', ');
+      toast.error(`Failed to save onboarding progress (${keys})`);
     },
   });
 
@@ -99,6 +102,7 @@ export function useOnboarding() {
 
   return {
     state,
+    isLoading,
     isOnboardingComplete,
     isOnboardingDismissed,
     shouldShowOnboarding,

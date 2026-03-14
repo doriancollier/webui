@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { toast } from 'sonner';
 import {
   Button,
   Select,
@@ -70,23 +71,25 @@ export function PulsePresetsStep({ onStepComplete, agents }: PulsePresetsStepPro
 
     setIsCreating(true);
     const selected = presets.filter((p) => resolvedEnabled.has(p.id));
-    try {
-      await Promise.all(
-        selected.map((preset) =>
-          createSchedule.mutateAsync({
-            name: preset.name,
-            prompt: preset.prompt,
-            cron: preset.cron,
-            cwd: resolvedAgent.projectPath,
-          })
-        )
+    const results = await Promise.allSettled(
+      selected.map((preset) =>
+        createSchedule.mutateAsync({
+          name: preset.name,
+          prompt: preset.prompt,
+          cron: preset.cron,
+          cwd: resolvedAgent.projectPath,
+        })
+      )
+    );
+    const failures = results.filter((r) => r.status === 'rejected');
+    if (failures.length > 0) {
+      console.error('[PulsePresetsStep] Schedule creation failures:', failures);
+      toast.warning(
+        `${failures.length} of ${selected.length} schedule(s) failed to create. You can retry from Pulse later.`
       );
-    } catch {
-      // Continue even if some creations fail — schedules can be created later
-    } finally {
-      setIsCreating(false);
-      onStepComplete();
     }
+    setIsCreating(false);
+    onStepComplete();
   }, [presets, selectedCount, resolvedEnabled, resolvedAgent, createSchedule, onStepComplete]);
 
   return (

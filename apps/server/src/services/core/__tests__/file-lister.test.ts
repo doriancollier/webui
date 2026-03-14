@@ -84,6 +84,13 @@ describe('FileListService', () => {
     } as Dirent;
   }
 
+  /** Mock `fs.readdir` to return dirents, casting through unknown to satisfy overload signatures. */
+  function mockReaddir(...calls: Dirent[][]) {
+    for (const entries of calls) {
+      vi.mocked(fs.readdir).mockResolvedValueOnce(entries as unknown as never);
+    }
+  }
+
   it('returns file list from git ls-files', async () => {
     mockGitSuccess(['src/index.ts', 'package.json', 'README.md']);
 
@@ -97,12 +104,10 @@ describe('FileListService', () => {
   it('falls back to readdir when git fails', async () => {
     mockGitFailure();
 
-    vi.mocked(fs.readdir).mockResolvedValueOnce([
-      makeDirent('index.ts', false),
-      makeDirent('lib', true),
-    ] as any);
-
-    vi.mocked(fs.readdir).mockResolvedValueOnce([makeDirent('utils.ts', false)] as any);
+    mockReaddir(
+      [makeDirent('index.ts', false), makeDirent('lib', true)],
+      [makeDirent('utils.ts', false)],
+    );
 
     const result = await fileLister.listFiles('/project');
 
@@ -139,18 +144,35 @@ describe('FileListService', () => {
   it('excludes node_modules and .git in readdir fallback', async () => {
     mockGitFailure();
 
-    vi.mocked(fs.readdir).mockResolvedValueOnce([
-      makeDirent('src', true),
-      makeDirent('node_modules', true),
-      makeDirent('.git', true),
-      makeDirent('index.ts', false),
-    ] as any);
-
-    vi.mocked(fs.readdir).mockResolvedValueOnce([makeDirent('app.ts', false)] as any);
+    mockReaddir(
+      [makeDirent('src', true), makeDirent('node_modules', true), makeDirent('.git', true), makeDirent('index.ts', false)],
+      [makeDirent('app.ts', false)],
+    );
 
     const result = await fileLister.listFiles('/project2');
 
     expect(result.files).toEqual(['src/app.ts', 'index.ts']);
+  });
+
+  it('skips directories with permission errors in readdir fallback', async () => {
+    mockGitFailure();
+
+    mockReaddir(
+      [makeDirent('accessible', true), makeDirent('restricted', true), makeDirent('index.ts', false)],
+      [makeDirent('app.ts', false)],
+    );
+
+    // restricted/ throws EACCES
+    const eacces = Object.assign(new Error('EACCES: permission denied'), {
+      code: 'EACCES',
+      errno: -13,
+    });
+    vi.mocked(fs.readdir).mockRejectedValueOnce(eacces);
+
+    const result = await fileLister.listFiles('/home/user');
+
+    expect(result.files).toEqual(['accessible/app.ts', 'index.ts']);
+    expect(result.truncated).toBe(false);
   });
 
   it('throws BoundaryError when cwd is outside boundary', async () => {

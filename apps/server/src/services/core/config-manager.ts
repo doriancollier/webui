@@ -52,6 +52,7 @@ class ConfigManager {
           },
         },
       });
+      logger.info(`[Config] Loaded from ${configPath} (first run: ${this._isFirstRun})`);
     } catch (_error) {
       if (fs.existsSync(configPath)) {
         const backupPath = configPath + '.bak';

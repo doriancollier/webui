@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { useAppStore, useFavicon, useDocumentTitle } from '@/layers/shared/model';
 import { isMac } from '@/layers/shared/lib';
 import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entities/session';
@@ -65,15 +65,21 @@ export function App({ transformContent, embedded }: AppProps = {}) {
 
   useShortcutsPanel(); // Register ? key handler
 
-  // First-run onboarding detection
-  const { shouldShowOnboarding } = useOnboarding();
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // First-run onboarding — gate rendering until config is loaded to prevent
+  // a flash of the chat UI before the onboarding screen appears.
+  const { shouldShowOnboarding, isLoading: isOnboardingLoading } = useOnboarding();
+  const [onboardingDismissed, setOnboardingDismissed] = useState(false);
 
+  // Timeout fallback: if config never loads (server unreachable, fetch hangs),
+  // fall through to main app after 3 seconds — better than a blank screen forever.
+  const [loadingTimedOut, setLoadingTimedOut] = useState(false);
   useEffect(() => {
-    if (shouldShowOnboarding) {
-      setShowOnboarding(true);
-    }
-  }, [shouldShowOnboarding]);
+    if (!isOnboardingLoading) return;
+    const timer = setTimeout(() => setLoadingTimedOut(true), 3000);
+    return () => clearTimeout(timer);
+  }, [isOnboardingLoading]);
+  const showOnboarding = shouldShowOnboarding && !onboardingDismissed;
+  const handleOnboardingComplete = useCallback(() => setOnboardingDismissed(true), []);
 
   // Escape key closes overlay sidebar — embedded only (scoped to container)
   // Standalone uses SidebarProvider's built-in Sheet dismiss on mobile
@@ -184,6 +190,12 @@ export function App({ transformContent, embedded }: AppProps = {}) {
   }
 
   // Standalone mode: Shadcn SidebarProvider handles layout, Sheet on mobile, push on desktop
+  // Gate rendering until config is loaded — prevents a flash of chat UI before
+  // onboarding appears on first run.
+  if (isOnboardingLoading && !loadingTimedOut) {
+    return <div className="bg-background h-dvh" />;
+  }
+
   return (
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
@@ -195,7 +207,7 @@ export function App({ transformContent, embedded }: AppProps = {}) {
               exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <OnboardingFlow onComplete={() => setShowOnboarding(false)} />
+              <OnboardingFlow onComplete={handleOnboardingComplete} />
             </motion.div>
           ) : (
             <motion.div

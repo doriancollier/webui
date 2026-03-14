@@ -21,6 +21,7 @@ let logDir: string | undefined;
 let logFile: string | undefined;
 let maxLogSize = DEFAULT_MAX_LOG_SIZE;
 let maxLogFiles = DEFAULT_MAX_LOG_FILES;
+let configuredLevel = 3; // info
 
 /**
  * Create an NDJSON file reporter that appends structured log entries to disk.
@@ -29,6 +30,8 @@ function createFileReporter() {
   return {
     log(logObj: LogObject) {
       if (!logFile) return;
+      // Respect the configured log level — skip entries above the threshold
+      if (logObj.level > configuredLevel) return;
 
       // Separate structured context objects from string message parts
       let context: Record<string, unknown> | undefined;
@@ -166,6 +169,7 @@ export function initLogger(options: {
   rotateIfNeeded();
 
   const level = options?.level ?? (process.env.NODE_ENV === 'production' ? 3 : 4);
+  configuredLevel = level;
 
   logger = createConsola({ level });
   logger.addReporter(createFileReporter());

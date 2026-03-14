@@ -397,4 +397,9 @@ async function shutdown() {
 process.on('SIGINT', shutdown);
 process.on('SIGTERM', shutdown);
 
-start();
+start().catch((err) => {
+  const info = logError(err);
+  logger.error('[DorkOS] Fatal error during startup', info);
+  // eslint-disable-next-line no-process-exit -- unrecoverable startup failure
+  process.exit(1);
+});

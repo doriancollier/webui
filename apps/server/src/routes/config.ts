@@ -10,6 +10,7 @@ import { isRelayEnabled, getRelayInitError } from '../services/relay/relay-state
 import { getMeshInitError } from '../services/mesh/mesh-state.js';
 import { getBoundary } from '../lib/boundary.js';
 import { SERVER_VERSION, IS_DEV_BUILD } from '../lib/version.js';
+import { logger, logError } from '../lib/logger.js';
 
 const router = Router();
 
@@ -147,9 +148,12 @@ router.patch('/', (req, res) => {
     // Check for sensitive keys in patch
     const warnings: string[] = [];
     const patchKeys = flattenKeys(patch);
+    logger.debug(`[Config] Patched: ${Object.keys(patch).join(', ')}`);
     for (const key of patchKeys) {
       if (SENSITIVE_CONFIG_KEYS.includes(key as (typeof SENSITIVE_CONFIG_KEYS)[number])) {
-        warnings.push(`'${key}' contains sensitive data. Consider using environment variables instead.`);
+        const warning = `'${key}' contains sensitive data. Consider using environment variables instead.`;
+        warnings.push(warning);
+        logger.warn(`[Config] ${warning}`);
       }
     }
 
@@ -168,7 +172,8 @@ router.patch('/', (req, res) => {
       config: configManager.getAll(),
       ...(warnings.length > 0 && { warnings }),
     });
-  } catch (_error) {
+  } catch (err) {
+    logger.error('[Config] PATCH failed', logError(err));
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

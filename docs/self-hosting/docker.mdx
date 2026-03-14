@@ -17,6 +17,8 @@ docker run -d --name dorkos \
   ghcr.io/dork-labs/dorkos:latest
 ```
 
+This runs DorkOS in the background (`-d`), maps port 4242 on your machine to the container, passes your API key, and creates a named volume so your data survives container restarts.
+
 Open [http://localhost:4242](http://localhost:4242).
 
 ## Configuration
@@ -34,7 +36,7 @@ Pass environment variables with `-e` or an env file. All [standard environment v
 
 ### Custom port
 
-Map the host port to any container port:
+Two things need to agree: the port DorkOS listens on inside the container (`--port`), and the port Docker maps from the host (`-p`). Both sides of `-p host:container` should match the `--port` value:
 
 ```bash
 docker run -d --name dorkos \
@@ -63,7 +65,7 @@ docker run -d --name dorkos \
 
 ## Persistent Data
 
-DorkOS stores configuration and session data in `~/.dork/` inside the container. Mount a named volume or host directory to persist data across container restarts and upgrades.
+DorkOS stores configuration, session transcripts, agent registrations, and the SQLite database in `~/.dork/` inside the container. Without a volume mount, all of this is lost when the container is removed. Mount a named volume or host directory to persist data across container restarts and upgrades.
 
 <Tabs items={["Named Volume (Recommended)", "Host Directory"]}>
 
@@ -96,7 +98,7 @@ Useful for backup or inspection — the data directory is directly accessible on
 
 ### Mounting a project directory
 
-To give agents access to a project on the host, bind-mount it and set the working directory:
+By default, agents running inside the container can only see the container's own filesystem — they have no access to your code on the host machine. To let agents read and write files in one of your projects, bind-mount the project directory into the container and tell DorkOS to use it as the default working directory:
 
 ```bash
 docker run -d --name dorkos \
@@ -115,7 +117,7 @@ docker run -d --name dorkos \
 
 ## Docker Compose
 
-For production deployments or multi-service setups, use Docker Compose:
+The `docker run` commands above work fine for trying DorkOS out, but they're unwieldy to maintain — you end up with long shell commands that are easy to mistype and hard to version control. Docker Compose captures the full configuration in a declarative file, making it reproducible, easy to update, and simple to tear down with `docker compose down`.
 
 ```yaml title="docker-compose.yml"
 services:
@@ -147,7 +149,11 @@ docker compose up -d
 
 ### With a reverse proxy
 
-Add Caddy for automatic HTTPS:
+The standalone Compose setup above serves DorkOS over plain HTTP on port 4242. That's fine for local use, but if you're exposing DorkOS over the internet — on a VPS, a home server with a domain, or any machine where others will connect — you need HTTPS. Browsers will block mixed content, credentials travel in the clear, and SSE streams are vulnerable to interception without TLS.
+
+A reverse proxy sits in front of DorkOS, terminates TLS, and forwards requests. Caddy is the simplest option because it obtains and renews Let's Encrypt certificates automatically — no manual cert management. It also handles the SSE-specific buffering settings that DorkOS requires.
+
+Add Caddy to the Compose file for automatic HTTPS:
 
 ```yaml title="docker-compose.yml"
 services:
@@ -186,7 +192,7 @@ volumes:
   caddy-config:
 ```
 
-```title="Caddyfile"
+```text title="Caddyfile"
 dorkos.example.com {
     reverse_proxy dorkos:4242 {
         flush_interval -1
@@ -209,7 +215,7 @@ The health endpoint is unauthenticated and suitable for load balancer or contain
 
 ## Building from Source
 
-If you need a custom image (e.g., for a fork or unreleased changes):
+The official image from the container registry is the easiest path. Build from source if you need to run unreleased changes, test a fork, or include local modifications:
 
 <Steps>
 <Step>
@@ -243,7 +249,7 @@ docker run -d --name dorkos \
 
 ### From published npm (no clone needed)
 
-Build an image that installs directly from npm:
+If you want a custom Docker image but don't need local code changes, you can build one that installs a published version directly from npm. This is useful when the official container image isn't available or you need to customize the base image:
 
 ```bash
 docker build -f Dockerfile.run \

@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Harden onboarding gate, error handling, logging, and docs
 - Harden Slack adapter — throttle streaming updates, bound caches, surface errors
 - Make adapter setup wizard scrollable when form exceeds viewport
 ---

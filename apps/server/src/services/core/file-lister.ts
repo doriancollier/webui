@@ -59,7 +59,13 @@ class FileListService {
   private async listViaReaddir(cwd: string, prefix = '', depth = 0): Promise<string[]> {
     if (depth > FILE_LIMITS.MAX_READDIR_DEPTH) return [];
     const results: string[] = [];
-    const entries = await fs.readdir(path.join(cwd, prefix), { withFileTypes: true });
+    let entries;
+    try {
+      entries = await fs.readdir(path.join(cwd, prefix), { withFileTypes: true });
+    } catch {
+      // Permission denied or inaccessible directory — skip silently
+      return [];
+    }
     for (const entry of entries) {
       if (entry.name.startsWith('.') && entry.name !== '.') continue;
       const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
