@@ -47,6 +47,7 @@ Commands:
   config validate      Check config validity
   init                 Interactive setup wizard
   init --yes           Accept all defaults
+  cleanup              Remove all DorkOS data
 
 Options:
   -p, --port <port>      Port to listen on (default: ${DEFAULT_PORT})
@@ -91,12 +92,20 @@ if (values['post-install-check']) {
 
 // Resolve data directory: explicit env var > ~/.dork (CLI always runs in production mode)
 const DORK_HOME = env.DORK_HOME || path.join(os.homedir(), '.dork');
+
+// Handle cleanup before creating directories — cleanup should see existing state, not dirs we just created
+const subcommand = positionals[0];
+
+if (subcommand === 'cleanup') {
+  const { runCleanup } = await import('./cleanup-command.js');
+  await runCleanup({ dorkHome: DORK_HOME });
+  process.exit(process.exitCode ?? 0);
+}
+
+// Ensure data directories exist for all other commands
 fs.mkdirSync(DORK_HOME, { recursive: true });
 fs.mkdirSync(path.join(DORK_HOME, 'logs'), { recursive: true });
 process.env.DORK_HOME = DORK_HOME;
-
-// Handle subcommands that don't need the full server
-const subcommand = positionals[0];
 
 if (subcommand === 'config') {
   const { initConfigManager } = await import('../server/services/core/config-manager.js');

@@ -81,6 +81,7 @@ dorkos config                 # Show all settings
 dorkos config set <key> <val> # Update a setting
 dorkos init                   # Interactive setup wizard
 dorkos init --yes             # Accept all defaults
+dorkos cleanup                # Remove all DorkOS data
 ```
 
 ### Flags

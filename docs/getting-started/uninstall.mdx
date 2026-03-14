@@ -1,0 +1,81 @@
+---
+title: Uninstall
+description: How to completely remove DorkOS and its data from your system
+---
+
+import { Callout } from 'fumadocs-ui/components/callout'
+import { Tabs, Tab } from 'fumadocs-ui/components/tabs'
+
+# Uninstall
+
+DorkOS stores persistent data on your filesystem. Follow these steps to remove everything cleanly.
+
+## Quick Uninstall
+
+The `dorkos cleanup` command interactively removes all DorkOS data:
+
+```bash
+dorkos cleanup
+```
+
+This walks you through removing:
+
+1. **Global data** (`~/.dork/`) — configuration, database, logs, adapter state
+2. **Per-project data** (`.dork/` directories) — agent manifests and uploads
+
+After cleanup completes, remove the CLI itself:
+
+<Tabs items={['npm', 'Homebrew']}>
+<Tab value="npm">
+```bash
+npm uninstall -g dorkos
+```
+</Tab>
+<Tab value="Homebrew">
+```bash
+brew uninstall dorkos
+```
+</Tab>
+</Tabs>
+
+## Docker
+
+If you run DorkOS in Docker, remove the container and any named volumes:
+
+```bash
+docker rm -f dorkos
+docker volume rm dorkos_data  # if using a named volume
+```
+
+## Obsidian Plugin
+
+Disable the DorkOS plugin in **Obsidian Settings > Community plugins**, then click **Uninstall**. The plugin does not write data outside the vault.
+
+## Manual Cleanup
+
+If you prefer to remove data manually or no longer have the CLI installed:
+
+```bash
+# Remove global data
+rm -rf ~/.dork
+
+# Find and remove per-project agent directories
+find ~ -name ".dork" -type d -path "*/.dork" 2>/dev/null
+```
+
+Review the results before deleting — the `.dork` name is common and may match unrelated directories.
+
+## What DorkOS Stores
+
+| Location | Contents | Owned by |
+|---|---|---|
+| `~/.dork/config.json` | User configuration | DorkOS |
+| `~/.dork/dork.db` | SQLite database (agents, schedules, relay state) | DorkOS |
+| `~/.dork/logs/` | Server log files | DorkOS |
+| `~/.dork/relay/` | Adapter credentials and state | DorkOS |
+| `<project>/.dork/` | Agent manifest, uploads | DorkOS |
+| `~/.claude/` | Claude Code sessions and config | Claude Code |
+
+<Callout type="info">
+DorkOS never modifies `~/.claude/`. That directory is managed by Claude Code and is unaffected by uninstalling DorkOS.
+</Callout>

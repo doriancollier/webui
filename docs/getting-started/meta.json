@@ -3,7 +3,8 @@
   "pages": [
     "installation",
     "quickstart",
-    "configuration"
+    "configuration",
+    "uninstall"
   ],
   "defaultOpen": true
 }

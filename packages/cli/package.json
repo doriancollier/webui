@@ -45,6 +45,7 @@
   },
   "scripts": {
     "build": "tsx scripts/build.ts",
+    "test": "vitest run",
     "lint": "eslint .",
     "prepublishOnly": "pnpm run build"
   },
@@ -54,6 +55,7 @@
     "@inquirer/prompts": "^8.2.1",
     "@ngrok/ngrok": "^1.7.0",
     "@scalar/express-api-reference": "^0.8.40",
+    "better-sqlite3": "^12.6.2",
     "conf": "^15.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.0",
@@ -61,7 +63,6 @@
     "gray-matter": "^4.0.3",
     "qrcode-terminal": "^0.12.0",
     "uuid": "^10.0.0",
-    "better-sqlite3": "^12.6.2",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -69,6 +70,7 @@
     "@dorkos/typescript-config": "workspace:*",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.0",
-    "typescript": "^5.7.0"
+    "typescript": "^5.7.0",
+    "vitest": "^4.1.0"
   }
 }
