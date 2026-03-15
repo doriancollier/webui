@@ -5,6 +5,34 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-03-14
+
+> Slack integration, Docker containerization, and adapter system unification
+
+### Added
+
+- Publish Docker images automatically to GHCR via GitHub Actions for easy containerized deployment
+- Add `dorkos cleanup` command to safely remove stored agent data and sessions
+- Add Slack adapter with Socket Mode support, message streaming, and format conversion
+- Add streaming toggle and typing indicators for real-time Slack message updates
+- Add layered adapter documentation system with per-field setup guides and help text
+- Unify discovery UI with shared candidate cards and consistent approve/skip workflows
+
+### Changed
+
+- Unify adapter system with BaseRelayAdapter base class, shared callbacks, and DRY utilities
+- Add upgrade guidance, rollback instructions, and breaking-change callouts to docs
+- Add dedicated Docker guide with install tabs for containerized setup
+- Fix documentation drift — update CLAUDE.md, API reference, and correct broken links
+
+### Fixed
+
+- Harden onboarding gate validation, error handling, logging, and documentation clarity
+- Harden Slack adapter with throttled streaming updates, bounded caches, and better error surfaces
+- Fix adapter setup wizard scrollability when forms exceed viewport height
+
+---
+
 ## [0.12.0] - 2026-03-13
 
 > Marketing storytelling, topology intelligence, and Pulse schedule management

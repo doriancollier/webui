@@ -1,0 +1,46 @@
+---
+title: DorkOS 0.13.0
+description: Slack integration, Docker containerization, and adapter system unification
+date: 2026-03-14
+author: DorkOS Team
+category: release
+tags: [release, slack, docker, relay, adapters]
+---
+
+Your agents can now talk to you on Slack, deploy anywhere with Docker, and the adapter system is unified and extensible for whatever comes next.
+
+## Highlights
+
+- **Slack Adapter** - Full Slack integration with Socket Mode, message streaming, typing indicators, and format conversion. Your agents can send and receive messages in Slack channels in real-time.
+- **Docker on GHCR** - Docker images are now automatically published to GitHub Container Registry on every release. Deploy DorkOS anywhere with a single `docker pull`.
+- **Unified Adapter System** - BaseRelayAdapter provides a consistent foundation with shared callbacks and DRY utilities, making it straightforward to build new adapters.
+
+## All Changes
+
+### Added
+
+- Publish Docker images automatically to GHCR via GitHub Actions for easy containerized deployment
+- Add `dorkos cleanup` command to safely remove stored agent data and sessions
+- Add Slack adapter with Socket Mode support, message streaming, and format conversion
+- Add streaming toggle and typing indicators for real-time Slack message updates
+- Add layered adapter documentation system with per-field setup guides and help text
+- Unify discovery UI with shared candidate cards and consistent approve/skip workflows
+
+### Changed
+
+- Unify adapter system with BaseRelayAdapter base class, shared callbacks, and DRY utilities
+- Add upgrade guidance, rollback instructions, and breaking-change callouts to docs
+- Add dedicated Docker guide with install tabs for containerized setup
+- Fix documentation drift — update CLAUDE.md, API reference, and correct broken links
+
+### Fixed
+
+- Harden onboarding gate validation, error handling, logging, and documentation clarity
+- Harden Slack adapter with throttled streaming updates, bounded caches, and better error surfaces
+- Fix adapter setup wizard scrollability when forms exceed viewport height
+
+## Install / Update
+
+```
+npm install -g dorkos@0.13.0
+```

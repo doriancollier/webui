@@ -9,25 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add Docker image publishing to GHCR via GitHub Actions
-- Add `dorkos cleanup` command for data removal
-- Fix Slack streaming bugs and add streaming toggle + typing indicators
-- Add layered adapter documentation system with setup guides and per-field help
-- Unify discovery UI — shared CandidateCard, approve/skip model
-- Add Slack adapter with Socket Mode, streaming, and format conversion
-
 ### Changed
-
-- Add upgrade guidance, rollback instructions, and breaking-change callouts
-- Add dedicated Docker guide and Docker install tab
-- Fix documentation drift — update CLAUDE.md, API reference, and broken links
-- Unify adapter system with BaseRelayAdapter, shared callbacks, and DRY utilities
 
 ### Fixed
 
-- Harden onboarding gate, error handling, logging, and docs
-- Harden Slack adapter — throttle streaming updates, bound caches, surface errors
-- Make adapter setup wizard scrollable when form exceeds viewport
+---
+
+## [0.13.0] - 2026-03-14
+
+> Slack integration, Docker containerization, and adapter system unification
+
+### Added
+
+- Publish Docker images automatically to GHCR via GitHub Actions for easy containerized deployment
+- Add `dorkos cleanup` command to safely remove stored agent data and sessions
+- Add Slack adapter with Socket Mode support, message streaming, and format conversion
+- Add streaming toggle and typing indicators for real-time Slack message updates
+- Add layered adapter documentation system with per-field setup guides and help text
+- Unify discovery UI with shared candidate cards and consistent approve/skip workflows
+
+### Changed
+
+- Unify adapter system with BaseRelayAdapter base class, shared callbacks, and DRY utilities
+- Add upgrade guidance, rollback instructions, and breaking-change callouts to docs
+- Add dedicated Docker guide with install tabs for containerized setup
+- Fix documentation drift — update CLAUDE.md, API reference, and correct broken links
+
+### Fixed
+
+- Harden onboarding gate validation, error handling, logging, and documentation clarity
+- Harden Slack adapter with throttled streaming updates, bounded caches, and better error surfaces
+- Fix adapter setup wizard scrollability when forms exceed viewport height
+
 ---
 
 ## [0.12.0] - 2026-03-13

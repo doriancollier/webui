@@ -1,6 +1,6 @@
 {
   "name": "dorkos",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "The operating system for autonomous AI agents — scheduling, messaging, and agent coordination so one person can ship like a team.",
   "license": "MIT",
   "author": "Dorian Collier",
@@ -67,6 +67,7 @@
   },
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
+    "@dorkos/shared": "workspace:*",
     "@dorkos/typescript-config": "workspace:*",
     "esbuild": "^0.24.0",
     "tsx": "^4.19.0",
