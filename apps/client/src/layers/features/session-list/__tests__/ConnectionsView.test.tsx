@@ -125,7 +125,6 @@ function makeBinding(adapterId: string, agentId: string): AdapterBinding {
     id: `${adapterId}-${agentId}`,
     adapterId,
     agentId,
-    projectPath: '/test',
     sessionStrategy: 'per-chat',
     label: '',
     createdAt: new Date().toISOString(),

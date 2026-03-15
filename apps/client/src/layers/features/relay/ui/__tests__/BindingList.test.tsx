@@ -54,7 +54,6 @@ vi.mock('@/layers/features/mesh/ui/BindingDialog', () => ({
               props.onConfirm as (values: {
                 adapterId: string;
                 agentId: string;
-                projectPath: string;
                 sessionStrategy: string;
                 label: string;
                 chatId?: string;
@@ -63,7 +62,6 @@ vi.mock('@/layers/features/mesh/ui/BindingDialog', () => ({
             )({
               adapterId: 'telegram-1',
               agentId: 'agent-alpha',
-              projectPath: '/projects/alpha',
               sessionStrategy: 'per-user',
               label: 'Updated',
             })
@@ -86,7 +84,6 @@ const makeBinding = (overrides: Record<string, unknown> = {}) => ({
   id: 'binding-1',
   adapterId: 'telegram-1',
   agentId: 'agent-alpha',
-  projectPath: '/projects/alpha',
   sessionStrategy: 'per-chat',
   label: '',
   createdAt: '2026-03-11T10:00:00Z',
@@ -211,14 +208,14 @@ describe('BindingList', () => {
       expect(screen.getByText('Alpha Bot')).toBeInTheDocument();
     });
 
-    it('falls back to project path name when agent is not in mesh', () => {
+    it('falls back to agentId when agent is not in mesh', () => {
       mockUseBindings.mockReturnValue({
         data: [makeBinding()],
         isLoading: false,
       });
       render(<BindingList />);
-      // projectPath is '/projects/alpha' → last segment 'alpha'
-      expect(screen.getByText('alpha')).toBeInTheDocument();
+      // agentId is 'agent-alpha'
+      expect(screen.getByText('agent-alpha')).toBeInTheDocument();
     });
 
     it('falls back to adapterId when adapter is not in catalog', () => {
@@ -264,8 +261,8 @@ describe('BindingList', () => {
     it('renders multiple binding rows', () => {
       mockUseBindings.mockReturnValue({
         data: [
-          makeBinding({ id: 'b1', agentId: 'agent-one', projectPath: '/projects/one' }),
-          makeBinding({ id: 'b2', agentId: 'agent-two', projectPath: '/projects/two' }),
+          makeBinding({ id: 'b1', agentId: 'agent-one' }),
+          makeBinding({ id: 'b2', agentId: 'agent-two' }),
         ],
         isLoading: false,
       });

@@ -120,7 +120,6 @@ function makeBinding(overrides: Record<string, unknown> = {}) {
     id: 'b1',
     adapterId: 'tg-main',
     agentId: 'agent-1',
-    projectPath: '/p',
     sessionStrategy: 'per-chat',
     label: '',
     createdAt: '',

@@ -50,7 +50,6 @@ function createStatefulBindingStore() {
       id: string;
       adapterId: string;
       agentId: string;
-      projectPath: string;
       sessionStrategy: string;
       label: string;
       chatId?: string;
@@ -70,7 +69,6 @@ function createStatefulBindingStore() {
         id,
         adapterId: input.adapterId as string,
         agentId: input.agentId as string,
-        projectPath: input.projectPath as string,
         sessionStrategy: (input.sessionStrategy as string) ?? 'per-chat',
         label: (input.label as string) ?? '',
         ...(input.chatId !== undefined ? { chatId: input.chatId as string } : {}),
@@ -164,7 +162,6 @@ describe('Binding CRUD roundtrip', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/home/user/project',
         sessionStrategy: 'per-chat',
         label: 'Test binding',
       })
@@ -221,7 +218,6 @@ describe('Binding CRUD roundtrip', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/project',
         sessionStrategy: 'per-chat',
         label: '',
         chatId: '12345',
@@ -250,7 +246,6 @@ describe('Binding CRUD roundtrip', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/project-a',
       })
       .expect(201);
 
@@ -259,7 +254,6 @@ describe('Binding CRUD roundtrip', () => {
       .send({
         adapterId: 'telegram-2',
         agentId: 'agent-2',
-        projectPath: '/project-b',
         sessionStrategy: 'stateless',
       })
       .expect(201);
@@ -283,7 +277,6 @@ describe('Binding CRUD roundtrip', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/project',
       })
       .expect(201);
 
@@ -308,7 +301,6 @@ describe('Binding CRUD roundtrip', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/project',
       })
       .expect(201);
 
@@ -456,7 +448,6 @@ describe('Multi-instance adapter flow', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/project-a',
         sessionStrategy: 'per-chat',
         label: 'Bot One binding',
       })
@@ -468,7 +459,6 @@ describe('Multi-instance adapter flow', () => {
       .send({
         adapterId: 'telegram-2',
         agentId: 'agent-2',
-        projectPath: '/project-b',
         sessionStrategy: 'stateless',
         label: 'Bot Two binding',
       })
@@ -681,7 +671,6 @@ describe('Binding creation with chat filter from observed data', () => {
       .send({
         adapterId: 'telegram-1',
         agentId: 'agent-1',
-        projectPath: '/project',
         sessionStrategy: 'per-chat',
         label: 'Support binding',
         chatId: observedChatId,

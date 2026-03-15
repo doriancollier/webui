@@ -30,7 +30,6 @@ export interface PendingConnection {
   sourceAdapterName: string;
   targetAgentId: string;
   targetAgentName: string;
-  targetProjectPath: string;
 }
 
 interface UseTopologyHandlersOptions {
@@ -39,7 +38,6 @@ interface UseTopologyHandlersOptions {
   createBindingMutate: (opts: {
     adapterId: string;
     agentId: string;
-    projectPath: string;
     sessionStrategy: SessionStrategy;
     label: string;
   }) => void;
@@ -172,7 +170,6 @@ export function useTopologyHandlers({
         sourceAdapterName: adapterData.adapterName,
         targetAgentId: targetNode.id,
         targetAgentName: agentData.label,
-        targetProjectPath: agentData.projectPath ?? '',
       });
     },
     [rawNodes],
@@ -185,7 +182,6 @@ export function useTopologyHandlers({
       createBindingMutate({
         adapterId: pendingConnection.sourceAdapterId,
         agentId: pendingConnection.targetAgentId,
-        projectPath: pendingConnection.targetProjectPath,
         sessionStrategy: opts.sessionStrategy,
         label: opts.label,
       });

@@ -134,10 +134,16 @@ export class AdapterManager {
         },
       };
 
+      if (!this.deps.meshCore) {
+        logger.info('[AdapterManager] meshCore not provided, skipping binding subsystem');
+        return;
+      }
+
       this.bindingRouter = new BindingRouter({
         bindingStore: this.bindingStore,
         relayCore: this.deps.relayCore,
         agentManager: sessionCreator,
+        meshCore: this.deps.meshCore,
         relayDir,
         resolveAdapterInstanceId: (platformType: string) => {
           const match = this.configs.find((c) => c.type === platformType && c.enabled);

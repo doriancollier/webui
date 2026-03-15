@@ -192,13 +192,11 @@ export class BindingStore {
     try {
       const raw = await readFile(this.filePath, 'utf-8');
       const json = JSON.parse(raw) as { bindings?: Record<string, unknown>[] };
-      // One-time migration: agentDir → projectPath
       if (json.bindings) {
         for (const b of json.bindings) {
-          if ('agentDir' in b && !('projectPath' in b)) {
-            b.projectPath = b.agentDir;
-            delete b.agentDir;
-          }
+          // Strip legacy fields — projectPath is now derived from agent registry
+          delete b.projectPath;
+          delete b.agentDir;
         }
       }
       const parsed = BindingsFileSchema.parse(json);

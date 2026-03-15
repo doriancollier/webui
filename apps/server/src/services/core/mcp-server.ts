@@ -322,7 +322,6 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
     {
       adapterId: z.string().describe('ID of the adapter to bind'),
       agentId: z.string().describe('Agent ID to route messages to'),
-      projectPath: z.string().describe('Filesystem path to the agent working directory'),
       sessionStrategy: z
         .string()
         .optional()

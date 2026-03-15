@@ -57,7 +57,6 @@ vi.mock('@/layers/features/mesh/ui/BindingDialog', () => ({
             props.onConfirm({
               adapterId: 'adapter-1',
               agentId: 'agent-1',
-              projectPath: '',
               sessionStrategy: 'per-chat',
               label: '',
             })

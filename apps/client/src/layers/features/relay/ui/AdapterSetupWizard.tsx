@@ -286,7 +286,6 @@ export function AdapterSetupWizard({
       {
         adapterId: createdAdapterId,
         agentId: bindAgentId,
-        projectPath: '',
         sessionStrategy: bindStrategy,
         label: '',
       },

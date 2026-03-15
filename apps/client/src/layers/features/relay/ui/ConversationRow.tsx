@@ -135,9 +135,6 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
     createBinding({
       adapterId: extractAdapterId(conversation),
       agentId: routeAgentId,
-      // AgentManifest has no projectPath field; leave empty for quick-route bindings.
-      // Users can refine this via the full BindingDialog ("More options...").
-      projectPath: '',
       sessionStrategy: 'per-chat',
       label: '',
       chatId: extractChatId(conversation),
@@ -157,7 +154,6 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
       createBinding({
         adapterId: values.adapterId,
         agentId: values.agentId,
-        projectPath: values.projectPath,
         sessionStrategy: values.sessionStrategy,
         label: values.label,
         chatId: values.chatId,

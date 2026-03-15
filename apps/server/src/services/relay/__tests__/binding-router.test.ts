@@ -5,6 +5,7 @@ import {
   type AgentSessionCreator,
 } from '../binding-router.js';
 import type { BindingStore } from '../binding-store.js';
+import type { AdapterMeshCoreLike } from '../adapter-manager.js';
 import { readFile, writeFile, mkdir, rename } from 'node:fs/promises';
 
 vi.mock('node:fs/promises');
@@ -13,6 +14,7 @@ describe('BindingRouter', () => {
   let router: BindingRouter;
   let mockRelayCore: RelayCoreLike;
   let mockAgentManager: AgentSessionCreator;
+  let mockMeshCore: AdapterMeshCoreLike;
   let mockBindingStore: Partial<BindingStore>;
   let capturedHandler: ((envelope: Record<string, unknown>) => Promise<void>) | undefined;
   const mockUnsubscribe = vi.fn();
@@ -36,6 +38,10 @@ describe('BindingRouter', () => {
       createSession: vi.fn().mockResolvedValue({ id: 'session-abc' }),
     };
 
+    mockMeshCore = {
+      getProjectPath: vi.fn().mockReturnValue('/agents/a'),
+    };
+
     mockBindingStore = {
       resolve: vi.fn(),
     };
@@ -44,6 +50,7 @@ describe('BindingRouter', () => {
       bindingStore: mockBindingStore as BindingStore,
       relayCore: mockRelayCore,
       agentManager: mockAgentManager,
+      meshCore: mockMeshCore,
       relayDir: '/tmp/relay',
     });
     await router.init();
@@ -94,7 +101,7 @@ describe('BindingRouter', () => {
       id: 'bind-1',
       adapterId: 'telegram',
       agentId: 'agent-a',
-      projectPath: '/agents/a',
+
       sessionStrategy: 'per-chat',
       label: '',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -121,7 +128,7 @@ describe('BindingRouter', () => {
       id: 'bind-1',
       adapterId: 'telegram',
       agentId: 'agent-a',
-      projectPath: '/agents/a',
+
       sessionStrategy: 'per-chat',
       label: '',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -150,7 +157,7 @@ describe('BindingRouter', () => {
       id: 'bind-1',
       adapterId: 'telegram',
       agentId: 'agent-a',
-      projectPath: '/agents/a',
+
       sessionStrategy: 'per-chat',
       label: '',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -192,7 +199,7 @@ describe('BindingRouter', () => {
       id: 'bind-1',
       adapterId: 'telegram',
       agentId: 'agent-a',
-      projectPath: '/agents/a',
+
       sessionStrategy: strategy,
       label: '',
       createdAt: '2026-01-01T00:00:00.000Z',
@@ -248,7 +255,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -274,6 +281,7 @@ describe('BindingRouter', () => {
         bindingStore: mockBindingStore as BindingStore,
         relayCore: mockRelayCore,
         agentManager: mockAgentManager,
+        meshCore: mockMeshCore,
         relayDir: '/tmp/relay',
       });
       await freshRouter.init();
@@ -283,7 +291,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -322,7 +330,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -363,7 +371,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -395,7 +403,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -421,7 +429,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -459,7 +467,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -509,6 +517,7 @@ describe('BindingRouter', () => {
         bindingStore: mockBindingStore as BindingStore,
         relayCore: mockRelayCore,
         agentManager: mockAgentManager,
+        meshCore: mockMeshCore,
         relayDir: '/tmp/relay',
       });
       await evictionRouter.init();
@@ -521,7 +530,7 @@ describe('BindingRouter', () => {
         id: 'bind-new',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -546,7 +555,7 @@ describe('BindingRouter', () => {
         id: 'bind-old',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -575,7 +584,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',
@@ -611,7 +620,7 @@ describe('BindingRouter', () => {
         id: 'bind-1',
         adapterId: 'telegram',
         agentId: 'agent-a',
-        projectPath: '/agents/a',
+  
         sessionStrategy: 'per-chat',
         label: '',
         createdAt: '2026-01-01T00:00:00.000Z',

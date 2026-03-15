@@ -1,0 +1,148 @@
+{
+  "specFile": "specs/remove-binding-projectpath/02-specification.md",
+  "createdAt": "2026-03-14",
+  "batches": [
+    {
+      "id": 1,
+      "name": "Schema Change",
+      "description": "Remove projectPath from shared schemas — everything else depends on this",
+      "tasks": [
+        {
+          "id": "T1",
+          "title": "Remove projectPath from AdapterBindingSchema and CreateBindingRequestSchema",
+          "file": "packages/shared/src/relay-adapter-schemas.ts",
+          "description": "Remove the `projectPath: z.string()` field from `AdapterBindingSchema`. `CreateBindingRequestSchema` derives via `.omit()` and auto-updates. The `AdapterBinding` and `CreateBindingRequest` types are auto-inferred."
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Server Core + Client Source",
+      "description": "All source-level changes after schema removal — can run in parallel",
+      "tasks": [
+        {
+          "id": "T2",
+          "title": "BindingRouter: add meshCore dep, derive CWD from agent registry",
+          "file": "apps/server/src/services/relay/binding-router.ts",
+          "description": "Add `meshCore: AdapterMeshCoreLike` to `BindingRouterDeps`. Replace `binding.projectPath` with `meshCore.getProjectPath(binding.agentId)` in `handleInbound()` (CWD enrichment) and `createNewSession()`. Add guard for undefined projectPath (warn+skip in handleInbound, throw in createNewSession)."
+        },
+        {
+          "id": "T3",
+          "title": "AdapterManager: wire meshCore into BindingRouter construction",
+          "file": "apps/server/src/services/relay/adapter-manager.ts",
+          "description": "In `initBindingSubsystem()`, add guard that meshCore is present, pass `meshCore: this.deps.meshCore` to the BindingRouter constructor."
+        },
+        {
+          "id": "T4",
+          "title": "BindingStore: update migration to strip projectPath",
+          "file": "apps/server/src/services/relay/binding-store.ts",
+          "description": "Replace the `agentDir → projectPath` migration in `load()` with a migration that strips both `projectPath` and `agentDir` from loaded binding objects."
+        },
+        {
+          "id": "T5",
+          "title": "MCP tools: remove projectPath from binding_create",
+          "files": [
+            "apps/server/src/services/runtimes/claude-code/mcp-tools/binding-tools.ts",
+            "apps/server/src/services/core/mcp-server.ts"
+          ],
+          "description": "Remove `projectPath` from the tool schema and handler args in both `binding-tools.ts` and `mcp-server.ts`. Both files define `binding_create` with inline Zod schemas."
+        },
+        {
+          "id": "T6",
+          "title": "Client: remove projectPath from BindingDialog",
+          "file": "apps/client/src/layers/features/mesh/ui/BindingDialog.tsx",
+          "description": "Remove `projectPath` from `BindingFormValues` interface, remove state/setter/effect/reset for projectPath, remove the 'Project Path' Input field (create mode), remove from handleConfirm output."
+        },
+        {
+          "id": "T7",
+          "title": "Client: remove projectPath from BindingList",
+          "file": "apps/client/src/layers/features/relay/ui/BindingList.tsx",
+          "description": "Remove `projectPathName()` helper function. Change agent name fallback to `agent?.name ?? binding.agentId`. Remove `projectPath` from create/duplicate binding calls and duplicate dialog initialValues."
+        },
+        {
+          "id": "T8",
+          "title": "Client: remove projectPath from use-topology-handlers",
+          "file": "apps/client/src/layers/features/mesh/ui/use-topology-handlers.ts",
+          "description": "Remove `targetProjectPath` from `PendingConnection` interface. Remove `projectPath` from `createBindingMutate` signature and the handleBindingConfirm call."
+        },
+        {
+          "id": "T9",
+          "title": "Client: remove projectPath from ConversationRow and AdapterSetupWizard",
+          "files": [
+            "apps/client/src/layers/features/relay/ui/ConversationRow.tsx",
+            "apps/client/src/layers/features/relay/ui/AdapterSetupWizard.tsx"
+          ],
+          "description": "Remove `projectPath: ''` from quick-route and wizard binding creation calls. Remove `projectPath: values.projectPath` from dialog binding creation."
+        },
+        {
+          "id": "T10",
+          "title": "Client: update tool descriptions in ToolsTab and ContextTab",
+          "files": [
+            "apps/client/src/layers/features/settings/ui/ToolsTab.tsx",
+            "apps/client/src/layers/features/agent-settings/ui/ContextTab.tsx"
+          ],
+          "description": "Update `binding_create(adapterId, agentId, projectPath)` to `binding_create(adapterId, agentId)` in ADAPTER_PREVIEW constants."
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Test Updates",
+      "description": "Update all test files to remove projectPath from mocks and assertions",
+      "tasks": [
+        {
+          "id": "T11",
+          "title": "Server tests: binding-router.test.ts",
+          "file": "apps/server/src/services/relay/__tests__/binding-router.test.ts",
+          "description": "Add meshCore mock with getProjectPath to BindingRouterDeps. Mock getProjectPath to return paths. Remove projectPath from all mock bindings. Update assertions for CWD enrichment to use meshCore return values. Add test for meshCore returning undefined (skips routing)."
+        },
+        {
+          "id": "T12",
+          "title": "Server tests: binding-store.test.ts",
+          "file": "apps/server/src/services/relay/__tests__/binding-store.test.ts",
+          "description": "Remove projectPath from all mock binding objects. Add tests for stripping projectPath and agentDir from legacy bindings.json on load."
+        },
+        {
+          "id": "T13",
+          "title": "Server tests: relay-bindings-integration.test.ts",
+          "file": "apps/server/src/routes/__tests__/relay-bindings-integration.test.ts",
+          "description": "Remove projectPath from mock data, request bodies, and assertions."
+        },
+        {
+          "id": "T14",
+          "title": "Client tests: BindingDialog.test.tsx and BindingList.test.tsx",
+          "files": [
+            "apps/client/src/layers/features/mesh/ui/__tests__/BindingDialog.test.tsx",
+            "apps/client/src/layers/features/relay/ui/__tests__/BindingList.test.tsx"
+          ],
+          "description": "Remove projectPath from form assertions, mock binding data, initialValues, and onConfirm assertions. Remove projectPathName fallback test."
+        },
+        {
+          "id": "T15",
+          "title": "Client tests: remaining test files",
+          "files": [
+            "apps/client/src/layers/features/relay/ui/__tests__/ConversationRow.test.tsx",
+            "apps/client/src/layers/entities/binding/__tests__/use-bindings.test.tsx",
+            "apps/client/src/layers/entities/binding/model/__tests__/use-update-binding.test.tsx",
+            "apps/client/src/layers/shared/lib/__tests__/transport-bindings.test.ts",
+            "apps/client/src/layers/features/relay/__tests__/AdapterCard.test.tsx",
+            "apps/client/src/layers/features/mesh/ui/__tests__/TopologyGraph.test.tsx"
+          ],
+          "description": "Remove projectPath from all mock binding objects, create call args, and assertions across ConversationRow.test, use-bindings.test, use-update-binding.test, transport-bindings.test, AdapterCard.test, TopologyGraph.test."
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Verification",
+      "description": "Typecheck, test, lint",
+      "tasks": [
+        {
+          "id": "T16",
+          "title": "Run typecheck, tests, and lint",
+          "description": "Run `pnpm typecheck`, `pnpm test -- --run`, and `pnpm lint` to verify all changes compile and pass."
+        }
+      ]
+    }
+  ]
+}

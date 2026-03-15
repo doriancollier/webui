@@ -911,7 +911,14 @@
       "title": "Docker Image Publishing to GHCR",
       "created": "2026-03-14",
       "status": "specified"
+    },
+    {
+      "number": 131,
+      "slug": "remove-binding-projectpath",
+      "title": "Remove projectPath from AdapterBinding \u2014 Derive CWD from Agent Registry",
+      "created": "2026-03-14",
+      "status": "specification"
     }
   ],
-  "nextNumber": 131
+  "nextNumber": 132
 }

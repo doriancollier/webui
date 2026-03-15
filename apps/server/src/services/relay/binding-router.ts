@@ -18,6 +18,7 @@ import type { AdapterBinding } from '@dorkos/shared/relay-schemas';
 import type { PublishOptions, Unsubscribe } from '@dorkos/relay';
 import { logger } from '../../lib/logger.js';
 import type { BindingStore } from './binding-store.js';
+import type { AdapterMeshCoreLike } from './adapter-manager.js';
 
 /** Minimal interface for AgentManager session creation. */
 export interface AgentSessionCreator {
@@ -38,6 +39,7 @@ export interface BindingRouterDeps {
   bindingStore: BindingStore;
   relayCore: RelayCoreLike;
   agentManager: AgentSessionCreator;
+  meshCore: AdapterMeshCoreLike;
   relayDir: string;
   /** Maps a platform type (e.g., 'telegram') to the adapter instance ID from config. */
   resolveAdapterInstanceId?: (platformType: string) => string | undefined;
@@ -126,13 +128,19 @@ export class BindingRouter {
         return;
       }
 
+      const projectPath = this.deps.meshCore.getProjectPath(binding.agentId);
+      if (!projectPath) {
+        logger.warn(
+          `BindingRouter: agent '${binding.agentId}' not found in mesh registry, skipping`,
+        );
+        return;
+      }
+
       const sessionId = await this.resolveSession(binding, chatId, envelope);
 
-      // Enrich payload with binding's projectPath so the agent handler
-      // resolves CWD correctly (it reads payloadCwd from the payload).
       const enrichedPayload =
-        binding.projectPath && envelope.payload && typeof envelope.payload === 'object'
-          ? { ...(envelope.payload as Record<string, unknown>), cwd: binding.projectPath }
+        envelope.payload && typeof envelope.payload === 'object'
+          ? { ...(envelope.payload as Record<string, unknown>), cwd: projectPath }
           : envelope.payload;
 
       await this.deps.relayCore.publish(`relay.agent.${sessionId}`, enrichedPayload, {
@@ -143,7 +151,7 @@ export class BindingRouter {
 
       logger.info(
         `BindingRouter: routed ${envelope.subject} → relay.agent.${sessionId} ` +
-        `(binding=${binding.id}, projectPath=${binding.projectPath || '(empty)'})`,
+        `(binding=${binding.id}, projectPath=${projectPath})`,
       );
     } catch (err) {
       logger.error(
@@ -230,13 +238,17 @@ export class BindingRouter {
   }
 
   private async createNewSession(binding: AdapterBinding): Promise<string> {
+    const projectPath = this.deps.meshCore.getProjectPath(binding.agentId);
+    if (!projectPath) {
+      throw new Error(`Agent '${binding.agentId}' not found in mesh registry`);
+    }
     logger.debug('[BindingRouter] createNewSession', {
       bindingId: binding.id,
       adapterId: binding.adapterId,
       agentId: binding.agentId,
-      projectPath: binding.projectPath || '(empty)',
+      projectPath,
     });
-    const session = await this.deps.agentManager.createSession(binding.projectPath);
+    const session = await this.deps.agentManager.createSession(projectPath);
     return session.id;
   }
 

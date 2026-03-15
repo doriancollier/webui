@@ -63,7 +63,7 @@ Adapter management:
 
 Bindings route adapter messages to agent projects:
 - binding_list() — see current adapter-to-agent bindings
-- binding_create(adapterId, agentId, projectPath) — route an adapter to an agent
+- binding_create(adapterId, agentId) — route an adapter to an agent
 - binding_delete(id) — remove a binding
 
 Session strategies: per-chat (default, one session per conversation), per-user (shared across chats), stateless (new session each message).`;

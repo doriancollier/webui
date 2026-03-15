@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 130,
+  "nextNumber": 131,
   "decisions": [
+    {
+      "number": 130,
+      "slug": "derive-binding-cwd-from-agent-registry",
+      "title": "Derive Binding CWD from Agent Registry Instead of Storing on Binding",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "remove-binding-projectpath",
+      "specSlug": "remove-binding-projectpath"
+    },
     {
       "number": 129,
       "slug": "npm-install-mode-for-docker-image",

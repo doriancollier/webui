@@ -53,12 +53,6 @@ function useAgentLookup() {
   }, [data]);
 }
 
-/** Extract a human-readable name from a project path (last segment). */
-function projectPathName(projectPath: string): string {
-  const segments = projectPath.replace(/\/+$/, '').split('/');
-  return segments[segments.length - 1] || projectPath;
-}
-
 interface EditState {
   binding: AdapterBinding;
   adapterName: string;
@@ -109,7 +103,6 @@ export function BindingList() {
       createBinding({
         adapterId: values.adapterId,
         agentId: values.agentId,
-        projectPath: values.projectPath,
         sessionStrategy: values.sessionStrategy,
         label: values.label,
         chatId: values.chatId,
@@ -125,7 +118,6 @@ export function BindingList() {
       createBinding({
         adapterId: values.adapterId,
         agentId: values.agentId,
-        projectPath: values.projectPath,
         sessionStrategy: values.sessionStrategy,
         label: values.label,
         chatId: values.chatId,
@@ -207,7 +199,7 @@ export function BindingList() {
           const adapterName = adapter?.displayName ?? binding.adapterId;
           const adapterIcon = adapter?.iconEmoji;
           const agent = agentLookup.get(binding.agentId);
-          const agentName = agent?.name ?? projectPathName(binding.projectPath);
+          const agentName = agent?.name ?? binding.agentId;
 
           return (
             <div
@@ -338,7 +330,6 @@ export function BindingList() {
           initialValues={{
             adapterId: duplicateSource.adapterId,
             agentId: duplicateSource.agentId,
-            projectPath: duplicateSource.projectPath,
             sessionStrategy: duplicateSource.sessionStrategy,
             label: duplicateSource.label,
             // chatId intentionally omitted — must differ for the new binding

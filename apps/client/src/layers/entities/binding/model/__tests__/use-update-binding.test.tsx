@@ -16,7 +16,6 @@ const mockBinding: AdapterBinding = {
   id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
   adapterId: 'telegram-main',
   agentId: 'agent-1',
-  projectPath: '/home/user/agents/alpha',
   sessionStrategy: 'per-chat',
   label: 'Main bot',
   createdAt: '2026-01-01T00:00:00.000Z',

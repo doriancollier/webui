@@ -63,7 +63,6 @@ const SELECT_ANY = '__any__';
 export interface BindingFormValues {
   adapterId: string;
   agentId: string;
-  projectPath: string;
   sessionStrategy: SessionStrategy;
   label: string;
   chatId?: string;
@@ -87,8 +86,8 @@ export interface BindingDialogProps {
 /**
  * Modal dialog for configuring or editing an adapter-agent binding.
  *
- * In create mode, shows adapter picker, agent picker, project path, session
- * strategy, label, and a collapsible chat filter section (chatId + channelType).
+ * In create mode, shows adapter picker, agent picker, session strategy, label,
+ * and a collapsible chat filter section (chatId + channelType).
  * In edit mode, adapter and agent are read-only and all other fields are editable.
  */
 export function BindingDialog({
@@ -104,7 +103,6 @@ export function BindingDialog({
 
   const [adapterId, setAdapterId] = useState(initialValues?.adapterId ?? '');
   const [agentId, setAgentId] = useState(initialValues?.agentId ?? '');
-  const [projectPath, setProjectPath] = useState(initialValues?.projectPath ?? '');
   const [strategy, setStrategy] = useState<SessionStrategy>(
     initialValues?.sessionStrategy ?? 'per-chat',
   );
@@ -122,7 +120,6 @@ export function BindingDialog({
     if (initialValues) {
       setAdapterId(initialValues.adapterId ?? '');
       setAgentId(initialValues.agentId ?? '');
-      setProjectPath(initialValues.projectPath ?? '');
       setStrategy(initialValues.sessionStrategy ?? 'per-chat');
       setLabel(initialValues.label ?? '');
       setChatId(initialValues.chatId ?? SELECT_ANY);
@@ -161,7 +158,6 @@ export function BindingDialog({
     onConfirm({
       adapterId,
       agentId,
-      projectPath,
       sessionStrategy: strategy,
       label,
       chatId: chatId === SELECT_ANY ? undefined : chatId,
@@ -178,7 +174,6 @@ export function BindingDialog({
   function resetForm() {
     setAdapterId('');
     setAgentId('');
-    setProjectPath('');
     setStrategy('per-chat');
     setLabel('');
     setChatId(SELECT_ANY);
@@ -251,15 +246,6 @@ export function BindingDialog({
                 </Select>
               </div>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="binding-project-path">Project Path</Label>
-                <Input
-                  id="binding-project-path"
-                  placeholder="/home/user/project"
-                  value={projectPath}
-                  onChange={(e) => setProjectPath(e.target.value)}
-                />
-              </div>
             </>
           )}
 

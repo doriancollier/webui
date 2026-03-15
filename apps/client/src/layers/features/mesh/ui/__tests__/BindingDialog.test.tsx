@@ -156,7 +156,6 @@ describe('BindingDialog', () => {
     initialValues: {
       adapterId: 'telegram-1',
       agentId: 'agent-1',
-      projectPath: '/home/user/project',
       sessionStrategy: 'per-chat' as const,
       label: 'My binding',
     },
@@ -176,11 +175,6 @@ describe('BindingDialog', () => {
     it('renders agent picker dropdown', () => {
       render(<BindingDialog {...defaultCreateProps} />, { wrapper: Wrapper });
       expect(screen.getByLabelText('Agent')).toBeInTheDocument();
-    });
-
-    it('renders project path input', () => {
-      render(<BindingDialog {...defaultCreateProps} />, { wrapper: Wrapper });
-      expect(screen.getByLabelText('Project Path')).toBeInTheDocument();
     });
 
     it('renders session strategy selector', () => {
@@ -371,7 +365,6 @@ describe('BindingDialog', () => {
           initialValues={{
             adapterId: 'telegram-1',
             agentId: 'agent-1',
-            projectPath: '/some/path',
             sessionStrategy: 'stateless',
             label: 'Pre-filled',
           }}
@@ -383,7 +376,6 @@ describe('BindingDialog', () => {
         expect.objectContaining({
           adapterId: 'telegram-1',
           agentId: 'agent-1',
-          projectPath: '/some/path',
           sessionStrategy: 'stateless',
           label: 'Pre-filled',
         }),
