@@ -535,16 +535,7 @@ EOF
 git tag -a v0.2.0 -m "Release v0.2.0"
 ```
 
-### 5.7: Push to Origin
-
-```bash
-# Push commit and tag
-git push origin main && git push origin v0.2.0
-```
-
-If push fails, report error and provide recovery commands.
-
-### 5.8: Publish to npm
+### 5.7: Publish to npm
 
 Ask using AskUserQuestion:
 
@@ -555,7 +546,7 @@ options:
   - label: "Yes, publish to npm (Recommended)"
     description: "Runs pnpm run publish:cli to publish the dorkos package"
   - label: "No, skip npm publish"
-    description: "Tag is pushed, but package is not published to npm"
+    description: "Package is not published to npm. Docker image will not be available."
 ```
 
 If yes:
@@ -565,6 +556,15 @@ pnpm run publish:cli
 ```
 
 The `prepublishOnly` hook in `packages/cli/package.json` will automatically build before publishing.
+
+### 5.8: Push to Origin
+
+```bash
+# Push commit and tag
+git push origin main && git push origin v0.2.0
+```
+
+If push fails, report error and provide recovery commands.
 
 ### 5.9: GitHub Release Notes
 
@@ -666,6 +666,11 @@ gh release create v0.2.0 --title "v0.2.0" --notes "[narrative release notes]"
 - Package is available on npm: `npm install -g dorkos@0.2.0`
 - Tag is available on GitHub
 - Users can update with `npm update -g dorkos`
+
+### Docker Image
+- Image will be published automatically to `ghcr.io/dork-labs/dorkos:{version}`
+- Triggered by the tag push above
+- Monitor progress: https://github.com/dork-labs/dorkos/actions/workflows/publish-docker.yml
 
 ### Release Notes
 

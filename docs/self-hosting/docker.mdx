@@ -21,6 +21,45 @@ This runs DorkOS in the background (`-d`), maps port 4242 on your machine to the
 
 Open [http://localhost:4242](http://localhost:4242).
 
+## Image Versioning
+
+Every release publishes the image with multiple tags:
+
+| Tag | Example | Description |
+|-----|---------|-------------|
+| `latest` | `ghcr.io/dork-labs/dorkos:latest` | Most recent non-prerelease version |
+| Exact version | `ghcr.io/dork-labs/dorkos:0.12.0` | Pinned to a specific release |
+| Minor track | `ghcr.io/dork-labs/dorkos:0.12` | Tracks the latest patch within a minor version |
+| Commit SHA | `ghcr.io/dork-labs/dorkos:sha-abc1234` | Pinned to a specific build commit |
+
+For production deployments, pin to an exact version:
+
+```bash
+docker pull ghcr.io/dork-labs/dorkos:0.12.0
+```
+
+The `latest` tag always points to the most recent non-prerelease version. Pre-release tags (e.g., `0.13.0-beta.1`) are available by exact version but do not update `latest`.
+
+## Multi-Platform Support
+
+The image is built for both `linux/amd64` and `linux/arm64`. Docker automatically pulls the correct architecture for your machine:
+
+- **Intel/AMD servers and desktops**: `linux/amd64`
+- **Apple Silicon (M1/M2/M3) via Docker Desktop**: `linux/arm64`
+- **ARM servers (AWS Graviton, Ampere)**: `linux/arm64`
+
+No configuration is needed — `docker pull` selects the right platform automatically.
+
+## Supply Chain Verification
+
+Every published image includes a [SLSA](https://slsa.dev/) provenance attestation, verifying it was built from the expected source commit in the `dork-labs/dorkos` repository. Verify any image with the GitHub CLI:
+
+```bash
+gh attestation verify oci://ghcr.io/dork-labs/dorkos:0.12.0 --owner dork-labs
+```
+
+This confirms the image was built by GitHub Actions from the official repository — not from a fork or local machine.
+
 ## Configuration
 
 Pass environment variables with `-e` or an env file. All [standard environment variables](/docs/self-hosting/deployment#environment-variables) are supported.

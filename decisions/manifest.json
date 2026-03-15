@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 127,
+  "nextNumber": 130,
   "decisions": [
+    {
+      "number": 129,
+      "slug": "npm-install-mode-for-docker-image",
+      "title": "Use npm Install Mode for Published Docker Image",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "docker-image-publishing",
+      "specSlug": "docker-image-publishing"
+    },
+    {
+      "number": 128,
+      "slug": "npm-publish-before-tag-push",
+      "title": "Reorder Release Phases — npm Publish Before Tag Push",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "docker-image-publishing",
+      "specSlug": "docker-image-publishing"
+    },
+    {
+      "number": 127,
+      "slug": "tag-push-trigger-for-docker-publishing",
+      "title": "Use Tag Push Trigger for Docker Image Publishing",
+      "status": "draft",
+      "created": "2026-03-14",
+      "extractedFrom": "docker-image-publishing",
+      "specSlug": "docker-image-publishing"
+    },
     {
       "number": 126,
       "slug": "envelope-payload-enrichment-for-cwd-propagation",

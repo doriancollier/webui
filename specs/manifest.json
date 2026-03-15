@@ -904,7 +904,14 @@
       "title": "Relay Adapter Streaming Fixes & Enhancements",
       "created": "2026-03-14",
       "status": "draft"
+    },
+    {
+      "number": 130,
+      "slug": "docker-image-publishing",
+      "title": "Docker Image Publishing to GHCR",
+      "created": "2026-03-14",
+      "status": "specified"
     }
   ],
-  "nextNumber": 130
+  "nextNumber": 131
 }

@@ -17,6 +17,10 @@
 ARG NODE_VERSION=20
 FROM node:${NODE_VERSION}-slim
 
+LABEL org.opencontainers.image.source="https://github.com/dork-labs/dorkos"
+LABEL org.opencontainers.image.description="DorkOS — the coordination layer for autonomous AI agents"
+LABEL org.opencontainers.image.licenses="MIT"
+
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
       python3 build-essential libsqlite3-dev && \
