@@ -49,7 +49,7 @@ async function buildCLI() {
     define: { __CLI_VERSION__: JSON.stringify(version) },
     sourcemap: true,
     banner: {
-      js: "import { createRequire } from 'module'; import { fileURLToPath as __fup } from 'url'; const require = createRequire(import.meta.url); const __filename = __fup(import.meta.url);",
+      js: "import { createRequire as __cjsRequire } from 'module'; import { fileURLToPath as __fup } from 'url'; const require = __cjsRequire(import.meta.url); const __filename = __fup(import.meta.url);",
     },
   });
 
