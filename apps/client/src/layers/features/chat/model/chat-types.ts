@@ -24,6 +24,8 @@ export interface ToolCallState {
   toolName: string;
   input: string;
   result?: string;
+  /** Intermediate output from tool_progress events (cleared when result arrives) */
+  progressOutput?: string;
   status: 'pending' | 'running' | 'complete' | 'error';
   /** Set when this tool call requires interactive UI (approval or question) */
   interactiveType?: 'approval' | 'question';

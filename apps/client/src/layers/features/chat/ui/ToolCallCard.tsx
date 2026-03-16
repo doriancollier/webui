@@ -1,9 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Check, X, ChevronDown } from 'lucide-react';
 import type { ToolCallState } from '../model/use-chat-session';
 import { getToolLabel, ToolArgumentsDisplay, cn } from '@/layers/shared/lib';
 import { toolStatus } from './message/message-variants';
+
+/** Maximum bytes of progress output to show before truncation. */
+const PROGRESS_TRUNCATE_BYTES = 5120;
+
+/** Renders streaming tool progress output with truncation. */
+function ProgressOutput({ content }: { content: string }) {
+  const [showFull, setShowFull] = useState(false);
+  const isTruncated = content.length > PROGRESS_TRUNCATE_BYTES;
+  const displayContent = isTruncated && !showFull ? content.slice(0, PROGRESS_TRUNCATE_BYTES) : content;
+
+  return (
+    <div className="mt-2 border-t pt-2">
+      <pre className="max-h-48 overflow-y-auto text-xs whitespace-pre-wrap">{displayContent}</pre>
+      {isTruncated && !showFull && (
+        <button
+          onClick={() => setShowFull(true)}
+          className="text-muted-foreground hover:text-foreground mt-1 text-xs underline"
+        >
+          Show full output ({(content.length / 1024).toFixed(1)}KB)
+        </button>
+      )}
+    </div>
+  );
+}
 
 interface ToolCallCardProps {
   toolCall: ToolCallState;
@@ -13,6 +37,14 @@ interface ToolCallCardProps {
 /** Expandable card displaying a tool call's status, arguments, and result. */
 export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCardProps) {
   const [expanded, setExpanded] = useState(defaultExpanded);
+
+  const hasProgress = !!toolCall.progressOutput;
+
+  useEffect(() => {
+    if (hasProgress && !expanded) {
+      setExpanded(true); // eslint-disable-line react-hooks/set-state-in-effect -- Intentional: auto-expand once when progress first arrives
+    }
+  }, [hasProgress]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const statusIcon = {
     pending: (
@@ -61,6 +93,9 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
             <div className="border-t px-3 pt-1 pb-3">
               {toolCall.input && (
                 <ToolArgumentsDisplay toolName={toolCall.toolName} input={toolCall.input} />
+              )}
+              {toolCall.progressOutput && !toolCall.result && (
+                <ProgressOutput content={toolCall.progressOutput} />
               )}
               {toolCall.result && (
                 <pre className="mt-2 overflow-x-auto border-t pt-2 text-xs whitespace-pre-wrap">

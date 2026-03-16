@@ -36,6 +36,7 @@ export interface TranscriptLine {
 export interface ContentBlock {
   type: string;
   text?: string;
+  thinking?: string;
   name?: string;
   id?: string;
   input?: Record<string, unknown>;
@@ -342,7 +343,9 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
       const toolCalls: HistoryToolCall[] = [];
 
       for (const block of contentBlocks) {
-        if (block.type === 'text' && block.text) {
+        if (block.type === 'thinking' && block.thinking) {
+          parts.push({ type: 'thinking', text: block.thinking, isStreaming: false });
+        } else if (block.type === 'text' && block.text) {
           const lastPart = parts[parts.length - 1];
           if (lastPart && lastPart.type === 'text') {
             lastPart.text += '\n' + block.text;

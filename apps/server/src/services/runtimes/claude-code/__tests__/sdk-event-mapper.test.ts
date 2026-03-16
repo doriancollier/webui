@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { mapSdkMessage } from '../sdk-event-mapper.js';
 import { sdkTaskStarted, sdkTaskProgress, sdkTaskNotification } from './sdk-scenarios.js';
 import type { AgentSession, ToolState } from '../agent-types.js';
-import type { StreamEvent } from '@dorkos/shared/types';
+import type { StreamEvent, ErrorEvent } from '@dorkos/shared/types';
 
 /** Collect all events yielded by the mapper for a single message. */
 async function collectEvents(
@@ -126,5 +126,113 @@ describe('sdk-event-mapper subagent lifecycle', () => {
     const events = await collectEvents(msg, session, sessionId, toolState);
 
     expect(events).toHaveLength(0);
+  });
+});
+
+describe('sdk-event-mapper result messages', () => {
+  const session = makeSession();
+  const sessionId = 'test-session';
+  const toolState = makeToolState();
+
+  function makeResultMessage(
+    subtype: string,
+    errors?: string[]
+  ): Parameters<typeof mapSdkMessage>[0] {
+    return {
+      type: 'result',
+      subtype,
+      model: 'claude-sonnet-4-20250514',
+      total_cost_usd: 0.05,
+      usage: { input_tokens: 1000, output_tokens: 500 },
+      modelUsage: { 'claude-sonnet-4-20250514': { contextWindow: 200000 } },
+      ...(errors ? { errors } : {}),
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+  }
+
+  it('success result yields session_status + done (2 events)', async () => {
+    const msg = makeResultMessage('success');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(2);
+    expect(events[0].type).toBe('session_status');
+    expect(events[1].type).toBe('done');
+    expect(events[1].data).toEqual({ sessionId: 'test-session' });
+  });
+
+  it('success result carries cost and token data in session_status', async () => {
+    const msg = makeResultMessage('success');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const status = events[0].data as Record<string, unknown>;
+    expect(status.costUsd).toBe(0.05);
+    expect(status.contextTokens).toBe(1000);
+    expect(status.model).toBe('claude-sonnet-4-20250514');
+  });
+
+  it('error_max_turns yields session_status + error + done (3 events)', async () => {
+    const msg = makeResultMessage('error_max_turns', ['Reached 10 turn limit']);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(3);
+    expect(events[0].type).toBe('session_status');
+    expect(events[1].type).toBe('error');
+    expect(events[2].type).toBe('done');
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.category).toBe('max_turns');
+    expect(err.message).toBe('Reached 10 turn limit');
+    expect(err.code).toBe('error_max_turns');
+  });
+
+  it('error_during_execution maps to execution_error category', async () => {
+    const msg = makeResultMessage('error_during_execution', ['API rate limit exceeded']);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.category).toBe('execution_error');
+    expect(err.message).toBe('API rate limit exceeded');
+    expect(err.details).toBe('API rate limit exceeded');
+  });
+
+  it('error_max_budget_usd maps to budget_exceeded category', async () => {
+    const msg = makeResultMessage('error_max_budget_usd', ['Budget of $1.00 exceeded']);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.category).toBe('budget_exceeded');
+    expect(err.code).toBe('error_max_budget_usd');
+  });
+
+  it('error_max_structured_output_retries maps to output_format_error', async () => {
+    const msg = makeResultMessage('error_max_structured_output_retries', ['Failed to produce valid JSON']);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.category).toBe('output_format_error');
+  });
+
+  it('error with multiple errors joins them in details', async () => {
+    const msg = makeResultMessage('error_during_execution', ['Error 1', 'Error 2']);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.message).toBe('Error 1');
+    expect(err.details).toBe('Error 1\nError 2');
+  });
+
+  it('error with no errors array uses fallback message', async () => {
+    const msg = makeResultMessage('error_during_execution');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.message).toBe('An unexpected error occurred.');
+  });
+
+  it('unknown error subtype defaults to execution_error', async () => {
+    const msg = makeResultMessage('error_unknown_future_type', ['Something new']);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    const err = events[1].data as ErrorEvent;
+    expect(err.category).toBe('execution_error');
   });
 });

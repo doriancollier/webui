@@ -24,6 +24,8 @@ export interface ToolState {
   currentToolName: string;
   currentToolId: string;
   taskToolInput: string;
+  inThinking: boolean;
+  thinkingStartMs: number;
   appendTaskInput: (chunk: string) => void;
   resetTaskInput: () => void;
   setToolState: (tool: boolean, name: string, id: string) => void;
@@ -35,11 +37,17 @@ export function createToolState(): ToolState {
   let currentToolName = '';
   let currentToolId = '';
   let taskToolInput = '';
+  let inThinking = false;
+  let thinkingStartMs = 0;
   return {
     get inTool() { return inTool; },
     get currentToolName() { return currentToolName; },
     get currentToolId() { return currentToolId; },
     get taskToolInput() { return taskToolInput; },
+    get inThinking() { return inThinking; },
+    set inThinking(v: boolean) { inThinking = v; },
+    get thinkingStartMs() { return thinkingStartMs; },
+    set thinkingStartMs(v: number) { thinkingStartMs = v; },
     appendTaskInput: (chunk: string) => { taskToolInput += chunk; },
     resetTaskInput: () => { taskToolInput = ''; },
     setToolState: (tool: boolean, name: string, id: string) => {

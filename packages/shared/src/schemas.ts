@@ -33,6 +33,7 @@ export const StreamEventTypeSchema = z
     'tool_call_delta',
     'tool_call_end',
     'tool_result',
+    'tool_progress',
     'approval_required',
     'question_prompt',
     'error',
@@ -45,6 +46,7 @@ export const StreamEventTypeSchema = z
     'relay_receipt',
     'message_delivered',
     'relay_message',
+    'thinking_delta',
     'subagent_started',
     'subagent_progress',
     'subagent_done',
@@ -166,6 +168,14 @@ export const TextDeltaSchema = z
 
 export type TextDelta = z.infer<typeof TextDeltaSchema>;
 
+export const ThinkingDeltaSchema = z
+  .object({
+    text: z.string(),
+  })
+  .openapi('ThinkingDelta');
+
+export type ThinkingDelta = z.infer<typeof ThinkingDeltaSchema>;
+
 const ToolCallStatusSchema = z.enum(['pending', 'running', 'complete', 'error']);
 
 export const ToolCallEventSchema = z
@@ -179,6 +189,15 @@ export const ToolCallEventSchema = z
   .openapi('ToolCallEvent');
 
 export type ToolCallEvent = z.infer<typeof ToolCallEventSchema>;
+
+export const ToolProgressEventSchema = z
+  .object({
+    toolCallId: z.string(),
+    content: z.string(),
+  })
+  .openapi('ToolProgressEvent');
+
+export type ToolProgressEvent = z.infer<typeof ToolProgressEventSchema>;
 
 export const ApprovalEventSchema = z
   .object({
@@ -199,10 +218,18 @@ export const QuestionPromptEventSchema = z
 
 export type QuestionPromptEvent = z.infer<typeof QuestionPromptEventSchema>;
 
+export const ErrorCategorySchema = z
+  .enum(['max_turns', 'execution_error', 'budget_exceeded', 'output_format_error'])
+  .openapi('ErrorCategory');
+
+export type ErrorCategory = z.infer<typeof ErrorCategorySchema>;
+
 export const ErrorEventSchema = z
   .object({
     message: z.string(),
     code: z.string().optional(),
+    category: ErrorCategorySchema.optional(),
+    details: z.string().optional(),
   })
   .openapi('ErrorEvent');
 
@@ -348,7 +375,9 @@ export const StreamEventSchema = z
     type: StreamEventTypeSchema,
     data: z.union([
       TextDeltaSchema,
+      ThinkingDeltaSchema,
       ToolCallEventSchema,
+      ToolProgressEventSchema,
       ApprovalEventSchema,
       QuestionPromptEventSchema,
       ErrorEventSchema,
@@ -388,6 +417,7 @@ export const ToolCallPartSchema = z
     toolName: z.string(),
     input: z.string().optional(),
     result: z.string().optional(),
+    progressOutput: z.string().optional(),
     status: ToolCallStatusSchema,
     interactiveType: z.enum(['approval', 'question']).optional(),
     questions: z.array(QuestionItemSchema).optional(),
@@ -414,10 +444,34 @@ export const SubagentPartSchema = z
 
 export type SubagentPart = z.infer<typeof SubagentPartSchema>;
 
+export const ThinkingPartSchema = z
+  .object({
+    type: z.literal('thinking'),
+    text: z.string(),
+    isStreaming: z.boolean().optional(),
+    elapsedMs: z.number().int().optional(),
+  })
+  .openapi('ThinkingPart');
+
+export type ThinkingPart = z.infer<typeof ThinkingPartSchema>;
+
+export const ErrorPartSchema = z
+  .object({
+    type: z.literal('error'),
+    message: z.string(),
+    category: ErrorCategorySchema.optional(),
+    details: z.string().optional(),
+  })
+  .openapi('ErrorPart');
+
+export type ErrorPart = z.infer<typeof ErrorPartSchema>;
+
 export const MessagePartSchema = z.discriminatedUnion('type', [
   TextPartSchema,
   ToolCallPartSchema,
   SubagentPartSchema,
+  ThinkingPartSchema,
+  ErrorPartSchema,
 ]);
 
 export type MessagePart = z.infer<typeof MessagePartSchema>;
@@ -436,6 +490,7 @@ export const HistoryToolCallSchema = z
     toolName: z.string(),
     input: z.string().optional(),
     result: z.string().optional(),
+    progressOutput: z.string().optional(),
     status: z.literal('complete'),
     questions: z.array(QuestionItemSchema).optional(),
     answers: z.record(z.string(), z.string()).optional(),

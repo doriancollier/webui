@@ -346,7 +346,7 @@ describe('TranscriptReader', () => {
       expect(messages[0].content).toBe('Part 1\nPart 2');
     });
 
-    it('skips assistant messages with no text and no tool calls', async () => {
+    it('parses assistant messages with only thinking blocks', async () => {
       const lines = [
         JSON.stringify({
           type: 'assistant',
@@ -362,7 +362,14 @@ describe('TranscriptReader', () => {
 
       const messages = await transcriptReader.readTranscript('/vault', 's1');
 
-      expect(messages).toHaveLength(0);
+      expect(messages).toHaveLength(1);
+      expect(messages[0].parts).toHaveLength(1);
+      expect(messages[0].parts![0]).toEqual({
+        type: 'thinking',
+        text: 'internal thoughts',
+        isStreaming: false,
+      });
+      expect(messages[0].content).toBe('');
     });
 
     it('classifies command messages with name and args', async () => {

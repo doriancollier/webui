@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implement result-error-distinction, extended-thinking-visibility, and tool-progress-streaming
+- Implement result-error-distinction, extended-thinking-visibility, and tool-progress-streaming
 - Add rate-limit states to InferenceIndicator showcase
 - Add rate-limit countdown UI and prop threading
 - Add SubagentBlock to design system showcase

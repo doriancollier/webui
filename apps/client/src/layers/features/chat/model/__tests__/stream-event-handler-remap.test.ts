@@ -27,6 +27,7 @@ function createMinimalDeps(overrides?: {
   const onSessionIdChangeFn = overrides?.onSessionIdChange ?? vi.fn();
   const onSessionIdChangeRef = { current: onSessionIdChangeFn as ((newSessionId: string) => void) | undefined };
   const onStreamingDoneRef = { current: undefined };
+  const thinkingStartRef = { current: null };
 
   const handler = createStreamEventHandler({
     currentPartsRef,
@@ -36,6 +37,7 @@ function createMinimalDeps(overrides?: {
     estimatedTokensRef,
     textStreamingTimerRef,
     isTextStreamingRef,
+    thinkingStartRef,
     setMessages,
     setError,
     setStatus,

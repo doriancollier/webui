@@ -948,7 +948,14 @@
       "title": "Agent Permission Mode for Adapter Bindings",
       "created": "2026-03-15",
       "status": "specified"
+    },
+    {
+      "number": 136,
+      "slug": "system-status-compact-boundary",
+      "title": "Surface SDK System Status Messages & Compact Boundary Events",
+      "created": "2026-03-16",
+      "status": "ideation"
     }
   ],
-  "nextNumber": 136
+  "nextNumber": 137
 }

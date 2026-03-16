@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { wrapSdkQuery, sdkSimpleText, sdkToolCall, sdkTodoWrite, sdkError } from './sdk-scenarios.js';
+import { wrapSdkQuery, sdkSimpleText, sdkToolCall, sdkTodoWrite, sdkError, sdkTaskStarted, sdkTaskProgress, sdkTaskNotification } from './sdk-scenarios.js';
 
 describe('sdk-scenarios.ts', () => {
   describe('wrapSdkQuery', () => {
@@ -106,6 +106,36 @@ describe('sdk-scenarios.ts', () => {
       const errors = (result as { errors?: string[] } | undefined)?.errors;
       expect(errors).toBeDefined();
       expect(errors).toContain('oops');
+    });
+  });
+
+  describe('sdkTaskStarted', () => {
+    it('produces a system message with subtype task_started', () => {
+      const msg = sdkTaskStarted('task-42', 'Explore the codebase');
+      expect(msg.type).toBe('system');
+      expect((msg as { subtype: string }).subtype).toBe('task_started');
+      expect((msg as { task_id: string }).task_id).toBe('task-42');
+      expect((msg as { description: string }).description).toBe('Explore the codebase');
+    });
+  });
+
+  describe('sdkTaskProgress', () => {
+    it('includes usage metrics and optional lastToolName', () => {
+      const msg = sdkTaskProgress('task-42', 3, 5000, 'Read');
+      expect((msg as { subtype: string }).subtype).toBe('task_progress');
+      const usage = (msg as { usage: { tool_uses: number; duration_ms: number } }).usage;
+      expect(usage.tool_uses).toBe(3);
+      expect(usage.duration_ms).toBe(5000);
+      expect((msg as { last_tool_name: string }).last_tool_name).toBe('Read');
+    });
+  });
+
+  describe('sdkTaskNotification', () => {
+    it('includes status, summary, and usage', () => {
+      const msg = sdkTaskNotification('task-42', 'completed', 'Done exploring');
+      expect((msg as { subtype: string }).subtype).toBe('task_notification');
+      expect((msg as { status: string }).status).toBe('completed');
+      expect((msg as { summary: string }).summary).toBe('Done exploring');
     });
   });
 });

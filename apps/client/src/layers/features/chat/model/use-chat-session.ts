@@ -76,6 +76,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const textStreamingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTextStreamingRef = useRef(false);
   const [isTextStreaming, setIsTextStreaming] = useState(false);
+  const thinkingStartRef = useRef<number | null>(null);
   const [rateLimitRetryAfter, setRateLimitRetryAfter] = useState<number | null>(null);
   const [isRateLimited, setIsRateLimited] = useState(false);
   const rateLimitClearRef = useRef<(() => void) | null>(null);
@@ -140,6 +141,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         estimatedTokensRef,
         textStreamingTimerRef,
         isTextStreamingRef,
+        thinkingStartRef,
         setMessages,
         setError,
         setStatus,

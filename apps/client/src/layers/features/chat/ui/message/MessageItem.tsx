@@ -22,6 +22,8 @@ interface MessageItemProps {
   focusedOptionIndex?: number;
   /** Called when user approves/denies a tool or answers a question */
   onToolDecided?: (toolCallId: string) => void;
+  /** Called when user clicks "Retry" on an inline error block */
+  onRetry?: () => void;
 }
 
 /** Format a timestamp string to a short time display (HH:MM). */
@@ -48,6 +50,7 @@ export function MessageItem({
   onToolRef,
   focusedOptionIndex = -1,
   onToolDecided,
+  onRetry,
 }: MessageItemProps) {
   const isUser = message.role === 'user';
   const { showTimestamps } = useAppStore();
@@ -61,7 +64,7 @@ export function MessageItem({
 
   return (
     <MessageProvider
-      value={{ sessionId, isStreaming, activeToolCallId, onToolRef, focusedOptionIndex, onToolDecided }}
+      value={{ sessionId, isStreaming, activeToolCallId, onToolRef, focusedOptionIndex, onToolDecided, onRetry }}
     >
       <motion.div
         initial={isNew ? { opacity: 0, y: 8, x: isUser ? 12 : 0, scale: isUser ? 0.97 : 1 } : false}

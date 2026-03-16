@@ -23,6 +23,7 @@ function createMinimalDeps() {
   const onTaskEventRef = { current: undefined };
   const onSessionIdChangeRef = { current: undefined };
   const onStreamingDoneRef = { current: undefined };
+  const thinkingStartRef = { current: null };
 
   const handler = createStreamEventHandler({
     currentPartsRef,
@@ -32,6 +33,7 @@ function createMinimalDeps() {
     estimatedTokensRef,
     textStreamingTimerRef,
     isTextStreamingRef,
+    thinkingStartRef,
     setMessages,
     setError,
     setStatus,

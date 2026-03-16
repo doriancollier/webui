@@ -11,6 +11,8 @@ import { QuestionPrompt } from '../QuestionPrompt';
 import type { QuestionPromptHandle } from '../QuestionPrompt';
 import { useMessageContext } from './MessageContext';
 import { SubagentBlock } from '../SubagentBlock';
+import { ThinkingBlock } from '../ThinkingBlock';
+import { ErrorMessageBlock } from '../ErrorMessageBlock';
 
 /**
  * Determines whether a tool call should be visible based on auto-hide settings.
@@ -47,6 +49,7 @@ function AutoHideToolCall({
     toolName: string;
     input?: string;
     result?: string;
+    progressOutput?: string;
     status: 'pending' | 'running' | 'complete' | 'error';
   };
   autoHide: boolean;
@@ -69,6 +72,7 @@ function AutoHideToolCall({
               toolName: part.toolName,
               input: part.input || '',
               result: part.result,
+              progressOutput: part.progressOutput,
               status: part.status,
             }}
             defaultExpanded={expandToolCalls}
@@ -86,7 +90,7 @@ function AutoHideToolCall({
  * Reads session/interaction state from MessageContext instead of props.
  */
 export function AssistantMessageContent({ message }: { message: ChatMessage }) {
-  const { sessionId, isStreaming, activeToolCallId, onToolRef, focusedOptionIndex, onToolDecided } =
+  const { sessionId, isStreaming, activeToolCallId, onToolRef, focusedOptionIndex, onToolDecided, onRetry } =
     useMessageContext();
   const { expandToolCalls, autoHideToolCalls } = useAppStore();
   const parts = message.parts ?? [];
@@ -130,31 +134,54 @@ export function AssistantMessageContent({ message }: { message: ChatMessage }) {
         if (part.type === 'subagent') {
           return <SubagentBlock key={part.taskId} part={part} />;
         }
-        if (part.interactiveType === 'approval') {
-          const isActive = part.toolCallId === activeToolCallId;
+        if (part.type === 'error') {
           return (
-            <ToolApproval
-              key={part.toolCallId}
-              ref={isActive ? approvalRefCallback : undefined}
-              sessionId={sessionId}
-              toolCallId={part.toolCallId}
-              toolName={part.toolName}
-              input={part.input || ''}
-              isActive={isActive}
-              onDecided={onToolDecided ? () => onToolDecided(part.toolCallId) : undefined}
+            <ErrorMessageBlock
+              key={`error-${i}`}
+              message={part.message}
+              category={part.category}
+              details={part.details}
+              onRetry={onRetry}
             />
           );
         }
-        if (part.interactiveType === 'question' && part.questions) {
-          const isActive = part.toolCallId === activeToolCallId;
+        if (part.type === 'thinking') {
+          return (
+            <ThinkingBlock
+              key={`thinking-${i}`}
+              text={part.text}
+              isStreaming={part.isStreaming ?? false}
+              elapsedMs={part.elapsedMs}
+            />
+          );
+        }
+        // At this point part.type === 'tool_call' — all other variants have been handled above.
+        const toolPart = part;
+        if (toolPart.interactiveType === 'approval') {
+          const isActive = toolPart.toolCallId === activeToolCallId;
+          return (
+            <ToolApproval
+              key={toolPart.toolCallId}
+              ref={isActive ? approvalRefCallback : undefined}
+              sessionId={sessionId}
+              toolCallId={toolPart.toolCallId}
+              toolName={toolPart.toolName}
+              input={toolPart.input || ''}
+              isActive={isActive}
+              onDecided={onToolDecided ? () => onToolDecided(toolPart.toolCallId) : undefined}
+            />
+          );
+        }
+        if (toolPart.interactiveType === 'question' && toolPart.questions) {
+          const isActive = toolPart.toolCallId === activeToolCallId;
           return (
             <QuestionPrompt
-              key={part.toolCallId}
+              key={toolPart.toolCallId}
               ref={isActive ? questionRefCallback : undefined}
               sessionId={sessionId}
-              toolCallId={part.toolCallId}
-              questions={part.questions}
-              answers={part.answers}
+              toolCallId={toolPart.toolCallId}
+              questions={toolPart.questions}
+              answers={toolPart.answers}
               isActive={isActive}
               focusedOptionIndex={isActive ? focusedOptionIndex : -1}
             />
@@ -162,8 +189,8 @@ export function AssistantMessageContent({ message }: { message: ChatMessage }) {
         }
         return (
           <AutoHideToolCall
-            key={part.toolCallId}
-            part={part}
+            key={toolPart.toolCallId}
+            part={toolPart}
             autoHide={autoHideToolCalls}
             expandToolCalls={expandToolCalls}
           />

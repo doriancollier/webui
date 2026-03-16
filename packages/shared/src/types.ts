@@ -16,11 +16,14 @@ export type {
   StreamEvent,
   TextDelta,
   ToolCallEvent,
+  ToolProgressEvent,
   ApprovalEvent,
   QuestionOption,
   QuestionItem,
   QuestionPromptEvent,
+  ErrorCategory,
   ErrorEvent,
+  ErrorPart,
   RateLimitEvent,
   DoneEvent,
   SessionStatusEvent,
@@ -67,6 +70,8 @@ export type {
   SubagentProgressEvent,
   SubagentDoneEvent,
   SubagentPart,
+  ThinkingDelta,
+  ThinkingPart,
 } from './schemas.js';
 
 export type {

@@ -262,6 +262,47 @@ describe('mapSdkMessage', () => {
     });
   });
 
+  describe('tool_progress messages', () => {
+    it('emits tool_progress with toolCallId and content', async () => {
+      const events = await collectEvents(
+        mapSdkMessage(
+          {
+            type: 'tool_progress',
+            tool_use_id: 'tc-1',
+            content: 'Installing dependencies...\n',
+          } as unknown,
+          makeSession(),
+          'session-1',
+          makeToolState()
+        )
+      );
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('tool_progress');
+      expect((events[0].data as Record<string, unknown>).toolCallId).toBe('tc-1');
+      expect((events[0].data as Record<string, unknown>).content).toBe(
+        'Installing dependencies...\n'
+      );
+    });
+
+    it('emits event even for empty content', async () => {
+      const events = await collectEvents(
+        mapSdkMessage(
+          {
+            type: 'tool_progress',
+            tool_use_id: 'tc-2',
+            content: '',
+          } as unknown,
+          makeSession(),
+          'session-1',
+          makeToolState()
+        )
+      );
+      expect(events).toHaveLength(1);
+      expect(events[0].type).toBe('tool_progress');
+      expect((events[0].data as Record<string, unknown>).content).toBe('');
+    });
+  });
+
   describe('result messages', () => {
     it('emits session_status + done', async () => {
       const events = await collectEvents(

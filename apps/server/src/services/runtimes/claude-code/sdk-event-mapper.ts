@@ -1,7 +1,23 @@
 import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
-import type { StreamEvent } from '@dorkos/shared/types';
+import type { StreamEvent, ErrorCategory } from '@dorkos/shared/types';
 import type { AgentSession, ToolState } from './agent-types.js';
 import { buildTaskEvent, TASK_TOOL_NAMES } from './build-task-event.js';
+
+/** Map SDK result subtypes to user-facing error categories. */
+function mapErrorCategory(subtype: string): ErrorCategory {
+  switch (subtype) {
+    case 'error_max_turns':
+      return 'max_turns';
+    case 'error_during_execution':
+      return 'execution_error';
+    case 'error_max_budget_usd':
+      return 'budget_exceeded';
+    case 'error_max_structured_output_retries':
+      return 'output_format_error';
+    default:
+      return 'execution_error';
+  }
+}
 
 /**
  * Map a single SDK message to zero or more DorkOS StreamEvent objects.
@@ -84,7 +100,10 @@ export async function* mapSdkMessage(
 
     if (eventType === 'content_block_start') {
       const contentBlock = event.content_block as Record<string, unknown> | undefined;
-      if (contentBlock?.type === 'tool_use') {
+      if (contentBlock?.type === 'thinking') {
+        toolState.inThinking = true;
+        toolState.thinkingStartMs = Date.now();
+      } else if (contentBlock?.type === 'tool_use') {
         toolState.resetTaskInput();
         toolState.setToolState(true, contentBlock.name as string, contentBlock.id as string);
         yield {
@@ -98,7 +117,9 @@ export async function* mapSdkMessage(
       }
     } else if (eventType === 'content_block_delta') {
       const delta = event.delta as Record<string, unknown> | undefined;
-      if (delta?.type === 'text_delta' && !toolState.inTool) {
+      if (delta?.type === 'thinking_delta' && toolState.inThinking) {
+        yield { type: 'thinking_delta', data: { text: delta.thinking as string } };
+      } else if (delta?.type === 'text_delta' && !toolState.inTool) {
         yield { type: 'text_delta', data: { text: delta.text as string } };
       } else if (delta?.type === 'input_json_delta' && toolState.inTool) {
         if (TASK_TOOL_NAMES.has(toolState.currentToolName)) {
@@ -115,7 +136,9 @@ export async function* mapSdkMessage(
         };
       }
     } else if (eventType === 'content_block_stop') {
-      if (toolState.inTool) {
+      if (toolState.inThinking) {
+        toolState.inThinking = false;
+      } else if (toolState.inTool) {
         const wasTaskTool = TASK_TOOL_NAMES.has(toolState.currentToolName);
         const taskToolName = toolState.currentToolName;
         yield {
@@ -161,6 +184,19 @@ export async function* mapSdkMessage(
     return;
   }
 
+  // Handle tool progress (intermediate output from long-running tools)
+  if (message.type === 'tool_progress') {
+    const progress = message as { tool_use_id: string; content: string };
+    yield {
+      type: 'tool_progress',
+      data: {
+        toolCallId: progress.tool_use_id,
+        content: progress.content,
+      },
+    };
+    return;
+  }
+
   // Handle rate limit events
   if (message.type === 'rate_limit_event') {
     const retryAfter = (message as Record<string, unknown>).retry_after as number | undefined;
@@ -179,6 +215,8 @@ export async function* mapSdkMessage(
       | Record<string, Record<string, unknown>>
       | undefined;
     const firstModelUsage = modelUsageMap ? Object.values(modelUsageMap)[0] : undefined;
+
+    // Always emit session_status with final cost/token/model data
     yield {
       type: 'session_status',
       data: {
@@ -189,6 +227,24 @@ export async function* mapSdkMessage(
         contextMaxTokens: firstModelUsage?.contextWindow as number | undefined,
       },
     };
+
+    // Emit error event if the result is an error subtype
+    const subtype = result.subtype as string | undefined;
+    if (subtype && subtype !== 'success') {
+      const errors = result.errors as string[] | undefined;
+      const category = mapErrorCategory(subtype);
+      yield {
+        type: 'error',
+        data: {
+          message: errors?.[0] ?? 'An unexpected error occurred.',
+          code: subtype,
+          category,
+          details: errors?.join('\n'),
+        },
+      };
+    }
+
+    // Always emit done to trigger client cleanup
     yield {
       type: 'done',
       data: { sessionId },

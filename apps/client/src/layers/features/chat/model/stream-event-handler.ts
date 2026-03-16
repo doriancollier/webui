@@ -1,5 +1,6 @@
 import type {
   TextDelta,
+  ThinkingDelta,
   ToolCallEvent,
   ApprovalEvent,
   QuestionPromptEvent,
@@ -10,6 +11,7 @@ import type {
   SubagentStartedEvent,
   SubagentProgressEvent,
   SubagentDoneEvent,
+  ToolProgressEvent,
 } from '@dorkos/shared/types';
 import { TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ToolCallState } from './chat-types';
@@ -37,6 +39,7 @@ interface StreamEventDeps {
   setRateLimitRetryAfter: (retryAfter: number | null) => void;
   setIsRateLimited: (limited: boolean) => void;
   rateLimitClearRef: React.MutableRefObject<(() => void) | null>;
+  thinkingStartRef: React.MutableRefObject<number | null>;
   sessionId: string;
   onTaskEventRef: React.MutableRefObject<((event: TaskUpdateEvent) => void) | undefined>;
   onSessionIdChangeRef: React.MutableRefObject<((newSessionId: string) => void) | undefined>;
@@ -56,6 +59,7 @@ export function deriveFromParts(parts: MessagePart[]): { content: string; toolCa
         toolName: part.toolName,
         input: part.input || '',
         result: part.result,
+        progressOutput: part.progressOutput,
         status: part.status,
         interactiveType: part.interactiveType,
         questions: part.questions,
@@ -76,6 +80,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
     estimatedTokensRef,
     textStreamingTimerRef,
     isTextStreamingRef,
+    thinkingStartRef,
     setMessages,
     setError,
     setStatus,
@@ -154,7 +159,38 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
     }
 
     switch (type) {
+      case 'thinking_delta': {
+        const { text } = data as ThinkingDelta;
+        const parts = currentPartsRef.current;
+        const lastPart = parts[parts.length - 1];
+        if (lastPart && lastPart.type === 'thinking') {
+          currentPartsRef.current = [
+            ...parts.slice(0, -1),
+            { ...lastPart, text: lastPart.text + text },
+          ];
+        } else {
+          // First thinking delta — record start time and create part
+          thinkingStartRef.current = Date.now();
+          currentPartsRef.current = [
+            ...parts,
+            { type: 'thinking', text, isStreaming: true } as MessagePart,
+          ];
+        }
+        updateAssistantMessage(assistantId);
+        break;
+      }
       case 'text_delta': {
+        // Finalize any streaming thinking part — thinking phase is over
+        if (thinkingStartRef.current !== null) {
+          const elapsedMs = Date.now() - thinkingStartRef.current;
+          thinkingStartRef.current = null;
+          const updatedParts = currentPartsRef.current.map((p) =>
+            p.type === 'thinking' && p.isStreaming
+              ? { ...p, isStreaming: false, elapsedMs }
+              : p
+          );
+          currentPartsRef.current = updatedParts;
+        }
         const { text } = data as TextDelta;
         const parts = currentPartsRef.current;
         const lastPart = parts[parts.length - 1];
@@ -211,6 +247,17 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         updateAssistantMessage(assistantId);
         break;
       }
+      case 'tool_progress': {
+        const tp = data as ToolProgressEvent;
+        const existing = findToolCallPart(tp.toolCallId);
+        if (existing) {
+          existing.progressOutput = (existing.progressOutput || '') + tp.content;
+        } else {
+          console.warn('[stream] tool_progress: unknown toolCallId', tp.toolCallId);
+        }
+        updateAssistantMessage(assistantId);
+        break;
+      }
       case 'tool_call_end': {
         const tc = data as ToolCallEvent;
         const existing = findToolCallPart(tc.toolCallId);
@@ -228,6 +275,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         if (existing) {
           existing.result = tc.result;
           existing.status = 'complete';
+          existing.progressOutput = undefined;
           // Mark AskUserQuestion as answered so QuestionPrompt shows collapsed on remount
           if (existing.interactiveType === 'question' && !existing.answers) {
             existing.answers = {};
@@ -284,9 +332,21 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         break;
       }
       case 'error': {
-        const { message } = data as ErrorEvent;
-        setError(message);
-        setStatus('error');
+        const errorData = data as ErrorEvent;
+        // SDK result errors with a category render inline in the message stream
+        if (errorData.category) {
+          currentPartsRef.current.push({
+            type: 'error',
+            message: errorData.message,
+            category: errorData.category,
+            details: errorData.details,
+          });
+          updateAssistantMessage(assistantId);
+        } else {
+          // Transport-level errors (no category) use the banner
+          setError(errorData.message);
+          setStatus('error');
+        }
         break;
       }
       case 'rate_limit': {
@@ -372,6 +432,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         }
         streamStartTimeRef.current = null;
         estimatedTokensRef.current = 0;
+        thinkingStartRef.current = null;
         setStreamStartTime(null);
         setEstimatedTokens(0);
         if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);

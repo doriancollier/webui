@@ -62,6 +62,7 @@ interface MessageListProps {
   onToolRef?: (handle: InteractiveToolHandle | null) => void;
   focusedOptionIndex?: number;
   onToolDecided?: (toolCallId: string) => void;
+  onRetry?: () => void;
 }
 
 export const MessageList = forwardRef<MessageListHandle, MessageListProps>(function MessageList(
@@ -82,6 +83,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     onToolRef,
     focusedOptionIndex,
     onToolDecided,
+    onRetry,
   },
   ref
 ) {
@@ -294,6 +296,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
                   onToolRef={onToolRef}
                   focusedOptionIndex={focusedOptionIndex}
                   onToolDecided={onToolDecided}
+                  onRetry={onRetry}
                 />
               </div>
             );

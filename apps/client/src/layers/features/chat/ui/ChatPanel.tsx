@@ -192,6 +192,14 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     setInput(draftRef.current);
   }, [messageQueue, setInput]);
 
+  /** Re-send the last user message after an inline execution_error. */
+  const handleRetry = useCallback(() => {
+    const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
+    if (lastUserMsg?.content) {
+      submitContent(lastUserMsg.content);
+    }
+  }, [messages, submitContent]);
+
   const handleQueueRemove = useCallback(
     (index: number) => {
       if (messageQueue.editingIndex === index) {
@@ -286,6 +294,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             onToolRef={handleToolRef}
             focusedOptionIndex={focusedOptionIndex}
             onToolDecided={markToolCallResponded}
+            onRetry={handleRetry}
           />
         )}
 
