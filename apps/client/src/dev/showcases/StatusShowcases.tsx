@@ -3,15 +3,9 @@ import { StreamingText } from '@/layers/features/chat/ui/StreamingText';
 import { InferenceIndicator } from '@/layers/features/chat/ui/InferenceIndicator';
 import { TaskListPanel } from '@/layers/features/chat/ui/TaskListPanel';
 import { PlaygroundSection } from '../PlaygroundSection';
+import { ShowcaseLabel } from '../ShowcaseLabel';
+import { ShowcaseDemo } from '../ShowcaseDemo';
 import { SAMPLE_TASKS } from '../mock-chat-data';
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
-      {children}
-    </div>
-  );
-}
 
 const SHORT_TEXT = 'The refactoring is complete. All tests pass.';
 
@@ -47,68 +41,108 @@ export function StatusShowcases() {
         title="StreamingText"
         description="Markdown rendering with streaming cursor."
       >
-        <Label>Short text</Label>
-        <StreamingText content={SHORT_TEXT} />
+        <ShowcaseLabel>Short text</ShowcaseLabel>
+        <ShowcaseDemo>
+          <StreamingText content={SHORT_TEXT} />
+        </ShowcaseDemo>
 
-        <Label>Markdown with code block</Label>
-        <StreamingText content={MARKDOWN_TEXT} />
+        <ShowcaseLabel>Markdown with code block</ShowcaseLabel>
+        <ShowcaseDemo>
+          <StreamingText content={MARKDOWN_TEXT} />
+        </ShowcaseDemo>
 
-        <Label>Code block only</Label>
-        <StreamingText content={CODE_BLOCK_TEXT} />
+        <ShowcaseLabel>Code block only</ShowcaseLabel>
+        <ShowcaseDemo>
+          <StreamingText content={CODE_BLOCK_TEXT} />
+        </ShowcaseDemo>
 
-        <Label>Streaming cursor active</Label>
-        <StreamingText content="Working on it..." isStreaming />
+        <ShowcaseLabel>Streaming cursor active</ShowcaseLabel>
+        <ShowcaseDemo>
+          <StreamingText content="Working on it..." isStreaming />
+        </ShowcaseDemo>
       </PlaygroundSection>
 
       <PlaygroundSection
         title="InferenceIndicator"
         description="Status indicator showing agent activity."
       >
-        <Label>Streaming (live timer)</Label>
-        <InferenceIndicator
-          status="streaming"
-          streamStartTime={streamStart}
-          estimatedTokens={1250}
-        />
+        <ShowcaseLabel>Streaming (live timer)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <InferenceIndicator
+            status="streaming"
+            streamStartTime={streamStart}
+            estimatedTokens={1250}
+          />
+        </ShowcaseDemo>
 
-        <Label>Waiting for approval</Label>
-        <InferenceIndicator
-          status="streaming"
-          streamStartTime={streamStart - 5000}
-          estimatedTokens={800}
-          isWaitingForUser
-          waitingType="approval"
-        />
+        <ShowcaseLabel>Waiting for approval</ShowcaseLabel>
+        <ShowcaseDemo>
+          <InferenceIndicator
+            status="streaming"
+            streamStartTime={streamStart - 5000}
+            estimatedTokens={800}
+            isWaitingForUser
+            waitingType="approval"
+          />
+        </ShowcaseDemo>
 
-        <Label>Waiting for question</Label>
-        <InferenceIndicator
-          status="streaming"
-          streamStartTime={streamStart - 3000}
-          estimatedTokens={600}
-          isWaitingForUser
-          waitingType="question"
-        />
+        <ShowcaseLabel>Waiting for question</ShowcaseLabel>
+        <ShowcaseDemo>
+          <InferenceIndicator
+            status="streaming"
+            streamStartTime={streamStart - 3000}
+            estimatedTokens={600}
+            isWaitingForUser
+            waitingType="question"
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Rate limited (with countdown)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <InferenceIndicator
+            status="streaming"
+            streamStartTime={streamStart - 10000}
+            estimatedTokens={400}
+            isRateLimited
+            rateLimitRetryAfter={42}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Rate limited (no duration)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <InferenceIndicator
+            status="streaming"
+            streamStartTime={streamStart - 10000}
+            estimatedTokens={400}
+            isRateLimited
+            rateLimitRetryAfter={null}
+          />
+        </ShowcaseDemo>
       </PlaygroundSection>
 
       <PlaygroundSection
         title="TaskListPanel"
         description="Task progress panel with mixed statuses."
       >
-        <Label>Expanded</Label>
-        <TaskListPanel
-          tasks={SAMPLE_TASKS}
-          activeForm="Implementing authentication service"
-          isCollapsed={taskCollapsed}
-          onToggleCollapse={() => setTaskCollapsed((c) => !c)}
-        />
+        <ShowcaseLabel>Expanded</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TaskListPanel
+            tasks={SAMPLE_TASKS}
+            activeForm="Implementing authentication service"
+            isCollapsed={taskCollapsed}
+            onToggleCollapse={() => setTaskCollapsed((c) => !c)}
+          />
+        </ShowcaseDemo>
 
-        <Label>Collapsed</Label>
-        <TaskListPanel
-          tasks={SAMPLE_TASKS}
-          activeForm="Implementing authentication service"
-          isCollapsed={taskCollapsed2}
-          onToggleCollapse={() => setTaskCollapsed2((c) => !c)}
-        />
+        <ShowcaseLabel>Collapsed</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TaskListPanel
+            tasks={SAMPLE_TASKS}
+            activeForm="Implementing authentication service"
+            isCollapsed={taskCollapsed2}
+            onToggleCollapse={() => setTaskCollapsed2((c) => !c)}
+          />
+        </ShowcaseDemo>
       </PlaygroundSection>
     </>
   );
