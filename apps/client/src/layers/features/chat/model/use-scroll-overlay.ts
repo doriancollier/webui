@@ -33,12 +33,14 @@ export function useScrollOverlay(
     const prevCount = prevMessageCountRef.current;
     prevMessageCountRef.current = messages.length;
     if (messages.length > prevCount && !isAtBottom) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- detecting new messages arriving while scrolled up
       setHasNewMessages(true);
     }
   }, [messages.length, isAtBottom]);
 
   useEffect(() => {
     if (isAtBottom) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing new-message indicator when user scrolls to bottom
       setHasNewMessages(false);
     }
   }, [isAtBottom]);

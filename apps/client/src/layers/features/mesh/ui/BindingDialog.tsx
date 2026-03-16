@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Shield, Trash2 } from 'lucide-react';
+import { ChevronRight, Trash2 } from 'lucide-react';
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -19,7 +19,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
   Badge,
-  Switch,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,26 +34,7 @@ import { useRegisteredAgents } from '@/layers/entities/mesh';
 import { cn } from '@/layers/shared/lib';
 import type { SessionStrategy } from '@dorkos/shared/relay-schemas';
 import type { PermissionMode } from '@dorkos/shared/schemas';
-
-/** Options for the session strategy selector with human-readable descriptions. */
-const SESSION_STRATEGIES: { value: SessionStrategy; label: string; description: string }[] = [
-  {
-    value: 'per-chat',
-    label: 'Per Chat',
-    description:
-      'One session per chat/conversation. Messages from the same chat resume the same session.',
-  },
-  {
-    value: 'per-user',
-    label: 'Per User',
-    description: 'One session per user. All messages from a user share a session across chats.',
-  },
-  {
-    value: 'stateless',
-    label: 'Stateless',
-    description: 'Every message starts a new session. No conversation history.',
-  },
-];
+import { BindingAdvancedSection } from './BindingAdvancedSection';
 
 const CHANNEL_TYPE_OPTIONS: { value: string; label: string }[] = [
   { value: 'dm', label: 'Direct Message' },
@@ -69,14 +49,6 @@ const CHANNEL_TYPE_OPTIONS: { value: string; label: string }[] = [
  * sentinel and convert back to undefined before submitting.
  */
 const SELECT_ANY = '__any__';
-
-/** Human-readable labels and descriptions for each permission mode. */
-const PERMISSION_MODES: { value: PermissionMode; label: string; description: string }[] = [
-  { value: 'default', label: 'Default', description: 'Agent asks for approval before using any tools' },
-  { value: 'plan', label: 'Plan Only', description: 'Agent can read files but asks before making changes' },
-  { value: 'acceptEdits', label: 'Accept Edits', description: 'Agent can read and write files; asks before running shell commands' },
-  { value: 'bypassPermissions', label: 'Full Access', description: 'Agent can use all tools without asking for approval' },
-];
 
 /** Values submitted when the user confirms the dialog. */
 export interface BindingFormValues {
@@ -167,6 +139,7 @@ export function BindingDialog({
   );
 
   // Sync all state when initialValues change (e.g. opening a different binding to edit)
+  /* eslint-disable react-hooks/set-state-in-effect -- batch-reset form state from new initialValues prop */
   useEffect(() => {
     if (initialValues) {
       setAdapterId(initialValues.adapterId ?? '');
@@ -193,6 +166,7 @@ export function BindingDialog({
       }
     }
   }, [initialValues]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const { data: catalog = [] } = useAdapterCatalog();
   const { data: agentsData } = useRegisteredAgents();
@@ -210,7 +184,6 @@ export function BindingDialog({
 
   const agentOptions = agentsData?.agents ?? [];
 
-  const selectedStrategy = SESSION_STRATEGIES.find((s) => s.value === strategy);
   // SELECT_ANY means "no filter selected" — convert back to undefined before submitting.
   const hasChatFilter = chatId !== SELECT_ANY || channelType !== SELECT_ANY;
   // Advanced section has non-default values when strategy or permissions deviate from defaults.
@@ -408,127 +381,24 @@ export function BindingDialog({
           </Collapsible>
 
           {/* Advanced — collapsible: session strategy + permission toggles */}
-          <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <ChevronRight
-                className={cn(
-                  'size-3.5 transition-transform',
-                  advancedOpen && 'rotate-90',
-                )}
-              />
-              Advanced
-              {hasAdvancedChanges && (
-                <Badge variant="secondary" className="text-xs">
-                  Modified
-                </Badge>
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-4 pt-3">
-              {/* Session strategy selector */}
-              <div className="space-y-1.5">
-                <Label htmlFor="binding-session-strategy">Session Strategy</Label>
-                <Select value={strategy} onValueChange={(v) => setStrategy(v as SessionStrategy)}>
-                  <SelectTrigger id="binding-session-strategy" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SESSION_STRATEGIES.map((s) => (
-                      <SelectItem key={s.value} value={s.value}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {selectedStrategy && (
-                  <p className="text-xs text-muted-foreground">{selectedStrategy.description}</p>
-                )}
-              </div>
-
-              {/* Permission mode selector */}
-              <div className="space-y-1.5">
-                <Label htmlFor="binding-permission-mode">Permission Mode</Label>
-                <Select value={permissionMode} onValueChange={handlePermissionModeChange}>
-                  <SelectTrigger id="binding-permission-mode" className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {PERMISSION_MODES.map((m) => (
-                      <SelectItem key={m.value} value={m.value}>
-                        {m.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {PERMISSION_MODES.find((m) => m.value === permissionMode) && (
-                  <p className="text-xs text-muted-foreground">
-                    {PERMISSION_MODES.find((m) => m.value === permissionMode)!.description}
-                  </p>
-                )}
-              </div>
-
-              {/* bypassPermissions security warning */}
-              <AlertDialog open={bypassWarningOpen} onOpenChange={setBypassWarningOpen}>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Enable Full Access?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Any user who can send messages through this adapter (e.g., members of your
-                      Slack workspace) will be able to trigger unrestricted agent actions, including
-                      file system access and command execution.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={() => setPermissionMode('bypassPermissions')}
-                      className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-                    >
-                      Enable Full Access
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-
-              {/* Permission toggles */}
-              <div className="space-y-2.5">
-                <p className="text-xs font-medium text-muted-foreground">Permissions</p>
-                <div className="flex cursor-pointer items-center justify-between gap-3">
-                  <Label htmlFor="perm-initiate" className="flex cursor-pointer items-center gap-1.5 text-xs font-normal">
-                    <Shield className="size-3 text-muted-foreground" />
-                    Allow agent to initiate messages
-                  </Label>
-                  <Switch
-                    id="perm-initiate"
-                    checked={canInitiate}
-                    onCheckedChange={setCanInitiate}
-                    aria-label="Allow agent to initiate messages"
-                  />
-                </div>
-                <div className="flex cursor-pointer items-center justify-between gap-3">
-                  <Label htmlFor="perm-reply" className="cursor-pointer text-xs font-normal">
-                    Allow agent to reply
-                  </Label>
-                  <Switch
-                    id="perm-reply"
-                    checked={canReply}
-                    onCheckedChange={setCanReply}
-                    aria-label="Allow agent to reply"
-                  />
-                </div>
-                <div className="flex cursor-pointer items-center justify-between gap-3">
-                  <Label htmlFor="perm-receive" className="cursor-pointer text-xs font-normal">
-                    Receive inbound messages
-                  </Label>
-                  <Switch
-                    id="perm-receive"
-                    checked={canReceive}
-                    onCheckedChange={setCanReceive}
-                    aria-label="Receive inbound messages"
-                  />
-                </div>
-              </div>
-            </CollapsibleContent>
-          </Collapsible>
+          <BindingAdvancedSection
+            strategy={strategy}
+            onStrategyChange={setStrategy}
+            permissionMode={permissionMode}
+            onPermissionModeChange={handlePermissionModeChange}
+            bypassWarningOpen={bypassWarningOpen}
+            onBypassWarningOpenChange={setBypassWarningOpen}
+            onBypassConfirm={() => setPermissionMode('bypassPermissions')}
+            canInitiate={canInitiate}
+            onCanInitiateChange={setCanInitiate}
+            canReply={canReply}
+            onCanReplyChange={setCanReply}
+            canReceive={canReceive}
+            onCanReceiveChange={setCanReceive}
+            open={advancedOpen}
+            onOpenChange={setAdvancedOpen}
+            hasChanges={hasAdvancedChanges}
+          />
         </div>
 
         <ResponsiveDialogFooter className="border-t px-4 py-3">

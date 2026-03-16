@@ -124,6 +124,7 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule, initial
   });
 
   // Reset form when dialog opens or switches between create/edit
+  /* eslint-disable react-hooks/set-state-in-effect -- reset/populate form state when dialog opens or edit target changes */
   useEffect(() => {
     if (!open) {
       // Reset on close
@@ -147,12 +148,13 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule, initial
       setScheduleTarget('agent');
       setStep('preset-picker');
     }
-   
   }, [editSchedule, open, initialPreset, initialAgentId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Wire external trigger from usePulsePresetDialog (e.g. from SchedulesView sidebar)
   const { pendingPreset, externalTrigger, clear } = usePulsePresetDialog();
 
+  /* eslint-disable react-hooks/set-state-in-effect -- apply externally triggered preset from sidebar action */
   useEffect(() => {
     if (externalTrigger && pendingPreset) {
       setAppliedPreset(pendingPreset);
@@ -161,6 +163,7 @@ export function CreateScheduleDialog({ open, onOpenChange, editSchedule, initial
       clear();
     }
   }, [externalTrigger, pendingPreset, clear, initialAgentId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));

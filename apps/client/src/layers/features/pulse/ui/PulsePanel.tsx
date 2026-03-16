@@ -49,6 +49,7 @@ export function PulsePanel() {
   }, [meshAgentsData]);
 
   // Open edit dialog for a specific schedule via store
+  /* eslint-disable react-hooks/set-state-in-effect -- respond to store-driven navigation to edit a schedule */
   useEffect(() => {
     if (!pulseEditScheduleId || isLoading) return;
     const target = allSchedules.find((s) => s.id === pulseEditScheduleId);
@@ -58,6 +59,7 @@ export function PulsePanel() {
     }
     setPulseEditScheduleId(null);
   }, [pulseEditScheduleId, allSchedules, isLoading, setPulseEditScheduleId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Resolve filtered agent name for the filter chip
   const filterAgentName = useMemo(() => {
@@ -67,12 +69,14 @@ export function PulsePanel() {
 
   const { externalTrigger } = usePulsePresetDialog();
 
+  /* eslint-disable react-hooks/set-state-in-effect -- open dialog in response to external preset trigger */
   useEffect(() => {
     if (externalTrigger) {
       setEditSchedule(undefined);
       setDialogOpen(true);
     }
   }, [externalTrigger]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleCreateWithPreset = (preset: PulsePreset) => {
     setAppliedPresetForDialog(preset);

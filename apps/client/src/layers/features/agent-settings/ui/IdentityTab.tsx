@@ -41,6 +41,7 @@ export function IdentityTab({ agent, projectPath: _projectPath, onUpdate }: Iden
 
   // Sync local state only when a different agent is loaded (not on every server confirmation)
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting local input state when a different agent is loaded
     setNameValue(agent.name);
   }, [agent.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -70,6 +71,7 @@ export function IdentityTab({ agent, projectPath: _projectPath, onUpdate }: Iden
   const descTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting local input state when a different agent is loaded
     setDescValue(agent.description);
   }, [agent.id]); // eslint-disable-line react-hooks/exhaustive-deps
 

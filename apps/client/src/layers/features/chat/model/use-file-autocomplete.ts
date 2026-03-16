@@ -49,12 +49,14 @@ export function useFileAutocomplete({
 
   // Reset selectedIndex when filter changes or palette opens/closes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting selection index in response to query/visibility changes
     setFileSelectedIndex(0);
   }, [fileQuery, showFiles]);
 
   // Clamp fileSelectedIndex when filteredFiles shrinks
   useEffect(() => {
     if (filteredFiles.length > 0 && fileSelectedIndex >= filteredFiles.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clamping index to valid range after list shrinks
       setFileSelectedIndex(filteredFiles.length - 1);
     }
   }, [filteredFiles.length, fileSelectedIndex]);

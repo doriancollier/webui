@@ -33,6 +33,7 @@ export function useToolShortcuts(
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting keyboard navigation state when active tool changes
     setFocusedOptionIndex(0);
     setActiveOptionCount(0);
   }, [activeInteraction?.toolCallId]);

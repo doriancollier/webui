@@ -211,6 +211,7 @@ export function CommandPaletteDialog() {
   // simultaneously in the store, so the value isn't available in handleOpenChange's closure.
   useEffect(() => {
     if (globalPaletteOpen && globalPaletteInitialSearch != null) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- consuming initial search text injected by external trigger (e.g. "@" from AgentIdentityChip)
       setSearch(globalPaletteInitialSearch);
       clearGlobalPaletteInitialSearch();
       // Place cursor after the prefix so typing appends instead of replacing.

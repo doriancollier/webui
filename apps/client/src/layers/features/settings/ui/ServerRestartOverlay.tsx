@@ -50,12 +50,14 @@ export function ServerRestartOverlay({ open, onDismiss }: ServerRestartOverlayPr
     }, POLL_INTERVAL_MS);
   }, [transport, clearTimers]);
 
+  /* eslint-disable react-hooks/set-state-in-effect -- start server health polling when overlay opens */
   useEffect(() => {
     if (open) {
       startPolling();
     }
     return clearTimers;
   }, [open, startPolling, clearTimers]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   if (!open) return null;
 

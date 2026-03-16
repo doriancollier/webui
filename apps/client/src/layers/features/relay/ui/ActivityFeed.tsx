@@ -272,6 +272,7 @@ export function ActivityFeed({
       ) : (
         <div className="space-y-2">
           <AnimatePresence mode="popLayout">
+            {/* eslint-disable-next-line react-hooks/refs -- initialIdsRef is a stable snapshot set once on first data load */}
             {filteredConversations.map((conv) => {
               const isNew = initialIdsRef.current !== null && !initialIdsRef.current.has(conv.id);
               const animProps = isNew ? NEW_ITEM_ANIMATION : HISTORY_ITEM_ANIMATION;

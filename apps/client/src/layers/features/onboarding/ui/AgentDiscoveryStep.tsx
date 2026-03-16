@@ -49,6 +49,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
   useEffect(() => {
     if (!autoStarted.current) {
       autoStarted.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- initializing scan state on first mount
       setHasStarted(true);
       startScan();
     }

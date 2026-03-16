@@ -94,6 +94,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
   const prevConnectedRef = useRef<boolean | undefined>(undefined);
 
   // Sync state from server config
+  /* eslint-disable react-hooks/set-state-in-effect -- sync local UI state from server tunnel config push */
   useEffect(() => {
     if (tunnel?.connected && tunnel?.url) {
       setState('connected');
@@ -103,9 +104,11 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
       setUrl(null);
     }
   }, [tunnel?.connected, tunnel?.url, state]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Sync domain from server config
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing local domain input from server config
     if (tunnel?.domain) setDomain(tunnel.domain);
   }, [tunnel?.domain]);
 
@@ -146,6 +149,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
   }, [state]);
 
   // Latency measurement when connected and dialog is open
+  /* eslint-disable react-hooks/set-state-in-effect -- periodic latency measurement via interval */
   useEffect(() => {
     if (state !== 'connected' || !url || !open) {
       setLatencyMs(null);
@@ -166,6 +170,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
     const interval = setInterval(measure, LATENCY_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [state, url, open]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleToggle = useCallback(
     async (checked: boolean) => {

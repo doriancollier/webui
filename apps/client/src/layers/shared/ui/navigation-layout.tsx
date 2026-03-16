@@ -86,6 +86,7 @@ function NavigationLayout({ children, value, onValueChange, className }: Navigat
     return () => setHasDialogHeader(false);
   }, []);
 
+  // eslint-disable-next-line react-hooks/refs -- itemsRef is synchronized via itemVersion state counter
   const activeLabel = itemsRef.current.get(value) ?? '';
 
   // Reset drill-in when viewport switches to desktop

@@ -51,12 +51,14 @@ export function useCommandPalette({
 
   // Reset selectedIndex when filter changes or palette opens/closes
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resetting selection index in response to query/visibility changes
     setSelectedIndex(0);
   }, [commandQuery, showCommands]);
 
   // Clamp selectedIndex when filteredCommands shrinks
   useEffect(() => {
     if (filteredCommands.length > 0 && selectedIndex >= filteredCommands.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clamping index to valid range after list shrinks
       setSelectedIndex(filteredCommands.length - 1);
     }
   }, [filteredCommands.length, selectedIndex]);

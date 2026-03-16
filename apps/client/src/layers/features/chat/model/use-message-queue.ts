@@ -48,6 +48,7 @@ export function useMessageQueue({
 
   // Stable ref for onFlush to avoid stale closures in the auto-flush effect
   const onFlushRef = useRef(onFlush);
+  // eslint-disable-next-line react-hooks/refs -- latest-callback ref pattern to avoid stale closures
   onFlushRef.current = onFlush;
 
   // Track previous status to detect streaming→idle transition

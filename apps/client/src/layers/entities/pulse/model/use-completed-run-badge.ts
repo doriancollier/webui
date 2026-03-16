@@ -19,8 +19,7 @@ interface CompletedRunBadge {
 export function useCompletedRunBadge(enabled = true): CompletedRunBadge {
   const { data: runs } = useRuns({ limit: 50 }, enabled);
   const prevRunningIdsRef = useRef<Set<string>>(new Set());
-  const unviewedCountRef = useRef(0);
-  const [, forceUpdate] = useState(0);
+  const [unviewedCount, setUnviewedCount] = useState(0);
 
   // Track which runs were previously "running"
   useEffect(() => {
@@ -41,21 +40,19 @@ export function useCompletedRunBadge(enabled = true): CompletedRunBadge {
     }
 
     if (newCompletions > 0) {
-      unviewedCountRef.current += newCompletions;
-      forceUpdate((n) => n + 1);
+      setUnviewedCount((prev) => prev + newCompletions);
     }
 
     prevRunningIdsRef.current = currentRunning;
   }, [runs]);
 
   const clearBadge = useCallback(() => {
-    unviewedCountRef.current = 0;
+    setUnviewedCount(0);
     localStorage.setItem(STORAGE_KEY, new Date().toISOString());
-    forceUpdate((n) => n + 1);
   }, []);
 
   return {
-    unviewedCount: unviewedCountRef.current,
+    unviewedCount,
     clearBadge,
   };
 }

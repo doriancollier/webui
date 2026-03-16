@@ -119,9 +119,11 @@ export function useSessionStatus(
   // This eliminates the render gap where localModel is null but session?.model is stale.
   useEffect(() => {
     if (localModel !== null && session?.model === localModel) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing optimistic override once server confirms the value
       setLocalModel(null);
     }
     if (localPermissionMode !== null && session?.permissionMode === localPermissionMode) {
+       
       setLocalPermissionMode(null);
     }
   }, [session?.model, session?.permissionMode, localModel, localPermissionMode]);

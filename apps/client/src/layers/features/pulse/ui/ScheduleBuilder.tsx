@@ -250,6 +250,7 @@ export function ScheduleBuilder({ value, onChange }: ScheduleBuilderProps) {
   const prevValueRef = useRef(value);
 
   // Sync from external value changes (e.g., edit mode)
+  /* eslint-disable react-hooks/set-state-in-effect -- sync internal builder state from external cron value */
   useEffect(() => {
     if (value === prevValueRef.current) return;
     prevValueRef.current = value;
@@ -261,6 +262,7 @@ export function ScheduleBuilder({ value, onChange }: ScheduleBuilderProps) {
       setMode('cron');
     }
   }, [value]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   function emitChange(newConfig: SimpleConfig) {
     setConfig(newConfig);
