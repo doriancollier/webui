@@ -1,7 +1,7 @@
 ---
 number: 130
 title: Derive Binding CWD from Agent Registry Instead of Storing on Binding
-status: draft
+status: proposed
 created: 2026-03-14
 spec: remove-binding-projectpath
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: remove-binding-projectpath)
+Proposed
 
 ## Context
 

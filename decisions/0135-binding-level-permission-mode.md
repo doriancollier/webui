@@ -1,7 +1,7 @@
 ---
 number: 135
 title: Binding-Level Permission Mode for Adapter Sessions
-status: draft
+status: proposed
 created: 2026-03-15
 spec: agent-permission-mode
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: agent-permission-mode)
+Proposed
 
 ## Context
 

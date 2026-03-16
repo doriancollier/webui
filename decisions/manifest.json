@@ -6,7 +6,7 @@
       "number": 135,
       "slug": "binding-level-permission-mode",
       "title": "Binding-Level Permission Mode for Adapter Sessions",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-15",
       "extractedFrom": "agent-permission-mode",
       "specSlug": "agent-permission-mode"
@@ -15,7 +15,7 @@
       "number": 133,
       "slug": "semantic-health-status-over-raw-metrics",
       "title": "Semantic Health Status Over Raw Metrics",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-15",
       "extractedFrom": "relay-panel-redesign",
       "specSlug": "relay-panel-redesign"
@@ -24,7 +24,7 @@
       "number": 132,
       "slug": "two-tab-information-architecture-for-relay-panel",
       "title": "Two-Tab Information Architecture for Relay Panel",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-15",
       "extractedFrom": "relay-panel-redesign",
       "specSlug": "relay-panel-redesign"
@@ -33,7 +33,7 @@
       "number": 131,
       "slug": "binding-level-permissions-over-adapter-level",
       "title": "Binding-Level Permissions Over Adapter-Level Permissions",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-15",
       "extractedFrom": "relay-panel-redesign",
       "specSlug": "relay-panel-redesign"
@@ -42,79 +42,16 @@
       "number": 130,
       "slug": "derive-binding-cwd-from-agent-registry",
       "title": "Derive Binding CWD from Agent Registry Instead of Storing on Binding",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-14",
       "extractedFrom": "remove-binding-projectpath",
       "specSlug": "remove-binding-projectpath"
     },
     {
-      "number": 129,
-      "slug": "npm-install-mode-for-docker-image",
-      "title": "Use npm Install Mode for Published Docker Image",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "docker-image-publishing",
-      "specSlug": "docker-image-publishing"
-    },
-    {
-      "number": 128,
-      "slug": "npm-publish-before-tag-push",
-      "title": "Reorder Release Phases — npm Publish Before Tag Push",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "docker-image-publishing",
-      "specSlug": "docker-image-publishing"
-    },
-    {
-      "number": 127,
-      "slug": "tag-push-trigger-for-docker-publishing",
-      "title": "Use Tag Push Trigger for Docker Image Publishing",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "docker-image-publishing",
-      "specSlug": "docker-image-publishing"
-    },
-    {
-      "number": 126,
-      "slug": "envelope-payload-enrichment-for-cwd-propagation",
-      "title": "Enrich Envelope Payload with Binding CWD in BindingRouter",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "relay-adapter-streaming-fixes",
-      "specSlug": "relay-adapter-streaming-fixes"
-    },
-    {
-      "number": 125,
-      "slug": "emoji-reaction-as-slack-typing-indicator",
-      "title": "Use Emoji Reaction as Slack Typing Indicator",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "relay-adapter-streaming-fixes",
-      "specSlug": "relay-adapter-streaming-fixes"
-    },
-    {
-      "number": 124,
-      "slug": "regex-workaround-for-slackify-markdown-paragraphs",
-      "title": "Regex Workaround for slackify-markdown Paragraph Breaks During Streaming",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "relay-adapter-streaming-fixes",
-      "specSlug": "relay-adapter-streaming-fixes"
-    },
-    {
-      "number": 123,
-      "slug": "slack-manifest-url-for-one-click-app-creation",
-      "title": "Use Slack Manifest URL for One-Click App Creation",
-      "status": "draft",
-      "created": "2026-03-14",
-      "extractedFrom": "adapter-setup-experience",
-      "specSlug": "adapter-setup-experience"
-    },
-    {
       "number": 122,
       "slug": "layered-adapter-documentation-system",
       "title": "Layered Documentation System for Adapter Setup",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-14",
       "extractedFrom": "adapter-setup-experience",
       "specSlug": "adapter-setup-experience"
@@ -123,7 +60,7 @@
       "number": 121,
       "slug": "file-based-adapter-documentation",
       "title": "File-Based Adapter Documentation Over Inline Template Literals",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-14",
       "extractedFrom": "adapter-setup-experience",
       "specSlug": "adapter-setup-experience"
@@ -132,16 +69,7 @@
       "number": 120,
       "slug": "shared-format-conversion-layer",
       "title": "Add Shared Format Conversion Layer to payload-utils",
-      "status": "draft",
-      "created": "2026-03-13",
-      "extractedFrom": "slack-adapter",
-      "specSlug": "slack-adapter"
-    },
-    {
-      "number": 119,
-      "slug": "slack-socket-mode-only",
-      "title": "Use Socket Mode Only for Slack Adapter",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-13",
       "extractedFrom": "slack-adapter",
       "specSlug": "slack-adapter"
@@ -150,7 +78,7 @@
       "number": 118,
       "slug": "use-slack-native-streaming-api",
       "title": "Use Slack Native Streaming API for Agent Responses",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-13",
       "extractedFrom": "slack-adapter",
       "specSlug": "slack-adapter"
@@ -159,7 +87,7 @@
       "number": 117,
       "slug": "direct-sse-as-sole-web-client-transport",
       "title": "Use Direct SSE as Sole Web Client Transport",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-12",
       "extractedFrom": "client-direct-sse",
       "specSlug": "client-direct-sse"
@@ -168,7 +96,7 @@
       "number": 116,
       "slug": "entity-layer-zustand-store-for-cross-feature-coordination",
       "title": "Entity-Layer Zustand Store for Cross-Feature FSD Coordination",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-11",
       "extractedFrom": "pulse-schedule-templates",
       "specSlug": "pulse-schedule-templates"
@@ -177,7 +105,7 @@
       "number": 115,
       "slug": "pending-user-content-ephemeral-state-boundary",
       "title": "Separate pendingUserContent Ephemeral State from JSONL-Sourced Messages Array",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-11",
       "extractedFrom": "fix-chat-ui-reliability-bugs",
       "specSlug": "fix-chat-ui-reliability-bugs"
@@ -186,43 +114,16 @@
       "number": 114,
       "slug": "client-only-part-id-for-streaming-key-stability",
       "title": "Client-Only _partId Field for Stable React Keys in Streaming Text Parts",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-11",
       "extractedFrom": "fix-chat-ui-reliability-bugs",
       "specSlug": "fix-chat-ui-reliability-bugs"
     },
     {
-      "number": 113,
-      "slug": "observed-chats-from-trace-store",
-      "title": "Observed Chats Derived from Trace Store",
-      "status": "draft",
-      "created": "2026-03-11",
-      "extractedFrom": "adapter-binding-ux-overhaul",
-      "specSlug": "adapter-binding-ux-overhaul"
-    },
-    {
-      "number": 112,
-      "slug": "reactive-binding-from-message-log",
-      "title": "Reactive Binding Creation from Message Log",
-      "status": "draft",
-      "created": "2026-03-11",
-      "extractedFrom": "adapter-binding-ux-overhaul",
-      "specSlug": "adapter-binding-ux-overhaul"
-    },
-    {
-      "number": 111,
-      "slug": "top-level-adapter-label-field",
-      "title": "Top-Level Adapter Label Field",
-      "status": "draft",
-      "created": "2026-03-11",
-      "extractedFrom": "adapter-binding-ux-overhaul",
-      "specSlug": "adapter-binding-ux-overhaul"
-    },
-    {
       "number": 110,
       "slug": "warning-level-api-version-checking",
       "title": "Warning-Level API Version Checking for Adapter Plugins",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-11",
       "extractedFrom": "relay-adapter-dx",
       "specSlug": "relay-adapter-dx"
@@ -231,7 +132,7 @@
       "number": 109,
       "slug": "optional-base-relay-adapter-class",
       "title": "Optional BaseRelayAdapter Abstract Class for Adapter DX",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-11",
       "extractedFrom": "relay-adapter-dx",
       "specSlug": "relay-adapter-dx"
@@ -1081,7 +982,7 @@
       "number": 134,
       "slug": "sdk-primary-command-discovery-with-filesystem-enrichment",
       "title": "SDK-Primary Command Discovery with Filesystem Enrichment",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-15",
       "extractedFrom": "sdk-command-discovery",
       "specSlug": "sdk-command-discovery"

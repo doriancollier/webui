@@ -1,7 +1,7 @@
 ---
 number: 122
 title: Layered Documentation System for Adapter Setup
-status: draft
+status: proposed
 created: 2026-03-14
 spec: adapter-setup-experience
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: adapter-setup-experience)
+Proposed
 
 ## Context
 

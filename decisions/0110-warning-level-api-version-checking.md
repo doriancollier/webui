@@ -1,7 +1,7 @@
 ---
 number: 110
 title: Warning-Level API Version Checking for Adapter Plugins
-status: draft
+status: proposed
 created: 2026-03-11
 spec: relay-adapter-dx
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: relay-adapter-dx)
+Proposed
 
 ## Context
 

@@ -1,7 +1,7 @@
 ---
 number: 117
 title: Use Direct SSE as Sole Web Client Transport
-status: draft
+status: proposed
 created: 2026-03-12
 spec: client-direct-sse
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: client-direct-sse)
+Proposed
 
 ## Context
 

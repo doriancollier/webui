@@ -1,7 +1,7 @@
 ---
 number: 132
 title: Two-Tab Information Architecture for Relay Panel
-status: draft
+status: proposed
 created: 2026-03-15
 spec: relay-panel-redesign
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: relay-panel-redesign)
+Proposed
 
 ## Context
 
