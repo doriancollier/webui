@@ -1,92 +1,46 @@
+/**
+ * Factory for stream event handlers that process SSE events into chat messages.
+ *
+ * Tool, hook, and subagent cases are delegated to `stream-tool-handlers.ts`.
+ * Types live in `stream-event-types.ts`, helpers in `stream-event-helpers.ts`.
+ *
+ * @module features/chat/model/stream-event-handler
+ */
 import type {
   TextDelta,
   ThinkingDelta,
-  ToolCallEvent,
-  ApprovalEvent,
-  QuestionPromptEvent,
   ErrorEvent,
   SessionStatusEvent,
   TaskUpdateEvent,
   MessagePart,
-  SubagentStartedEvent,
-  SubagentProgressEvent,
-  SubagentDoneEvent,
-  ToolProgressEvent,
   SystemStatusEvent,
   PromptSuggestionEvent,
-  HookStartedEvent,
-  HookProgressEvent,
-  HookResponseEvent,
-  HookPart,
 } from '@dorkos/shared/types';
 import { TIMING } from '@/layers/shared/lib';
-import type { ChatMessage, ToolCallState, TransportErrorInfo } from './chat-types';
+import type { StreamEventDeps, StreamingTextPart } from './stream-event-types';
+import { createStreamHelpers } from './stream-event-helpers';
+import {
+  handleToolCallStart,
+  handleToolCallDelta,
+  handleToolProgress,
+  handleToolCallEnd,
+  handleToolResult,
+  handleApprovalRequired,
+  handleQuestionPrompt,
+  handleSubagentStarted,
+  handleSubagentProgress,
+  handleSubagentDone,
+  handleHookStarted,
+  handleHookProgress,
+  handleHookResponse,
+} from './stream-tool-handlers';
 
-// Client-only streaming type — _partId is never serialized or sent over the wire.
-// It provides a stable React key for text parts during streaming, where the parts
-// array is rebuilt on every text_delta event.
-type StreamingTextPart = { type: 'text'; text: string; _partId: string };
-
-interface StreamEventDeps {
-  currentPartsRef: React.MutableRefObject<MessagePart[]>;
-  /** Buffer for hook events that arrive before their owning tool_call_start. */
-  orphanHooksRef: React.MutableRefObject<Map<string, HookPart[]>>;
-  assistantCreatedRef: React.MutableRefObject<boolean>;
-  sessionStatusRef: React.MutableRefObject<SessionStatusEvent | null>;
-  streamStartTimeRef: React.MutableRefObject<number | null>;
-  estimatedTokensRef: React.MutableRefObject<number>;
-  textStreamingTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
-  isTextStreamingRef: React.MutableRefObject<boolean>;
-  setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
-  setError: (error: TransportErrorInfo | null) => void;
-  setStatus: (status: 'idle' | 'streaming' | 'error') => void;
-  setSessionStatus: (status: SessionStatusEvent | null) => void;
-  setEstimatedTokens: (tokens: number) => void;
-  setStreamStartTime: (time: number | null) => void;
-  setIsTextStreaming: (streaming: boolean) => void;
-  setRateLimitRetryAfter: (retryAfter: number | null) => void;
-  setIsRateLimited: (limited: boolean) => void;
-  rateLimitClearRef: React.MutableRefObject<(() => void) | null>;
-  setSystemStatus: (message: string | null) => void;
-  setPromptSuggestions: (suggestions: string[]) => void;
-  thinkingStartRef: React.MutableRefObject<number | null>;
-  sessionId: string;
-  onTaskEventRef: React.MutableRefObject<((event: TaskUpdateEvent) => void) | undefined>;
-  onSessionIdChangeRef: React.MutableRefObject<((newSessionId: string) => void) | undefined>;
-  onStreamingDoneRef: React.MutableRefObject<(() => void) | undefined>;
-}
-
-/** Derive flat content and toolCalls from parts for backward compat. */
-export function deriveFromParts(parts: MessagePart[]): { content: string; toolCalls: ToolCallState[] } {
-  const textSegments: string[] = [];
-  const toolCalls: ToolCallState[] = [];
-  for (const part of parts) {
-    if (part.type === 'text') {
-      textSegments.push(part.text);
-    } else if (part.type === 'tool_call') {
-      toolCalls.push({
-        toolCallId: part.toolCallId,
-        toolName: part.toolName,
-        input: part.input || '',
-        result: part.result,
-        progressOutput: part.progressOutput,
-        status: part.status,
-        interactiveType: part.interactiveType,
-        questions: part.questions,
-        answers: part.answers,
-        timeoutMs: part.timeoutMs,
-        hooks: part.hooks,
-      });
-    }
-  }
-  return { content: textSegments.join('\n'), toolCalls };
-}
+export type { StreamEventDeps } from './stream-event-types';
 
 /** Create a stream event handler that processes SSE events into chat messages. */
 export function createStreamEventHandler(deps: StreamEventDeps) {
   const {
     currentPartsRef,
-    orphanHooksRef,
     assistantCreatedRef,
     sessionStatusRef,
     streamStartTimeRef,
@@ -112,71 +66,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
     onStreamingDoneRef,
   } = deps;
 
-  function findToolCallPart(toolCallId: string) {
-    for (let i = currentPartsRef.current.length - 1; i >= 0; i--) {
-      const part = currentPartsRef.current[i];
-      if (part.type === 'tool_call' && part.toolCallId === toolCallId) {
-        return part;
-      }
-    }
-    return undefined;
-  }
-
-  function findHookById(hookId: string): HookPart | undefined {
-    for (let i = currentPartsRef.current.length - 1; i >= 0; i--) {
-      const part = currentPartsRef.current[i];
-      if (part.type === 'tool_call' && part.hooks) {
-        const hook = part.hooks.find((h) => h.hookId === hookId);
-        if (hook) return hook;
-      }
-    }
-    return undefined;
-  }
-
-  function findSubagentPart(taskId: string) {
-    for (let i = currentPartsRef.current.length - 1; i >= 0; i--) {
-      const part = currentPartsRef.current[i];
-      if (part.type === 'subagent' && part.taskId === taskId) {
-        return part;
-      }
-    }
-    return undefined;
-  }
-
-  function ensureAssistantMessage(assistantId: string) {
-    if (!assistantCreatedRef.current) {
-      assistantCreatedRef.current = true;
-      setMessages((prev) => [
-        ...prev,
-        {
-          id: assistantId,
-          role: 'assistant',
-          content: '',
-          toolCalls: [],
-          parts: [],
-          timestamp: new Date().toISOString(),
-        },
-      ]);
-    }
-  }
-
-  function updateAssistantMessage(assistantId: string) {
-    ensureAssistantMessage(assistantId);
-    const parts = currentPartsRef.current.map((p) => ({ ...p }));
-    const derived = deriveFromParts(parts);
-    setMessages((prev) =>
-      prev.map((m) =>
-        m.id === assistantId
-          ? {
-              ...m,
-              content: derived.content,
-              toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : [],
-              parts,
-            }
-          : m
-      )
-    );
-  }
+  const helpers = createStreamHelpers(deps);
 
   return function handleStreamEvent(type: string, data: unknown, assistantId: string) {
     // Auto-clear rate limit on any non-rate-limit event (SDK resumed)
@@ -202,7 +92,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
             { type: 'thinking', text, isStreaming: true } as MessagePart,
           ];
         }
-        updateAssistantMessage(assistantId);
+        helpers.updateAssistantMessage(assistantId);
         break;
       }
       case 'text_delta': {
@@ -247,122 +137,30 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           isTextStreamingRef.current = false;
           setIsTextStreaming(false);
         }, 500);
-        updateAssistantMessage(assistantId);
+        helpers.updateAssistantMessage(assistantId);
         break;
       }
-      case 'tool_call_start': {
-        const tc = data as ToolCallEvent;
-        // Drain any hook events that arrived before this tool_call_start
-        const buffered = orphanHooksRef.current.get(tc.toolCallId);
-        orphanHooksRef.current.delete(tc.toolCallId);
-        currentPartsRef.current.push({
-          type: 'tool_call',
-          toolCallId: tc.toolCallId,
-          toolName: tc.toolName,
-          input: '',
-          status: 'running',
-          ...(buffered && buffered.length > 0 ? { hooks: buffered } : {}),
-        });
-        updateAssistantMessage(assistantId);
+      case 'tool_call_start':
+        handleToolCallStart(helpers, data, assistantId);
         break;
-      }
-      case 'tool_call_delta': {
-        const tc = data as ToolCallEvent;
-        const existing = findToolCallPart(tc.toolCallId);
-        if (existing && tc.input) {
-          existing.input = (existing.input || '') + tc.input;
-        } else if (!existing) {
-          console.warn('[stream] tool_call_delta: unknown toolCallId', tc.toolCallId);
-        }
-        updateAssistantMessage(assistantId);
+      case 'tool_call_delta':
+        handleToolCallDelta(helpers, data, assistantId);
         break;
-      }
-      case 'tool_progress': {
-        const tp = data as ToolProgressEvent;
-        const existing = findToolCallPart(tp.toolCallId);
-        if (existing) {
-          existing.progressOutput = (existing.progressOutput || '') + tp.content;
-        } else {
-          console.warn('[stream] tool_progress: unknown toolCallId', tp.toolCallId);
-        }
-        updateAssistantMessage(assistantId);
+      case 'tool_progress':
+        handleToolProgress(helpers, data, assistantId);
         break;
-      }
-      case 'tool_call_end': {
-        const tc = data as ToolCallEvent;
-        const existing = findToolCallPart(tc.toolCallId);
-        if (existing) {
-          existing.status = 'complete';
-        } else {
-          console.warn('[stream] tool_call_end: unknown toolCallId', tc.toolCallId);
-        }
-        updateAssistantMessage(assistantId);
+      case 'tool_call_end':
+        handleToolCallEnd(helpers, data, assistantId);
         break;
-      }
-      case 'tool_result': {
-        const tc = data as ToolCallEvent;
-        const existing = findToolCallPart(tc.toolCallId);
-        if (existing) {
-          existing.result = tc.result;
-          existing.status = 'complete';
-          existing.progressOutput = undefined;
-          // Mark AskUserQuestion as answered so QuestionPrompt shows collapsed on remount
-          if (existing.interactiveType === 'question' && !existing.answers) {
-            existing.answers = {};
-          }
-        } else {
-          console.warn('[stream] tool_result: unknown toolCallId', tc.toolCallId);
-        }
-        // Defer re-render by one microtask so the immediately-following
-        // text_delta('Done') event can batch into the same React flush,
-        // preventing an orphaned 'Done' text part from appearing.
-        queueMicrotask(() => updateAssistantMessage(assistantId));
+      case 'tool_result':
+        handleToolResult(helpers, data, assistantId);
         break;
-      }
-      case 'approval_required': {
-        const approval = data as ApprovalEvent;
-        const existingA = findToolCallPart(approval.toolCallId);
-        if (existingA) {
-          existingA.interactiveType = 'approval';
-          existingA.input = approval.input;
-          existingA.status = 'pending';
-          existingA.timeoutMs = approval.timeoutMs;
-        } else {
-          // New tool call arriving directly as approval_required (no prior tool_call_start)
-          currentPartsRef.current.push({
-            type: 'tool_call',
-            toolCallId: approval.toolCallId,
-            toolName: approval.toolName,
-            input: approval.input,
-            status: 'pending',
-            interactiveType: 'approval',
-            timeoutMs: approval.timeoutMs,
-          });
-        }
-        updateAssistantMessage(assistantId);
+      case 'approval_required':
+        handleApprovalRequired(helpers, data, assistantId);
         break;
-      }
-      case 'question_prompt': {
-        const question = data as QuestionPromptEvent;
-        const existingQ = findToolCallPart(question.toolCallId);
-        if (existingQ) {
-          existingQ.interactiveType = 'question';
-          existingQ.questions = question.questions;
-          existingQ.status = 'pending';
-        } else {
-          currentPartsRef.current.push({
-            type: 'tool_call',
-            toolCallId: question.toolCallId,
-            toolName: 'AskUserQuestion',
-            input: '',
-            status: 'pending',
-            interactiveType: 'question',
-            questions: question.questions,
-          });
-        }
-        updateAssistantMessage(assistantId);
+      case 'question_prompt':
+        handleQuestionPrompt(helpers, data, assistantId);
         break;
-      }
       case 'error': {
         const errorData = data as ErrorEvent;
         // SDK result errors with a category render inline in the message stream
@@ -373,7 +171,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
             category: errorData.category,
             details: errorData.details,
           });
-          updateAssistantMessage(assistantId);
+          helpers.updateAssistantMessage(assistantId);
         } else {
           // Transport-level errors (no category) use the banner
           setError({
@@ -413,92 +211,24 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         onTaskEventRef.current?.(taskEvent);
         break;
       }
-      case 'subagent_started': {
-        const { taskId, description } = data as SubagentStartedEvent;
-        currentPartsRef.current.push({
-          type: 'subagent',
-          taskId,
-          description,
-          status: 'running',
-        });
-        updateAssistantMessage(assistantId);
+      case 'subagent_started':
+        handleSubagentStarted(helpers, data, assistantId);
         break;
-      }
-      case 'subagent_progress': {
-        const progress = data as SubagentProgressEvent;
-        const subagentPart = findSubagentPart(progress.taskId);
-        if (subagentPart) {
-          subagentPart.toolUses = progress.toolUses;
-          subagentPart.lastToolName = progress.lastToolName;
-          subagentPart.durationMs = progress.durationMs;
-        } else {
-          console.warn('[stream] subagent_progress: unknown taskId', progress.taskId);
-        }
-        updateAssistantMessage(assistantId);
+      case 'subagent_progress':
+        handleSubagentProgress(helpers, data, assistantId);
         break;
-      }
-      case 'subagent_done': {
-        const done = data as SubagentDoneEvent;
-        const subagentPartDone = findSubagentPart(done.taskId);
-        if (subagentPartDone) {
-          subagentPartDone.status = done.status === 'completed' ? 'complete' : 'error';
-          subagentPartDone.summary = done.summary;
-          if (done.toolUses !== undefined) subagentPartDone.toolUses = done.toolUses;
-          if (done.durationMs !== undefined) subagentPartDone.durationMs = done.durationMs;
-        } else {
-          console.warn('[stream] subagent_done: unknown taskId', done.taskId);
-        }
-        updateAssistantMessage(assistantId);
+      case 'subagent_done':
+        handleSubagentDone(helpers, data, assistantId);
         break;
-      }
-      case 'hook_started': {
-        const hook = data as HookStartedEvent;
-        const newHook: HookPart = {
-          hookId: hook.hookId,
-          hookName: hook.hookName,
-          hookEvent: hook.hookEvent,
-          status: 'running',
-          stdout: '',
-          stderr: '',
-        };
-        if (hook.toolCallId) {
-          const tc = findToolCallPart(hook.toolCallId);
-          if (tc) {
-            tc.hooks = [...(tc.hooks || []), newHook];
-            updateAssistantMessage(assistantId);
-          } else {
-            // Tool call not yet started — buffer for later drain
-            const existing = orphanHooksRef.current.get(hook.toolCallId) || [];
-            orphanHooksRef.current.set(hook.toolCallId, [...existing, newHook]);
-          }
-        } else {
-          // No tool context — session-level hook, ignore on client
-          // (server routes these as system_status or error events)
-        }
+      case 'hook_started':
+        handleHookStarted(helpers, data, assistantId);
         break;
-      }
-      case 'hook_progress': {
-        const progress = data as HookProgressEvent;
-        const hook = findHookById(progress.hookId);
-        if (hook) {
-          hook.stdout = progress.stdout;
-          hook.stderr = progress.stderr;
-          updateAssistantMessage(assistantId);
-        }
+      case 'hook_progress':
+        handleHookProgress(helpers, data, assistantId);
         break;
-      }
-      case 'hook_response': {
-        const response = data as HookResponseEvent;
-        const hook = findHookById(response.hookId);
-        if (hook) {
-          hook.status = response.outcome;
-          hook.stdout = response.stdout;
-          hook.stderr = response.stderr;
-          hook.exitCode = response.exitCode;
-          updateAssistantMessage(assistantId);
-        }
+      case 'hook_response':
+        handleHookResponse(helpers, data, assistantId);
         break;
-      }
       case 'system_status': {
         const { message } = data as SystemStatusEvent;
         setSystemStatus(message);

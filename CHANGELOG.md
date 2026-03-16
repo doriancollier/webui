@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add hook lifecycle showcase and refactor stream-event-handler
 - Add ClientsItem presence indicator showcase to design system
 - Add ClientsItem presence indicator showcase to design system
 - Add multi-client presence indicator, subagent/hook lifecycle visibility, and tool call enhancements

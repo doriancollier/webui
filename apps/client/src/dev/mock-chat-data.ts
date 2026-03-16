@@ -1,4 +1,4 @@
-import type { ChatMessage, ToolCallState } from '@/layers/features/chat/model/chat-types';
+import type { ChatMessage, ToolCallState, HookState } from '@/layers/features/chat/model/chat-types';
 import type { PendingFile } from '@/layers/features/chat/model/use-file-upload';
 import type { QueueItem } from '@/layers/features/chat/model/use-message-queue';
 import type { TaskItem, QuestionItem, SubagentPart, ErrorPart } from '@dorkos/shared/types';
@@ -193,6 +193,105 @@ export const TOOL_CALLS_EXTENDED: Record<string, ToolCallState> = {
     input: JSON.stringify({ server: 'context7', uri: 'docs://react/hooks/useState' }),
     status: 'complete',
     result: 'useState documentation content...',
+  }),
+};
+
+/** Create a hook state with sensible defaults. */
+export function createHookState(
+  overrides: Partial<HookState> = {}
+): HookState {
+  return {
+    hookId: nextId('hook'),
+    hookName: 'pre-commit-lint',
+    hookEvent: 'PreToolUse',
+    status: 'running',
+    stdout: '',
+    stderr: '',
+    ...overrides,
+  };
+}
+
+export const TOOL_CALLS_WITH_HOOKS: Record<string, ToolCallState> = {
+  hook_running: createToolCall({
+    toolName: 'Bash',
+    input: JSON.stringify({ command: 'git commit -m "feat: add auth"' }),
+    status: 'running',
+    hooks: [
+      createHookState({
+        hookName: 'pre-commit-lint',
+        hookEvent: 'PreToolUse',
+        status: 'running',
+      }),
+    ],
+  }),
+  hook_success: createToolCall({
+    toolName: 'Bash',
+    input: JSON.stringify({ command: 'git commit -m "feat: add auth"' }),
+    status: 'complete',
+    result: '[main abc1234] feat: add auth',
+    hooks: [
+      createHookState({
+        hookName: 'pre-commit-lint',
+        hookEvent: 'PreToolUse',
+        status: 'success',
+        stdout: 'All files passed linting.',
+      }),
+    ],
+  }),
+  hook_error: createToolCall({
+    toolName: 'Bash',
+    input: JSON.stringify({ command: 'git push origin main' }),
+    status: 'complete',
+    result: 'Push completed.',
+    hooks: [
+      createHookState({
+        hookName: 'pre-push-tests',
+        hookEvent: 'PreToolUse',
+        status: 'error',
+        stderr: 'FAIL src/auth.test.ts\n  ✗ should validate JWT token (12ms)\n    Expected: 200\n    Received: 401',
+        exitCode: 1,
+      }),
+    ],
+  }),
+  hook_cancelled: createToolCall({
+    toolName: 'Write',
+    input: JSON.stringify({ file_path: '/src/config.ts', content: '...' }),
+    status: 'complete',
+    result: 'File written.',
+    hooks: [
+      createHookState({
+        hookName: 'validate-config',
+        hookEvent: 'PostToolUse',
+        status: 'cancelled',
+      }),
+    ],
+  }),
+  multi_hooks: createToolCall({
+    toolName: 'Bash',
+    input: JSON.stringify({ command: 'npm publish' }),
+    status: 'complete',
+    result: 'Published @dorkos/cli@1.2.0',
+    hooks: [
+      createHookState({
+        hookName: 'pre-publish-lint',
+        hookEvent: 'PreToolUse',
+        status: 'success',
+        stdout: 'Lint passed.',
+      }),
+      createHookState({
+        hookName: 'pre-publish-tests',
+        hookEvent: 'PreToolUse',
+        status: 'success',
+        stdout: '42 tests passed.',
+      }),
+      createHookState({
+        hookName: 'post-publish-notify',
+        hookEvent: 'PostToolUse',
+        status: 'error',
+        stderr: 'ECONNREFUSED: Slack webhook unreachable',
+        exitCode: 1,
+      }),
+    ],
   }),
 };
 
@@ -410,6 +509,7 @@ Let me start by updating the auth service.`,
       },
     ],
   }),
+
 ];
 
 export const SAMPLE_QUESTIONS: QuestionItem[] = [
@@ -433,6 +533,32 @@ export const SAMPLE_QUESTIONS: QuestionItem[] = [
     multiSelect: true,
   },
 ];
+
+export const TOOL_CALL_MULTI_QUESTION: ToolCallState = createToolCall({
+  toolName: 'AskUserQuestion',
+  input: JSON.stringify({ questions: SAMPLE_QUESTIONS }),
+  status: 'pending',
+  interactiveType: 'question',
+  questions: SAMPLE_QUESTIONS,
+});
+
+/** Assistant message with multi-question tool call for showcase use. */
+export const SAMPLE_MESSAGE_MULTI_QUESTION: ChatMessage = createAssistantMessage({
+  content: 'I have a couple of questions before proceeding.',
+  toolCalls: [TOOL_CALL_MULTI_QUESTION],
+  parts: [
+    { type: 'text', text: 'I have a couple of questions before proceeding.' },
+    {
+      type: 'tool_call',
+      toolCallId: TOOL_CALL_MULTI_QUESTION.toolCallId,
+      toolName: TOOL_CALL_MULTI_QUESTION.toolName,
+      input: TOOL_CALL_MULTI_QUESTION.input,
+      status: 'pending',
+      interactiveType: 'question',
+      questions: TOOL_CALL_MULTI_QUESTION.questions,
+    },
+  ],
+});
 
 export const SAMPLE_FILES: PendingFile[] = [
   createPendingFile({

@@ -13,6 +13,8 @@ import {
   TOOL_CALLS,
   TOOL_CALL_APPROVAL,
   TOOL_CALL_QUESTION,
+  TOOL_CALL_MULTI_QUESTION,
+  SAMPLE_MESSAGE_MULTI_QUESTION,
 } from '../mock-chat-data';
 import type { MessageGrouping } from '@/layers/features/chat/model/chat-types';
 
@@ -125,6 +127,18 @@ export function MessageShowcases() {
             }}
           >
             <AssistantMessageContent message={SAMPLE_MESSAGES[7]} />
+          </MessageProvider>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>With multiple questions pending</ShowcaseLabel>
+        <ShowcaseDemo>
+          <MessageProvider
+            value={{
+              ...STANDALONE_CTX,
+              activeToolCallId: TOOL_CALL_MULTI_QUESTION.toolCallId,
+            }}
+          >
+            <AssistantMessageContent message={SAMPLE_MESSAGE_MULTI_QUESTION} />
           </MessageProvider>
         </ShowcaseDemo>
       </PlaygroundSection>

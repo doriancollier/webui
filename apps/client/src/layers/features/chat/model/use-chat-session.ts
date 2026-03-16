@@ -5,7 +5,8 @@ import { useTransport, useAppStore } from '@/layers/shared/model';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import { insertOptimisticSession } from '@/layers/entities/session';
 import type { ChatMessage, ChatSessionOptions, TransportErrorInfo } from './chat-types';
-import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
+import { createStreamEventHandler } from './stream-event-handler';
+import { deriveFromParts } from './stream-event-helpers';
 
 // Re-export types for backward compat
 export type { ChatMessage, ToolCallState, HookState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions, TransportErrorInfo } from './chat-types';

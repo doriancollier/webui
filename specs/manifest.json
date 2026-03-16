@@ -997,7 +997,14 @@
       "title": "Multi-Client Session Indicator",
       "created": "2026-03-16",
       "status": "specification"
+    },
+    {
+      "number": 143,
+      "slug": "dev-playground-navigation-overhaul",
+      "title": "Dev Playground Navigation Overhaul",
+      "created": "2026-03-16",
+      "status": "ideation"
     }
   ],
-  "nextNumber": 143
+  "nextNumber": 144
 }

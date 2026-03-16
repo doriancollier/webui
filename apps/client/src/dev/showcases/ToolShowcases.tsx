@@ -6,7 +6,7 @@ import { ThinkingBlock } from '@/layers/features/chat/ui/ThinkingBlock';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
-import { MOCK_SESSION_ID, TOOL_CALLS, TOOL_CALLS_EXTENDED, TOOL_CALL_APPROVAL, SUBAGENT_PARTS, ERROR_PARTS } from '../mock-chat-data';
+import { MOCK_SESSION_ID, TOOL_CALLS, TOOL_CALLS_EXTENDED, TOOL_CALLS_WITH_HOOKS, TOOL_CALL_APPROVAL, SUBAGENT_PARTS, ERROR_PARTS } from '../mock-chat-data';
 
 /** Tool-related component showcases: ToolCallCard, ToolApproval. */
 export function ToolShowcases() {
@@ -60,6 +60,29 @@ export function ToolShowcases() {
               )
             )}
           </div>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="ToolCallCard — Hook Lifecycle"
+        description="Tool call cards with hook sub-rows in all four states: running, success, error, cancelled."
+      >
+        <ShowcaseDemo>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(Object.entries(TOOL_CALLS_WITH_HOOKS) as [string, (typeof TOOL_CALLS_WITH_HOOKS)[string]][]).map(
+              ([key, tc]) => (
+                <div key={key}>
+                  <ShowcaseLabel>{key}</ShowcaseLabel>
+                  <ToolCallCard toolCall={tc} />
+                </div>
+              )
+            )}
+          </div>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Error hook expanded by default</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ToolCallCard toolCall={TOOL_CALLS_WITH_HOOKS.hook_error} defaultExpanded />
         </ShowcaseDemo>
       </PlaygroundSection>
 
