@@ -1,0 +1,40 @@
+---
+title: DorkOS 0.14.0
+description: Binding-level permissions, relay panel redesign, and SDK command discovery
+date: 2026-03-16
+author: DorkOS Team
+category: release
+tags: [release, relay, permissions, commands]
+---
+
+Control how each adapter-agent binding handles permissions, navigate the redesigned Relay panel with a cleaner 2-tab layout, and get more reliable slash command discovery via the SDK.
+
+## Highlights
+
+- **Binding-Level Permissions** - Configure permission modes per adapter-agent binding so headless sessions (Slack, Telegram) use the right tool approval level instead of stalling on prompts
+- **Relay Panel Redesign** - A new 2-tab layout with semantic health indicators, inline permissions, and aggregated dead letter management makes monitoring relay traffic faster and clearer
+- **SDK Command Discovery** - Slash commands now use the SDK `supportedCommands()` API, fixing stale cache issues and discovering root-level commands reliably
+
+## All Changes
+
+### Added
+
+- Configure permission modes per adapter-agent binding so headless sessions (Slack, Telegram) use the right tool approval level instead of stalling
+- Redesign the Relay panel with a 2-tab layout, semantic health indicators, inline permissions, and aggregated dead letter management
+- Discover slash commands via the SDK `supportedCommands()` API for more reliable command availability
+
+### Changed
+
+- Derive binding working directory from the agent registry instead of storing a separate path
+
+### Fixed
+
+- Prevent dead letter panel from re-opening after the user explicitly collapses it
+- Fix relay panel follow-up issues with health bar rendering, empty states, and label consistency
+- Discover root-level commands and fix SDK command cache returning stale results
+
+## Install / Update
+
+```
+npm install -g dorkos@0.14.0
+```

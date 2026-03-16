@@ -5,6 +5,28 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-03-16
+
+> Binding-level permissions, relay panel redesign, and SDK command discovery
+
+### Added
+
+- Configure permission modes per adapter-agent binding so headless sessions (Slack, Telegram) use the right tool approval level instead of stalling
+- Redesign the Relay panel with a 2-tab layout, semantic health indicators, inline permissions, and aggregated dead letter management
+- Discover slash commands via the SDK `supportedCommands()` API for more reliable command availability
+
+### Changed
+
+- Derive binding working directory from the agent registry instead of storing a separate path
+
+### Fixed
+
+- Prevent dead letter panel from re-opening after the user explicitly collapses it
+- Fix relay panel follow-up issues with health bar rendering, empty states, and label consistency
+- Discover root-level commands and fix SDK command cache returning stale results
+
+---
+
 ## [0.13.1] - 2026-03-14
 
 ### Fixed

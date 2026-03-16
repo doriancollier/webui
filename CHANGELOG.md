@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.14.0] - 2026-03-16
+
+> Binding-level permissions, relay panel redesign, and SDK command discovery
+
+### Added
+
 - Configure permission modes per adapter-agent binding so headless sessions (Slack, Telegram) use the right tool approval level instead of stalling
 - Redesign the Relay panel with a 2-tab layout, semantic health indicators, inline permissions, and aggregated dead letter management
 - Discover slash commands via the SDK `supportedCommands()` API for more reliable command availability
