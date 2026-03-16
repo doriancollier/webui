@@ -1,6 +1,9 @@
-// @vitest-environment jsdom
+/**
+ * @vitest-environment jsdom
+ */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom/vitest';
 import { ToolArgumentsDisplay } from '../tool-arguments-formatter';
 
 describe('ToolArgumentsDisplay', () => {
@@ -74,5 +77,47 @@ describe('ToolArgumentsDisplay', () => {
     render(<ToolArgumentsDisplay toolName="Test" input={input} />);
     const nullEl = screen.getByText('null');
     expect(nullEl.className).toContain('italic');
+  });
+});
+
+describe('ToolArgumentsDisplay raw fallback truncation — regression', () => {
+  it('renders valid object JSON as key-value grid without raw truncation', () => {
+    const validJson = JSON.stringify({ command: 'echo hello', description: 'test' });
+    render(<ToolArgumentsDisplay toolName="Bash" input={validJson} />);
+
+    // Should render as a structured display, not a <pre> block
+    expect(screen.getByText('Command')).toBeInTheDocument();
+    expect(screen.getByText('Description')).toBeInTheDocument();
+  });
+});
+
+describe('ToolArgumentsDisplay raw fallback truncation', () => {
+  it('renders short invalid JSON input fully without truncation', () => {
+    const shortInput = 'this is not valid json';
+    render(<ToolArgumentsDisplay toolName="Bash" input={shortInput} />);
+    expect(screen.getByText(shortInput)).toBeTruthy();
+  });
+
+  it('truncates invalid JSON input over 5KB with ellipsis', () => {
+    const longInput = 'a'.repeat(6000);
+    const { container } = render(<ToolArgumentsDisplay toolName="Bash" input={longInput} />);
+
+    const pre = container.querySelector('pre');
+    expect(pre).not.toBeNull();
+    // 5120 chars + 1 ellipsis character = 5121
+    expect(pre!.textContent!.length).toBe(5121);
+    expect(pre!.textContent!.endsWith('\u2026')).toBe(true);
+  });
+
+  it('truncates non-object parsed JSON over 5KB with ellipsis', () => {
+    const longArray = JSON.stringify(Array.from({ length: 2000 }, (_, i) => i));
+    expect(longArray.length).toBeGreaterThan(5120);
+
+    const { container } = render(<ToolArgumentsDisplay toolName="Bash" input={longArray} />);
+
+    const pre = container.querySelector('pre');
+    expect(pre).not.toBeNull();
+    expect(pre!.textContent!.length).toBe(5121);
+    expect(pre!.textContent!.endsWith('\u2026')).toBe(true);
   });
 });

@@ -38,6 +38,11 @@ export function ToolShowcases() {
         <ShowcaseDemo>
           <ToolCallCard toolCall={TOOL_CALLS.running_with_progress} />
         </ShowcaseDemo>
+
+        <ShowcaseLabel>Long result (truncated at 5KB)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ToolCallCard toolCall={TOOL_CALLS.complete_long_result} defaultExpanded />
+        </ShowcaseDemo>
       </PlaygroundSection>
 
       <PlaygroundSection

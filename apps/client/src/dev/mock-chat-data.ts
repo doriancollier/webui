@@ -145,6 +145,12 @@ export const TOOL_CALLS: Record<string, ToolCallState> = {
     status: 'error',
     result: 'EACCES: permission denied',
   }),
+  complete_long_result: createToolCall({
+    toolName: 'Bash',
+    input: JSON.stringify({ command: 'cat apps/server/src/services/runtimes/claude-code/sdk-event-mapper.ts' }),
+    status: 'complete',
+    result: Array.from({ length: 200 }, (_, i) => `${String(i + 1).padStart(4, ' ')}│ ${'import { foo } from "bar";  // line content here that makes this realistic output'.slice(0, 60 + (i % 20))}`).join('\n'),
+  }),
 };
 
 export const TOOL_CALL_APPROVAL: ToolCallState = createToolCall({
