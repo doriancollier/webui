@@ -1,7 +1,7 @@
 import type { ChatMessage, ToolCallState } from '@/layers/features/chat/model/chat-types';
 import type { PendingFile } from '@/layers/features/chat/model/use-file-upload';
 import type { QueueItem } from '@/layers/features/chat/model/use-message-queue';
-import type { TaskItem, QuestionItem } from '@dorkos/shared/types';
+import type { TaskItem, QuestionItem, SubagentPart } from '@dorkos/shared/types';
 
 // ---------------------------------------------------------------------------
 // Factories
@@ -157,6 +157,42 @@ export const TOOL_CALL_QUESTION: ToolCallState = createToolCall({
     },
   ],
 });
+
+export const SUBAGENT_PARTS: Record<string, SubagentPart> = {
+  running: {
+    type: 'subagent',
+    taskId: 'subagent-running',
+    description: 'Exploring codebase for authentication patterns',
+    status: 'running',
+    toolUses: 7,
+    lastToolName: 'Grep',
+    durationMs: 12400,
+  },
+  complete: {
+    type: 'subagent',
+    taskId: 'subagent-complete',
+    description: 'Research best practices for JWT auth',
+    status: 'complete',
+    toolUses: 12,
+    durationMs: 45000,
+    summary: 'Found 3 viable approaches. Recommended: RS256 with rotating keys.',
+  },
+  error: {
+    type: 'subagent',
+    taskId: 'subagent-error',
+    description: 'Run integration test suite',
+    status: 'error',
+    toolUses: 2,
+    durationMs: 8500,
+    summary: 'Process exited with code 1: ECONNREFUSED localhost:5432',
+  },
+  minimal: {
+    type: 'subagent',
+    taskId: 'subagent-minimal',
+    description: 'Quick file search',
+    status: 'running',
+  },
+};
 
 export const SAMPLE_TASKS: TaskItem[] = [
   createTaskItem({

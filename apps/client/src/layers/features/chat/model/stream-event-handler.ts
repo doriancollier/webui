@@ -332,6 +332,8 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           subagentPart.toolUses = progress.toolUses;
           subagentPart.lastToolName = progress.lastToolName;
           subagentPart.durationMs = progress.durationMs;
+        } else {
+          console.warn('[stream] subagent_progress: unknown taskId', progress.taskId);
         }
         updateAssistantMessage(assistantId);
         break;
@@ -344,6 +346,8 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           subagentPartDone.summary = done.summary;
           if (done.toolUses !== undefined) subagentPartDone.toolUses = done.toolUses;
           if (done.durationMs !== undefined) subagentPartDone.durationMs = done.durationMs;
+        } else {
+          console.warn('[stream] subagent_done: unknown taskId', done.taskId);
         }
         updateAssistantMessage(assistantId);
         break;
