@@ -5,6 +5,7 @@ import { StreamingText } from '@/layers/features/chat/ui/StreamingText';
 import { InferenceIndicator } from '@/layers/features/chat/ui/InferenceIndicator';
 import { SystemStatusZone } from '@/layers/features/chat/ui/SystemStatusZone';
 import { TaskListPanel } from '@/layers/features/chat/ui/TaskListPanel';
+import { ClientsItem } from '@/layers/features/status';
 import type { TransportErrorInfo } from '@/layers/features/chat/model/chat-types';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
@@ -50,12 +51,20 @@ npm install jsonwebtoken @types/jsonwebtoken
 npm run test -- --watch
 \`\`\``;
 
-/** Status-related component showcases: StreamingText, InferenceIndicator, SystemStatusZone, TransportErrorBanner, TaskListPanel. */
+/** Status-related component showcases: StreamingText, InferenceIndicator, SystemStatusZone, TransportErrorBanner, TaskListPanel, ClientsItem. */
 export function StatusShowcases() {
   const [taskCollapsed, setTaskCollapsed] = useState(false);
   const [taskCollapsed2, setTaskCollapsed2] = useState(true);
   // Stable start times to avoid react-hooks/purity warnings from Date.now() in render
   const [streamStart] = useState(() => Date.now());
+  // Stable timestamps for ClientsItem showcase
+  const [now] = useState(() => new Date().toISOString());
+  const [fiveMinAgo] = useState(() => new Date(Date.now() - 5 * 60_000).toISOString());
+  const [twelveMinAgo] = useState(() => new Date(Date.now() - 12 * 60_000).toISOString());
+  const [fortyFiveMinAgo] = useState(() => new Date(Date.now() - 45 * 60_000).toISOString());
+  const [threeMinAgo] = useState(() => new Date(Date.now() - 3 * 60_000).toISOString());
+  const [tenSecAgo] = useState(() => new Date(Date.now() - 10_000).toISOString());
+  const [twoMinAgo] = useState(() => new Date(Date.now() - 2 * 60_000).toISOString());
 
   return (
     <>
@@ -252,6 +261,67 @@ export function StatusShowcases() {
             activeForm="Implementing authentication service"
             isCollapsed={taskCollapsed2}
             onToggleCollapse={() => setTaskCollapsed2((c) => !c)}
+          />
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="ClientsItem"
+        description="Multi-client session presence indicator. Shows connected client count with popover details."
+      >
+        <ShowcaseLabel>2 web clients</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ClientsItem
+            clientCount={2}
+            clients={[
+              { type: 'web', connectedAt: now },
+              { type: 'web', connectedAt: fiveMinAgo },
+            ]}
+            lockInfo={null}
+            pulse={false}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Mixed client types (web + Obsidian + external)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ClientsItem
+            clientCount={3}
+            clients={[
+              { type: 'web', connectedAt: now },
+              { type: 'obsidian', connectedAt: twelveMinAgo },
+              { type: 'mcp', connectedAt: fortyFiveMinAgo },
+            ]}
+            lockInfo={null}
+            pulse={false}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Session locked by another client (amber)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ClientsItem
+            clientCount={2}
+            clients={[
+              { type: 'web', connectedAt: now },
+              { type: 'obsidian', connectedAt: threeMinAgo },
+            ]}
+            lockInfo={{
+              clientId: 'obsidian-abc123',
+              acquiredAt: tenSecAgo,
+            }}
+            pulse={false}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Pulse animation (sync event from another client)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ClientsItem
+            clientCount={2}
+            clients={[
+              { type: 'web', connectedAt: now },
+              { type: 'web', connectedAt: twoMinAgo },
+            ]}
+            lockInfo={null}
+            pulse={true}
           />
         </ShowcaseDemo>
       </PlaygroundSection>
