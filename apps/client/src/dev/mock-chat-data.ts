@@ -1,7 +1,7 @@
 import type { ChatMessage, ToolCallState } from '@/layers/features/chat/model/chat-types';
 import type { PendingFile } from '@/layers/features/chat/model/use-file-upload';
 import type { QueueItem } from '@/layers/features/chat/model/use-message-queue';
-import type { TaskItem, QuestionItem, SubagentPart } from '@dorkos/shared/types';
+import type { TaskItem, QuestionItem, SubagentPart, ErrorPart } from '@dorkos/shared/types';
 
 /** Shared mock session ID for playground demos that require a session context. */
 export const MOCK_SESSION_ID = 'playground-session-001';
@@ -115,6 +115,20 @@ export const TOOL_CALLS: Record<string, ToolCallState> = {
     input: JSON.stringify({ file_path: '/src/components/App.tsx' }),
     status: 'running',
   }),
+  running_with_progress: createToolCall({
+    toolName: 'Bash',
+    input: JSON.stringify({ command: 'pnpm vitest run --reporter=verbose' }),
+    status: 'running',
+    progressOutput:
+      '✓ src/utils.test.ts (3 tests) 12ms\n' +
+      '✓ src/auth.test.ts (5 tests) 45ms\n' +
+      '✓ src/api/sessions.test.ts (8 tests) 123ms\n' +
+      '✗ src/api/agents.test.ts > AgentManager > handles timeout\n' +
+      '  AssertionError: expected 408 to equal 504\n' +
+      '    at Object.<anonymous> (src/api/agents.test.ts:47:18)\n' +
+      '✓ src/hooks/use-theme.test.ts (2 tests) 8ms\n' +
+      '⠋ Running src/components/ChatPanel.test.tsx...',
+  }),
   complete: createToolCall({
     toolName: 'Edit',
     input: JSON.stringify({
@@ -194,6 +208,35 @@ export const SUBAGENT_PARTS: Record<string, SubagentPart> = {
     taskId: 'subagent-minimal',
     description: 'Quick file search',
     status: 'running',
+  },
+};
+
+export const ERROR_PARTS: Record<string, ErrorPart> = {
+  max_turns: {
+    type: 'error',
+    message: 'Agent exceeded the maximum number of turns (25)',
+    category: 'max_turns',
+  },
+  execution_error: {
+    type: 'error',
+    message: 'Anthropic API returned 500: Internal Server Error',
+    category: 'execution_error',
+    details:
+      'Error: API request failed with status 500\n  at ClaudeClient.sendMessage (sdk/client.ts:142)\n  at AgentLoop.step (sdk/agent.ts:89)\n  at AgentLoop.run (sdk/agent.ts:45)',
+  },
+  budget_exceeded: {
+    type: 'error',
+    message: 'Session cost ($2.47) exceeded budget limit ($2.00)',
+    category: 'budget_exceeded',
+  },
+  output_format_error: {
+    type: 'error',
+    message: 'Failed to produce valid JSON after 3 retries',
+    category: 'output_format_error',
+  },
+  uncategorized: {
+    type: 'error',
+    message: 'Something went wrong during processing.',
   },
 };
 

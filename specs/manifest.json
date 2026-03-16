@@ -954,8 +954,15 @@
       "slug": "system-status-compact-boundary",
       "title": "Surface SDK System Status Messages & Compact Boundary Events",
       "created": "2026-03-16",
-      "status": "ideation"
+      "status": "specification"
+    },
+    {
+      "number": 137,
+      "slug": "tool-result-truncation",
+      "title": "Tool Result Truncation",
+      "created": "2026-03-16",
+      "status": "specification"
     }
   ],
-  "nextNumber": 137
+  "nextNumber": 138
 }

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add ErrorMessageBlock and ThinkingBlock showcases; add specs for system-status and tool-result-truncation
 - Implement result-error-distinction, extended-thinking-visibility, and tool-progress-streaming
 - Implement result-error-distinction, extended-thinking-visibility, and tool-progress-streaming
 - Add rate-limit states to InferenceIndicator showcase

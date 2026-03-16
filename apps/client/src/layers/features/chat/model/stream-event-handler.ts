@@ -432,6 +432,15 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         }
         streamStartTimeRef.current = null;
         estimatedTokensRef.current = 0;
+        // Finalize any still-streaming thinking part (edge case: thinking with no following text_delta)
+        if (thinkingStartRef.current !== null) {
+          const elapsedMs = Date.now() - thinkingStartRef.current;
+          currentPartsRef.current = currentPartsRef.current.map((p) =>
+            p.type === 'thinking' && p.isStreaming
+              ? { ...p, isStreaming: false, elapsedMs }
+              : p
+          );
+        }
         thinkingStartRef.current = null;
         setStreamStartTime(null);
         setEstimatedTokens(0);
