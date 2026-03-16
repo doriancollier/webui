@@ -15,6 +15,8 @@ interface InferenceIndicatorProps {
   permissionMode?: PermissionMode;
   isWaitingForUser?: boolean;
   waitingType?: 'approval' | 'question';
+  isRateLimited?: boolean;
+  rateLimitRetryAfter?: number | null;
 }
 
 function formatTokens(count: number): string {
@@ -33,6 +35,8 @@ export function InferenceIndicator({
   permissionMode = 'default',
   isWaitingForUser,
   waitingType,
+  isRateLimited,
+  rateLimitRetryAfter,
 }: InferenceIndicatorProps) {
   const verbs = useMemo(() => {
     if (permissionMode === 'bypassPermissions') {
@@ -67,6 +71,23 @@ export function InferenceIndicator({
     }
     prevStatusRef.current = status;
   }, [status]);
+
+  // Rate-limit countdown: ticks down every second from retryAfter, clears when rate limit resolves
+  const [countdown, setCountdown] = useState<number | null>(null);
+  useEffect(() => {
+    if (!isRateLimited || !rateLimitRetryAfter) {
+      setCountdown(null);
+      return;
+    }
+    setCountdown(Math.ceil(rateLimitRetryAfter));
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev === null || prev <= 1) return null;
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isRateLimited, rateLimitRetryAfter]);
 
   // Null render: nothing to show
   if (status === 'idle' && !showComplete) {
@@ -108,6 +129,27 @@ export function InferenceIndicator({
       >
         <WaitIcon className="size-3 text-amber-500" />
         <span className="text-amber-600 dark:text-amber-400">{waitMessage}</span>
+        <span className="text-muted-foreground/70 ml-1.5 tabular-nums">{elapsed}</span>
+      </motion.div>
+    );
+  }
+
+  // Rate-limited state: calm indicator with countdown, lower priority than waiting-for-user
+  if (status === 'streaming' && isRateLimited) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 4 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+        className="text-2xs flex items-baseline gap-1.5 px-4 py-2"
+        data-testid="inference-indicator-rate-limited"
+      >
+        <span className="text-amber-500">&#x23F3;</span>
+        <span className="text-amber-600 dark:text-amber-400">
+          {countdown !== null
+            ? `Rate limited \u2014 retrying in ${countdown}s`
+            : 'Rate limited \u2014 retrying shortly'}
+        </span>
         <span className="text-muted-foreground/70 ml-1.5 tabular-nums">{elapsed}</span>
       </motion.div>
     );

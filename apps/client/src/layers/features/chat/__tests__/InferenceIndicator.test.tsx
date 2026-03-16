@@ -142,4 +142,91 @@ describe('InferenceIndicator', () => {
     expect(screen.getByTestId('inference-indicator-waiting')).toBeTruthy();
     expect(screen.queryByTestId('inference-indicator-streaming')).toBeNull();
   });
+
+  it('renders rate-limited state with countdown', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isRateLimited={true}
+        rateLimitRetryAfter={30}
+      />
+    );
+    expect(screen.getByTestId('inference-indicator-rate-limited')).toBeTruthy();
+    expect(screen.getByText(/Rate limited.*retrying in 30s/)).toBeTruthy();
+  });
+
+  it('renders rate-limited state without countdown when retryAfter is null', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isRateLimited={true}
+        rateLimitRetryAfter={null}
+      />
+    );
+    expect(screen.getByTestId('inference-indicator-rate-limited')).toBeTruthy();
+    expect(screen.getByText(/Rate limited.*retrying shortly/)).toBeTruthy();
+  });
+
+  it('does not show rate-limited state when not streaming', () => {
+    const { container } = render(
+      <InferenceIndicator
+        status="idle"
+        streamStartTime={null}
+        estimatedTokens={0}
+        isRateLimited={true}
+        rateLimitRetryAfter={30}
+      />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('shows elapsed time in rate-limited state', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isRateLimited={true}
+        rateLimitRetryAfter={30}
+      />
+    );
+    // The mocked useElapsedTime returns '2m 14s'
+    expect(screen.getByText('2m 14s')).toBeTruthy();
+  });
+
+  it('prefers waiting-for-user over rate-limited state', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isWaitingForUser={true}
+        waitingType="approval"
+        isRateLimited={true}
+        rateLimitRetryAfter={30}
+      />
+    );
+    // Waiting state takes priority
+    expect(screen.getByTestId('inference-indicator-waiting')).toBeTruthy();
+    expect(screen.queryByTestId('inference-indicator-rate-limited')).toBeNull();
+  });
+
+  it('does not show normal streaming state when rate-limited', () => {
+    render(
+      <InferenceIndicator
+        status="streaming"
+        streamStartTime={Date.now()}
+        estimatedTokens={100}
+        isRateLimited={true}
+        rateLimitRetryAfter={30}
+      />
+    );
+    // Should show rate-limited, not normal streaming
+    expect(screen.getByTestId('inference-indicator-rate-limited')).toBeTruthy();
+    expect(screen.queryByTestId('inference-indicator-streaming')).toBeNull();
+  });
 });

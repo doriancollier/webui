@@ -111,6 +111,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     waitingType,
     activeInteraction,
     markToolCallResponded,
+    isRateLimited,
+    rateLimitRetryAfter,
   } = useChatSession(sessionId, {
     transformContent: fileTransformContent,
     onTaskEvent: handleTaskEventWithCelebrations,
@@ -278,6 +280,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             permissionMode={permissionMode}
             isWaitingForUser={isWaitingForUser}
             waitingType={waitingType ?? undefined}
+            isRateLimited={isRateLimited}
+            rateLimitRetryAfter={rateLimitRetryAfter}
             activeToolCallId={activeInteraction?.toolCallId ?? null}
             onToolRef={handleToolRef}
             focusedOptionIndex={focusedOptionIndex}

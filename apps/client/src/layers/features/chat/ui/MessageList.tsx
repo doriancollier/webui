@@ -56,6 +56,8 @@ interface MessageListProps {
   permissionMode?: PermissionMode;
   isWaitingForUser?: boolean;
   waitingType?: 'approval' | 'question';
+  isRateLimited?: boolean;
+  rateLimitRetryAfter?: number | null;
   activeToolCallId?: string | null;
   onToolRef?: (handle: InteractiveToolHandle | null) => void;
   focusedOptionIndex?: number;
@@ -74,6 +76,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     permissionMode,
     isWaitingForUser,
     waitingType,
+    isRateLimited,
+    rateLimitRetryAfter,
     activeToolCallId,
     onToolRef,
     focusedOptionIndex,
@@ -305,6 +309,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
               permissionMode={permissionMode}
               isWaitingForUser={isWaitingForUser}
               waitingType={waitingType}
+              isRateLimited={isRateLimited}
+              rateLimitRetryAfter={rateLimitRetryAfter}
             />
           </div>
         </div>
