@@ -4,11 +4,66 @@ import type { SessionStatusEvent, MessagePart, HistoryMessage } from '@dorkos/sh
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import { insertOptimisticSession } from '@/layers/entities/session';
-import type { ChatMessage, ChatSessionOptions } from './chat-types';
+import type { ChatMessage, ChatSessionOptions, TransportErrorInfo } from './chat-types';
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
 
 // Re-export types for backward compat
-export type { ChatMessage, ToolCallState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions } from './chat-types';
+export type { ChatMessage, ToolCallState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions, TransportErrorInfo } from './chat-types';
+
+/**
+ * Classify a transport-level error for structured banner display.
+ *
+ * @internal Exported for testing only.
+ */
+export function classifyTransportError(err: unknown): TransportErrorInfo {
+  const error = err instanceof Error ? err : new Error(String(err));
+  const code = (err as { code?: string } | null | undefined)?.code;
+  const status = (err as { status?: number } | null | undefined)?.status;
+
+  // Session locked by another client
+  if (code === 'SESSION_LOCKED') {
+    return {
+      heading: 'Session in use',
+      message: 'Another client is sending a message. Try again in a few seconds.',
+      retryable: false,
+      autoDismissMs: TIMING.SESSION_BUSY_CLEAR_MS,
+    };
+  }
+
+  // Network/fetch errors
+  if (error instanceof TypeError || /fetch|network/i.test(error.message)) {
+    return {
+      heading: 'Connection failed',
+      message: 'Could not reach the server. Check your connection and try again.',
+      retryable: true,
+    };
+  }
+
+  // HTTP 500-599 server errors
+  if (status && status >= 500 && status <= 599) {
+    return {
+      heading: 'Server error',
+      message: 'The server encountered an error. Try again.',
+      retryable: true,
+    };
+  }
+
+  // HTTP 408 or timeout
+  if (status === 408 || /timeout/i.test(error.message)) {
+    return {
+      heading: 'Request timed out',
+      message: 'The server took too long to respond. Try again.',
+      retryable: true,
+    };
+  }
+
+  // Default unknown
+  return {
+    heading: 'Error',
+    message: error.message,
+    retryable: false,
+  };
+}
 
 /** Map HistoryMessage from server to internal ChatMessage format. */
 function mapHistoryMessage(m: HistoryMessage): ChatMessage {
@@ -60,7 +115,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle');
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<TransportErrorInfo | null>(null);
   const [sessionBusy, setSessionBusy] = useState(false);
   const sessionStatusRef = useRef<SessionStatusEvent | null>(null);
   const [sessionStatus, setSessionStatus] = useState<SessionStatusEvent | null>(null);
@@ -348,14 +403,16 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
       if ((err as Error).name !== 'AbortError') {
         if ((err as { code?: string }).code === 'SESSION_LOCKED') {
           setSessionBusy(true);
+          setError(classifyTransportError(err));
           if (clearInput) setInput(restoreContentOnLock);
           if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
           sessionBusyTimerRef.current = setTimeout(() => {
             setSessionBusy(false);
+            setError(null);
             sessionBusyTimerRef.current = null;
           }, TIMING.SESSION_BUSY_CLEAR_MS);
         } else {
-          setError((err as Error).message);
+          setError(classifyTransportError(err));
         }
         setStatus('error');
       }

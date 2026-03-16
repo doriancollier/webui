@@ -15,7 +15,7 @@ import type {
   SystemStatusEvent,
 } from '@dorkos/shared/types';
 import { TIMING } from '@/layers/shared/lib';
-import type { ChatMessage, ToolCallState } from './chat-types';
+import type { ChatMessage, ToolCallState, TransportErrorInfo } from './chat-types';
 
 // Client-only streaming type — _partId is never serialized or sent over the wire.
 // It provides a stable React key for text parts during streaming, where the parts
@@ -31,7 +31,7 @@ interface StreamEventDeps {
   textStreamingTimerRef: React.MutableRefObject<ReturnType<typeof setTimeout> | null>;
   isTextStreamingRef: React.MutableRefObject<boolean>;
   setMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>;
-  setError: (error: string | null) => void;
+  setError: (error: TransportErrorInfo | null) => void;
   setStatus: (status: 'idle' | 'streaming' | 'error') => void;
   setSessionStatus: (status: SessionStatusEvent | null) => void;
   setEstimatedTokens: (tokens: number) => void;
@@ -66,6 +66,7 @@ export function deriveFromParts(parts: MessagePart[]): { content: string; toolCa
         interactiveType: part.interactiveType,
         questions: part.questions,
         answers: part.answers,
+        timeoutMs: part.timeoutMs,
       });
     }
   }
@@ -299,6 +300,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           existingA.interactiveType = 'approval';
           existingA.input = approval.input;
           existingA.status = 'pending';
+          existingA.timeoutMs = approval.timeoutMs;
         } else {
           // New tool call arriving directly as approval_required (no prior tool_call_start)
           currentPartsRef.current.push({
@@ -308,6 +310,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
             input: approval.input,
             status: 'pending',
             interactiveType: 'approval',
+            timeoutMs: approval.timeoutMs,
           });
         }
         updateAssistantMessage(assistantId);
@@ -347,7 +350,11 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           updateAssistantMessage(assistantId);
         } else {
           // Transport-level errors (no category) use the banner
-          setError(errorData.message);
+          setError({
+            heading: 'Error',
+            message: errorData.message,
+            retryable: false,
+          });
         }
         // Always update session status to 'error' — the subsequent done event
         // will reset it to 'idle', but this ensures correct status between events.
@@ -369,6 +376,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           costUsd: incoming.costUsd ?? sessionStatusRef.current?.costUsd,
           contextTokens: incoming.contextTokens ?? sessionStatusRef.current?.contextTokens,
           contextMaxTokens: incoming.contextMaxTokens ?? sessionStatusRef.current?.contextMaxTokens,
+          outputTokens: incoming.outputTokens ?? sessionStatusRef.current?.outputTokens,
         };
         sessionStatusRef.current = merged;
         setSessionStatus(merged);

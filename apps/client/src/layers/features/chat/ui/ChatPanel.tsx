@@ -1,6 +1,7 @@
 import { useRef, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ArrowDown } from 'lucide-react';
+import { ArrowDown, AlertTriangle } from 'lucide-react';
+import { Button } from '@/layers/shared/ui';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
 import { useMessageQueue } from '../model/use-message-queue';
@@ -351,8 +352,22 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
       />
 
       {error && (
-        <div className="mx-4 mb-2 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-sm text-red-600 dark:text-red-400">
-          {error}
+        <div className="mx-4 mb-2 flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-destructive">{error.heading}</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+          </div>
+          {error.retryable && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRetry}
+              className="shrink-0"
+            >
+              Retry
+            </Button>
+          )}
         </div>
       )}
 

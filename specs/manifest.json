@@ -984,6 +984,20 @@
       "created": "2026-03-16",
       "status": "ideation"
     }
+    ,{
+      "number": 141,
+      "slug": "hook-lifecycle-events",
+      "title": "Surface SDK Hook Lifecycle Events in Chat UI",
+      "created": "2026-03-16",
+      "status": "specification"
+    }
+    ,{
+      "number": 142,
+      "slug": "multi-client-session-indicator",
+      "title": "Multi-Client Session Indicator",
+      "created": "2026-03-16",
+      "status": "specification"
+    }
   ],
-  "nextNumber": 141
+  "nextNumber": 143
 }

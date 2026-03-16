@@ -90,7 +90,11 @@ describe('stream-event-handler — error events', () => {
     }, 'asst-1');
 
     // Should set banner error
-    expect(setError).toHaveBeenCalledWith('Network connection lost');
+    expect(setError).toHaveBeenCalledWith({
+      heading: 'Error',
+      message: 'Network connection lost',
+      retryable: false,
+    });
     expect(setStatus).toHaveBeenCalledWith('error');
     // Should NOT append to parts
     expect(currentPartsRef.current.find((p) => p.type === 'error')).toBeUndefined();

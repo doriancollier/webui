@@ -33,6 +33,20 @@ export interface ToolCallState {
   questions?: QuestionItem[];
   /** Submitted answers (present when restored from history) */
   answers?: Record<string, string>;
+  /** Approval timeout duration in milliseconds (present for approval-type tool calls) */
+  timeoutMs?: number;
+}
+
+/** Structured error information for transport-level failures. */
+export interface TransportErrorInfo {
+  /** Short heading shown in the error banner (e.g., "Connection failed"). */
+  heading: string;
+  /** Human-readable detail message. */
+  message: string;
+  /** Whether the user can retry the same action. */
+  retryable: boolean;
+  /** If set, the error banner auto-dismisses after this many ms. */
+  autoDismissMs?: number;
 }
 
 export type ChatStatus = 'idle' | 'streaming' | 'error';
