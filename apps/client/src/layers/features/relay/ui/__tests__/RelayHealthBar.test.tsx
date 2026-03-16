@@ -19,10 +19,6 @@ vi.mock('@/layers/entities/relay', () => ({
   useAdapterCatalog: (...args: unknown[]) => mockUseAdapterCatalog(...args),
 }));
 
-// Mock DeliveryMetricsDashboard to avoid deep render dependencies
-vi.mock('../DeliveryMetrics', () => ({
-  DeliveryMetricsDashboard: () => <div data-testid="delivery-metrics-dashboard" />,
-}));
 
 import { RelayHealthBar, computeHealthState } from '../RelayHealthBar';
 
@@ -250,9 +246,9 @@ describe('RelayHealthBar', () => {
       expect(screen.getByText('45ms')).toBeInTheDocument();
     });
 
-    it('renders the metrics button', () => {
+    it('does not render a metrics dialog trigger button', () => {
       render(<RelayHealthBar />);
-      expect(screen.getByLabelText('Open delivery metrics')).toBeInTheDocument();
+      expect(screen.queryByLabelText('Open delivery metrics')).toBeNull();
     });
   });
 
@@ -331,18 +327,6 @@ describe('RelayHealthBar', () => {
       mockUseAdapterCatalog.mockReturnValue({ data: catalogAllConnected, isLoading: false });
       render(<RelayHealthBar />);
       expect(screen.getByText('<1ms')).toBeInTheDocument();
-    });
-  });
-
-  describe('metrics dialog', () => {
-    it('opens the metrics dialog when the chart button is clicked', () => {
-      enableRelayWithData();
-      render(<RelayHealthBar />);
-
-      fireEvent.click(screen.getByLabelText('Open delivery metrics'));
-
-      expect(screen.getByText('Delivery Metrics')).toBeInTheDocument();
-      expect(screen.getByTestId('delivery-metrics-dashboard')).toBeInTheDocument();
     });
   });
 

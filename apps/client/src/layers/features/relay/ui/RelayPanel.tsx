@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Route } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent, FeatureDisabledState } from '@/layers/shared/ui';
@@ -14,6 +14,7 @@ export function RelayPanel() {
   const relayEnabled = useRelayEnabled();
   const [activeTab, setActiveTab] = useState('connections');
   const [showCatalog, setShowCatalog] = useState(false);
+  const [autoShowFailures, setAutoShowFailures] = useState(false);
   const deadLetterRef = useRef<HTMLDivElement>(null);
 
   // Connect SSE stream when relay is enabled; track connection health for banner
@@ -23,14 +24,19 @@ export function RelayPanel() {
   const { data: catalog = [] } = useAdapterCatalog(relayEnabled);
   const hasConfiguredAdapters = catalog.some((entry) => entry.instances.length > 0);
 
-  /** Switch to the activity tab and scroll dead letters section into view. */
-  const handleFailedClick = () => {
+  /**
+   * Switch to the activity tab, force the dead-letter section open, then scroll to it.
+   * The 100ms pulse on autoShowFailures lets the useEffect in ActivityFeed fire even
+   * on repeated clicks (value goes true → false → true each time).
+   */
+  const handleFailedClick = useCallback(() => {
     setActiveTab('activity');
-    // Defer scroll until after the tab content is visible in the DOM
+    setAutoShowFailures(true);
+    setTimeout(() => setAutoShowFailures(false), 100);
     setTimeout(() => {
       deadLetterRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }, 0);
-  };
+    }, 150);
+  }, []);
 
   if (!relayEnabled) {
     return (
@@ -81,6 +87,7 @@ export function RelayPanel() {
                     enabled={relayEnabled}
                     deadLetterRef={deadLetterRef}
                     onSwitchToAdapters={() => setActiveTab('connections')}
+                    autoShowFailures={autoShowFailures}
                   />
                 </TabsContent>
               </motion.div>

@@ -33,6 +33,7 @@ vi.mock('@/layers/entities/mesh', () => ({
 
 vi.mock('@/layers/entities/binding', () => ({
   useCreateBinding: () => mockUseCreateBinding(),
+  useBindings: () => ({ data: [] }),
 }));
 
 // Mock BindingDialog to isolate ConversationRow behavior.

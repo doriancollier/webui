@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/layers/shared/ui';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
-import { useCreateBinding } from '@/layers/entities/binding';
+import { useCreateBinding, useBindings } from '@/layers/entities/binding';
 import { getStatusDotColor, getStatusTextColor, getStatusBorderColor } from '../lib/status-colors';
 import { formatTimeAgo } from '../lib/format-time';
 import { MessageTrace } from './MessageTrace';
@@ -125,6 +125,12 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
   const { data: agentsData } = useRegisteredAgents();
   const agents = useMemo(() => agentsData?.agents ?? [], [agentsData]);
   const { mutate: createBinding } = useCreateBinding();
+  const { data: allBindings = [] } = useBindings();
+  const extractedAdapterId = extractAdapterId(conversation);
+  const existingBindings = useMemo(
+    () => allBindings.filter((b) => b.adapterId === extractedAdapterId),
+    [allBindings, extractedAdapterId],
+  );
 
   const dotColor = getStatusDotColor(conversation.status);
   const textColor = getStatusTextColor(conversation.status);
@@ -227,6 +233,14 @@ export function ConversationRow({ conversation }: ConversationRowProps) {
             </PopoverTrigger>
             <PopoverContent className="w-64 space-y-3 p-3" align="end">
               <p className="text-xs font-medium">Route to Agent</p>
+              {existingBindings.length > 0 && (
+                <div className="rounded border border-blue-200 bg-blue-50 px-2 py-1.5 text-xs dark:border-blue-900 dark:bg-blue-950">
+                  <p className="font-medium text-blue-800 dark:text-blue-200">
+                    {existingBindings.length} binding{existingBindings.length !== 1 ? 's' : ''}{' '}
+                    already exist{existingBindings.length === 1 ? 's' : ''} for this adapter
+                  </p>
+                </div>
+              )}
               <Select value={routeAgentId} onValueChange={setRouteAgentId}>
                 <SelectTrigger className="h-8 text-xs">
                   <SelectValue placeholder="Select agent" />

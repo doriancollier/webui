@@ -14,6 +14,7 @@ import {
 import { ConversationRow } from './ConversationRow';
 import { DeadLetterSection } from './DeadLetterSection';
 import { ComposeMessageDialog } from './ComposeMessageDialog';
+import { MetricsSummary } from './MetricsSummary';
 import type { RelayConversation } from '@dorkos/shared/relay-schemas';
 
 interface ActivityFeedProps {
@@ -22,6 +23,8 @@ interface ActivityFeedProps {
   deadLetterRef?: RefObject<HTMLDivElement | null>;
   /** Called when the user clicks "Set up an adapter" in the no-messages empty state. */
   onSwitchToAdapters?: () => void;
+  /** When true, forces the dead-letter section open. Used by the health bar click handler. */
+  autoShowFailures?: boolean;
 }
 
 type SourceFilter = 'all' | 'chat' | 'pulse' | 'system';
@@ -76,11 +79,17 @@ function applyFilters(
 }
 
 /** Chronological conversation feed with source/status filters and search. */
-export function ActivityFeed({ enabled, deadLetterRef, onSwitchToAdapters }: ActivityFeedProps) {
+export function ActivityFeed({
+  enabled,
+  deadLetterRef,
+  onSwitchToAdapters,
+  autoShowFailures,
+}: ActivityFeedProps) {
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [searchFilter, setSearchFilter] = useState('');
   const [showFailures, setShowFailures] = useState(false);
+  const [userToggled, setUserToggled] = useState(false);
   const { data, isLoading } = useRelayConversations(enabled);
   const { data: deadLetterGroups = [] } = useAggregatedDeadLetters(enabled);
   const conversations = data?.conversations ?? [];
@@ -95,6 +104,22 @@ export function ActivityFeed({ enabled, deadLetterRef, onSwitchToAdapters }: Act
       initialIdsRef.current = new Set(conversations.map((c) => c.id));
     }
   }, [conversations]);
+
+  // Auto-open the dead-letter section when dead letters arrive, unless the user manually closed it.
+  useEffect(() => {
+    if (!userToggled && deadLetterGroups.length > 0) {
+      setShowFailures(true);
+    }
+  }, [deadLetterGroups.length, userToggled]);
+
+  // Force the dead-letter section open when the health bar click handler signals it.
+  // Also resets userToggled so the auto-show effect can fire again on future arrivals.
+  useEffect(() => {
+    if (autoShowFailures) {
+      setShowFailures(true);
+      setUserToggled(false);
+    }
+  }, [autoShowFailures]);
 
   const hasActiveFilters = sourceFilter !== 'all' || statusFilter !== 'all' || searchFilter !== '';
 
@@ -123,6 +148,8 @@ export function ActivityFeed({ enabled, deadLetterRef, onSwitchToAdapters }: Act
   }
 
   return (
+    <>
+    <MetricsSummary enabled={enabled} />
     <div className="flex flex-col gap-3 p-4">
       <div className="flex flex-wrap items-center gap-2">
         <Select value={sourceFilter} onValueChange={(v) => setSourceFilter(v as SourceFilter)}>
@@ -155,10 +182,10 @@ export function ActivityFeed({ enabled, deadLetterRef, onSwitchToAdapters }: Act
           className="relative"
           onClick={() => setShowFailures(!showFailures)}
           aria-pressed={showFailures}
-          aria-label="Show failures"
+          aria-label="Show dead letters"
         >
           <AlertTriangle className="mr-1 size-3.5" />
-          Failures
+          Dead Letters
           {hasDeadLetters && !showFailures && (
             <span className="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-red-500" />
           )}
@@ -220,16 +247,11 @@ export function ActivityFeed({ enabled, deadLetterRef, onSwitchToAdapters }: Act
 
           <Inbox className="size-10 text-muted-foreground/50" />
           <div className="space-y-1">
-            <p className="text-sm font-medium">Waiting for messages</p>
+            <p className="text-sm font-medium">No activity yet</p>
             <p className="text-sm text-muted-foreground">
-              Messages will appear here once your adapters are connected and agents start communicating.
+              Messages will appear here as your agents communicate
             </p>
           </div>
-          {onSwitchToAdapters && (
-            <Button variant="outline" size="sm" onClick={onSwitchToAdapters}>
-              Set up an adapter
-            </Button>
-          )}
         </div>
       ) : filteredConversations.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
@@ -261,5 +283,6 @@ export function ActivityFeed({ enabled, deadLetterRef, onSwitchToAdapters }: Act
         </div>
       )}
     </div>
-  );
+    </>
+  )
 }

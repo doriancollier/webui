@@ -1,6 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
+import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent, waitFor, act } from '@testing-library/react';
 import { AdapterCard } from '../ui/AdapterCard';
@@ -12,13 +13,23 @@ import type { AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-sche
 
 const mockUseBindings = vi.fn();
 const mockUseRegisteredAgents = vi.fn();
+const mockMutate = vi.fn();
 
 vi.mock('@/layers/entities/binding', () => ({
   useBindings: (...args: unknown[]) => mockUseBindings(...args),
+  useCreateBinding: () => ({ mutate: mockMutate }),
+  useUpdateBinding: () => ({ mutate: mockMutate }),
+  useDeleteBinding: () => ({ mutate: mockMutate }),
 }));
 
 vi.mock('@/layers/entities/mesh', () => ({
   useRegisteredAgents: (...args: unknown[]) => mockUseRegisteredAgents(...args),
+}));
+
+// Stub BindingDialog to avoid deep rendering — AdapterCard tests focus on card behaviour.
+vi.mock('@/layers/features/mesh/ui/BindingDialog', () => ({
+  BindingDialog: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="binding-dialog" /> : null,
 }));
 
 // ---------------------------------------------------------------------------
@@ -343,19 +354,20 @@ describe('AdapterCard', () => {
   // No-bindings state
   // -------------------------------------------------------------------------
 
-  it('shows "No agent bound" text when connected with no bindings', () => {
+  it('shows "Add binding" CTA button when connected with no bindings', () => {
     render(<AdapterCard {...defaultProps()} />);
-    expect(screen.getByText('No agent bound')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /add binding/i })).toBeTruthy();
   });
 
-  it('does not show "No agent bound" when disconnected', () => {
+  it('does not show "Add binding" CTA when disconnected', () => {
     render(<AdapterCard {...defaultProps({ instance: disabledInstance })} />);
-    expect(screen.queryByText('No agent bound')).toBeNull();
+    // No bindings and disconnected — CTA should not appear
+    expect(screen.queryByRole('button', { name: /^add binding$/i })).toBeNull();
   });
 
-  it('does not show "Bind" button (no Bindings tab to navigate to)', () => {
+  it('does not show "No agent bound" amber text (replaced by CTA button)', () => {
     render(<AdapterCard {...defaultProps()} />);
-    expect(screen.queryByRole('button', { name: 'Bind' })).toBeNull();
+    expect(screen.queryByText('No agent bound')).toBeNull();
   });
 
   it('does not show "No agent bound" when bindings exist', () => {

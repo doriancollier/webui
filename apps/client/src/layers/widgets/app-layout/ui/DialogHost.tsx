@@ -76,9 +76,9 @@ export function DialogHost() {
         <ResponsiveDialogContent className="h-[85vh] max-w-2xl gap-0 p-0">
           <ResponsiveDialogFullscreenToggle />
           <ResponsiveDialogHeader className="border-b px-4 py-3">
-            <ResponsiveDialogTitle className="text-sm font-medium">Relay</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle className="text-sm font-medium">Connections</ResponsiveDialogTitle>
             <ResponsiveDialogDescription className="sr-only">
-              Inter-agent messaging activity and endpoints
+              Manage adapters and monitor message activity
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           <div className="flex min-h-0 flex-1 flex-col">

@@ -1,13 +1,3 @@
-import { useState } from 'react';
-import { BarChart3 } from 'lucide-react';
-import { Button } from '@/layers/shared/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/layers/shared/ui/dialog';
 import {
   Tooltip,
   TooltipContent,
@@ -16,7 +6,6 @@ import {
 } from '@/layers/shared/ui/tooltip';
 import { useDeliveryMetrics, useAdapterCatalog, useRelayEnabled } from '@/layers/entities/relay';
 import type { DeliveryMetrics } from '@dorkos/shared/relay-schemas';
-import { DeliveryMetricsDashboard } from './DeliveryMetrics';
 
 interface RelayHealthBarProps {
   /** When false, the bar is suppressed regardless of relay state. Defaults to true. */
@@ -108,13 +97,11 @@ function useAdapterConnectivity(enabled: boolean) {
  * Shows a colored status dot (green/amber/red) and a plain-language status message.
  * Healthy state includes a tooltip with detailed metrics breakdown.
  * Degraded/critical failure text is clickable to scroll to dead letters.
- * Includes a BarChart3 icon button that opens a Dialog with the full DeliveryMetricsDashboard.
  *
  * Renders null when relay is disabled, the `enabled` prop is false, or data is loading.
  */
 export function RelayHealthBar({ enabled = true, onFailedClick }: RelayHealthBarProps) {
   const relayEnabled = useRelayEnabled();
-  const [metricsOpen, setMetricsOpen] = useState(false);
 
   const { data: metrics, isLoading: metricsLoading } = useDeliveryMetrics();
   const { total, connected, isLoading: catalogLoading } = useAdapterConnectivity(
@@ -172,26 +159,6 @@ export function RelayHealthBar({ enabled = true, onFailedClick }: RelayHealthBar
             )}
           </span>
         )}
-
-        {/* Metrics dashboard trigger */}
-        <Dialog open={metricsOpen} onOpenChange={setMetricsOpen}>
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="size-6 shrink-0 p-0"
-              aria-label="Open delivery metrics"
-            >
-              <BarChart3 className="size-3.5" />
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Delivery Metrics</DialogTitle>
-            </DialogHeader>
-            <DeliveryMetricsDashboard />
-          </DialogContent>
-        </Dialog>
       </div>
     </TooltipProvider>
   );

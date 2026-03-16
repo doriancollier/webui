@@ -33,6 +33,9 @@ vi.mock('../ConversationRow', () => ({
   ),
 }));
 
+// Mock MetricsSummary — renders independently via useDeliveryMetrics; not under test here.
+vi.mock('../MetricsSummary', () => ({ MetricsSummary: () => null }));
+
 import { ActivityFeed } from '../ActivityFeed';
 
 // ---------------------------------------------------------------------------
@@ -86,40 +89,24 @@ describe('ActivityFeed', () => {
   });
 
   describe('empty state', () => {
-    it('shows the "waiting for messages" state when there are no conversations and no active filters', () => {
+    it('shows the "no activity yet" state when there are no conversations and no active filters', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
-      expect(screen.getByText('Waiting for messages')).toBeInTheDocument();
+      expect(screen.getByText('No activity yet')).toBeInTheDocument();
     });
 
     it('shows contextual description in the no-messages state', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
       expect(
-        screen.getByText(
-          'Messages will appear here once your adapters are connected and agents start communicating.',
-        ),
+        screen.getByText('Messages will appear here as your agents communicate'),
       ).toBeInTheDocument();
     });
 
-    it('does not show "Set up an adapter" button when onSwitchToAdapters is not provided', () => {
-      mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
-      render(<ActivityFeed enabled={true} />);
-      expect(screen.queryByText('Set up an adapter')).not.toBeInTheDocument();
-    });
-
-    it('shows "Set up an adapter" button when onSwitchToAdapters is provided', () => {
+    it('never shows "Set up an adapter" button', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} onSwitchToAdapters={vi.fn()} />);
-      expect(screen.getByText('Set up an adapter')).toBeInTheDocument();
-    });
-
-    it('calls onSwitchToAdapters when "Set up an adapter" is clicked', () => {
-      mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
-      const onSwitchToAdapters = vi.fn();
-      render(<ActivityFeed enabled={true} onSwitchToAdapters={onSwitchToAdapters} />);
-      fireEvent.click(screen.getByText('Set up an adapter'));
-      expect(onSwitchToAdapters).toHaveBeenCalledOnce();
+      expect(screen.queryByText('Set up an adapter')).not.toBeInTheDocument();
     });
 
     it('shows the "no messages match filters" state when filters are active and nothing matches', () => {
@@ -159,7 +146,7 @@ describe('ActivityFeed', () => {
       const clearButtons = screen.getAllByText('Clear filters');
       fireEvent.click(clearButtons[clearButtons.length - 1]);
 
-      expect(screen.getByText('Waiting for messages')).toBeInTheDocument();
+      expect(screen.getByText('No activity yet')).toBeInTheDocument();
     });
   });
 
@@ -503,18 +490,18 @@ describe('ActivityFeed', () => {
       expect(screen.queryByTestId('dead-letter-section')).not.toBeInTheDocument();
     });
 
-    it('renders the "Failures" toggle button', () => {
+    it('renders the "Dead Letters" toggle button', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
 
-      expect(screen.getByRole('button', { name: 'Show failures' })).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Show dead letters' })).toBeInTheDocument();
     });
 
     it('shows DeadLetterSection when failures toggle is clicked', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Show failures' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show dead letters' }));
 
       const section = screen.getByTestId('dead-letter-section');
       expect(section).toBeInTheDocument();
@@ -525,7 +512,7 @@ describe('ActivityFeed', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
 
-      const toggle = screen.getByRole('button', { name: 'Show failures' });
+      const toggle = screen.getByRole('button', { name: 'Show dead letters' });
       fireEvent.click(toggle);
       expect(screen.getByTestId('dead-letter-section')).toBeInTheDocument();
 
@@ -537,7 +524,7 @@ describe('ActivityFeed', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={false} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Show failures' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show dead letters' }));
 
       const section = screen.getByTestId('dead-letter-section');
       expect(section).toHaveAttribute('data-enabled', 'false');
@@ -551,7 +538,7 @@ describe('ActivityFeed', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
 
-      const toggle = screen.getByRole('button', { name: 'Show failures' });
+      const toggle = screen.getByRole('button', { name: 'Show dead letters' });
       // Red dot is a span inside the button
       const redDot = toggle.querySelector('.bg-red-500');
       expect(redDot).toBeInTheDocument();
@@ -565,9 +552,9 @@ describe('ActivityFeed', () => {
       mockUseRelayConversations.mockReturnValue({ data: { conversations: [] }, isLoading: false });
       render(<ActivityFeed enabled={true} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Show failures' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show dead letters' }));
 
-      const toggle = screen.getByRole('button', { name: 'Show failures' });
+      const toggle = screen.getByRole('button', { name: 'Show dead letters' });
       const redDot = toggle.querySelector('.bg-red-500');
       expect(redDot).not.toBeInTheDocument();
     });
@@ -585,7 +572,7 @@ describe('ActivityFeed', () => {
       const ref = { current: null } as React.RefObject<HTMLDivElement | null>;
       render(<ActivityFeed enabled={true} deadLetterRef={ref} />);
 
-      fireEvent.click(screen.getByRole('button', { name: 'Show failures' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Show dead letters' }));
 
       expect(ref.current).not.toBeNull();
     });

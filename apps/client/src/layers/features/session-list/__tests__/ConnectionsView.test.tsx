@@ -232,16 +232,23 @@ describe('ConnectionsView', () => {
 
   it('Open Relay button calls setRelayOpen(true)', () => {
     render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
-    const btn = screen.getByText(/Open Relay/);
+    const btn = screen.getByRole('button', { name: /Open Relay/ });
     fireEvent.click(btn);
     expect(mockSetRelayOpen).toHaveBeenCalledWith(true);
   });
 
   it('Open Mesh button calls setMeshOpen(true)', () => {
     render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
-    const btn = screen.getByText(/Open Mesh/);
+    const btn = screen.getByRole('button', { name: /Open Mesh/ });
     fireEvent.click(btn);
     expect(mockSetMeshOpen).toHaveBeenCalledWith(true);
+  });
+
+  it('Edit capabilities button calls setAgentDialogOpen(true)', () => {
+    render(<ConnectionsView toolStatus={enabledToolStatus} agentId={AGENT_ID} />, { wrapper: Wrapper });
+    const btn = screen.getByRole('button', { name: /Edit capabilities/ });
+    fireEvent.click(btn);
+    expect(mockSetAgentDialogOpen).toHaveBeenCalledWith(true);
   });
 
   it('renders empty adapter state when no adapters configured', () => {

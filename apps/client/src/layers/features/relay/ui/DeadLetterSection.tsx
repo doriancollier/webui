@@ -1,6 +1,15 @@
 import { useState } from 'react';
 import { AlertTriangle, Eye, Trash2 } from 'lucide-react';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
   Badge,
   Button,
   Dialog,
@@ -10,7 +19,7 @@ import {
   DialogDescription,
 } from '@/layers/shared/ui';
 import { cn } from '@/layers/shared/lib';
-import { useAggregatedDeadLetters, useDismissDeadLetterGroup } from '@/layers/entities/relay';
+import { useAggregatedDeadLetters, useDismissDeadLetterGroup, useDeliveryMetrics } from '@/layers/entities/relay';
 import type { AggregatedDeadLetter } from '@/layers/entities/relay';
 import { formatTimeAgo } from '../lib/format-time';
 
@@ -93,16 +102,37 @@ function AggregatedCard({ group }: AggregatedCardProps) {
               </Dialog>
             </>
           )}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-7 px-2 text-xs text-destructive hover:text-destructive"
-            onClick={() => dismissMutation.mutate({ source: group.source, reason: group.reason })}
-            disabled={dismissMutation.isPending}
-          >
-            <Trash2 className="mr-1 size-3" />
-            Dismiss All
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                disabled={dismissMutation.isPending}
+              >
+                <Trash2 className="mr-1 size-3" />
+                Mark Resolved
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Mark dead letters as resolved?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will dismiss {group.count} dead letter{group.count !== 1 ? 's' : ''} from{' '}
+                  <span className="font-medium">{group.source}</span> ({reasonConfig.label}).
+                  This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => dismissMutation.mutate({ source: group.source, reason: group.reason })}
+                >
+                  Mark Resolved
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       </div>
     </div>
@@ -125,11 +155,21 @@ interface DeadLetterSectionProps {
  */
 export function DeadLetterSection({ enabled = true }: DeadLetterSectionProps) {
   const { data: groups = [], isLoading } = useAggregatedDeadLetters(enabled);
+  const { data: metrics } = useDeliveryMetrics();
+  const budgetRejections = metrics?.budgetRejections;
+  const hasBudgetRejections = budgetRejections && Object.values(budgetRejections).some((v) => v > 0);
 
   if (isLoading || groups.length === 0) return null;
 
   return (
     <div className="space-y-2">
+      {hasBudgetRejections && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 dark:border-amber-900 dark:bg-amber-950">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+            Budget rejections: {budgetRejections.hopLimit} hop limit, {budgetRejections.cycleDetected} cycles, {budgetRejections.budgetExhausted} budget, {budgetRejections.ttlExpired} TTL
+          </p>
+        </div>
+      )}
       {groups.map((group) => (
         <AggregatedCard key={`${group.source}:${group.reason}`} group={group} />
       ))}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Shield } from 'lucide-react';
+import { ChevronRight, Shield, Trash2 } from 'lucide-react';
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -20,6 +20,15 @@ import {
   CollapsibleTrigger,
   Badge,
   Switch,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from '@/layers/shared/ui';
 import { useAdapterCatalog, useObservedChats } from '@/layers/entities/relay';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
@@ -85,6 +94,13 @@ export interface BindingDialogProps {
   adapterName?: string;
   /** In edit mode, human-readable name of the target agent (read-only). */
   agentName?: string;
+  /**
+   * In edit mode, called with the binding ID when the user confirms deletion.
+   * When provided, a destructive "Delete" button is shown in the dialog footer.
+   */
+  onDelete?: (bindingId: string) => void;
+  /** The binding ID — required when onDelete is provided. */
+  bindingId?: string;
 }
 
 /**
@@ -102,6 +118,8 @@ export function BindingDialog({
   initialValues,
   adapterName,
   agentName,
+  onDelete,
+  bindingId,
 }: BindingDialogProps) {
   const isEdit = mode === 'edit';
 
@@ -440,6 +458,34 @@ export function BindingDialog({
         </div>
 
         <ResponsiveDialogFooter className="border-t px-4 py-3">
+          {isEdit && onDelete && bindingId && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="ghost" size="sm" className="mr-auto text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950">
+                  <Trash2 className="mr-1.5 size-3.5" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete binding</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete this binding? The adapter will no longer route
+                    messages to the connected agent.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => onDelete(bindingId)}
+                    className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
           <Button variant="ghost" size="sm" onClick={handleCancel}>
             Cancel
           </Button>

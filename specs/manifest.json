@@ -926,7 +926,7 @@
       "slug": "relay-panel-redesign",
       "title": "Relay Panel Redesign \u2014 Jobs/Ive Design Overhaul",
       "created": "2026-03-15",
-      "status": "in-progress"
+      "status": "implemented"
     },
     {
       "number": 133,
@@ -934,7 +934,14 @@
       "title": "SDK-Based Command Discovery",
       "created": "2026-03-15",
       "status": "specified"
+    },
+    {
+      "number": 134,
+      "slug": "relay-panel-ux-fixes",
+      "title": "Relay Panel UX Fixes \u2014 Binding CRUD, Health Bar, Activity Feed",
+      "created": "2026-03-15",
+      "status": "specified"
     }
   ],
-  "nextNumber": 134
+  "nextNumber": 135
 }

@@ -1,6 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Activity, AlertTriangle, ChevronRight, MoreVertical, Settings, ShieldCheck, Trash2 } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/layers/shared/ui/tooltip';
+import { Activity, AlertTriangle, ChevronRight, Link2, MoreVertical, Plus, Settings, Trash2 } from 'lucide-react';
 import { Badge } from '@/layers/shared/ui/badge';
 import { Button } from '@/layers/shared/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/layers/shared/ui/collapsible';
@@ -28,12 +27,13 @@ import {
   SheetTitle,
 } from '@/layers/shared/ui/sheet';
 import { cn } from '@/layers/shared/lib';
-import type { AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-schemas';
-import { useBindings } from '@/layers/entities/binding';
+import type { AdapterBinding, AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-schemas';
+import { useBindings, useCreateBinding, useDeleteBinding, useUpdateBinding } from '@/layers/entities/binding';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
 import { getCategoryColorClasses } from '../lib/category-colors';
 import { AdapterEventLog } from './AdapterEventLog';
 import { AdapterBindingRow } from './AdapterBindingRow';
+import { BindingDialog, type BindingFormValues } from '@/layers/features/mesh/ui/BindingDialog';
 
 /** Maximum binding rows to display before showing overflow link. */
 const MAX_VISIBLE_BINDINGS = 3;
@@ -50,6 +50,15 @@ interface AdapterCardProps {
 export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemove }: AdapterCardProps) {
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
   const [eventsSheetOpen, setEventsSheetOpen] = useState(false);
+  const [bindingDialogOpen, setBindingDialogOpen] = useState(false);
+  const [bindingDialogMode, setBindingDialogMode] = useState<'create' | 'edit'>('create');
+  const [editingBinding, setEditingBinding] = useState<AdapterBinding | null>(null);
+  const [showAllBindings, setShowAllBindings] = useState(false);
+
+  const createBinding = useCreateBinding();
+  const updateBinding = useUpdateBinding();
+  const deleteBinding = useDeleteBinding();
+
   const isBuiltinClaude = manifest.type === 'claude-code' && manifest.builtin;
 
   // Prefer custom label as primary display name, fall back to status displayName or id.
@@ -102,8 +111,33 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
     !['error', 'connected', 'disconnected', 'starting', 'stopping'].includes(instance.status.state) && 'bg-gray-400',
   );
 
-  const visibleBindings = boundAgentRows.slice(0, MAX_VISIBLE_BINDINGS);
+  const visibleBindings = showAllBindings ? boundAgentRows : boundAgentRows.slice(0, MAX_VISIBLE_BINDINGS);
   const overflowCount = boundAgentRows.length - MAX_VISIBLE_BINDINGS;
+
+  /** Resolves a registered agent's display name from its ID. */
+  function lookupAgentName(agentId: string) {
+    return agents.find((a) => a.id === agentId)?.name ?? agentId;
+  }
+
+  function openBindingCreate() {
+    setBindingDialogMode('create');
+    setEditingBinding(null);
+    setBindingDialogOpen(true);
+  }
+
+  function handleBindingConfirm(values: BindingFormValues) {
+    if (bindingDialogMode === 'edit' && editingBinding) {
+      updateBinding.mutate({ id: editingBinding.id, updates: values });
+    } else {
+      createBinding.mutate(values);
+    }
+    setBindingDialogOpen(false);
+  }
+
+  function handleBindingDelete(bindingId: string) {
+    deleteBinding.mutate(bindingId);
+    setBindingDialogOpen(false);
+  }
 
   return (
     <>
@@ -138,6 +172,10 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
                 <DropdownMenuItem onClick={() => setEventsSheetOpen(true)}>
                   <Activity className="mr-2 size-3.5" />
                   Events
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={openBindingCreate}>
+                  <Link2 className="mr-2 size-3.5" />
+                  Add Binding
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={onConfigure}>
                   <Settings className="mr-2 size-3.5" />
@@ -175,28 +213,69 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
             </p>
           ) : hasBindings ? (
             <>
-              {visibleBindings.map((row) => (
-                <AdapterBindingRow
-                  key={row.bindingId}
-                  agentName={row.agentName}
-                  sessionStrategy={row.sessionStrategy}
-                  chatId={row.chatId}
-                  channelType={row.channelType}
-                  canInitiate={row.canInitiate}
-                  canReply={row.canReply}
-                  canReceive={row.canReceive}
-                />
-              ))}
-              {overflowCount > 0 && (
-                <span className="text-xs text-muted-foreground">
+              {visibleBindings.map((row, idx) => {
+                const binding = adapterBindings[idx];
+                return (
+                  <button
+                    key={row.bindingId}
+                    type="button"
+                    className="group/row flex w-full cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 text-left transition-colors hover:bg-muted/50"
+                    onClick={() => {
+                      setEditingBinding(binding);
+                      setBindingDialogMode('edit');
+                      setBindingDialogOpen(true);
+                    }}
+                  >
+                    <AdapterBindingRow
+                      agentName={row.agentName}
+                      sessionStrategy={row.sessionStrategy}
+                      chatId={row.chatId}
+                      channelType={row.channelType}
+                      canInitiate={row.canInitiate}
+                      canReply={row.canReply}
+                      canReceive={row.canReceive}
+                    />
+                  </button>
+                );
+              })}
+              {overflowCount > 0 && !showAllBindings && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  onClick={() => setShowAllBindings(true)}
+                >
                   and {overflowCount} more
-                </span>
+                </button>
               )}
+              {showAllBindings && boundAgentRows.length > MAX_VISIBLE_BINDINGS && (
+                <button
+                  type="button"
+                  className="mt-1 text-xs text-muted-foreground hover:text-foreground hover:underline"
+                  onClick={() => setShowAllBindings(false)}
+                >
+                  Show less
+                </button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-1 h-6 gap-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                onClick={openBindingCreate}
+              >
+                <Plus className="size-3" />
+                Add binding
+              </Button>
             </>
           ) : isConnected ? (
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-amber-600">No agent bound</span>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="mt-1 h-6 gap-1 px-2 text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-500 dark:hover:bg-amber-950"
+              onClick={openBindingCreate}
+            >
+              <Plus className="size-3" />
+              Add binding
+            </Button>
           ) : null}
         </div>
 
@@ -271,6 +350,32 @@ export function AdapterCard({ instance, manifest, onToggle, onConfigure, onRemov
           </div>
         </SheetContent>
       </Sheet>
+
+      <BindingDialog
+        open={bindingDialogOpen}
+        onOpenChange={setBindingDialogOpen}
+        mode={bindingDialogMode}
+        initialValues={
+          bindingDialogMode === 'edit' && editingBinding
+            ? {
+                adapterId: editingBinding.adapterId,
+                agentId: editingBinding.agentId,
+                sessionStrategy: editingBinding.sessionStrategy,
+                label: editingBinding.label ?? '',
+                chatId: editingBinding.chatId,
+                channelType: editingBinding.channelType,
+                canInitiate: editingBinding.canInitiate,
+                canReply: editingBinding.canReply,
+                canReceive: editingBinding.canReceive,
+              }
+            : { adapterId: instance.id }
+        }
+        adapterName={manifest.displayName}
+        agentName={editingBinding ? lookupAgentName(editingBinding.agentId) : undefined}
+        onConfirm={handleBindingConfirm}
+        onDelete={editingBinding ? handleBindingDelete : undefined}
+        bindingId={editingBinding?.id}
+      />
     </>
   );
 }

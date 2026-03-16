@@ -16,10 +16,12 @@ const mockUseDismissDeadLetterGroup = vi.fn().mockReturnValue({
   mutate: mockDismissMutate,
   isPending: false,
 });
+const mockUseDeliveryMetrics = vi.fn().mockReturnValue({ data: undefined });
 
 vi.mock('@/layers/entities/relay', () => ({
   useAggregatedDeadLetters: (...args: unknown[]) => mockUseAggregatedDeadLetters(...args),
   useDismissDeadLetterGroup: () => mockUseDismissDeadLetterGroup(),
+  useDeliveryMetrics: () => mockUseDeliveryMetrics(),
 }));
 
 import { DeadLetterSection } from '../DeadLetterSection';
@@ -171,30 +173,69 @@ describe('DeadLetterSection', () => {
   });
 
   describe('dismiss action', () => {
-    it('shows "Dismiss All" button on each card', () => {
+    it('shows "Mark Resolved" button on each card', () => {
       mockUseAggregatedDeadLetters.mockReturnValue({ data: [hopLimitGroup], isLoading: false });
       render(<DeadLetterSection />);
-      expect(screen.getByText('Dismiss All')).toBeInTheDocument();
+      expect(screen.getByText('Mark Resolved')).toBeInTheDocument();
     });
 
-    it('calls dismiss mutation with source and reason on click', () => {
+    it('opens confirmation dialog when "Mark Resolved" is clicked', () => {
       mockUseAggregatedDeadLetters.mockReturnValue({ data: [hopLimitGroup], isLoading: false });
       render(<DeadLetterSection />);
-      fireEvent.click(screen.getByText('Dismiss All'));
+      fireEvent.click(screen.getByText('Mark Resolved'));
+      expect(screen.getByText('Mark dead letters as resolved?')).toBeInTheDocument();
+    });
+
+    it('shows count, source, and reason in the confirmation dialog', () => {
+      mockUseAggregatedDeadLetters.mockReturnValue({ data: [hopLimitGroup], isLoading: false });
+      render(<DeadLetterSection />);
+      fireEvent.click(screen.getByText('Mark Resolved'));
+      // The description text is split across multiple DOM nodes due to JSX interpolation
+      const description = screen.getByRole('alertdialog').querySelector('[id^="radix-"]');
+      const descText = screen.getByText('Mark dead letters as resolved?').closest('[role="alertdialog"]')?.textContent ?? '';
+      expect(descText).toMatch(/15044/);
+      expect(descText).toMatch(/slack-adapter/);
+      expect(descText).toMatch(/Hop Limit/);
+    });
+
+    it('uses singular "dead letter" when count is 1', () => {
+      mockUseAggregatedDeadLetters.mockReturnValue({ data: [unknownReasonGroup], isLoading: false });
+      render(<DeadLetterSection />);
+      fireEvent.click(screen.getByText('Mark Resolved'));
+      const descText = screen.getByText('Mark dead letters as resolved?').closest('[role="alertdialog"]')?.textContent ?? '';
+      // count=1 should not append 's'
+      expect(descText).toMatch(/1 dead letter[^s]/);
+    });
+
+    it('calls dismiss mutation after confirming in the dialog', () => {
+      mockUseAggregatedDeadLetters.mockReturnValue({ data: [hopLimitGroup], isLoading: false });
+      render(<DeadLetterSection />);
+      fireEvent.click(screen.getByText('Mark Resolved'));
+      // Click the "Mark Resolved" action button inside the dialog
+      const dialogActions = screen.getAllByText('Mark Resolved');
+      fireEvent.click(dialogActions[dialogActions.length - 1]);
       expect(mockDismissMutate).toHaveBeenCalledWith({
         source: 'slack-adapter',
         reason: 'hop_limit',
       });
     });
 
-    it('disables dismiss button while mutation is pending', () => {
+    it('does not call dismiss mutation when Cancel is clicked', () => {
+      mockUseAggregatedDeadLetters.mockReturnValue({ data: [hopLimitGroup], isLoading: false });
+      render(<DeadLetterSection />);
+      fireEvent.click(screen.getByText('Mark Resolved'));
+      fireEvent.click(screen.getByText('Cancel'));
+      expect(mockDismissMutate).not.toHaveBeenCalled();
+    });
+
+    it('disables "Mark Resolved" trigger button while mutation is pending', () => {
       mockUseDismissDeadLetterGroup.mockReturnValue({
         mutate: mockDismissMutate,
         isPending: true,
       });
       mockUseAggregatedDeadLetters.mockReturnValue({ data: [hopLimitGroup], isLoading: false });
       render(<DeadLetterSection />);
-      expect(screen.getByText('Dismiss All').closest('button')).toBeDisabled();
+      expect(screen.getByText('Mark Resolved').closest('button')).toBeDisabled();
     });
   });
 

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { ArrowUpRight } from 'lucide-react';
 import { useRelayAdapters } from '@/layers/entities/relay';
 import { useRegisteredAgents, useAgentAccess } from '@/layers/entities/mesh';
 import { useBindings } from '@/layers/entities/binding';
@@ -8,6 +9,7 @@ import type { AgentToolStatus, ChipState } from '@/layers/entities/agent';
 import { useMcpConfig } from '@/layers/entities/agent';
 import {
   SidebarGroup,
+  SidebarGroupAction,
   SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuItem,
@@ -152,6 +154,9 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
                 <SidebarGroupLabel className="text-2xs text-muted-foreground/70 font-medium tracking-wider uppercase">
                   Adapters
                 </SidebarGroupLabel>
+                <SidebarGroupAction aria-label="Open Relay panel" onClick={() => setRelayOpen(true)}>
+                  <ArrowUpRight />
+                </SidebarGroupAction>
 
                 <AnimatePresence mode="wait" initial={false}>
                   {toolStatus.relay === 'disabled-by-agent' ? (
@@ -216,14 +221,6 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
                   )}
                 </AnimatePresence>
 
-                <div className="px-3 py-2">
-                  <button
-                    onClick={() => setRelayOpen(true)}
-                    className="text-muted-foreground hover:text-foreground text-xs transition-colors"
-                  >
-                    Open Relay →
-                  </button>
-                </div>
               </SidebarGroup>
             </motion.div>
           )}
@@ -244,6 +241,9 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
                 <SidebarGroupLabel className="text-2xs text-muted-foreground/70 font-medium tracking-wider uppercase">
                   Agents
                 </SidebarGroupLabel>
+                <SidebarGroupAction aria-label="Open Mesh panel" onClick={() => setMeshOpen(true)}>
+                  <ArrowUpRight />
+                </SidebarGroupAction>
 
                 <AnimatePresence mode="wait" initial={false}>
                   {toolStatus.mesh === 'disabled-by-agent' ? (
@@ -353,14 +353,6 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
                   </div>
                 )}
 
-                <div className="px-3 py-2">
-                  <button
-                    onClick={() => setMeshOpen(true)}
-                    className="text-muted-foreground hover:text-foreground text-xs transition-colors"
-                  >
-                    Open Mesh →
-                  </button>
-                </div>
               </SidebarGroup>
             </motion.div>
           )}
@@ -371,6 +363,9 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
           <SidebarGroupLabel className="text-2xs text-muted-foreground/70 font-medium tracking-wider uppercase">
             Tools
           </SidebarGroupLabel>
+          <SidebarGroupAction aria-label="Edit capabilities" onClick={() => setAgentDialogOpen(true)}>
+            <ArrowUpRight />
+          </SidebarGroupAction>
 
           {/* Block 1: DorkOS built-in tools */}
           <SidebarMenu>
@@ -471,14 +466,6 @@ export function ConnectionsView({ toolStatus, agentId }: ConnectionsViewProps) {
             </div>
           )}
 
-          <div className="px-3 py-2">
-            <button
-              onClick={() => setAgentDialogOpen(true)}
-              className="text-muted-foreground hover:text-foreground text-xs transition-colors"
-            >
-              Edit capabilities →
-            </button>
-          </div>
         </SidebarGroup>
       </div>
     </ScrollArea>

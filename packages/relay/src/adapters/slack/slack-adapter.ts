@@ -91,7 +91,7 @@ export const SLACK_MANIFEST: AdapterManifest = {
         '3. **OAuth & Permissions** \u2014 Add bot token scopes: channels:history, channels:read, chat:write, groups:history, groups:read, im:history, im:read, im:write, mpim:history, app_mentions:read, users:read, reactions:write. Then install the app to your workspace.\n' +
         '4. **App-Level Token** \u2014 In Basic Information \u2192 App-Level Tokens, generate a token with the connections:write scope.\n\n' +
         '\u26a0\ufe0f Do NOT enable "Agents & AI Apps" \u2014 it adds user scopes that cause install failures on most workspaces.',
-      fields: ['botToken', 'appToken', 'signingSecret'],
+      fields: ['botToken', 'appToken', 'signingSecret', 'streaming', 'typingIndicator'],
     },
   ],
   configFields: [
