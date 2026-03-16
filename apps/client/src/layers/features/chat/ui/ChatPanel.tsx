@@ -118,6 +118,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     rateLimitRetryAfter,
     systemStatus,
     promptSuggestions,
+    presenceInfo,
+    presencePulse,
   } = useChatSession(sessionId, {
     transformContent: fileTransformContent,
     onTaskEvent: handleTaskEventWithCelebrations,
@@ -416,6 +418,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         onQueueCancelEdit={handleQueueCancelEdit}
         onQueueNavigateUp={handleQueueNavigateUp}
         onQueueNavigateDown={handleQueueNavigateDown}
+        presenceInfo={presenceInfo}
+        presencePulse={presencePulse}
       />
     </div>
   );

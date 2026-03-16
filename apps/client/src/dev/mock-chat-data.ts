@@ -153,6 +153,49 @@ export const TOOL_CALLS: Record<string, ToolCallState> = {
   }),
 };
 
+export const TOOL_CALLS_EXTENDED: Record<string, ToolCallState> = {
+  task_get: createToolCall({
+    toolName: 'TaskGet',
+    input: JSON.stringify({ taskId: '3' }),
+    status: 'complete',
+    result: '{ "id": "3", "subject": "Write unit tests", "status": "pending" }',
+  }),
+  notebook_edit: createToolCall({
+    toolName: 'NotebookEdit',
+    input: JSON.stringify({ notebook_path: '/notebooks/analysis.ipynb', new_source: 'df.describe()' }),
+    status: 'complete',
+    result: 'Cell updated.',
+  }),
+  enter_plan_mode: createToolCall({
+    toolName: 'EnterPlanMode',
+    input: JSON.stringify({}),
+    status: 'complete',
+  }),
+  exit_plan_mode: createToolCall({
+    toolName: 'ExitPlanMode',
+    input: JSON.stringify({}),
+    status: 'complete',
+  }),
+  tool_search: createToolCall({
+    toolName: 'ToolSearch',
+    input: JSON.stringify({ query: 'slack message send' }),
+    status: 'complete',
+    result: 'Found 3 tools: mcp__slack__send_message, mcp__slack__read_channel, mcp__slack__list_channels',
+  }),
+  list_mcp_resources: createToolCall({
+    toolName: 'ListMcpResourcesTool',
+    input: JSON.stringify({ server: 'context7' }),
+    status: 'complete',
+    result: '3 resources found',
+  }),
+  read_mcp_resource: createToolCall({
+    toolName: 'ReadMcpResourceTool',
+    input: JSON.stringify({ server: 'context7', uri: 'docs://react/hooks/useState' }),
+    status: 'complete',
+    result: 'useState documentation content...',
+  }),
+};
+
 export const TOOL_CALL_APPROVAL: ToolCallState = createToolCall({
   toolName: 'Bash',
   input: JSON.stringify({ command: 'rm -rf node_modules && npm install' }),

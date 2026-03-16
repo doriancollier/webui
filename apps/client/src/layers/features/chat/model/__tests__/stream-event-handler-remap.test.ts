@@ -24,6 +24,7 @@ function createMinimalDeps(overrides?: {
   const setIsRateLimited = vi.fn();
   const setSystemStatus = vi.fn();
   const rateLimitClearRef = { current: null };
+  const orphanHooksRef = { current: new Map() };
   const onTaskEventRef = { current: undefined };
   const onSessionIdChangeFn = overrides?.onSessionIdChange ?? vi.fn();
   const onSessionIdChangeRef = { current: onSessionIdChangeFn as ((newSessionId: string) => void) | undefined };
@@ -32,6 +33,7 @@ function createMinimalDeps(overrides?: {
 
   const handler = createStreamEventHandler({
     currentPartsRef,
+    orphanHooksRef,
     assistantCreatedRef,
     sessionStatusRef,
     streamStartTimeRef,
@@ -60,6 +62,7 @@ function createMinimalDeps(overrides?: {
   return {
     handler,
     currentPartsRef,
+    orphanHooksRef,
     assistantCreatedRef,
     setMessages,
     onSessionIdChangeFn,

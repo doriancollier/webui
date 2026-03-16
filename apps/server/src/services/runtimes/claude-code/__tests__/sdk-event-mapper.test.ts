@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest';
 import { mapSdkMessage } from '../sdk-event-mapper.js';
 import { sdkTaskStarted, sdkTaskProgress, sdkTaskNotification } from './sdk-scenarios.js';
 import type { AgentSession, ToolState } from '../agent-types.js';
-import type { StreamEvent, ErrorEvent } from '@dorkos/shared/types';
+import type {
+  StreamEvent,
+  ErrorEvent,
+  HookStartedEvent,
+  HookProgressEvent,
+  HookResponseEvent,
+} from '@dorkos/shared/types';
 
 /** Collect all events yielded by the mapper for a single message. */
 async function collectEvents(
@@ -291,5 +297,204 @@ describe('sdk-event-mapper result messages', () => {
 
     const err = events[1].data as ErrorEvent;
     expect(err.category).toBe('execution_error');
+  });
+});
+
+// --- Hook lifecycle SDK message factories ---
+
+type SDKMessage = Parameters<typeof mapSdkMessage>[0];
+
+function sdkHookStarted(hookId: string, hookName: string, hookEvent: string): SDKMessage {
+  return {
+    type: 'system',
+    subtype: 'hook_started',
+    hook_id: hookId,
+    hook_name: hookName,
+    hook_event: hookEvent,
+    uuid: `uuid-${hookId}`,
+    session_id: 'test-session',
+  } as unknown as SDKMessage;
+}
+
+function sdkHookProgress(
+  hookId: string,
+  hookName: string,
+  hookEvent: string,
+  stdout: string,
+  stderr: string
+): SDKMessage {
+  return {
+    type: 'system',
+    subtype: 'hook_progress',
+    hook_id: hookId,
+    hook_name: hookName,
+    hook_event: hookEvent,
+    stdout,
+    stderr,
+    output: stdout + stderr,
+    uuid: `uuid-${hookId}-progress`,
+    session_id: 'test-session',
+  } as unknown as SDKMessage;
+}
+
+function sdkHookResponse(
+  hookId: string,
+  hookName: string,
+  hookEvent: string,
+  outcome: string,
+  exitCode?: number,
+  stdout = '',
+  stderr = ''
+): SDKMessage {
+  return {
+    type: 'system',
+    subtype: 'hook_response',
+    hook_id: hookId,
+    hook_name: hookName,
+    hook_event: hookEvent,
+    output: stdout + stderr,
+    stdout,
+    stderr,
+    exit_code: exitCode,
+    outcome,
+    uuid: `uuid-${hookId}-response`,
+    session_id: 'test-session',
+  } as unknown as SDKMessage;
+}
+
+describe('sdk-event-mapper hook lifecycle events', () => {
+  const session = makeSession();
+  const sessionId = 'test-session';
+
+  it('hook_started (tool-contextual) yields hook_started event', async () => {
+    const toolState = makeToolState();
+    toolState.currentToolId = 'tool-123';
+    const msg = sdkHookStarted('hook-1', 'pre-commit', 'PreToolUse');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('hook_started');
+    const data = events[0].data as HookStartedEvent;
+    expect(data).toEqual({
+      hookId: 'hook-1',
+      hookName: 'pre-commit',
+      hookEvent: 'PreToolUse',
+      toolCallId: 'tool-123',
+    });
+  });
+
+  it('hook_started (session-level) yields system_status event', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookStarted('hook-2', 'session-init', 'SessionStart');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('system_status');
+    expect(events[0].data).toEqual({
+      message: 'Running hook "session-init"...',
+    });
+  });
+
+  it('hook_progress (tool-contextual) yields hook_progress event', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookProgress('hook-1', 'pre-commit', 'PreToolUse', 'checking files...', '');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('hook_progress');
+    const data = events[0].data as HookProgressEvent;
+    expect(data).toEqual({
+      hookId: 'hook-1',
+      stdout: 'checking files...',
+      stderr: '',
+    });
+  });
+
+  it('hook_progress (session-level) yields nothing', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookProgress('hook-2', 'session-init', 'SessionStart', 'output', '');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(0);
+  });
+
+  it('hook_response (tool-contextual, success) yields hook_response', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookResponse('hook-1', 'pre-commit', 'PostToolUse', 'success', 0, 'all good', '');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('hook_response');
+    const data = events[0].data as HookResponseEvent;
+    expect(data).toEqual({
+      hookId: 'hook-1',
+      hookName: 'pre-commit',
+      exitCode: 0,
+      outcome: 'success',
+      stdout: 'all good',
+      stderr: '',
+    });
+  });
+
+  it('hook_response (tool-contextual, error) yields hook_response', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookResponse(
+      'hook-1',
+      'pre-commit',
+      'PostToolUseFailure',
+      'error',
+      1,
+      '',
+      'trailing whitespace'
+    );
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('hook_response');
+    const data = events[0].data as HookResponseEvent;
+    expect(data.outcome).toBe('error');
+    expect(data.stderr).toBe('trailing whitespace');
+  });
+
+  it('hook_response (session-level, error) yields error event', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookResponse(
+      'hook-3',
+      'env-check',
+      'SessionStart',
+      'error',
+      1,
+      '',
+      'missing env var'
+    );
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('error');
+    const data = events[0].data as ErrorEvent;
+    expect(data.code).toBe('hook_failure');
+    expect(data.category).toBe('execution_error');
+    expect(data.message).toBe('Hook "env-check" failed (SessionStart)');
+    expect(data.details).toBe('missing env var');
+  });
+
+  it('hook_response (session-level, success) yields nothing', async () => {
+    const toolState = makeToolState();
+    const msg = sdkHookResponse('hook-3', 'env-check', 'SessionStart', 'success', 0);
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(0);
+  });
+
+  it('hook_started with empty currentToolId yields toolCallId: null', async () => {
+    const toolState = makeToolState();
+    toolState.currentToolId = '';
+    const msg = sdkHookStarted('hook-4', 'pre-commit', 'PreToolUse');
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('hook_started');
+    const data = events[0].data as HookStartedEvent;
+    expect(data.toolCallId).toBeNull();
   });
 });

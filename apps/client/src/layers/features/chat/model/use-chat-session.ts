@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SessionStatusEvent, MessagePart, HistoryMessage } from '@dorkos/shared/types';
+import type { SessionStatusEvent, MessagePart, HistoryMessage, PresenceUpdateEvent, HookPart } from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import { insertOptimisticSession } from '@/layers/entities/session';
@@ -8,7 +8,7 @@ import type { ChatMessage, ChatSessionOptions, TransportErrorInfo } from './chat
 import { createStreamEventHandler, deriveFromParts } from './stream-event-handler';
 
 // Re-export types for backward compat
-export type { ChatMessage, ToolCallState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions, TransportErrorInfo } from './chat-types';
+export type { ChatMessage, ToolCallState, HookState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions, TransportErrorInfo } from './chat-types';
 
 /**
  * Classify a transport-level error for structured banner display.
@@ -121,6 +121,8 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const [sessionStatus, setSessionStatus] = useState<SessionStatusEvent | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const currentPartsRef = useRef<MessagePart[]>([]);
+  // Buffer for hook events that arrive before their owning tool_call_start
+  const orphanHooksRef = useRef<Map<string, HookPart[]>>(new Map());
   const assistantIdRef = useRef<string>('');
   const assistantCreatedRef = useRef(false);
   const historySeededRef = useRef(false);
@@ -139,6 +141,10 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const [promptSuggestions, setPromptSuggestions] = useState<string[]>([]);
   const systemStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionBusyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [presenceInfo, setPresenceInfo] = useState<PresenceUpdateEvent | null>(null);
+  const [presencePulse, setPresencePulse] = useState(false);
+  const presenceInfoRef = useRef<PresenceUpdateEvent | null>(null);
+  const presencePulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const selectedCwdRef = useRef(selectedCwd);
   const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
   const messagesRef = useRef<ChatMessage[]>(messages);
@@ -152,6 +158,9 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   useEffect(() => {
     selectedCwdRef.current = selectedCwd;
   }, [selectedCwd]);
+  useEffect(() => {
+    presenceInfoRef.current = presenceInfo;
+  }, [presenceInfo]);
 
   // Track tab visibility for adaptive polling interval
   useEffect(() => {
@@ -207,6 +216,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     () =>
       createStreamEventHandler({
         currentPartsRef,
+        orphanHooksRef,
         assistantCreatedRef,
         sessionStatusRef,
         streamStartTimeRef,
@@ -260,6 +270,12 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     }
   }, [sessionId, selectedCwd]);
 
+  // Clear presence state when the active session changes
+  useEffect(() => {
+    setPresenceInfo(null);
+    setPresencePulse(false);
+  }, [sessionId]);
+
   // Seed local messages state from history (initial load + post-stream replace)
   useEffect(() => {
     if (!historyQuery.data) return;
@@ -292,24 +308,45 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     if (!sessionId) return;
     if (isStreaming) return;
 
-    const url = `/api/sessions/${sessionId}/stream`;
+    const clientIdParam = transport.clientId ? `?clientId=${encodeURIComponent(transport.clientId)}` : '';
+    const url = `/api/sessions/${sessionId}/stream${clientIdParam}`;
     const eventSource = new EventSource(url);
 
     eventSource.addEventListener('sync_update', () => {
       queryClient.invalidateQueries({ queryKey: ['messages', sessionId, selectedCwdRef.current] });
       queryClient.invalidateQueries({ queryKey: ['tasks', sessionId, selectedCwdRef.current] });
+
+      // Pulse the presence badge when another client's change arrives
+      if (presenceInfoRef.current && presenceInfoRef.current.clientCount > 1) {
+        setPresencePulse(true);
+        if (presencePulseTimerRef.current) clearTimeout(presencePulseTimerRef.current);
+        presencePulseTimerRef.current = setTimeout(() => {
+          setPresencePulse(false);
+          presencePulseTimerRef.current = null;
+        }, 1000);
+      }
+    });
+
+    eventSource.addEventListener('presence_update', (e) => {
+      try {
+        const data = JSON.parse(e.data) as PresenceUpdateEvent;
+        setPresenceInfo(data);
+      } catch {
+        // Ignore malformed presence events
+      }
     });
 
     return () => {
       eventSource.close();
     };
-  }, [sessionId, isStreaming, queryClient]);
+  }, [sessionId, isStreaming, queryClient, transport.clientId]);
 
   // Cleanup timers on unmount
   useEffect(() => {
     return () => {
       if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
       if (systemStatusTimerRef.current) clearTimeout(systemStatusTimerRef.current);
+      if (presencePulseTimerRef.current) clearTimeout(presencePulseTimerRef.current);
     };
   }, []);
 
@@ -518,5 +555,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     rateLimitRetryAfter,
     systemStatus,
     promptSuggestions,
+    presenceInfo,
+    presencePulse,
   };
 }

@@ -627,3 +627,39 @@ const result = await promise;
 expect(result.behavior).toBe('allow');
 expect(result.updatedInput.answers).toEqual({ '0': 'Option A' });
 ```
+
+## Hook Lifecycle Events
+
+When users configure hooks in Claude Code, DorkOS surfaces their execution:
+
+- **Tool-contextual hooks** (PreToolUse, PostToolUse, PostToolUseFailure) appear as sub-rows in ToolCallCard
+- **Session-level hooks** (SessionStart, UserPromptSubmit, etc.) show in SystemStatusZone
+- **Hook failures** are always visible — tool card stays expanded, session failures escalate to error banner
+
+Hook events flow through the standard pipeline: `sdk-event-mapper.ts` → SSE → `stream-event-handler.ts` → `ToolCallCard`.
+
+### Routing Logic
+
+The `hook_event` field on each SDK message determines the rendering surface:
+
+| `hook_event` | Route | Surface |
+|---|---|---|
+| `PreToolUse`, `PostToolUse`, `PostToolUseFailure` | Tool-contextual | Sub-row in ToolCallCard |
+| All others (`SessionStart`, `UserPromptSubmit`, etc.) | Session-level | SystemStatusZone / error banner |
+
+### Orphan Hook Handling
+
+`PreToolUse` hooks may arrive before the associated `tool_call_start` event. These "orphan" hooks are buffered in `orphanHooksRef` (a `Map<string, HookPart[]>` keyed by `toolCallId`) and attached to the tool call when `tool_call_start` arrives.
+
+### HookRow Visual States
+
+| Status | Icon | Styling |
+|---|---|---|
+| `running` | Spinner (Loader2) | Muted |
+| `success` | Check | Muted |
+| `error` | X | Destructive, auto-expands, shows stderr |
+| `cancelled` | X | Muted |
+
+### Auto-Hide Suppression
+
+When a tool call has any hook with `status === 'error'`, the tool card's auto-hide behavior is suppressed so users can inspect the failure. Tool cards with only successful hooks auto-hide normally.

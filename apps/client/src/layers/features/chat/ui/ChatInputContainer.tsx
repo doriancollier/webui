@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useDropzone } from 'react-dropzone';
 import type { RefObject } from 'react';
-import type { SessionStatusEvent } from '@dorkos/shared/types';
+import type { SessionStatusEvent, PresenceUpdateEvent } from '@dorkos/shared/types';
 import { ChatInput } from './ChatInput';
 import type { ChatInputHandle } from './ChatInput';
 import { ChatStatusSection } from './ChatStatusSection';
@@ -51,6 +51,10 @@ interface ChatInputContainerProps {
   onQueueNavigateUp: () => void;
   /** Navigate down through the queue (shell-history style). */
   onQueueNavigateDown: () => void;
+  /** Current presence info from SSE. */
+  presenceInfo: PresenceUpdateEvent | null;
+  /** Whether the presence badge should pulse. */
+  presencePulse: boolean;
 }
 
 /** Container for chat input, autocomplete palettes, drag-and-drop, and status chips. */
@@ -78,6 +82,8 @@ export function ChatInputContainer({
   onQueueCancelEdit,
   onQueueNavigateUp,
   onQueueNavigateDown,
+  presenceInfo,
+  presencePulse,
 }: ChatInputContainerProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -202,6 +208,8 @@ export function ChatInputContainer({
         sessionStatus={sessionStatus}
         isStreaming={status === 'streaming'}
         onChipClick={autocomplete.handleChipClick}
+        presenceInfo={presenceInfo}
+        presencePulse={presencePulse}
       />
     </div>
   );

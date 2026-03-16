@@ -1,12 +1,33 @@
 import { useState } from 'react';
+import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/layers/shared/ui';
 import { StreamingText } from '@/layers/features/chat/ui/StreamingText';
 import { InferenceIndicator } from '@/layers/features/chat/ui/InferenceIndicator';
 import { SystemStatusZone } from '@/layers/features/chat/ui/SystemStatusZone';
 import { TaskListPanel } from '@/layers/features/chat/ui/TaskListPanel';
+import type { TransportErrorInfo } from '@/layers/features/chat/model/chat-types';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
 import { SAMPLE_TASKS } from '../mock-chat-data';
+
+/** Replica of the inline transport error banner from ChatPanel for showcase purposes. */
+function TransportErrorBanner({ error, onRetry }: { error: TransportErrorInfo; onRetry?: () => void }) {
+  return (
+    <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-destructive">{error.heading}</p>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
+      </div>
+      {error.retryable && (
+        <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0">
+          Retry
+        </Button>
+      )}
+    </div>
+  );
+}
 
 const SHORT_TEXT = 'The refactoring is complete. All tests pass.';
 
@@ -29,7 +50,7 @@ npm install jsonwebtoken @types/jsonwebtoken
 npm run test -- --watch
 \`\`\``;
 
-/** Status-related component showcases: StreamingText, InferenceIndicator, SystemStatusZone, TaskListPanel. */
+/** Status-related component showcases: StreamingText, InferenceIndicator, SystemStatusZone, TransportErrorBanner, TaskListPanel. */
 export function StatusShowcases() {
   const [taskCollapsed, setTaskCollapsed] = useState(false);
   const [taskCollapsed2, setTaskCollapsed2] = useState(true);
@@ -135,9 +156,78 @@ export function StatusShowcases() {
           <SystemStatusZone message="Permission mode changed to plan" />
         </ShowcaseDemo>
 
+        <ShowcaseLabel>Response truncated (max tokens)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <SystemStatusZone message="Response truncated — reached max output tokens." />
+        </ShowcaseDemo>
+
         <ShowcaseLabel>Null (renders nothing)</ShowcaseLabel>
         <ShowcaseDemo>
           <SystemStatusZone message={null} />
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="TransportErrorBanner"
+        description="Structured error banner for transport-level failures (network, server, timeout, session lock). Shown outside the message stream."
+      >
+        <ShowcaseLabel>Connection failed (retryable)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TransportErrorBanner
+            error={{
+              heading: 'Connection failed',
+              message: 'Could not reach the server. Check your connection and try again.',
+              retryable: true,
+            }}
+            onRetry={() => console.log('[Showcase] Retry clicked')}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Server error (retryable)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TransportErrorBanner
+            error={{
+              heading: 'Server error',
+              message: 'The server encountered an error. Try again.',
+              retryable: true,
+            }}
+            onRetry={() => console.log('[Showcase] Retry clicked')}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Request timed out (retryable)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TransportErrorBanner
+            error={{
+              heading: 'Request timed out',
+              message: 'The server took too long to respond. Try again.',
+              retryable: true,
+            }}
+            onRetry={() => console.log('[Showcase] Retry clicked')}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Session in use (not retryable, auto-dismisses)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TransportErrorBanner
+            error={{
+              heading: 'Session in use',
+              message: 'Another client is sending a message. Try again in a few seconds.',
+              retryable: false,
+              autoDismissMs: 4000,
+            }}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Unknown error (not retryable)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <TransportErrorBanner
+            error={{
+              heading: 'Error',
+              message: 'An unexpected error occurred.',
+              retryable: false,
+            }}
+          />
         </ShowcaseDemo>
       </PlaygroundSection>
 

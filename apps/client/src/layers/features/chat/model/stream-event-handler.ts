@@ -14,6 +14,10 @@ import type {
   ToolProgressEvent,
   SystemStatusEvent,
   PromptSuggestionEvent,
+  HookStartedEvent,
+  HookProgressEvent,
+  HookResponseEvent,
+  HookPart,
 } from '@dorkos/shared/types';
 import { TIMING } from '@/layers/shared/lib';
 import type { ChatMessage, ToolCallState, TransportErrorInfo } from './chat-types';
@@ -25,6 +29,8 @@ type StreamingTextPart = { type: 'text'; text: string; _partId: string };
 
 interface StreamEventDeps {
   currentPartsRef: React.MutableRefObject<MessagePart[]>;
+  /** Buffer for hook events that arrive before their owning tool_call_start. */
+  orphanHooksRef: React.MutableRefObject<Map<string, HookPart[]>>;
   assistantCreatedRef: React.MutableRefObject<boolean>;
   sessionStatusRef: React.MutableRefObject<SessionStatusEvent | null>;
   streamStartTimeRef: React.MutableRefObject<number | null>;
@@ -69,6 +75,7 @@ export function deriveFromParts(parts: MessagePart[]): { content: string; toolCa
         questions: part.questions,
         answers: part.answers,
         timeoutMs: part.timeoutMs,
+        hooks: part.hooks,
       });
     }
   }
@@ -79,6 +86,7 @@ export function deriveFromParts(parts: MessagePart[]): { content: string; toolCa
 export function createStreamEventHandler(deps: StreamEventDeps) {
   const {
     currentPartsRef,
+    orphanHooksRef,
     assistantCreatedRef,
     sessionStatusRef,
     streamStartTimeRef,
@@ -97,6 +105,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
     setIsRateLimited,
     rateLimitClearRef,
     setSystemStatus,
+    setPromptSuggestions,
     sessionId,
     onTaskEventRef,
     onSessionIdChangeRef,
@@ -108,6 +117,17 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       const part = currentPartsRef.current[i];
       if (part.type === 'tool_call' && part.toolCallId === toolCallId) {
         return part;
+      }
+    }
+    return undefined;
+  }
+
+  function findHookById(hookId: string): HookPart | undefined {
+    for (let i = currentPartsRef.current.length - 1; i >= 0; i--) {
+      const part = currentPartsRef.current[i];
+      if (part.type === 'tool_call' && part.hooks) {
+        const hook = part.hooks.find((h) => h.hookId === hookId);
+        if (hook) return hook;
       }
     }
     return undefined;
@@ -232,12 +252,16 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       }
       case 'tool_call_start': {
         const tc = data as ToolCallEvent;
+        // Drain any hook events that arrived before this tool_call_start
+        const buffered = orphanHooksRef.current.get(tc.toolCallId);
+        orphanHooksRef.current.delete(tc.toolCallId);
         currentPartsRef.current.push({
           type: 'tool_call',
           toolCallId: tc.toolCallId,
           toolName: tc.toolName,
           input: '',
           status: 'running',
+          ...(buffered && buffered.length > 0 ? { hooks: buffered } : {}),
         });
         updateAssistantMessage(assistantId);
         break;
@@ -427,6 +451,54 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         updateAssistantMessage(assistantId);
         break;
       }
+      case 'hook_started': {
+        const hook = data as HookStartedEvent;
+        const newHook: HookPart = {
+          hookId: hook.hookId,
+          hookName: hook.hookName,
+          hookEvent: hook.hookEvent,
+          status: 'running',
+          stdout: '',
+          stderr: '',
+        };
+        if (hook.toolCallId) {
+          const tc = findToolCallPart(hook.toolCallId);
+          if (tc) {
+            tc.hooks = [...(tc.hooks || []), newHook];
+            updateAssistantMessage(assistantId);
+          } else {
+            // Tool call not yet started — buffer for later drain
+            const existing = orphanHooksRef.current.get(hook.toolCallId) || [];
+            orphanHooksRef.current.set(hook.toolCallId, [...existing, newHook]);
+          }
+        } else {
+          // No tool context — session-level hook, ignore on client
+          // (server routes these as system_status or error events)
+        }
+        break;
+      }
+      case 'hook_progress': {
+        const progress = data as HookProgressEvent;
+        const hook = findHookById(progress.hookId);
+        if (hook) {
+          hook.stdout = progress.stdout;
+          hook.stderr = progress.stderr;
+          updateAssistantMessage(assistantId);
+        }
+        break;
+      }
+      case 'hook_response': {
+        const response = data as HookResponseEvent;
+        const hook = findHookById(response.hookId);
+        if (hook) {
+          hook.status = response.outcome;
+          hook.stdout = response.stdout;
+          hook.stderr = response.stderr;
+          hook.exitCode = response.exitCode;
+          updateAssistantMessage(assistantId);
+        }
+        break;
+      }
       case 'system_status': {
         const { message } = data as SystemStatusEvent;
         setSystemStatus(message);
@@ -434,7 +506,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       }
       case 'prompt_suggestion': {
         const { suggestions } = data as PromptSuggestionEvent;
-        deps.setPromptSuggestions(suggestions);
+        setPromptSuggestions(suggestions);
         break;
       }
       case 'compact_boundary': {

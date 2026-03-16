@@ -21,6 +21,7 @@ function createMinimalDeps() {
   const setIsRateLimited = vi.fn();
   const setSystemStatus = vi.fn();
   const rateLimitClearRef = { current: null };
+  const orphanHooksRef = { current: new Map() };
   const onTaskEventRef = { current: undefined };
   const onSessionIdChangeRef = { current: undefined };
   const onStreamingDoneRef = { current: undefined };
@@ -28,6 +29,7 @@ function createMinimalDeps() {
 
   const handler = createStreamEventHandler({
     currentPartsRef,
+    orphanHooksRef,
     assistantCreatedRef,
     sessionStatusRef,
     streamStartTimeRef,

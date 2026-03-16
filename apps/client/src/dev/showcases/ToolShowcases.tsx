@@ -6,7 +6,7 @@ import { ThinkingBlock } from '@/layers/features/chat/ui/ThinkingBlock';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
-import { MOCK_SESSION_ID, TOOL_CALLS, TOOL_CALL_APPROVAL, SUBAGENT_PARTS, ERROR_PARTS } from '../mock-chat-data';
+import { MOCK_SESSION_ID, TOOL_CALLS, TOOL_CALLS_EXTENDED, TOOL_CALL_APPROVAL, SUBAGENT_PARTS, ERROR_PARTS } from '../mock-chat-data';
 
 /** Tool-related component showcases: ToolCallCard, ToolApproval. */
 export function ToolShowcases() {
@@ -42,6 +42,24 @@ export function ToolShowcases() {
         <ShowcaseLabel>Long result (truncated at 5KB)</ShowcaseLabel>
         <ShowcaseDemo>
           <ToolCallCard toolCall={TOOL_CALLS.complete_long_result} defaultExpanded />
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="ToolCallCard — Extended Labels"
+        description="Tool labels for less common tools: task management, notebooks, plan mode, MCP resources."
+      >
+        <ShowcaseDemo>
+          <div className="grid gap-4 md:grid-cols-2">
+            {(Object.entries(TOOL_CALLS_EXTENDED) as [string, (typeof TOOL_CALLS_EXTENDED)[string]][]).map(
+              ([key, tc]) => (
+                <div key={key}>
+                  <ShowcaseLabel>{key}</ShowcaseLabel>
+                  <ToolCallCard toolCall={tc} />
+                </div>
+              )
+            )}
+          </div>
         </ShowcaseDemo>
       </PlaygroundSection>
 
@@ -157,6 +175,39 @@ export function ToolShowcases() {
             toolName={TOOL_CALL_APPROVAL.toolName}
             input={TOOL_CALL_APPROVAL.input}
             isActive
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>With countdown timer (10 min)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ToolApproval
+            sessionId={MOCK_SESSION_ID}
+            toolCallId={TOOL_CALL_APPROVAL.toolCallId + '-timer'}
+            toolName={TOOL_CALL_APPROVAL.toolName}
+            input={TOOL_CALL_APPROVAL.input}
+            timeoutMs={600_000}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Warning phase (2 min remaining)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ToolApproval
+            sessionId={MOCK_SESSION_ID}
+            toolCallId={TOOL_CALL_APPROVAL.toolCallId + '-warning'}
+            toolName={TOOL_CALL_APPROVAL.toolName}
+            input={TOOL_CALL_APPROVAL.input}
+            timeoutMs={120_000}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Urgent phase (30s remaining)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <ToolApproval
+            sessionId={MOCK_SESSION_ID}
+            toolCallId={TOOL_CALL_APPROVAL.toolCallId + '-urgent'}
+            toolName={TOOL_CALL_APPROVAL.toolName}
+            input={TOOL_CALL_APPROVAL.input}
+            timeoutMs={30_000}
           />
         </ShowcaseDemo>
       </PlaygroundSection>

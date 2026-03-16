@@ -4,6 +4,13 @@ import type { AgentSession, ToolState } from './agent-types.js';
 import { buildTaskEvent, TASK_TOOL_NAMES } from './build-task-event.js';
 import { logger } from '../../../lib/logger.js';
 
+/** Hook events that correlate to a specific tool call and render inside ToolCallCard. */
+const TOOL_CONTEXTUAL_HOOK_EVENTS = new Set([
+  'PreToolUse',
+  'PostToolUse',
+  'PostToolUseFailure',
+]);
+
 /** Map SDK result subtypes to user-facing error categories. */
 function mapErrorCategory(subtype: string): ErrorCategory {
   switch (subtype) {
@@ -112,6 +119,83 @@ export async function* mapSdkMessage(
         type: 'compact_boundary',
         data: {},
       };
+      return;
+    }
+
+    // Handle hook lifecycle events
+    if (message.subtype === 'hook_started') {
+      const msg = message as Record<string, unknown>;
+      const hookEvent = msg.hook_event as string;
+      const isToolContextual = TOOL_CONTEXTUAL_HOOK_EVENTS.has(hookEvent);
+
+      if (isToolContextual) {
+        yield {
+          type: 'hook_started',
+          data: {
+            hookId: msg.hook_id as string,
+            hookName: msg.hook_name as string,
+            hookEvent,
+            toolCallId: toolState.currentToolId || null,
+          },
+        };
+      } else {
+        yield {
+          type: 'system_status',
+          data: { message: `Running hook "${msg.hook_name as string}"...` },
+        };
+      }
+      return;
+    }
+
+    if (message.subtype === 'hook_progress') {
+      const msg = message as Record<string, unknown>;
+      const hookEvent = msg.hook_event as string;
+      const isToolContextual = TOOL_CONTEXTUAL_HOOK_EVENTS.has(hookEvent);
+
+      if (isToolContextual) {
+        yield {
+          type: 'hook_progress',
+          data: {
+            hookId: msg.hook_id as string,
+            stdout: msg.stdout as string,
+            stderr: msg.stderr as string,
+          },
+        };
+      }
+      // Session-level progress: silent (no useful output to show mid-execution)
+      return;
+    }
+
+    if (message.subtype === 'hook_response') {
+      const msg = message as Record<string, unknown>;
+      const hookEvent = msg.hook_event as string;
+      const isToolContextual = TOOL_CONTEXTUAL_HOOK_EVENTS.has(hookEvent);
+
+      if (isToolContextual) {
+        yield {
+          type: 'hook_response',
+          data: {
+            hookId: msg.hook_id as string,
+            hookName: msg.hook_name as string,
+            exitCode: msg.exit_code as number | undefined,
+            outcome: msg.outcome as 'success' | 'error' | 'cancelled',
+            stdout: msg.stdout as string,
+            stderr: msg.stderr as string,
+          },
+        };
+      } else if ((msg.outcome as string) === 'error') {
+        // Session-level failure: escalate to persistent error
+        yield {
+          type: 'error',
+          data: {
+            message: `Hook "${msg.hook_name as string}" failed (${hookEvent})`,
+            code: 'hook_failure',
+            category: 'execution_error',
+            details: (msg.stderr as string) || (msg.stdout as string),
+          },
+        };
+      }
+      // Session-level success: silent (already shown via system_status on start)
       return;
     }
   }

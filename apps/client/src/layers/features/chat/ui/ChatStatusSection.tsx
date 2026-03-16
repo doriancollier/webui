@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import type { PanInfo } from 'motion/react';
-import type { SessionStatusEvent } from '@dorkos/shared/types';
+import type { SessionStatusEvent, PresenceUpdateEvent } from '@dorkos/shared/types';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useIsMobile, useAppStore, useTransport } from '@/layers/shared/model';
 import { STORAGE_KEYS, TIMING } from '@/layers/shared/lib';
@@ -19,6 +19,7 @@ import {
   NotificationSoundItem,
   TunnelItem,
   VersionItem,
+  ClientsItem,
   useGitStatus,
 } from '@/layers/features/status';
 
@@ -27,6 +28,8 @@ interface ChatStatusSectionProps {
   sessionStatus: SessionStatusEvent | null;
   isStreaming: boolean;
   onChipClick: (trigger: string) => void;
+  presenceInfo: PresenceUpdateEvent | null;
+  presencePulse: boolean;
 }
 
 const SWIPE_THRESHOLD = 80;
@@ -44,6 +47,8 @@ export function ChatStatusSection({
   sessionStatus,
   isStreaming,
   onChipClick,
+  presenceInfo,
+  presencePulse,
 }: ChatStatusSectionProps) {
   const isMobile = useIsMobile();
 
@@ -177,6 +182,19 @@ export function ChatStatusSection({
                 : false
             }
             onDismiss={handleDismissVersion}
+          />
+        )}
+      </StatusLine.Item>
+      <StatusLine.Item
+        itemKey="clients"
+        visible={!!presenceInfo && presenceInfo.clientCount > 1}
+      >
+        {presenceInfo && (
+          <ClientsItem
+            clientCount={presenceInfo.clientCount}
+            clients={presenceInfo.clients}
+            lockInfo={presenceInfo.lockInfo}
+            pulse={presencePulse}
           />
         )}
       </StatusLine.Item>

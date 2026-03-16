@@ -75,6 +75,12 @@ export type {
   SystemStatusEvent,
   CompactBoundaryEvent,
   PromptSuggestionEvent,
+  HookStartedEvent,
+  HookProgressEvent,
+  HookResponseEvent,
+  HookPart,
+  PresenceClient,
+  PresenceUpdateEvent,
 } from './schemas.js';
 
 export type {

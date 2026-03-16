@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add multi-client presence indicator, subagent/hook lifecycle visibility, and tool call enhancements
 - Implement tool-approval-timeout-visibility, prompt-suggestion-chips, multi-client-session-indicator; add specs and research
 - Add transport error categorization and retry affordance
 - Add truncated tool result showcase to design system

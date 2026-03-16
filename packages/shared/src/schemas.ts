@@ -53,6 +53,10 @@ export const StreamEventTypeSchema = z
     'system_status',
     'compact_boundary',
     'prompt_suggestion',
+    'hook_started',
+    'hook_progress',
+    'hook_response',
+    'presence_update',
   ])
   .openapi('StreamEventType');
 
@@ -397,6 +401,65 @@ export const PromptSuggestionEventSchema = z
 
 export type PromptSuggestionEvent = z.infer<typeof PromptSuggestionEventSchema>;
 
+export const HookStartedEventSchema = z
+  .object({
+    hookId: z.string(),
+    hookName: z.string(),
+    hookEvent: z.string(),
+    toolCallId: z.string().nullable(),
+  })
+  .openapi('HookStartedEvent');
+
+export type HookStartedEvent = z.infer<typeof HookStartedEventSchema>;
+
+export const HookProgressEventSchema = z
+  .object({
+    hookId: z.string(),
+    stdout: z.string(),
+    stderr: z.string(),
+  })
+  .openapi('HookProgressEvent');
+
+export type HookProgressEvent = z.infer<typeof HookProgressEventSchema>;
+
+export const HookResponseEventSchema = z
+  .object({
+    hookId: z.string(),
+    hookName: z.string(),
+    exitCode: z.number().optional(),
+    outcome: z.enum(['success', 'error', 'cancelled']),
+    stdout: z.string(),
+    stderr: z.string(),
+  })
+  .openapi('HookResponseEvent');
+
+export type HookResponseEvent = z.infer<typeof HookResponseEventSchema>;
+
+// === Presence Types ===
+
+export const PresenceClientSchema = z.object({
+  type: z.enum(['web', 'obsidian', 'mcp', 'unknown']),
+  connectedAt: z.string(),
+});
+
+export type PresenceClient = z.infer<typeof PresenceClientSchema>;
+
+export const PresenceUpdateEventSchema = z
+  .object({
+    sessionId: z.string(),
+    clientCount: z.number().int(),
+    clients: z.array(PresenceClientSchema),
+    lockInfo: z
+      .object({
+        clientId: z.string(),
+        acquiredAt: z.string(),
+      })
+      .nullable(),
+  })
+  .openapi('PresenceUpdateEvent');
+
+export type PresenceUpdateEvent = z.infer<typeof PresenceUpdateEventSchema>;
+
 export const StreamEventSchema = z
   .object({
     type: StreamEventTypeSchema,
@@ -423,6 +486,10 @@ export const StreamEventSchema = z
       SystemStatusEventSchema,
       CompactBoundaryEventSchema,
       PromptSuggestionEventSchema,
+      HookStartedEventSchema,
+      HookProgressEventSchema,
+      HookResponseEventSchema,
+      PresenceUpdateEventSchema,
     ]),
   })
   .openapi('StreamEvent');
@@ -440,6 +507,20 @@ export const TextPartSchema = z
 
 export type TextPart = z.infer<typeof TextPartSchema>;
 
+const HookStatusSchema = z.enum(['running', 'success', 'error', 'cancelled']);
+
+export const HookPartSchema = z.object({
+  hookId: z.string(),
+  hookName: z.string(),
+  hookEvent: z.string(),
+  status: HookStatusSchema,
+  stdout: z.string(),
+  stderr: z.string(),
+  exitCode: z.number().optional(),
+});
+
+export type HookPart = z.infer<typeof HookPartSchema>;
+
 export const ToolCallPartSchema = z
   .object({
     type: z.literal('tool_call'),
@@ -453,6 +534,7 @@ export const ToolCallPartSchema = z
     questions: z.array(QuestionItemSchema).optional(),
     answers: z.record(z.string(), z.string()).optional(),
     timeoutMs: z.number().optional().describe('Approval timeout duration in milliseconds'),
+    hooks: z.array(HookPartSchema).optional(),
   })
   .openapi('ToolCallPart');
 

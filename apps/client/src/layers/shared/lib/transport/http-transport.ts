@@ -62,7 +62,7 @@ import { createMeshMethods } from './mesh-methods';
  *
  */
 export class HttpTransport implements Transport {
-  private readonly clientId: string;
+  readonly clientId: string;
   private readonly etagCache = new Map<string, string>();
   private readonly messageCache = new Map<string, { messages: HistoryMessage[] }>();
 
@@ -194,7 +194,7 @@ export class HttpTransport implements Transport {
   ) => Promise<AgentManifest>;
 
   constructor(private baseUrl: string) {
-    this.clientId = crypto.randomUUID();
+    this.clientId = `web-${crypto.randomUUID()}`;
     Object.assign(
       this,
       createPulseMethods(baseUrl),

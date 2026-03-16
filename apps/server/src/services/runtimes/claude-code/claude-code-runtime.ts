@@ -106,7 +106,7 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     this.cwd = cwd ?? DEFAULT_CWD;
     this.claudeCliPath = resolveClaudeCliPath();
     this.transcriptReader = new TranscriptReader();
-    this.broadcaster = new SessionBroadcaster(this.transcriptReader);
+    this.broadcaster = new SessionBroadcaster(this.transcriptReader, this.lockManager);
   }
 
   // ---------------------------------------------------------------------------

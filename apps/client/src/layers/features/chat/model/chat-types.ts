@@ -1,4 +1,4 @@
-import type { QuestionItem, MessagePart, TaskUpdateEvent } from '@dorkos/shared/types';
+import type { QuestionItem, MessagePart, TaskUpdateEvent, HookPart } from '@dorkos/shared/types';
 
 export interface ChatMessage {
   id: string;
@@ -11,6 +11,9 @@ export interface ChatMessage {
   commandName?: string;
   commandArgs?: string;
 }
+
+/** Client-side view of a single hook execution attached to a tool call. */
+export type HookState = HookPart;
 
 export type GroupPosition = 'only' | 'first' | 'middle' | 'last';
 
@@ -35,6 +38,8 @@ export interface ToolCallState {
   answers?: Record<string, string>;
   /** Approval timeout duration in milliseconds (present for approval-type tool calls) */
   timeoutMs?: number;
+  /** Hook executions attached to this tool call (pre-tool and post-tool hooks). */
+  hooks?: HookState[];
 }
 
 /** Structured error information for transport-level failures. */

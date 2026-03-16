@@ -112,6 +112,8 @@ export interface UploadFile {
 }
 
 export interface Transport {
+  /** Optional client identifier for SSE presence tracking. */
+  readonly clientId?: string;
   /** List all sessions, optionally scoped to a working directory. */
   listSessions(cwd?: string): Promise<Session[]>;
   /** Get metadata for a single session by ID. */

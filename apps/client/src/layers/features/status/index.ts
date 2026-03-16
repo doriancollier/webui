@@ -13,5 +13,6 @@ export { ContextItem } from './ui/ContextItem';
 export { NotificationSoundItem } from './ui/NotificationSoundItem';
 export { TunnelItem } from './ui/TunnelItem';
 export { VersionItem } from './ui/VersionItem';
+export { ClientsItem } from './ui/ClientsItem';
 export { useGitStatus } from './model/use-git-status';
 export { isNewer, isFeatureUpdate } from './lib/version-compare';

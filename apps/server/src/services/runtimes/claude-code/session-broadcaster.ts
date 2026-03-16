@@ -3,6 +3,7 @@ import { join } from 'path';
 import type { Response } from 'express';
 import type { StreamEvent } from '@dorkos/shared/types';
 import type { TranscriptReader } from './transcript-reader.js';
+import type { SessionLockManager } from './session-lock.js';
 import { SSE, WATCHER } from '../../../config/constants.js';
 import { logger } from '../../../lib/logger.js';
 
@@ -13,6 +14,22 @@ interface CallbackEntry {
   vaultRoot: string;
 }
 
+/** Metadata for a connected SSE client. */
+interface ConnectedClient {
+  res: Response;
+  clientId: string;
+  clientType: 'web' | 'obsidian' | 'mcp' | 'unknown';
+  connectedAt: string;
+}
+
+/** Infer client type from the clientId prefix convention. */
+function inferClientType(clientId: string): ConnectedClient['clientType'] {
+  if (clientId.startsWith('web-')) return 'web';
+  if (clientId.startsWith('obsidian-')) return 'obsidian';
+  if (clientId.startsWith('mcp-')) return 'mcp';
+  return 'unknown';
+}
+
 /**
  * SessionBroadcaster manages file watching and SSE broadcasting for cross-client session sync.
  *
@@ -21,12 +38,12 @@ interface CallbackEntry {
  *
  * Usage:
  * ```typescript
- * const broadcaster = new SessionBroadcaster(transcriptReader);
+ * const broadcaster = new SessionBroadcaster(transcriptReader, lockManager);
  *
  * // Register SSE client for a session
  * app.get('/api/sessions/:id/sync', (req, res) => {
  *   res.setHeader('Content-Type', 'text/event-stream');
- *   broadcaster.registerClient(req.params.id, vaultRoot, res);
+ *   broadcaster.registerClient(req.params.id, vaultRoot, res, clientId);
  * });
  *
  * // Cleanup on shutdown
@@ -34,7 +51,7 @@ interface CallbackEntry {
  * ```
  */
 export class SessionBroadcaster {
-  private clients = new Map<string, Set<Response>>();
+  private clients = new Map<string, Map<string, ConnectedClient>>();
   private callbacks = new Map<string, CallbackEntry>();
   private watchers = new Map<string, FSWatcher>();
   private offsets = new Map<string, number>();
@@ -42,7 +59,10 @@ export class SessionBroadcaster {
   private debounceTimers = new Map<string, NodeJS.Timeout>();
   private totalClientCount = 0;
 
-  constructor(private transcriptReader: TranscriptReader) {}
+  constructor(
+    private transcriptReader: TranscriptReader,
+    private lockManager?: SessionLockManager,
+  ) {}
 
   /**
    * Get the number of connected SSE clients.
@@ -59,18 +79,19 @@ export class SessionBroadcaster {
   /**
    * Register an SSE client for a session.
    *
-   * - Adds the response to the set of connected clients
+   * - Adds the response to the client metadata map
    * - Starts a file watcher if none exists for this session
    * - Initializes offset to current file size (only broadcast new content)
    * - Sends sync_connected event to the client
    * - Auto-deregisters on response close
+   * - Broadcasts presence update to all clients for this session
    *
    * @param sessionId - Session UUID
    * @param vaultRoot - Vault root path for resolving transcript directory
    * @param res - Express Response object configured for SSE
-   * @param clientId - Optional client identifier
+   * @param clientId - Optional client identifier (used for type inference via prefix convention)
    */
-  registerClient(sessionId: string, vaultRoot: string, res: Response, _clientId?: string): void {
+  registerClient(sessionId: string, vaultRoot: string, res: Response, clientId?: string): void {
     // Enforce global SSE connection limit
     if (this.totalClientCount >= SSE.MAX_TOTAL_CLIENTS) {
       res.status(503).json({ error: 'SSE connection limit reached', code: 'SSE_LIMIT' });
@@ -84,11 +105,20 @@ export class SessionBroadcaster {
       return;
     }
 
-    // Add client to set
+    // Generate clientId if not provided
+    const resolvedClientId = clientId ?? `unknown-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+    // Add client to map
     if (!this.clients.has(sessionId)) {
-      this.clients.set(sessionId, new Set());
+      this.clients.set(sessionId, new Map());
     }
-    this.clients.get(sessionId)!.add(res);
+    const client: ConnectedClient = {
+      res,
+      clientId: resolvedClientId,
+      clientType: inferClientType(resolvedClientId),
+      connectedAt: new Date().toISOString(),
+    };
+    this.clients.get(sessionId)!.set(resolvedClientId, client);
     this.totalClientCount++;
 
     // Start watcher if this is the first client for this session
@@ -103,6 +133,9 @@ export class SessionBroadcaster {
     res.on('close', () => {
       this.deregisterClient(sessionId, res);
     });
+
+    // Broadcast presence to all connected clients for this session
+    this.broadcastPresence(sessionId);
   }
 
   /**
@@ -161,7 +194,8 @@ export class SessionBroadcaster {
   /**
    * Deregister an SSE client from a session.
    *
-   * - Removes the response from the client set
+   * - Finds and removes the client by response reference
+   * - Broadcasts updated presence to remaining clients
    * - Stops the file watcher if no clients remain for this session
    * - Cleans up offsets and timers
    *
@@ -169,16 +203,29 @@ export class SessionBroadcaster {
    * @param res - Express Response object to remove
    */
   deregisterClient(sessionId: string, res: Response): void {
-    const clientSet = this.clients.get(sessionId);
-    if (!clientSet) return;
+    const clientMap = this.clients.get(sessionId);
+    if (!clientMap) return;
 
-    if (clientSet.has(res)) {
-      this.totalClientCount--;
+    // Find and remove the client by response reference
+    let removed = false;
+    for (const [id, client] of clientMap) {
+      if (client.res === res) {
+        clientMap.delete(id);
+        this.totalClientCount--;
+        removed = true;
+        break;
+      }
     }
-    clientSet.delete(res);
+
+    if (!removed) return;
+
+    // Broadcast updated presence to remaining clients
+    if (clientMap.size > 0) {
+      this.broadcastPresence(sessionId);
+    }
 
     // Clean up if no SSE clients remain
-    if (clientSet.size === 0) {
+    if (clientMap.size === 0) {
       this.clients.delete(sessionId);
 
       // Only stop watcher if no callbacks remain for this session
@@ -187,17 +234,13 @@ export class SessionBroadcaster {
       );
 
       if (!hasCallbacks) {
-        // Stop watcher
         const watcher = this.watchers.get(sessionId);
         if (watcher) {
           watcher.close();
           this.watchers.delete(sessionId);
         }
-
-        // Clean up state
         this.offsets.delete(sessionId);
         this.offsetInitializing.delete(sessionId);
-
         const timer = this.debounceTimers.get(sessionId);
         if (timer) {
           clearTimeout(timer);
@@ -205,6 +248,39 @@ export class SessionBroadcaster {
         }
       }
     }
+  }
+
+  /**
+   * Get current presence info for a session.
+   *
+   * @param sessionId - Session UUID
+   * @returns Presence info with client count, client metadata, and lock state, or null if no clients
+   */
+  getPresenceInfo(sessionId: string): {
+    clientCount: number;
+    clients: Array<{ type: string; connectedAt: string }>;
+    lockInfo: { clientId: string; acquiredAt: string } | null;
+  } | null {
+    const clientMap = this.clients.get(sessionId);
+    if (!clientMap || clientMap.size === 0) return null;
+
+    const clients = Array.from(clientMap.values()).map((c) => ({
+      type: c.clientType,
+      connectedAt: c.connectedAt,
+    }));
+
+    let lockInfo: { clientId: string; acquiredAt: string } | null = null;
+    if (this.lockManager) {
+      const lock = this.lockManager.getLockInfo(sessionId);
+      if (lock) {
+        lockInfo = {
+          clientId: lock.clientId,
+          acquiredAt: new Date(lock.acquiredAt).toISOString(),
+        };
+      }
+    }
+
+    return { clientCount: clientMap.size, clients, lockInfo };
   }
 
   /**
@@ -309,11 +385,11 @@ export class SessionBroadcaster {
       }
 
       // Check if there are any listeners (SSE clients or callbacks)
-      const clientSet = this.clients.get(sessionId);
+      const clientMap = this.clients.get(sessionId);
       const hasCallbacks = Array.from(this.callbacks.values()).some(
         (entry) => entry.sessionId === sessionId
       );
-      if ((!clientSet || clientSet.size === 0) && !hasCallbacks) {
+      if ((!clientMap || clientMap.size === 0) && !hasCallbacks) {
         return;
       }
 
@@ -325,15 +401,14 @@ export class SessionBroadcaster {
       const eventData = `event: sync_update\ndata: ${JSON.stringify(event)}\n\n`;
 
       // Send to SSE clients
-      if (clientSet) {
-        for (const client of Array.from(clientSet)) {
+      if (clientMap) {
+        for (const connectedClient of Array.from(clientMap.values())) {
           try {
-            const ok = client.write(eventData);
+            const ok = connectedClient.res.write(eventData);
             if (!ok) {
-              await new Promise<void>((resolve) => client.once('drain', resolve));
+              await new Promise<void>((resolve) => connectedClient.res.once('drain', resolve));
             }
           } catch (err) {
-            // Client may have disconnected, will be cleaned up on 'close' event
             logger.error(
               `[SessionBroadcaster] Failed to write to client for session ${sessionId}:`,
               err
@@ -363,6 +438,66 @@ export class SessionBroadcaster {
     }
   }
 
+  /** Broadcast a presence_update SSE event to all connected clients for a session. */
+  private broadcastPresence(sessionId: string): void {
+    const clientMap = this.clients.get(sessionId);
+    if (!clientMap || clientMap.size === 0) return;
+
+    const clients = Array.from(clientMap.values()).map((c) => ({
+      type: c.clientType,
+      connectedAt: c.connectedAt,
+    }));
+
+    // Get lock info if lock manager is available
+    let lockInfo: { clientId: string; acquiredAt: string } | null = null;
+    if (this.lockManager) {
+      const lock = this.lockManager.getLockInfo(sessionId);
+      if (lock) {
+        lockInfo = {
+          clientId: lock.clientId,
+          acquiredAt: new Date(lock.acquiredAt).toISOString(),
+        };
+      }
+    }
+
+    const presenceData = {
+      sessionId,
+      clientCount: clientMap.size,
+      clients,
+      lockInfo,
+    };
+
+    const eventData = `event: presence_update\ndata: ${JSON.stringify(presenceData)}\n\n`;
+
+    for (const client of clientMap.values()) {
+      try {
+        client.res.write(eventData);
+      } catch (err) {
+        logger.error(
+          `[SessionBroadcaster] Failed to write presence to client ${client.clientId}:`,
+          err
+        );
+      }
+    }
+
+    // Also invoke registered callbacks
+    for (const [, entry] of this.callbacks) {
+      if (entry.sessionId === sessionId) {
+        try {
+          entry.callback({
+            type: 'presence_update',
+            data: presenceData,
+          } as StreamEvent);
+        } catch (err) {
+          logger.error(
+            `[SessionBroadcaster] Presence callback error for session ${sessionId}:`,
+            err
+          );
+        }
+      }
+    }
+  }
+
   /**
    * Shutdown the broadcaster, closing all watchers and client connections.
    * Should be called on server shutdown.
@@ -384,10 +519,10 @@ export class SessionBroadcaster {
     this.callbacks.clear();
 
     // End all client responses
-    Array.from(this.clients.values()).forEach((clientSet) => {
-      Array.from(clientSet).forEach((client) => {
+    Array.from(this.clients.values()).forEach((clientMap) => {
+      Array.from(clientMap.values()).forEach((client) => {
         try {
-          client.end();
+          client.res.end();
         } catch {
           // Ignore errors on close
         }

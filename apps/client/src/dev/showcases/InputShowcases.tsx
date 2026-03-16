@@ -3,6 +3,7 @@ import { ChatInput } from '@/layers/features/chat/ui/ChatInput';
 import { FileChipBar } from '@/layers/features/chat/ui/FileChipBar';
 import { QueuePanel } from '@/layers/features/chat/ui/QueuePanel';
 import { ShortcutChips } from '@/layers/features/chat/ui/ShortcutChips';
+import { PromptSuggestionChips } from '@/layers/features/chat/ui/PromptSuggestionChips';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
@@ -40,7 +41,7 @@ function ChatInputDemo({
   );
 }
 
-/** Input-related component showcases: ChatInput, FileChipBar, QueuePanel, ShortcutChips. */
+/** Input-related component showcases: ChatInput, FileChipBar, QueuePanel, ShortcutChips, PromptSuggestionChips. */
 export function InputShowcases() {
   const [files, setFiles] = useState(SAMPLE_FILES);
 
@@ -106,6 +107,44 @@ export function InputShowcases() {
       >
         <ShowcaseDemo>
           <ShortcutChips onChipClick={() => {}} />
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="PromptSuggestionChips"
+        description="SDK-provided follow-up suggestions shown after assistant responses."
+      >
+        <ShowcaseLabel>With suggestions</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PromptSuggestionChips
+            suggestions={[
+              'Run the tests',
+              'Review the changes',
+              'Commit this work',
+            ]}
+            onChipClick={() => {}}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Long suggestions (truncated)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PromptSuggestionChips
+            suggestions={[
+              'Can you refactor the authentication module to use JWT tokens instead?',
+              'Show me the test coverage report for the shared package',
+              'Deploy to staging',
+              'Fix the TypeScript errors in the relay package',
+            ]}
+            onChipClick={() => {}}
+          />
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Single suggestion</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PromptSuggestionChips
+            suggestions={['Run the tests']}
+            onChipClick={() => {}}
+          />
         </ShowcaseDemo>
       </PlaygroundSection>
     </>

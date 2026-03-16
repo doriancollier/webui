@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Check, X, ChevronDown } from 'lucide-react';
-import type { ToolCallState } from '../model/use-chat-session';
+import type { ToolCallState, HookState } from '../model/use-chat-session';
 import { getToolLabel, ToolArgumentsDisplay, cn } from '@/layers/shared/lib';
 import { toolStatus } from './message/message-variants';
 
@@ -34,6 +34,69 @@ function TruncatedOutput({ content, threshold = TRUNCATE_THRESHOLD, className }:
           Show full output ({(content.length / 1024).toFixed(1)}KB)
         </button>
       )}
+    </div>
+  );
+}
+
+interface HookRowProps {
+  /** Single hook execution to display as a compact sub-row. */
+  hook: HookState;
+}
+
+/** Status icon map for hook execution states. */
+const hookStatusIcon = {
+  running: <Loader2 className="size-(--size-icon-xs) animate-spin text-muted-foreground" />,
+  success: <Check className="size-(--size-icon-xs) text-muted-foreground" />,
+  error: <X className="size-(--size-icon-xs) text-destructive" />,
+  cancelled: <X className="size-(--size-icon-xs) text-muted-foreground" />,
+} satisfies Record<HookState['status'], React.ReactNode>;
+
+/**
+ * Compact sub-row for a single hook execution inside a tool call card.
+ * Clickable to expand/collapse output. Error hooks start expanded.
+ */
+function HookRow({ hook }: HookRowProps) {
+  const hasOutput = !!(hook.stdout || hook.stderr);
+  const [expanded, setExpanded] = useState(hook.status === 'error');
+  const output = hook.stderr || hook.stdout;
+
+  return (
+    <div>
+      <button
+        onClick={() => hasOutput && setExpanded((e) => !e)}
+        className={cn(
+          'flex w-full items-center gap-1.5 py-0.5',
+          !hasOutput && 'cursor-default',
+        )}
+        aria-expanded={hasOutput ? expanded : undefined}
+        disabled={!hasOutput}
+      >
+        {hookStatusIcon[hook.status]}
+        <span className={cn('text-3xs font-mono', hook.status === 'error' ? 'text-destructive' : 'text-muted-foreground')}>
+          {hook.hookName}
+        </span>
+        {hook.status === 'error' && (
+          <span className="text-3xs text-destructive">failed</span>
+        )}
+        {hook.exitCode !== undefined && (
+          <span className="text-3xs text-muted-foreground ml-auto">exit {hook.exitCode}</span>
+        )}
+      </button>
+      <AnimatePresence initial={false}>
+        {expanded && hasOutput && output && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+            className="overflow-hidden"
+          >
+            <pre className="text-muted-foreground max-h-32 overflow-y-auto whitespace-pre-wrap py-1 text-xs">
+              {output}
+            </pre>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -90,6 +153,13 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
           <ChevronDown className="size-(--size-icon-xs)" />
         </motion.div>
       </button>
+      {toolCall.hooks && toolCall.hooks.length > 0 && (
+        <div className="border-t border-border/50 px-3 py-1 space-y-0.5">
+          {toolCall.hooks.map((hook) => (
+            <HookRow key={hook.hookId} hook={hook} />
+          ))}
+        </div>
+      )}
       <AnimatePresence initial={false}>
         {expanded && (
           <motion.div
