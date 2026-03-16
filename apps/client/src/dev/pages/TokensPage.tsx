@@ -3,6 +3,8 @@ import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { Button } from '@/layers/shared/ui';
 import { Settings } from 'lucide-react';
+import { TocSidebar } from '../TocSidebar';
+import { TOKENS_SECTIONS } from '../playground-registry';
 
 interface ColorToken {
   name: string;
@@ -121,16 +123,19 @@ export function TokensPage() {
         </p>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-8 p-6">
-        <SemanticColorsSection />
-        <StatusColorsSection />
-        <SidebarColorsSection />
-        <TypographySection />
-        <SpacingSection />
-        <RadiiSection />
-        <ShadowsSection />
-        <SizesSection />
-      </main>
+      <div className="flex gap-8 p-6">
+        <main className="min-w-0 flex-1 space-y-8">
+          <SemanticColorsSection />
+          <StatusColorsSection />
+          <SidebarColorsSection />
+          <TypographySection />
+          <SpacingSection />
+          <RadiiSection />
+          <ShadowsSection />
+          <SizesSection />
+        </main>
+        <TocSidebar sections={TOKENS_SECTIONS} />
+      </div>
     </>
   );
 }

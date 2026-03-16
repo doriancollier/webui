@@ -3,6 +3,8 @@ import { ToolShowcases } from '../showcases/ToolShowcases';
 import { InputShowcases } from '../showcases/InputShowcases';
 import { StatusShowcases } from '../showcases/StatusShowcases';
 import { MiscShowcases } from '../showcases/MiscShowcases';
+import { TocSidebar } from '../TocSidebar';
+import { CHAT_SECTIONS } from '../playground-registry';
 
 /** Chat component showcase page for the dev playground. */
 export function ChatPage() {
@@ -15,13 +17,16 @@ export function ChatPage() {
         </p>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-8 p-6">
-        <MessageShowcases />
-        <ToolShowcases />
-        <InputShowcases />
-        <StatusShowcases />
-        <MiscShowcases />
-      </main>
+      <div className="flex gap-8 p-6">
+        <main className="min-w-0 flex-1 space-y-8">
+          <MessageShowcases />
+          <ToolShowcases />
+          <InputShowcases />
+          <StatusShowcases />
+          <MiscShowcases />
+        </main>
+        <TocSidebar sections={CHAT_SECTIONS} />
+      </div>
     </>
   );
 }

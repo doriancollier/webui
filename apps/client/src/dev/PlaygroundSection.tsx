@@ -13,7 +13,7 @@ export function PlaygroundSection({
   const anchorId = title.toLowerCase().replace(/\s+/g, '-');
 
   return (
-    <section id={anchorId} className="rounded-xl border border-border bg-card p-6">
+    <section id={anchorId} className="scroll-mt-14 rounded-xl border border-border bg-card p-6">
       <h2 className="group mb-1 text-lg font-semibold text-foreground">
         {title}
         <a
