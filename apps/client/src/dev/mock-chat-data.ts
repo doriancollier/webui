@@ -3,6 +3,9 @@ import type { PendingFile } from '@/layers/features/chat/model/use-file-upload';
 import type { QueueItem } from '@/layers/features/chat/model/use-message-queue';
 import type { TaskItem, QuestionItem, SubagentPart } from '@dorkos/shared/types';
 
+/** Shared mock session ID for playground demos that require a session context. */
+export const MOCK_SESSION_ID = 'playground-session-001';
+
 // ---------------------------------------------------------------------------
 // Factories
 // ---------------------------------------------------------------------------

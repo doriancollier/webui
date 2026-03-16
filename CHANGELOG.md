@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Improve playground UX with demo wells and DRY cleanup
+- Improve playground UX with demo wells and DRY cleanup
+
 ### Fixed
 
 ---

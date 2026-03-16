@@ -1,3 +1,4 @@
+import { cn } from '@/layers/shared/lib';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { Button } from '@/layers/shared/ui';
@@ -138,7 +139,7 @@ function ColorSwatch({ name, bg, border }: { name: string; bg: string; border?: 
   return (
     <div className="space-y-1.5">
       <div
-        className={`h-16 rounded-lg ${bg} ${border ? 'border border-border' : ''}`}
+        className={cn('h-16 rounded-lg', bg, border && 'border border-border')}
       />
       <p className="text-foreground text-xs font-medium">{name}</p>
       <p className="text-muted-foreground font-mono text-3xs">--{name}</p>

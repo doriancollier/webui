@@ -1,16 +1,11 @@
 import { useState, useCallback } from 'react';
 import { CelebrationOverlay } from '@/layers/features/chat/ui/CelebrationOverlay';
 import { DragHandle } from '@/layers/features/chat/ui/DragHandle';
+import { Button } from '@/layers/shared/ui';
 import type { CelebrationEvent } from '@/layers/shared/lib';
 import { PlaygroundSection } from '../PlaygroundSection';
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
-      {children}
-    </div>
-  );
-}
+import { ShowcaseLabel } from '../ShowcaseLabel';
+import { ShowcaseDemo } from '../ShowcaseDemo';
 
 /** Miscellaneous component showcases: CelebrationOverlay, DragHandle. */
 export function MiscShowcases() {
@@ -31,13 +26,11 @@ export function MiscShowcases() {
         title="CelebrationOverlay"
         description="Confetti celebration triggered by completing all tasks."
       >
-        <button
-          type="button"
-          onClick={fireCelebration}
-          className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium transition-colors"
-        >
-          Fire confetti
-        </button>
+        <ShowcaseDemo>
+          <Button variant="outline" onClick={fireCelebration}>
+            Fire confetti
+          </Button>
+        </ShowcaseDemo>
         <CelebrationOverlay
           celebration={celebration}
           onComplete={() => setCelebration(null)}
@@ -48,11 +41,13 @@ export function MiscShowcases() {
         title="DragHandle"
         description="Pill-shaped toggle for collapsing/expanding sections."
       >
-        <Label>{collapsed ? 'Collapsed' : 'Expanded'}</Label>
-        <DragHandle
-          collapsed={collapsed}
-          onToggle={() => setCollapsed((c) => !c)}
-        />
+        <ShowcaseLabel>{collapsed ? 'Collapsed' : 'Expanded'}</ShowcaseLabel>
+        <ShowcaseDemo>
+          <DragHandle
+            collapsed={collapsed}
+            onToggle={() => setCollapsed((c) => !c)}
+          />
+        </ShowcaseDemo>
       </PlaygroundSection>
     </>
   );

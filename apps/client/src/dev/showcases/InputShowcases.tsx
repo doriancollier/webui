@@ -4,15 +4,9 @@ import { FileChipBar } from '@/layers/features/chat/ui/FileChipBar';
 import { QueuePanel } from '@/layers/features/chat/ui/QueuePanel';
 import { ShortcutChips } from '@/layers/features/chat/ui/ShortcutChips';
 import { PlaygroundSection } from '../PlaygroundSection';
+import { ShowcaseLabel } from '../ShowcaseLabel';
+import { ShowcaseDemo } from '../ShowcaseDemo';
 import { SAMPLE_FILES, SAMPLE_QUEUE } from '../mock-chat-data';
-
-function Label({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-wider">
-      {children}
-    </div>
-  );
-}
 
 function ChatInputDemo({
   label,
@@ -28,18 +22,20 @@ function ChatInputDemo({
   const [value, setValue] = useState(initialValue);
   return (
     <div>
-      <Label>{label}</Label>
-      <div className="border-border rounded-xl border">
-        <ChatInput
-          value={value}
-          onChange={setValue}
-          onSubmit={() => {}}
-          isStreaming={isStreaming}
-          queueDepth={queueDepth}
-          onStop={() => {}}
-          onQueue={() => {}}
-        />
-      </div>
+      <ShowcaseLabel>{label}</ShowcaseLabel>
+      <ShowcaseDemo>
+        <div className="border-border rounded-xl border">
+          <ChatInput
+            value={value}
+            onChange={setValue}
+            onSubmit={() => {}}
+            isStreaming={isStreaming}
+            queueDepth={queueDepth}
+            onStop={() => {}}
+            onQueue={() => {}}
+          />
+        </div>
+      </ShowcaseDemo>
     </div>
   );
 }
@@ -71,38 +67,46 @@ export function InputShowcases() {
         title="FileChipBar"
         description="File chips in various upload states."
       >
-        <FileChipBar
-          files={files}
-          onRemove={(id) => setFiles((prev) => prev.filter((f) => f.id !== id))}
-        />
+        <ShowcaseDemo>
+          <FileChipBar
+            files={files}
+            onRemove={(id) => setFiles((prev) => prev.filter((f) => f.id !== id))}
+          />
+        </ShowcaseDemo>
       </PlaygroundSection>
 
       <PlaygroundSection
         title="QueuePanel"
         description="Queued messages displayed above the input."
       >
-        <Label>With items</Label>
-        <QueuePanel
-          queue={SAMPLE_QUEUE}
-          editingIndex={null}
-          onEdit={() => {}}
-          onRemove={() => {}}
-        />
+        <ShowcaseLabel>With items</ShowcaseLabel>
+        <ShowcaseDemo>
+          <QueuePanel
+            queue={SAMPLE_QUEUE}
+            editingIndex={null}
+            onEdit={() => {}}
+            onRemove={() => {}}
+          />
+        </ShowcaseDemo>
 
-        <Label>With item being edited</Label>
-        <QueuePanel
-          queue={SAMPLE_QUEUE}
-          editingIndex={1}
-          onEdit={() => {}}
-          onRemove={() => {}}
-        />
+        <ShowcaseLabel>With item being edited</ShowcaseLabel>
+        <ShowcaseDemo>
+          <QueuePanel
+            queue={SAMPLE_QUEUE}
+            editingIndex={1}
+            onEdit={() => {}}
+            onRemove={() => {}}
+          />
+        </ShowcaseDemo>
       </PlaygroundSection>
 
       <PlaygroundSection
         title="ShortcutChips"
         description="Quick-access chips for / commands and @ file mentions."
       >
-        <ShortcutChips onChipClick={() => {}} />
+        <ShowcaseDemo>
+          <ShortcutChips onChipClick={() => {}} />
+        </ShowcaseDemo>
       </PlaygroundSection>
     </>
   );
