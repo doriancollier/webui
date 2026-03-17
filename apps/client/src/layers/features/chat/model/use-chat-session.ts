@@ -113,6 +113,8 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const transport = useTransport();
   const queryClient = useQueryClient();
   const selectedCwd = useAppStore((s) => s.selectedCwd);
+  const enableCrossClientSync = useAppStore((s) => s.enableCrossClientSync);
+  const enableMessagePolling = useAppStore((s) => s.enableMessagePolling);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState('');
   const [status, setStatus] = useState<'idle' | 'streaming' | 'error'>('idle');
@@ -255,6 +257,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     enabled: sessionId !== null,
     refetchInterval: () => {
       if (isStreaming) return false;
+      if (!enableMessagePolling) return false;
       return isTabVisible
         ? QUERY_TIMING.ACTIVE_TAB_REFETCH_MS
         : QUERY_TIMING.BACKGROUND_TAB_REFETCH_MS;
@@ -308,6 +311,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   useEffect(() => {
     if (!sessionId) return;
     if (isStreaming) return;
+    if (!enableCrossClientSync) return;
 
     const clientIdParam = transport.clientId ? `?clientId=${encodeURIComponent(transport.clientId)}` : '';
     const url = `/api/sessions/${sessionId}/stream${clientIdParam}`;
@@ -340,7 +344,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     return () => {
       eventSource.close();
     };
-  }, [sessionId, isStreaming, queryClient, transport.clientId]);
+  }, [sessionId, isStreaming, queryClient, transport.clientId, enableCrossClientSync]);
 
   // Cleanup timers on unmount
   useEffect(() => {

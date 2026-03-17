@@ -1011,7 +1011,21 @@
       "title": "QuestionPrompt Component Redesign",
       "created": "2026-03-16",
       "status": "specified"
+    },
+    {
+      "number": 145,
+      "slug": "interactive-card-focus-navigation",
+      "title": "Unified Input Zone for Interactive Cards",
+      "created": "2026-03-17",
+      "status": "ideation"
+    },
+    {
+      "number": 146,
+      "slug": "data-path-debug-toggles",
+      "title": "Data Path Debug Toggles",
+      "created": "2026-03-17",
+      "status": "specified"
     }
   ],
-  "nextNumber": 145
+  "nextNumber": 147
 }

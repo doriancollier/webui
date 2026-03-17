@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { Button, Separator } from '@/layers/shared/ui';
+import { Button, Label, Separator, Switch } from '@/layers/shared/ui';
+import { useAppStore } from '@/layers/shared/model';
 import { ResetDialog } from './ResetDialog';
 import { RestartDialog } from './RestartDialog';
 
@@ -13,9 +14,49 @@ interface AdvancedTabProps {
 export function AdvancedTab({ onResetComplete, onRestartComplete }: AdvancedTabProps) {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [restartDialogOpen, setRestartDialogOpen] = useState(false);
+  const enableCrossClientSync = useAppStore((s) => s.enableCrossClientSync);
+  const setEnableCrossClientSync = useAppStore((s) => s.setEnableCrossClientSync);
+  const enableMessagePolling = useAppStore((s) => s.enableMessagePolling);
+  const setEnableMessagePolling = useAppStore((s) => s.setEnableMessagePolling);
 
   return (
     <div className="space-y-6">
+      <div className="space-y-4 rounded-lg border p-4">
+        <h3 className="text-sm font-semibold">Diagnostics</h3>
+        <p className="text-muted-foreground text-xs">
+          Toggle data synchronization paths for debugging. Disabling these
+          reduces background network activity but may cause stale data.
+        </p>
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <Label className="text-sm font-medium">Cross-client sync</Label>
+            <p className="text-muted-foreground text-xs">
+              Real-time updates from other clients and presence indicators
+            </p>
+          </div>
+          <Switch
+            checked={enableCrossClientSync}
+            onCheckedChange={setEnableCrossClientSync}
+          />
+        </div>
+
+        <Separator />
+
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0">
+            <Label className="text-sm font-medium">Message polling</Label>
+            <p className="text-muted-foreground text-xs">
+              Periodic refresh of message history (3s active, 10s background)
+            </p>
+          </div>
+          <Switch
+            checked={enableMessagePolling}
+            onCheckedChange={setEnableMessagePolling}
+          />
+        </div>
+      </div>
+
       <div className="border-destructive/50 space-y-4 rounded-lg border p-4">
         <div className="flex items-center gap-2">
           <TriangleAlert className="text-destructive size-4" />

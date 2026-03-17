@@ -8,20 +8,26 @@ import { createMockTransport } from '@dorkos/test-utils';
 import type { StreamEvent } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
 
-// Mock app store (selectedCwd)
+// Mock app store (selectedCwd + debug toggles)
+let mockAppState: Record<string, unknown> = {
+  selectedCwd: '/test/cwd',
+  enableCrossClientSync: true,
+  enableMessagePolling: true,
+};
+
 vi.mock('@/layers/shared/model', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('@/layers/shared/model');
   return {
     ...actual,
     useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
-      const state = { selectedCwd: '/test/cwd' };
-      return selector ? selector(state) : state;
+      return selector ? selector(mockAppState) : mockAppState;
     },
   };
 });
 
 // Mock EventSource for SSE subscription tests
 class MockEventSource {
+  static instances: MockEventSource[] = [];
   url: string;
   listeners: Map<string, Array<(event: Event) => void>>;
   readyState: number;
@@ -30,6 +36,7 @@ class MockEventSource {
     this.url = url;
     this.listeners = new Map();
     this.readyState = 1; // OPEN
+    MockEventSource.instances.push(this);
   }
 
   addEventListener(type: string, listener: (event: Event) => void) {
@@ -99,6 +106,12 @@ describe('useChatSession', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     uuidCounter = 0;
+    MockEventSource.instances = [];
+    mockAppState = {
+      selectedCwd: '/test/cwd',
+      enableCrossClientSync: true,
+      enableMessagePolling: true,
+    };
   });
 
   it('initializes with empty messages and transitions to idle', async () => {
@@ -874,6 +887,40 @@ describe('useChatSession', () => {
       expect(result.current.streamStartTime).toBeNull();
 
       vi.restoreAllMocks();
+    });
+  });
+
+  describe('data path debug toggles', () => {
+    it('does not create EventSource when enableCrossClientSync is false', async () => {
+      mockAppState = { ...mockAppState, enableCrossClientSync: false };
+
+      const transport = createMockTransport();
+      renderHook(() => useChatSession('s1'), {
+        wrapper: createWrapper(transport),
+      });
+
+      // Wait for effects to settle
+      await waitFor(() => {
+        // Verify no EventSource was created for the session stream URL
+        const streamInstances = MockEventSource.instances.filter((es) =>
+          es.url.includes('/api/sessions/s1/stream')
+        );
+        expect(streamInstances).toHaveLength(0);
+      });
+    });
+
+    it('creates EventSource when enableCrossClientSync is true (default)', async () => {
+      const transport = createMockTransport();
+      renderHook(() => useChatSession('s1'), {
+        wrapper: createWrapper(transport),
+      });
+
+      await waitFor(() => {
+        const streamInstances = MockEventSource.instances.filter((es) =>
+          es.url.includes('/api/sessions/s1/stream')
+        );
+        expect(streamInstances.length).toBeGreaterThan(0);
+      });
     });
   });
 });
