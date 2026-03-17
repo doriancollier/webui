@@ -195,7 +195,7 @@ export function ChatInputContainer({
                 onDecided={onToolDecided ? () => onToolDecided(activeInteraction!.toolCallId) : undefined}
                 timeoutMs={activeInteraction!.timeoutMs}
               />
-            ) : activeInteraction!.questions ? (
+            ) : activeInteraction!.interactiveType === 'question' && activeInteraction!.questions ? (
               <QuestionPrompt
                 ref={onToolRef}
                 sessionId={sessionId}

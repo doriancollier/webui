@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 137,
+  "nextNumber": 138,
   "decisions": [
+    {
+      "number": 137,
+      "slug": "unified-input-zone-for-interactive-cards",
+      "title": "Unified Input Zone for Interactive Cards",
+      "status": "draft",
+      "created": "2026-03-17",
+      "extractedFrom": "interactive-card-focus-navigation",
+      "specSlug": "interactive-card-focus-navigation"
+    },
     {
       "number": 136,
       "slug": "hybrid-hook-event-routing",

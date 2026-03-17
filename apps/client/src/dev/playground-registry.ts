@@ -1,5 +1,5 @@
 /** Page identifiers for the dev playground. */
-export type Page = 'overview' | 'tokens' | 'components' | 'chat';
+export type Page = 'overview' | 'tokens' | 'components' | 'chat' | 'features';
 
 /** A single searchable/navigable section in the playground. */
 export interface PlaygroundSection {
@@ -302,6 +302,14 @@ export const COMPONENTS_SECTIONS: PlaygroundSection[] = [
     category: 'Overlays',
     keywords: ['responsive', 'dialog', 'drawer', 'mobile', 'desktop', 'fullscreen'],
   },
+  // DrawerShowcases
+  {
+    id: 'drawer',
+    title: 'Drawer',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['drawer', 'bottom', 'sheet', 'slide', 'panel', 'vaul', 'mobile'],
+  },
   // DataDisplayShowcases
   {
     id: 'pathbreadcrumb',
@@ -337,6 +345,42 @@ export const COMPONENTS_SECTIONS: PlaygroundSection[] = [
     page: 'components',
     category: 'Data Display',
     keywords: ['scroll', 'area', 'overflow', 'scrollbar', 'custom', 'vertical', 'horizontal'],
+  },
+  // ChatPrimitivesShowcases
+  {
+    id: 'collapsiblecard',
+    title: 'CollapsibleCard',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['collapsible', 'card', 'expand', 'collapse', 'thinking', 'chevron'],
+  },
+  {
+    id: 'interactivecard',
+    title: 'InteractiveCard',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['interactive', 'card', 'active', 'resolved', 'focus', 'ring'],
+  },
+  {
+    id: 'optionrow',
+    title: 'OptionRow',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['option', 'row', 'radio', 'selected', 'focused', 'choice'],
+  },
+  {
+    id: 'compactpendingrow',
+    title: 'CompactPendingRow',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['compact', 'pending', 'row', 'approval', 'question', 'waiting'],
+  },
+  {
+    id: 'compactresultrow',
+    title: 'CompactResultRow',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['compact', 'result', 'row', 'approved', 'denied', 'badge', 'icon'],
   },
 ];
 
@@ -523,6 +567,74 @@ export const CHAT_SECTIONS: PlaygroundSection[] = [
 ];
 
 /**
+ * Feature component sections from FeaturesPage.
+ *
+ * Sources: RelayShowcases, MeshShowcases, PulseShowcases, OnboardingShowcases.
+ */
+export const FEATURES_SECTIONS: PlaygroundSection[] = [
+  // RelayShowcases
+  {
+    id: 'catalogcard',
+    title: 'CatalogCard',
+    page: 'features',
+    category: 'Relay',
+    keywords: ['catalog', 'card', 'adapter', 'manifest', 'add', 'relay'],
+  },
+  {
+    id: 'connectionstatusbanner',
+    title: 'ConnectionStatusBanner',
+    page: 'features',
+    category: 'Relay',
+    keywords: ['connection', 'status', 'banner', 'disconnected', 'reconnecting', 'relay'],
+  },
+  {
+    id: 'relayemptystate',
+    title: 'RelayEmptyState',
+    page: 'features',
+    category: 'Relay',
+    keywords: ['relay', 'empty', 'state', 'adapter', 'onboarding'],
+  },
+  // MeshShowcases
+  {
+    id: 'agentcard',
+    title: 'AgentCard',
+    page: 'features',
+    category: 'Mesh',
+    keywords: ['agent', 'card', 'manifest', 'capabilities', 'mesh', 'registry'],
+  },
+  {
+    id: 'meshemptystate',
+    title: 'MeshEmptyState',
+    page: 'features',
+    category: 'Mesh',
+    keywords: ['mesh', 'empty', 'state', 'topology', 'preview', 'agent'],
+  },
+  // PulseShowcases
+  {
+    id: 'presetcard',
+    title: 'PresetCard',
+    page: 'features',
+    category: 'Pulse',
+    keywords: ['preset', 'card', 'schedule', 'toggle', 'selectable', 'cron', 'pulse'],
+  },
+  // OnboardingShowcases
+  {
+    id: 'welcomestep',
+    title: 'WelcomeStep',
+    page: 'features',
+    category: 'Onboarding',
+    keywords: ['welcome', 'step', 'onboarding', 'get started', 'skip', 'animation'],
+  },
+  {
+    id: 'discoverycelebration',
+    title: 'DiscoveryCelebration',
+    page: 'features',
+    category: 'Onboarding',
+    keywords: ['discovery', 'celebration', 'candidate', 'animation', 'beat', 'onboarding'],
+  },
+];
+
+/**
  * Full playground registry combining all page-level section arrays.
  *
  * Used as the data source for the TOC sidebar and Cmd+K search.
@@ -531,4 +643,5 @@ export const PLAYGROUND_REGISTRY: PlaygroundSection[] = [
   ...TOKENS_SECTIONS,
   ...COMPONENTS_SECTIONS,
   ...CHAT_SECTIONS,
+  ...FEATURES_SECTIONS,
 ];

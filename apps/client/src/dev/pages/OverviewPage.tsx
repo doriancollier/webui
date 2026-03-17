@@ -1,5 +1,5 @@
-import { Palette, Component, MessageSquare } from 'lucide-react';
-import { TOKENS_SECTIONS, COMPONENTS_SECTIONS, CHAT_SECTIONS } from '../playground-registry';
+import { Palette, Component, MessageSquare, Blocks } from 'lucide-react';
+import { TOKENS_SECTIONS, COMPONENTS_SECTIONS, CHAT_SECTIONS, FEATURES_SECTIONS } from '../playground-registry';
 import type { Page, PlaygroundSection } from '../playground-registry';
 
 interface OverviewPageProps {
@@ -36,6 +36,13 @@ const CATEGORIES: CategoryCard[] = [
     description: 'Visual testing gallery for chat UI — messages, tool calls, input, status indicators, and misc.',
     icon: MessageSquare,
     sections: CHAT_SECTIONS,
+  },
+  {
+    page: 'features',
+    label: 'Feature Components',
+    description: 'Domain-specific components from Relay, Mesh, Pulse, and Onboarding features.',
+    icon: Blocks,
+    sections: FEATURES_SECTIONS,
   },
 ];
 

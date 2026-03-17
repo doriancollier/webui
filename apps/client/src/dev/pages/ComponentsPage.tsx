@@ -5,6 +5,8 @@ import { NavigationShowcases } from '../showcases/NavigationShowcases';
 import { SidebarShowcases } from '../showcases/SidebarShowcases';
 import { OverlayShowcases } from '../showcases/OverlayShowcases';
 import { DataDisplayShowcases } from '../showcases/DataDisplayShowcases';
+import { DrawerShowcases } from '../showcases/DrawerShowcases';
+import { ChatPrimitivesShowcases } from '../showcases/ChatPrimitivesShowcases';
 import { TocSidebar } from '../TocSidebar';
 import { COMPONENTS_SECTIONS } from '../playground-registry';
 
@@ -27,7 +29,9 @@ export function ComponentsPage() {
           <NavigationShowcases />
           <SidebarShowcases />
           <OverlayShowcases />
+          <DrawerShowcases />
           <DataDisplayShowcases />
+          <ChatPrimitivesShowcases />
         </main>
         <TocSidebar sections={COMPONENTS_SECTIONS} />
       </div>

@@ -88,7 +88,11 @@ export function handleToolCallEnd(
   const tc = data as ToolCallEvent;
   const existing = helpers.findToolCallPart(tc.toolCallId);
   if (existing) {
-    existing.status = 'complete';
+    // Don't overwrite 'pending' status on interactive tool calls — they remain
+    // pending until the user responds (tool_result handles the final status).
+    if (!existing.interactiveType) {
+      existing.status = 'complete';
+    }
   } else {
     console.warn('[stream] tool_call_end: unknown toolCallId', tc.toolCallId);
   }

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prevent tool_call_end from overwriting pending status on interactive tool calls
 ---
 
 ## [0.15.0] - 2026-03-17

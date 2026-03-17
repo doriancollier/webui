@@ -18,9 +18,10 @@ import {
   Separator,
 } from '@/layers/shared/ui';
 import { TransportProvider, useTheme } from '@/layers/shared/model';
-import { LayoutDashboard, Palette, Component, MessageSquare, Sun, Monitor, Moon, Search } from 'lucide-react';
+import { LayoutDashboard, Palette, Component, MessageSquare, Blocks, Sun, Monitor, Moon, Search } from 'lucide-react';
 import { createPlaygroundTransport } from './playground-transport';
 import { ChatPage } from './pages/ChatPage';
+import { FeaturesPage } from './pages/FeaturesPage';
 import { TokensPage } from './pages/TokensPage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { OverviewPage } from './pages/OverviewPage';
@@ -48,6 +49,7 @@ function getRouteFromPath(): PlaygroundRoute {
   if (path.startsWith('/dev/tokens')) return { page: 'tokens', anchor };
   if (path.startsWith('/dev/components')) return { page: 'components', anchor };
   if (path.startsWith('/dev/chat')) return { page: 'chat', anchor };
+  if (path.startsWith('/dev/features')) return { page: 'features', anchor };
   return { page: 'overview', anchor };
 }
 
@@ -64,6 +66,7 @@ const DESIGN_SYSTEM_NAV: NavItem[] = [
 
 const FEATURES_NAV: NavItem[] = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
+  { id: 'features', label: 'Features', icon: Blocks },
 ];
 
 /**
@@ -248,6 +251,7 @@ export default function DevPlayground() {
                 {page === 'tokens' && <TokensPage />}
                 {page === 'components' && <ComponentsPage />}
                 {page === 'chat' && <ChatPage />}
+                {page === 'features' && <FeaturesPage />}
               </SidebarInset>
 
               <PlaygroundSearch

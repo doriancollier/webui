@@ -92,7 +92,7 @@
       "activeForm": "Rewriting QuestionPrompt submitted state to compact single-row pattern",
       "size": "medium",
       "priority": "high",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "parallelWith": ["4.2", "4.3"]
     },
@@ -105,7 +105,7 @@
       "activeForm": "Rewriting ToolApproval approved/denied states to compact single-row pattern",
       "size": "medium",
       "priority": "high",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "parallelWith": ["4.1", "4.3"]
     },
@@ -118,7 +118,7 @@
       "activeForm": "Updating ToolApproval pending state buttons to use shared Button component",
       "size": "small",
       "priority": "high",
-      "status": "pending",
+      "status": "done",
       "dependencies": [],
       "parallelWith": ["4.1", "4.2"]
     },
@@ -131,7 +131,7 @@
       "activeForm": "Updating QuestionPrompt tests for compact submitted state",
       "size": "medium",
       "priority": "high",
-      "status": "pending",
+      "status": "done",
       "dependencies": ["4.1"],
       "parallelWith": ["5.2"]
     },
@@ -144,7 +144,7 @@
       "activeForm": "Updating ToolApproval tests for compact decided state and Button usage",
       "size": "medium",
       "priority": "high",
-      "status": "pending",
+      "status": "done",
       "dependencies": ["4.2", "4.3"],
       "parallelWith": ["5.1"]
     },
