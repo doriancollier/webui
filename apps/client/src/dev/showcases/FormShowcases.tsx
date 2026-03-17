@@ -16,11 +16,23 @@ import {
   TabsList,
   TabsTrigger,
   TabsContent,
+  Checkbox,
+  RadioGroup,
+  RadioGroupItem,
+  Command,
+  CommandInput,
+  CommandList,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
 } from '@/layers/shared/ui';
 
-/** Form component showcases: Input, Textarea, Switch, Select, Tabs. */
+/** Form component showcases: Input, Textarea, Switch, Select, Tabs, Checkbox, RadioGroup, Label, Command. */
 export function FormShowcases() {
   const [switchOn, setSwitchOn] = useState(true);
+  const [checkA, setCheckA] = useState(true);
+  const [checkB, setCheckB] = useState(false);
+  const [radioValue, setRadioValue] = useState('claude-code');
 
   return (
     <>
@@ -136,6 +148,144 @@ export function FormShowcases() {
               </p>
             </TabsContent>
           </Tabs>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Checkbox"
+        description="Checkboxes for multi-select form fields."
+      >
+        <ShowcaseLabel>Default</ShowcaseLabel>
+        <ShowcaseDemo>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="demo-check-a"
+              checked={checkA}
+              onCheckedChange={(v) => setCheckA(!!v)}
+            />
+            <Label htmlFor="demo-check-a">Enable notifications</Label>
+          </div>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Unchecked</ShowcaseLabel>
+        <ShowcaseDemo>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="demo-check-b"
+              checked={checkB}
+              onCheckedChange={(v) => setCheckB(!!v)}
+            />
+            <Label htmlFor="demo-check-b">Auto-approve tool calls</Label>
+          </div>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Disabled</ShowcaseLabel>
+        <ShowcaseDemo>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Checkbox id="demo-check-disabled-on" checked disabled />
+              <Label htmlFor="demo-check-disabled-on">Checked (disabled)</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox id="demo-check-disabled-off" disabled />
+              <Label htmlFor="demo-check-disabled-off">Unchecked (disabled)</Label>
+            </div>
+          </div>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="RadioGroup"
+        description="Radio buttons for single-select form fields."
+      >
+        <ShowcaseLabel>Default</ShowcaseLabel>
+        <ShowcaseDemo>
+          <RadioGroup value={radioValue} onValueChange={setRadioValue}>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="claude-code" id="demo-radio-cc" />
+              <Label htmlFor="demo-radio-cc">Claude Code</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="codex" id="demo-radio-codex" />
+              <Label htmlFor="demo-radio-codex">Codex</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="custom" id="demo-radio-custom" />
+              <Label htmlFor="demo-radio-custom">Custom Runtime</Label>
+            </div>
+          </RadioGroup>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>With descriptions</ShowcaseLabel>
+        <ShowcaseDemo>
+          <RadioGroup defaultValue="fast">
+            <div className="flex items-start gap-2">
+              <RadioGroupItem value="fast" id="demo-radio-fast" className="mt-0.5" />
+              <div>
+                <Label htmlFor="demo-radio-fast">Fast mode</Label>
+                <p className="text-muted-foreground text-xs">Lower latency, reduced context window</p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <RadioGroupItem value="thorough" id="demo-radio-thorough" className="mt-0.5" />
+              <div>
+                <Label htmlFor="demo-radio-thorough">Thorough mode</Label>
+                <p className="text-muted-foreground text-xs">Full context, extended thinking enabled</p>
+              </div>
+            </div>
+          </RadioGroup>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Disabled</ShowcaseLabel>
+        <ShowcaseDemo>
+          <RadioGroup defaultValue="locked" disabled>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="locked" id="demo-radio-locked" />
+              <Label htmlFor="demo-radio-locked">Locked option</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="other" id="demo-radio-other-dis" />
+              <Label htmlFor="demo-radio-other-dis">Unavailable</Label>
+            </div>
+          </RadioGroup>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Label"
+        description="Standalone label component for form accessibility."
+      >
+        <ShowcaseDemo>
+          <div className="space-y-3">
+            <Label>Default label</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="demo-label-input">Associated input</Label>
+              <Input id="demo-label-input" placeholder="Click the label above" />
+            </div>
+          </div>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Command"
+        description="Search/autocomplete input with filterable list."
+      >
+        <ShowcaseDemo>
+          <Command className="border shadow-md">
+            <CommandInput placeholder="Search agents..." />
+            <CommandList>
+              <CommandEmpty>No results found.</CommandEmpty>
+              <CommandGroup heading="Runtimes">
+                <CommandItem>Claude Code</CommandItem>
+                <CommandItem>Codex</CommandItem>
+                <CommandItem>Custom Runtime</CommandItem>
+              </CommandGroup>
+              <CommandGroup heading="Actions">
+                <CommandItem>Create new agent</CommandItem>
+                <CommandItem>Import configuration</CommandItem>
+              </CommandGroup>
+            </CommandList>
+          </Command>
         </ShowcaseDemo>
       </PlaygroundSection>
     </>

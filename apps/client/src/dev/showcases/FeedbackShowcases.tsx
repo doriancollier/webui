@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { ChevronsUpDown } from 'lucide-react';
+import { toast } from 'sonner';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
@@ -8,10 +11,18 @@ import {
   TooltipTrigger,
   TooltipContent,
   Button,
+  HoverCard,
+  HoverCardTrigger,
+  HoverCardContent,
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
 } from '@/layers/shared/ui';
 
-/** Feedback component showcases: Skeleton, Separator, Tooltip. */
+/** Feedback component showcases: Skeleton, Separator, Tooltip, HoverCard, Collapsible, Toaster. */
 export function FeedbackShowcases() {
+  const [collapsibleOpen, setCollapsibleOpen] = useState(false);
+
   return (
     <>
       <PlaygroundSection
@@ -65,6 +76,98 @@ export function FeedbackShowcases() {
               <p>This is a tooltip</p>
             </TooltipContent>
           </Tooltip>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="HoverCard"
+        description="Content card revealed on hover over a trigger."
+      >
+        <ShowcaseDemo>
+          <HoverCard>
+            <HoverCardTrigger asChild>
+              <Button variant="link">@claude-code</Button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-72">
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold">Claude Code Runtime</h4>
+                <p className="text-muted-foreground text-xs">
+                  Primary agent runtime backed by the Claude Agent SDK. Supports streaming,
+                  tool approval, and extended thinking.
+                </p>
+                <div className="text-muted-foreground flex items-center gap-2 pt-1 text-xs">
+                  <span>v2.1.0</span>
+                  <Separator orientation="vertical" className="h-3" />
+                  <span>42 sessions active</span>
+                </div>
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Collapsible"
+        description="Expand/collapse toggle for supplementary content."
+      >
+        <ShowcaseDemo>
+          <Collapsible open={collapsibleOpen} onOpenChange={setCollapsibleOpen} className="space-y-2">
+            <div className="flex items-center gap-2">
+              <h4 className="text-sm font-semibold">Agent Configuration</h4>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <ChevronsUpDown className="size-4" />
+                  <span className="sr-only">Toggle</span>
+                </Button>
+              </CollapsibleTrigger>
+            </div>
+            <div className="rounded-md border px-3 py-2 text-sm">
+              Runtime: Claude Code
+            </div>
+            <CollapsibleContent className="space-y-2">
+              <div className="rounded-md border px-3 py-2 text-sm">
+                Max tokens: 8192
+              </div>
+              <div className="rounded-md border px-3 py-2 text-sm">
+                Temperature: 0.7
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Toaster"
+        description="Toast notifications via Sonner."
+      >
+        <ShowcaseDemo>
+          {/* Toasts render via the global <Toaster /> in App.tsx */}
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() => toast.success('Agent deployed successfully')}
+            >
+              Success
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => toast.error('Failed to connect to runtime')}
+            >
+              Error
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => toast.info('Session sync in progress')}
+            >
+              Info
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => toast.warning('Rate limit approaching')}
+            >
+              Warning
+            </Button>
+          </div>
         </ShowcaseDemo>
       </PlaygroundSection>
     </>

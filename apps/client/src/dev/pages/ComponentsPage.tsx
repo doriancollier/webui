@@ -3,6 +3,7 @@ import { FormShowcases } from '../showcases/FormShowcases';
 import { FeedbackShowcases } from '../showcases/FeedbackShowcases';
 import { NavigationShowcases } from '../showcases/NavigationShowcases';
 import { OverlayShowcases } from '../showcases/OverlayShowcases';
+import { DataDisplayShowcases } from '../showcases/DataDisplayShowcases';
 import { TocSidebar } from '../TocSidebar';
 import { COMPONENTS_SECTIONS } from '../playground-registry';
 
@@ -24,6 +25,7 @@ export function ComponentsPage() {
           <FeedbackShowcases />
           <NavigationShowcases />
           <OverlayShowcases />
+          <DataDisplayShowcases />
         </main>
         <TocSidebar sections={COMPONENTS_SECTIONS} />
       </div>

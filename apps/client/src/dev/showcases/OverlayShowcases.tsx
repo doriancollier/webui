@@ -1,4 +1,5 @@
 import { PlaygroundSection } from '../PlaygroundSection';
+import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
 import {
   Button,
@@ -27,9 +28,25 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose,
+  ResponsiveDialog,
+  ResponsiveDialogTrigger,
+  ResponsiveDialogContent,
+  ResponsiveDialogHeader,
+  ResponsiveDialogTitle,
+  ResponsiveDialogDescription,
+  ResponsiveDialogFooter,
+  ResponsiveDialogClose,
+  ResponsiveDialogFullscreenToggle,
 } from '@/layers/shared/ui';
 
-/** Overlay component showcases: Dialog, AlertDialog, Popover, DropdownMenu. */
+/** Overlay component showcases: Dialog, AlertDialog, Popover, DropdownMenu, Sheet, ResponsiveDialog. */
 export function OverlayShowcases() {
   return (
     <>
@@ -131,6 +148,87 @@ export function OverlayShowcases() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="Sheet"
+        description="Slide-out side panel from any edge."
+      >
+        <ShowcaseLabel>Right (default)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline">Open Right Sheet</Button>
+            </SheetTrigger>
+            <SheetContent>
+              <SheetHeader>
+                <SheetTitle>Agent Details</SheetTitle>
+                <SheetDescription>
+                  View and edit agent configuration.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-4 text-sm text-muted-foreground">
+                Sheet body content goes here.
+              </div>
+              <SheetClose asChild>
+                <Button variant="outline" className="mt-2">Close</Button>
+              </SheetClose>
+            </SheetContent>
+          </Sheet>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Left</ShowcaseLabel>
+        <ShowcaseDemo>
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline">Open Left Sheet</Button>
+            </SheetTrigger>
+            <SheetContent side="left">
+              <SheetHeader>
+                <SheetTitle>Navigation</SheetTitle>
+                <SheetDescription>
+                  Side navigation panel.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="py-4 text-sm text-muted-foreground">
+                Navigation content here.
+              </div>
+            </SheetContent>
+          </Sheet>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="ResponsiveDialog"
+        description="Dialog on desktop, drawer on mobile. Supports fullscreen toggle."
+      >
+        <ShowcaseDemo>
+          <ResponsiveDialog>
+            <ResponsiveDialogTrigger asChild>
+              <Button variant="outline">Open Responsive Dialog</Button>
+            </ResponsiveDialogTrigger>
+            <ResponsiveDialogContent>
+              <ResponsiveDialogHeader>
+                <ResponsiveDialogTitle>Session Settings</ResponsiveDialogTitle>
+                <ResponsiveDialogDescription>
+                  Configure the current session. On mobile, this renders as a bottom drawer.
+                </ResponsiveDialogDescription>
+                <ResponsiveDialogFullscreenToggle />
+              </ResponsiveDialogHeader>
+              <div className="py-4 text-sm text-muted-foreground">
+                Responsive dialog body content.
+              </div>
+              <ResponsiveDialogFooter>
+                <ResponsiveDialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </ResponsiveDialogClose>
+                <ResponsiveDialogClose asChild>
+                  <Button>Save</Button>
+                </ResponsiveDialogClose>
+              </ResponsiveDialogFooter>
+            </ResponsiveDialogContent>
+          </ResponsiveDialog>
         </ShowcaseDemo>
       </PlaygroundSection>
     </>
