@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "nextNumber": 146,
+  "nextNumber": 147,
   "specs": [
+    {
+      "number": 146,
+      "slug": "form-field-standardization",
+      "title": "Form Field Standardization",
+      "created": "2026-03-18",
+      "status": "ideation"
+    },
     {
       "number": 145,
       "slug": "slack-tool-approval",
@@ -1039,7 +1046,14 @@
       "title": "Relay Adapter Event Whitelist Overhaul",
       "created": "2026-03-17",
       "status": "specification"
+    },
+    {
+      "number": 148,
+      "slug": "sdk-error-observability",
+      "title": "SDK Error Observability — Break Infinite Retry Loop, Surface Errors to Adapters",
+      "created": "2026-03-18",
+      "status": "specification"
     }
   ],
-  "nextNumber": 148
+  "nextNumber": 149
 }

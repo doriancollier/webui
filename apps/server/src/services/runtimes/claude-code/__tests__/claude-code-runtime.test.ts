@@ -285,41 +285,8 @@ describe('ClaudeCodeRuntime', () => {
             throw new Error('Query closed before response received');
           })());
         }
-        // Second call: succeed normally
-        return wrapSdkQuery((async function* () {
-          yield {
-            type: 'system',
-            subtype: 'init',
-            session_id: 'new-session',
-            tools: [],
-            mcp_servers: [],
-            model: 'test',
-            permissionMode: 'default',
-            slash_commands: [],
-            output_style: 'text',
-            skills: [],
-            plugins: [],
-            cwd: '/test',
-            apiKeySource: 'user',
-            uuid: 'uuid-1',
-          };
-          yield {
-            type: 'result',
-            subtype: 'success',
-            duration_ms: 100,
-            duration_api_ms: 80,
-            is_error: false,
-            num_turns: 1,
-            result: '',
-            stop_reason: 'end_turn',
-            total_cost_usd: 0.001,
-            usage: { input_tokens: 10, output_tokens: 5 },
-            modelUsage: {},
-            permission_denials: [],
-            uuid: 'uuid-2',
-            session_id: 'new-session',
-          };
-        })());
+        // Second call: succeed normally with content
+        return wrapSdkQuery(sdkSimpleText('retry succeeded'));
       });
 
       // Start with hasStarted: true so the first call uses resume
@@ -337,53 +304,15 @@ describe('ClaudeCodeRuntime', () => {
       expect(mockedQuery).toHaveBeenCalledTimes(2);
     });
 
-    it('retries when Claude Code process exits with code 1 (stale resume)', async () => {
+    it('surfaces process exit code errors immediately (not treated as resume failure)', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
       (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
 
-      let callCount = 0;
-      (mockedQuery as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        callCount++;
-        if (callCount === 1) {
-          return wrapSdkQuery((async function* () {
-            throw new Error('Claude Code process exited with code 1');
-          })());
-        }
-        return wrapSdkQuery((async function* () {
-          yield {
-            type: 'system',
-            subtype: 'init',
-            session_id: 'new-session-2',
-            tools: [],
-            mcp_servers: [],
-            model: 'test',
-            permissionMode: 'default',
-            slash_commands: [],
-            output_style: 'text',
-            skills: [],
-            plugins: [],
-            cwd: '/test',
-            apiKeySource: 'user',
-            uuid: 'uuid-1',
-          };
-          yield {
-            type: 'result',
-            subtype: 'success',
-            duration_ms: 100,
-            duration_api_ms: 80,
-            is_error: false,
-            num_turns: 1,
-            result: '',
-            stop_reason: 'end_turn',
-            total_cost_usd: 0.001,
-            usage: { input_tokens: 10, output_tokens: 5 },
-            modelUsage: {},
-            permission_denials: [],
-            uuid: 'uuid-2',
-            session_id: 'new-session-2',
-          };
-        })());
-      });
+      (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
+        wrapSdkQuery((async function* () {
+          throw new Error('Claude Code process exited with code 1');
+        })()),
+      );
 
       agentManager.ensureSession('stale-exit', { permissionMode: 'default', hasStarted: true });
       const events = [];
@@ -391,9 +320,12 @@ describe('ClaudeCodeRuntime', () => {
         events.push(event);
       }
 
-      expect(events.find((e) => e.type === 'error')).toBeUndefined();
-      expect(events.find((e) => e.type === 'done')).toBeDefined();
-      expect(mockedQuery).toHaveBeenCalledTimes(2);
+      const errorEvent = events.find((e) => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect(errorEvent!.data.category).toBe('execution_error');
+      expect(errorEvent!.data.message).toContain('stopped unexpectedly');
+      // Should NOT retry — process exit is not a resume failure
+      expect(mockedQuery).toHaveBeenCalledTimes(1);
     });
 
     it('uses opts.cwd over empty session.cwd', async () => {
@@ -474,7 +406,10 @@ describe('ClaudeCodeRuntime', () => {
 
       const errorEvent = events.find((e) => e.type === 'error');
       expect(errorEvent).toBeDefined();
-      expect((errorEvent!.data as Record<string, unknown>).message).toBe('API key not found');
+      const errorData = errorEvent!.data as Record<string, unknown>;
+      expect(errorData.message).toContain('stopped unexpectedly');
+      expect(errorData.category).toBe('execution_error');
+      expect(errorData.details).toBe('API key not found');
 
       // Should still emit done
       const doneEvent = events.find((e) => e.type === 'done');
@@ -483,6 +418,84 @@ describe('ClaudeCodeRuntime', () => {
       expect(mockedQuery).toHaveBeenCalledTimes(1);
     });
   });
+
+    it('emits error when stream completes with zero content events', async () => {
+      const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
+      (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
+
+      // SDK yields only init + success result — no text_delta or tool_call_start
+      (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
+        wrapSdkQuery((async function* () {
+          yield {
+            type: 'system',
+            subtype: 'init',
+            session_id: 'empty-stream',
+            tools: [],
+            mcp_servers: [],
+            model: 'test',
+            permissionMode: 'default',
+            slash_commands: [],
+            output_style: 'text',
+            skills: [],
+            plugins: [],
+            cwd: '/test',
+            apiKeySource: 'user',
+            uuid: 'uuid-1',
+          };
+          yield {
+            type: 'result',
+            subtype: 'success',
+            duration_ms: 100,
+            duration_api_ms: 80,
+            is_error: false,
+            num_turns: 1,
+            result: '',
+            stop_reason: 'end_turn',
+            total_cost_usd: 0.001,
+            usage: { input_tokens: 10, output_tokens: 5 },
+            modelUsage: {},
+            permission_denials: [],
+            uuid: 'uuid-2',
+            session_id: 'empty-stream',
+          };
+        })()),
+      );
+
+      agentManager.ensureSession('empty', { permissionMode: 'default' });
+      const events = [];
+      for await (const event of agentManager.sendMessage('empty', 'hello')) {
+        events.push(event);
+      }
+
+      const errorEvent = events.find((e) => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect((errorEvent!.data as Record<string, unknown>).message).toContain('did not respond');
+      expect((errorEvent!.data as Record<string, unknown>).category).toBe('execution_error');
+    });
+
+    it('retries resume failure once then surfaces error on second failure', async () => {
+      const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
+      (mockedQuery as ReturnType<typeof vi.fn>).mockClear();
+
+      // Both calls throw 'session not found' — a genuine resume failure
+      (mockedQuery as ReturnType<typeof vi.fn>).mockReturnValue(
+        wrapSdkQuery((async function* () {
+          throw new Error('session not found');
+        })()),
+      );
+
+      agentManager.ensureSession('retry-exhaust', { permissionMode: 'default', hasStarted: true });
+      const events = [];
+      for await (const event of agentManager.sendMessage('retry-exhaust', 'hello')) {
+        events.push(event);
+      }
+
+      const errorEvent = events.find((e) => e.type === 'error');
+      expect(errorEvent).toBeDefined();
+      expect((errorEvent!.data as Record<string, unknown>).category).toBe('execution_error');
+      // Called twice: original + one retry (MAX_RESUME_RETRIES = 1)
+      expect(mockedQuery).toHaveBeenCalledTimes(2);
+    });
 
   describe('sendMessage() boundary enforcement', () => {
     it('yields error event when cwd violates boundary', async () => {

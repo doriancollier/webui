@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 141,
+  "nextNumber": 144,
   "decisions": [
+    {
+      "number": 143,
+      "slug": "use-retry-depth-over-circuit-breaker-for-sdk-errors",
+      "title": "Use Retry Depth Parameter Over Circuit Breaker for SDK Errors",
+      "status": "draft",
+      "created": "2026-03-18",
+      "extractedFrom": "sdk-error-observability",
+      "specSlug": "sdk-error-observability"
+    },
+    {
+      "number": 142,
+      "slug": "defer-form-library-adoption",
+      "title": "Defer Form Library Adoption",
+      "status": "draft",
+      "created": "2026-03-18",
+      "extractedFrom": "form-field-standardization",
+      "specSlug": "form-field-standardization"
+    },
+    {
+      "number": 141,
+      "slug": "use-shadcn-field-for-form-layout",
+      "title": "Use Shadcn Field for Form Layout Foundation",
+      "status": "draft",
+      "created": "2026-03-18",
+      "extractedFrom": "form-field-standardization",
+      "specSlug": "form-field-standardization"
+    },
     {
       "number": 140,
       "slug": "telegram-callback-id-lookup-map",

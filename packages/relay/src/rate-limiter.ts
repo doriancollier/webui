@@ -10,11 +10,22 @@
  */
 import type { RateLimitConfig, RateLimitResult } from './types.js';
 
-/** Default rate limit configuration: 100 messages per 60-second window. */
+/**
+ * Default rate limit configuration: 100 messages per 60-second window.
+ *
+ * Agent senders (`agent:*`) get a much higher limit because a single agent
+ * response stream can easily produce 100+ events (text_delta, thinking_delta,
+ * tool_call_start/delta/end, session_status, approval_required, etc.).
+ * Without this override, the rate limiter silently drops critical events
+ * like approval_required mid-stream.
+ */
 const DEFAULT_RATE_LIMIT_CONFIG: RateLimitConfig = {
   enabled: true,
   windowSecs: 60,
   maxPerWindow: 100,
+  perSenderOverrides: {
+    'agent:': 2000,
+  },
 };
 
 /**

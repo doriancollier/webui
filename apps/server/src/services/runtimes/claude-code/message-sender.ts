@@ -13,7 +13,7 @@ import {
   type SDKMessage,
   type McpServerConfig,
 } from '@anthropic-ai/claude-agent-sdk';
-import type { StreamEvent } from '@dorkos/shared/types';
+import type { StreamEvent, ErrorCategory } from '@dorkos/shared/types';
 import type { MessageOpts, AgentRegistryPort } from '@dorkos/shared/agent-runtime';
 import type { McpServerEntry } from '@dorkos/shared/transport';
 import type { AgentSession } from './agent-types.js';
@@ -58,8 +58,10 @@ const RESUME_FAILURE_PATTERNS = [
   'session not found',
   'no such file',
   'enoent',
-  'process exited with code',
 ];
+
+/** Max transparent retries for stale session recovery before surfacing error. */
+const MAX_RESUME_RETRIES = 1;
 
 /** Detect whether an error indicates a failed SDK session resume. */
 function isResumeFailure(err: unknown): boolean {
@@ -87,6 +89,7 @@ export async function* executeSdkQuery(
   session: AgentSession,
   opts: MessageSenderOpts,
   messageOpts?: MessageOpts,
+  retryDepth = 0,
 ): AsyncGenerator<StreamEvent> {
   session.lastActivity = Date.now();
   session.eventQueue = [];
@@ -268,7 +271,10 @@ export async function* executeSdkQuery(
   });
 
   let emittedDone = false;
+  let emittedError = false;
   let eventCount = 0;
+  let contentEventCount = 0;
+  let wasInteractive = false;
   const streamStart = Date.now();
   const toolState = createToolState();
 
@@ -315,6 +321,13 @@ export async function* executeSdkQuery(
             opts.meshCore.updateLastSeen(meshAgentId, 'response_complete');
           }
         }
+        // Track content events for empty-stream detection
+        if (['text_delta', 'tool_call_start', 'tool_result', 'thinking_delta'].includes(event.type)) {
+          contentEventCount++;
+        }
+        if (['approval_required', 'question_prompt'].includes(event.type)) {
+          wasInteractive = true;
+        }
         eventCount++;
         yield event;
       }
@@ -325,35 +338,60 @@ export async function* executeSdkQuery(
       }
     }
   } catch (err) {
-    if (session.hasStarted && isResumeFailure(err)) {
+    if (session.hasStarted && isResumeFailure(err) && retryDepth < MAX_RESUME_RETRIES) {
       logger.warn('[sendMessage] resume failed for stale session, retrying as new', {
         session: sessionId,
+        retryDepth,
         error: err instanceof Error ? err.message : String(err),
       });
       session.hasStarted = false;
-      yield* executeSdkQuery(sessionId, content, session, opts, messageOpts);
+      yield* executeSdkQuery(sessionId, content, session, opts, messageOpts, retryDepth + 1);
       return;
     }
+    const errMsg = err instanceof Error ? err.message : String(err);
     logger.warn('[sendMessage] stream error', {
       session: sessionId,
-      error: err instanceof Error ? err.message : String(err),
+      error: errMsg,
       durationMs: Date.now() - streamStart,
       eventCount,
+      contentEventCount,
+      retryDepth,
     });
     yield {
       type: 'error',
       data: {
-        message: err instanceof Error ? err.message : 'SDK error',
+        message: 'The agent stopped unexpectedly. The service may be temporarily overloaded — try again in a moment.',
+        category: 'execution_error' as ErrorCategory,
+        details: errMsg,
       },
     };
+    emittedError = true;
   } finally {
     session.activeQuery = undefined;
+  }
+
+  // Detect empty streams — zero content events with no prior error
+  if (contentEventCount === 0 && !emittedError && !wasInteractive) {
+    logger.warn('[sendMessage] stream completed with zero content events', {
+      session: sessionId,
+      eventCount,
+      durationMs: Date.now() - streamStart,
+    });
+    yield {
+      type: 'error',
+      data: {
+        message: 'The agent did not respond. The service may be temporarily unavailable.',
+        category: 'execution_error' as ErrorCategory,
+      },
+    };
+    emittedError = true;
   }
 
   logger.info('[sendMessage] stream done', {
     session: sessionId,
     durationMs: Date.now() - streamStart,
     eventCount,
+    contentEventCount,
   });
 
   if (!emittedDone) {
