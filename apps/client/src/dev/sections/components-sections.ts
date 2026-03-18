@@ -1,0 +1,242 @@
+import type { PlaygroundSection } from '../playground-registry';
+
+/**
+ * Component sections from ComponentsPage.
+ *
+ * Sources: ButtonShowcases, FeedbackShowcases, NavigationShowcases,
+ * SidebarShowcases, OverlayShowcases, DataDisplayShowcases.
+ */
+export const COMPONENTS_SECTIONS: PlaygroundSection[] = [
+  // ButtonShowcases
+  {
+    id: 'button',
+    title: 'Button',
+    page: 'components',
+    category: 'Buttons',
+    keywords: ['btn', 'click', 'action', 'variant', 'destructive', 'ghost', 'outline', 'brand', 'link'],
+  },
+  {
+    id: 'badge',
+    title: 'Badge',
+    page: 'components',
+    category: 'Buttons',
+    keywords: ['label', 'tag', 'chip', 'status', 'pill'],
+  },
+  {
+    id: 'hoverbordergradient',
+    title: 'HoverBorderGradient',
+    page: 'components',
+    category: 'Buttons',
+    keywords: ['gradient', 'animated', 'border', 'hover', 'aceternity'],
+  },
+  {
+    id: 'kbd',
+    title: 'Kbd',
+    page: 'components',
+    category: 'Buttons',
+    keywords: ['keyboard', 'shortcut', 'key', 'hotkey', 'hint'],
+  },
+  // FeedbackShowcases
+  {
+    id: 'skeleton',
+    title: 'Skeleton',
+    page: 'components',
+    category: 'Feedback',
+    keywords: ['loading', 'placeholder', 'pulse', 'shimmer', 'spinner'],
+  },
+  {
+    id: 'separator',
+    title: 'Separator',
+    page: 'components',
+    category: 'Feedback',
+    keywords: ['divider', 'line', 'horizontal', 'vertical', 'hr'],
+  },
+  {
+    id: 'tooltip',
+    title: 'Tooltip',
+    page: 'components',
+    category: 'Feedback',
+    keywords: ['hover', 'popover', 'hint', 'label', 'info'],
+  },
+  {
+    id: 'hovercard',
+    title: 'HoverCard',
+    page: 'components',
+    category: 'Feedback',
+    keywords: ['hover', 'card', 'preview', 'popover', 'trigger'],
+  },
+  {
+    id: 'collapsible',
+    title: 'Collapsible',
+    page: 'components',
+    category: 'Feedback',
+    keywords: ['collapse', 'expand', 'toggle', 'accordion', 'disclosure'],
+  },
+  {
+    id: 'toaster',
+    title: 'Toaster',
+    page: 'components',
+    category: 'Feedback',
+    keywords: ['toast', 'notification', 'sonner', 'success', 'error', 'info', 'warning'],
+  },
+  // NavigationShowcases
+  {
+    id: 'navigationlayout',
+    title: 'NavigationLayout',
+    page: 'components',
+    category: 'Navigation',
+    keywords: ['nav', 'sidebar', 'settings', 'panel', 'layout', 'menu', 'item'],
+  },
+  // SidebarShowcases
+  {
+    id: 'sessionitem',
+    title: 'SessionItem',
+    page: 'components',
+    category: 'Sidebar',
+    keywords: ['session', 'item', 'row', 'active', 'permission', 'expand', 'entrance'],
+  },
+  {
+    id: 'sessionsview',
+    title: 'SessionsView',
+    page: 'components',
+    category: 'Sidebar',
+    keywords: ['session', 'list', 'group', 'today', 'yesterday', 'empty', 'scroll'],
+  },
+  {
+    id: 'sidebartabrow',
+    title: 'SidebarTabRow',
+    page: 'components',
+    category: 'Sidebar',
+    keywords: ['tab', 'sidebar', 'sessions', 'schedules', 'connections', 'badge', 'status', 'indicator'],
+  },
+  {
+    id: 'sidebarfooterbar',
+    title: 'SidebarFooterBar',
+    page: 'components',
+    category: 'Sidebar',
+    keywords: ['footer', 'sidebar', 'theme', 'settings', 'branding', 'logo', 'agent'],
+  },
+  // OverlayShowcases
+  {
+    id: 'dialog',
+    title: 'Dialog',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['modal', 'overlay', 'popup', 'confirm', 'alert'],
+  },
+  {
+    id: 'alertdialog',
+    title: 'AlertDialog',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['modal', 'confirm', 'destructive', 'delete', 'danger', 'alert'],
+  },
+  {
+    id: 'popover',
+    title: 'Popover',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['floating', 'overlay', 'panel', 'anchor', 'tooltip'],
+  },
+  {
+    id: 'dropdownmenu',
+    title: 'DropdownMenu',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['menu', 'context', 'dropdown', 'action', 'item'],
+  },
+  {
+    id: 'sheet',
+    title: 'Sheet',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['sheet', 'panel', 'slide', 'side', 'drawer', 'left', 'right'],
+  },
+  {
+    id: 'responsivedialog',
+    title: 'ResponsiveDialog',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['responsive', 'dialog', 'drawer', 'mobile', 'desktop', 'fullscreen'],
+  },
+  // DrawerShowcases
+  {
+    id: 'drawer',
+    title: 'Drawer',
+    page: 'components',
+    category: 'Overlays',
+    keywords: ['drawer', 'bottom', 'sheet', 'slide', 'panel', 'vaul', 'mobile'],
+  },
+  // DataDisplayShowcases
+  {
+    id: 'pathbreadcrumb',
+    title: 'PathBreadcrumb',
+    page: 'components',
+    category: 'Data Display',
+    keywords: ['path', 'breadcrumb', 'filesystem', 'directory', 'segment', 'truncate'],
+  },
+  {
+    id: 'scanline',
+    title: 'ScanLine',
+    page: 'components',
+    category: 'Data Display',
+    keywords: ['scan', 'line', 'animation', 'streaming', 'beam', 'glow', 'agent'],
+  },
+  {
+    id: 'markdowncontent',
+    title: 'MarkdownContent',
+    page: 'components',
+    category: 'Data Display',
+    keywords: ['markdown', 'prose', 'render', 'static', 'streamdown', 'content'],
+  },
+  {
+    id: 'featuredisabledstate',
+    title: 'FeatureDisabledState',
+    page: 'components',
+    category: 'Data Display',
+    keywords: ['feature', 'disabled', 'empty', 'state', 'placeholder', 'subsystem'],
+  },
+  {
+    id: 'scrollarea',
+    title: 'ScrollArea',
+    page: 'components',
+    category: 'Data Display',
+    keywords: ['scroll', 'area', 'overflow', 'scrollbar', 'custom', 'vertical', 'horizontal'],
+  },
+  // ChatPrimitivesShowcases
+  {
+    id: 'collapsiblecard',
+    title: 'CollapsibleCard',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['collapsible', 'card', 'expand', 'collapse', 'thinking', 'chevron'],
+  },
+  {
+    id: 'interactivecard',
+    title: 'InteractiveCard',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['interactive', 'card', 'active', 'resolved', 'focus', 'ring'],
+  },
+  {
+    id: 'optionrow',
+    title: 'OptionRow',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['option', 'row', 'radio', 'selected', 'focused', 'choice'],
+  },
+  {
+    id: 'compactpendingrow',
+    title: 'CompactPendingRow',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['compact', 'pending', 'row', 'approval', 'question', 'waiting'],
+  },
+  {
+    id: 'compactresultrow',
+    title: 'CompactResultRow',
+    page: 'components',
+    category: 'Chat Primitives',
+    keywords: ['compact', 'result', 'row', 'approved', 'denied', 'badge', 'icon'],
+  },
+];

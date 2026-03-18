@@ -17,13 +17,14 @@ import { PLAYGROUND_REGISTRY } from './playground-registry';
 const PAGE_LABELS: Record<Page, string> = {
   overview: 'Overview',
   tokens: 'Design Tokens',
+  forms: 'Forms',
   components: 'Components',
   chat: 'Chat',
   features: 'Features',
 };
 
 /** Ordered list of pages for consistent group rendering. */
-const PAGE_ORDER: Page[] = ['overview', 'tokens', 'components', 'chat', 'features'];
+const PAGE_ORDER: Page[] = ['overview', 'tokens', 'forms', 'components', 'chat', 'features'];
 
 /** Group registry sections by their page. */
 function groupByPage(sections: PlaygroundSection[]): Map<Page, PlaygroundSection[]> {

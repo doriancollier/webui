@@ -1,5 +1,5 @@
-import { Palette, Component, MessageSquare, Blocks } from 'lucide-react';
-import { TOKENS_SECTIONS, COMPONENTS_SECTIONS, CHAT_SECTIONS, FEATURES_SECTIONS } from '../playground-registry';
+import { Palette, TextCursorInput, Component, MessageSquare, Blocks } from 'lucide-react';
+import { TOKENS_SECTIONS, FORMS_SECTIONS, COMPONENTS_SECTIONS, CHAT_SECTIONS, FEATURES_SECTIONS } from '../playground-registry';
 import type { Page, PlaygroundSection } from '../playground-registry';
 
 interface OverviewPageProps {
@@ -24,9 +24,16 @@ const CATEGORIES: CategoryCard[] = [
     sections: TOKENS_SECTIONS,
   },
   {
+    page: 'forms',
+    label: 'Forms',
+    description: 'Form primitives and composed input components — inputs, selects, comboboxes, and tag inputs.',
+    icon: TextCursorInput,
+    sections: FORMS_SECTIONS,
+  },
+  {
     page: 'components',
     label: 'Components',
-    description: 'Interactive gallery of shared UI primitives — buttons, forms, overlays, navigation, and feedback.',
+    description: 'Interactive gallery of shared UI primitives — buttons, overlays, navigation, and feedback.',
     icon: Component,
     sections: COMPONENTS_SECTIONS,
   },

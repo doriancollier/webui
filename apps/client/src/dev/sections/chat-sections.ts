@@ -1,0 +1,183 @@
+import type { PlaygroundSection } from '../playground-registry';
+
+/**
+ * Chat component sections from ChatPage.
+ *
+ * Sources: MessageShowcases, ToolShowcases, InputShowcases,
+ * StatusShowcases, MiscShowcases.
+ */
+export const CHAT_SECTIONS: PlaygroundSection[] = [
+  // MessageShowcases
+  {
+    id: 'usermessagecontent',
+    title: 'UserMessageContent',
+    page: 'chat',
+    category: 'Messages',
+    keywords: ['user', 'message', 'content', 'text', 'command', 'compaction'],
+  },
+  {
+    id: 'assistantmessagecontent',
+    title: 'AssistantMessageContent',
+    page: 'chat',
+    category: 'Messages',
+    keywords: ['assistant', 'message', 'content', 'markdown', 'code', 'tool', 'approval'],
+  },
+  {
+    id: 'messageitem',
+    title: 'MessageItem',
+    page: 'chat',
+    category: 'Messages',
+    keywords: ['message', 'item', 'grouping', 'position', 'bubble'],
+  },
+  // ToolShowcases
+  {
+    id: 'toolcallcard',
+    title: 'ToolCallCard',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['tool', 'call', 'card', 'status', 'running', 'complete', 'error', 'pending'],
+  },
+  {
+    id: 'toolcallcard-extended-labels',
+    title: 'ToolCallCard — Extended Labels',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['tool', 'call', 'label', 'task', 'notebook', 'mcp', 'plan'],
+  },
+  {
+    id: 'toolcallcard-hook-lifecycle',
+    title: 'ToolCallCard — Hook Lifecycle',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['tool', 'hook', 'lifecycle', 'running', 'success', 'error', 'cancelled'],
+  },
+  {
+    id: 'subagentblock',
+    title: 'SubagentBlock',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['subagent', 'agent', 'block', 'lifecycle', 'spawned'],
+  },
+  {
+    id: 'errormessageblock',
+    title: 'ErrorMessageBlock',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['error', 'message', 'block', 'failure', 'category', 'execution'],
+  },
+  {
+    id: 'thinkingblock',
+    title: 'ThinkingBlock',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['thinking', 'reasoning', 'extended', 'streaming', 'collapsed', 'chain of thought'],
+  },
+  {
+    id: 'toolapproval',
+    title: 'ToolApproval',
+    page: 'chat',
+    category: 'Tools',
+    keywords: ['approval', 'tool', 'approve', 'deny', 'pending', 'interactive', 'timeout'],
+  },
+  // InputShowcases
+  {
+    id: 'chatinput',
+    title: 'ChatInput',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['input', 'textarea', 'chat', 'send', 'streaming', 'stop', 'queue'],
+  },
+  {
+    id: 'filechipbar',
+    title: 'FileChipBar',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['file', 'attachment', 'chip', 'upload', 'remove'],
+  },
+  {
+    id: 'queuepanel',
+    title: 'QueuePanel',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['queue', 'message', 'panel', 'pending', 'edit'],
+  },
+  {
+    id: 'shortcutchips',
+    title: 'ShortcutChips',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['shortcut', 'chip', 'command', 'mention', 'file', 'slash'],
+  },
+  {
+    id: 'promptsuggestionchips',
+    title: 'PromptSuggestionChips',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['prompt', 'suggestion', 'chip', 'follow-up', 'sdk', 'autocomplete'],
+  },
+  {
+    id: 'questionprompt',
+    title: 'QuestionPrompt',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['question', 'prompt', 'radio', 'checkbox', 'multi-select', 'tabs', 'form', 'interactive'],
+  },
+  // StatusShowcases
+  {
+    id: 'streamingtext',
+    title: 'StreamingText',
+    page: 'chat',
+    category: 'Status',
+    keywords: ['streaming', 'text', 'markdown', 'cursor', 'render'],
+  },
+  {
+    id: 'inferenceindicator',
+    title: 'InferenceIndicator',
+    page: 'chat',
+    category: 'Status',
+    keywords: ['inference', 'indicator', 'streaming', 'waiting', 'rate limit', 'timer'],
+  },
+  {
+    id: 'systemstatuszone',
+    title: 'SystemStatusZone',
+    page: 'chat',
+    category: 'Status',
+    keywords: ['system', 'status', 'banner', 'compaction', 'permission', 'ephemeral'],
+  },
+  {
+    id: 'transporterrorbanner',
+    title: 'TransportErrorBanner',
+    page: 'chat',
+    category: 'Status',
+    keywords: ['transport', 'error', 'banner', 'connection', 'retry', 'network', 'timeout', 'session lock'],
+  },
+  {
+    id: 'tasklistpanel',
+    title: 'TaskListPanel',
+    page: 'chat',
+    category: 'Status',
+    keywords: ['task', 'list', 'panel', 'progress', 'collapse', 'checklist'],
+  },
+  {
+    id: 'clientsitem',
+    title: 'ClientsItem',
+    page: 'chat',
+    category: 'Status',
+    keywords: ['clients', 'session', 'presence', 'connected', 'multi-client', 'lock', 'obsidian', 'web', 'mcp'],
+  },
+  // MiscShowcases
+  {
+    id: 'celebrationoverlay',
+    title: 'CelebrationOverlay',
+    page: 'chat',
+    category: 'Misc',
+    keywords: ['celebration', 'confetti', 'overlay', 'task', 'complete', 'fireworks'],
+  },
+  {
+    id: 'draghandle',
+    title: 'DragHandle',
+    page: 'chat',
+    category: 'Misc',
+    keywords: ['drag', 'handle', 'collapse', 'expand', 'toggle', 'pill'],
+  },
+];

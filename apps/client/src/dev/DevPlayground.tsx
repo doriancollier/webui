@@ -18,11 +18,12 @@ import {
   Separator,
 } from '@/layers/shared/ui';
 import { TransportProvider, useTheme } from '@/layers/shared/model';
-import { LayoutDashboard, Palette, Component, MessageSquare, Blocks, Sun, Monitor, Moon, Search } from 'lucide-react';
+import { LayoutDashboard, Palette, TextCursorInput, Component, MessageSquare, Blocks, Sun, Monitor, Moon, Search } from 'lucide-react';
 import { createPlaygroundTransport } from './playground-transport';
 import { ChatPage } from './pages/ChatPage';
 import { FeaturesPage } from './pages/FeaturesPage';
 import { TokensPage } from './pages/TokensPage';
+import { FormsPage } from './pages/FormsPage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PlaygroundSearch } from './PlaygroundSearch';
@@ -47,6 +48,7 @@ function getRouteFromPath(): PlaygroundRoute {
 
   if (path === '/dev' || path === '/dev/') return { page: 'overview', anchor };
   if (path.startsWith('/dev/tokens')) return { page: 'tokens', anchor };
+  if (path.startsWith('/dev/forms')) return { page: 'forms', anchor };
   if (path.startsWith('/dev/components')) return { page: 'components', anchor };
   if (path.startsWith('/dev/chat')) return { page: 'chat', anchor };
   if (path.startsWith('/dev/features')) return { page: 'features', anchor };
@@ -61,6 +63,7 @@ interface NavItem {
 
 const DESIGN_SYSTEM_NAV: NavItem[] = [
   { id: 'tokens', label: 'Tokens', icon: Palette },
+  { id: 'forms', label: 'Forms', icon: TextCursorInput },
   { id: 'components', label: 'Components', icon: Component },
 ];
 
@@ -249,6 +252,7 @@ export default function DevPlayground() {
                 </header>
                 {page === 'overview' && <OverviewPage onNavigate={navigateTo} />}
                 {page === 'tokens' && <TokensPage />}
+                {page === 'forms' && <FormsPage />}
                 {page === 'components' && <ComponentsPage />}
                 {page === 'chat' && <ChatPage />}
                 {page === 'features' && <FeaturesPage />}

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   PLAYGROUND_REGISTRY,
   TOKENS_SECTIONS,
+  FORMS_SECTIONS,
   COMPONENTS_SECTIONS,
   CHAT_SECTIONS,
   FEATURES_SECTIONS,
@@ -22,14 +23,14 @@ describe('playground-registry', () => {
   });
 
   it('all sections have a valid page assignment', () => {
-    const validPages = new Set(['overview', 'tokens', 'components', 'chat', 'features']);
+    const validPages = new Set(['overview', 'tokens', 'forms', 'components', 'chat', 'features']);
     for (const section of PLAYGROUND_REGISTRY) {
       expect(validPages.has(section.page)).toBe(true);
     }
   });
 
   it('PLAYGROUND_REGISTRY equals the union of all page-level arrays', () => {
-    const combined = [...TOKENS_SECTIONS, ...COMPONENTS_SECTIONS, ...CHAT_SECTIONS, ...FEATURES_SECTIONS];
+    const combined = [...TOKENS_SECTIONS, ...FORMS_SECTIONS, ...COMPONENTS_SECTIONS, ...CHAT_SECTIONS, ...FEATURES_SECTIONS];
     expect(PLAYGROUND_REGISTRY).toEqual(combined);
   });
 

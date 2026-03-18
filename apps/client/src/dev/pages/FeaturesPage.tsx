@@ -1,4 +1,5 @@
 import { RelayShowcases } from '../showcases/RelayShowcases';
+import { AdapterWizardShowcases } from '../showcases/AdapterWizardShowcases';
 import { MeshShowcases } from '../showcases/MeshShowcases';
 import { PulseShowcases } from '../showcases/PulseShowcases';
 import { OnboardingShowcases } from '../showcases/OnboardingShowcases';
@@ -19,6 +20,7 @@ export function FeaturesPage() {
       <div className="flex gap-8 p-6">
         <main className="min-w-0 flex-1 space-y-8">
           <RelayShowcases />
+          <AdapterWizardShowcases />
           <MeshShowcases />
           <PulseShowcases />
           <OnboardingShowcases />
