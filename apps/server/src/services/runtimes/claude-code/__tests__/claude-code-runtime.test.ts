@@ -417,7 +417,6 @@ describe('ClaudeCodeRuntime', () => {
       // Should only have been called once — no retry
       expect(mockedQuery).toHaveBeenCalledTimes(1);
     });
-  });
 
     it('emits error when stream completes with zero content events', async () => {
       const { query: mockedQuery } = await import('@anthropic-ai/claude-agent-sdk');
@@ -496,6 +495,7 @@ describe('ClaudeCodeRuntime', () => {
       // Called twice: original + one retry (MAX_RESUME_RETRIES = 1)
       expect(mockedQuery).toHaveBeenCalledTimes(2);
     });
+  });
 
   describe('sendMessage() boundary enforcement', () => {
     it('yields error event when cwd violates boundary', async () => {
