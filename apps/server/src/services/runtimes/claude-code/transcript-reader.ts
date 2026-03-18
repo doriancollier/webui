@@ -39,6 +39,21 @@ export class TranscriptReader {
   }
 
   /**
+   * Check whether a JSONL transcript file exists for the given session ID.
+   * Lightweight stat-only check (no parsing). Skips boundary validation
+   * since the caller is expected to have already validated.
+   */
+  async hasTranscript(vaultRoot: string, sessionId: string): Promise<boolean> {
+    const filePath = path.join(this.getTranscriptsDir(vaultRoot), `${sessionId}.jsonl`);
+    try {
+      await fs.access(filePath);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
    * List all sessions by scanning SDK JSONL transcript files.
    * Extracts metadata (title, timestamps, preview) from file content and stats.
    */

@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prevent new sessions from crashing with invalid SDK resume ID
 - Enhance Slack inbound message handling with improved reaction management
 - Add inbound typing reaction with FIFO cleanup on stream completion
 - Improve ConfigFieldInput layout, error UX, and password toggle

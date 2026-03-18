@@ -248,12 +248,18 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     content: string,
     opts?: MessageOpts
   ): AsyncGenerator<StreamEvent> {
-    // Auto-create session if it doesn't exist (for resuming SDK sessions).
+    // Auto-create session if it doesn't exist.
+    // Only set hasStarted=true when a JSONL transcript already exists on disk
+    // (e.g. session created by CLI or a prior server run). Brand new sessions
+    // must start with hasStarted=false to avoid passing a DorkOS UUID as the
+    // SDK resume ID, which crashes the Claude Code process.
     if (!this.sessions.has(sessionId)) {
+      const effectiveCwd = opts?.cwd ?? this.cwd;
+      const hasTranscript = await this.transcriptReader.hasTranscript(effectiveCwd, sessionId);
       this.ensureSession(sessionId, {
         permissionMode: opts?.permissionMode ?? 'default',
         cwd: opts?.cwd,
-        hasStarted: true,
+        hasStarted: hasTranscript,
       });
     }
 
