@@ -42,6 +42,8 @@ export interface AgentSessionStoreLike {
 export class AgentSessionStore implements AgentSessionStoreLike {
   private readonly filePath: string;
   private sessions: Map<string, AgentSessionRecord> = new Map();
+  /** Serializes persist calls to prevent concurrent tmp+rename races. */
+  private writeLock: Promise<void> = Promise.resolve();
 
   constructor(relayDir: string) {
     this.filePath = join(relayDir, 'agent-sessions.json');
@@ -117,8 +119,28 @@ export class AgentSessionStore implements AgentSessionStoreLike {
     });
   }
 
-  /** Atomically write the current sessions map to disk (tmp + rename). */
-  private async persist(): Promise<void> {
+  /**
+   * Flush any pending writes to disk.
+   *
+   * Call during shutdown to ensure the last fire-and-forget persist
+   * completes before the process exits.
+   */
+  async shutdown(): Promise<void> {
+    try {
+      await this.writeLock;
+    } catch {
+      // Errors already logged by set/delete .catch() handlers
+    }
+  }
+
+  /** Enqueue an atomic persist, serialized to prevent concurrent tmp+rename races. */
+  private persist(): Promise<void> {
+    this.writeLock = this.writeLock.then(() => this.doPersist(), () => this.doPersist());
+    return this.writeLock;
+  }
+
+  /** Atomic tmp+rename write. Must be serialized via writeLock. */
+  private async doPersist(): Promise<void> {
     const dir = join(this.filePath, '..');
     await mkdir(dir, { recursive: true });
     const data: Record<string, AgentSessionRecord> = {};

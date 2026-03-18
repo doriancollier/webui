@@ -44,6 +44,7 @@ export class BindingSubsystem {
   private readonly bindingStore: BindingStore;
   private readonly agentSessionStore: AgentSessionStore;
   private bindingRouter: BindingRouter | undefined;
+  private isShutdown = false;
 
   private constructor(
     bindingStore: BindingStore,
@@ -118,11 +119,14 @@ export class BindingSubsystem {
     return this.bindingRouter;
   }
 
-  /** Shut down the BindingRouter and BindingStore. */
+  /** Shut down the BindingRouter, AgentSessionStore, and BindingStore. Idempotent. */
   async shutdown(): Promise<void> {
+    if (this.isShutdown) return;
+    this.isShutdown = true;
     if (this.bindingRouter) {
       await this.bindingRouter.shutdown();
     }
+    await this.agentSessionStore.shutdown();
     await this.bindingStore.shutdown();
   }
 }

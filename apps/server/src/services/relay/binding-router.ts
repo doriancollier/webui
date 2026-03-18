@@ -61,6 +61,10 @@ export class BindingRouter {
   private inFlight = new Map<string, Promise<string>>();
   private readonly sessionMapPath: string;
   private unsubscribe?: Unsubscribe;
+  /** Serializes saveSessionMap calls to prevent concurrent tmp+rename races. */
+  private writeLock: Promise<void> = Promise.resolve();
+  /** Guards against concurrent shutdown calls corrupting session data. */
+  private isShutdown = false;
 
   constructor(private readonly deps: BindingRouterDeps) {
     this.sessionMapPath = pathJoin(deps.relayDir, 'sessions.json');
@@ -342,13 +346,24 @@ export class BindingRouter {
       }
 
       this.sessionMap = new Map(valid);
-    } catch {
-      // File doesn't exist yet or JSON parse error — start fresh
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (code === 'ENOENT') {
+        logger.debug('BindingRouter: no sessions.json found, starting with empty session map');
+      } else {
+        logger.warn('BindingRouter: failed to load sessions.json, starting fresh', err);
+      }
       this.sessionMap = new Map();
     }
   }
 
-  private async saveSessionMap(): Promise<void> {
+  private saveSessionMap(): Promise<void> {
+    this.writeLock = this.writeLock.then(() => this.doSaveSessionMap(), () => this.doSaveSessionMap());
+    return this.writeLock;
+  }
+
+  /** Atomic tmp+rename write of the session map. Must be serialized via writeLock. */
+  private async doSaveSessionMap(): Promise<void> {
     await mkdir(this.deps.relayDir, { recursive: true });
     const data = JSON.stringify(Array.from(this.sessionMap.entries()));
     const tmpPath = `${this.sessionMapPath}.tmp`;
@@ -356,8 +371,10 @@ export class BindingRouter {
     await rename(tmpPath, this.sessionMapPath);
   }
 
-  /** Save session map, unsubscribe, and clear state. */
+  /** Save session map, unsubscribe, and clear state. Idempotent — safe to call multiple times. */
   async shutdown(): Promise<void> {
+    if (this.isShutdown) return;
+    this.isShutdown = true;
     this.unsubscribe?.();
     try {
       await this.saveSessionMap();

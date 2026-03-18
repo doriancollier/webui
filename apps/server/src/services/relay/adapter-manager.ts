@@ -97,13 +97,13 @@ export class AdapterManager {
     await this.enrichManifestsWithDocs();
     await ensureDefaultAdapterConfig(this.configPath);
     this.configs = await loadAdapterConfig(this.configPath);
+    await this.initBindingSubsystem();
     await this.startEnabledAdapters();
     this.configWatcher = watchAdapterConfig(this.configPath, () => {
       this.reload().catch((err) => {
         logger.warn('[AdapterManager] Hot-reload failed:', err);
       });
     });
-    await this.initBindingSubsystem();
   }
 
   /** Initialize the binding subsystem. Non-fatal on failure — logs and continues. */

@@ -55,10 +55,16 @@ export async function handleAgentMessage(
     return { success: false, error: `Could not extract agentId from subject: ${subject}`, durationMs: Date.now() - startTime };
   }
 
+  const log = deps.logger ?? console;
+
+  if (!deps.agentSessionStore) {
+    log.warn('[CCA] agentSessionStore not provided — SDK session mapping will not persist across restarts');
+  }
+
   // Resolve canonical SDK session ID from persistent store
   const persistedSdkSessionId = deps.agentSessionStore?.get(agentId);
   const ccaSessionKey = persistedSdkSessionId ?? agentId;
-  const log = deps.logger ?? console;
+  log.debug?.(`[CCA] session lookup: agentId=${agentId}, persistedSdkSessionId=${persistedSdkSessionId ?? '(none)'}, hasStarted=${!!persistedSdkSessionId}`);
 
   // Record trace span as pending
   deps.traceStore.insertSpan({
@@ -181,7 +187,7 @@ export async function handleAgentMessage(
     const actualSdkId = deps.agentManager.getSdkSessionId(ccaSessionKey);
     if (actualSdkId && actualSdkId !== agentId) {
       deps.agentSessionStore.set(agentId, actualSdkId);
-      log.debug?.(`[CCA] persisted session mapping: ${agentId} → ${actualSdkId}`);
+      log.info(`[CCA] persisted session mapping: ${agentId} → ${actualSdkId}`);
     } else {
       log.debug?.(`[CCA] no session mapping to persist: agentId=${agentId}, ` +
         `ccaSessionKey=${ccaSessionKey}, actualSdkId=${actualSdkId ?? '(none)'}`);

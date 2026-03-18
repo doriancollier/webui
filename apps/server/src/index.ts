@@ -388,8 +388,11 @@ async function shutdownServices() {
   await tunnelManager.stop();
 }
 
-// Graceful shutdown
+// Graceful shutdown — guarded against concurrent signals (SIGINT + SIGTERM)
+let shuttingDown = false;
 async function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
   logger.info('Shutting down...');
   await shutdownServices();
   process.exit(0);
