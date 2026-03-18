@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Standardize form fields with Shadcn Field, SettingRow, and PasswordInput
 - Add interactive tool approval for Slack and Telegram adapters
 - Add dedicated Forms page and split registry into per-page section files
 - Add data path debug toggles for cross-client sync and message polling

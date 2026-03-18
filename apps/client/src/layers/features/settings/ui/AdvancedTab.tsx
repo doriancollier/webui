@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
-import { Button, Label, Separator, Switch } from '@/layers/shared/ui';
+import { Button, Separator, SettingRow, Switch } from '@/layers/shared/ui';
 import { useAppStore } from '@/layers/shared/model';
 import { ResetDialog } from './ResetDialog';
 import { RestartDialog } from './RestartDialog';
@@ -28,33 +28,27 @@ export function AdvancedTab({ onResetComplete, onRestartComplete }: AdvancedTabP
           reduces background network activity but may cause stale data.
         </p>
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <Label className="text-sm font-medium">Cross-client sync</Label>
-            <p className="text-muted-foreground text-xs">
-              Real-time updates from other clients and presence indicators
-            </p>
-          </div>
+        <SettingRow
+          label="Cross-client sync"
+          description="Real-time updates from other clients and presence indicators"
+        >
           <Switch
             checked={enableCrossClientSync}
             onCheckedChange={setEnableCrossClientSync}
           />
-        </div>
+        </SettingRow>
 
         <Separator />
 
-        <div className="flex items-center justify-between gap-4">
-          <div className="min-w-0">
-            <Label className="text-sm font-medium">Message polling</Label>
-            <p className="text-muted-foreground text-xs">
-              Periodic refresh of message history (3s active, 10s background)
-            </p>
-          </div>
+        <SettingRow
+          label="Message polling"
+          description="Periodic refresh of message history (3s active, 10s background)"
+        >
           <Switch
             checked={enableMessagePolling}
             onCheckedChange={setEnableMessagePolling}
           />
-        </div>
+        </SettingRow>
       </div>
 
       <div className="border-destructive/50 space-y-4 rounded-lg border p-4">

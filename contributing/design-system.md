@@ -335,6 +335,64 @@ Pattern: `Popover` > `PopoverTrigger` > `PopoverContent` > `Command` > `CommandI
 
 ---
 
+## Form Fields
+
+DorkOS uses [Shadcn Field](https://ui.shadcn.com/docs/components/field) as the foundation for all form field layouts. Field provides accessible label/description/error association via `aria-describedby` and `role="alert"`. Two higher-level components sit on top.
+
+### SettingRow
+
+Horizontal settings row — label and description on the left, control on the right. Use for all settings toggle/select patterns. Built on `<Field orientation="horizontal">`.
+
+```tsx
+import { SettingRow, Switch } from '@/layers/shared/ui';
+
+<SettingRow label="Notifications" description="Enable push alerts">
+  <Switch checked={enabled} onCheckedChange={setEnabled} />
+</SettingRow>
+```
+
+For compound controls (e.g., Badge + Switch), wrap them in a flex container:
+
+```tsx
+<SettingRow label="Feature" description="Toggle feature access">
+  <div className="flex items-center gap-2">
+    <Badge variant="secondary">Disabled</Badge>
+    <Switch checked={enabled} onCheckedChange={setEnabled} />
+  </div>
+</SettingRow>
+```
+
+### PasswordInput
+
+Password input with eye/eye-off visibility toggle. Supports controlled and uncontrolled modes.
+
+```tsx
+import { PasswordInput } from '@/layers/shared/ui';
+
+// Uncontrolled (manages its own visibility state)
+<PasswordInput placeholder="Enter password" />
+
+// Start visible
+<PasswordInput visibleByDefault placeholder="API token" />
+
+// Controlled visibility
+<PasswordInput showPassword={show} onShowPasswordChange={setShow} />
+```
+
+Sentinel mode ("saved value" placeholder that clears on focus) is a consumer concern — pass `onFocus`, `placeholder`, and `value` props.
+
+### Field Orientation Conventions
+
+| Context | Orientation | Component |
+|---|---|---|
+| Settings rows | `horizontal` | `<SettingRow>` |
+| Wizard/form fields | `vertical` | `<Field orientation="vertical">` |
+| Responsive layouts | `responsive` | `<Field orientation="responsive">` |
+
+For rows that have a label but no description (e.g., simple toggles), use `<Field orientation="horizontal">` + `<FieldLabel>` directly instead of `SettingRow`.
+
+---
+
 ## Interaction States
 
 ### Hover

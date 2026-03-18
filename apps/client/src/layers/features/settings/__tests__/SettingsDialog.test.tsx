@@ -241,7 +241,9 @@ describe('SettingsDialog', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
     const label = screen.getByText('Show git status');
-    const row = label.closest('.flex')!;
+    // Traverse up to the row container — works for both the private SettingRow
+    // (div.justify-between) and the Field-based shared SettingRow (data-slot="field").
+    const row = label.closest('[data-slot="field"], [class~="justify-between"]')!;
     const toggle = row.querySelector('[role="switch"]');
     expect(toggle).toBeDefined();
     expect(toggle?.getAttribute('data-state')).toBe('checked');
@@ -251,7 +253,9 @@ describe('SettingsDialog', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/preferences/i);
     const label = screen.getByText('Show shortcut chips');
-    const row = label.closest('.flex')!;
+    // Traverse up to the row container — works for both the private SettingRow
+    // (div.justify-between) and the Field-based shared SettingRow (data-slot="field").
+    const row = label.closest('[data-slot="field"], [class~="justify-between"]')!;
     const toggle = row.querySelector('[role="switch"]');
     expect(toggle).toBeDefined();
     expect(toggle?.getAttribute('data-state')).toBe('checked');

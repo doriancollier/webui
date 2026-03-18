@@ -85,4 +85,18 @@ export const FORMS_SECTIONS: PlaygroundSection[] = [
     category: 'Composed',
     keywords: ['scan', 'root', 'path', 'chip', 'tag', 'directory', 'mesh', 'filesystem'],
   },
+  {
+    id: 'settingrow',
+    title: 'SettingRow',
+    page: 'forms',
+    category: 'Composed',
+    keywords: ['setting', 'row', 'toggle', 'switch', 'label', 'description', 'horizontal', 'settings'],
+  },
+  {
+    id: 'passwordinput',
+    title: 'PasswordInput',
+    page: 'forms',
+    category: 'Composed',
+    keywords: ['password', 'input', 'visibility', 'toggle', 'eye', 'secret', 'field', 'auth'],
+  },
 ];

@@ -14,9 +14,9 @@ import {
   CollapsibleTrigger,
   CollapsibleContent,
 } from '@/layers/shared/ui/collapsible';
-import { Label } from '@/layers/shared/ui/label';
-import { Button } from '@/layers/shared/ui/button';
-import { ChevronDown, Eye, EyeOff, HelpCircle } from 'lucide-react';
+import { Field, FieldLabel, FieldDescription, FieldError } from '@/layers/shared/ui/field';
+import { PasswordInput } from '@/layers/shared/ui/password-input';
+import { ChevronDown, HelpCircle } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
 import { MarkdownContent } from '@/layers/shared/ui/markdown-content';
 import type { ConfigField } from '@dorkos/shared/relay-schemas';
@@ -42,7 +42,6 @@ export function ConfigFieldInput({
   error,
   allValues,
 }: ConfigFieldInputProps) {
-  const [showPassword, setShowPassword] = useState(() => field.visibleByDefault ?? false);
   const [patternError, setPatternError] = useState('');
 
   // Conditional visibility: hide this field when its dependency doesn't match.
@@ -108,35 +107,19 @@ export function ConfigFieldInput({
           );
         }
         return (
-          <div className="relative">
-            <Input
-              id={fieldId}
-              type={showPassword ? 'text' : 'password'}
-              value={stringValue}
-              onChange={(e) => {
-                // Trim leading/trailing whitespace — tokens are always pasted and often include newlines.
-                onChange(field.key, e.target.value.trim());
-                if (patternError) setPatternError('');
-              }}
-              onBlur={handleBlur}
-              onPaste={() => setTimeout(handleBlur, 0)}
-              placeholder={field.placeholder}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="absolute right-0 top-0 h-full px-3"
-              onClick={() => setShowPassword(!showPassword)}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-            >
-              {showPassword ? (
-                <EyeOff className="size-4" />
-              ) : (
-                <Eye className="size-4" />
-              )}
-            </Button>
-          </div>
+          <PasswordInput
+            id={fieldId}
+            value={stringValue}
+            visibleByDefault={field.visibleByDefault ?? false}
+            onChange={(e) => {
+              // Trim leading/trailing whitespace — tokens are always pasted and often include newlines.
+              onChange(field.key, e.target.value.trim());
+              if (patternError) setPatternError('');
+            }}
+            onBlur={handleBlur}
+            onPaste={() => setTimeout(handleBlur, 0)}
+            placeholder={field.placeholder}
+          />
         );
       }
 
@@ -219,18 +202,18 @@ export function ConfigFieldInput({
   };
 
   return (
-    <div className="space-y-2">
-      <Label
+    <Field>
+      <FieldLabel
         htmlFor={fieldId}
         className={cn(
           field.required && !isSentinel && 'after:ml-0.5 after:text-red-500 after:content-["*"]',
         )}
       >
         {field.label}
-      </Label>
+      </FieldLabel>
       {renderControl()}
       {field.description && (
-        <p className="text-xs text-muted-foreground">{field.description}</p>
+        <FieldDescription className="text-xs">{field.description}</FieldDescription>
       )}
       {field.helpMarkdown && (
         <Collapsible>
@@ -247,9 +230,9 @@ export function ConfigFieldInput({
         </Collapsible>
       )}
       {(error ?? patternError) && (
-        <p className="text-xs text-red-500">{error ?? patternError}</p>
+        <FieldError>{error ?? patternError}</FieldError>
       )}
-    </div>
+    </Field>
   );
 }
 

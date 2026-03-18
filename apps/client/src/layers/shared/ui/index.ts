@@ -68,10 +68,26 @@ export {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from './dropdown-menu';
+export {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldTitle,
+} from './field';
 export { HoverBorderGradient } from './hover-border-gradient';
 export { HoverCard, HoverCardTrigger, HoverCardContent } from './hover-card';
 export { Kbd } from './kbd';
 export { Label } from './label';
+export { PasswordInput } from './password-input';
+export type { PasswordInputProps } from './password-input';
+export { SettingRow } from './setting-row';
+export type { SettingRowProps } from './setting-row';
 export { PathBreadcrumb } from './path-breadcrumb';
 export {
   Popover,

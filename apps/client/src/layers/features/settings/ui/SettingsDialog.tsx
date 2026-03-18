@@ -18,12 +18,12 @@ import {
   NavigationLayoutPanel,
   NavigationLayoutPanelHeader,
   Switch,
-  Label,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SettingRow,
 } from '@/layers/shared/ui';
 import { ServerTab } from './ServerTab';
 import { TunnelDialog } from './TunnelDialog';
@@ -335,22 +335,3 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   );
 }
 
-function SettingRow({
-  label,
-  description,
-  children,
-}: {
-  label: string;
-  description: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <div className="min-w-0">
-        <Label className="text-sm font-medium">{label}</Label>
-        <p className="text-muted-foreground text-xs">{description}</p>
-      </div>
-      {children}
-    </div>
-  );
-}

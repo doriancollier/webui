@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useRelayEnabled } from '@/layers/entities/relay';
-import { Badge, Label, Switch } from '@/layers/shared/ui';
+import { Badge, SettingRow, Switch } from '@/layers/shared/ui';
 import { useAgentContextConfig } from '../model/use-agent-context-config';
 
 const RELAY_PREVIEW = `DorkOS Relay is a pub/sub message bus for inter-agent communication.
@@ -81,11 +81,7 @@ function ContextBlockSection({
 
   return (
     <section className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label className="text-sm font-medium">{label}</Label>
-          <p className="text-muted-foreground text-xs">{description}</p>
-        </div>
+      <SettingRow label={label} description={description}>
         <div className="flex items-center gap-2">
           {!available && (
             <Badge variant="secondary" className="text-xs">
@@ -99,7 +95,7 @@ function ContextBlockSection({
             aria-label={`Toggle ${label} context`}
           />
         </div>
-      </div>
+      </SettingRow>
       {effective && (
         <pre className="bg-muted max-h-40 overflow-y-auto rounded-md p-3 text-xs leading-relaxed">
           {preview}

@@ -14,6 +14,8 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
+  Field,
+  FieldLabel,
 } from '@/layers/shared/ui';
 import { useTransport } from '@/layers/shared/model';
 import { cn, TIMING, getPlatform } from '@/layers/shared/lib';
@@ -475,10 +477,10 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
 
           {/* Separator + toggle always at bottom */}
           <Separator />
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Enable remote access</span>
+          <Field orientation="horizontal" className="items-center justify-between">
+            <FieldLabel className="text-sm font-normal">Enable remote access</FieldLabel>
             <Switch checked={isChecked} onCheckedChange={handleToggle} disabled={isTransitioning} />
-          </div>
+          </Field>
         </div>
       </ResponsiveDialogContent>
     </ResponsiveDialog>

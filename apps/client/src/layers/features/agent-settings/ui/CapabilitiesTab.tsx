@@ -9,6 +9,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SettingRow,
   Switch,
   Tooltip,
   TooltipContent,
@@ -58,11 +59,7 @@ function ToolGroupRow({ domain, agentOverride, globalDefault, onToggle, onReset 
 
   if (domain.serverDisabled) {
     return (
-      <div className="flex items-center justify-between py-1">
-        <div className="space-y-0.5">
-          <Label className="text-sm font-medium">{domain.label}</Label>
-          <p className="text-muted-foreground text-xs">{domain.description}</p>
-        </div>
+      <SettingRow label={domain.label} description={domain.description} className="py-1">
         <Tooltip>
           <TooltipTrigger asChild>
             <div className="flex items-center gap-2">
@@ -74,16 +71,12 @@ function ToolGroupRow({ domain, agentOverride, globalDefault, onToggle, onReset 
             {domain.serverDisabledReason ?? 'Disabled globally by server configuration.'}
           </TooltipContent>
         </Tooltip>
-      </div>
+      </SettingRow>
     );
   }
 
   return (
-    <div className="flex items-center justify-between py-1">
-      <div className="space-y-0.5">
-        <Label className="text-sm font-medium">{domain.label}</Label>
-        <p className="text-muted-foreground text-xs">{domain.description}</p>
-      </div>
+    <SettingRow label={domain.label} description={domain.description} className="py-1">
       <div className="flex items-center gap-2">
         <span className={`text-xs ${isOverridden ? 'text-foreground' : 'text-muted-foreground'}`}>
           {stateLabel}
@@ -110,7 +103,7 @@ function ToolGroupRow({ domain, agentOverride, globalDefault, onToggle, onReset 
           aria-label={`Toggle ${domain.label} tools`}
         />
       </div>
-    </div>
+    </SettingRow>
   );
 }
 
@@ -374,15 +367,9 @@ export function CapabilitiesTab({ agent, onUpdate }: CapabilitiesTabProps) {
         </p>
 
         {/* Core Tools — always enabled, no toggle */}
-        <div className="flex items-center justify-between py-1">
-          <div className="space-y-0.5">
-            <Label className="text-sm font-medium">Core Tools</Label>
-            <p className="text-muted-foreground text-xs">
-              ping, server info, agent identity
-            </p>
-          </div>
+        <SettingRow label="Core Tools" description="ping, server info, agent identity" className="py-1">
           <span className="text-muted-foreground text-xs">Always enabled</span>
-        </div>
+        </SettingRow>
 
         {toolDomains.map((domain) => (
           <ToolGroupRow

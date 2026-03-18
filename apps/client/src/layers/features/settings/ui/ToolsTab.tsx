@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useRelayEnabled } from '@/layers/entities/relay';
 import { usePulseEnabled } from '@/layers/entities/pulse';
-import { Badge, Label, Switch } from '@/layers/shared/ui';
+import { Badge, SettingRow, Switch } from '@/layers/shared/ui';
 import { useAgentContextConfig } from '@/layers/features/agent-settings/model/use-agent-context-config';
 
 const PULSE_PREVIEW = `DorkOS Pulse lets you create and manage scheduled agent runs.
@@ -91,11 +91,7 @@ function ToolBlockSection({
 
   return (
     <section className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="space-y-0.5">
-          <Label className="text-sm font-medium">{label}</Label>
-          <p className="text-muted-foreground text-xs">{description}</p>
-        </div>
+      <SettingRow label={label} description={description}>
         <div className="flex items-center gap-2">
           {!available && (
             <Badge variant="secondary" className="text-xs">
@@ -109,7 +105,7 @@ function ToolBlockSection({
             aria-label={`Toggle ${label} context`}
           />
         </div>
-      </div>
+      </SettingRow>
       {effective && (
         <pre className="bg-muted max-h-40 overflow-y-auto rounded-md p-3 text-xs leading-relaxed">
           {preview}

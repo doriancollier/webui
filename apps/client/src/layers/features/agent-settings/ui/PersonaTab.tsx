@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Switch, Label } from '@/layers/shared/ui';
+import { Switch, Label, Field, FieldLabel } from '@/layers/shared/ui';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 
 const DEBOUNCE_MS = 500;
@@ -86,16 +86,16 @@ export function PersonaTab({ agent, onUpdate }: PersonaTabProps) {
       </p>
 
       {/* Toggle */}
-      <div className="flex items-center justify-between">
-        <Label htmlFor="persona-toggle" className="text-sm font-medium">
+      <Field orientation="horizontal" className="items-center justify-between">
+        <FieldLabel htmlFor="persona-toggle" className="text-sm font-medium">
           Inject persona into sessions
-        </Label>
+        </FieldLabel>
         <Switch
           id="persona-toggle"
           checked={isEnabled}
           onCheckedChange={handleToggle}
         />
-      </div>
+      </Field>
 
       {/* Textarea */}
       <div className="space-y-2">
