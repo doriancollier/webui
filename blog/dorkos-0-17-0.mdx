@@ -1,0 +1,49 @@
+---
+title: DorkOS 0.17.0
+description: CLI polish, Apple-style field grouping, and relay hardening
+date: 2026-03-18
+author: DorkOS Team
+category: release
+tags: [release, cli, relay, ui]
+---
+
+DorkOS 0.17.0 polishes the CLI experience, introduces Apple-style field grouping in the UI, and hardens the relay system with extensive fixes for Slack message handling and session persistence.
+
+## Highlights
+
+**CLI UX Improvements** — URLs in CLI output are now clickable, unknown options produce helpful suggestions instead of cryptic errors, and new users get a browser open prompt for easier onboarding.
+
+**Apple-Style Field Grouping** — New FieldCard primitives bring grouped, card-based field layouts to configuration panels, following Apple's Settings design language for a cleaner, more scannable UI.
+
+**Relay Hardening** — Ten fixes across the relay system address rate limiting, session persistence across restarts, Slack reaction management, and adapter lifecycle cleanup.
+
+## All Changes
+
+### Added
+
+- Improve CLI UX with clickable URLs, unknown option handling, and browser open prompt
+- Add FieldCard primitives and apply Apple-style field grouping
+
+### Changed
+
+- Move platform formatting rules into adapters
+- Eliminate DRY violations, enforce file size limits, and instance-scope mutable state
+
+### Fixed
+
+- Populate sender on index rebuild and fix stale TSDoc
+- Fix second hasStarted bug in updateSession and add resume diagnostics
+- Fix per-sender rate limiting, add publish rejection logging and inbound result checks
+- Prevent new sessions from crashing with invalid SDK resume ID
+- Enhance Slack inbound message handling with improved reaction management
+- Add inbound typing reaction with FIFO cleanup on stream completion
+- Improve ConfigFieldInput layout, error UX, and password toggle
+- Persist session map across restarts for Slack DM continuity
+- Extract binding permissionMode in CCA agent handler
+- Clear pending approval timeouts on SlackAdapter stop
+
+## Install / Update
+
+```
+npm install -g dorkos@0.17.0
+```

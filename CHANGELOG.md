@@ -9,7 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Improve UX with clickable URLs, unknown option handling, and browser open prompt
+### Changed
+
+### Fixed
+
+---
+
+## [0.17.0] - 2026-03-18
+
+> CLI polish, Apple-style field grouping, and relay hardening
+
+### Added
+
+- Improve CLI UX with clickable URLs, unknown option handling, and browser open prompt
 - Add FieldCard primitives and apply Apple-style field grouping
 
 ### Changed
@@ -21,8 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Populate sender on index rebuild and fix stale TSDoc
 - Fix second hasStarted bug in updateSession and add resume diagnostics
-- Fix second hasStarted bug in updateSession and add resume diagnostics
-- Fix second hasStarted bug in updateSession and add resume diagnostics
 - Fix per-sender rate limiting, add publish rejection logging and inbound result checks
 - Prevent new sessions from crashing with invalid SDK resume ID
 - Enhance Slack inbound message handling with improved reaction management
@@ -31,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Persist session map across restarts for Slack DM continuity
 - Extract binding permissionMode in CCA agent handler
 - Clear pending approval timeouts on SlackAdapter stop
+
 ---
 
 ## [0.16.0] - 2026-03-18
