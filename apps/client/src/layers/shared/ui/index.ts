@@ -80,6 +80,8 @@ export {
   FieldSet,
   FieldTitle,
 } from './field';
+export { FieldCard, FieldCardContent, CollapsibleFieldCard } from './field-card';
+export type { CollapsibleFieldCardProps } from './field-card';
 export { HoverBorderGradient } from './hover-border-gradient';
 export { HoverCard, HoverCardTrigger, HoverCardContent } from './hover-card';
 export { Kbd } from './kbd';

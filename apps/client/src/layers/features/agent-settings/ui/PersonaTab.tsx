@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { Switch, Label, Field, FieldLabel } from '@/layers/shared/ui';
+import { Switch, Label, Field, FieldCard, FieldCardContent, FieldLabel } from '@/layers/shared/ui';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 
 const DEBOUNCE_MS = 500;
@@ -85,35 +85,39 @@ export function PersonaTab({ agent, onUpdate }: PersonaTabProps) {
         directory. Use it to define the agent&apos;s expertise, constraints, and personality.
       </p>
 
-      {/* Toggle */}
-      <Field orientation="horizontal" className="items-center justify-between">
-        <FieldLabel htmlFor="persona-toggle" className="text-sm font-medium">
-          Inject persona into sessions
-        </FieldLabel>
-        <Switch
-          id="persona-toggle"
-          checked={isEnabled}
-          onCheckedChange={handleToggle}
-        />
-      </Field>
+      <FieldCard>
+        <FieldCardContent>
+          {/* Toggle */}
+          <Field orientation="horizontal" className="items-center justify-between">
+            <FieldLabel htmlFor="persona-toggle" className="text-sm font-medium">
+              Inject persona into sessions
+            </FieldLabel>
+            <Switch
+              id="persona-toggle"
+              checked={isEnabled}
+              onCheckedChange={handleToggle}
+            />
+          </Field>
 
-      {/* Textarea */}
-      <div className="space-y-2">
-        <textarea
-          id="persona-text"
-          value={personaValue}
-          onChange={(e) => handlePersonaChange(e.target.value)}
-          onBlur={handlePersonaBlur}
-          rows={8}
-          maxLength={MAX_CHARS}
-          disabled={!isEnabled}
-          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder="You are backend-bot, an expert in REST API design..."
-        />
-        <p className="text-muted-foreground text-right text-xs">
-          {personaValue.length} / {MAX_CHARS.toLocaleString()}
-        </p>
-      </div>
+          {/* Textarea */}
+          <div className="space-y-2">
+            <textarea
+              id="persona-text"
+              value={personaValue}
+              onChange={(e) => handlePersonaChange(e.target.value)}
+              onBlur={handlePersonaBlur}
+              rows={8}
+              maxLength={MAX_CHARS}
+              disabled={!isEnabled}
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring w-full resize-none rounded-md border px-3 py-2 font-mono text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              placeholder="You are backend-bot, an expert in REST API design..."
+            />
+            <p className="text-muted-foreground text-right text-xs">
+              {personaValue.length} / {MAX_CHARS.toLocaleString()}
+            </p>
+          </div>
+        </FieldCardContent>
+      </FieldCard>
 
       {/* Preview */}
       <div className="space-y-2">

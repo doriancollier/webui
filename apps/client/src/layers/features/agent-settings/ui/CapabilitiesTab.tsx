@@ -3,6 +3,8 @@ import { X, RotateCcw } from 'lucide-react';
 import {
   Badge,
   Button,
+  FieldCard,
+  FieldCardContent,
   Label,
   Select,
   SelectContent,
@@ -239,149 +241,156 @@ export function CapabilitiesTab({ agent, onUpdate }: CapabilitiesTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Capabilities tags */}
-      <div className="space-y-2">
-        <Label htmlFor="cap-input" className="text-sm font-medium">
-          Capabilities
-        </Label>
-        <div className="flex flex-wrap gap-1.5">
-          {agent.capabilities.map((cap) => (
-            <Badge key={cap} variant="secondary" className="gap-1 pr-1">
-              {cap}
-              <button
-                onClick={() => removeCapability(cap)}
-                className="hover:bg-muted rounded-sm p-0.5 transition-colors duration-150"
-                aria-label={`Remove ${cap}`}
-              >
-                <X className="size-3" />
-              </button>
-            </Badge>
+      {/* Identity card */}
+      <FieldCard>
+        <FieldCardContent>
+          {/* Capabilities tags */}
+          <div className="space-y-2">
+            <Label htmlFor="cap-input" className="text-sm font-medium">
+              Capabilities
+            </Label>
+            <div className="flex flex-wrap gap-1.5">
+              {agent.capabilities.map((cap) => (
+                <Badge key={cap} variant="secondary" className="gap-1 pr-1">
+                  {cap}
+                  <button
+                    onClick={() => removeCapability(cap)}
+                    className="hover:bg-muted rounded-sm p-0.5 transition-colors duration-150"
+                    aria-label={`Remove ${cap}`}
+                  >
+                    <X className="size-3" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+            <input
+              id="cap-input"
+              type="text"
+              value={capInput}
+              onChange={(e) => setCapInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={INPUT_CLASSES}
+              placeholder="Add capability and press Enter"
+            />
+          </div>
+
+          {/* Namespace */}
+          <div className="space-y-2">
+            <Label htmlFor="agent-namespace" className="text-sm font-medium">
+              Namespace
+            </Label>
+            <input
+              id="agent-namespace"
+              type="text"
+              value={nsValue}
+              onChange={(e) => handleNsChange(e.target.value)}
+              onBlur={handleNsBlur}
+              className={INPUT_CLASSES}
+              placeholder="Optional grouping namespace"
+            />
+          </div>
+
+          {/* Response Mode */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Response Mode</Label>
+            <Select
+              value={agent.behavior?.responseMode ?? 'always'}
+              onValueChange={(v) =>
+                onUpdate({
+                  behavior: {
+                    ...agent.behavior,
+                    responseMode: v as AgentManifest['behavior']['responseMode'],
+                  },
+                })
+              }
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="always">Always respond</SelectItem>
+                <SelectItem value="direct-only">Direct messages only</SelectItem>
+                <SelectItem value="mention-only">Mentions only</SelectItem>
+                <SelectItem value="silent">Silent</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </FieldCardContent>
+      </FieldCard>
+
+      {/* Budget card */}
+      <h3 className="text-sm font-semibold">Budget</h3>
+      <FieldCard>
+        <FieldCardContent>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label htmlFor="max-hops" className="text-muted-foreground text-xs">
+                Max Hops / Message
+              </label>
+              <input
+                id="max-hops"
+                type="number"
+                min={1}
+                value={agent.budget?.maxHopsPerMessage ?? 5}
+                onChange={(e) =>
+                  onUpdate({
+                    budget: {
+                      ...agent.budget,
+                      maxHopsPerMessage: parseInt(e.target.value) || 5,
+                    },
+                  })
+                }
+                className={INPUT_CLASSES}
+              />
+            </div>
+            <div className="space-y-1">
+              <label htmlFor="max-calls" className="text-muted-foreground text-xs">
+                Max Calls / Hour
+              </label>
+              <input
+                id="max-calls"
+                type="number"
+                min={1}
+                value={agent.budget?.maxCallsPerHour ?? 100}
+                onChange={(e) =>
+                  onUpdate({
+                    budget: {
+                      ...agent.budget,
+                      maxCallsPerHour: parseInt(e.target.value) || 100,
+                    },
+                  })
+                }
+                className={INPUT_CLASSES}
+              />
+            </div>
+          </div>
+        </FieldCardContent>
+      </FieldCard>
+
+      {/* Tool Groups card */}
+      <h3 className="text-sm font-semibold">Tool Groups</h3>
+      <p className="text-muted-foreground text-xs">
+        Override which MCP tool domains are available to this agent. Leave unset to inherit global
+        defaults.
+      </p>
+      <FieldCard>
+        <FieldCardContent>
+          <SettingRow label="Core Tools" description="ping, server info, agent identity" className="py-1">
+            <span className="text-muted-foreground text-xs">Always enabled</span>
+          </SettingRow>
+
+          {toolDomains.map((domain) => (
+            <ToolGroupRow
+              key={domain.key}
+              domain={domain}
+              agentOverride={groups[domain.key]}
+              globalDefault={globalConfig[domain.configKey]}
+              onToggle={handleToolGroupChange}
+              onReset={handleToolGroupReset}
+            />
           ))}
-        </div>
-        <input
-          id="cap-input"
-          type="text"
-          value={capInput}
-          onChange={(e) => setCapInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          className={INPUT_CLASSES}
-          placeholder="Add capability and press Enter"
-        />
-      </div>
-
-      {/* Namespace */}
-      <div className="space-y-2">
-        <Label htmlFor="agent-namespace" className="text-sm font-medium">
-          Namespace
-        </Label>
-        <input
-          id="agent-namespace"
-          type="text"
-          value={nsValue}
-          onChange={(e) => handleNsChange(e.target.value)}
-          onBlur={handleNsBlur}
-          className={INPUT_CLASSES}
-          placeholder="Optional grouping namespace"
-        />
-      </div>
-
-      {/* Response Mode */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Response Mode</Label>
-        <Select
-          value={agent.behavior?.responseMode ?? 'always'}
-          onValueChange={(v) =>
-            onUpdate({
-              behavior: {
-                ...agent.behavior,
-                responseMode: v as AgentManifest['behavior']['responseMode'],
-              },
-            })
-          }
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="always">Always respond</SelectItem>
-            <SelectItem value="direct-only">Direct messages only</SelectItem>
-            <SelectItem value="mention-only">Mentions only</SelectItem>
-            <SelectItem value="silent">Silent</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Budget */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Budget</Label>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <label htmlFor="max-hops" className="text-muted-foreground text-xs">
-              Max Hops / Message
-            </label>
-            <input
-              id="max-hops"
-              type="number"
-              min={1}
-              value={agent.budget?.maxHopsPerMessage ?? 5}
-              onChange={(e) =>
-                onUpdate({
-                  budget: {
-                    ...agent.budget,
-                    maxHopsPerMessage: parseInt(e.target.value) || 5,
-                  },
-                })
-              }
-              className={INPUT_CLASSES}
-            />
-          </div>
-          <div className="space-y-1">
-            <label htmlFor="max-calls" className="text-muted-foreground text-xs">
-              Max Calls / Hour
-            </label>
-            <input
-              id="max-calls"
-              type="number"
-              min={1}
-              value={agent.budget?.maxCallsPerHour ?? 100}
-              onChange={(e) =>
-                onUpdate({
-                  budget: {
-                    ...agent.budget,
-                    maxCallsPerHour: parseInt(e.target.value) || 100,
-                  },
-                })
-              }
-              className={INPUT_CLASSES}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Tool Groups */}
-      <div className="space-y-3">
-        <Label className="text-sm font-medium">Tool Groups</Label>
-        <p className="text-muted-foreground text-xs">
-          Override which MCP tool domains are available to this agent. Leave unset to inherit global
-          defaults.
-        </p>
-
-        {/* Core Tools — always enabled, no toggle */}
-        <SettingRow label="Core Tools" description="ping, server info, agent identity" className="py-1">
-          <span className="text-muted-foreground text-xs">Always enabled</span>
-        </SettingRow>
-
-        {toolDomains.map((domain) => (
-          <ToolGroupRow
-            key={domain.key}
-            domain={domain}
-            agentOverride={groups[domain.key]}
-            globalDefault={globalConfig[domain.configKey]}
-            onToggle={handleToolGroupChange}
-            onReset={handleToolGroupReset}
-          />
-        ))}
-      </div>
+        </FieldCardContent>
+      </FieldCard>
     </div>
   );
 }

@@ -99,4 +99,18 @@ export const FORMS_SECTIONS: PlaygroundSection[] = [
     category: 'Composed',
     keywords: ['password', 'input', 'visibility', 'toggle', 'eye', 'secret', 'field', 'auth'],
   },
+  {
+    id: 'fieldcard',
+    title: 'FieldCard',
+    page: 'forms',
+    category: 'Composed',
+    keywords: ['field', 'card', 'group', 'divider', 'section', 'composed'],
+  },
+  {
+    id: 'collapsiblefieldcard',
+    title: 'CollapsibleFieldCard',
+    page: 'forms',
+    category: 'Composed',
+    keywords: ['collapsible', 'field', 'card', 'accordion', 'chevron', 'composed'],
+  },
 ];

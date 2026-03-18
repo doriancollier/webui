@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 import { useRelayEnabled } from '@/layers/entities/relay';
-import { Badge, SettingRow, Switch } from '@/layers/shared/ui';
+import { Badge, FieldCard, FieldCardContent, SettingRow, Switch } from '@/layers/shared/ui';
 import { useAgentContextConfig } from '../model/use-agent-context-config';
 
 const RELAY_PREVIEW = `DorkOS Relay is a pub/sub message bus for inter-agent communication.
@@ -123,40 +123,44 @@ export function ContextTab() {
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <p className="text-muted-foreground text-sm">
         Control which tool usage instructions are injected into the agent system prompt.
         These blocks teach the agent how to use DorkOS tools together.
       </p>
 
-      <ContextBlockSection
-        label="Relay Tools"
-        description="Subject hierarchy, messaging workflows, and error codes for the Relay message bus."
-        enabled={config.relayTools}
-        available={relayEnabled}
-        unavailableReason="Relay is disabled"
-        onToggle={(v) => handleToggle('relayTools', v)}
-        preview={RELAY_PREVIEW}
-      />
+      <FieldCard>
+        <FieldCardContent>
+          <ContextBlockSection
+            label="Relay Tools"
+            description="Subject hierarchy, messaging workflows, and error codes for the Relay message bus."
+            enabled={config.relayTools}
+            available={relayEnabled}
+            unavailableReason="Relay is disabled"
+            onToggle={(v) => handleToggle('relayTools', v)}
+            preview={RELAY_PREVIEW}
+          />
 
-      <ContextBlockSection
-        label="Mesh Tools"
-        description="Agent lifecycle, discovery workflow, and cross-tool orchestration with Relay."
-        enabled={config.meshTools}
-        available={true}
-        onToggle={(v) => handleToggle('meshTools', v)}
-        preview={MESH_PREVIEW}
-      />
+          <ContextBlockSection
+            label="Mesh Tools"
+            description="Agent lifecycle, discovery workflow, and cross-tool orchestration with Relay."
+            enabled={config.meshTools}
+            available={true}
+            onToggle={(v) => handleToggle('meshTools', v)}
+            preview={MESH_PREVIEW}
+          />
 
-      <ContextBlockSection
-        label="Adapter Tools"
-        description="External platform subjects, adapter management, and binding routing conventions."
-        enabled={config.adapterTools}
-        available={relayEnabled}
-        unavailableReason="Relay is disabled"
-        onToggle={(v) => handleToggle('adapterTools', v)}
-        preview={ADAPTER_PREVIEW}
-      />
+          <ContextBlockSection
+            label="Adapter Tools"
+            description="External platform subjects, adapter management, and binding routing conventions."
+            enabled={config.adapterTools}
+            available={relayEnabled}
+            unavailableReason="Relay is disabled"
+            onToggle={(v) => handleToggle('adapterTools', v)}
+            preview={ADAPTER_PREVIEW}
+          />
+        </FieldCardContent>
+      </FieldCard>
     </div>
   );
 }

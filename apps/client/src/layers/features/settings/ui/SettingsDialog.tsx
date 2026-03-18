@@ -24,6 +24,8 @@ import {
   SelectTrigger,
   SelectValue,
   SettingRow,
+  FieldCard,
+  FieldCardContent,
 } from '@/layers/shared/ui';
 import { ServerTab } from './ServerTab';
 import { TunnelDialog } from './TunnelDialog';
@@ -131,60 +133,64 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   Appearance
                 </NavigationLayoutPanelHeader>
 
-                <SettingRow label="Theme" description="Choose your preferred color scheme">
-                  <Select value={theme} onValueChange={setTheme}>
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="light">Light</SelectItem>
-                      <SelectItem value="dark">Dark</SelectItem>
-                      <SelectItem value="system">System</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </SettingRow>
+                <FieldCard>
+                  <FieldCardContent>
+                    <SettingRow label="Theme" description="Choose your preferred color scheme">
+                      <Select value={theme} onValueChange={setTheme}>
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="light">Light</SelectItem>
+                          <SelectItem value="dark">Dark</SelectItem>
+                          <SelectItem value="system">System</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
 
-                <SettingRow label="Font family" description="Choose the typeface for the interface">
-                  <Select
-                    value={fontFamily}
-                    onValueChange={(v) => setFontFamily(v as FontFamilyKey)}
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FONT_CONFIGS.map((font) => (
-                        <SelectItem key={font.key} value={font.key}>
-                          <div className="flex flex-col">
-                            <span>{font.displayName}</span>
-                            <span className="text-muted-foreground text-xs">
-                              {font.description}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </SettingRow>
+                    <SettingRow label="Font family" description="Choose the typeface for the interface">
+                      <Select
+                        value={fontFamily}
+                        onValueChange={(v) => setFontFamily(v as FontFamilyKey)}
+                      >
+                        <SelectTrigger className="w-40">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FONT_CONFIGS.map((font) => (
+                            <SelectItem key={font.key} value={font.key}>
+                              <div className="flex flex-col">
+                                <span>{font.displayName}</span>
+                                <span className="text-muted-foreground text-xs">
+                                  {font.description}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
 
-                <SettingRow
-                  label="Font size"
-                  description="Adjust the text size across the interface"
-                >
-                  <Select
-                    value={fontSize}
-                    onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}
-                  >
-                    <SelectTrigger className="w-32">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="small">Small</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="large">Large</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </SettingRow>
+                    <SettingRow
+                      label="Font size"
+                      description="Adjust the text size across the interface"
+                    >
+                      <Select
+                        value={fontSize}
+                        onValueChange={(v) => setFontSize(v as 'small' | 'medium' | 'large')}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="small">Small</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="large">Large</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </SettingRow>
+                  </FieldCardContent>
+                </FieldCard>
               </div>
             </NavigationLayoutPanel>
 
@@ -192,67 +198,71 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               <div className="space-y-4">
                 <NavigationLayoutPanelHeader>Preferences</NavigationLayoutPanelHeader>
 
-                <SettingRow
-                  label="Show timestamps"
-                  description="Display message timestamps in chat"
-                >
-                  <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
-                </SettingRow>
+                <FieldCard>
+                  <FieldCardContent>
+                    <SettingRow
+                      label="Show timestamps"
+                      description="Display message timestamps in chat"
+                    >
+                      <Switch checked={showTimestamps} onCheckedChange={setShowTimestamps} />
+                    </SettingRow>
 
-                <SettingRow
-                  label="Expand tool calls"
-                  description="Auto-expand tool call details in messages"
-                >
-                  <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
-                </SettingRow>
+                    <SettingRow
+                      label="Expand tool calls"
+                      description="Auto-expand tool call details in messages"
+                    >
+                      <Switch checked={expandToolCalls} onCheckedChange={setExpandToolCalls} />
+                    </SettingRow>
 
-                <SettingRow
-                  label="Auto-hide tool calls"
-                  description="Fade out completed tool calls after a few seconds"
-                >
-                  <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
-                </SettingRow>
+                    <SettingRow
+                      label="Auto-hide tool calls"
+                      description="Fade out completed tool calls after a few seconds"
+                    >
+                      <Switch checked={autoHideToolCalls} onCheckedChange={setAutoHideToolCalls} />
+                    </SettingRow>
 
-                <SettingRow
-                  label="Show shortcut chips"
-                  description="Display shortcut hints below the message input"
-                >
-                  <Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />
-                </SettingRow>
+                    <SettingRow
+                      label="Show shortcut chips"
+                      description="Display shortcut hints below the message input"
+                    >
+                      <Switch checked={showShortcutChips} onCheckedChange={setShowShortcutChips} />
+                    </SettingRow>
 
-                <SettingRow
-                  label="Task celebrations"
-                  description="Show animations when tasks complete"
-                >
-                  <Switch
-                    checked={showTaskCelebrations}
-                    onCheckedChange={setShowTaskCelebrations}
-                  />
-                </SettingRow>
+                    <SettingRow
+                      label="Task celebrations"
+                      description="Show animations when tasks complete"
+                    >
+                      <Switch
+                        checked={showTaskCelebrations}
+                        onCheckedChange={setShowTaskCelebrations}
+                      />
+                    </SettingRow>
 
-                <SettingRow
-                  label="Notification sound"
-                  description="Play a sound when AI finishes responding (3s+ responses)"
-                >
-                  <Switch
-                    checked={enableNotificationSound}
-                    onCheckedChange={setEnableNotificationSound}
-                  />
-                </SettingRow>
+                    <SettingRow
+                      label="Notification sound"
+                      description="Play a sound when AI finishes responding (3s+ responses)"
+                    >
+                      <Switch
+                        checked={enableNotificationSound}
+                        onCheckedChange={setEnableNotificationSound}
+                      />
+                    </SettingRow>
 
-                <SettingRow
-                  label="Pulse run notifications"
-                  description="Show a toast when a scheduled Pulse run completes"
-                >
-                  <Switch
-                    checked={enablePulseNotifications}
-                    onCheckedChange={setEnablePulseNotifications}
-                  />
-                </SettingRow>
+                    <SettingRow
+                      label="Pulse run notifications"
+                      description="Show a toast when a scheduled Pulse run completes"
+                    >
+                      <Switch
+                        checked={enablePulseNotifications}
+                        onCheckedChange={setEnablePulseNotifications}
+                      />
+                    </SettingRow>
 
-                <SettingRow label="Show dev tools" description="Enable developer tools panel">
-                  <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
-                </SettingRow>
+                    <SettingRow label="Show dev tools" description="Enable developer tools panel">
+                      <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
+                    </SettingRow>
+                  </FieldCardContent>
+                </FieldCard>
 
               </div>
             </NavigationLayoutPanel>
@@ -260,42 +270,46 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <NavigationLayoutPanel value="statusBar">
               <div className="space-y-4">
                 <NavigationLayoutPanelHeader>Status Bar</NavigationLayoutPanelHeader>
-                <SettingRow label="Show directory" description="Display current working directory">
-                  <Switch checked={showStatusBarCwd} onCheckedChange={setShowStatusBarCwd} />
-                </SettingRow>
-                <SettingRow
-                  label="Show git status"
-                  description="Display branch name and change count"
-                >
-                  <Switch checked={showStatusBarGit} onCheckedChange={setShowStatusBarGit} />
-                </SettingRow>
-                <SettingRow
-                  label="Show permission mode"
-                  description="Display current permission setting"
-                >
-                  <Switch
-                    checked={showStatusBarPermission}
-                    onCheckedChange={setShowStatusBarPermission}
-                  />
-                </SettingRow>
-                <SettingRow label="Show model" description="Display selected AI model">
-                  <Switch checked={showStatusBarModel} onCheckedChange={setShowStatusBarModel} />
-                </SettingRow>
-                <SettingRow label="Show cost" description="Display session cost in USD">
-                  <Switch checked={showStatusBarCost} onCheckedChange={setShowStatusBarCost} />
-                </SettingRow>
-                <SettingRow
-                  label="Show context usage"
-                  description="Display context window utilization"
-                >
-                  <Switch checked={showStatusBarContext} onCheckedChange={setShowStatusBarContext} />
-                </SettingRow>
-                <SettingRow label="Show sound toggle" description="Display notification sound toggle">
-                  <Switch checked={showStatusBarSound} onCheckedChange={setShowStatusBarSound} />
-                </SettingRow>
-                <SettingRow label="Show remote" description="Display remote control">
-                  <Switch checked={showStatusBarTunnel} onCheckedChange={setShowStatusBarTunnel} />
-                </SettingRow>
+                <FieldCard>
+                  <FieldCardContent>
+                    <SettingRow label="Show directory" description="Display current working directory">
+                      <Switch checked={showStatusBarCwd} onCheckedChange={setShowStatusBarCwd} />
+                    </SettingRow>
+                    <SettingRow
+                      label="Show git status"
+                      description="Display branch name and change count"
+                    >
+                      <Switch checked={showStatusBarGit} onCheckedChange={setShowStatusBarGit} />
+                    </SettingRow>
+                    <SettingRow
+                      label="Show permission mode"
+                      description="Display current permission setting"
+                    >
+                      <Switch
+                        checked={showStatusBarPermission}
+                        onCheckedChange={setShowStatusBarPermission}
+                      />
+                    </SettingRow>
+                    <SettingRow label="Show model" description="Display selected AI model">
+                      <Switch checked={showStatusBarModel} onCheckedChange={setShowStatusBarModel} />
+                    </SettingRow>
+                    <SettingRow label="Show cost" description="Display session cost in USD">
+                      <Switch checked={showStatusBarCost} onCheckedChange={setShowStatusBarCost} />
+                    </SettingRow>
+                    <SettingRow
+                      label="Show context usage"
+                      description="Display context window utilization"
+                    >
+                      <Switch checked={showStatusBarContext} onCheckedChange={setShowStatusBarContext} />
+                    </SettingRow>
+                    <SettingRow label="Show sound toggle" description="Display notification sound toggle">
+                      <Switch checked={showStatusBarSound} onCheckedChange={setShowStatusBarSound} />
+                    </SettingRow>
+                    <SettingRow label="Show remote" description="Display remote control">
+                      <Switch checked={showStatusBarTunnel} onCheckedChange={setShowStatusBarTunnel} />
+                    </SettingRow>
+                  </FieldCardContent>
+                </FieldCard>
               </div>
             </NavigationLayoutPanel>
 

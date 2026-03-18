@@ -16,6 +16,7 @@ import {
   CollapsibleContent,
 } from '@/layers/shared/ui/collapsible';
 import { Field, FieldContent, FieldLabel, FieldDescription, FieldError } from '@/layers/shared/ui/field';
+import { FieldCard, FieldCardContent } from '@/layers/shared/ui/field-card';
 import { PasswordInput } from '@/layers/shared/ui/password-input';
 import { ChevronDown, HelpCircle } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
@@ -144,6 +145,7 @@ export function ConfigFieldInput({
             value={stringValue}
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
+            aria-invalid={!!displayError || undefined}
           />
         );
 
@@ -178,6 +180,7 @@ export function ConfigFieldInput({
             onBlur={handleBlur}
             onPaste={() => setTimeout(handleBlur, 0)}
             placeholder={field.placeholder}
+            aria-invalid={!!displayError || undefined}
           />
         );
       }
@@ -192,6 +195,7 @@ export function ConfigFieldInput({
               onChange(field.key, e.target.value ? Number(e.target.value) : undefined)
             }
             placeholder={field.placeholder}
+            aria-invalid={!!displayError || undefined}
           />
         );
 
@@ -222,7 +226,7 @@ export function ConfigFieldInput({
         }
         return (
           <Select value={stringValue} onValueChange={(v) => onChange(field.key, v)}>
-            <SelectTrigger id={fieldId}>
+            <SelectTrigger id={fieldId} aria-invalid={!!displayError || undefined}>
               <SelectValue placeholder={field.placeholder ?? 'Select...'} />
             </SelectTrigger>
             <SelectContent>
@@ -243,6 +247,7 @@ export function ConfigFieldInput({
             onChange={(e) => onChange(field.key, e.target.value)}
             placeholder={field.placeholder}
             rows={3}
+            aria-invalid={!!displayError || undefined}
           />
         );
 
@@ -307,6 +312,12 @@ interface ConfigFieldGroupProps {
   errors: Record<string, string>;
 }
 
+/** Check whether a field is visible given current form values. */
+function isFieldVisible(field: ConfigField, allValues: Record<string, unknown>): boolean {
+  if (!field.showWhen) return true;
+  return allValues[field.showWhen.field] === field.showWhen.equals;
+}
+
 /**
  * Renders a list of `ConfigField` descriptors grouped by their `section` property.
  * Fields without a section are rendered first under no heading.
@@ -329,23 +340,33 @@ export function ConfigFieldGroup({
 
   return (
     <div className="space-y-6">
-      {Array.from(sections.entries()).map(([section, sectionFields]) => (
-        <div key={section ?? '__default'} className="space-y-4">
-          {section && (
-            <h4 className="text-sm font-medium text-muted-foreground">{section}</h4>
-          )}
-          {sectionFields.map((field) => (
-            <ConfigFieldInput
-              key={field.key}
-              field={field}
-              value={values[field.key]}
-              onChange={onChange}
-              error={errors[field.key]}
-              allValues={values}
-            />
-          ))}
-        </div>
-      ))}
+      {Array.from(sections.entries()).map(([section, sectionFields]) => {
+        // Filter to visible fields to avoid empty separator gaps from showWhen nulls.
+        const visibleFields = sectionFields.filter((f) => isFieldVisible(f, values));
+        if (visibleFields.length === 0) return null;
+
+        return (
+          <div key={section ?? '__default'} className="space-y-3">
+            {section && (
+              <h4 className="text-sm font-semibold">{section}</h4>
+            )}
+            <FieldCard>
+              <FieldCardContent>
+                {visibleFields.map((field) => (
+                  <ConfigFieldInput
+                    key={field.key}
+                    field={field}
+                    value={values[field.key]}
+                    onChange={onChange}
+                    error={errors[field.key]}
+                    allValues={values}
+                  />
+                ))}
+              </FieldCardContent>
+            </FieldCard>
+          </div>
+        );
+      })}
     </div>
   );
 }

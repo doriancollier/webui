@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import {
   ResponsiveDialog,
   ResponsiveDialogContent,
@@ -8,6 +8,7 @@ import {
   ResponsiveDialogDescription,
   ResponsiveDialogFooter,
   Button,
+  CollapsibleFieldCard,
   Input,
   Label,
   Select,
@@ -15,9 +16,6 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
   Badge,
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +29,6 @@ import {
 } from '@/layers/shared/ui';
 import { useAdapterCatalog, useObservedChats } from '@/layers/entities/relay';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
-import { cn } from '@/layers/shared/lib';
 import type { SessionStrategy } from '@dorkos/shared/relay-schemas';
 import type { PermissionMode } from '@dorkos/shared/schemas';
 import { BindingAdvancedSection } from './BindingAdvancedSection';
@@ -313,72 +310,63 @@ export function BindingDialog({
           </div>
 
           {/* Chat filter — collapsible */}
-          <Collapsible open={chatFilterOpen} onOpenChange={setChatFilterOpen}>
-            <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-              <ChevronRight
-                className={cn(
-                  'size-3.5 transition-transform',
-                  chatFilterOpen && 'rotate-90',
-                )}
-              />
-              Chat Filter
-              {hasChatFilter && (
-                <Badge variant="secondary" className="text-xs">
-                  Active
-                </Badge>
-              )}
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-3 pt-2">
-              {/* ChatId picker */}
-              <div className="space-y-1.5">
-                <Label htmlFor="binding-chat-id">Chat ID</Label>
-                <Select value={chatId} onValueChange={setChatId}>
-                  <SelectTrigger id="binding-chat-id" className="w-full">
-                    <SelectValue placeholder="Any chat (wildcard)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={SELECT_ANY}>Any chat (wildcard)</SelectItem>
-                    {observedChats.map((chat) => (
-                      <SelectItem key={chat.chatId} value={chat.chatId}>
-                        <span>{chat.displayName ?? chat.chatId}</span>
-                        {(chat.channelType || chat.messageCount > 0) && (
-                          <span className="ml-2 text-xs text-muted-foreground">
-                            {[chat.channelType, `${chat.messageCount} msgs`]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </span>
-                        )}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+          <CollapsibleFieldCard
+            open={chatFilterOpen}
+            onOpenChange={setChatFilterOpen}
+            trigger="Chat Filter"
+            badge={hasChatFilter ? <Badge variant="secondary" className="text-xs">Active</Badge> : undefined}
+          >
+            {/* ChatId picker */}
+            <div className="space-y-1.5 px-4 py-3">
+              <Label htmlFor="binding-chat-id">Chat ID</Label>
+              <Select value={chatId} onValueChange={setChatId}>
+                <SelectTrigger id="binding-chat-id" className="w-full">
+                  <SelectValue placeholder="Any chat (wildcard)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELECT_ANY}>Any chat (wildcard)</SelectItem>
+                  {observedChats.map((chat) => (
+                    <SelectItem key={chat.chatId} value={chat.chatId}>
+                      <span>{chat.displayName ?? chat.chatId}</span>
+                      {(chat.channelType || chat.messageCount > 0) && (
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {[chat.channelType, `${chat.messageCount} msgs`]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      )}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {/* ChannelType picker */}
-              <div className="space-y-1.5">
-                <Label htmlFor="binding-channel-type">Channel Type</Label>
-                <Select value={channelType} onValueChange={setChannelType}>
-                  <SelectTrigger id="binding-channel-type" className="w-full">
-                    <SelectValue placeholder="Any type (wildcard)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={SELECT_ANY}>Any type (wildcard)</SelectItem>
-                    {CHANNEL_TYPE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {/* ChannelType picker */}
+            <div className="space-y-1.5 px-4 py-3">
+              <Label htmlFor="binding-channel-type">Channel Type</Label>
+              <Select value={channelType} onValueChange={setChannelType}>
+                <SelectTrigger id="binding-channel-type" className="w-full">
+                  <SelectValue placeholder="Any type (wildcard)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={SELECT_ANY}>Any type (wildcard)</SelectItem>
+                  {CHANNEL_TYPE_OPTIONS.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-              {hasChatFilter && (
+            {hasChatFilter && (
+              <div className="px-4 py-3">
                 <Button variant="ghost" size="sm" onClick={handleClearFilters}>
                   Clear filters
                 </Button>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
+              </div>
+            )}
+          </CollapsibleFieldCard>
 
           {/* Advanced — collapsible: session strategy + permission toggles */}
           <BindingAdvancedSection

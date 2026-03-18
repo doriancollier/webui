@@ -1,4 +1,4 @@
-import { ChevronRight, Shield } from 'lucide-react';
+import { Shield } from 'lucide-react';
 import {
   Badge,
   Switch,
@@ -8,9 +8,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
+  CollapsibleFieldCard,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -20,7 +18,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/layers/shared/ui';
-import { cn } from '@/layers/shared/lib';
 import type { SessionStrategy } from '@dorkos/shared/relay-schemas';
 import type { PermissionMode } from '@dorkos/shared/schemas';
 
@@ -100,24 +97,15 @@ export function BindingAdvancedSection({
   const selectedPermissionMode = PERMISSION_MODES.find((m) => m.value === permissionMode);
 
   return (
-    <Collapsible open={open} onOpenChange={onOpenChange}>
-      <CollapsibleTrigger className="flex items-center gap-2 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-        <ChevronRight
-          className={cn(
-            'size-3.5 transition-transform',
-            open && 'rotate-90',
-          )}
-        />
-        Advanced
-        {hasChanges && (
-          <Badge variant="secondary" className="text-xs">
-            Modified
-          </Badge>
-        )}
-      </CollapsibleTrigger>
-      <CollapsibleContent className="space-y-4 pt-3">
+    <>
+      <CollapsibleFieldCard
+        open={open}
+        onOpenChange={onOpenChange}
+        trigger="Advanced"
+        badge={hasChanges ? <Badge variant="secondary" className="text-xs">Modified</Badge> : undefined}
+      >
         {/* Session strategy selector */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 px-4 py-3">
           <Label htmlFor="binding-session-strategy">Session Strategy</Label>
           <Select value={strategy} onValueChange={(v) => onStrategyChange(v as SessionStrategy)}>
             <SelectTrigger id="binding-session-strategy" className="w-full">
@@ -137,7 +125,7 @@ export function BindingAdvancedSection({
         </div>
 
         {/* Permission mode selector */}
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 px-4 py-3">
           <Label htmlFor="binding-permission-mode">Permission Mode</Label>
           <Select value={permissionMode} onValueChange={onPermissionModeChange}>
             <SelectTrigger id="binding-permission-mode" className="w-full">
@@ -156,31 +144,8 @@ export function BindingAdvancedSection({
           )}
         </div>
 
-        {/* bypassPermissions security warning */}
-        <AlertDialog open={bypassWarningOpen} onOpenChange={onBypassWarningOpenChange}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Enable Full Access?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Any user who can send messages through this adapter (e.g., members of your
-                Slack workspace) will be able to trigger unrestricted agent actions, including
-                file system access and command execution.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={onBypassConfirm}
-                className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-              >
-                Enable Full Access
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-
         {/* Permission toggles */}
-        <div className="space-y-2.5">
+        <div className="space-y-2.5 px-4 py-3">
           <p className="text-xs font-medium text-muted-foreground">Permissions</p>
           <div className="flex cursor-pointer items-center justify-between gap-3">
             <Label htmlFor="perm-initiate" className="flex cursor-pointer items-center gap-1.5 text-xs font-normal">
@@ -217,7 +182,30 @@ export function BindingAdvancedSection({
             />
           </div>
         </div>
-      </CollapsibleContent>
-    </Collapsible>
+      </CollapsibleFieldCard>
+
+      {/* bypassPermissions security warning */}
+      <AlertDialog open={bypassWarningOpen} onOpenChange={onBypassWarningOpenChange}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Enable Full Access?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Any user who can send messages through this adapter (e.g., members of your
+              Slack workspace) will be able to trigger unrestricted agent actions, including
+              file system access and command execution.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={onBypassConfirm}
+              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
+            >
+              Enable Full Access
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

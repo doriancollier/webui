@@ -1,6 +1,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn, EMOJI_SET } from '@/layers/shared/lib';
 import {
+  FieldCard,
+  FieldCardContent,
   Label,
   Select,
   SelectContent,
@@ -103,37 +105,62 @@ export function IdentityTab({ agent, projectPath: _projectPath, onUpdate }: Iden
 
   return (
     <div className="space-y-6">
-      {/* Name */}
-      <div className="space-y-2">
-        <Label htmlFor="agent-name" className="text-sm font-medium">
-          Name
-        </Label>
-        <input
-          id="agent-name"
-          type="text"
-          value={nameValue}
-          onChange={(e) => handleNameChange(e.target.value)}
-          onBlur={handleNameBlur}
-          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          placeholder="Agent name"
-        />
-      </div>
+      <FieldCard>
+        <FieldCardContent>
+          {/* Name */}
+          <div className="space-y-2">
+            <Label htmlFor="agent-name" className="text-sm font-medium">
+              Name
+            </Label>
+            <input
+              id="agent-name"
+              type="text"
+              value={nameValue}
+              onChange={(e) => handleNameChange(e.target.value)}
+              onBlur={handleNameBlur}
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              placeholder="Agent name"
+            />
+          </div>
 
-      {/* Description */}
-      <div className="space-y-2">
-        <Label htmlFor="agent-description" className="text-sm font-medium">
-          Description
-        </Label>
-        <textarea
-          id="agent-description"
-          value={descValue}
-          onChange={(e) => handleDescChange(e.target.value)}
-          onBlur={handleDescBlur}
-          rows={3}
-          className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          placeholder="What does this agent do?"
-        />
-      </div>
+          {/* Description */}
+          <div className="space-y-2">
+            <Label htmlFor="agent-description" className="text-sm font-medium">
+              Description
+            </Label>
+            <textarea
+              id="agent-description"
+              value={descValue}
+              onChange={(e) => handleDescChange(e.target.value)}
+              onBlur={handleDescBlur}
+              rows={3}
+              className="border-border bg-background text-foreground placeholder:text-muted-foreground focus-visible:ring-ring w-full resize-none rounded-md border px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+              placeholder="What does this agent do?"
+            />
+          </div>
+
+          {/* Runtime */}
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Runtime</Label>
+            <Select
+              value={agent.runtime}
+              onValueChange={(v) =>
+                onUpdate({ runtime: v as AgentManifest['runtime'] })
+              }
+            >
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="claude-code">Claude Code</SelectItem>
+                <SelectItem value="cursor">Cursor</SelectItem>
+                <SelectItem value="codex">Codex</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </FieldCardContent>
+      </FieldCard>
 
       {/* Color */}
       <div className="space-y-2">
@@ -198,26 +225,6 @@ export function IdentityTab({ agent, projectPath: _projectPath, onUpdate }: Iden
         </div>
       </div>
 
-      {/* Runtime */}
-      <div className="space-y-2">
-        <Label className="text-sm font-medium">Runtime</Label>
-        <Select
-          value={agent.runtime}
-          onValueChange={(v) =>
-            onUpdate({ runtime: v as AgentManifest['runtime'] })
-          }
-        >
-          <SelectTrigger className="w-48">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="claude-code">Claude Code</SelectItem>
-            <SelectItem value="cursor">Cursor</SelectItem>
-            <SelectItem value="codex">Codex</SelectItem>
-            <SelectItem value="other">Other</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
     </div>
   );
 }
