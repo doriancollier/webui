@@ -19,7 +19,7 @@ function createMockRelay(): RelayPublisher {
   };
 }
 
-function createMockClient(): WebClient {
+function createMockClient(): WebClient & { reactions: { add: ReturnType<typeof vi.fn> } } {
   return {
     users: {
       info: vi.fn().mockResolvedValue({
@@ -31,7 +31,10 @@ function createMockClient(): WebClient {
         channel: { name: 'general' },
       }),
     },
-  } as unknown as WebClient;
+    reactions: {
+      add: vi.fn().mockResolvedValue({ ok: true }),
+    },
+  } as unknown as WebClient & { reactions: { add: ReturnType<typeof vi.fn> } };
 }
 
 function createMockCallbacks(): AdapterInboundCallbacks {
@@ -229,5 +232,76 @@ describe('handleInboundMessage', () => {
 
     const published = (relay.publish as ReturnType<typeof vi.fn>).mock.calls[0][1];
     expect(published.senderName).toBe('U99999');
+  });
+
+  describe('typing indicator — inbound reaction', () => {
+    it('adds hourglass reaction immediately on message receipt when typingIndicator is reaction', async () => {
+      const event = createEvent({ ts: '1234.5678' });
+      const pendingReactions = new Map<string, string[]>();
+
+      await handleInboundMessage(event, client, relay, 'UBOTID', callbacks, undefined, 'reaction', pendingReactions);
+
+      // Wait a tick for the fire-and-forget promise to resolve
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(client.reactions.add).toHaveBeenCalledWith({
+        channel: 'D67890',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.5678',
+      });
+    });
+
+    it('tracks pending reaction in FIFO queue', async () => {
+      const event = createEvent({ ts: '1234.5678' });
+      const pendingReactions = new Map<string, string[]>();
+
+      await handleInboundMessage(event, client, relay, 'UBOTID', callbacks, undefined, 'reaction', pendingReactions);
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(pendingReactions.get('D67890')).toEqual(['1234.5678']);
+    });
+
+    it('does not add reaction when typingIndicator is none', async () => {
+      const event = createEvent({ ts: '1234.5678' });
+
+      await handleInboundMessage(event, client, relay, 'UBOTID', callbacks, undefined, 'none');
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(client.reactions.add).not.toHaveBeenCalled();
+    });
+
+    it('does not add reaction when typingIndicator is omitted (default)', async () => {
+      const event = createEvent({ ts: '1234.5678' });
+
+      await handleInboundMessage(event, client, relay, 'UBOTID', callbacks);
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(client.reactions.add).not.toHaveBeenCalled();
+    });
+
+    it('logs warning when reaction add fails', async () => {
+      client.reactions.add.mockRejectedValueOnce(new Error('no_permission'));
+      const event = createEvent({ ts: '1234.5678' });
+      const mockLogger = { debug: vi.fn(), warn: vi.fn(), error: vi.fn() };
+
+      await handleInboundMessage(event, client, relay, 'UBOTID', callbacks, mockLogger, 'reaction');
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(mockLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('failed to add typing reaction'),
+      );
+    });
+
+    it('does not track reaction when add fails', async () => {
+      client.reactions.add.mockRejectedValueOnce(new Error('no_permission'));
+      const event = createEvent({ ts: '1234.5678' });
+      const pendingReactions = new Map<string, string[]>();
+
+      await handleInboundMessage(event, client, relay, 'UBOTID', callbacks, undefined, 'reaction', pendingReactions);
+      await new Promise((r) => setTimeout(r, 10));
+
+      // Should not track a reaction that failed to add
+      expect(pendingReactions.has('D67890')).toBe(false);
+    });
   });
 });

@@ -12,6 +12,7 @@ import type { WebClient } from '@slack/web-api';
 import type { StandardPayload } from '@dorkos/shared/relay-schemas';
 import type { RelayPublisher, AdapterInboundCallbacks, RelayLogger } from '../../types.js';
 import { noopLogger } from '../../types.js';
+import type { PendingReactions } from './stream.js';
 
 // === Constants ===
 
@@ -248,6 +249,8 @@ export async function handleInboundMessage(
   botUserId: string,
   callbacks: AdapterInboundCallbacks,
   logger: RelayLogger = noopLogger,
+  typingIndicator: 'none' | 'reaction' = 'none',
+  pendingReactions?: PendingReactions,
 ): Promise<void> {
   // Skip bot's own messages (echo prevention)
   if (event.user === botUserId) {
@@ -313,6 +316,25 @@ export async function handleInboundMessage(
     });
     callbacks.trackInbound();
     logger.debug(`inbound from ${senderName} in ${event.channel}: "${content.slice(0, 80)}${content.length > 80 ? '\u2026' : ''}" (${content.length} chars) \u2192 ${subject}`);
+
+    // Add immediate hourglass reaction so the user knows the message was received,
+    // even if the agent is queued behind another in-flight request.
+    if (typingIndicator === 'reaction') {
+      client.reactions
+        .add({ channel: event.channel, name: 'hourglass_flowing_sand', timestamp: event.ts })
+        .then(() => {
+          // Track the reaction so the outbound handler can remove it on done/error.
+          if (pendingReactions) {
+            const queue = pendingReactions.get(event.channel) ?? [];
+            queue.push(event.ts);
+            pendingReactions.set(event.channel, queue);
+          }
+          logger.debug(`inbound: added typing reaction to ${event.channel}:${event.ts}`);
+        })
+        .catch((err) => {
+          logger.warn(`inbound: failed to add typing reaction to ${event.channel}:${event.ts}: ${err instanceof Error ? err.message : String(err)}`);
+        });
+    }
   } catch (err) {
     callbacks.recordError(err);
     logger.warn(`inbound publish failed for ${event.channel}:`, err instanceof Error ? err.message : String(err));

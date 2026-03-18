@@ -35,7 +35,7 @@ import { handleApprovalRequired } from './approval.js';
 import type { SlackOutboundState } from './approval.js';
 
 // Re-export types so existing imports from outbound.ts continue to work
-export type { ActiveStream } from './stream.js';
+export type { ActiveStream, PendingReactions } from './stream.js';
 // Re-export approval state types and helpers so the adapter facade can use them
 export { clearApprovalTimeout, createSlackOutboundState, clearAllApprovalTimeouts } from './approval.js';
 export type { SlackOutboundState } from './approval.js';
@@ -49,6 +49,7 @@ export interface SlackDeliverOptions {
   envelope: RelayEnvelope;
   client: WebClient | null;
   streamState: Map<string, import('./stream.js').ActiveStream>;
+  pendingReactions: import('./stream.js').PendingReactions;
   botUserId: string;
   callbacks: AdapterOutboundCallbacks;
   streaming: boolean;
@@ -96,7 +97,7 @@ function resolveThreadTs(envelope: RelayEnvelope): string | undefined {
  * @param opts - Delivery options
  */
 export async function deliverMessage(opts: SlackDeliverOptions): Promise<DeliveryResult> {
-  const { adapterId, subject, envelope, client, streamState, callbacks, logger = noopLogger } = opts;
+  const { adapterId, subject, envelope, client, streamState, pendingReactions, callbacks, logger = noopLogger } = opts;
   const startTime = Date.now();
 
   // Reap orphaned streams that never received a done/error event
@@ -142,6 +143,8 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
     callbacks, startTime,
     typingIndicator: opts.typingIndicator,
     streamKeyTs,
+    pendingReactions,
+    logger,
   };
 
   // --- StreamEvent-aware delivery ---

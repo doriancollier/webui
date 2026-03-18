@@ -23,6 +23,15 @@ const STREAM_UPDATE_INTERVAL_MS = 1_000;
 /** Maximum age (ms) before an orphaned stream entry is reaped. */
 export const STREAM_TTL_MS = 5 * 60 * 1_000;
 
+/**
+ * FIFO queue of message timestamps with pending :hourglass_flowing_sand: reactions.
+ *
+ * Keyed by channelId. Values are arrays of message `ts` values in arrival order.
+ * The inbound handler pushes on message receipt; the outbound handler shifts on
+ * done/error to remove the reaction from the correct message.
+ */
+export type PendingReactions = Map<string, string[]>;
+
 /** Active stream state for a channel (keyed by channelId:streamKeyTs). */
 export interface ActiveStream {
   /** The channel ID being streamed to. */
@@ -48,6 +57,8 @@ export interface StreamContext {
   channelId: string; threadTs: string | undefined; client: WebClient;
   streamState: Map<string, ActiveStream>; callbacks: AdapterOutboundCallbacks;
   startTime: number; typingIndicator: 'none' | 'reaction'; streamKeyTs: string;
+  pendingReactions: PendingReactions;
+  logger?: { debug: (...args: unknown[]) => void; warn: (...args: unknown[]) => void };
 }
 
 /**
@@ -90,30 +101,77 @@ export function buildStreamKey(channelId: string, streamKeyTs?: string): string 
   return streamKeyTs ? `${channelId}:${streamKeyTs}` : channelId;
 }
 
-/** Add :hourglass_flowing_sand: reaction — fire-and-forget, errors silently swallowed. */
+/** Add :hourglass_flowing_sand: reaction — fire-and-forget with logged failures. */
 export function addTypingReaction(
   client: WebClient,
   channelId: string,
   threadTs: string | undefined,
   typingIndicator: 'none' | 'reaction',
+  logger?: { warn: (...args: unknown[]) => void },
 ): void {
   if (typingIndicator !== 'reaction' || !threadTs) return;
   void client.reactions
     .add({ channel: channelId, name: 'hourglass_flowing_sand', timestamp: threadTs })
-    .catch(() => {});
+    .catch((err) => {
+      // already_reacted is expected when inbound already added the reaction
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('already_reacted')) {
+        logger?.warn(`stream: failed to add typing reaction to ${channelId}:${threadTs}: ${msg}`);
+      }
+    });
 }
 
-/** Remove :hourglass_flowing_sand: reaction — fire-and-forget, errors silently swallowed. */
+/** Remove :hourglass_flowing_sand: reaction — fire-and-forget with logged failures. */
 export function removeTypingReaction(
   client: WebClient,
   channelId: string,
   threadTs: string | undefined,
   typingIndicator: 'none' | 'reaction',
+  logger?: { warn: (...args: unknown[]) => void },
 ): void {
   if (typingIndicator !== 'reaction' || !threadTs) return;
   void client.reactions
     .remove({ channel: channelId, name: 'hourglass_flowing_sand', timestamp: threadTs })
-    .catch(() => {});
+    .catch((err) => {
+      // no_reaction is expected if the reaction was already removed or never added
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('no_reaction')) {
+        logger?.warn(`stream: failed to remove typing reaction from ${channelId}:${threadTs}: ${msg}`);
+      }
+    });
+}
+
+/**
+ * Remove the oldest pending reaction for a channel (FIFO).
+ *
+ * Called by handleDone/handleError to clean up the hourglass reaction
+ * that was added on the inbound side. Uses the FIFO queue to correlate
+ * with the correct user message even when multiple messages are queued.
+ */
+function removePendingReaction(
+  client: WebClient,
+  channelId: string,
+  typingIndicator: 'none' | 'reaction',
+  pendingReactions: PendingReactions,
+  logger?: { debug?: (...args: unknown[]) => void; warn: (...args: unknown[]) => void },
+): void {
+  if (typingIndicator !== 'reaction') return;
+  const queue = pendingReactions.get(channelId);
+  if (!queue || queue.length === 0) return;
+  const messageTs = queue.shift()!;
+  if (queue.length === 0) pendingReactions.delete(channelId);
+
+  void client.reactions
+    .remove({ channel: channelId, name: 'hourglass_flowing_sand', timestamp: messageTs })
+    .then(() => {
+      logger?.debug?.(`stream: removed pending typing reaction from ${channelId}:${messageTs}`);
+    })
+    .catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('no_reaction')) {
+        logger?.warn(`stream: failed to remove pending typing reaction from ${channelId}:${messageTs}: ${msg}`);
+      }
+    });
 }
 
 /**
@@ -134,7 +192,7 @@ export async function handleTextDelta(
   nativeStreaming: boolean,
   ctx: StreamContext,
 ): Promise<DeliveryResult> {
-  const { channelId, threadTs, client, streamState, callbacks, startTime, typingIndicator, streamKeyTs } = ctx;
+  const { channelId, threadTs, client, streamState, callbacks, startTime, typingIndicator, streamKeyTs, logger } = ctx;
   const key = buildStreamKey(channelId, streamKeyTs);
   const existing = streamState.get(key);
 
@@ -148,7 +206,7 @@ export async function handleTextDelta(
         accumulatedText: textChunk, lastUpdateAt: 0,
         startedAt: Date.now(), streamId: randomUUID(),
       });
-      addTypingReaction(client, channelId, threadTs, typingIndicator);
+      addTypingReaction(client, channelId, threadTs, typingIndicator, logger);
     }
     return { success: true, durationMs: Date.now() - startTime };
   }
@@ -194,7 +252,7 @@ export async function handleTextDelta(
         lastUpdateAt: now, startedAt: now, streamId: randomUUID(), nativeStreamId,
       });
       await nativeAppendStream(client, nativeStreamId, formatForPlatform(textChunk, 'slack'));
-      addTypingReaction(client, channelId, threadTs, typingIndicator);
+      addTypingReaction(client, channelId, threadTs, typingIndicator, logger);
       return { success: true, durationMs: Date.now() - startTime };
     } catch (err) {
       // Fallback to chat.postMessage (e.g., missing scope, API not available)
@@ -215,7 +273,7 @@ export async function handleTextDelta(
       messageTs: (result as { ts?: string }).ts ?? '',
       accumulatedText: textChunk, lastUpdateAt: now, startedAt: now, streamId: randomUUID(),
     });
-    addTypingReaction(client, channelId, threadTs, typingIndicator);
+    addTypingReaction(client, channelId, threadTs, typingIndicator, logger);
     return { success: true, durationMs: now - startTime };
   } catch (err) {
     callbacks.recordError(err);
@@ -284,16 +342,22 @@ export async function flushStreamBuffer(ctx: StreamContext): Promise<void> {
  * @param ctx - Shared stream handler context
  */
 export async function handleDone(ctx: StreamContext): Promise<DeliveryResult> {
-  const { channelId, threadTs, client, streamState, callbacks, startTime, typingIndicator, streamKeyTs } = ctx;
+  const { channelId, threadTs, client, streamState, callbacks, startTime, typingIndicator, streamKeyTs, pendingReactions, logger } = ctx;
   const key = buildStreamKey(channelId, streamKeyTs);
   const existing = streamState.get(key);
   streamState.delete(key);
 
+  // Remove the inbound-side hourglass reaction (FIFO queue)
+  removePendingReaction(client, channelId, typingIndicator, pendingReactions, logger);
+
+  // Also attempt outbound-side removal as fallback (for threaded messages where threadTs is known)
   if (existing?.threadTs) {
-    removeTypingReaction(client, channelId, existing.threadTs, typingIndicator);
+    removeTypingReaction(client, channelId, existing.threadTs, typingIndicator, logger);
   }
 
   if (!existing) {
+    // Stream completed with zero text_delta events — the user's message produced no visible response.
+    logger?.warn(`stream: done received for ${channelId} with no active stream (empty response — user may see no output)`);
     return { success: true, durationMs: Date.now() - startTime };
   }
 
@@ -334,13 +398,17 @@ export async function handleDone(ctx: StreamContext): Promise<DeliveryResult> {
  * @param ctx - Shared stream handler context
  */
 export async function handleError(errorMsg: string, ctx: StreamContext): Promise<DeliveryResult> {
-  const { channelId, threadTs, client, streamState, callbacks, startTime, typingIndicator, streamKeyTs } = ctx;
+  const { channelId, threadTs, client, streamState, callbacks, startTime, typingIndicator, streamKeyTs, pendingReactions, logger } = ctx;
   const key = buildStreamKey(channelId, streamKeyTs);
   const existing = streamState.get(key);
   streamState.delete(key);
 
+  // Remove the inbound-side hourglass reaction (FIFO queue)
+  removePendingReaction(client, channelId, typingIndicator, pendingReactions, logger);
+
+  // Also attempt outbound-side removal as fallback
   if (existing?.threadTs) {
-    removeTypingReaction(client, channelId, existing.threadTs, typingIndicator);
+    removeTypingReaction(client, channelId, existing.threadTs, typingIndicator, logger);
   }
 
   if (existing) {

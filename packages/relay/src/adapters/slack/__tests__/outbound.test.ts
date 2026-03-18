@@ -181,6 +181,7 @@ function deliver(
   streaming = true,
   typingIndicator: 'none' | 'reaction' = 'none',
   nativeStreaming = false,
+  pendingReactions: Map<string, string[]> = new Map(),
 ) {
   return deliverMessage({
     adapterId: 'slack',
@@ -188,6 +189,7 @@ function deliver(
     envelope,
     client,
     streamState,
+    pendingReactions,
     botUserId,
     callbacks,
     streaming,
@@ -693,6 +695,82 @@ describe('deliverMessage', () => {
       });
       // Should not post message (buffered mode)
       expect(mockPostMessage).not.toHaveBeenCalled();
+    });
+
+    it('removes pending reaction on done even without platformData in response', async () => {
+      // Simulate inbound adding a pending reaction
+      const pendingReactions = new Map<string, string[]>();
+      pendingReactions.set('D123', ['1234.0001']);
+
+      // CCA response envelope has NO platformData (realistic scenario)
+      const done = createEnvelope('relay.human.slack.D123', {
+        type: 'done',
+        data: {},
+      });
+      await deliver('relay.human.slack.D123', done, client, streamState, callbacks, 'UBOTID', true, 'reaction', false, pendingReactions);
+
+      expect(mockReactionsRemove).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+      // Queue should be drained
+      expect(pendingReactions.has('D123')).toBe(false);
+    });
+
+    it('removes pending reaction on error even without platformData in response', async () => {
+      const pendingReactions = new Map<string, string[]>();
+      pendingReactions.set('D123', ['1234.0001']);
+
+      const error = createEnvelope('relay.human.slack.D123', {
+        type: 'error',
+        data: { message: 'failed' },
+      });
+      await deliver('relay.human.slack.D123', error, client, streamState, callbacks, 'UBOTID', true, 'reaction', false, pendingReactions);
+
+      expect(mockReactionsRemove).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+    });
+
+    it('handles FIFO ordering with multiple queued messages', async () => {
+      const pendingReactions = new Map<string, string[]>();
+      pendingReactions.set('D123', ['1234.0001', '1234.0002']);
+
+      // First done removes first reaction
+      const done1 = createEnvelope('relay.human.slack.D123', { type: 'done', data: {} });
+      await deliver('relay.human.slack.D123', done1, client, streamState, callbacks, 'UBOTID', true, 'reaction', false, pendingReactions);
+
+      expect(mockReactionsRemove).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0001',
+      });
+
+      // Second done removes second reaction
+      mockReactionsRemove.mockClear();
+      const done2 = createEnvelope('relay.human.slack.D123', { type: 'done', data: {} });
+      await deliver('relay.human.slack.D123', done2, client, streamState, callbacks, 'UBOTID', true, 'reaction', false, pendingReactions);
+
+      expect(mockReactionsRemove).toHaveBeenCalledWith({
+        channel: 'D123',
+        name: 'hourglass_flowing_sand',
+        timestamp: '1234.0002',
+      });
+      expect(pendingReactions.has('D123')).toBe(false);
+    });
+
+    it('does not crash when pending reactions queue is empty', async () => {
+      const pendingReactions = new Map<string, string[]>();
+
+      const done = createEnvelope('relay.human.slack.D123', { type: 'done', data: {} });
+      const result = await deliver('relay.human.slack.D123', done, client, streamState, callbacks, 'UBOTID', true, 'reaction', false, pendingReactions);
+
+      expect(result.success).toBe(true);
+      // No reactions should be removed when queue is empty
+      expect(mockReactionsRemove).not.toHaveBeenCalled();
     });
   });
 

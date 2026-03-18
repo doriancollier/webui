@@ -209,6 +209,8 @@ export class SlackAdapter extends BaseRelayAdapter {
   /** Bot's own user ID — cached after auth.test for echo prevention. */
   private botUserId = '';
   private streamState = new Map<string, ActiveStream>();
+  /** FIFO queue of message timestamps with pending hourglass reactions, keyed by channelId. */
+  private pendingReactions: import('./stream.js').PendingReactions = new Map();
   private readonly outboundState: SlackOutboundState = createSlackOutboundState();
 
   constructor(id: string, config: SlackAdapterConfig, displayName = 'Slack') {
@@ -257,6 +259,8 @@ export class SlackAdapter extends BaseRelayAdapter {
         this.botUserId,
         this.makeInboundCallbacks(),
         this.logger,
+        this.config.typingIndicator ?? 'none',
+        this.pendingReactions,
       );
     });
 
@@ -268,6 +272,8 @@ export class SlackAdapter extends BaseRelayAdapter {
         this.botUserId,
         this.makeInboundCallbacks(),
         this.logger,
+        this.config.typingIndicator ?? 'none',
+        this.pendingReactions,
       );
     });
 
@@ -303,6 +309,7 @@ export class SlackAdapter extends BaseRelayAdapter {
     }
     this.botUserId = '';
     this.streamState.clear();
+    this.pendingReactions.clear();
     clearAllApprovalTimeouts(this.outboundState);
     clearCaches();
   }
@@ -327,6 +334,7 @@ export class SlackAdapter extends BaseRelayAdapter {
       envelope,
       client: this.app?.client ?? null,
       streamState: this.streamState,
+      pendingReactions: this.pendingReactions,
       botUserId: this.botUserId,
       callbacks: this.makeOutboundCallbacks(),
       streaming: this.config.streaming ?? true,
