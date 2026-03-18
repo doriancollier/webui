@@ -508,7 +508,7 @@ describe('ClaudeCodeRuntime interactive tools', () => {
 
       const errorEvents = events.filter((e) => e.type === 'error');
       expect(errorEvents).toHaveLength(1);
-      expect((errorEvents[0].data as { message: string }).message).toBe('SDK connection failed');
+      expect((errorEvents[0].data as { message: string }).message).toBe('The agent stopped unexpectedly. The service may be temporarily overloaded — try again in a moment.');
 
       // Should still emit done
       const doneEvents = events.filter((e) => e.type === 'done');

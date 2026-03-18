@@ -9,15 +9,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.16.0] - 2026-03-18
+
+> Interactive tool approval, standardized form fields, and resilient streaming
+
+### Added
+
 - Standardize form fields with Shadcn Field, SettingRow, and PasswordInput
 - Add interactive tool approval for Slack and Telegram adapters
 - Add dedicated Forms page and split registry into per-page section files
 - Add data path debug toggles for cross-client sync and message polling
 - Add unified input zone for interactive cards
-- Add unified input zone for interactive cards
 - Add 4 sidebar component showcases to dev playground
-
-### Changed
 
 ### Fixed
 
@@ -25,6 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Move empty-stream and retry-depth tests into sendMessage() describe block
 - Break infinite SDK retry loop and surface errors to adapters
 - Prevent tool_call_end from overwriting pending status on interactive tool calls
+
 ---
 
 ## [0.15.0] - 2026-03-17

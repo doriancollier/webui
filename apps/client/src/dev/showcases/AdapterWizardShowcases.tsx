@@ -117,9 +117,9 @@ const SLACK_MANIFEST: AdapterManifest = {
 
 /** Filled config values for demos that need populated data. */
 const FILLED_VALUES: Record<string, unknown> = {
-  botToken: 'xoxb-1234567890-abcdefghijklmnop',
-  appToken: 'xapp-1-ABCDEFGHIJK-9876543210-xyz',
-  signingSecret: 'a1b2c3d4e5f6g7h8i9j0',
+  botToken: 'placeholder-bot-token-for-demo',
+  appToken: 'placeholder-app-token-for-demo',
+  signingSecret: 'placeholder-signing-secret',
   streaming: true,
   typingIndicator: 'reaction',
 };

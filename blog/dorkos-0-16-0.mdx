@@ -1,0 +1,42 @@
+---
+title: DorkOS 0.16.0
+description: Interactive tool approval, standardized form fields, and resilient streaming
+date: 2026-03-18
+author: DorkOS Team
+category: release
+tags: [release, relay, ui, forms]
+---
+
+DorkOS 0.16.0 brings interactive tool approval to relay adapters, standardizes form fields across the UI, and fixes several streaming reliability issues.
+
+## Highlights
+
+**Interactive Tool Approval** — Slack and Telegram adapters now surface tool approval cards inline, so headless agent sessions can request human confirmation without stalling. The stream buffer is flushed before posting approval cards to ensure consistent ordering.
+
+**Standardized Form Fields** — New Shadcn Field, SettingRow, and PasswordInput primitives unify form styling across Settings, Relay configuration, and agent registration. A dedicated Forms page in the dev playground showcases all patterns.
+
+**Resilient Streaming** — The SDK retry loop no longer spins infinitely on persistent errors; failures are now surfaced to adapters with actionable context. Tool call status updates no longer overwrite pending interactive states.
+
+## All Changes
+
+### Added
+
+- Standardize form fields with Shadcn Field, SettingRow, and PasswordInput
+- Add interactive tool approval for Slack and Telegram adapters
+- Add dedicated Forms page and split registry into per-page section files
+- Add data path debug toggles for cross-client sync and message polling
+- Add unified input zone for interactive cards
+- Add 4 sidebar component showcases to dev playground
+
+### Fixed
+
+- Flush stream buffer before posting tool approval cards
+- Move empty-stream and retry-depth tests into sendMessage() describe block
+- Break infinite SDK retry loop and surface errors to adapters
+- Prevent tool_call_end from overwriting pending status on interactive tool calls
+
+## Install / Update
+
+```
+npm install -g dorkos@0.16.0
+```
