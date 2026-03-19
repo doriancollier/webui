@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Prevent session remap flash and merge consecutive assistant JSONL entries
 - Eliminate message flash and disappearing errors on stream completion
 - Pause background-tab polling for always-on query hooks
 - Add hourglass reaction immediately and clean up orphaned reactions

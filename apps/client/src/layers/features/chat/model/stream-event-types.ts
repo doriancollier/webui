@@ -42,6 +42,8 @@ export interface StreamEventDeps {
   >;
   onSessionIdChangeRef: React.MutableRefObject<((newSessionId: string) => void) | undefined>;
   onStreamingDoneRef: React.MutableRefObject<(() => void) | undefined>;
+  /** Set to true before `onSessionIdChange` in done handler to signal that the session change is a remap, not navigation. */
+  isRemappingRef: React.MutableRefObject<boolean>;
 }
 
 /** Context object passed to extracted handler functions. */

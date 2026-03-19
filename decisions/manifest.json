@@ -1,7 +1,52 @@
 {
   "version": 1,
-  "nextNumber": 145,
+  "nextNumber": 150,
   "decisions": [
+    {
+      "number": 149,
+      "slug": "three-phase-streaming-integrity-implementation",
+      "title": "Three-Phase Implementation for Streaming Message Integrity",
+      "status": "draft",
+      "created": "2026-03-19",
+      "extractedFrom": "streaming-message-integrity",
+      "specSlug": "streaming-message-integrity"
+    },
+    {
+      "number": 148,
+      "slug": "server-echo-id-for-client-server-reconciliation",
+      "title": "Server-Echo Message ID for Client-Server ID Reconciliation",
+      "status": "draft",
+      "created": "2026-03-19",
+      "extractedFrom": "streaming-message-integrity",
+      "specSlug": "streaming-message-integrity"
+    },
+    {
+      "number": 147,
+      "slug": "extend-transcript-parser-for-error-subagent-hook",
+      "title": "Extend Transcript Parser to Extract Error/Subagent/Hook Parts",
+      "status": "draft",
+      "created": "2026-03-19",
+      "extractedFrom": "streaming-message-integrity",
+      "specSlug": "streaming-message-integrity"
+    },
+    {
+      "number": 146,
+      "slug": "skip-post-stream-replace-for-message-stability",
+      "title": "Skip Post-Stream Replace for Message Stability",
+      "status": "draft",
+      "created": "2026-03-19",
+      "extractedFrom": "streaming-message-integrity",
+      "specSlug": "streaming-message-integrity"
+    },
+    {
+      "number": 145,
+      "slug": "streaming-message-tag-for-client-id-dedup",
+      "title": "Use _streaming Boolean Flag for Client-ID Dedup",
+      "status": "draft",
+      "created": "2026-03-19",
+      "extractedFrom": "streaming-message-integrity",
+      "specSlug": "streaming-message-integrity"
+    },
     {
       "number": 144,
       "slug": "use-html-parse-mode-for-telegram-formatting",

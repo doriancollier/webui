@@ -188,16 +188,16 @@ router.post('/:id/messages', async (req, res) => {
 
   try {
     for await (const event of runtime.sendMessage(sessionId, content, { cwd })) {
-      await sendSSEEvent(res, event);
-
-      // If the backend assigned a different internal session ID, track it.
-      // Also include server-assigned message IDs for client-server ID reconciliation.
+      // Intercept the done event to enrich it with server-assigned message IDs
+      // and session ID remap info, rather than sending a second done event.
       if (event.type === 'done') {
         const actualInternalId = runtime.getInternalSessionId(sessionId);
         const lookupId = actualInternalId ?? sessionId;
         const lastMsgIds = await runtime.getLastMessageIds(lookupId);
 
-        const donePayload: Record<string, unknown> = {};
+        const donePayload: Record<string, unknown> = {
+          ...(event.data && typeof event.data === 'object' ? event.data : {}),
+        };
 
         if (actualInternalId && actualInternalId !== sessionId) {
           logger.debug('[POST /messages] session ID remapped', {
@@ -211,13 +211,11 @@ router.post('/:id/messages', async (req, res) => {
           donePayload.messageIds = lastMsgIds;
         }
 
-        if (Object.keys(donePayload).length > 0) {
-          await sendSSEEvent(res, {
-            type: 'done',
-            data: donePayload,
-          });
-        }
+        await sendSSEEvent(res, { type: 'done', data: donePayload });
+        continue;
       }
+
+      await sendSSEEvent(res, event);
     }
   } catch (err) {
     logger.warn('[POST /messages] SSE stream error', {

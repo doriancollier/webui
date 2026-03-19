@@ -54,6 +54,7 @@ function createDeps() {
     onTaskEventRef,
     onSessionIdChangeRef,
     onStreamingDoneRef,
+    isRemappingRef: { current: false },
   });
 
   return {

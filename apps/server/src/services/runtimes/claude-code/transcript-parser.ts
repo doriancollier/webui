@@ -455,5 +455,39 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
     }
   }
 
-  return messages;
+  return mergeConsecutiveAssistantMessages(messages);
+}
+
+/**
+ * Merge consecutive assistant messages into a single message per turn.
+ *
+ * The SDK may emit separate JSONL entries for thinking and text blocks within
+ * a single assistant turn. The client's streaming model treats these as one
+ * message with multiple parts, so the parser must do the same to prevent
+ * duplicates when history loads.
+ *
+ * Uses the last message's ID so that `getLastMessageIds()` returns the correct
+ * value for Phase 3 client-server ID reconciliation.
+ */
+function mergeConsecutiveAssistantMessages(messages: HistoryMessage[]): HistoryMessage[] {
+  const merged: HistoryMessage[] = [];
+  for (const msg of messages) {
+    const prev = merged[merged.length - 1];
+    if (prev && prev.role === 'assistant' && msg.role === 'assistant') {
+      prev.id = msg.id;
+      prev.parts = [...(prev.parts ?? []), ...(msg.parts ?? [])];
+      if (msg.content) {
+        prev.content = prev.content ? prev.content + '\n' + msg.content : msg.content;
+      }
+      if (msg.toolCalls) {
+        prev.toolCalls = [...(prev.toolCalls ?? []), ...msg.toolCalls];
+      }
+      if (msg.timestamp) prev.timestamp = msg.timestamp;
+    } else {
+      const copy = { ...msg };
+      if (copy.parts) copy.parts = [...copy.parts];
+      merged.push(copy);
+    }
+  }
+  return merged;
 }

@@ -153,6 +153,10 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const messagesRef = useRef<ChatMessage[]>(messages);
   // Tracks the optimistic user message ID so it can be removed on error
   const pendingUserIdRef = useRef<string | null>(null);
+  // Signals that a sessionId change is a server remap (not user navigation).
+  // Set synchronously in the done handler BEFORE onSessionIdChange fires,
+  // so the session change effect can skip clearing messages.
+  const isRemappingRef = useRef(false);
 
   // Keep refs in sync with state
   useEffect(() => {
@@ -243,6 +247,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         onTaskEventRef,
         onSessionIdChangeRef,
         onStreamingDoneRef,
+        isRemappingRef,
       }),
 
     [sessionId, setSystemStatusWithClear]
@@ -266,8 +271,18 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
 
   // Reset history seed flag when session or cwd changes.
   // Don't clear messages during streaming — preserves state during
-  // create-on-first-message (null → clientId) and done redirect (clientId → sdkId).
+  // create-on-first-message (null → clientId).
+  // Don't clear messages during remap — the done handler sets isRemappingRef
+  // before changing sessionId (clientId → sdkId); we keep messages and force
+  // Branch 2 (incremental dedup) so tagged-dedup reconciles IDs correctly.
   useEffect(() => {
+    if (isRemappingRef.current) {
+      isRemappingRef.current = false;
+      // Force incremental dedup path (Branch 2) — messages are preserved,
+      // and the tagged-dedup logic will reconcile IDs when history loads.
+      historySeededRef.current = true;
+      return;
+    }
     historySeededRef.current = false;
     if (statusRef.current !== 'streaming') {
       setMessages([]);
@@ -338,9 +353,15 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         ) {
           // Carry over client-only parts that the server version lacks
           const serverMapped = mapHistoryMessage(serverMsg);
-          // Carry over subagent parts — the transcript parser may not yet return them
+          // Carry over subagent parts not already in the server response (the
+          // transcript parser may or may not extract them depending on SDK version).
+          const serverSubagentIds = new Set(
+            serverMapped.parts
+              .filter((p) => p.type === 'subagent')
+              .map((p) => p.taskId),
+          );
           const clientOnlyParts = taggedAssistant.parts.filter(
-            (p) => p.type === 'subagent',
+            (p) => p.type === 'subagent' && !serverSubagentIds.has(p.taskId),
           );
           const mergedParts =
             clientOnlyParts.length > 0
@@ -580,7 +601,12 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     [] // Refs are stable
   );
 
-  const isLoadingHistory = historyQuery.isLoading;
+  // Only show loading when we have no local messages to display.
+  // During session ID remap (clientId → sdkId), messages are preserved in
+  // local state but the query key changes — causing isLoading to briefly
+  // become true. Without this guard, ChatPanel swaps in a loading spinner
+  // and the messages "flash" despite being available in local state.
+  const isLoadingHistory = historyQuery.isLoading && messages.length === 0;
 
   const pendingInteractions = useMemo(() => {
     return messages

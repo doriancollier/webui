@@ -53,6 +53,7 @@ function createMinimalDeps() {
     onTaskEventRef,
     onSessionIdChangeRef,
     onStreamingDoneRef,
+    isRemappingRef: { current: false },
   });
 
   return { handler, currentPartsRef, setMessages, setError, setStatus };

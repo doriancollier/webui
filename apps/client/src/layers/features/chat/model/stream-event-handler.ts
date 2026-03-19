@@ -258,7 +258,9 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         if (doneData.sessionId && doneData.sessionId !== sessionId) {
           currentPartsRef.current = [];
           assistantCreatedRef.current = false;
-          // Keep messages on screen — tagged-dedup handles ID reconciliation
+          // Signal that this sessionId change is a remap — the session change effect
+          // must NOT clear messages (ref is read synchronously before the next render).
+          deps.isRemappingRef.current = true;
           onSessionIdChangeRef.current?.(doneData.sessionId);
         }
 

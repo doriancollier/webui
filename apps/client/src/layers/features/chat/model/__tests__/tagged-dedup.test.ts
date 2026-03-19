@@ -71,8 +71,13 @@ function runTaggedDedup(
       serverMsg.role === 'assistant'
     ) {
       const serverMapped = mapHistoryMessage(serverMsg);
+      const serverSubagentIds = new Set(
+        serverMapped.parts
+          .filter((p) => p.type === 'subagent')
+          .map((p) => p.taskId),
+      );
       const clientOnlyParts = taggedAssistant.parts.filter(
-        (p) => p.type === 'subagent',
+        (p) => p.type === 'subagent' && !serverSubagentIds.has(p.taskId),
       );
       const mergedParts =
         clientOnlyParts.length > 0
@@ -224,6 +229,57 @@ describe('tagged-dedup in seed effect Branch 2', () => {
     const subagentInResult = asst.parts.find((p) => p.type === 'subagent');
     expect(subagentInResult).toBeDefined();
     expect(subagentInResult).toMatchObject({ type: 'subagent', taskId: 'task-1' });
+  });
+
+  it('does not duplicate subagent parts when server already includes them', () => {
+    const clientUserId = 'pending-user-abc';
+    const clientAsstId = 'pending-asst-xyz';
+    const subagentPart: MessagePart = {
+      type: 'subagent',
+      taskId: 'task-1',
+      description: 'Running tests',
+      status: 'complete',
+    };
+    const current: ChatMessage[] = [
+      {
+        id: clientUserId,
+        role: 'user',
+        content: 'Run tests',
+        parts: [{ type: 'text', text: 'Run tests' }],
+        timestamp: '',
+        _streaming: true,
+      },
+      {
+        id: clientAsstId,
+        role: 'assistant',
+        content: 'Done',
+        parts: [{ type: 'text', text: 'Done' }, subagentPart],
+        timestamp: '',
+        _streaming: true,
+      },
+    ];
+    // Server response includes the same subagent part (transcript parser extracted it)
+    const history: HistoryMessage[] = [
+      { id: 'server-user-1', role: 'user', content: 'Run tests' },
+      {
+        id: 'server-asst-1',
+        role: 'assistant',
+        content: 'Done',
+        parts: [
+          { type: 'text', text: 'Done' },
+          { type: 'subagent', taskId: 'task-1', description: 'Running tests', status: 'complete' },
+        ],
+      },
+    ];
+
+    runTaggedDedup(current, history, setMessages);
+
+    const result = applySetMessages(current, setMessagesCalls);
+    const asst = result[1];
+    // Should have exactly one subagent part, not two
+    const subagentParts = asst.parts.filter((p) => p.type === 'subagent');
+    expect(subagentParts).toHaveLength(1);
+    expect(subagentParts[0]).toMatchObject({ taskId: 'task-1' });
   });
 
   it('does not match when user content differs', () => {

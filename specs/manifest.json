@@ -1060,7 +1060,14 @@
       "title": "Relay Adapter System Code Quality & DRY Remediation",
       "created": "2026-03-18",
       "status": "specification"
+    },
+    {
+      "number": 150,
+      "slug": "streaming-message-integrity",
+      "title": "Streaming Message Integrity — Eliminate Post-Stream Replace",
+      "created": "2026-03-19",
+      "status": "specification"
     }
   ],
-  "nextNumber": 150
+  "nextNumber": 151
 }

@@ -30,6 +30,7 @@ function createMinimalDeps(overrides?: {
   const onSessionIdChangeRef = { current: onSessionIdChangeFn as ((newSessionId: string) => void) | undefined };
   const onStreamingDoneRef = { current: undefined };
   const thinkingStartRef = { current: null };
+  const isRemappingRef = { current: false };
 
   const handler = createStreamEventHandler({
     currentPartsRef,
@@ -57,6 +58,7 @@ function createMinimalDeps(overrides?: {
     onTaskEventRef,
     onSessionIdChangeRef,
     onStreamingDoneRef,
+    isRemappingRef,
   });
 
   return {
@@ -67,6 +69,7 @@ function createMinimalDeps(overrides?: {
     setMessages,
     onSessionIdChangeFn,
     onSessionIdChangeRef,
+    isRemappingRef,
   };
 }
 
@@ -75,7 +78,7 @@ describe('stream-event-handler — session remap on done event', () => {
     // Purpose: Tagged-dedup handles ID reconciliation, so messages must stay on screen
     // during session remap. The old setMessages([]) caused a blank flash.
     const onSessionIdChangeFn = vi.fn();
-    const { handler, currentPartsRef, assistantCreatedRef, setMessages } = createMinimalDeps({
+    const { handler, currentPartsRef, assistantCreatedRef, setMessages, isRemappingRef } = createMinimalDeps({
       sessionId: 'client-uuid',
       onSessionIdChange: onSessionIdChangeFn,
     });
@@ -91,6 +94,9 @@ describe('stream-event-handler — session remap on done event', () => {
     );
     expect(emptyArrayCalls).toHaveLength(0);
 
+    // isRemappingRef must be true so the session change effect skips clearing
+    expect(isRemappingRef.current).toBe(true);
+
     // Refs are still reset
     expect(currentPartsRef.current).toEqual([]);
     expect(assistantCreatedRef.current).toBe(false);
@@ -103,7 +109,7 @@ describe('stream-event-handler — session remap on done event', () => {
     // Purpose: Ensure the remap clear only triggers when sessionId actually changes.
     // Normal stream completion (no remap) must not wipe the message buffer.
     const onSessionIdChangeFn = vi.fn();
-    const { handler, currentPartsRef, assistantCreatedRef, setMessages } = createMinimalDeps({
+    const { handler, currentPartsRef, assistantCreatedRef, setMessages, isRemappingRef } = createMinimalDeps({
       sessionId: 'same-uuid',
       onSessionIdChange: onSessionIdChangeFn,
     });
@@ -118,6 +124,8 @@ describe('stream-event-handler — session remap on done event', () => {
     );
     expect(emptyArrayCalls).toHaveLength(0);
     expect(onSessionIdChangeFn).not.toHaveBeenCalled();
+    // isRemappingRef should remain false — no remap occurred
+    expect(isRemappingRef.current).toBe(false);
   });
 });
 
