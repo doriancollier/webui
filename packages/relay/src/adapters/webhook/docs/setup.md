@@ -117,7 +117,7 @@ SIGNATURE=$(echo -n "${TIMESTAMP}.${BODY}" | \
   openssl dgst -sha256 -hmac "${SECRET}" | cut -d' ' -f2)
 
 # Send the request
-curl -X POST "http://localhost:4242/api/relay/webhooks/${ADAPTER_ID}" \
+curl -X POST "http://localhost:6242/api/relay/webhooks/${ADAPTER_ID}" \
   -H "Content-Type: application/json" \
   -H "X-Signature: ${SIGNATURE}" \
   -H "X-Timestamp: ${TIMESTAMP}" \

@@ -42,7 +42,7 @@ Create a new browser test using a 5-phase explore-first loop. Never guess select
 
 Navigate the feature step-by-step as a real user would. At **each** meaningful state change:
 
-1. `mcp__playwright__browser_navigate` to `http://localhost:4241` (or the relevant page)
+1. `mcp__playwright__browser_navigate` to `http://localhost:6241` (or the relevant page)
 2. `mcp__playwright__browser_snapshot` to capture the accessibility tree
 3. Document: element roles, names, testids, hierarchy, loading indicators, conditional rendering
 4. Note timing: what loads immediately, what appears after an SSE event or API call, what animates

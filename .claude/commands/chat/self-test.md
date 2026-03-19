@@ -15,7 +15,7 @@ Parse `$ARGUMENTS` for two optional inputs:
 
 1. **URL**: Any argument starting with `http` — use as `TEST_URL`. Default:
    ```
-   TEST_URL="http://localhost:4241/?dir=/Users/doriancollier/Keep/temp/empty"
+   TEST_URL="http://localhost:6241/?dir=/Users/doriancollier/Keep/temp/empty"
    ```
 
 2. **Focus areas**: An argument starting with `focus:` — comma-separated list of specific areas to test. Examples:
@@ -79,17 +79,17 @@ RESULTS_FILE="$RESULTS_DIR/$TIMESTAMP.md"
 Parse `$ARGUMENTS`. If a URL starting with `http` is provided, use it as `TEST_URL`. Default:
 
 ```
-TEST_URL="http://localhost:4241/?dir=/Users/doriancollier/Keep/temp/empty"
+TEST_URL="http://localhost:6241/?dir=/Users/doriancollier/Keep/temp/empty"
 ```
 
 Extract the `dir` query param value from `TEST_URL` for JSONL resolution later.
 
-Verify the dev server is up. Try multiple ports since the server may run on `DORKOS_PORT` (from `.env`), the default 4242 (when `.env` isn't loaded), or be proxied through Vite on 4241:
+Verify the dev server is up. Try multiple ports since the server may run on `DORKOS_PORT` (from `.env`), the default 4242 (when `.env` isn't loaded), or be proxied through Vite on 6241:
 
 ```bash
-DORKOS_PORT="${DORKOS_PORT:-6942}"
+DORKOS_PORT="${DORKOS_PORT:-6242}"
 # Try configured port first, then default, then Vite proxy
-for port in $DORKOS_PORT 4242 4241; do
+for port in $DORKOS_PORT 4242 6241; do
   if curl -sf "http://localhost:$port/api/health" | grep -q '"ok"'; then
     API_PORT=$port
     echo "Server found on port $port"
@@ -460,7 +460,7 @@ All checks passed. No bugs or significant issues found.
 - **Model selector:** `ModelItem` in `StatusLine` — opens a `ResponsiveDropdownMenu`.
 - **Permission mode selector:** `PermissionModeItem` in `StatusLine` — 4 options available.
 - **New session button:** Plus icon in `SessionSidebar`.
-- **API port:** `DORKOS_PORT` env var — default is 4242; user config may override (e.g., 6942 via `.env`). The Vite dev server on 4241 proxies `/api` to the backend.
+- **API port:** `DORKOS_PORT` env var — dev convention is 6242 (via `.env`), production default is 4242. The Vite dev server on 6241 proxies `/api` to the backend.
 - **Streaming:** The web client always uses direct SSE — the POST response body IS the SSE stream (no Relay mediation). A separate persistent EventSource handles cross-client `sync_update` events only (see ADR-0117).
 - **Streaming complete signal:** Stop button present during streaming, gone when done.
 - **SSE event types to watch:** `text_delta`, `tool_call_start`, `tool_call_end`, `tool_result`, `task_update`, `done`.

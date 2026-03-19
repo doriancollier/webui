@@ -4,8 +4,8 @@
 
 Start the server and visit:
 
-- **Scalar UI**: [http://localhost:4242/api/docs](http://localhost:4242/api/docs) - interactive API explorer
-- **Raw spec**: [http://localhost:4242/api/openapi.json](http://localhost:4242/api/openapi.json) - OpenAPI 3.1 JSON
+- **Scalar UI**: [http://localhost:6242/api/docs](http://localhost:6242/api/docs) - interactive API explorer
+- **Raw spec**: [http://localhost:6242/api/openapi.json](http://localhost:6242/api/openapi.json) - OpenAPI 3.1 JSON
 
 ## How Schemas Work
 
@@ -226,7 +226,7 @@ Other relevant environment variables:
 
 | Variable              | Default | Description                                                  |
 | --------------------- | ------- | ------------------------------------------------------------ |
-| `DORKOS_PORT`         | `4242`  | Express server port                                          |
+| `DORKOS_PORT`         | `4242` (dev: `6242`)  | Express server port                                          |
 | `DORKOS_CORS_ORIGIN`  | `*`     | CORS `Access-Control-Allow-Origin` value. Set to a specific origin (e.g. `https://app.example.com`) to restrict cross-origin requests. |
 | `DORKOS_PULSE_ENABLED`| `false` | `/api/schedules/*` and `/api/runs/*` routes                  |
 
@@ -1166,7 +1166,7 @@ All DorkOS tools are registered on the external MCP server: core tools (ping, se
   "mcpServers": {
     "dorkos": {
       "type": "http",
-      "url": "http://localhost:4242/mcp"
+      "url": "http://localhost:6242/mcp"
     }
   }
 }
@@ -1179,7 +1179,7 @@ With API key:
   "mcpServers": {
     "dorkos": {
       "type": "http",
-      "url": "http://localhost:4242/mcp",
+      "url": "http://localhost:6242/mcp",
       "headers": {
         "Authorization": "Bearer your-api-key-here"
       }
@@ -1204,4 +1204,4 @@ Via ngrok tunnel:
 }
 ```
 
-**Cursor / Windsurf:** Add an MCP server in settings with URL `http://localhost:4242/mcp` and type `http`. If using an API key, configure the `Authorization: Bearer <key>` header in the MCP server settings.
+**Cursor / Windsurf:** Add an MCP server in settings with URL `http://localhost:6242/mcp` and type `http`. If using an API key, configure the `Authorization: Bearer <key>` header in the MCP server settings.

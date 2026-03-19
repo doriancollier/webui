@@ -22,7 +22,7 @@ cp .env.example .env  # Add your ANTHROPIC_API_KEY
 pnpm dev
 ```
 
-The client will be available at `http://localhost:3000` and the server at `http://localhost:4242`.
+The client will be available at `http://localhost:6241` and the server at `http://localhost:6242`.
 
 ## Monorepo Structure
 

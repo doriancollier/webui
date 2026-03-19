@@ -9,7 +9,7 @@ const VITE_PORT = process.env.VITE_PORT || '4241';
 // with the real server when both are running locally.
 const MOCK_PORT = process.env.DORKOS_MOCK_PORT || '4243';
 // Vite client for mock tests — proxies /api to MOCK_PORT instead of PORT.
-// NOTE: port 4244 is taken by @dorkos/site (Next.js marketing site).
+// NOTE: port 6244 is taken by @dorkos/site (Next.js marketing site).
 const MOCK_VITE_PORT = process.env.DORKOS_MOCK_VITE_PORT || '4248';
 /* eslint-enable no-restricted-syntax */
 

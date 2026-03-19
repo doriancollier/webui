@@ -75,8 +75,8 @@ Replace `your-domain.com` with your actual domain. The path must match the Relay
 
 For local development, use a tunnel service to expose your machine to the internet:
 
-- **[ngrok](https://ngrok.com/):** `ngrok http 4242` then use the generated `https://...ngrok-free.app` URL
-- **[Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/):** `cloudflared tunnel --url http://localhost:4242`
+- **[ngrok](https://ngrok.com/):** `ngrok http 6242` then use the generated `https://...ngrok-free.app` URL
+- **[Cloudflare Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/):** `cloudflared tunnel --url http://localhost:6242`
 
 Set the tunnel's HTTPS URL as the **Webhook URL** in the adapter config.
 

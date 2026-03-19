@@ -16,7 +16,7 @@ This plan covers manual and automated browser testing for all unreleased changes
 
 Validate the app boots and core layout renders after pnpm migration and App.tsx restructuring.
 
-- [x] App loads at `http://localhost:4241` without console errors
+- [x] App loads at `http://localhost:6241` without console errors
 - [x] Sidebar is visible with session list
 - [x] Chat panel is visible with message input (combobox "Message Claude...")
 - [x] Status bar renders at bottom of screen (toolbar "Session status")

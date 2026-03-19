@@ -43,7 +43,7 @@ Classify each test into one of four categories:
 
 For stale tests:
 
-1. Use Playwright MCP `mcp__playwright__browser_navigate` to visit the feature at `http://localhost:4241`
+1. Use Playwright MCP `mcp__playwright__browser_navigate` to visit the feature at `http://localhost:6241`
 2. Use `mcp__playwright__browser_snapshot` to capture the current accessibility tree
 3. Compare current selectors/structure with what the test expects
 4. Update POM locators or test assertions if they've drifted

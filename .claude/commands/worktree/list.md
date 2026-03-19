@@ -31,14 +31,14 @@ for dir in $(git worktree list --porcelain | grep '^worktree ' | awk '{print $2}
 done
 ```
 
-Note: The main worktree uses port 4242 (from `.env`), not the hash-derived port.
+Note: The main worktree uses port 6242 (from `.env`), not the hash-derived port.
 
 ## Output Format
 
 ```
 Worktrees
 
-  webui         → :4242 (main)           [main worktree]
+  webui         → :6242 (main)           [main worktree]
   webui-feat-x  → :4287 (feat-x)
   webui-feat-y  → :4312 (feat-y)
 ```

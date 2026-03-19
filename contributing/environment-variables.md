@@ -91,7 +91,7 @@ To add a new `VITE_*` var:
 | Variable                  | App            | Type              | Default                   | Description                                                                 |
 | ------------------------- | -------------- | ----------------- | ------------------------- | --------------------------------------------------------------------------- |
 | NODE_ENV                  | server         | string enum       | `development`             | Runtime environment mode                                                    |
-| DORKOS_PORT               | server         | number            | `4242`                    | Express server port                                                         |
+| DORKOS_PORT               | server         | number            | `4242` (dev: `6242`)      | Express server port                                                         |
 | DORKOS_HOST               | server         | string            | `localhost`               | Express server bind address. Set to `0.0.0.0` in Docker containers for port forwarding. |
 | DORKOS_DEFAULT_CWD        | server         | string \| undefined | —                       | Default working directory for new sessions                                  |
 | DORKOS_BOUNDARY           | server         | string \| undefined | —                       | Directory access boundary for file browsing security                        |

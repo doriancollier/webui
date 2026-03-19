@@ -292,7 +292,7 @@ This env var controls process-level Relay initialization and must be set before 
 
 ### DORKOS_CORS_ORIGIN
 
-Configures the `Access-Control-Allow-Origin` header on the Express server. When unset, defaults to localhost on `DORKOS_PORT` and `VITE_PORT` (4241). Set to `*` for wildcard, or a comma-separated list of origins to allow multiple production origins.
+Configures the `Access-Control-Allow-Origin` header on the Express server. When unset, defaults to localhost on `DORKOS_PORT` and `VITE_PORT` (code default 4241, dev convention 6241). Set to `*` for wildcard, or a comma-separated list of origins to allow multiple production origins.
 
 ```bash
 export DORKOS_CORS_ORIGIN=https://myapp.example.com

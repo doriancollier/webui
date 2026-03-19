@@ -27,9 +27,9 @@ AskUserQuestion:
   question: "What URL should I navigate to?"
   header: "URL"
   options:
-    - label: "localhost:4241"
+    - label: "localhost:6241"
       description: "Vite dev client (proxies /api to server)"
-    - label: "localhost:6942"
+    - label: "localhost:6242"
       description: "Express API server directly"
 ```
 
@@ -76,7 +76,7 @@ AskUserQuestion:
 
 ```bash
 # Check if dev server is running
-DORKOS_PORT="${DORKOS_PORT:-4242}"
+DORKOS_PORT="${DORKOS_PORT:-6242}"
 if ! curl -s "http://localhost:$DORKOS_PORT/api/health" > /dev/null 2>&1; then
   echo "⚠️  Dev server not responding on port $DORKOS_PORT. Check that 'pnpm dev' is running."
 fi

@@ -5,7 +5,7 @@ title: Homepage Design Review — Creative Panel
 # Homepage Design Review — Creative Panel
 
 **Date**: 2026-02-27
-**URL**: http://localhost:4244/
+**URL**: http://localhost:6244/
 **Panel**: David Ogilvy, Steve Jobs, Seth Godin, Jony Ive, Dan Wieden
 
 ## Process
@@ -122,7 +122,7 @@ Captured all 12 sections at 1440px viewport width via browser automation.
 7. **Villain closing statement** — Made larger/bolder (`text-xl font-medium`), added divider line above for visual weight.
 
 **Build verified**: `pnpm turbo build --filter=@dorkos/web --force` passed (69 static pages)
-**Browser verified**: All changes rendering correctly at localhost:4244
+**Browser verified**: All changes rendering correctly at localhost:6244
 
 ---
 
@@ -186,7 +186,7 @@ Captured all 12 sections at 1440px viewport width via browser automation.
 10. **Hero feed footer de-hedged** — "your agents could be doing all of this" → "With DorkOS running, this is your overnight log." Removed conditional doubt.
 
 **Build verified**: `pnpm turbo build --filter=@dorkos/web --force` passed
-**Browser verified**: All changes rendering correctly at localhost:4244 (desktop)
+**Browser verified**: All changes rendering correctly at localhost:6244 (desktop)
 
 ---
 

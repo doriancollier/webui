@@ -108,7 +108,7 @@ cp .env.example .env  # Add your ANTHROPIC_API_KEY
 pnpm dev
 ```
 
-This starts the Express server on port 4242 and the Vite dev server on port 4241.
+This starts the Express server on port 6242 and the Vite dev server on port 6241.
 
 ### Docker
 

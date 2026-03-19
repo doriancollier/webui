@@ -1297,9 +1297,9 @@ Expected: no errors
 dotenv -- turbo dev --filter=@dorkos/site
 ```
 
-Open http://localhost:4244/story -- verify all 6 sections render with correct content and animations.
+Open http://localhost:6244/story -- verify all 6 sections render with correct content and animations.
 
-Open http://localhost:4244/story?present=true -- verify:
+Open http://localhost:6244/story?present=true -- verify:
 - Fixed fullscreen container active
 - Sections snap to viewport on scroll
 - ArrowRight/Space advances slides

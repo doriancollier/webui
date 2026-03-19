@@ -105,7 +105,7 @@ Run a single test: `pnpm vitest run <path-to-test-file>`. Agent worktree command
 
 ### Server (`apps/server/src/`)
 
-Express server on `DORKOS_PORT` (default 4242). Routes obtain the active runtime via `runtimeRegistry.getDefault()`. The `AgentRuntime` interface (`packages/shared/src/agent-runtime.ts`) abstracts all agent backends. SDK interactions are confined to `services/runtimes/claude-code/` (enforced by ESLint).
+Express server on `DORKOS_PORT` (default 4242, dev convention 6242). Routes obtain the active runtime via `runtimeRegistry.getDefault()`. The `AgentRuntime` interface (`packages/shared/src/agent-runtime.ts`) abstracts all agent backends. SDK interactions are confined to `services/runtimes/claude-code/` (enforced by ESLint).
 
 **Service domains:** `services/core/` (shared infra), `services/runtimes/` (agent backends), `services/pulse/` (scheduling), `services/relay/` (messaging), `services/mesh/` (discovery), `services/discovery/` (filesystem scanning), `services/session/` (session management). API docs at `/api/docs`.
 
