@@ -229,6 +229,40 @@ export function clearCaches(): void {
 }
 
 /**
+ * Remove an eagerly-queued reaction when publish fails or is rejected.
+ *
+ * Removes the entry from the pending queue and issues a fire-and-forget
+ * reactions.remove call so the hourglass doesn't linger on a message
+ * that will never be processed.
+ */
+function removeQueuedReaction(
+  client: WebClient,
+  channelId: string,
+  messageTs: string,
+  pendingReactions: PendingReactions | undefined,
+  wasQueued: boolean,
+  logger: RelayLogger,
+): void {
+  if (!wasQueued) return;
+  if (pendingReactions) {
+    const queue = pendingReactions.get(channelId);
+    if (queue) {
+      const idx = queue.indexOf(messageTs);
+      if (idx !== -1) queue.splice(idx, 1);
+      if (queue.length === 0) pendingReactions.delete(channelId);
+    }
+  }
+  void client.reactions
+    .remove({ channel: channelId, name: 'hourglass_flowing_sand', timestamp: messageTs })
+    .catch((err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (!msg.includes('no_reaction')) {
+        logger.warn(`inbound: failed to remove queued typing reaction from ${channelId}:${messageTs}: ${msg}`);
+      }
+    });
+}
+
+/**
  * Handle an inbound Slack message and publish it to the Relay.
  *
  * Builds the subject from the channel ID, constructs a StandardPayload,
@@ -280,6 +314,38 @@ export async function handleInboundMessage(
   // Cap inbound content to prevent oversized payloads
   const content = event.text.slice(0, MAX_CONTENT_LENGTH);
 
+  // Add hourglass reaction immediately — before name resolution and publish
+  // so the user sees feedback within milliseconds of sending their message.
+  // Queue is populated synchronously so the outbound handler can find it
+  // when done/error arrives — even if the Slack API call is still in-flight.
+  let reactionQueued = false;
+  if (typingIndicator === 'reaction') {
+    if (pendingReactions) {
+      const queue = pendingReactions.get(event.channel) ?? [];
+      queue.push(event.ts);
+      pendingReactions.set(event.channel, queue);
+      reactionQueued = true;
+    }
+
+    client.reactions
+      .add({ channel: event.channel, name: 'hourglass_flowing_sand', timestamp: event.ts })
+      .then(() => {
+        logger.debug(`inbound: added typing reaction to ${event.channel}:${event.ts}`);
+      })
+      .catch((err) => {
+        // Remove from queue since the reaction was never actually added.
+        if (pendingReactions) {
+          const queue = pendingReactions.get(event.channel);
+          if (queue) {
+            const idx = queue.indexOf(event.ts);
+            if (idx !== -1) queue.splice(idx, 1);
+            if (queue.length === 0) pendingReactions.delete(event.channel);
+          }
+        }
+        logger.warn(`inbound: failed to add typing reaction to ${event.channel}:${event.ts}: ${err instanceof Error ? err.message : String(err)}`);
+      });
+  }
+
   const senderName = event.user
     ? await resolveUserName(client, event.user)
     : 'unknown';
@@ -320,43 +386,17 @@ export async function handleInboundMessage(
       const reason = result.rejected[0]?.reason ?? 'unknown';
       callbacks.recordError(new Error(`Publish rejected: ${reason}`));
       logger.warn(`inbound publish rejected for ${event.channel}: ${reason}`);
+      // Clean up the eagerly-added reaction since nothing will process this message
+      removeQueuedReaction(client, event.channel, event.ts, pendingReactions, reactionQueued, logger);
       return;
     }
 
     callbacks.trackInbound();
     logger.debug(`inbound from ${senderName} in ${event.channel}: "${content.slice(0, 80)}${content.length > 80 ? '\u2026' : ''}" (${content.length} chars) \u2192 ${subject}`);
-
-    // Add immediate hourglass reaction so the user knows the message was received,
-    // even if the agent is queued behind another in-flight request.
-    // Queue is populated synchronously so the outbound handler can find it
-    // when done/error arrives — even if the Slack API call is still in-flight.
-    if (typingIndicator === 'reaction') {
-      if (pendingReactions) {
-        const queue = pendingReactions.get(event.channel) ?? [];
-        queue.push(event.ts);
-        pendingReactions.set(event.channel, queue);
-      }
-
-      client.reactions
-        .add({ channel: event.channel, name: 'hourglass_flowing_sand', timestamp: event.ts })
-        .then(() => {
-          logger.debug(`inbound: added typing reaction to ${event.channel}:${event.ts}`);
-        })
-        .catch((err) => {
-          // Remove from queue since the reaction was never actually added.
-          if (pendingReactions) {
-            const queue = pendingReactions.get(event.channel);
-            if (queue) {
-              const idx = queue.indexOf(event.ts);
-              if (idx !== -1) queue.splice(idx, 1);
-              if (queue.length === 0) pendingReactions.delete(event.channel);
-            }
-          }
-          logger.warn(`inbound: failed to add typing reaction to ${event.channel}:${event.ts}: ${err instanceof Error ? err.message : String(err)}`);
-        });
-    }
   } catch (err) {
     callbacks.recordError(err);
     logger.warn(`inbound publish failed for ${event.channel}:`, err instanceof Error ? err.message : String(err));
+    // Clean up the eagerly-added reaction since nothing will process this message
+    removeQueuedReaction(client, event.channel, event.ts, pendingReactions, reactionQueued, logger);
   }
 }

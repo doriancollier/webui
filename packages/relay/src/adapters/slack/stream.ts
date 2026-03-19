@@ -148,7 +148,7 @@ export function removeTypingReaction(
  * that was added on the inbound side. Uses the FIFO queue to correlate
  * with the correct user message even when multiple messages are queued.
  */
-function removePendingReaction(
+export function removePendingReaction(
   client: WebClient,
   channelId: string,
   typingIndicator: 'none' | 'reaction',

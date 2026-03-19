@@ -28,6 +28,7 @@ import {
   handleError,
   flushStreamBuffer,
   wrapSlackCall,
+  removePendingReaction,
   STREAM_TTL_MS,
 } from './stream.js';
 import type { StreamContext } from './stream.js';
@@ -104,6 +105,10 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
   for (const [key, stream] of streamState) {
     if (startTime - stream.startedAt > STREAM_TTL_MS) {
       streamState.delete(key);
+      // Clean up the pending hourglass reaction that would otherwise linger forever
+      if (client) {
+        removePendingReaction(client, stream.channelId, opts.typingIndicator, pendingReactions, logger);
+      }
       logger.warn(`stream: reaped orphaned stream for ${key} (age: ${Math.round((startTime - stream.startedAt) / 1000)}s)`);
     }
   }
