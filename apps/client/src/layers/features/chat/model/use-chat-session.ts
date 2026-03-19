@@ -298,7 +298,68 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
 
     if (historySeededRef.current && !isStreaming) {
       const currentIds = new Set(messagesRef.current.map((m) => m.id));
-      const newMessages = history.filter((m) => !currentIds.has(m.id));
+      const taggedMessages = messagesRef.current.filter((m) => m._streaming);
+
+      // Find the tagged user message (if any) for content matching
+      const taggedUser = taggedMessages.find((m) => m.role === 'user');
+      const taggedAssistant = taggedMessages.find((m) => m.role === 'assistant');
+
+      const newMessages: typeof history = [];
+      let matchedUserIdx = -1;
+
+      for (let i = 0; i < history.length; i++) {
+        const serverMsg = history[i];
+        if (currentIds.has(serverMsg.id)) continue;
+
+        // Try to match tagged user message by exact content
+        if (
+          taggedUser &&
+          serverMsg.role === 'user' &&
+          serverMsg.content === taggedUser.content
+        ) {
+          matchedUserIdx = i;
+          // Replace tagged user with server version, clear tag
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === taggedUser.id
+                ? { ...mapHistoryMessage(serverMsg), _streaming: false }
+                : m,
+            ),
+          );
+          continue;
+        }
+
+        // Match tagged assistant by position (immediately after matched user)
+        if (
+          taggedAssistant &&
+          matchedUserIdx >= 0 &&
+          i === matchedUserIdx + 1 &&
+          serverMsg.role === 'assistant'
+        ) {
+          // Carry over client-only parts that the server version lacks
+          const serverMapped = mapHistoryMessage(serverMsg);
+          // Carry over subagent parts — the transcript parser may not yet return them
+          const clientOnlyParts = taggedAssistant.parts.filter(
+            (p) => p.type === 'subagent',
+          );
+          const mergedParts =
+            clientOnlyParts.length > 0
+              ? [...serverMapped.parts, ...clientOnlyParts]
+              : serverMapped.parts;
+
+          setMessages((prev) =>
+            prev.map((m) =>
+              m.id === taggedAssistant.id
+                ? { ...serverMapped, parts: mergedParts, _streaming: false }
+                : m,
+            ),
+          );
+          continue;
+        }
+
+        // No match — append as new message (existing behavior)
+        newMessages.push(serverMsg);
+      }
 
       if (newMessages.length > 0) {
         setMessages((prev) => [...prev, ...newMessages.map(mapHistoryMessage)]);
@@ -396,6 +457,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         content,
         parts: [{ type: 'text', text: content }],
         timestamp: new Date().toISOString(),
+        _streaming: true,
       },
     ]);
     if (clearInput) setInput('');
@@ -427,16 +489,9 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         (event) => streamEventHandler(event.type, event.data, assistantIdRef.current),
         abortController.signal,
         selectedCwd ?? undefined,
+        { clientMessageId: pendingUserId },
       );
-      // Reset seed flag so the next history fetch does a full replace instead of
-      // an incremental append. This prevents ID-mismatch duplicates: the streaming
-      // assistant has a client-generated UUID while history has an SDK-assigned UUID.
-      historySeededRef.current = false;
       pendingUserIdRef.current = null;
-      // Invalidate broadly to cover session ID remaps (client UUID → SDK UUID).
-      // The old targetSessionId may differ from the SDK-assigned ID returned in
-      // the done event, so a narrow key would miss the active query.
-      queryClient.invalidateQueries({ queryKey: ['messages'] });
       setStatus('idle');
     } catch (err) {
       // Remove optimistic user message on error — must not linger if delivery fails

@@ -378,6 +378,37 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     return this.transcriptReader.getTranscriptETag(projectDir, sessionId);
   }
 
+  /** @inheritdoc */
+  async getLastMessageIds(
+    sessionId: string,
+  ): Promise<{ user: string; assistant: string } | null> {
+    try {
+      const session = this.findSession(sessionId);
+      const projectDir = session?.cwd ?? this.cwd;
+      const messages = await this.transcriptReader.readTranscript(projectDir, sessionId);
+      if (!messages.length) return null;
+
+      let lastUser: string | null = null;
+      let lastAssistant: string | null = null;
+
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const m = messages[i];
+        if (!lastAssistant && m.role === 'assistant') lastAssistant = m.id;
+        if (!lastUser && m.role === 'user') lastUser = m.id;
+        if (lastUser && lastAssistant) break;
+      }
+
+      if (!lastUser || !lastAssistant) return null;
+      return { user: lastUser, assistant: lastAssistant };
+    } catch (err) {
+      logger.warn('[getLastMessageIds] failed to read transcript', {
+        sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return null;
+    }
+  }
+
   /** Read new content from a session transcript starting at a byte offset. */
   async readFromOffset(
     projectDir: string,

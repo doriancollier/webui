@@ -71,11 +71,9 @@ function createMinimalDeps(overrides?: {
 }
 
 describe('stream-event-handler — session remap on done event', () => {
-  it('clears messages and resets refs when done event carries a new sessionId', () => {
-    // Purpose: Regression for Bug #1 — when the server remaps the session UUID in the
-    // done event, the client must clear the streaming buffer so history is the sole
-    // source of truth. Without this, the streaming assistant message (client UUID) and
-    // the history copy (SDK UUID) both render, creating a duplicate.
+  it('preserves messages and resets refs when done event carries a new sessionId', () => {
+    // Purpose: Tagged-dedup handles ID reconciliation, so messages must stay on screen
+    // during session remap. The old setMessages([]) caused a blank flash.
     const onSessionIdChangeFn = vi.fn();
     const { handler, currentPartsRef, assistantCreatedRef, setMessages } = createMinimalDeps({
       sessionId: 'client-uuid',
@@ -87,14 +85,18 @@ describe('stream-event-handler — session remap on done event', () => {
 
     handler('done', { sessionId: 'sdk-uuid' }, 'some-assistant-id');
 
-    expect(setMessages).toHaveBeenCalledWith([]);
+    // Messages should NOT be cleared — tagged-dedup handles reconciliation
+    const emptyArrayCalls = setMessages.mock.calls.filter(
+      (call) => Array.isArray(call[0]) && call[0].length === 0,
+    );
+    expect(emptyArrayCalls).toHaveLength(0);
+
+    // Refs are still reset
     expect(currentPartsRef.current).toEqual([]);
     expect(assistantCreatedRef.current).toBe(false);
-    expect(onSessionIdChangeFn).toHaveBeenCalledWith('sdk-uuid');
 
-    const setMessagesOrder = setMessages.mock.invocationCallOrder[0];
-    const onChangeFnOrder = onSessionIdChangeFn.mock.invocationCallOrder[0];
-    expect(setMessagesOrder).toBeLessThan(onChangeFnOrder);
+    // Session change callback still fires
+    expect(onSessionIdChangeFn).toHaveBeenCalledWith('sdk-uuid');
   });
 
   it('does not clear messages on done event when sessionId is unchanged', () => {
@@ -116,5 +118,98 @@ describe('stream-event-handler — session remap on done event', () => {
     );
     expect(emptyArrayCalls).toHaveLength(0);
     expect(onSessionIdChangeFn).not.toHaveBeenCalled();
+  });
+});
+
+describe('stream-event-handler — client ID remap via done event messageIds', () => {
+  it('calls setMessages with mapper when done event includes messageIds', () => {
+    const { handler, setMessages } = createMinimalDeps({ sessionId: 'test-session' });
+
+    handler('done', {
+      messageIds: { user: 'server-user-1', assistant: 'server-asst-1' },
+    }, 'client-asst-id');
+
+    const mapperCalls = setMessages.mock.calls.filter(
+      (call) => typeof call[0] === 'function',
+    );
+    expect(mapperCalls.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('mapper remaps _streaming user message to server ID', () => {
+    const { handler, setMessages } = createMinimalDeps({ sessionId: 'test-session' });
+
+    handler('done', {
+      messageIds: { user: 'server-user-1', assistant: 'server-asst-1' },
+    }, 'client-asst-id');
+
+    // Find the mapper call for messageIds remap and apply it
+    const mapperCalls = setMessages.mock.calls.filter(
+      (call) => typeof call[0] === 'function',
+    );
+    const mapper = mapperCalls[0][0] as (prev: { id: string; role: string; _streaming?: boolean }[]) => { id: string; role: string; _streaming?: boolean }[];
+
+    const prev = [
+      { id: 'pending-user-uuid', role: 'user', _streaming: true },
+      { id: 'pending-asst-uuid', role: 'assistant', _streaming: true },
+    ];
+    const result = mapper(prev);
+
+    expect(result[0].id).toBe('server-user-1');
+    expect(result[0]._streaming).toBe(false);
+    expect(result[1].id).toBe('server-asst-1');
+    expect(result[1]._streaming).toBe(false);
+  });
+
+  it('mapper leaves non-streaming messages unchanged', () => {
+    const { handler, setMessages } = createMinimalDeps({ sessionId: 'test-session' });
+
+    handler('done', {
+      messageIds: { user: 'server-user-1', assistant: 'server-asst-1' },
+    }, 'client-asst-id');
+
+    const mapperCalls = setMessages.mock.calls.filter(
+      (call) => typeof call[0] === 'function',
+    );
+    const mapper = mapperCalls[0][0] as (prev: { id: string; role: string; _streaming?: boolean }[]) => { id: string; role: string; _streaming?: boolean }[];
+
+    const prev = [{ id: 'stable-id', role: 'user', _streaming: false }];
+    const result = mapper(prev);
+
+    expect(result[0].id).toBe('stable-id');
+  });
+
+  it('does not call a messageIds mapper when messageIds is absent', () => {
+    const { handler, setMessages } = createMinimalDeps({ sessionId: 'test-session' });
+
+    handler('done', {}, 'client-asst-id');
+
+    // No function-form setMessages call should originate from messageIds logic
+    // (the done handler has no other functional setMessages calls)
+    const mapperCalls = setMessages.mock.calls.filter(
+      (call) => typeof call[0] === 'function',
+    );
+    expect(mapperCalls).toHaveLength(0);
+  });
+
+  it('handles remap and messageIds together in one done event', () => {
+    const onSessionIdChangeFn = vi.fn();
+    const { handler, setMessages } = createMinimalDeps({
+      sessionId: 'client-session',
+      onSessionIdChange: onSessionIdChangeFn,
+    });
+
+    handler('done', {
+      sessionId: 'server-session',
+      messageIds: { user: 'u1', assistant: 'a1' },
+    }, 'client-asst-id');
+
+    // Session callback fires
+    expect(onSessionIdChangeFn).toHaveBeenCalledWith('server-session');
+
+    // messageIds mapper also applied
+    const mapperCalls = setMessages.mock.calls.filter(
+      (call) => typeof call[0] === 'function',
+    );
+    expect(mapperCalls.length).toBeGreaterThanOrEqual(1);
   });
 });

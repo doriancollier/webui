@@ -171,6 +171,17 @@ export interface AgentRuntime {
   getSessionETag(projectDir: string, sessionId: string): Promise<string | null>;
 
   /**
+   * Return the JSONL-assigned message IDs for the last user and assistant
+   * messages in a session. Used for client-server ID reconciliation.
+   *
+   * @param sessionId - Session to query
+   * @returns ID pair or null if not available
+   */
+  getLastMessageIds(
+    sessionId: string,
+  ): Promise<{ user: string; assistant: string } | null>;
+
+  /**
    * Read new content from a session transcript starting at a byte offset.
    *
    * @param projectDir - Project directory for transcript lookup

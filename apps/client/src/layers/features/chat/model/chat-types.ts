@@ -10,6 +10,8 @@ export interface ChatMessage {
   messageType?: 'command' | 'compaction';
   commandName?: string;
   commandArgs?: string;
+  /** @internal Client-only tag for streaming messages awaiting server ID reconciliation. */
+  _streaming?: boolean;
 }
 
 /** Client-side view of a single hook execution attached to a tool call. */

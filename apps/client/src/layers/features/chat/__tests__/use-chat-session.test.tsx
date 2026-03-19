@@ -457,7 +457,8 @@ describe('useChatSession', () => {
       'Hello',
       expect.any(Function),
       expect.any(AbortSignal),
-      '/test/cwd'
+      '/test/cwd',
+      expect.objectContaining({ clientMessageId: expect.any(String) })
     );
   });
 

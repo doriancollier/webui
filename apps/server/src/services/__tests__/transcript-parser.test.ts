@@ -249,3 +249,174 @@ describe('buildCommandMessage', () => {
     expect(typeof msg.id).toBe('string');
   });
 });
+
+describe('parseTranscript error/subagent extraction', () => {
+  it('extracts error blocks from JSONL as ErrorPart', () => {
+    const lines = [
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-1',
+        message: {
+          role: 'assistant',
+          content: [
+            { type: 'text', text: 'Attempting to run...' },
+            {
+              type: 'error',
+              message: 'Hook validation failed',
+              category: 'execution_error',
+            },
+          ],
+        },
+      }),
+    ];
+    const messages = parseTranscript(lines);
+    expect(messages).toHaveLength(1);
+    expect(messages[0].parts).toHaveLength(2);
+    const errorPart = messages[0].parts!.find((p) => p.type === 'error');
+    expect(errorPart).toEqual({
+      type: 'error',
+      message: 'Hook validation failed',
+      category: 'execution_error',
+      details: undefined,
+    });
+  });
+
+  it('extracts subagent blocks from JSONL as SubagentPart', () => {
+    const lines = [
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-2',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'subagent',
+              task_id: 'task-abc',
+              description: 'Running tests',
+              status: 'complete',
+              tool_uses: 3,
+              last_tool_name: 'Bash',
+              duration_ms: 5000,
+              summary: 'All tests passed',
+            },
+          ],
+        },
+      }),
+    ];
+    const messages = parseTranscript(lines);
+    expect(messages).toHaveLength(1);
+    const subagentPart = messages[0].parts!.find((p) => p.type === 'subagent');
+    expect(subagentPart).toEqual({
+      type: 'subagent',
+      taskId: 'task-abc',
+      description: 'Running tests',
+      status: 'complete',
+      toolUses: 3,
+      lastToolName: 'Bash',
+      durationMs: 5000,
+      summary: 'All tests passed',
+    });
+  });
+
+  it('preserves existing text/thinking/tool_use extraction alongside new types', () => {
+    const lines = [
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-4',
+        message: {
+          role: 'assistant',
+          content: [
+            { type: 'thinking', thinking: 'Let me think...' },
+            { type: 'text', text: 'Here is the result' },
+            { type: 'error', message: 'Non-fatal issue' },
+          ],
+        },
+      }),
+    ];
+    const messages = parseTranscript(lines);
+    expect(messages).toHaveLength(1);
+    expect(messages[0].parts).toHaveLength(3);
+    expect(messages[0].parts![0].type).toBe('thinking');
+    expect(messages[0].parts![1].type).toBe('text');
+    expect(messages[0].parts![2].type).toBe('error');
+  });
+
+  it('handles missing optional fields with safe defaults', () => {
+    const lines = [
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-5',
+        message: {
+          role: 'assistant',
+          content: [
+            { type: 'error' },
+            { type: 'subagent' },
+          ],
+        },
+      }),
+    ];
+    const messages = parseTranscript(lines);
+    expect(messages).toHaveLength(1);
+    expect(messages[0].parts).toHaveLength(2);
+    const errorPart = messages[0].parts![0];
+    expect(errorPart).toMatchObject({ type: 'error', message: '' });
+    const subPart = messages[0].parts![1];
+    expect(subPart).toMatchObject({
+      type: 'subagent',
+      taskId: '',
+      description: '',
+      status: 'running',
+    });
+  });
+
+  it('extracts error details when present', () => {
+    const lines = [
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-6',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'error',
+              message: 'Budget exceeded',
+              category: 'budget_exceeded',
+              details: 'Used 150% of allocated tokens',
+            },
+          ],
+        },
+      }),
+    ];
+    const messages = parseTranscript(lines);
+    const errorPart = messages[0].parts!.find((p) => p.type === 'error');
+    expect(errorPart).toEqual({
+      type: 'error',
+      message: 'Budget exceeded',
+      category: 'budget_exceeded',
+      details: 'Used 150% of allocated tokens',
+    });
+  });
+
+  it('uses task_id for subagent taskId, falling back to id', () => {
+    const lines = [
+      JSON.stringify({
+        type: 'assistant',
+        uuid: 'msg-7',
+        message: {
+          role: 'assistant',
+          content: [
+            {
+              type: 'subagent',
+              id: 'fallback-id',
+              description: 'Test task',
+              status: 'running',
+            },
+          ],
+        },
+      }),
+    ];
+    const messages = parseTranscript(lines);
+    const subPart = messages[0].parts!.find((p) => p.type === 'subagent');
+    expect(subPart).toMatchObject({ type: 'subagent', taskId: 'fallback-id' });
+  });
+});

@@ -80,6 +80,7 @@ export function createStreamHelpers(deps: StreamEventDeps): StreamHandlerHelpers
           toolCalls: [],
           parts: [],
           timestamp: new Date().toISOString(),
+          _streaming: true,
         },
       ]);
     }

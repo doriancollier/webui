@@ -101,7 +101,8 @@ export class DirectTransport implements Transport {
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
-    cwd?: string
+    cwd?: string,
+    _options?: { clientMessageId?: string }
   ): Promise<void> {
     const generator = this.services.runtime.sendMessage(
       sessionId,

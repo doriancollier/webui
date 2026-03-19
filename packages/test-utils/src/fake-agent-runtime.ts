@@ -99,6 +99,7 @@ export class FakeAgentRuntime implements AgentRuntime {
     commands: [],
     lastScanned: '',
   });
+  getLastMessageIds = vi.fn<(sessionId: string) => Promise<{ user: string; assistant: string } | null>>().mockResolvedValue(null);
   checkSessionHealth = vi.fn<() => void>();
   approveTool = vi.fn<(sessionId: string, toolCallId: string, approved: boolean) => boolean>();
   submitAnswers = vi

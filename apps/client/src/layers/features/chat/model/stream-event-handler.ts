@@ -254,17 +254,32 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         break;
       }
       case 'done': {
-        const doneData = data as { sessionId?: string };
+        const doneData = data as { sessionId?: string; messageIds?: { user: string; assistant: string } };
         if (doneData.sessionId && doneData.sessionId !== sessionId) {
-          // Clear streaming state BEFORE triggering the remap so history becomes
-          // the sole source of truth. The streaming assistant message has a
-          // client-generated UUID that won't match the SDK-assigned UUID in history —
-          // without this clear, both copies render (ID-mismatch dedup failure).
           currentPartsRef.current = [];
           assistantCreatedRef.current = false;
-          setMessages([]);
+          // Keep messages on screen — tagged-dedup handles ID reconciliation
           onSessionIdChangeRef.current?.(doneData.sessionId);
         }
+
+        // Phase 3: remap client-generated IDs to server-assigned IDs immediately.
+        // When messageIds is absent (older server), tagged-dedup in the seed effect
+        // handles reconciliation via content/position matching.
+        if (doneData.messageIds) {
+          const { user: serverUserId, assistant: serverAssistantId } = doneData.messageIds;
+          setMessages((prev) =>
+            prev.map((m) => {
+              if (m._streaming && m.role === 'user' && serverUserId) {
+                return { ...m, id: serverUserId, _streaming: false };
+              }
+              if (m._streaming && m.role === 'assistant' && serverAssistantId) {
+                return { ...m, id: serverAssistantId, _streaming: false };
+              }
+              return m;
+            }),
+          );
+        }
+
         if (streamStartTimeRef.current) {
           const elapsed = Date.now() - streamStartTimeRef.current;
           if (elapsed >= TIMING.MIN_STREAM_DURATION_MS) {

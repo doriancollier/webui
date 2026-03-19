@@ -104,6 +104,10 @@ export class TestModeRuntime implements AgentRuntime {
     return null;
   }
 
+  async getLastMessageIds(_sessionId: string): Promise<{ user: string; assistant: string } | null> {
+    return null;
+  }
+
   async readFromOffset(
     _projectDir: string,
     _id: string,

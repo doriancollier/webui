@@ -130,13 +130,15 @@ export interface Transport {
    * @param onEvent - Callback invoked for each streamed event
    * @param signal - Optional AbortSignal to cancel the request
    * @param cwd - Optional working directory override
+   * @param options - Optional additional parameters (clientMessageId for server-echo ID)
    */
   sendMessage(
     sessionId: string,
     content: string,
     onEvent: (event: StreamEvent) => void,
     signal?: AbortSignal,
-    cwd?: string
+    cwd?: string,
+    options?: { clientMessageId?: string }
   ): Promise<void>;
   /** Approve a pending tool call that requires user confirmation. */
   approveTool(sessionId: string, toolCallId: string): Promise<{ ok: boolean }>;
