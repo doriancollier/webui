@@ -13,10 +13,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+---
+
+## [0.17.1] - 2026-03-19
+
+> Streaming message integrity and reliability fixes
+
+### Added
+
+- Document Claude Agent SDK Message History and Session Listing API for research library
+
+### Fixed
+
 - Prevent session remap flash and merge consecutive assistant JSONL entries
 - Eliminate message flash and disappearing errors on stream completion
 - Pause background-tab polling for always-on query hooks
 - Add hourglass reaction immediately and clean up orphaned reactions
+
 ---
 
 ## [0.17.0] - 2026-03-18
@@ -614,7 +627,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.15.0...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.17.1...HEAD
+[0.17.1]: https://github.com/dork-labs/dorkos/compare/v0.17.0...v0.17.1
+[0.17.0]: https://github.com/dork-labs/dorkos/compare/v0.16.0...v0.17.0
+[0.16.0]: https://github.com/dork-labs/dorkos/compare/v0.15.0...v0.16.0
 [0.15.0]: https://github.com/dork-labs/dorkos/compare/v0.14.0...v0.15.0
 [0.14.0]: https://github.com/dork-labs/dorkos/compare/v0.13.1...v0.14.0
 [0.13.1]: https://github.com/dork-labs/dorkos/compare/v0.13.0...v0.13.1

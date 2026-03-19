@@ -1,0 +1,37 @@
+---
+title: DorkOS 0.17.1
+description: Streaming message integrity and reliability fixes
+date: 2026-03-19
+author: DorkOS Team
+category: release
+tags: [release, streaming, bugfix, chat]
+---
+
+DorkOS 0.17.1 fixes message flash and data loss bugs in the chat streaming pipeline, and improves background polling behavior.
+
+## Highlights
+
+**Streaming Message Integrity** — Messages no longer flash or disappear when the agent finishes responding. The first-message session ID remap now preserves messages in place instead of triggering a full re-render. Inline error messages, subagent parts, and hook output persist after streaming ends.
+
+**Background Tab Optimization** — Query hooks with always-on polling now pause when the browser tab is inactive, reducing unnecessary network traffic and server load.
+
+**Relay Reaction Reliability** — Hourglass reactions in Slack/Telegram are added immediately when streaming starts, and orphaned reactions are cleaned up properly on completion.
+
+## All Changes
+
+### Added
+
+- Document Claude Agent SDK Message History and Session Listing API for research library
+
+### Fixed
+
+- Prevent session remap flash and merge consecutive assistant JSONL entries
+- Eliminate message flash and disappearing errors on stream completion
+- Pause background-tab polling for always-on query hooks
+- Add hourglass reaction immediately and clean up orphaned reactions
+
+## Install / Update
+
+```
+npm install -g dorkos@0.17.1
+```
