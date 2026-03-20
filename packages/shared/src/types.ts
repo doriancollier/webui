@@ -81,6 +81,7 @@ export type {
   HookPart,
   PresenceClient,
   PresenceUpdateEvent,
+  SubagentStatus,
 } from './schemas.js';
 
 export type {

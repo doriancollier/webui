@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
-import React from 'react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
-import type { Transport } from '@dorkos/shared/transport';
 import { createMockTransport } from '@dorkos/test-utils';
 import type { StreamEvent } from '@dorkos/shared/types';
-import { TransportProvider } from '@/layers/shared/model';
+import {
+  MockEventSource,
+  resetUuidCounter,
+  createWrapper,
+  createSendMessageMock,
+} from './chat-session-test-helpers';
 
 // Mock app store (selectedCwd + debug toggles)
 let mockAppState: Record<string, unknown> = {
@@ -25,87 +27,10 @@ vi.mock('@/layers/shared/model', async () => {
   };
 });
 
-// Mock EventSource for SSE subscription tests
-class MockEventSource {
-  static instances: MockEventSource[] = [];
-  url: string;
-  listeners: Map<string, Array<(event: Event) => void>>;
-  readyState: number;
-
-  constructor(url: string) {
-    this.url = url;
-    this.listeners = new Map();
-    this.readyState = 1; // OPEN
-    MockEventSource.instances.push(this);
-  }
-
-  addEventListener(type: string, listener: (event: Event) => void) {
-    if (!this.listeners.has(type)) {
-      this.listeners.set(type, []);
-    }
-    this.listeners.get(type)!.push(listener);
-  }
-
-  removeEventListener(type: string, listener: (event: Event) => void) {
-    const listeners = this.listeners.get(type);
-    if (listeners) {
-      const index = listeners.indexOf(listener);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    }
-  }
-
-  close() {
-    this.readyState = 2; // CLOSED
-  }
-}
-
-globalThis.EventSource = MockEventSource as unknown as typeof EventSource;
-
-function createWrapper(transport: Transport) {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false, gcTime: 0 },
-    },
-  });
-  return ({ children }: { children: React.ReactNode }) => (
-    <QueryClientProvider client={queryClient}>
-      <TransportProvider transport={transport}>{children}</TransportProvider>
-    </QueryClientProvider>
-  );
-}
-
-// Mock crypto.randomUUID
-const mockUUID = vi.fn();
-let uuidCounter = 0;
-mockUUID.mockImplementation(() => `uuid-${++uuidCounter}`);
-Object.defineProperty(globalThis.crypto, 'randomUUID', {
-  value: mockUUID,
-  writable: true,
-});
-
-/** Helper: create a sendMessage mock that fires events via the onEvent callback */
-function createSendMessageMock(events: StreamEvent[]) {
-  return vi.fn(
-    async (
-      _sessionId: string,
-      _content: string,
-      onEvent: (event: StreamEvent) => void,
-      _signal?: AbortSignal,
-      _cwd?: string
-    ) => {
-      for (const event of events) {
-        onEvent(event);
-      }
-    }
-  );
-}
-
-describe('useChatSession', () => {
+describe('useChatSession — core', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    uuidCounter = 0;
+    resetUuidCounter();
     MockEventSource.instances = [];
     mockAppState = {
       selectedCwd: '/test/cwd',
@@ -197,7 +122,6 @@ describe('useChatSession', () => {
     });
 
     expect(result.current.input).toBe('');
-    // Optimistic user message is in messages array (may be replaced by history on refetch)
     const userMessages = result.current.messages.filter((m) => m.role === 'user');
     expect(userMessages).toHaveLength(1);
     expect(userMessages[0].content).toBe('Hello');
@@ -344,21 +268,20 @@ describe('useChatSession', () => {
   });
 
   it('stop() aborts the stream', async () => {
-    // Create a sendMessage that hangs until aborted
     const sendMessage = vi.fn(
       async (
         _sessionId: string,
         _content: string,
         _onEvent: (event: StreamEvent) => void,
         signal?: AbortSignal,
-        _cwd?: string
+        _cwd?: string,
       ) => {
         return new Promise<void>((resolve, reject) => {
           signal?.addEventListener('abort', () => {
             reject(new DOMException('The operation was aborted.', 'AbortError'));
           });
         });
-      }
+      },
     );
     const transport = createMockTransport({ sendMessage });
 
@@ -372,12 +295,10 @@ describe('useChatSession', () => {
       result.current.setInput('test');
     });
 
-    // Start streaming (don't await - it will hang)
     act(() => {
       result.current.handleSubmit();
     });
 
-    // Stop immediately
     await act(async () => {
       result.current.stop();
     });
@@ -404,7 +325,6 @@ describe('useChatSession', () => {
 
     expect(result.current.status).toBe('error');
     expect(result.current.error).toMatchObject({ message: 'HTTP 404' });
-    // Optimistic user message removed on error
     expect(result.current.messages.filter((m) => m.role === 'user')).toHaveLength(0);
   });
 
@@ -428,8 +348,8 @@ describe('useChatSession', () => {
     });
 
     expect(result.current.sessionBusy).toBe(true);
-    expect(result.current.input).toBe('test message'); // Input preserved
-    expect(result.current.error).toMatchObject({ heading: 'Session in use' }); // Structured error for busy state
+    expect(result.current.input).toBe('test message');
+    expect(result.current.error).toMatchObject({ heading: 'Session in use' });
     expect(result.current.status).toBe('error');
   });
 
@@ -458,7 +378,7 @@ describe('useChatSession', () => {
       expect.any(Function),
       expect.any(AbortSignal),
       '/test/cwd',
-      expect.objectContaining({ clientMessageId: expect.any(String) })
+      expect.objectContaining({ clientMessageId: expect.any(String) }),
     );
   });
 
@@ -492,7 +412,6 @@ describe('useChatSession', () => {
       await result.current.handleSubmit();
     });
 
-    // 2 history + 1 optimistic user + 1 new assistant = 4
     expect(result.current.messages).toHaveLength(4);
     expect(result.current.messages[2].role).toBe('user');
     expect(result.current.messages[2].content).toBe('New question');
@@ -502,21 +421,20 @@ describe('useChatSession', () => {
 
   describe('deferred assistant message creation', () => {
     it('does not create assistant message immediately on submit', async () => {
-      // Create a sendMessage mock that never resolves (hangs)
       const sendMessage = vi.fn(
         async (
           _sessionId: string,
           _content: string,
           _onEvent: (event: StreamEvent) => void,
           signal?: AbortSignal,
-          _cwd?: string
+          _cwd?: string,
         ) => {
           return new Promise<void>((resolve, reject) => {
             signal?.addEventListener('abort', () => {
               reject(new DOMException('The operation was aborted.', 'AbortError'));
             });
           });
-        }
+        },
       );
       const transport = createMockTransport({ sendMessage });
 
@@ -530,21 +448,16 @@ describe('useChatSession', () => {
         result.current.setInput('test');
       });
 
-      // Start streaming (don't await - it will hang)
       act(() => {
         result.current.handleSubmit();
       });
 
-      // Wait for streaming status
       await waitFor(() => expect(result.current.status).toBe('streaming'));
 
-      // Optimistic user message is in messages, but no assistant yet
       expect(result.current.messages).toHaveLength(1);
       expect(result.current.messages[0].role).toBe('user');
       expect(result.current.messages[0].content).toBe('test');
-      expect(result.current.status).toBe('streaming');
 
-      // Clean up by stopping
       await act(async () => {
         result.current.stop();
       });
@@ -570,7 +483,6 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // 1 optimistic user + 1 assistant
       expect(result.current.messages).toHaveLength(2);
       expect(result.current.messages[0].role).toBe('user');
       expect(result.current.messages[1].role).toBe('assistant');
@@ -578,9 +490,6 @@ describe('useChatSession', () => {
     });
 
     it('optimistic user message appears before assistant during streaming', async () => {
-      // Regression: the old pendingUserContent rendered outside the virtualizer,
-      // causing the assistant to appear above the user message. Optimistic messages
-      // in the array must precede the streaming assistant.
       let fireEvents!: (events: StreamEvent[]) => void;
       const sendMessage = vi.fn(
         (
@@ -596,10 +505,9 @@ describe('useChatSession', () => {
             signal?.addEventListener('abort', () => {
               reject(new DOMException('The operation was aborted.', 'AbortError'));
             });
-            // Store resolve so we can complete later
             (sendMessage as unknown as { _resolve: () => void })._resolve = resolve;
           });
-        }
+        },
       );
       const transport = createMockTransport({ sendMessage });
 
@@ -613,26 +521,22 @@ describe('useChatSession', () => {
         result.current.setInput('Hello');
       });
 
-      // Start streaming (don't await — stays pending until resolve)
       act(() => {
         result.current.handleSubmit();
       });
 
       await waitFor(() => expect(result.current.status).toBe('streaming'));
 
-      // Fire a text_delta to create the assistant message mid-stream
       act(() => {
         fireEvents([{ type: 'text_delta', data: { text: 'Response' } } as StreamEvent]);
       });
 
-      // Both messages should exist with user BEFORE assistant
       expect(result.current.messages).toHaveLength(2);
       expect(result.current.messages[0].role).toBe('user');
       expect(result.current.messages[0].content).toBe('Hello');
       expect(result.current.messages[1].role).toBe('assistant');
       expect(result.current.messages[1].content).toBe('Response');
 
-      // Clean up
       await act(async () => {
         result.current.stop();
       });
@@ -661,7 +565,6 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // 1 optimistic user + 1 assistant
       expect(result.current.messages).toHaveLength(2);
       expect(result.current.messages[0].role).toBe('user');
       expect(result.current.messages[1].role).toBe('assistant');
@@ -690,7 +593,6 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // Assert only 1 assistant message exists with combined content
       const assistantMessages = result.current.messages.filter((m) => m.role === 'assistant');
       expect(assistantMessages).toHaveLength(1);
       expect(assistantMessages[0].content).toBe('First Second');
@@ -715,213 +617,10 @@ describe('useChatSession', () => {
         await result.current.handleSubmit();
       });
 
-      // Optimistic user message present, no assistant (done without content)
       const userMessages = result.current.messages.filter((m) => m.role === 'user');
       expect(userMessages).toHaveLength(1);
       expect(userMessages[0].content).toBe('test');
       expect(result.current.status).toBe('idle');
-    });
-  });
-
-  describe('EventSource subscription for real-time sync', () => {
-    it('opens EventSource connection when session is active and not streaming', async () => {
-      const transport = createMockTransport();
-      const { result } = renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('idle');
-      });
-
-      // Verify EventSource was created for the session
-      expect(globalThis.EventSource).toBeDefined();
-    });
-
-    it('closes EventSource when session changes', async () => {
-      const transport = createMockTransport();
-      const { result, rerender } = renderHook(({ sessionId }) => useChatSession(sessionId), {
-        wrapper: createWrapper(transport),
-        initialProps: { sessionId: 's1' },
-      });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('idle');
-      });
-
-      // Change session ID
-      rerender({ sessionId: 's2' });
-
-      await waitFor(() => {
-        expect(result.current.status).toBe('idle');
-      });
-
-      // EventSource should have been recreated for new session
-      expect(result.current.status).toBe('idle');
-    });
-
-    it('does not open EventSource while streaming', async () => {
-      const sendMessage = vi.fn(
-        async (
-          _sessionId: string,
-          _content: string,
-          _onEvent: (event: StreamEvent) => void,
-          signal?: AbortSignal,
-          _cwd?: string
-        ) => {
-          return new Promise<void>((resolve, reject) => {
-            signal?.addEventListener('abort', () => {
-              reject(new DOMException('The operation was aborted.', 'AbortError'));
-            });
-          });
-        }
-      );
-      const transport = createMockTransport({ sendMessage });
-
-      const { result } = renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      await waitFor(() => expect(result.current.status).toBe('idle'));
-
-      await act(async () => {
-        result.current.setInput('test');
-      });
-
-      // Start streaming
-      act(() => {
-        result.current.handleSubmit();
-      });
-
-      await waitFor(() => expect(result.current.status).toBe('streaming'));
-
-      // EventSource should not interfere with streaming
-      expect(result.current.status).toBe('streaming');
-
-      // Clean up
-      await act(async () => {
-        result.current.stop();
-      });
-    });
-  });
-
-  describe('inference indicator state', () => {
-    it('resets streamStartTime and estimatedTokens after done event', async () => {
-      const sendMessage = createSendMessageMock([
-        { type: 'text_delta', data: { text: 'Hello world!' } } as StreamEvent,
-        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
-      ]);
-      const transport = createMockTransport({ sendMessage });
-      const { result } = renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      await waitFor(() => expect(result.current.status).toBe('idle'));
-
-      await act(async () => {
-        result.current.setInput('test');
-      });
-      await act(async () => {
-        await result.current.handleSubmit();
-      });
-
-      expect(result.current.streamStartTime).toBeNull();
-      expect(result.current.estimatedTokens).toBe(0);
-    });
-
-    it('accumulates estimatedTokens from text_delta lengths', async () => {
-      const sendMessage = vi.fn(
-        async (
-          _sessionId: string,
-          _content: string,
-          onEvent: (event: StreamEvent) => void,
-          _signal?: AbortSignal,
-          _cwd?: string
-        ) => {
-          // Fire two text deltas (8 chars each = 2 tokens each = 4 total)
-          onEvent({ type: 'text_delta', data: { text: '12345678' } } as StreamEvent);
-          onEvent({ type: 'text_delta', data: { text: 'abcdefgh' } } as StreamEvent);
-          onEvent({ type: 'done', data: { sessionId: 's1' } } as StreamEvent);
-        }
-      );
-      const transport = createMockTransport({ sendMessage });
-      const { result } = renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      await waitFor(() => expect(result.current.status).toBe('idle'));
-
-      await act(async () => {
-        result.current.setInput('test');
-      });
-      await act(async () => {
-        await result.current.handleSubmit();
-      });
-
-      // After done, tokens reset to 0
-      expect(result.current.estimatedTokens).toBe(0);
-    });
-
-    it('sets streamStartTime to a number when streaming begins', async () => {
-      const now = Date.now();
-      vi.spyOn(Date, 'now').mockReturnValue(now);
-
-      const sendMessage = createSendMessageMock([
-        { type: 'text_delta', data: { text: 'Hello' } } as StreamEvent,
-        { type: 'done', data: { sessionId: 's1' } } as StreamEvent,
-      ]);
-      const transport = createMockTransport({ sendMessage });
-      const { result } = renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      await waitFor(() => expect(result.current.status).toBe('idle'));
-
-      await act(async () => {
-        result.current.setInput('test');
-      });
-      await act(async () => {
-        await result.current.handleSubmit();
-      });
-
-      // After done, streamStartTime resets to null
-      expect(result.current.streamStartTime).toBeNull();
-
-      vi.restoreAllMocks();
-    });
-  });
-
-  describe('data path debug toggles', () => {
-    it('does not create EventSource when enableCrossClientSync is false', async () => {
-      mockAppState = { ...mockAppState, enableCrossClientSync: false };
-
-      const transport = createMockTransport();
-      renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      // Wait for effects to settle
-      await waitFor(() => {
-        // Verify no EventSource was created for the session stream URL
-        const streamInstances = MockEventSource.instances.filter((es) =>
-          es.url.includes('/api/sessions/s1/stream')
-        );
-        expect(streamInstances).toHaveLength(0);
-      });
-    });
-
-    it('creates EventSource when enableCrossClientSync is true (default)', async () => {
-      const transport = createMockTransport();
-      renderHook(() => useChatSession('s1'), {
-        wrapper: createWrapper(transport),
-      });
-
-      await waitFor(() => {
-        const streamInstances = MockEventSource.instances.filter((es) =>
-          es.url.includes('/api/sessions/s1/stream')
-        );
-        expect(streamInstances.length).toBeGreaterThan(0);
-      });
     });
   });
 });

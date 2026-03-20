@@ -1,15 +1,30 @@
 import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import type { SessionStatusEvent, MessagePart, HistoryMessage, PresenceUpdateEvent, HookPart } from '@dorkos/shared/types';
+import type {
+  SessionStatusEvent,
+  MessagePart,
+  PresenceUpdateEvent,
+  HookPart,
+} from '@dorkos/shared/types';
 import { useTransport, useAppStore } from '@/layers/shared/model';
 import { QUERY_TIMING, TIMING } from '@/layers/shared/lib';
 import { insertOptimisticSession } from '@/layers/entities/session';
 import type { ChatMessage, ChatSessionOptions, TransportErrorInfo } from './chat-types';
 import { createStreamEventHandler } from './stream-event-handler';
 import { deriveFromParts } from './stream-event-helpers';
+import { mapHistoryMessage, reconcileTaggedMessages } from './stream-history-helpers';
 
 // Re-export types for backward compat
-export type { ChatMessage, ToolCallState, HookState, GroupPosition, MessageGrouping, ChatStatus, ChatSessionOptions, TransportErrorInfo } from './chat-types';
+export type {
+  ChatMessage,
+  ToolCallState,
+  HookState,
+  GroupPosition,
+  MessageGrouping,
+  ChatStatus,
+  ChatSessionOptions,
+  TransportErrorInfo,
+} from './chat-types';
 
 /**
  * Classify a transport-level error for structured banner display.
@@ -63,48 +78,6 @@ export function classifyTransportError(err: unknown): TransportErrorInfo {
     heading: 'Error',
     message: error.message,
     retryable: false,
-  };
-}
-
-/** Map HistoryMessage from server to internal ChatMessage format. */
-function mapHistoryMessage(m: HistoryMessage): ChatMessage {
-  const parts: MessagePart[] = m.parts ? [...m.parts] : [];
-  if (parts.length === 0) {
-    if (m.content) {
-      parts.push({ type: 'text', text: m.content });
-    }
-    if (m.toolCalls) {
-      for (const tc of m.toolCalls) {
-        parts.push({
-          type: 'tool_call',
-          toolCallId: tc.toolCallId,
-          toolName: tc.toolName,
-          input: tc.input,
-          result: tc.result,
-          status: tc.status,
-          ...(tc.questions
-            ? {
-                interactiveType: 'question' as const,
-                questions: tc.questions,
-                answers: tc.answers,
-              }
-            : {}),
-        });
-      }
-    }
-  }
-
-  const derived = deriveFromParts(parts);
-  return {
-    id: m.id,
-    role: m.role,
-    content: derived.content,
-    toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : undefined,
-    parts,
-    timestamp: m.timestamp || '',
-    messageType: m.messageType,
-    commandName: m.commandName,
-    commandArgs: m.commandArgs,
   };
 }
 
@@ -312,79 +285,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     }
 
     if (historySeededRef.current && !isStreaming) {
-      const currentIds = new Set(messagesRef.current.map((m) => m.id));
-      const taggedMessages = messagesRef.current.filter((m) => m._streaming);
-
-      // Find the tagged user message (if any) for content matching
-      const taggedUser = taggedMessages.find((m) => m.role === 'user');
-      const taggedAssistant = taggedMessages.find((m) => m.role === 'assistant');
-
-      const newMessages: typeof history = [];
-      let matchedUserIdx = -1;
-
-      for (let i = 0; i < history.length; i++) {
-        const serverMsg = history[i];
-        if (currentIds.has(serverMsg.id)) continue;
-
-        // Try to match tagged user message by exact content
-        if (
-          taggedUser &&
-          serverMsg.role === 'user' &&
-          serverMsg.content === taggedUser.content
-        ) {
-          matchedUserIdx = i;
-          // Replace tagged user with server version, clear tag
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === taggedUser.id
-                ? { ...mapHistoryMessage(serverMsg), _streaming: false }
-                : m,
-            ),
-          );
-          continue;
-        }
-
-        // Match tagged assistant by position (immediately after matched user)
-        if (
-          taggedAssistant &&
-          matchedUserIdx >= 0 &&
-          i === matchedUserIdx + 1 &&
-          serverMsg.role === 'assistant'
-        ) {
-          // Carry over client-only parts that the server version lacks
-          const serverMapped = mapHistoryMessage(serverMsg);
-          // Carry over subagent parts not already in the server response (the
-          // transcript parser may or may not extract them depending on SDK version).
-          const serverSubagentIds = new Set(
-            serverMapped.parts
-              .filter((p) => p.type === 'subagent')
-              .map((p) => p.taskId),
-          );
-          const clientOnlyParts = taggedAssistant.parts.filter(
-            (p) => p.type === 'subagent' && !serverSubagentIds.has(p.taskId),
-          );
-          const mergedParts =
-            clientOnlyParts.length > 0
-              ? [...serverMapped.parts, ...clientOnlyParts]
-              : serverMapped.parts;
-
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === taggedAssistant.id
-                ? { ...serverMapped, parts: mergedParts, _streaming: false }
-                : m,
-            ),
-          );
-          continue;
-        }
-
-        // No match — append as new message (existing behavior)
-        newMessages.push(serverMsg);
-      }
-
-      if (newMessages.length > 0) {
-        setMessages((prev) => [...prev, ...newMessages.map(mapHistoryMessage)]);
-      }
+      reconcileTaggedMessages(messagesRef.current, history, setMessages);
     }
   }, [historyQuery.data, isStreaming]);
 
@@ -395,7 +296,9 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
     if (isStreaming) return;
     if (!enableCrossClientSync) return;
 
-    const clientIdParam = transport.clientId ? `?clientId=${encodeURIComponent(transport.clientId)}` : '';
+    const clientIdParam = transport.clientId
+      ? `?clientId=${encodeURIComponent(transport.clientId)}`
+      : '';
     const url = `/api/sessions/${sessionId}/stream${clientIdParam}`;
     const eventSource = new EventSource(url);
 
@@ -444,113 +347,111 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
    * @param clearInput - When true, clears the `input` state after enqueueing (used by handleSubmit). When false, the textarea draft is preserved (used by submitContent/queue flush).
    * @param restoreContentOnLock - Content to restore to `input` if the session is locked. Only meaningful when clearInput is true.
    */
-  const executeSubmission = useCallback(async (
-    content: string,
-    clearInput: boolean,
-    restoreContentOnLock: string,
-  ) => {
-    // Create session on first message if no active session
-    let targetSessionId = sessionId;
-    if (!targetSessionId) {
-      targetSessionId = crypto.randomUUID();
-      const now = new Date().toISOString();
-      insertOptimisticSession(queryClient, selectedCwdRef.current, {
-        id: targetSessionId,
-        title: `Session ${targetSessionId.slice(0, 8)}`,
-        createdAt: now,
-        updatedAt: now,
-        permissionMode: 'default',
-      });
-      onSessionIdChangeRef.current?.(targetSessionId);
-    }
+  const executeSubmission = useCallback(
+    async (content: string, clearInput: boolean, restoreContentOnLock: string) => {
+      // Create session on first message if no active session
+      let targetSessionId = sessionId;
+      if (!targetSessionId) {
+        targetSessionId = crypto.randomUUID();
+        const now = new Date().toISOString();
+        insertOptimisticSession(queryClient, selectedCwdRef.current, {
+          id: targetSessionId,
+          title: `Session ${targetSessionId.slice(0, 8)}`,
+          createdAt: now,
+          updatedAt: now,
+          permissionMode: 'default',
+        });
+        onSessionIdChangeRef.current?.(targetSessionId);
+      }
 
-    // Add optimistic user message directly to the messages array so it appears
-    // in the virtualizer BEFORE the streaming assistant message. This fixes the
-    // ordering bug where the assistant appeared above the user message (the old
-    // pendingUserContent bubble was rendered outside the virtualizer).
-    const pendingUserId = `pending-user-${crypto.randomUUID()}`;
-    pendingUserIdRef.current = pendingUserId;
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: pendingUserId,
-        role: 'user' as const,
-        content,
-        parts: [{ type: 'text', text: content }],
-        timestamp: new Date().toISOString(),
-        _streaming: true,
-      },
-    ]);
-    if (clearInput) setInput('');
-    setPromptSuggestions([]);
-    setStatus('streaming');
-    statusRef.current = 'streaming'; // Sync ref immediately — closes the timing window where sync_update could invalidate stale history
-    setError(null);
-    currentPartsRef.current = [];
-    const streamStart = Date.now();
-    streamStartTimeRef.current = streamStart;
-    estimatedTokensRef.current = 0;
-    setStreamStartTime(streamStart);
-    setEstimatedTokens(0);
+      // Add optimistic user message directly to the messages array so it appears
+      // in the virtualizer BEFORE the streaming assistant message. This fixes the
+      // ordering bug where the assistant appeared above the user message (the old
+      // pendingUserContent bubble was rendered outside the virtualizer).
+      const pendingUserId = `pending-user-${crypto.randomUUID()}`;
+      pendingUserIdRef.current = pendingUserId;
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: pendingUserId,
+          role: 'user' as const,
+          content,
+          parts: [{ type: 'text', text: content }],
+          timestamp: new Date().toISOString(),
+          _streaming: true,
+        },
+      ]);
+      if (clearInput) setInput('');
+      setPromptSuggestions([]);
+      setStatus('streaming');
+      statusRef.current = 'streaming'; // Sync ref immediately — closes the timing window where sync_update could invalidate stale history
+      setError(null);
+      currentPartsRef.current = [];
+      const streamStart = Date.now();
+      streamStartTimeRef.current = streamStart;
+      estimatedTokensRef.current = 0;
+      setStreamStartTime(streamStart);
+      setEstimatedTokens(0);
 
-    assistantIdRef.current = crypto.randomUUID();
-    assistantCreatedRef.current = false;
+      assistantIdRef.current = crypto.randomUUID();
+      assistantCreatedRef.current = false;
 
-    const abortController = new AbortController();
-    abortRef.current = abortController;
+      const abortController = new AbortController();
+      abortRef.current = abortController;
 
-    try {
-      const finalContent = transformContentRef.current
-        ? await transformContentRef.current(content)
-        : content;
+      try {
+        const finalContent = transformContentRef.current
+          ? await transformContentRef.current(content)
+          : content;
 
-      await transport.sendMessage(
-        targetSessionId,
-        finalContent,
-        (event) => streamEventHandler(event.type, event.data, assistantIdRef.current),
-        abortController.signal,
-        selectedCwd ?? undefined,
-        { clientMessageId: pendingUserId },
-      );
-      pendingUserIdRef.current = null;
-      setStatus('idle');
-    } catch (err) {
-      // Remove optimistic user message on error — must not linger if delivery fails
-      if (pendingUserIdRef.current) {
-        const failedId = pendingUserIdRef.current;
-        setMessages((prev) => prev.filter((m) => m.id !== failedId));
+        await transport.sendMessage(
+          targetSessionId,
+          finalContent,
+          (event) => streamEventHandler(event.type, event.data, assistantIdRef.current),
+          abortController.signal,
+          selectedCwd ?? undefined,
+          { clientMessageId: pendingUserId }
+        );
         pendingUserIdRef.current = null;
-      }
-      if ((err as Error).name !== 'AbortError') {
-        if ((err as { code?: string }).code === 'SESSION_LOCKED') {
-          setSessionBusy(true);
-          setError(classifyTransportError(err));
-          if (clearInput) setInput(restoreContentOnLock);
-          if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
-          sessionBusyTimerRef.current = setTimeout(() => {
-            setSessionBusy(false);
-            setError(null);
-            sessionBusyTimerRef.current = null;
-          }, TIMING.SESSION_BUSY_CLEAR_MS);
-        } else {
-          setError(classifyTransportError(err));
+        setStatus('idle');
+      } catch (err) {
+        // Remove optimistic user message on error — must not linger if delivery fails
+        if (pendingUserIdRef.current) {
+          const failedId = pendingUserIdRef.current;
+          setMessages((prev) => prev.filter((m) => m.id !== failedId));
+          pendingUserIdRef.current = null;
         }
-        setStatus('error');
+        if ((err as Error).name !== 'AbortError') {
+          if ((err as { code?: string }).code === 'SESSION_LOCKED') {
+            setSessionBusy(true);
+            setError(classifyTransportError(err));
+            if (clearInput) setInput(restoreContentOnLock);
+            if (sessionBusyTimerRef.current) clearTimeout(sessionBusyTimerRef.current);
+            sessionBusyTimerRef.current = setTimeout(() => {
+              setSessionBusy(false);
+              setError(null);
+              sessionBusyTimerRef.current = null;
+            }, TIMING.SESSION_BUSY_CLEAR_MS);
+          } else {
+            setError(classifyTransportError(err));
+          }
+          setStatus('error');
+        }
+        if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);
+        isTextStreamingRef.current = false;
+        setIsTextStreaming(false);
+        setIsRateLimited(false);
+        setRateLimitRetryAfter(null);
       }
-      if (textStreamingTimerRef.current) clearTimeout(textStreamingTimerRef.current);
-      isTextStreamingRef.current = false;
-      setIsTextStreaming(false);
-      setIsRateLimited(false);
-      setRateLimitRetryAfter(null);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: stable refs for transport/options/cwd
-  }, [sessionId, streamEventHandler, queryClient]);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: stable refs for transport/options/cwd
+    },
+    [sessionId, streamEventHandler, queryClient]
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!input.trim() || status === 'streaming') return;
     const userContent = input.trim();
     await executeSubmission(userContent, true, userContent);
-     
   }, [input, status, executeSubmission]);
 
   /**
@@ -558,11 +459,13 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
    * Used by the auto-flush mechanism to send queued messages while preserving the
    * user's current draft in the textarea.
    */
-  const submitContent = useCallback(async (content: string) => {
-    if (!content.trim() || status === 'streaming') return;
-    await executeSubmission(content.trim(), false, '');
-     
-  }, [status, executeSubmission]);
+  const submitContent = useCallback(
+    async (content: string) => {
+      if (!content.trim() || status === 'streaming') return;
+      await executeSubmission(content.trim(), false, '');
+    },
+    [status, executeSubmission]
+  );
 
   const stop = useCallback(() => {
     abortRef.current?.abort();

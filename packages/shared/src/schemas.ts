@@ -255,6 +255,9 @@ export type RateLimitEvent = z.infer<typeof RateLimitEventSchema>;
 export const DoneEventSchema = z
   .object({
     sessionId: z.string(),
+    messageIds: z
+      .object({ user: z.string(), assistant: z.string() })
+      .optional(),
   })
   .openapi('DoneEvent');
 
@@ -388,9 +391,7 @@ export const SystemStatusEventSchema = z
 
 export type SystemStatusEvent = z.infer<typeof SystemStatusEventSchema>;
 
-export const CompactBoundaryEventSchema = z
-  .object({})
-  .openapi('CompactBoundaryEvent');
+export const CompactBoundaryEventSchema = z.object({}).openapi('CompactBoundaryEvent');
 
 export type CompactBoundaryEvent = z.infer<typeof CompactBoundaryEventSchema>;
 
@@ -541,7 +542,10 @@ export const ToolCallPartSchema = z
 
 export type ToolCallPart = z.infer<typeof ToolCallPartSchema>;
 
-const SubagentStatusSchema = z.enum(['running', 'complete', 'error']);
+export const SubagentStatusSchema = z.enum(['running', 'complete', 'error']);
+
+/** Status values for subagent lifecycle tracking. */
+export type SubagentStatus = z.infer<typeof SubagentStatusSchema>;
 
 export const SubagentPartSchema = z
   .object({
@@ -743,7 +747,9 @@ export const ServerConfigSchema = z
     latestVersion: z
       .string()
       .nullable()
-      .openapi({ description: 'Latest available version from npm, or null if dev mode or unknown' }),
+      .openapi({
+        description: 'Latest available version from npm, or null if dev mode or unknown',
+      }),
     isDevMode: z
       .boolean()
       .openapi({ description: 'Whether the server is running a development build' }),
@@ -785,18 +791,32 @@ export const ServerConfigSchema = z
       .openapi({ description: 'Mesh agent discovery feature state' }),
     onboarding: z
       .object({
-        completedSteps: z.array(z.string()).openapi({ description: 'Steps the user has completed' }),
+        completedSteps: z
+          .array(z.string())
+          .openapi({ description: 'Steps the user has completed' }),
         skippedSteps: z.array(z.string()).openapi({ description: 'Steps the user has skipped' }),
-        startedAt: z.string().nullable().openapi({ description: 'ISO timestamp when onboarding was started' }),
-        dismissedAt: z.string().nullable().openapi({ description: 'ISO timestamp when onboarding was dismissed' }),
+        startedAt: z
+          .string()
+          .nullable()
+          .openapi({ description: 'ISO timestamp when onboarding was started' }),
+        dismissedAt: z
+          .string()
+          .nullable()
+          .openapi({ description: 'ISO timestamp when onboarding was dismissed' }),
       })
       .optional()
       .openapi({ description: 'First-time user onboarding state' }),
     agentContext: z
       .object({
-        relayTools: z.boolean().openapi({ description: 'Whether relay tool context is injected into agent prompts' }),
-        meshTools: z.boolean().openapi({ description: 'Whether mesh tool context is injected into agent prompts' }),
-        adapterTools: z.boolean().openapi({ description: 'Whether adapter tool context is injected into agent prompts' }),
+        relayTools: z
+          .boolean()
+          .openapi({ description: 'Whether relay tool context is injected into agent prompts' }),
+        meshTools: z
+          .boolean()
+          .openapi({ description: 'Whether mesh tool context is injected into agent prompts' }),
+        adapterTools: z
+          .boolean()
+          .openapi({ description: 'Whether adapter tool context is injected into agent prompts' }),
       })
       .optional()
       .openapi({ description: 'Agent tool context injection toggles' }),

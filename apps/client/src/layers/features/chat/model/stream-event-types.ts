@@ -6,9 +6,14 @@
 import type { MessagePart, HookPart, ToolCallPart, SubagentPart } from '@dorkos/shared/types';
 import type { ChatMessage, TransportErrorInfo } from './chat-types';
 
-// Client-only streaming type — _partId is never serialized or sent over the wire.
-// It provides a stable React key for text parts during streaming, where the parts
-// array is rebuilt on every text_delta event.
+/**
+ * Client-only streaming text part with a stable identity key.
+ *
+ * `_partId` is never serialized or sent over the wire. It provides a stable
+ * React key for text parts during streaming — the parts array is rebuilt on
+ * every `text_delta` event, so without a persistent ID React would remount
+ * every text node on each delta.
+ */
 export type StreamingTextPart = { type: 'text'; text: string; _partId: string };
 
 export interface StreamEventDeps {

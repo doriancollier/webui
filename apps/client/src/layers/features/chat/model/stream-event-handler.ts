@@ -9,6 +9,7 @@
 import type {
   TextDelta,
   ThinkingDelta,
+  DoneEvent,
   ErrorEvent,
   SessionStatusEvent,
   TaskUpdateEvent,
@@ -101,9 +102,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           const elapsedMs = Date.now() - thinkingStartRef.current;
           thinkingStartRef.current = null;
           const updatedParts = currentPartsRef.current.map((p) =>
-            p.type === 'thinking' && p.isStreaming
-              ? { ...p, isStreaming: false, elapsedMs }
-              : p
+            p.type === 'thinking' && p.isStreaming ? { ...p, isStreaming: false, elapsedMs } : p
           );
           currentPartsRef.current = updatedParts;
         }
@@ -254,7 +253,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         break;
       }
       case 'done': {
-        const doneData = data as { sessionId?: string; messageIds?: { user: string; assistant: string } };
+        const doneData = data as DoneEvent;
         if (doneData.sessionId && doneData.sessionId !== sessionId) {
           // Flush current streaming state to messages before clearing parts for remap.
           // This prevents the queueMicrotask race in handleToolResult from reading
@@ -265,7 +264,12 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
             setMessages((prev) =>
               prev.map((m) =>
                 m._streaming && m.role === 'assistant'
-                  ? { ...m, content: derived.content, toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : [], parts }
+                  ? {
+                      ...m,
+                      content: derived.content,
+                      toolCalls: derived.toolCalls.length > 0 ? derived.toolCalls : [],
+                      parts,
+                    }
                   : m
               )
             );
@@ -292,7 +296,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
                 return { ...m, id: serverAssistantId, _streaming: false };
               }
               return m;
-            }),
+            })
           );
         }
 
@@ -308,9 +312,7 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         if (thinkingStartRef.current !== null) {
           const elapsedMs = Date.now() - thinkingStartRef.current;
           currentPartsRef.current = currentPartsRef.current.map((p) =>
-            p.type === 'thinking' && p.isStreaming
-              ? { ...p, isStreaming: false, elapsedMs }
-              : p
+            p.type === 'thinking' && p.isStreaming ? { ...p, isStreaming: false, elapsedMs } : p
           );
         }
         thinkingStartRef.current = null;
@@ -330,7 +332,9 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
             return {
               ...m,
               toolCalls: m.toolCalls!.map((tc) =>
-                tc.interactiveType && tc.status === 'pending' ? { ...tc, status: 'complete' as const } : tc
+                tc.interactiveType && tc.status === 'pending'
+                  ? { ...tc, status: 'complete' as const }
+                  : tc
               ),
               parts: m.parts.map((p) =>
                 p.type === 'tool_call' && p.interactiveType && p.status === 'pending'

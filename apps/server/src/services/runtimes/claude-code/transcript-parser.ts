@@ -5,6 +5,7 @@ import type {
   ToolCallPart,
   HistoryToolCall,
   ErrorCategory,
+  SubagentStatus,
 } from '@dorkos/shared/types';
 import { SDK_TOOL_NAMES } from '@dorkos/shared/constants';
 
@@ -425,7 +426,7 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
             type: 'subagent',
             taskId: block.task_id ?? block.id ?? '',
             description: block.description ?? '',
-            status: (block.status as 'running' | 'complete' | 'error') ?? 'running',
+            status: (block.status as SubagentStatus) ?? 'running',
             toolUses: block.tool_uses,
             lastToolName: block.last_tool_name,
             durationMs: block.duration_ms,
