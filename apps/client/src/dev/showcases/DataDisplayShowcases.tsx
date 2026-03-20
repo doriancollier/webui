@@ -41,6 +41,7 @@ export function DataDisplayShowcases() {
   const [isStreaming, setIsStreaming] = useState(true);
   const [scanColor, setScanColor] = useState('#3b82f6');
   const [scanVisible, setScanVisible] = useState(true);
+  const [scanFadeEdges, setScanFadeEdges] = useState(true);
 
   return (
     <>
@@ -102,6 +103,14 @@ export function DataDisplayShowcases() {
                 <Label htmlFor="scan-streaming">Streaming</Label>
               </div>
               <div className="flex items-center gap-2">
+                <Switch
+                  id="scan-fade-edges"
+                  checked={scanFadeEdges}
+                  onCheckedChange={setScanFadeEdges}
+                />
+                <Label htmlFor="scan-fade-edges">Fade edges</Label>
+              </div>
+              <div className="flex items-center gap-2">
                 <Label htmlFor="scan-color">Color</Label>
                 <Input
                   id="scan-color"
@@ -118,7 +127,7 @@ export function DataDisplayShowcases() {
               </div>
               <AnimatePresence>
                 {scanVisible && (
-                  <ScanLine color={scanColor} isTextStreaming={isStreaming} />
+                  <ScanLine color={scanColor} isTextStreaming={isStreaming} fadeEdges={scanFadeEdges} />
                 )}
               </AnimatePresence>
             </div>

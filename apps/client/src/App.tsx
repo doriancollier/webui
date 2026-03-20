@@ -16,7 +16,6 @@ import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
-  ScanLine,
   Separator,
   Sidebar,
   SidebarProvider,
@@ -43,7 +42,6 @@ export function App({ transformContent, embedded }: AppProps = {}) {
 
   const [selectedCwd] = useDirectoryState();
   const isStreaming = useAppStore((s) => s.isStreaming);
-  const isTextStreaming = useAppStore((s) => s.isTextStreaming);
   const activeForm = useAppStore((s) => s.activeForm);
   const isWaitingForUser = useAppStore((s) => s.isWaitingForUser);
   const pulseBadgeCount = useAppStore((s) => s.pulseBadgeCount);
@@ -240,13 +238,6 @@ export function App({ transformContent, embedded }: AppProps = {}) {
                       />
                       <div className="flex-1" />
                       <CommandPaletteTrigger />
-
-                      {/* Streaming scan line — sweeps across header bottom when agent is active */}
-                      <AnimatePresence>
-                        {isStreaming && (
-                          <ScanLine color={agentVisual.color} isTextStreaming={isTextStreaming} />
-                        )}
-                      </AnimatePresence>
                     </header>
                     <main className="flex-1 overflow-hidden">
                       <ChatPanel

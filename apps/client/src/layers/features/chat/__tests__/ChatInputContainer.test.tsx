@@ -47,6 +47,21 @@ vi.mock('react-dropzone', () => ({
   }),
 }));
 
+vi.mock('@/layers/shared/model', () => ({
+  useAppStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
+    selector({ isTextStreaming: false }),
+  ),
+}));
+
+vi.mock('@/layers/entities/agent', () => ({
+  useCurrentAgent: () => ({ data: null }),
+  useAgentVisual: () => ({ color: '#3b82f6', emoji: '' }),
+}));
+
+vi.mock('@/layers/entities/session', () => ({
+  useDirectoryState: () => [null, vi.fn()],
+}));
+
 import { ChatInputContainer } from '../ui/ChatInputContainer';
 import type { ToolCallState } from '../model/chat-types';
 import { createRef } from 'react';

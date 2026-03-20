@@ -13,6 +13,10 @@ import { ToolApproval } from './ToolApproval';
 import { QuestionPrompt } from './QuestionPrompt';
 import { CommandPalette } from '@/layers/features/commands';
 import { FilePalette } from '@/layers/features/files';
+import { ScanLine } from '@/layers/shared/ui';
+import { useAppStore } from '@/layers/shared/model';
+import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
+import { useDirectoryState } from '@/layers/entities/session';
 import type { InteractiveToolHandle } from './message';
 import type { useInputAutocomplete } from '../model/use-input-autocomplete';
 import type { PendingFile } from '../model/use-file-upload';
@@ -102,6 +106,11 @@ export function ChatInputContainer({
   onToolDecided,
 }: ChatInputContainerProps) {
   const mode = activeInteraction ? 'interactive' : 'normal';
+  const isStreaming = status === 'streaming';
+  const isTextStreaming = useAppStore((s) => s.isTextStreaming);
+  const [selectedCwd] = useDirectoryState();
+  const { data: currentAgent } = useCurrentAgent(selectedCwd);
+  const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
 
   // Preserve draft text when switching to interactive mode
   const interactiveDraftRef = useRef('');
@@ -159,6 +168,13 @@ export function ChatInputContainer({
     >
       {/* Hidden dropzone input — react-dropzone requires this */}
       <input {...getInputProps()} />
+
+      {/* Streaming scan line — sweeps across input container top edge */}
+      <AnimatePresence>
+        {isStreaming && (
+          <ScanLine color={agentVisual.color} isTextStreaming={isTextStreaming} edge="top" />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isDragActive && (
