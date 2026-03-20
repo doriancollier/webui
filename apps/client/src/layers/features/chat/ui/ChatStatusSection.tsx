@@ -17,6 +17,8 @@ import {
   CostItem,
   ContextItem,
   NotificationSoundItem,
+  SyncItem,
+  PollingItem,
   TunnelItem,
   VersionItem,
   ClientsItem,
@@ -63,10 +65,16 @@ export function ChatStatusSection({
     showStatusBarContext,
     showStatusBarGit,
     showStatusBarSound,
+    showStatusBarSync,
+    showStatusBarPolling,
     showStatusBarTunnel,
     showStatusBarVersion,
     enableNotificationSound,
     setEnableNotificationSound,
+    enableCrossClientSync,
+    setEnableCrossClientSync,
+    enableMessagePolling,
+    setEnableMessagePolling,
   } = useAppStore();
   const { data: gitStatus } = useGitStatus(status.cwd);
   const transport = useTransport();
@@ -160,6 +168,18 @@ export function ChatStatusSection({
         <NotificationSoundItem
           enabled={enableNotificationSound}
           onToggle={() => setEnableNotificationSound(!enableNotificationSound)}
+        />
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="sync" visible={showStatusBarSync}>
+        <SyncItem
+          enabled={enableCrossClientSync}
+          onToggle={() => setEnableCrossClientSync(!enableCrossClientSync)}
+        />
+      </StatusLine.Item>
+      <StatusLine.Item itemKey="polling" visible={showStatusBarPolling}>
+        <PollingItem
+          enabled={enableMessagePolling}
+          onToggle={() => setEnableMessagePolling(!enableMessagePolling)}
         />
       </StatusLine.Item>
       <StatusLine.Item itemKey="tunnel" visible={showStatusBarTunnel && !!serverConfig?.tunnel}>

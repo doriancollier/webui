@@ -126,39 +126,39 @@ describe('AppStore', () => {
     expect(useAppStore.getState().globalPaletteOpen).toBe(false);
   });
 
-  it('defaults enableCrossClientSync to true', async () => {
+  it('defaults enableCrossClientSync to false', async () => {
     const { useAppStore } = await import('../app-store');
-    expect(useAppStore.getState().enableCrossClientSync).toBe(true);
+    expect(useAppStore.getState().enableCrossClientSync).toBe(false);
   });
 
   it('persists enableCrossClientSync to localStorage', async () => {
     const { useAppStore } = await import('../app-store');
-    useAppStore.getState().setEnableCrossClientSync(false);
-    expect(localStorage.getItem('dorkos-enable-cross-client-sync')).toBe('false');
+    useAppStore.getState().setEnableCrossClientSync(true);
+    expect(localStorage.getItem('dorkos-enable-cross-client-sync')).toBe('true');
   });
 
-  it('resets enableCrossClientSync to true on resetPreferences', async () => {
+  it('resets enableCrossClientSync to false on resetPreferences', async () => {
     const { useAppStore } = await import('../app-store');
-    useAppStore.getState().setEnableCrossClientSync(false);
+    useAppStore.getState().setEnableCrossClientSync(true);
     useAppStore.getState().resetPreferences();
-    expect(useAppStore.getState().enableCrossClientSync).toBe(true);
+    expect(useAppStore.getState().enableCrossClientSync).toBe(false);
   });
 
-  it('defaults enableMessagePolling to true', async () => {
+  it('defaults enableMessagePolling to false', async () => {
     const { useAppStore } = await import('../app-store');
-    expect(useAppStore.getState().enableMessagePolling).toBe(true);
+    expect(useAppStore.getState().enableMessagePolling).toBe(false);
   });
 
   it('persists enableMessagePolling to localStorage', async () => {
     const { useAppStore } = await import('../app-store');
-    useAppStore.getState().setEnableMessagePolling(false);
-    expect(localStorage.getItem('dorkos-enable-message-polling')).toBe('false');
+    useAppStore.getState().setEnableMessagePolling(true);
+    expect(localStorage.getItem('dorkos-enable-message-polling')).toBe('true');
   });
 
-  it('resets enableMessagePolling to true on resetPreferences', async () => {
+  it('resets enableMessagePolling to false on resetPreferences', async () => {
     const { useAppStore } = await import('../app-store');
-    useAppStore.getState().setEnableMessagePolling(false);
+    useAppStore.getState().setEnableMessagePolling(true);
     useAppStore.getState().resetPreferences();
-    expect(useAppStore.getState().enableMessagePolling).toBe(true);
+    expect(useAppStore.getState().enableMessagePolling).toBe(false);
   });
 });

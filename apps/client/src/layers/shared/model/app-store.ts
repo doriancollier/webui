@@ -125,6 +125,10 @@ interface AppState {
   setShowStatusBarVersion: (v: boolean) => void;
   showStatusBarTunnel: boolean;
   setShowStatusBarTunnel: (v: boolean) => void;
+  showStatusBarSync: boolean;
+  setShowStatusBarSync: (v: boolean) => void;
+  showStatusBarPolling: boolean;
+  setShowStatusBarPolling: (v: boolean) => void;
   enableCrossClientSync: boolean;
   setEnableCrossClientSync: (v: boolean) => void;
   enableMessagePolling: boolean;
@@ -174,6 +178,8 @@ const BOOL_KEYS = {
   showStatusBarSound: 'dorkos-show-status-bar-sound',
   showStatusBarVersion: 'dorkos-show-status-bar-version',
   showStatusBarTunnel: 'dorkos-show-status-bar-tunnel',
+  showStatusBarSync: 'dorkos-show-status-bar-sync',
+  showStatusBarPolling: 'dorkos-show-status-bar-polling',
   enableCrossClientSync: 'dorkos-enable-cross-client-sync',
   enableMessagePolling: 'dorkos-enable-message-polling',
 } as const;
@@ -197,8 +203,10 @@ const BOOL_DEFAULTS: Record<keyof typeof BOOL_KEYS, boolean> = {
   showStatusBarSound: true,
   showStatusBarVersion: true,
   showStatusBarTunnel: true,
-  enableCrossClientSync: true,
-  enableMessagePolling: true,
+  showStatusBarSync: true,
+  showStatusBarPolling: true,
+  enableCrossClientSync: false,
+  enableMessagePolling: false,
 };
 
 export const useAppStore = create<AppState>()(
@@ -377,6 +385,16 @@ export const useAppStore = create<AppState>()(
       setShowStatusBarTunnel: (v) => {
         writeBool(BOOL_KEYS.showStatusBarTunnel, v);
         set({ showStatusBarTunnel: v });
+      },
+      showStatusBarSync: readBool(BOOL_KEYS.showStatusBarSync, true),
+      setShowStatusBarSync: (v) => {
+        writeBool(BOOL_KEYS.showStatusBarSync, v);
+        set({ showStatusBarSync: v });
+      },
+      showStatusBarPolling: readBool(BOOL_KEYS.showStatusBarPolling, true),
+      setShowStatusBarPolling: (v) => {
+        writeBool(BOOL_KEYS.showStatusBarPolling, v);
+        set({ showStatusBarPolling: v });
       },
       enableCrossClientSync: readBool(BOOL_KEYS.enableCrossClientSync, BOOL_DEFAULTS.enableCrossClientSync),
       setEnableCrossClientSync: (v) => {

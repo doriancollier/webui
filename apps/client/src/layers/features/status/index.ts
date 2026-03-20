@@ -11,6 +11,8 @@ export { ModelItem } from './ui/ModelItem';
 export { CostItem } from './ui/CostItem';
 export { ContextItem } from './ui/ContextItem';
 export { NotificationSoundItem } from './ui/NotificationSoundItem';
+export { SyncItem } from './ui/SyncItem';
+export { PollingItem } from './ui/PollingItem';
 export { TunnelItem } from './ui/TunnelItem';
 export { VersionItem } from './ui/VersionItem';
 export { ClientsItem } from './ui/ClientsItem';

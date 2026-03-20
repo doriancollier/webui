@@ -80,6 +80,10 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setEnablePulseNotifications,
     showStatusBarSound,
     setShowStatusBarSound,
+    showStatusBarSync,
+    setShowStatusBarSync,
+    showStatusBarPolling,
+    setShowStatusBarPolling,
     showStatusBarTunnel,
     setShowStatusBarTunnel,
   } = useAppStore();
@@ -304,6 +308,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                     </SettingRow>
                     <SettingRow label="Show sound toggle" description="Display notification sound toggle">
                       <Switch checked={showStatusBarSound} onCheckedChange={setShowStatusBarSound} />
+                    </SettingRow>
+                    <SettingRow label="Show sync toggle" description="Display multi-window sync toggle">
+                      <Switch checked={showStatusBarSync} onCheckedChange={setShowStatusBarSync} />
+                    </SettingRow>
+                    <SettingRow label="Show refresh toggle" description="Display background refresh toggle">
+                      <Switch checked={showStatusBarPolling} onCheckedChange={setShowStatusBarPolling} />
                     </SettingRow>
                     <SettingRow label="Show remote" description="Display remote control">
                       <Switch checked={showStatusBarTunnel} onCheckedChange={setShowStatusBarTunnel} />
