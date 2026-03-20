@@ -1,7 +1,7 @@
 ---
 number: 143
 title: Use Retry Depth Parameter Over Circuit Breaker for SDK Errors
-status: draft
+status: proposed
 created: 2026-03-18
 spec: sdk-error-observability
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: sdk-error-observability)
+Proposed
 
 ## Context
 

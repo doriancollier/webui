@@ -1,7 +1,7 @@
 ---
 number: 138
 title: Whitelist Relay Adapter Event Filtering
-status: draft
+status: proposed
 created: 2026-03-17
 spec: relay-adapter-event-whitelist
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: relay-adapter-event-whitelist)
+Proposed
 
 ## Context
 

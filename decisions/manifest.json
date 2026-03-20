@@ -1,30 +1,48 @@
 {
   "version": 1,
-  "nextNumber": 150,
+  "nextNumber": 154,
   "decisions": [
     {
-      "number": 149,
-      "slug": "three-phase-streaming-integrity-implementation",
-      "title": "Three-Phase Implementation for Streaming Message Integrity",
-      "status": "draft",
-      "created": "2026-03-19",
-      "extractedFrom": "streaming-message-integrity",
-      "specSlug": "streaming-message-integrity"
+      "number": 153,
+      "slug": "move-inference-indicator-outside-scroll-container",
+      "title": "Move Inference Status Display Outside the Scroll Container",
+      "status": "proposed",
+      "created": "2026-03-20",
+      "extractedFrom": "unified-status-strip",
+      "specSlug": "unified-status-strip"
+    },
+    {
+      "number": 152,
+      "slug": "state-machine-for-unified-status-strip",
+      "title": "Use State Machine with Prioritized Content Slots for Unified Status Strip",
+      "status": "proposed",
+      "created": "2026-03-20",
+      "extractedFrom": "unified-status-strip",
+      "specSlug": "unified-status-strip"
+    },
+    {
+      "number": 151,
+      "slug": "use-stick-to-bottom-for-spring-scroll",
+      "title": "Replace Custom Scroll Logic with use-stick-to-bottom for Spring-Based Streaming Scroll",
+      "status": "proposed",
+      "created": "2026-03-20",
+      "extractedFrom": "chat-streaming-motion",
+      "specSlug": "chat-streaming-motion"
+    },
+    {
+      "number": 150,
+      "slug": "streamdown-animated-prop-for-text-streaming",
+      "title": "Use Streamdown's Built-In animated Prop for Per-Word Text Streaming Animation",
+      "status": "proposed",
+      "created": "2026-03-20",
+      "extractedFrom": "chat-streaming-motion",
+      "specSlug": "chat-streaming-motion"
     },
     {
       "number": 148,
       "slug": "server-echo-id-for-client-server-reconciliation",
       "title": "Server-Echo Message ID for Client-Server ID Reconciliation",
-      "status": "draft",
-      "created": "2026-03-19",
-      "extractedFrom": "streaming-message-integrity",
-      "specSlug": "streaming-message-integrity"
-    },
-    {
-      "number": 147,
-      "slug": "extend-transcript-parser-for-error-subagent-hook",
-      "title": "Extend Transcript Parser to Extract Error/Subagent/Hook Parts",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-19",
       "extractedFrom": "streaming-message-integrity",
       "specSlug": "streaming-message-integrity"
@@ -33,7 +51,7 @@
       "number": 146,
       "slug": "skip-post-stream-replace-for-message-stability",
       "title": "Skip Post-Stream Replace for Message Stability",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-19",
       "extractedFrom": "streaming-message-integrity",
       "specSlug": "streaming-message-integrity"
@@ -42,25 +60,16 @@
       "number": 145,
       "slug": "streaming-message-tag-for-client-id-dedup",
       "title": "Use _streaming Boolean Flag for Client-ID Dedup",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-19",
       "extractedFrom": "streaming-message-integrity",
       "specSlug": "streaming-message-integrity"
     },
     {
-      "number": 144,
-      "slug": "use-html-parse-mode-for-telegram-formatting",
-      "title": "Use HTML Parse Mode for Telegram Formatting",
-      "status": "draft",
-      "created": "2026-03-18",
-      "extractedFrom": "relay-adapter-code-quality",
-      "specSlug": "relay-adapter-code-quality"
-    },
-    {
       "number": 143,
       "slug": "use-retry-depth-over-circuit-breaker-for-sdk-errors",
       "title": "Use Retry Depth Parameter Over Circuit Breaker for SDK Errors",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-18",
       "extractedFrom": "sdk-error-observability",
       "specSlug": "sdk-error-observability"
@@ -69,7 +78,7 @@
       "number": 142,
       "slug": "defer-form-library-adoption",
       "title": "Defer Form Library Adoption",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-18",
       "extractedFrom": "form-field-standardization",
       "specSlug": "form-field-standardization"
@@ -78,7 +87,7 @@
       "number": 141,
       "slug": "use-shadcn-field-for-form-layout",
       "title": "Use Shadcn Field for Form Layout Foundation",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-18",
       "extractedFrom": "form-field-standardization",
       "specSlug": "form-field-standardization"
@@ -87,7 +96,7 @@
       "number": 140,
       "slug": "telegram-callback-id-lookup-map",
       "title": "Use Ephemeral Lookup Map for Telegram Callback Data",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-18",
       "extractedFrom": "slack-tool-approval",
       "specSlug": "slack-tool-approval"
@@ -96,7 +105,7 @@
       "number": 139,
       "slug": "relay-bus-approval-routing",
       "title": "Route Chat Adapter Approvals via Relay Message Bus",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-18",
       "extractedFrom": "slack-tool-approval",
       "specSlug": "slack-tool-approval"
@@ -105,7 +114,7 @@
       "number": 138,
       "slug": "whitelist-relay-adapter-event-filtering",
       "title": "Whitelist Relay Adapter Event Filtering",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-17",
       "extractedFrom": "relay-adapter-event-whitelist",
       "specSlug": "relay-adapter-event-whitelist"

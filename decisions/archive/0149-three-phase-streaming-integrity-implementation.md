@@ -24,6 +24,7 @@ Implement a three-phase approach: Phase 1 (client-only, fixes both bugs immediat
 ## Consequences
 
 ### Positive
+
 - Phase 1 can ship immediately without server changes
 - Phase 2 is independent — can be shipped in parallel with Phase 1
 - Phase 3 depends only on Phase 1 infrastructure — not blocked by Phase 2
@@ -33,6 +34,7 @@ Implement a three-phase approach: Phase 1 (client-only, fixes both bugs immediat
 - Allows iterative shipping and testing
 
 ### Negative
+
 - Developers must understand three separate phases and their dependencies
 - Phase 1 uses interim content/position matching (not the final solution)
 - Phase 3 requires both client and server coordination

@@ -1,7 +1,7 @@
 ---
 number: 146
 title: Skip Post-Stream Replace for Message Stability
-status: draft
+status: proposed
 created: 2026-03-19
 spec: streaming-message-integrity
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: streaming-message-integrity)
+Proposed
 
 ## Context
 
@@ -26,6 +26,7 @@ Remove the post-stream reset sequence. Stop resetting `historySeededRef.current 
 ## Consequences
 
 ### Positive
+
 - Eliminates message flash on stream completion (no stale-data replace)
 - Removes unnecessary background query invalidation (one fewer network request)
 - Allows error/subagent/hook parts to persist (no data loss on replace)
@@ -33,6 +34,7 @@ Remove the post-stream reset sequence. Stop resetting `historySeededRef.current 
 - Makes the incremental append path the default behavior
 
 ### Negative
+
 - Breaks the current "seed effect Branch 1" (full replace) flow — must rewrite Branch 2 (incremental) with tagged dedup
 - Session ID remap now requires careful handling to avoid showing duplicate messages during the transition
 - Polling interval becomes responsible for eventual consistency (not immediate)

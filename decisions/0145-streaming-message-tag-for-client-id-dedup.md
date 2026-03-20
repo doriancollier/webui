@@ -1,17 +1,17 @@
 ---
 number: 145
 title: Use _streaming Boolean Flag for Client-ID Dedup
-status: draft
+status: proposed
 created: 2026-03-19
 spec: streaming-message-integrity
 superseded-by: null
 ---
 
-# 0145. Use _streaming Boolean Flag for Client-ID Dedup
+# 0145. Use \_streaming Boolean Flag for Client-ID Dedup
 
 ## Status
 
-Draft (auto-extracted from spec: streaming-message-integrity)
+Proposed
 
 ## Context
 
@@ -24,6 +24,7 @@ Add an optional `_streaming: boolean` field to the `ChatMessage` interface follo
 ## Consequences
 
 ### Positive
+
 - Eliminates the post-stream replace without losing data (no flash, no error part vanishing)
 - Enables incremental append path to work correctly during streaming recovery
 - Small, bounded set (0-2 messages) makes content/position matching performant
@@ -31,6 +32,7 @@ Add an optional `_streaming: boolean` field to the `ChatMessage` interface follo
 - Tags are cleared on match — no unbounded growth
 
 ### Negative
+
 - Requires rewriting the seed effect's incremental append logic to handle tagged dedup
 - Content matching is an interim solution; server-echo ID (Phase 3) is the long-term fix
 - Adds client-side matching heuristic that depends on message ordering

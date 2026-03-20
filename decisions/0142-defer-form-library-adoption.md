@@ -1,7 +1,7 @@
 ---
 number: 142
 title: Defer Form Library Adoption
-status: draft
+status: proposed
 created: 2026-03-18
 spec: form-field-standardization
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: form-field-standardization)
+Proposed
 
 ## Context
 

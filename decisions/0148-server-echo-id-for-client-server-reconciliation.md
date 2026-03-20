@@ -1,7 +1,7 @@
 ---
 number: 148
 title: Server-Echo Message ID for Client-Server ID Reconciliation
-status: draft
+status: proposed
 created: 2026-03-19
 spec: streaming-message-integrity
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: streaming-message-integrity)
+Proposed
 
 ## Context
 
@@ -24,6 +24,7 @@ Implement the three-phase client-ID propagation approach. Phase 3: Add optional 
 ## Consequences
 
 ### Positive
+
 - Industry-standard pattern used by Slack, RTK Query, and others
 - Provides exact ID mapping via server-generated `messageIds` in done event
 - Backward compatible — falls back to tagged-dedup when `messageIds` absent
@@ -31,8 +32,9 @@ Implement the three-phase client-ID propagation approach. Phase 3: Add optional 
 - Enables precise client-server synchronization
 
 ### Negative
+
 - Requires extending the `AgentRuntime` interface with `getLastMessageIds()` method
 - Adds server-side transcript parsing after streaming completes (minor performance cost)
 - Both client and server changes needed — can't ship independently
-- Depends on Phase 1 (_streaming flag infrastructure) already being in place
+- Depends on Phase 1 (\_streaming flag infrastructure) already being in place
 - Requires Transport interface extension for `clientMessageId` parameter

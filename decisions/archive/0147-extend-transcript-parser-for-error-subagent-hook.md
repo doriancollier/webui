@@ -26,6 +26,7 @@ Add block handlers for error, subagent, and hook JSONL blocks in the transcript 
 ## Consequences
 
 ### Positive
+
 - Fixes data loss when loading past sessions (error/subagent/hook parts now visible)
 - Reuses existing Zod schemas (no schema changes needed)
 - Defensive field access handles missing JSONL fields gracefully
@@ -33,6 +34,7 @@ Add block handlers for error, subagent, and hook JSONL blocks in the transcript 
 - Orthogonal to the streaming ID reconciliation fix
 
 ### Negative
+
 - Requires understanding exact JSONL field names from the SDK (block.error_type vs block.errorType, etc.)
 - Assumes the SDK persists these block types to JSONL (may vary by SDK version)
 - Field name assumptions may need adjustment if SDK format changes
