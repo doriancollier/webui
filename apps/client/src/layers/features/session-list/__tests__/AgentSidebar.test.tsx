@@ -8,13 +8,13 @@ import type { Session } from '@dorkos/shared/types';
 import { TransportProvider } from '@/layers/shared/model';
 import { TooltipProvider, SidebarProvider } from '@/layers/shared/ui';
 
-// Mock useSessionId (nuqs-backed)
+// Mock useSessionId (TanStack Router search params)
 const mockSetSessionId = vi.fn();
 vi.mock('@/layers/entities/session/model/use-session-id', () => ({
   useSessionId: () => [null, mockSetSessionId] as const,
 }));
 
-// Mock useDirectoryState (nuqs-backed)
+// Mock useDirectoryState (TanStack Router search params)
 vi.mock('@/layers/entities/session/model/use-directory-state', () => ({
   useDirectoryState: () => ['/test/cwd', vi.fn()] as const,
 }));
@@ -278,6 +278,12 @@ describe('AgentSidebar', () => {
   });
 
   it('auto-selects first session when no active session', async () => {
+    // Simulate being on the /session route (jsdom defaults to '/' which is the dashboard)
+    Object.defineProperty(window, 'location', {
+      writable: true,
+      value: { ...window.location, pathname: '/session' },
+    });
+
     mockTransport = createMockTransport({
       listSessions: vi
         .fn()
@@ -315,9 +321,7 @@ describe('AgentSidebar', () => {
     it('switching tab calls setSidebarActiveTab', () => {
       renderWithQuery(<AgentSidebar />);
 
-      const schedulesTab = screen
-        .getAllByRole('tab')
-        .find((t) => t.id === 'sidebar-tab-schedules');
+      const schedulesTab = screen.getAllByRole('tab').find((t) => t.id === 'sidebar-tab-schedules');
       expect(schedulesTab).toBeDefined();
       if (schedulesTab) {
         fireEvent.click(schedulesTab);
@@ -332,9 +336,7 @@ describe('AgentSidebar', () => {
       const connectionsPanel = document.getElementById('sidebar-tabpanel-connections');
       expect(sessionsPanel?.getAttribute('aria-labelledby')).toBe('sidebar-tab-sessions');
       expect(schedulesPanel?.getAttribute('aria-labelledby')).toBe('sidebar-tab-schedules');
-      expect(connectionsPanel?.getAttribute('aria-labelledby')).toBe(
-        'sidebar-tab-connections'
-      );
+      expect(connectionsPanel?.getAttribute('aria-labelledby')).toBe('sidebar-tab-connections');
     });
   });
 
@@ -391,9 +393,7 @@ describe('AgentSidebar', () => {
 
       renderWithQuery(<AgentSidebar />);
 
-      const schedulesTab = screen
-        .getAllByRole('tab')
-        .find((t) => t.id === 'sidebar-tab-schedules');
+      const schedulesTab = screen.getAllByRole('tab').find((t) => t.id === 'sidebar-tab-schedules');
       expect(schedulesTab).toBeUndefined();
     });
 

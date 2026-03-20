@@ -21,15 +21,15 @@ import { SidebarTabRow } from './SidebarTabRow';
 import { SessionsView } from './SessionsView';
 import { SchedulesView } from './SchedulesView';
 import { ConnectionsView } from './ConnectionsView';
-import { Plus } from 'lucide-react';
+import { Home, Plus } from 'lucide-react';
+import { useNavigate } from '@tanstack/react-router';
 import { ProgressCard, useOnboarding } from '@/layers/features/onboarding';
 import { useConnectionsStatus } from '../model/use-connections-status';
 
 /** Primary sidebar with session list, schedule tabs, and onboarding progress. */
 export function AgentSidebar() {
   const { sessions, activeSessionId, setActiveSession } = useSessions();
-  const { setSidebarOpen, setPulseOpen, setOnboardingStep } =
-    useAppStore();
+  const { setSidebarOpen, setPulseOpen, setOnboardingStep } = useAppStore();
   const isMobile = useIsMobile();
   // Suppresses auto-select after user intentionally clicks "New session"
   const intentionallyNullRef = useRef(false);
@@ -43,11 +43,14 @@ export function AgentSidebar() {
 
   // Auto-select most recent session when directory changes and no session is active.
   // Skip when the user intentionally cleared the session via "New session" button.
+  // Skip when on the dashboard — it intentionally has no active session.
   useEffect(() => {
     if (intentionallyNullRef.current) {
       intentionallyNullRef.current = false;
       return;
     }
+    // On the dashboard route, no session should be auto-selected.
+    if (window.location.pathname === '/') return;
     if (!activeSessionId && sessions.length > 0) {
       setActiveSession(sessions[0].id);
     }
@@ -114,6 +117,7 @@ export function AgentSidebar() {
   const { data: activeRunCount = 0 } = useActiveRunCount(pulseToolEnabled);
 
   const connectionsStatus = useConnectionsStatus(selectedCwd);
+  const navigate = useNavigate();
 
   const visibleTabs = useMemo(() => {
     const tabs: ('sessions' | 'schedules' | 'connections')[] = ['sessions'];
@@ -154,6 +158,15 @@ export function AgentSidebar() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [sidebarOpen, visibleTabs, setSidebarActiveTab]);
 
+  const handleDashboard = useCallback(() => {
+    intentionallyNullRef.current = true;
+    navigate({ to: '/' });
+    if (isMobile) {
+      setSidebarOpen(false);
+      sidebarCtx?.setOpenMobile(false);
+    }
+  }, [navigate, isMobile, setSidebarOpen, sidebarCtx]);
+
   // Cmd/Ctrl+Shift+N → new session (global, works regardless of sidebar state)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -171,6 +184,16 @@ export function AgentSidebar() {
     <>
       <SidebarHeader className="border-b p-3">
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              data-slot="dashboard-link"
+              onClick={handleDashboard}
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-100 active:scale-[0.98]"
+            >
+              <Home className="size-(--size-icon-sm)" />
+              Dashboard
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleNewSession}

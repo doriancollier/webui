@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, ExternalLink, CheckCircle } from 'lucide-react';
-import { features, CATEGORY_LABELS } from '@/layers/features/marketing';
+import { features, CATEGORY_LABELS, type FeatureStatus } from '@/layers/features/marketing';
 import { siteConfig } from '@/config/site';
 
 export function generateStaticParams() {
@@ -44,7 +44,7 @@ export default async function FeaturePage(props: { params: Promise<{ slug: strin
 
   const relatedFeatureData = (feature.relatedFeatures ?? [])
     .map((slug) => features.find((f) => f.slug === slug))
-    .filter(Boolean);
+    .filter((f): f is (typeof features)[number] => f !== undefined);
 
   // BreadcrumbList JSON-LD
   const breadcrumbJsonLd = {
@@ -161,11 +161,11 @@ export default async function FeaturePage(props: { params: Promise<{ slug: strin
             <div className="flex flex-wrap gap-2">
               {relatedFeatureData.map((related) => (
                 <Link
-                  key={related!.slug}
-                  href={`/features/${related!.slug}`}
+                  key={related.slug}
+                  href={`/features/${related.slug}`}
                   className="border-warm-gray-light/30 text-warm-gray hover:text-charcoal hover:border-warm-gray transition-smooth inline-flex items-center gap-1 rounded-full border px-3 py-1 font-mono text-xs"
                 >
-                  {related!.name} <ArrowRight size={10} />
+                  {related.name} <ArrowRight size={10} />
                 </Link>
               ))}
             </div>
@@ -176,22 +176,22 @@ export default async function FeaturePage(props: { params: Promise<{ slug: strin
   );
 }
 
-const STATUS_STYLES: Record<string, string> = {
+const STATUS_STYLES: Record<FeatureStatus, string> = {
   ga: 'bg-emerald-100/60 text-emerald-900',
   beta: 'bg-amber-100/60 text-amber-900',
   'coming-soon': 'bg-warm-gray/10 text-warm-gray-light',
 };
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS: Record<FeatureStatus, string> = {
   ga: 'Available',
   beta: 'Beta',
   'coming-soon': 'Coming Soon',
 };
 
-function StatusBadge({ status }: { status: string }) {
+function StatusBadge({ status }: { status: FeatureStatus }) {
   return (
-    <span className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${STATUS_STYLES[status] ?? ''}`}>
-      {STATUS_LABELS[status] ?? status}
+    <span className={`rounded-full px-2.5 py-0.5 font-mono text-xs ${STATUS_STYLES[status]}`}>
+      {STATUS_LABELS[status]}
     </span>
   );
 }

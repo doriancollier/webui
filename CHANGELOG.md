@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix dashboard navigation — use router context in beforeLoad, suppress auto-select
+- Fix dashboard navigation — use router context in beforeLoad, suppress auto-select
 - Add messageIds to DoneEventSchema, export SubagentStatus, extract history helpers
 
 ---

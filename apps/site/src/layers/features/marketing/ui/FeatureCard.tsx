@@ -1,19 +1,19 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import type { Feature } from '../lib/features';
+import type { Feature, FeatureStatus } from '../lib/features';
 import { CATEGORY_LABELS } from '../lib/features';
 
 interface FeatureCardProps {
   feature: Feature;
 }
 
-const STATUS_STYLES: Record<string, string> = {
+const STATUS_STYLES: Record<FeatureStatus, string> = {
   ga: 'bg-emerald-100/60 text-emerald-900',
   beta: 'bg-amber-100/60 text-amber-900',
   'coming-soon': 'bg-warm-gray/10 text-warm-gray-light',
 };
 
-const STATUS_LABELS: Record<string, string> = {
+const STATUS_LABELS: Record<FeatureStatus, string> = {
   ga: 'Available',
   beta: 'Beta',
   'coming-soon': 'Coming Soon',
@@ -34,9 +34,9 @@ export function FeatureCard({ feature }: FeatureCardProps) {
           {CATEGORY_LABELS[feature.category]}
         </span>
         <span
-          className={`rounded-full px-2 py-0.5 font-mono text-xs ${STATUS_STYLES[feature.status] ?? ''}`}
+          className={`rounded-full px-2 py-0.5 font-mono text-xs ${STATUS_STYLES[feature.status]}`}
         >
-          {STATUS_LABELS[feature.status] ?? feature.status}
+          {STATUS_LABELS[feature.status]}
         </span>
       </div>
 
