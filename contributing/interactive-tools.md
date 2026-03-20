@@ -174,7 +174,10 @@ if (tc.interactiveType === 'question' && tc.questions) {
 
 ```typescript
 await transport.submitAnswers(sessionId, toolCallId, answers);
+onDecided?.(); // Optimistically clear waiting state (same pattern as ToolApproval)
 ```
+
+Both `QuestionPrompt` and `ToolApproval` treat HTTP 409 (`INTERACTION_ALREADY_RESOLVED`) as success — this handles the race condition where the SDK resolves the interaction before the client's HTTP request arrives.
 
 **6. Transport resolves the deferred promise**
 
@@ -429,6 +432,8 @@ submitMyNewResult(sessionId: string, toolCallId: string, result: MyResult): bool
 
 Implement in `HttpTransport` (POST to a new route) and `DirectTransport` (call the runtime directly).
 
+**Important:** Handle 409 responses in your transport method. The server returns 409 with `{ code: 'INTERACTION_ALREADY_RESOLVED' }` when the SDK resolves the interaction before the HTTP request arrives. Treat this as success in the client.
+
 ### Step 4: Add route (HttpTransport only)
 
 ```typescript
@@ -523,6 +528,10 @@ Generator loop iteration:
 Every deferred promise includes a 10-minute timeout (`SESSIONS.INTERACTION_TIMEOUT_MS = 10 * 60 * 1000`, defined in `apps/server/src/config/constants.ts`). If the user does not respond, the timeout fires, removes the interaction from `pendingInteractions`, and resolves the promise with `{ behavior: 'deny' }`. This prevents the SDK from hanging indefinitely.
 
 The timeout is cleared whenever the interaction is resolved normally (user responds or interaction is cancelled).
+
+### Force-Complete Safety Net
+
+The stream `done` handler sweeps any remaining pending interactive tool calls to `'complete'` status. This ensures the UI never gets stuck in an interactive waiting state after the stream ends, even if a `tool_result` event was missed or arrived out of order.
 
 ### Timeout Visibility
 

@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Reconcile developer guides and external docs for v0.17.2 changes
+
 ### Fixed
 
 - Use dynamic port in tunnel CORS test

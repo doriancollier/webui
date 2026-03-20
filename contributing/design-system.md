@@ -381,6 +381,42 @@ import { PasswordInput } from '@/layers/shared/ui';
 
 Sentinel mode ("saved value" placeholder that clears on focus) is a consumer concern — pass `onFocus`, `placeholder`, and `value` props.
 
+### FieldCard
+
+Rounded card container for grouping related form fields into Apple-style settings groups. Three components work together:
+
+- **`FieldCard`** — Outer card with `rounded-lg border bg-card`. Use `className` for variants (e.g., `border-destructive/50` for danger zones).
+- **`FieldCardContent`** — Content wrapper that applies automatic thin `divide-y` separators between children. Each child gets `px-4 py-3`.
+- **`CollapsibleFieldCard`** — Collapsible section with a right-aligned ChevronDown that rotates -90deg when collapsed.
+
+```tsx
+import { FieldCard, FieldCardContent, CollapsibleFieldCard } from '@/layers/shared/ui';
+
+// Static group
+<FieldCard>
+  <FieldCardContent>
+    <SettingRow label="Notifications" description="Enable push alerts">
+      <Switch />
+    </SettingRow>
+    <SettingRow label="Sound" description="Play sound on notification">
+      <Switch />
+    </SettingRow>
+  </FieldCardContent>
+</FieldCard>
+
+// Collapsible group
+<CollapsibleFieldCard
+  open={open}
+  onOpenChange={setOpen}
+  trigger="Advanced"
+  badge={<Badge variant="secondary">3 overrides</Badge>}
+>
+  <div className="px-4 py-3">Content here</div>
+</CollapsibleFieldCard>
+```
+
+Used across settings panels, agent config tabs, adapter wizard, and binding dialogs.
+
 ### Field Orientation Conventions
 
 | Context | Orientation | Component |

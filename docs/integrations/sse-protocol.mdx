@@ -15,8 +15,10 @@ When a client sends a message, the server responds with an SSE stream:
 POST /api/sessions/:id/messages
 Content-Type: application/json
 
-{ "content": "Hello, Claude", "cwd": "/path/to/project" }
+{ "content": "Hello, Claude", "cwd": "/path/to/project", "clientMessageId": "optional-uuid" }
 ```
+
+The optional `clientMessageId` enables server-echo ID reconciliation — the server includes JSONL-assigned message IDs in the `done` event so the client can remap streaming message IDs to their persistent equivalents.
 
 Response (`Content-Type: text/event-stream`):
 
@@ -40,6 +42,12 @@ The endpoint always returns a `text/event-stream` response. The web client uses 
   "text_delta": { type: "{ delta: string }", description: "Incremental text chunk for the assistant message" },
 }} />
 
+### Thinking Events
+
+<TypeTable type={{
+  "thinking_delta": { type: "{ delta: string }", description: "Incremental extended thinking content (when extended thinking is enabled)" },
+}} />
+
 ### Tool Events
 
 <TypeTable type={{
@@ -47,6 +55,7 @@ The endpoint always returns a `text/event-stream` response. The web client uses 
   "tool_call_delta": { type: "{ toolCallId: string, delta: string }", description: "Incremental tool input/output" },
   "tool_call_end": { type: "{ toolCallId: string }", description: "Tool invocation completes" },
   "tool_result": { type: "{ toolCallId: string, result: string }", description: "Tool execution result" },
+  "tool_progress": { type: "{ toolCallId: string, progress: string }", description: "Tool execution progress update (e.g., percentage complete)" },
 }} />
 
 ### Interactive Events
@@ -60,7 +69,7 @@ The endpoint always returns a `text/event-stream` response. The web client uses 
 
 <TypeTable type={{
   "error": { type: "{ error: string }", description: "Error occurred during execution" },
-  "done": { type: "{}", description: "Message stream complete" },
+  "done": { type: "{ lastMessageIds?: { user: string, assistant: string } }", description: "Message stream complete. Includes JSONL-assigned IDs when clientMessageId was sent in the request." },
   "session_status": { type: "{ status: string }", description: "Session state changed" },
   "task_update": { type: "{ tasks: TaskItem[] }", description: "Task list updated" },
 }} />
@@ -87,6 +96,8 @@ Content-Type: application/json
 <Callout type="warn">
   Failing to respond to an `approval_required` event blocks the agent. The SSE stream stays open until the tool call is resolved.
 </Callout>
+
+Both `/approve`, `/deny`, and `/submit-answers` may return `409` with `{ code: "INTERACTION_ALREADY_RESOLVED" }` if the SDK resolved the interaction before the request arrived. Treat this as success.
 </Tab>
 
 <Tab value="Question Response">

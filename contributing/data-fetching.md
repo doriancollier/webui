@@ -51,9 +51,12 @@ export function useSessions(cwd?: string) {
     queryKey: ['sessions', cwd],
     queryFn: () => transport.listSessions(cwd),
     refetchInterval: 30_000, // Poll every 30s for new sessions
+    refetchIntervalInBackground: false, // Pause polling when tab is hidden
   });
 }
 ```
+
+**Background-tab optimization:** All hooks that use `refetchInterval` should also set `refetchIntervalInBackground: false` to prevent unnecessary network requests when the browser tab is hidden. This convention is enforced across `useSessions`, `useRuns`, `useRelayAdapters`, `useTunnelStatus`, and other polling hooks.
 
 ### Sending Messages with SSE Streaming
 

@@ -24,6 +24,7 @@ Transport
   denyTool(sessionId, toolCallId)     -> { ok: boolean }
   submitAnswers(sessionId, toolCallId, answers) -> { ok: boolean }
   getTasks(sessionId, cwd?)           -> { tasks: TaskItem[] }
+  getLastMessageIds(sessionId)        -> { user: string, assistant: string } | null
 
   -- Server / Config --
   health()                   -> HealthResponse
@@ -84,7 +85,7 @@ Transport
 
 ### Key Design Decision: Callback-Based Streaming
 
-`sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. An optional `cwd` parameter is passed through so the SDK uses the correct project directory when resuming sessions. This normalizes both transports:
+`sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. An optional `cwd` parameter is passed through so the SDK uses the correct project directory when resuming sessions. An optional `options` bag supports `clientMessageId` for server-echo ID reconciliation. This normalizes both transports:
 
 - **HttpTransport** parses SSE events from a `ReadableStream` and calls `onEvent`
 - **DirectTransport** iterates the `AsyncGenerator` from the runtime and calls `onEvent`
@@ -204,7 +205,7 @@ The `AgentRuntime` interface defines all operations that an agent backend must s
 - **Session lifecycle**: `ensureSession`, `hasSession`, `updateSession`
 - **Messaging**: `sendMessage` (returns `AsyncGenerator<StreamEvent>`)
 - **Interactive flows**: `approveTool`, `submitAnswers`
-- **Session queries**: `listSessions`, `getSession`, `getMessageHistory`, `getSessionTasks`, `getSessionETag`, `readFromOffset`
+- **Session queries**: `listSessions`, `getSession`, `getMessageHistory`, `getSessionTasks`, `getSessionETag`, `getLastMessageIds`, `readFromOffset`
 - **Session sync**: `watchSession`
 - **Session locking**: `acquireLock`, `releaseLock`, `isLocked`, `getLockInfo`
 - **Capabilities**: `getSupportedModels`, `getCapabilities` (returns `RuntimeCapabilities`)

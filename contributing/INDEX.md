@@ -43,22 +43,22 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 | Guide | Last Reviewed | Reviewer | Notes |
 |---|---|---|---|
 | `project-structure.md` | 2026-03-06 | Claude | Added eslint-config and icons packages |
-| `architecture.md` | 2026-03-12 | Claude | Updated in relay-removal commit: SSE-only client transport, removed subscribe-first handshake section |
-| `design-system.md` | 2026-03-16 | Claude | Reconciled — lint fixes only, no content changes required |
-| `api-reference.md` | 2026-03-16 | Claude | Added thinking_delta/tool_progress SSE events, binding permissionMode field |
-| `configuration.md` | 2026-03-16 | Claude | Added `dorkos cleanup` CLI command section |
-| `interactive-tools.md` | 2026-03-06 | Claude | Fixed INTERACTION_TIMEOUT_MS constant ref, reject implementations, auto-approve logic, InteractiveSession type |
-| `keyboard-shortcuts.md` | 2026-03-16 | Claude | Reconciled — lint fix only, no content changes required |
-| `obsidian-plugin-development.md` | 2026-03-16 | Claude | Reconciled — lint fixes only, no content changes required |
-| `data-fetching.md` | 2026-03-12 | Claude | Added Pulse entity hooks section (usePulsePresets), useMcpConfig in agent entity section, updated key files table |
-| `state-management.md` | 2026-03-12 | Claude | Added cross-feature signal store pattern (usePulsePresetDialog), added to decision matrix |
-| `animations.md` | 2026-03-16 | Claude | Reconciled — no changes since last review |
-| `styling-theming.md` | 2026-03-16 | Claude | Reconciled — lint fixes only, no content changes required |
-| `parallel-execution.md` | 2026-03-16 | Claude | Reconciled — release.md command update only |
-| `relay-adapters.md` | 2026-03-16 | Claude | Added SlackAdapter built-in section, binding permissionMode/capability fields, updated custom adapter example to use BaseRelayAdapter |
-| `adapter-catalog.md` | 2026-03-16 | Claude | Reconciled — ConfigFieldInput lint fix only |
-| `browser-testing.md` | 2026-03-16 | Claude | Reconciled — lint fixes only, no content changes required |
-| `environment-variables.md` | 2026-03-16 | Claude | Reconciled — no changes since last review |
+| `architecture.md` | 2026-03-19 | Claude | Added getLastMessageIds to Transport and AgentRuntime, sendMessage options parameter |
+| `design-system.md` | 2026-03-19 | Claude | Added FieldCard/FieldCardContent/CollapsibleFieldCard to Form Fields section |
+| `api-reference.md` | 2026-03-19 | Claude | Reconciled — route changes are bug fixes, no new API surface |
+| `configuration.md` | 2026-03-19 | Claude | Reconciled — CLI UX improvements are internal, port convention already applied |
+| `interactive-tools.md` | 2026-03-19 | Claude | Added onDecided to QuestionPrompt, 409 INTERACTION_ALREADY_RESOLVED handling, force-complete safety net |
+| `keyboard-shortcuts.md` | 2026-03-19 | Claude | Reconciled — no matching changes |
+| `obsidian-plugin-development.md` | 2026-03-19 | Claude | Reconciled — port convention already applied directly |
+| `data-fetching.md` | 2026-03-19 | Claude | Added refetchIntervalInBackground background-tab optimization pattern |
+| `state-management.md` | 2026-03-19 | Claude | Reconciled — entity hook changes are polling config only |
+| `animations.md` | 2026-03-19 | Claude | Reconciled — no matching changes |
+| `styling-theming.md` | 2026-03-19 | Claude | Reconciled — new shared/ui components covered in design-system.md |
+| `parallel-execution.md` | 2026-03-19 | Claude | Reconciled — command file tweaks only |
+| `relay-adapters.md` | 2026-03-19 | Claude | Reconciled — 8 relay commits are bug fixes, guide already updated in 0f9de937/9cffd1dd |
+| `adapter-catalog.md` | 2026-03-19 | Claude | Reconciled — ConfigFieldInput layout changes only |
+| `browser-testing.md` | 2026-03-19 | Claude | Reconciled — port convention already applied directly |
+| `environment-variables.md` | 2026-03-19 | Claude | Reconciled — already updated in port convention commit |
 
 ## External Docs Coverage
 
@@ -109,10 +109,10 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/getting-started/configuration.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `docs/concepts/architecture.mdx` | 2026-03-06 | Claude | Added to coverage map |
 | `docs/concepts/sessions.mdx` | 2026-03-06 | Claude | Added to coverage map |
-| `docs/concepts/transport.mdx` | 2026-03-12 | Claude | Added getMcpConfig to Filesystem and Config methods table |
+| `docs/concepts/transport.mdx` | 2026-03-19 | Claude | Added getLastMessageIds to Sessions table |
 | `docs/concepts/relay.mdx` | 2026-03-11 | Claude | Reviewed — conceptually accurate, no updates needed |
 | `docs/concepts/mesh.mdx` | 2026-03-06 | Claude | Added to coverage map |
-| `docs/integrations/sse-protocol.mdx` | 2026-03-12 | Claude | Removed 202/relay mode content; relay events moved out of session sync stream |
+| `docs/integrations/sse-protocol.mdx` | 2026-03-19 | Claude | Added thinking_delta/tool_progress events, clientMessageId, lastMessageIds in done, 409 for interactive endpoints |
 | `docs/integrations/building-integrations.mdx` | 2026-03-09 | Claude | Added uploadFiles() to Transport interface listing |
 | `docs/self-hosting/deployment.mdx` | 2026-03-06 | Claude | Reconciled — no content impact from ESLint migration |
 | `docs/self-hosting/reverse-proxy.mdx` | 2026-02-17 | Claude | Written from scratch |
