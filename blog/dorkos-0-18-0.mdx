@@ -1,0 +1,39 @@
+---
+title: DorkOS 0.18.0
+description: Chat simulator, interactive tool fixes, and developer guide refresh
+date: 2026-03-19
+author: DorkOS Team
+category: release
+tags: [release, dev-tools, chat, bugfix]
+---
+
+DorkOS 0.18.0 adds a chat simulator to the Dev Playground and fixes interactive tool reliability issues in the AskUserQuestion flow.
+
+## Highlights
+
+**Chat Simulator** — Test streaming, tool approval, and question prompt flows directly in the Dev Playground without spinning up a live agent. Useful for iterating on chat UI components and verifying interactive tool behavior.
+
+**Interactive Tool Fixes** — The AskUserQuestion input bar no longer gets stuck after submitting answers, and 404 errors on the submit endpoint are resolved. The Pulse router now correctly receives its dorkHome parameter.
+
+## All Changes
+
+### Added
+
+- Add chat simulator to Dev Playground for testing streaming, tool approval, and question flows without a live agent
+
+### Changed
+
+- Reconcile developer guides and external docs with recent architecture changes
+- Add test-results directory to .gitignore
+
+### Fixed
+
+- Fix stuck input bar and 404 errors in AskUserQuestion flow
+- Fix createPulseRouter missing dorkHome parameter
+- Fix tunnel CORS test using hardcoded port instead of dynamic assignment
+
+## Install / Update
+
+```
+npm install -g dorkos@0.18.0
+```

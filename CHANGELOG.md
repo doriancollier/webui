@@ -9,18 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add chat simulator to Dev Playground
-
 ### Changed
-
-- Reconcile developer guides and external docs for v0.17.2 changes
 
 ### Fixed
 
-- Use dynamic port in tunnel CORS test
-- Resolve stuck input bar and 404 errors in AskUserQuestion flow
-- Update createPulseRouter to include dorkHome parameter
 ---
+
+## [0.18.0] - 2026-03-19
+
+> Chat simulator, interactive tool fixes, and developer guide refresh
+
+### Added
+
+- Add chat simulator to Dev Playground for testing streaming, tool approval, and question flows without a live agent
+
+### Changed
+
+- Reconcile developer guides and external docs with recent architecture changes
+- Add test-results directory to .gitignore
+
+### Fixed
+
+- Fix stuck input bar and 404 errors in AskUserQuestion flow
+- Fix createPulseRouter missing dorkHome parameter
+- Fix tunnel CORS test using hardcoded port instead of dynamic assignment
 
 ## [0.17.2] - 2026-03-19
 
@@ -652,7 +664,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Keyboard shortcuts for navigation
 - Directory picker for working directory selection
 
-[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.17.1...HEAD
+[Unreleased]: https://github.com/dork-labs/dorkos/compare/v0.18.0...HEAD
+[0.18.0]: https://github.com/dork-labs/dorkos/compare/v0.17.2...v0.18.0
+[0.17.2]: https://github.com/dork-labs/dorkos/compare/v0.17.1...v0.17.2
 [0.17.1]: https://github.com/dork-labs/dorkos/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/dork-labs/dorkos/compare/v0.16.0...v0.17.0
 [0.16.0]: https://github.com/dork-labs/dorkos/compare/v0.15.0...v0.16.0
