@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
 import { StreamingText } from '@/layers/features/chat/ui/StreamingText';
-import { InferenceIndicator } from '@/layers/features/chat/ui/InferenceIndicator';
-import { SystemStatusZone } from '@/layers/features/chat/ui/SystemStatusZone';
+import { ChatStatusStrip } from '@/layers/features/chat/ui/ChatStatusStrip';
 import { TaskListPanel } from '@/layers/features/chat/ui/TaskListPanel';
 import { ClientsItem } from '@/layers/features/status';
 import type { TransportErrorInfo } from '@/layers/features/chat/model/chat-types';
@@ -13,13 +12,19 @@ import { ShowcaseDemo } from '../ShowcaseDemo';
 import { SAMPLE_TASKS } from '../mock-chat-data';
 
 /** Replica of the inline transport error banner from ChatPanel for showcase purposes. */
-function TransportErrorBanner({ error, onRetry }: { error: TransportErrorInfo; onRetry?: () => void }) {
+function TransportErrorBanner({
+  error,
+  onRetry,
+}: {
+  error: TransportErrorInfo;
+  onRetry?: () => void;
+}) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
-      <AlertTriangle className="mt-0.5 size-4 shrink-0 text-destructive" />
+    <div className="border-destructive/30 bg-destructive/5 flex items-start gap-3 rounded-lg border px-3 py-2">
+      <AlertTriangle className="text-destructive mt-0.5 size-4 shrink-0" />
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-destructive">{error.heading}</p>
-        <p className="text-sm text-muted-foreground">{error.message}</p>
+        <p className="text-destructive text-sm font-medium">{error.heading}</p>
+        <p className="text-muted-foreground text-sm">{error.message}</p>
       </div>
       {error.retryable && (
         <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0">
@@ -51,7 +56,7 @@ npm install jsonwebtoken @types/jsonwebtoken
 npm run test -- --watch
 \`\`\``;
 
-/** Status-related component showcases: StreamingText, InferenceIndicator, SystemStatusZone, TransportErrorBanner, TaskListPanel, ClientsItem. */
+/** Status-related component showcases: StreamingText, ChatStatusStrip, TransportErrorBanner, TaskListPanel, ClientsItem. */
 export function StatusShowcases() {
   const [taskCollapsed, setTaskCollapsed] = useState(false);
   const [taskCollapsed2, setTaskCollapsed2] = useState(true);
@@ -99,85 +104,105 @@ export function StatusShowcases() {
       </PlaygroundSection>
 
       <PlaygroundSection
-        title="InferenceIndicator"
-        description="Status indicator showing agent activity."
+        title="ChatStatusStrip"
+        description="Unified status strip — one morphing container showing agent activity, system status, and completion summaries."
       >
-        <ShowcaseLabel>Streaming (live timer)</ShowcaseLabel>
+        <ShowcaseLabel>Streaming (live timer + rotating verb)</ShowcaseLabel>
         <ShowcaseDemo>
-          <InferenceIndicator
+          <ChatStatusStrip
             status="streaming"
             streamStartTime={streamStart}
             estimatedTokens={1250}
+            systemStatus={null}
           />
         </ShowcaseDemo>
 
         <ShowcaseLabel>Waiting for approval</ShowcaseLabel>
         <ShowcaseDemo>
-          <InferenceIndicator
+          <ChatStatusStrip
             status="streaming"
             streamStartTime={streamStart - 5000}
             estimatedTokens={800}
             isWaitingForUser
             waitingType="approval"
+            systemStatus={null}
           />
         </ShowcaseDemo>
 
         <ShowcaseLabel>Waiting for question</ShowcaseLabel>
         <ShowcaseDemo>
-          <InferenceIndicator
+          <ChatStatusStrip
             status="streaming"
             streamStartTime={streamStart - 3000}
             estimatedTokens={600}
             isWaitingForUser
             waitingType="question"
+            systemStatus={null}
           />
         </ShowcaseDemo>
 
         <ShowcaseLabel>Rate limited (with countdown)</ShowcaseLabel>
         <ShowcaseDemo>
-          <InferenceIndicator
+          <ChatStatusStrip
             status="streaming"
             streamStartTime={streamStart - 10000}
             estimatedTokens={400}
             isRateLimited
             rateLimitRetryAfter={42}
+            systemStatus={null}
           />
         </ShowcaseDemo>
 
         <ShowcaseLabel>Rate limited (no duration)</ShowcaseLabel>
         <ShowcaseDemo>
-          <InferenceIndicator
+          <ChatStatusStrip
             status="streaming"
             streamStartTime={streamStart - 10000}
             estimatedTokens={400}
             isRateLimited
             rateLimitRetryAfter={null}
+            systemStatus={null}
           />
         </ShowcaseDemo>
-      </PlaygroundSection>
 
-      <PlaygroundSection
-        title="SystemStatusZone"
-        description="Ephemeral status banner for SDK system messages (e.g. context compaction, permission changes)."
-      >
-        <ShowcaseLabel>Active message</ShowcaseLabel>
+        <ShowcaseLabel>System message: compacting</ShowcaseLabel>
         <ShowcaseDemo>
-          <SystemStatusZone message="Compacting context..." />
+          <ChatStatusStrip
+            status="idle"
+            streamStartTime={null}
+            estimatedTokens={0}
+            systemStatus="Compacting context..."
+          />
         </ShowcaseDemo>
 
-        <ShowcaseLabel>Permission mode change</ShowcaseLabel>
+        <ShowcaseLabel>System message: permission change</ShowcaseLabel>
         <ShowcaseDemo>
-          <SystemStatusZone message="Permission mode changed to plan" />
+          <ChatStatusStrip
+            status="idle"
+            streamStartTime={null}
+            estimatedTokens={0}
+            systemStatus="Permission mode changed to plan"
+          />
         </ShowcaseDemo>
 
-        <ShowcaseLabel>Response truncated (max tokens)</ShowcaseLabel>
+        <ShowcaseLabel>System message: truncated</ShowcaseLabel>
         <ShowcaseDemo>
-          <SystemStatusZone message="Response truncated — reached max output tokens." />
+          <ChatStatusStrip
+            status="idle"
+            streamStartTime={null}
+            estimatedTokens={0}
+            systemStatus="Response truncated — reached max output tokens."
+          />
         </ShowcaseDemo>
 
-        <ShowcaseLabel>Null (renders nothing)</ShowcaseLabel>
+        <ShowcaseLabel>Idle (renders nothing — height 0)</ShowcaseLabel>
         <ShowcaseDemo>
-          <SystemStatusZone message={null} />
+          <ChatStatusStrip
+            status="idle"
+            streamStartTime={null}
+            estimatedTokens={0}
+            systemStatus={null}
+          />
         </ShowcaseDemo>
       </PlaygroundSection>
 

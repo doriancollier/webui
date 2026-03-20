@@ -24,7 +24,7 @@ import { CelebrationOverlay } from './CelebrationOverlay';
 import { useFiles } from '@/layers/features/files';
 import { useCelebrations } from '../model/use-celebrations';
 import { ErrorMessageBlock } from './ErrorMessageBlock';
-import { SystemStatusZone } from './SystemStatusZone';
+import { ChatStatusStrip } from './ChatStatusStrip';
 import { PromptSuggestionChips } from './PromptSuggestionChips';
 import type { TaskUpdateEvent } from '@dorkos/shared/types';
 
@@ -88,12 +88,15 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     [taskState, celebrations]
   );
 
-  const handleSessionIdChange = useCallback((newId: string) => {
-    setSessionId(newId);
-    // Invalidate stale session metadata so the new key fetches immediately
-    // instead of waiting for TanStack Query's staleTime to expire.
-    queryClient.invalidateQueries({ queryKey: ['session', newId] });
-  }, [setSessionId, queryClient]);
+  const handleSessionIdChange = useCallback(
+    (newId: string) => {
+      setSessionId(newId);
+      // Invalidate stale session metadata so the new key fetches immediately
+      // instead of waiting for TanStack Query's staleTime to expire.
+      queryClient.invalidateQueries({ queryKey: ['session', newId] });
+    },
+    [setSessionId, queryClient]
+  );
 
   const {
     messages,
@@ -136,8 +139,10 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
 
   const { handleToolRef, focusedOptionIndex } = useToolShortcuts(activeInteraction);
-  const { isAtBottom, hasNewMessages, scrollToBottom, handleScrollStateChange } =
-    useScrollOverlay(messages, messageListRef);
+  const { isAtBottom, hasNewMessages, scrollToBottom, handleScrollStateChange } = useScrollOverlay(
+    messages,
+    messageListRef
+  );
 
   useChatStatusSync(status, isWaitingForUser, taskState.activeForm, isTextStreaming);
 
@@ -297,16 +302,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
             ref={messageListRef}
             messages={messages}
             sessionId={sessionId!}
-            status={status}
             isTextStreaming={isTextStreaming}
             onScrollStateChange={handleScrollStateChange}
-            streamStartTime={streamStartTime}
-            estimatedTokens={estimatedTokens}
-            permissionMode={permissionMode}
-            isWaitingForUser={isWaitingForUser}
-            waitingType={waitingType ?? undefined}
-            isRateLimited={isRateLimited}
-            rateLimitRetryAfter={rateLimitRetryAfter}
             activeToolCallId={activeInteraction?.toolCallId ?? null}
             onToolRef={handleToolRef}
             focusedOptionIndex={focusedOptionIndex}
@@ -350,7 +347,17 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         </AnimatePresence>
       </div>
 
-      <SystemStatusZone message={systemStatus} />
+      <ChatStatusStrip
+        status={status}
+        streamStartTime={streamStartTime}
+        estimatedTokens={estimatedTokens}
+        permissionMode={permissionMode}
+        isWaitingForUser={isWaitingForUser ?? false}
+        waitingType={waitingType ?? 'approval'}
+        isRateLimited={isRateLimited ?? false}
+        rateLimitRetryAfter={rateLimitRetryAfter ?? null}
+        systemStatus={systemStatus}
+      />
 
       <AnimatePresence>
         {showSuggestions && (

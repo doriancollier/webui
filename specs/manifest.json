@@ -983,29 +983,29 @@
       "title": "Tool Approval Timeout Visibility",
       "created": "2026-03-16",
       "status": "ideation"
-    }
-    ,{
+    },
+    {
       "number": 139,
       "slug": "error-categorization-retry",
       "title": "Error Categorization & Retry Affordance",
       "created": "2026-03-16",
       "status": "specification"
-    }
-    ,{
+    },
+    {
       "number": 140,
       "slug": "prompt-suggestion-chips",
       "title": "Prompt Suggestion Chips",
       "created": "2026-03-16",
       "status": "ideation"
-    }
-    ,{
+    },
+    {
       "number": 141,
       "slug": "hook-lifecycle-events",
       "title": "Surface SDK Hook Lifecycle Events in Chat UI",
       "created": "2026-03-16",
       "status": "specification"
-    }
-    ,{
+    },
+    {
       "number": 142,
       "slug": "multi-client-session-indicator",
       "title": "Multi-Client Session Indicator",
@@ -1074,7 +1074,21 @@
       "title": "Dev Playground Chat Simulator",
       "created": "2026-03-19",
       "status": "ideation"
+    },
+    {
+      "number": 152,
+      "slug": "chat-streaming-motion",
+      "title": "Chat Streaming Motion — Premium Text & Scroll Animation",
+      "created": "2026-03-20",
+      "status": "specified"
+    },
+    {
+      "number": 153,
+      "slug": "unified-status-strip",
+      "title": "Unified Status Strip — Consolidate InferenceIndicator & SystemStatusZone",
+      "created": "2026-03-20",
+      "status": "specified"
     }
   ],
-  "nextNumber": 152
+  "nextNumber": 154
 }

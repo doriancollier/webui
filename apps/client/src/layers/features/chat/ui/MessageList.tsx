@@ -1,18 +1,10 @@
-import {
-  useEffect,
-  useState,
-  useMemo,
-  useImperativeHandle,
-  forwardRef,
-} from 'react';
+import { useEffect, useState, useMemo, useImperativeHandle, forwardRef } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useStickToBottom } from 'use-stick-to-bottom';
 import type { ChatMessage, MessageGrouping } from '../model/use-chat-session';
-import type { PermissionMode } from '@dorkos/shared/types';
 import type { TextEffectConfig } from '@/layers/shared/lib';
 import { MessageItem } from './message';
 import type { InteractiveToolHandle } from './message';
-import { InferenceIndicator } from './InferenceIndicator';
 import { ScrollThumb } from './ScrollThumb';
 
 /** Computes positional grouping metadata for consecutive same-role messages. */
@@ -48,16 +40,8 @@ export interface MessageListHandle {
 interface MessageListProps {
   messages: ChatMessage[];
   sessionId: string;
-  status?: 'idle' | 'streaming' | 'error';
   isTextStreaming?: boolean;
   onScrollStateChange?: (state: ScrollState) => void;
-  streamStartTime?: number | null;
-  estimatedTokens?: number;
-  permissionMode?: PermissionMode;
-  isWaitingForUser?: boolean;
-  waitingType?: 'approval' | 'question';
-  isRateLimited?: boolean;
-  rateLimitRetryAfter?: number | null;
   activeToolCallId?: string | null;
   onToolRef?: (handle: InteractiveToolHandle | null) => void;
   focusedOptionIndex?: number;
@@ -73,16 +57,8 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
   {
     messages,
     sessionId,
-    status,
     isTextStreaming,
     onScrollStateChange,
-    streamStartTime,
-    estimatedTokens,
-    permissionMode,
-    isWaitingForUser,
-    waitingType,
-    isRateLimited,
-    rateLimitRetryAfter,
     activeToolCallId,
     onToolRef,
     focusedOptionIndex,
@@ -208,21 +184,6 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
               </div>
             );
           })}
-          {/* Inference indicator — positioned after all virtualizer items */}
-          <div
-            style={{ position: 'absolute', top: virtualizer.getTotalSize(), left: 0, width: '100%' }}
-          >
-            <InferenceIndicator
-              status={status ?? 'idle'}
-              streamStartTime={streamStartTime ?? null}
-              estimatedTokens={estimatedTokens ?? 0}
-              permissionMode={permissionMode}
-              isWaitingForUser={isWaitingForUser}
-              waitingType={waitingType}
-              isRateLimited={isRateLimited}
-              rateLimitRetryAfter={rateLimitRetryAfter}
-            />
-          </div>
         </div>
       </div>
       <ScrollThumb scrollRef={scrollRef} />

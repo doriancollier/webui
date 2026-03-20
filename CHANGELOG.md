@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Unify InferenceIndicator and SystemStatusZone into ChatStatusStrip
 - Add status bar toggles for multi-window sync and background refresh
 - Add per-word text animation and spring-based smooth scroll
 

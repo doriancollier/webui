@@ -26,11 +26,7 @@ export function SimulatorChatPanel({ sim, textEffect }: SimulatorChatPanelProps)
           <MessageList
             messages={sim.messages}
             sessionId="simulator-session"
-            status={sim.status}
             isTextStreaming={sim.isTextStreaming}
-            isWaitingForUser={sim.isWaitingForUser}
-            waitingType={sim.waitingType}
-            permissionMode="default"
             activeToolCallId={null}
             onToolRef={() => {}}
             onToolDecided={() => {}}
