@@ -22,7 +22,7 @@ import { SessionsView } from './SessionsView';
 import { SchedulesView } from './SchedulesView';
 import { ConnectionsView } from './ConnectionsView';
 import { Home, Plus } from 'lucide-react';
-import { useNavigate } from '@tanstack/react-router';
+import { useNavigate, useLocation } from '@tanstack/react-router';
 import { ProgressCard, useOnboarding } from '@/layers/features/onboarding';
 import { useConnectionsStatus } from '../model/use-connections-status';
 
@@ -40,6 +40,7 @@ export function AgentSidebar() {
   const pulseOpen = useAppStore((s) => s.pulseOpen);
   // Null when rendered in embedded mode (no SidebarProvider); used to close the mobile Sheet.
   const sidebarCtx = useContext(SidebarContext);
+  const routerLocation = useLocation();
 
   // Auto-select most recent session when directory changes and no session is active.
   // Skip when the user intentionally cleared the session via "New session" button.
@@ -50,11 +51,11 @@ export function AgentSidebar() {
       return;
     }
     // On the dashboard route, no session should be auto-selected.
-    if (window.location.pathname === '/') return;
+    if (routerLocation.pathname === '/') return;
     if (!activeSessionId && sessions.length > 0) {
       setActiveSession(sessions[0].id);
     }
-  }, [activeSessionId, sessions, setActiveSession]);
+  }, [activeSessionId, sessions, setActiveSession, routerLocation.pathname]);
 
   const handleNewSession = useCallback(() => {
     intentionallyNullRef.current = true;

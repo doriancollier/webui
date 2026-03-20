@@ -54,7 +54,7 @@ export function ObsidianApp() {
           onFileClick={openFile}
         />
       </div>
-      <App transformContent={transformContent} embedded />
+      <App transformContent={transformContent} />
     </div>
   );
 }

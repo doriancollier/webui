@@ -19,6 +19,14 @@ vi.mock('@/layers/entities/session/model/use-directory-state', () => ({
   useDirectoryState: () => ['/test/cwd', vi.fn()] as const,
 }));
 
+// Mock TanStack Router hooks (AgentSidebar uses useNavigate and useLocation directly)
+let mockPathname = '/session';
+const mockNavigate = vi.fn();
+vi.mock('@tanstack/react-router', () => ({
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: mockPathname }),
+}));
+
 // Mock app store (sidebar state + selectedCwd)
 const mockSetSidebarOpen = vi.fn();
 const mockSetPulseOpen = vi.fn();
@@ -199,6 +207,7 @@ describe('AgentSidebar', () => {
     mockTransport = createMockTransport();
     mockSetSidebarOpen.mockClear();
     mockSidebarActiveTab = 'sessions';
+    mockPathname = '/session';
   });
   afterEach(() => {
     cleanup();
@@ -278,12 +287,7 @@ describe('AgentSidebar', () => {
   });
 
   it('auto-selects first session when no active session', async () => {
-    // Simulate being on the /session route (jsdom defaults to '/' which is the dashboard)
-    Object.defineProperty(window, 'location', {
-      writable: true,
-      value: { ...window.location, pathname: '/session' },
-    });
-
+    // mockPathname defaults to '/session' in beforeEach (not dashboard)
     mockTransport = createMockTransport({
       listSessions: vi
         .fn()

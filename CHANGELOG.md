@@ -16,6 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Clean up routing migration — remove dead code, fix test/code consistency
+
 ### Fixed
 
 - Fix dashboard navigation — use router context in beforeLoad, suppress auto-select
