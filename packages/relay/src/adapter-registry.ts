@@ -23,6 +23,9 @@ import type {
  * Implements the {@link AdapterRegistryLike} interface so it can be passed
  * through {@link RelayOptions} without creating a circular dependency.
  */
+/** Timeout for adapter.start() calls within register() (ms). */
+const ADAPTER_START_TIMEOUT_MS = 30_000;
+
 export class AdapterRegistry implements AdapterRegistryLike {
   private readonly adapters = new Map<string, RelayAdapter>();
   private relay: RelayPublisher | null = null;
@@ -67,7 +70,27 @@ export class AdapterRegistry implements AdapterRegistryLike {
     const existing = this.adapters.get(adapter.id);
 
     // Start the new adapter first — if this throws, abort (old adapter stays active)
-    await adapter.start(this.relay);
+    this.logger.info(`AdapterRegistry: starting adapter '${adapter.id}'`);
+    let timer: ReturnType<typeof setTimeout>;
+    try {
+      await Promise.race([
+        adapter.start(this.relay),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(
+            () =>
+              reject(
+                new Error(
+                  `Adapter '${adapter.id}' start timed out after ${ADAPTER_START_TIMEOUT_MS / 1000}s`
+                )
+              ),
+            ADAPTER_START_TIMEOUT_MS
+          );
+        }),
+      ]);
+    } finally {
+      clearTimeout(timer!);
+    }
+    this.logger.info(`AdapterRegistry: adapter '${adapter.id}' started`);
 
     // Swap in the new adapter
     this.adapters.set(adapter.id, adapter);

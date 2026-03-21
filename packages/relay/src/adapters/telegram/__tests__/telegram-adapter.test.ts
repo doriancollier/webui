@@ -1361,6 +1361,48 @@ describe('TelegramAdapter', () => {
     });
   });
 
+  // --- Timeout on bot.init() ---
+
+  it('start() rejects when bot.init() hangs beyond INIT_TIMEOUT_MS', async () => {
+    vi.useFakeTimers();
+
+    // Suppress the expected unhandled rejection from the timeout race under fake timers
+    const suppress = () => {};
+    process.on('unhandledRejection', suppress);
+
+    mockBotInit.mockReturnValue(new Promise(() => {})); // never resolves
+
+    const startPromise = adapter.start(mockRelay);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await expect(startPromise).rejects.toThrow('timed out');
+
+    mockBotInit.mockResolvedValue(undefined);
+    await vi.advanceTimersByTimeAsync(0);
+    process.removeListener('unhandledRejection', suppress);
+    vi.useRealTimers();
+  });
+
+  it('testConnection() rejects when bot.init() hangs beyond INIT_TIMEOUT_MS', async () => {
+    vi.useFakeTimers();
+
+    const suppress = () => {};
+    process.on('unhandledRejection', suppress);
+
+    mockBotInit.mockReturnValue(new Promise(() => {})); // never resolves
+
+    const resultPromise = adapter.testConnection();
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    const result = await resultPromise;
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('timed out');
+
+    mockBotInit.mockResolvedValue(undefined);
+    await vi.advanceTimersByTimeAsync(0);
+    process.removeListener('unhandledRejection', suppress);
+    vi.useRealTimers();
+  });
+
   // --- M20: Caption-only message ---
 
   it('publishes caption-only messages when text is undefined (M20)', async () => {

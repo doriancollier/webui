@@ -171,6 +171,49 @@ describe('SlackAdapter', () => {
     expect(adapter.getStatus().state).toBe('disconnected');
   });
 
+  // Timeout on auth.test()
+
+  it('start() rejects when auth.test() hangs beyond INIT_TIMEOUT_MS', async () => {
+    vi.useFakeTimers();
+
+    // Suppress the expected unhandled rejection from the timeout race under fake timers
+    const suppress = () => {};
+    process.on('unhandledRejection', suppress);
+
+    mockAuthTest.mockReturnValue(new Promise(() => {})); // never resolves
+
+    const startPromise = adapter.start(mockRelay);
+    await vi.advanceTimersByTimeAsync(15_000);
+    await expect(startPromise).rejects.toThrow('timed out');
+
+    // Reset mock so subsequent tests work
+    mockAuthTest.mockResolvedValue({ user_id: 'U_BOT', user: 'dorkos_bot' });
+    await vi.advanceTimersByTimeAsync(0);
+    process.removeListener('unhandledRejection', suppress);
+    vi.useRealTimers();
+  });
+
+  it('testConnection() rejects when auth.test() hangs beyond INIT_TIMEOUT_MS', async () => {
+    vi.useFakeTimers();
+
+    const suppress = () => {};
+    process.on('unhandledRejection', suppress);
+
+    mockAuthTest.mockReturnValue(new Promise(() => {})); // never resolves
+
+    const resultPromise = adapter.testConnection();
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    const result = await resultPromise;
+    expect(result.ok).toBe(false);
+    expect(result.error).toContain('timed out');
+
+    mockAuthTest.mockResolvedValue({ user_id: 'U_BOT', user: 'dorkos_bot' });
+    await vi.advanceTimersByTimeAsync(0);
+    process.removeListener('unhandledRejection', suppress);
+    vi.useRealTimers();
+  });
+
   // Deliver
   it('deliver() delegates to outbound module and posts to Slack', async () => {
     await adapter.start(mockRelay);

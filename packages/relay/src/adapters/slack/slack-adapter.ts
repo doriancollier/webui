@@ -222,6 +222,9 @@ export const SLACK_MANIFEST: AdapterManifest = {
  * logic to inbound.ts and outbound.ts sub-modules.
  */
 export class SlackAdapter extends BaseRelayAdapter {
+  /** Timeout for auth.test() calls (ms). */
+  private static readonly INIT_TIMEOUT_MS = 15_000;
+
   private readonly config: SlackAdapterConfig;
   private app: App | null = null;
   /** Bot's own user ID — cached after auth.test for echo prevention. */
@@ -247,7 +250,7 @@ export class SlackAdapter extends BaseRelayAdapter {
       // Import WebClient directly to avoid starting a full Bolt app
       const { WebClient } = await import('@slack/web-api');
       const tempClient = new WebClient(this.config.botToken);
-      const result = await tempClient.auth.test();
+      const result = await SlackAdapter.withInitTimeout(tempClient.auth.test());
       return { ok: true, botUsername: result.user as string | undefined };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -265,8 +268,12 @@ export class SlackAdapter extends BaseRelayAdapter {
     });
 
     // Cache bot's own user ID for echo prevention
-    const authResult = await app.client.auth.test();
+    const authResult = await SlackAdapter.withInitTimeout(app.client.auth.test());
     this.botUserId = (authResult.user_id as string) ?? '';
+    this.logger.info('authenticated', {
+      botUserId: this.botUserId,
+      workspace: authResult.team as string | undefined,
+    });
 
     // Register event listeners before starting
     app.message(async ({ event, client }) => {
@@ -311,6 +318,7 @@ export class SlackAdapter extends BaseRelayAdapter {
     });
 
     // Start the Bolt app (Socket Mode connects automatically)
+    this.logger.info('connecting via Socket Mode');
     await app.start();
     this.app = app;
   }
@@ -361,6 +369,30 @@ export class SlackAdapter extends BaseRelayAdapter {
       approvalState: this.outboundState,
       logger: this.logger,
     });
+  }
+
+  /**
+   * Wrap a promise with a timeout guard.
+   *
+   * Used for auth.test() calls in both `_start()` and `testConnection()` to
+   * prevent indefinite hangs when the Slack API is unreachable.
+   */
+  private static async withInitTimeout<T>(promise: Promise<T>): Promise<T> {
+    let timer: ReturnType<typeof setTimeout>;
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                'Slack auth.test() timed out — check your bot token and network connectivity'
+              )
+            ),
+          SlackAdapter.INIT_TIMEOUT_MS
+        );
+      }),
+    ]).finally(() => clearTimeout(timer!));
   }
 
   /**

@@ -277,8 +277,12 @@ export function AdapterSetupWizard({
             setStep('bind');
           },
           onError: (error) => {
-            // If the server rejects the ID (e.g. duplicate), go back to configure.
-            if (error.message?.includes('duplicate') || error.message?.includes('exists')) {
+            if (error.message?.includes('timed out')) {
+              toast.error('Request timed out', {
+                description: 'Check your token and network connectivity, then try again.',
+              });
+            } else if (error.message?.includes('duplicate') || error.message?.includes('exists')) {
+              // If the server rejects the ID (e.g. duplicate), go back to configure.
               setStep('configure');
               setSetupStepIndex(0);
             }

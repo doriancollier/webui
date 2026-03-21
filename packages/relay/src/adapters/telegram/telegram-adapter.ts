@@ -155,6 +155,9 @@ For local development, use a tunnel service (e.g., ngrok, Cloudflare Tunnel).`,
  * lifecycle, polling reconnection, and state management.
  */
 export class TelegramAdapter extends BaseRelayAdapter {
+  /** Timeout for bot.init() and setWebhook() calls (ms). */
+  private static readonly INIT_TIMEOUT_MS = 15_000;
+
   /** Reconnection delay schedule (ms) -- exponential backoff. */
   private static readonly RECONNECT_DELAYS = [5_000, 10_000, 30_000, 60_000, 60_000];
 
@@ -177,7 +180,7 @@ export class TelegramAdapter extends BaseRelayAdapter {
   async testConnection(): Promise<{ ok: boolean; error?: string; botUsername?: string }> {
     try {
       const bot = new Bot(this.config.token);
-      await bot.init();
+      await this.initBotWithTimeout(bot);
       return { ok: true, botUsername: bot.botInfo.username };
     } catch (err) {
       return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -247,12 +250,17 @@ export class TelegramAdapter extends BaseRelayAdapter {
     });
 
     if (this.config.mode === 'webhook') {
+      this.logger.info('starting webhook mode', {
+        url: this.config.webhookUrl,
+        port: this.config.webhookPort,
+      });
       this.webhookServer = await startWebhookMode(
         bot,
         this.id,
         this.config.webhookUrl,
         this.config.webhookPort,
-        this.config.webhookSecret
+        this.config.webhookSecret,
+        TelegramAdapter.INIT_TIMEOUT_MS
       );
     } else {
       await this.startPollingMode(bot);
@@ -318,9 +326,35 @@ export class TelegramAdapter extends BaseRelayAdapter {
 
   // --- Private helpers ---
 
+  /**
+   * Call bot.init() with a timeout guard.
+   *
+   * Prevents indefinite hangs when the Telegram API is unreachable or the
+   * token is invalid but the connection never closes.
+   */
+  private async initBotWithTimeout(bot: Bot): Promise<void> {
+    let timer: ReturnType<typeof setTimeout>;
+    await Promise.race([
+      bot.init(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                'Telegram bot token validation timed out — check your token and network connectivity'
+              )
+            ),
+          TelegramAdapter.INIT_TIMEOUT_MS
+        );
+      }),
+    ]).finally(() => clearTimeout(timer!));
+  }
+
   /** Start grammy bot in long-polling mode with eager token validation. */
   private async startPollingMode(bot: Bot): Promise<void> {
-    await bot.init();
+    await this.initBotWithTimeout(bot);
+    this.logger.info('bot validated', { username: bot.botInfo.username, mode: 'polling' });
+    this.logger.info('starting polling mode');
     bot
       .start({
         drop_pending_updates: true,

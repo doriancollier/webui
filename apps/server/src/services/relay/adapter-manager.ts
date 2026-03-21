@@ -283,6 +283,8 @@ export class AdapterManager {
     enabled = true,
     label?: string
   ): Promise<void> {
+    logger.info('[AdapterManager] adding adapter', { type, id, enabled });
+
     if (this.configs.some((c) => c.id === id)) {
       throw new AdapterError(`Adapter with ID '${id}' already exists`, 'DUPLICATE_ID');
     }
@@ -312,11 +314,26 @@ export class AdapterManager {
     } as AdapterConfig;
     this.configs.push(adapterConfig);
     await saveAdapterConfig(this.configPath, this.configs);
+    logger.debug('[AdapterManager] config saved', { id });
 
     if (enabled) {
       const adapter = await this.buildAdapter(adapterConfig);
       if (adapter) {
-        await this.registry.register(adapter);
+        logger.info('[AdapterManager] starting adapter', { id });
+        try {
+          await this.registry.register(adapter);
+          this.deps.eventRecorder?.insertAdapterEvent(
+            id,
+            'adapter.connected',
+            'Connected to relay'
+          );
+          logger.info('[AdapterManager] adapter registered', { id });
+        } catch (err) {
+          const message = err instanceof Error ? err.message : String(err);
+          this.deps.eventRecorder?.insertAdapterEvent(id, 'adapter.error', message);
+          logger.error('[AdapterManager] adapter start failed', { id, error: message });
+          throw err;
+        }
       }
     }
   }

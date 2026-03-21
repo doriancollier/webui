@@ -165,6 +165,8 @@ export class WebhookAdapter extends BaseRelayAdapter {
    * @param _relay - The RelayPublisher (stored by base class; unused here)
    */
   protected async _start(_relay: RelayPublisher): Promise<void> {
+    this.logger.info('webhook adapter ready', { subject: this.config.inbound.subject });
+
     // Prune expired nonces on a fixed interval to prevent memory growth
     this.nonceInterval = setInterval(() => {
       this.pruneExpiredNonces();

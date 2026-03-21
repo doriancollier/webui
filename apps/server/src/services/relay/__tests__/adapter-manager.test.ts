@@ -1041,6 +1041,48 @@ describe('AdapterManager', () => {
       expect(saved.label).toBeUndefined();
     });
 
+    it('records adapter.connected event on successful start', async () => {
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ adapters: [] }));
+      const mockEventRecorder = { insertAdapterEvent: vi.fn() };
+      const depsWithRecorder = { ...mockDeps, eventRecorder: mockEventRecorder };
+      const managerWithRecorder = new AdapterManager(registry, configPath, depsWithRecorder);
+      await managerWithRecorder.initialize();
+
+      await managerWithRecorder.addAdapter('webhook', 'wh-test', {
+        inbound: { subject: 'relay.webhook.test', secret: 'secret-16-chars!!' },
+        outbound: { url: 'https://example.com', secret: 'secret-16-chars!!' },
+      });
+
+      expect(mockEventRecorder.insertAdapterEvent).toHaveBeenCalledWith(
+        'wh-test',
+        'adapter.connected',
+        'Connected to relay'
+      );
+    });
+
+    it('records adapter.error event and re-throws when register() fails', async () => {
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ adapters: [] }));
+      const mockEventRecorder = { insertAdapterEvent: vi.fn() };
+      const depsWithRecorder = { ...mockDeps, eventRecorder: mockEventRecorder };
+      const failRegistry = createMockRegistry();
+      vi.mocked(failRegistry.register).mockRejectedValue(new Error('start failed'));
+      const managerWithRecorder = new AdapterManager(failRegistry, configPath, depsWithRecorder);
+      await managerWithRecorder.initialize();
+
+      await expect(
+        managerWithRecorder.addAdapter('webhook', 'wh-fail', {
+          inbound: { subject: 'relay.webhook.test', secret: 'secret-16-chars!!' },
+          outbound: { url: 'https://example.com', secret: 'secret-16-chars!!' },
+        })
+      ).rejects.toThrow('start failed');
+
+      expect(mockEventRecorder.insertAdapterEvent).toHaveBeenCalledWith(
+        'wh-fail',
+        'adapter.error',
+        'start failed'
+      );
+    });
+
     it('label is NOT passed to the adapter constructor', async () => {
       vi.mocked(readFile).mockResolvedValue(JSON.stringify({ adapters: [] }));
       await manager.initialize();

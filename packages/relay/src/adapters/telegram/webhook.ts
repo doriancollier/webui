@@ -26,6 +26,7 @@ const DEFAULT_WEBHOOK_PORT = 8443;
  * @param webhookUrl - The public HTTPS URL where Telegram sends updates
  * @param webhookPort - The port for the webhook HTTP server (defaults to 8443)
  * @param webhookSecret - Optional pre-shared secret; auto-generated if omitted
+ * @param timeoutMs - Timeout for the setWebhook API call (ms)
  * @returns The created HTTP server instance
  */
 export async function startWebhookMode(
@@ -33,7 +34,8 @@ export async function startWebhookMode(
   adapterId: string,
   webhookUrl: string | undefined,
   webhookPort: number | undefined,
-  webhookSecret: string | undefined
+  webhookSecret: string | undefined,
+  timeoutMs = 15_000
 ): Promise<Server> {
   if (!webhookUrl) {
     throw new Error(`TelegramAdapter(${adapterId}): webhookUrl is required when mode is 'webhook'`);
@@ -42,7 +44,21 @@ export async function startWebhookMode(
   // Auto-generate secret if not provided in config
   const secret = webhookSecret ?? crypto.randomUUID();
 
-  await bot.api.setWebhook(webhookUrl, { secret_token: secret });
+  let timer: ReturnType<typeof setTimeout>;
+  await Promise.race([
+    bot.api.setWebhook(webhookUrl, { secret_token: secret }),
+    new Promise<never>((_, reject) => {
+      timer = setTimeout(
+        () =>
+          reject(
+            new Error(
+              'Telegram bot token validation timed out — check your token and network connectivity'
+            )
+          ),
+        timeoutMs
+      );
+    }),
+  ]).finally(() => clearTimeout(timer!));
 
   const port = webhookPort ?? DEFAULT_WEBHOOK_PORT;
   const handler = webhookCallback(bot, 'http', { secretToken: secret });
