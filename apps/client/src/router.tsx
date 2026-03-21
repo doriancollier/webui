@@ -11,6 +11,7 @@ import { zodValidator } from '@tanstack/zod-adapter';
 import { AppShell } from './AppShell';
 import { DashboardPage } from '@/layers/widgets/dashboard';
 import { SessionPage } from '@/layers/widgets/session';
+import { AgentsPage } from '@/layers/widgets/agents';
 
 // ── Router context ──────────────────────────────────────────
 interface RouterContext {
@@ -67,8 +68,17 @@ const sessionRoute = createRoute({
   component: SessionPage,
 });
 
+// ── Agents fleet management at /agents ──────────────────────
+const agentsRoute = createRoute({
+  getParentRoute: () => appShellRoute,
+  path: '/agents',
+  component: AgentsPage,
+});
+
 // ── Route tree ──────────────────────────────────────────────
-const routeTree = rootRoute.addChildren([appShellRoute.addChildren([indexRoute, sessionRoute])]);
+const routeTree = rootRoute.addChildren([
+  appShellRoute.addChildren([indexRoute, sessionRoute, agentsRoute]),
+]);
 
 /**
  * Create a configured TanStack Router instance with the full route tree.

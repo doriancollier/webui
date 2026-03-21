@@ -10,7 +10,7 @@ import { PermissionBanner, DialogHost } from '@/layers/widgets/app-layout';
 import { SessionSidebar, SidebarFooterBar } from '@/layers/features/session-list';
 import { DashboardSidebar } from '@/layers/features/dashboard-sidebar';
 import { useOnboarding, OnboardingFlow, ProgressCard } from '@/layers/features/onboarding';
-import { SessionHeader, DashboardHeader } from '@/layers/features/top-nav';
+import { SessionHeader, DashboardHeader, AgentsHeader } from '@/layers/features/top-nav';
 import {
   Toaster,
   TooltipProvider,
@@ -54,6 +54,8 @@ function useSidebarSlot(): SidebarSlot {
   switch (pathname) {
     case '/':
       return { key: 'dashboard', body: <DashboardSidebar /> };
+    case '/agents':
+      return { key: 'agents', body: <DashboardSidebar /> };
     default:
       return { key: 'session', body: <SessionSidebar /> };
   }
@@ -78,6 +80,12 @@ function useHeaderSlot({
       return {
         key: 'dashboard',
         content: <DashboardHeader />,
+        borderStyle: undefined,
+      };
+    case '/agents':
+      return {
+        key: 'agents',
+        content: <AgentsHeader />,
         borderStyle: undefined,
       };
     default:

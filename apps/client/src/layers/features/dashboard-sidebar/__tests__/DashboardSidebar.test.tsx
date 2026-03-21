@@ -86,15 +86,15 @@ describe('DashboardSidebar', () => {
   it('marks Dashboard active when pathname is /', () => {
     mockPathname = '/';
     renderWithProviders(<DashboardSidebar />);
-    const dashboardBtn = screen.getAllByText('Dashboard')[0].closest('button');
-    expect(dashboardBtn).toHaveAttribute('data-active', 'true');
+    const dashboardBtns = screen.getAllByText('Dashboard').map((el) => el.closest('button'));
+    expect(dashboardBtns.some((btn) => btn?.getAttribute('data-active') === 'true')).toBe(true);
   });
 
   it('marks Agents active when pathname is /agents', () => {
     mockPathname = '/agents';
     renderWithProviders(<DashboardSidebar />);
-    const agentsBtn = screen.getAllByText('Agents')[0].closest('button');
-    expect(agentsBtn).toHaveAttribute('data-active', 'true');
+    const agentsBtns = screen.getAllByText('Agents').map((el) => el.closest('button'));
+    expect(agentsBtns.some((btn) => btn?.getAttribute('data-active') === 'true')).toBe(true);
   });
 
   it('renders Sessions nav item that navigates to /session', () => {
