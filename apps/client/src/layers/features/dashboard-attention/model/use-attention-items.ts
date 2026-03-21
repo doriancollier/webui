@@ -4,7 +4,6 @@ import { useRuns } from '@/layers/entities/pulse';
 import { useAggregatedDeadLetters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
 import { useNavigate } from '@tanstack/react-router';
-import { useAppStore } from '@/layers/shared/model';
 import type { LucideIcon } from 'lucide-react';
 import { Clock, XCircle, Mail, WifiOff } from 'lucide-react';
 
@@ -43,9 +42,6 @@ export function useAttentionItems(): AttentionItem[] {
   const { data: deadLetters } = useAggregatedDeadLetters();
   const { data: meshStatus } = useMeshStatus();
   const navigate = useNavigate();
-  const setRelayOpen = useAppStore((s) => s.setRelayOpen);
-  const setMeshOpen = useAppStore((s) => s.setMeshOpen);
-  const setPulseOpen = useAppStore((s) => s.setPulseOpen);
 
   return useMemo(() => {
     const items: AttentionItem[] = [];
@@ -95,7 +91,11 @@ export function useAttentionItems(): AttentionItem[] {
             timestamp: run.createdAt,
             action: {
               label: 'View →',
-              onClick: () => setPulseOpen(true),
+              onClick: () =>
+                navigate({
+                  to: '/',
+                  search: { detail: 'failed-run', itemId: run.id },
+                }),
             },
             severity: 'error',
           });
@@ -116,7 +116,11 @@ export function useAttentionItems(): AttentionItem[] {
             timestamp: group.lastSeen,
             action: {
               label: 'View →',
-              onClick: () => setRelayOpen(true),
+              onClick: () =>
+                navigate({
+                  to: '/',
+                  search: { detail: 'dead-letter', itemId: `${group.source}::${group.reason}` },
+                }),
             },
             severity: 'warning',
           });
@@ -136,7 +140,11 @@ export function useAttentionItems(): AttentionItem[] {
         timestamp: new Date().toISOString(),
         action: {
           label: 'View →',
-          onClick: () => setMeshOpen(true),
+          onClick: () =>
+            navigate({
+              to: '/',
+              search: { detail: 'offline-agent', itemId: 'offline' },
+            }),
         },
         severity: 'error',
       });
@@ -146,14 +154,5 @@ export function useAttentionItems(): AttentionItem[] {
     items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     return items.slice(0, MAX_ITEMS);
-  }, [
-    sessions,
-    failedRuns,
-    deadLetters,
-    meshStatus,
-    navigate,
-    setRelayOpen,
-    setMeshOpen,
-    setPulseOpen,
-  ]);
+  }, [sessions, failedRuns, deadLetters, meshStatus, navigate]);
 }

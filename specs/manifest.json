@@ -1,7 +1,21 @@
 {
   "version": 1,
-  "nextNumber": 148,
+  "nextNumber": 150,
   "specs": [
+    {
+      "number": 149,
+      "slug": "attention-item-detail-navigation",
+      "title": "Attention Item Detail Navigation",
+      "created": "2026-03-20",
+      "status": "ideation"
+    },
+    {
+      "number": 148,
+      "slug": "site-feature-category-pages",
+      "title": "Site Feature Category Pages — /features/category/{category}",
+      "created": "2026-03-21",
+      "status": "ideation"
+    },
     {
       "number": 147,
       "slug": "dashboard-content",

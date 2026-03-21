@@ -33,7 +33,7 @@ const appShellRoute = createRoute({
   component: AppShell,
 });
 
-// ── Search param schema ─────────────────────────────────────
+// ── Search param schemas ────────────────────────────────────
 const sessionSearchSchema = z.object({
   session: z.string().optional(),
   dir: z.string().optional(),
@@ -42,10 +42,19 @@ const sessionSearchSchema = z.object({
 /** Search params available on the `/session` route. */
 export type SessionSearch = z.infer<typeof sessionSearchSchema>;
 
+const dashboardSearchSchema = z.object({
+  detail: z.enum(['dead-letter', 'failed-run', 'offline-agent']).optional(),
+  itemId: z.string().optional(),
+});
+
+/** Search params available on the `/` (dashboard) route. */
+export type DashboardSearch = z.infer<typeof dashboardSearchSchema>;
+
 // ── Dashboard at / ──────────────────────────────────────────
 const indexRoute = createRoute({
   getParentRoute: () => appShellRoute,
   path: '/',
+  validateSearch: zodValidator(dashboardSearchSchema),
   component: DashboardPage,
   // Redirect to /session if ?session= param is present (backward compat for old bookmarks)
   beforeLoad: ({ location }) => {

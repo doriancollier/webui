@@ -228,11 +228,11 @@ describe('MeshPanel - Mode A (zero agents)', () => {
 describe('MeshPanel - Mode B (agents present)', () => {
   beforeEach(enableMeshModeB);
 
-  it('renders all 5 tabs', () => {
+  it('renders all 4 tabs', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
     expect(screen.getByRole('tab', { name: 'Topology' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Discovery' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: 'Agents' })).toBeInTheDocument();
+    expect(screen.queryByRole('tab', { name: 'Agents' })).not.toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Denied' })).toBeInTheDocument();
     expect(screen.getByRole('tab', { name: 'Access' })).toBeInTheDocument();
   });
@@ -245,12 +245,6 @@ describe('MeshPanel - Mode B (agents present)', () => {
   it('does not show disabled message', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
     expect(screen.queryByText('Mesh is currently disabled')).not.toBeInTheDocument();
-  });
-
-  it('shows agent card with name and runtime', () => {
-    render(<MeshPanel />, { wrapper: createWrapper() });
-    expect(screen.getByText('TestAgent')).toBeInTheDocument();
-    expect(screen.getByText('claude-code')).toBeInTheDocument();
   });
 });
 
@@ -271,47 +265,6 @@ describe('MeshPanel - Topology tab', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
     fireEvent.click(screen.getByTestId('topology-graph'));
     expect(screen.getByText('Loading...')).toBeInTheDocument();
-  });
-});
-
-// ---------------------------------------------------------------------------
-// Mode B — Agents tab empty state
-// ---------------------------------------------------------------------------
-
-describe('MeshPanel - Agents tab empty state', () => {
-  it('shows contextual empty state when agents list is empty', () => {
-    // Return agents loading=false with empty list but Mode B via loading state
-    mockUseRegisteredAgents.mockReturnValue({
-      data: {
-        agents: [
-          {
-            id: 'x',
-            name: 'X',
-            runtime: 'claude-code',
-            description: '',
-            capabilities: [],
-            path: '/x',
-            namespace: 'ns',
-            version: '1',
-          },
-        ],
-      },
-      isLoading: false,
-    });
-    mockUseDeniedAgents.mockReturnValue({ data: { denied: [] }, isLoading: false });
-    mockUseMeshScanRoots.mockReturnValue({
-      roots: [],
-      boundary: '',
-      isSaving: false,
-      setScanRoots: vi.fn(),
-    });
-
-    // Re-render with empty agents to test the empty state within Mode B
-    // We need Mode B (agents exist) but agents tab to show empty. This is tested
-    // by having at least 1 agent overall but the scenario is for when the tab shows nothing.
-    // For now, verify the denied tab empty state which is always visible in Mode B.
-    render(<MeshPanel />, { wrapper: createWrapper() });
-    expect(screen.getByText('No blocked paths')).toBeInTheDocument();
   });
 });
 

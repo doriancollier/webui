@@ -1,7 +1,11 @@
 import { source, blog } from '@/lib/source';
 import { siteConfig } from '@/config/site';
 import { subsystems } from '@/layers/features/marketing/lib/subsystems';
-import { features } from '@/layers/features/marketing/lib/features';
+import {
+  features,
+  CATEGORY_LABELS,
+  type FeatureCategory,
+} from '@/layers/features/marketing/lib/features';
 
 export const dynamic = 'force-static';
 
@@ -103,6 +107,19 @@ function buildFeaturesSection(): string {
     .join('\n');
 }
 
+function buildFeatureCategoriesSection(): string {
+  const categories = Object.keys(CATEGORY_LABELS) as FeatureCategory[];
+  return categories
+    .map((category) => {
+      const label = CATEGORY_LABELS[category];
+      const url = `${siteConfig.url}/features/category/${category}`;
+      const categoryFeatures = features.filter((f) => f.category === category);
+      const featureNames = categoryFeatures.map((f) => f.name).join(', ');
+      return featureNames ? `- [${label}](${url}): ${featureNames}` : `- [${label}](${url})`;
+    })
+    .join('\n');
+}
+
 /**
  * Dynamic llms.txt route handler.
  *
@@ -123,6 +140,10 @@ ${buildCapabilitiesSection()}
 ## Features
 
 ${buildFeaturesSection()}
+
+## Feature Categories
+
+${buildFeatureCategoriesSection()}
 
 ## Documentation
 

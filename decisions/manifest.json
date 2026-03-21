@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 167,
+  "nextNumber": 170,
   "decisions": [
+    {
+      "number": 169,
+      "slug": "collectionpage-jsonld-for-category-pages",
+      "title": "Use CollectionPage JSON-LD for Feature Category Pages",
+      "status": "draft",
+      "created": "2026-03-21",
+      "extractedFrom": "site-feature-category-pages",
+      "specSlug": "site-feature-category-pages"
+    },
+    {
+      "number": 168,
+      "slug": "static-category-subfolder-to-avoid-nextjs-route-conflict",
+      "title": "Use Static category/ Subfolder Prefix to Avoid Next.js Dynamic Route Conflict",
+      "status": "draft",
+      "created": "2026-03-21",
+      "extractedFrom": "site-feature-category-pages",
+      "specSlug": "site-feature-category-pages"
+    },
+    {
+      "number": 167,
+      "slug": "search-params-for-sheet-detail-state",
+      "title": "Use Search Params for Sheet Detail State",
+      "status": "draft",
+      "created": "2026-03-20",
+      "extractedFrom": "attention-item-detail-navigation",
+      "specSlug": "attention-item-detail-navigation"
+    },
     {
       "number": 166,
       "slug": "remove-mesh-agents-tab-clean-break",

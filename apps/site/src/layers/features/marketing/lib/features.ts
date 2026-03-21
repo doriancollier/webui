@@ -205,6 +205,10 @@ export const features: Feature[] = [
       'Per-schedule working directory configuration',
     ],
     docsUrl: '/docs/pulse',
+    media: {
+      screenshot: '/features/pulse-scheduler.png',
+      alt: 'Pulse Scheduler — visual cron builder with run history panel',
+    },
     relatedFeatures: ['relay-message-bus', 'mesh-agent-discovery'],
     sortOrder: 1,
   },
@@ -228,6 +232,10 @@ export const features: Feature[] = [
       'Bindings link adapters to specific agents',
     ],
     docsUrl: '/docs/relay',
+    media: {
+      screenshot: '/features/relay-message-bus.png',
+      alt: 'Relay Message Bus — activity feed showing inter-agent message routing',
+    },
     relatedFeatures: ['slack-adapter', 'telegram-adapter', 'mesh-agent-discovery'],
     sortOrder: 1,
   },
@@ -310,6 +318,10 @@ export const features: Feature[] = [
       'Respects reduced-motion preferences',
     ],
     docsUrl: '/docs/mesh/topology',
+    media: {
+      screenshot: '/features/mesh-topology.png',
+      alt: 'Mesh Topology Graph — interactive force-directed graph of agents and adapters',
+    },
     relatedFeatures: ['mesh-agent-discovery', 'relay-message-bus'],
     sortOrder: 2,
   },

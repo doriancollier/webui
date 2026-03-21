@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { siteConfig } from '@/config/site';
 import { source, blog } from '@/lib/source';
-import { features } from '@/layers/features/marketing';
+import { features, CATEGORY_LABELS, type FeatureCategory } from '@/layers/features/marketing';
 
 const BASE_URL = siteConfig.url;
 
@@ -61,6 +61,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
+  const featureCategoryPages: MetadataRoute.Sitemap = (
+    Object.keys(CATEGORY_LABELS) as FeatureCategory[]
+  ).map((category) => ({
+    url: `${BASE_URL}/features/category/${category}`,
+    changeFrequency: 'monthly' as const,
+    priority: 0.6,
+  }));
+
   const docPages: MetadataRoute.Sitemap = source.getPages().map((page) => ({
     url: `${BASE_URL}${page.url}`,
     lastModified: new Date(),
@@ -75,5 +83,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.6,
   }));
 
-  return [...staticPages, ...featureCatalogPage, ...featurePages, ...docPages, ...blogPages];
+  return [
+    ...staticPages,
+    ...featureCatalogPage,
+    ...featurePages,
+    ...featureCategoryPages,
+    ...docPages,
+    ...blogPages,
+  ];
 }

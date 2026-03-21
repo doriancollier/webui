@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ArrowRight, ExternalLink, CheckCircle } from 'lucide-react';
@@ -140,9 +141,11 @@ export default async function FeaturePage(props: { params: Promise<{ slug: strin
         {/* Screenshot */}
         {feature.media?.screenshot && (
           <figure className="mt-10">
-            <img
+            <Image
               src={feature.media.screenshot}
               alt={feature.media.alt ?? `${feature.name} screenshot`}
+              width={1200}
+              height={750}
               className="border-warm-gray-light/20 w-full rounded-lg border shadow-sm"
             />
           </figure>

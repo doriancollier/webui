@@ -8,3 +8,4 @@
  * @module features/mesh
  */
 export { MeshPanel } from './ui/MeshPanel';
+export { DiscoveryView } from './ui/DiscoveryView';

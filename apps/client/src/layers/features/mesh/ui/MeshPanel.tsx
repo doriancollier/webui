@@ -1,10 +1,10 @@
 import { lazy, Suspense, useState, useCallback } from 'react';
-import { Loader2, Network, ShieldCheck, TriangleAlert, X } from 'lucide-react';
+import { Loader2, ShieldCheck, TriangleAlert } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/layers/shared/ui';
 import { Badge } from '@/layers/shared/ui/badge';
-import { useRegisteredAgents, useDeniedAgents, useUnregisterAgent } from '@/layers/entities/mesh';
-import type { AgentManifest, DenialRecord } from '@dorkos/shared/mesh-schemas';
+import { useRegisteredAgents, useDeniedAgents } from '@/layers/entities/mesh';
+import type { DenialRecord } from '@dorkos/shared/mesh-schemas';
 import { useDirectoryState } from '@/layers/entities/session';
 import { AgentDialog } from '@/layers/features/agent-settings';
 import { MeshStatsHeader } from './MeshStatsHeader';
@@ -16,76 +16,6 @@ import { MeshEmptyState } from './MeshEmptyState';
 const LazyTopologyGraph = lazy(() =>
   import('./TopologyGraph').then((m) => ({ default: m.TopologyGraph }))
 );
-
-// -- Agents Tab --
-
-interface AgentsTabProps {
-  agents: AgentManifest[];
-  isLoading: boolean;
-  onGoToDiscovery: () => void;
-}
-
-function AgentsTab({ agents, isLoading, onGoToDiscovery }: AgentsTabProps) {
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="text-muted-foreground size-5 animate-spin" />
-      </div>
-    );
-  }
-
-  if (agents.length === 0) {
-    return (
-      <MeshEmptyState
-        icon={Network}
-        headline="No agents registered yet"
-        description="Discover agents in your filesystem and register them to the mesh."
-        action={{ label: 'Go to Discovery', onClick: onGoToDiscovery }}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-2 p-4">
-      {agents.map((agent) => (
-        <AgentCard key={agent.id} agent={agent} />
-      ))}
-    </div>
-  );
-}
-
-function AgentCard({ agent }: { agent: AgentManifest }) {
-  const { mutate: unregister } = useUnregisterAgent();
-
-  return (
-    <div className="space-y-1 rounded-xl border p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium">{agent.name}</p>
-          <Badge variant="secondary">{agent.runtime}</Badge>
-        </div>
-        <button
-          type="button"
-          onClick={() => unregister(agent.id)}
-          className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded p-1"
-          aria-label={`Unregister ${agent.name}`}
-        >
-          <X className="size-3.5" />
-        </button>
-      </div>
-      {agent.description && <p className="text-muted-foreground text-xs">{agent.description}</p>}
-      {agent.capabilities.length > 0 && (
-        <div className="flex flex-wrap gap-1 pt-1">
-          {agent.capabilities.map((cap) => (
-            <Badge key={cap} variant="outline" className="text-xs">
-              {cap}
-            </Badge>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // -- Denied Tab --
 
@@ -233,7 +163,6 @@ export function MeshPanel() {
               <TabsList className="mx-4 mt-3 shrink-0">
                 <TabsTrigger value="topology">Topology</TabsTrigger>
                 <TabsTrigger value="discovery">Discovery</TabsTrigger>
-                <TabsTrigger value="agents">Agents</TabsTrigger>
                 <TabsTrigger value="denied">Denied</TabsTrigger>
                 <TabsTrigger value="access">Access</TabsTrigger>
               </TabsList>
@@ -280,14 +209,6 @@ export function MeshPanel() {
 
               <TabsContent value="discovery" className="min-h-0 flex-1 overflow-y-auto">
                 <DiscoveryView />
-              </TabsContent>
-
-              <TabsContent value="agents" className="min-h-0 flex-1 overflow-y-auto">
-                <AgentsTab
-                  agents={agents}
-                  isLoading={agentsLoading}
-                  onGoToDiscovery={switchToDiscovery}
-                />
               </TabsContent>
 
               <TabsContent value="denied" className="min-h-0 flex-1 overflow-y-auto">

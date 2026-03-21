@@ -41,20 +41,6 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
 }));
 
-const mockSetRelayOpen = vi.fn();
-const mockSetMeshOpen = vi.fn();
-const mockSetPulseOpen = vi.fn();
-vi.mock('@/layers/shared/model', () => ({
-  useAppStore: (selector: (s: Record<string, unknown>) => unknown) => {
-    const state = {
-      setRelayOpen: mockSetRelayOpen,
-      setMeshOpen: mockSetMeshOpen,
-      setPulseOpen: mockSetPulseOpen,
-    };
-    return selector(state);
-  },
-}));
-
 import { useAttentionItems } from '../model/use-attention-items';
 
 // ---------------------------------------------------------------------------
@@ -285,16 +271,19 @@ describe('useAttentionItems', () => {
     }
   });
 
-  it('failed run action opens Pulse panel', () => {
+  it('failed run action navigates with detail search params', () => {
     mockUseRuns.mockReturnValue({ data: [makeRun()] });
 
     const { result } = renderHook(() => useAttentionItems());
     result.current[0].action.onClick();
 
-    expect(mockSetPulseOpen).toHaveBeenCalledWith(true);
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/',
+      search: { detail: 'failed-run', itemId: 'run-1' },
+    });
   });
 
-  it('dead letter action opens Relay panel', () => {
+  it('dead letter action navigates with compound key itemId', () => {
     mockUseAggregatedDeadLetters.mockReturnValue({
       data: [makeDeadLetterGroup()],
     });
@@ -302,15 +291,21 @@ describe('useAttentionItems', () => {
     const { result } = renderHook(() => useAttentionItems());
     result.current[0].action.onClick();
 
-    expect(mockSetRelayOpen).toHaveBeenCalledWith(true);
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/',
+      search: { detail: 'dead-letter', itemId: 'telegram-adapter::hop_limit' },
+    });
   });
 
-  it('offline agent action opens Mesh panel', () => {
+  it('offline agent action navigates with sentinel itemId', () => {
     mockUseMeshStatus.mockReturnValue({ data: makeMeshStatus(1) });
 
     const { result } = renderHook(() => useAttentionItems());
     result.current[0].action.onClick();
 
-    expect(mockSetMeshOpen).toHaveBeenCalledWith(true);
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/',
+      search: { detail: 'offline-agent', itemId: 'offline' },
+    });
   });
 });
