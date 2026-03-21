@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { join } from 'node:path';
 import { mkdtemp, stat, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { EndpointRegistry, hashSubject } from '../endpoint-registry.js';
+import { EndpointRegistry } from '../endpoint-registry.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -32,36 +32,6 @@ async function expectNotExists(dirPath: string): Promise<void> {
 }
 
 // ---------------------------------------------------------------------------
-// hashSubject
-// ---------------------------------------------------------------------------
-
-describe('hashSubject', () => {
-  it('returns a 12-character hex string', () => {
-    const hash = hashSubject('relay.agent.myproject.backend');
-    expect(hash).toMatch(/^[a-f0-9]{12}$/);
-  });
-
-  it('is deterministic — same input always produces same output', () => {
-    const subject = 'relay.agent.myproject.backend';
-    const hash1 = hashSubject(subject);
-    const hash2 = hashSubject(subject);
-    expect(hash1).toBe(hash2);
-  });
-
-  it('produces different hashes for different subjects', () => {
-    const hash1 = hashSubject('relay.agent.project-a.backend');
-    const hash2 = hashSubject('relay.agent.project-b.backend');
-    expect(hash1).not.toBe(hash2);
-  });
-
-  it('produces different hashes for subjects that differ only in case', () => {
-    const hash1 = hashSubject('relay.agent.MyProject');
-    const hash2 = hashSubject('relay.agent.myproject');
-    expect(hash1).not.toBe(hash2);
-  });
-});
-
-// ---------------------------------------------------------------------------
 // EndpointRegistry — registerEndpoint
 // ---------------------------------------------------------------------------
 
@@ -72,8 +42,8 @@ describe('EndpointRegistry', () => {
       const info = await registry.registerEndpoint(subject);
 
       expect(info.subject).toBe(subject);
-      expect(info.hash).toBe(hashSubject(subject));
-      expect(info.maildirPath).toBe(join(tempDir, 'mailboxes', info.hash));
+      expect(info.hash).toBe(subject);
+      expect(info.maildirPath).toBe(join(tempDir, 'mailboxes', subject));
       expect(info.registeredAt).toBeTruthy();
       // registeredAt is a valid ISO date string
       expect(new Date(info.registeredAt).toISOString()).toBe(info.registeredAt);
@@ -291,29 +261,19 @@ describe('EndpointRegistry', () => {
   // Hash determinism and directory structure
   // ---------------------------------------------------------------------------
 
-  describe('hash determinism', () => {
-    it('two registries with same dataDir produce same hash for same subject', () => {
-      const registry2 = new EndpointRegistry(tempDir);
+  describe('directory naming', () => {
+    it('hash equals subject (API compatibility)', async () => {
       const subject = 'relay.agent.test.determinism';
+      const info = await registry.registerEndpoint(subject);
 
-      // hashSubject is a standalone function — deterministic by nature
-      const hash1 = hashSubject(subject);
-      const hash2 = hashSubject(subject);
-      expect(hash1).toBe(hash2);
-
-      // Also verify EndpointRegistry uses the same hash
-      // (we can't register twice in the same dir, but hash should match)
-      expect(hash1).toMatch(/^[a-f0-9]{12}$/);
-      // Ensure the second registry instance is valid (no-op, just showing they're independent)
-      expect(registry2.size).toBe(0);
+      expect(info.hash).toBe(subject);
     });
 
-    it('maildir path is derived from hash', async () => {
+    it('maildir path is derived from subject', async () => {
       const subject = 'relay.agent.path-check';
       const info = await registry.registerEndpoint(subject);
-      const expectedHash = hashSubject(subject);
 
-      expect(info.maildirPath).toBe(join(tempDir, 'mailboxes', expectedHash));
+      expect(info.maildirPath).toBe(join(tempDir, 'mailboxes', subject));
     });
   });
 });

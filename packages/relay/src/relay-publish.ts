@@ -10,7 +10,6 @@
 import { monotonicFactory } from 'ulidx';
 import { validateSubject, matchesPattern } from './subject-matcher.js';
 import { createDefaultBudget } from './budget-enforcer.js';
-import { hashSubject } from './endpoint-registry.js';
 import { checkRateLimit } from './rate-limiter.js';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import type { EndpointRegistry } from './endpoint-registry.js';
@@ -321,13 +320,12 @@ export class RelayPublishPipeline {
     envelope: RelayEnvelope,
     adapterResult: DeliveryResult | null
   ): Promise<void> {
-    const subjectHash = hashSubject(subject);
-    await this.deps.maildirStore.ensureMaildir(subjectHash);
+    await this.deps.maildirStore.ensureMaildir(subject);
 
     const reason = adapterResult?.error
       ? `adapter delivery failed: ${adapterResult.error}`
       : 'no matching endpoints or adapters';
-    await this.deps.deadLetterQueue.reject(subjectHash, envelope, reason);
+    await this.deps.deadLetterQueue.reject(subject, envelope, reason);
   }
 
   /** Record a trace span for delivery tracking (best-effort). */

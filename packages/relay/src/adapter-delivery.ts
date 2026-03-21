@@ -7,7 +7,6 @@
  * @module relay/adapter-delivery
  */
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
-import { hashSubject } from './endpoint-registry.js';
 import type { SqliteIndex } from './sqlite-index.js';
 import type { AdapterRegistryLike, AdapterContext, DeliveryResult } from './types.js';
 
@@ -60,11 +59,10 @@ export class AdapterDelivery {
 
       // Index adapter-delivered messages in SQLite for audit trail
       if (result && result.success) {
-        const subjectHash = hashSubject(subject);
         this.sqliteIndex.insertMessage({
           id: envelope.id,
           subject,
-          endpointHash: `adapter:${subjectHash}`,
+          endpointHash: `adapter:${subject}`,
           status: 'delivered',
           createdAt: envelope.createdAt,
           expiresAt: null,

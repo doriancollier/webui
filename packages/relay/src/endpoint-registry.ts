@@ -6,12 +6,11 @@
  * Maildir directory structure (tmp/, new/, cur/, failed/) created under
  * the configured data directory.
  *
- * Endpoint hashes are deterministic SHA-256 digests of the subject string,
- * truncated to 12 hex characters for filesystem-safe directory names.
+ * Directory names use the subject string directly (e.g. `relay.agent.myproject.backend/`).
+ * Subject validation ensures all characters are POSIX-safe (`[a-zA-Z0-9_-]` tokens separated by dots).
  *
  * @module relay/endpoint-registry
  */
-import { createHash } from 'node:crypto';
 import { mkdir, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { validateSubject } from './subject-matcher.js';
@@ -19,23 +18,6 @@ import type { EndpointInfo } from './types.js';
 
 /** Maildir subdirectories created for each endpoint. */
 const MAILDIR_DIRS = ['tmp', 'new', 'cur', 'failed'] as const;
-
-/** Length of the truncated hash used for directory names. */
-const HASH_LENGTH = 12;
-
-/**
- * Compute a deterministic, filesystem-safe hash for a subject string.
- *
- * Uses SHA-256, truncated to {@link HASH_LENGTH} hex characters. The same
- * subject always produces the same hash, making directory lookups predictable
- * without maintaining a separate mapping file.
- *
- * @param subject - A validated subject string (e.g. `relay.agent.myproject.backend`)
- * @returns A lowercase hex string of length {@link HASH_LENGTH}
- */
-export function hashSubject(subject: string): string {
-  return createHash('sha256').update(subject).digest('hex').slice(0, HASH_LENGTH);
-}
 
 /**
  * In-memory registry of message endpoints, backed by Maildir directories on disk.
@@ -64,8 +46,8 @@ export class EndpointRegistry {
   /**
    * Register a new message endpoint.
    *
-   * Validates the subject, computes a deterministic hash, creates the
-   * Maildir directory structure, and stores the endpoint info in memory.
+   * Validates the subject, creates the Maildir directory structure using
+   * the subject string as the directory name, and stores the endpoint info in memory.
    *
    * @param subject - The hierarchical subject for this endpoint (e.g. `relay.agent.myproject.backend`).
    *                  Must not contain wildcards (`*` or `>`).
@@ -87,8 +69,7 @@ export class EndpointRegistry {
       throw new Error(`Endpoint already registered: ${subject}`);
     }
 
-    const hash = hashSubject(subject);
-    const maildirPath = join(this.mailboxesDir, hash);
+    const maildirPath = join(this.mailboxesDir, subject);
 
     // Create all Maildir subdirectories
     for (const dir of MAILDIR_DIRS) {
@@ -97,7 +78,7 @@ export class EndpointRegistry {
 
     const info: EndpointInfo = {
       subject,
-      hash,
+      hash: subject,
       maildirPath,
       registeredAt: new Date().toISOString(),
     };

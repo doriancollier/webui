@@ -66,6 +66,7 @@ export type Unsubscribe = () => void;
 
 export interface EndpointInfo {
   subject: string;
+  /** @deprecated Equals `subject`. Kept for API compatibility — will be renamed to `id` in a future release. */
   hash: string;
   maildirPath: string;
   registeredAt: string;

@@ -89,8 +89,7 @@ describe('endpoint registration', () => {
     const info = await relay.registerEndpoint('relay.agent.backend');
 
     expect(info.subject).toBe('relay.agent.backend');
-    expect(info.hash).toBeDefined();
-    expect(info.hash.length).toBe(12);
+    expect(info.hash).toBe('relay.agent.backend');
     expect(info.maildirPath).toContain('mailboxes');
     expect(info.registeredAt).toBeDefined();
   });

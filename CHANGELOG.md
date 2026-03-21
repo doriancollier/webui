@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Use subject strings as mailbox directory names instead of SHA-256 hashes
 - Split feature category into product + category
 - Clean up routing migration — remove dead code, fix test/code consistency
 

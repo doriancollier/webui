@@ -10,7 +10,7 @@ import type { DeadLetter } from '../types.js';
 // Helpers
 // ---------------------------------------------------------------------------
 
-const TEST_ENDPOINT = 'abc123';
+const TEST_ENDPOINT = 'relay.test.subject';
 
 function makeEnvelope(overrides: Partial<RelayEnvelope> = {}): RelayEnvelope {
   return {

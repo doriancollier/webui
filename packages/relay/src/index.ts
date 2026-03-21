@@ -15,7 +15,7 @@ export { RelayCore } from './relay-core.js';
 export { RELAY_ADAPTER_API_VERSION } from './version.js';
 
 // Sub-modules (for advanced usage)
-export { EndpointRegistry, hashSubject } from './endpoint-registry.js';
+export { EndpointRegistry } from './endpoint-registry.js';
 export { SubscriptionRegistry } from './subscription-registry.js';
 export { MaildirStore } from './maildir-store.js';
 export type {
