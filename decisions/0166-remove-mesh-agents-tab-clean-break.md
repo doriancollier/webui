@@ -1,7 +1,7 @@
 ---
 number: 166
 title: Remove MeshPanel Agents Tab for Clean Separation
-status: draft
+status: proposed
 created: 2026-03-20
 spec: agents-page
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: agents-page)
+Proposed
 
 ## Context
 

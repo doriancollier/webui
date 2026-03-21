@@ -1,7 +1,7 @@
 ---
 number: 161
 title: Route-Aware Sidebar & Header Slot Pattern via Private Switch Hooks
-status: draft
+status: proposed
 created: 2026-03-20
 spec: dynamic-sidebar-content
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: dynamic-sidebar-content)
+Proposed
 
 ## Context
 

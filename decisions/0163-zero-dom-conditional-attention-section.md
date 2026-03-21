@@ -1,7 +1,7 @@
 ---
 number: 163
 title: Zero-DOM Conditional Rendering for Needs Attention Section
-status: draft
+status: proposed
 created: 2026-03-20
 spec: dashboard-content
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: dashboard-content)
+Proposed
 
 ## Context
 

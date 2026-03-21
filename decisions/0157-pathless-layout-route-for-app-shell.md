@@ -1,7 +1,7 @@
 ---
 number: 157
 title: Use Pathless Layout Route for Shared App Shell
-status: draft
+status: proposed
 created: 2026-03-20
 spec: dashboard-home-route
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: dashboard-home-route)
+Proposed
 
 ## Context
 

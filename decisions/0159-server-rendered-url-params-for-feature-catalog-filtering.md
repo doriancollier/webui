@@ -1,7 +1,7 @@
 ---
 number: 159
 title: Use Server-Rendered URL Params for Feature Catalog Filtering
-status: draft
+status: proposed
 created: 2026-03-20
 spec: site-feature-catalog
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: site-feature-catalog)
+Proposed
 
 ## Context
 

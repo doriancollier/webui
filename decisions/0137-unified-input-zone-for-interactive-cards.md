@@ -1,7 +1,7 @@
 ---
 number: 137
 title: Unified Input Zone for Interactive Cards
-status: draft
+status: proposed
 created: 2026-03-17
 spec: interactive-card-focus-navigation
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: interactive-card-focus-navigation)
+Proposed
 
 ## Context
 

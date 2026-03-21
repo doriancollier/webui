@@ -1,7 +1,7 @@
 ---
 number: 156
 title: Use Code-Based Route Definitions Over File-Based Routing
-status: draft
+status: proposed
 created: 2026-03-20
 spec: dashboard-home-route
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: dashboard-home-route)
+Proposed
 
 ## Context
 

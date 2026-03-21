@@ -1,7 +1,7 @@
 ---
 number: 136
 title: Hybrid Hook Event Routing by hook_event Field
-status: draft
+status: proposed
 created: 2026-03-16
 spec: hook-lifecycle-events
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: hook-lifecycle-events)
+Proposed
 
 ## Context
 
