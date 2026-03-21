@@ -321,7 +321,7 @@ export function useSimulator(scenario: SimScenario | null): SimulatorResult {
 
   // Reset when scenario changes
   useEffect(() => {
-    reset();
+    reset(); // eslint-disable-line react-hooks/set-state-in-effect -- Dev simulator: intentional re-init on scenario switch
   }, [scenario?.id, reset]);
 
   return {

@@ -99,8 +99,9 @@ async function start() {
 
   // Initialize Pulse scheduler if enabled
   const schedulerConfig = configManager.get('scheduler');
-  // eslint-disable-next-line no-restricted-syntax -- checks key existence (not value); env.ts boolFlag can't distinguish "unset" from "set to false"
+
   const pulseEnabled =
+    // eslint-disable-next-line no-restricted-syntax -- Checking presence, not value: env.ts can't distinguish "unset" from "set to false"
     'DORKOS_PULSE_ENABLED' in process.env ? env.DORKOS_PULSE_ENABLED : schedulerConfig.enabled;
 
   let pulseStore: PulseStore | undefined;
@@ -120,8 +121,9 @@ async function start() {
   const relayConfig = configManager.get('relay');
   // Env var wins when explicitly set; fall back to config when not set.
   // boolFlag defaults to false even when unset, so check process.env directly.
-  // eslint-disable-next-line no-restricted-syntax -- checks key existence (not value); env.ts boolFlag can't distinguish "unset" from "set to false"
+
   const relayEnabled =
+    // eslint-disable-next-line no-restricted-syntax -- Checking presence, not value: env.ts can't distinguish "unset" from "set to false"
     'DORKOS_RELAY_ENABLED' in process.env ? env.DORKOS_RELAY_ENABLED : relayConfig.enabled;
 
   // Phase A: core relay infrastructure (RelayCore + TraceStore)

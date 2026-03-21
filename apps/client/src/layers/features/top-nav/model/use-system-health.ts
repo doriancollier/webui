@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useRuns } from '@/layers/entities/pulse';
 import { useAggregatedDeadLetters, useRelayAdapters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
+import { useNow } from '@/layers/shared/model';
 
 /** One day in milliseconds. */
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
@@ -21,8 +22,9 @@ export function useSystemHealth(): SystemHealthState {
   const { data: meshStatus } = useMeshStatus();
   const { data: adapters } = useRelayAdapters();
 
+  const now = useNow();
+
   return useMemo(() => {
-    const now = Date.now();
     const twentyFourHoursAgo = now - TWENTY_FOUR_HOURS_MS;
 
     const hasRecentFailedRuns = failedRuns?.some(
@@ -43,5 +45,5 @@ export function useSystemHealth(): SystemHealthState {
     }
 
     return 'healthy';
-  }, [failedRuns, deadLetters, meshStatus, adapters]);
+  }, [now, failedRuns, deadLetters, meshStatus, adapters]);
 }

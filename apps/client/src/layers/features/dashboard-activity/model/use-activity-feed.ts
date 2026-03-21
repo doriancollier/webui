@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useSessions } from '@/layers/entities/session';
 import { useRuns } from '@/layers/entities/pulse';
+import { useNow } from '@/layers/shared/model';
 
 /** Maximum number of events to show in the feed before capping. */
 const MAX_EVENTS = 20;
@@ -22,7 +23,10 @@ export interface ActivityGroup {
   events: ActivityEvent[];
 }
 
-/** @internal Exported for testing only. */
+/**
+ * Format a duration in milliseconds as a compact human-readable string.
+ * @internal Exported for testing only.
+ */
 export function formatDuration(ms: number): string {
   const minutes = Math.floor(ms / 60000);
   if (minutes < 60) return `${minutes}m`;
@@ -41,11 +45,12 @@ export function formatDuration(ms: number): string {
 export function useActivityFeed(): { groups: ActivityGroup[]; totalCount: number } {
   const { sessions } = useSessions();
   const { data: runs } = useRuns();
+  const nowMs = useNow();
 
   return useMemo(() => {
     const events: ActivityEvent[] = [];
-    const now = new Date();
-    const sevenDaysAgo = now.getTime() - SEVEN_DAYS_MS;
+    const now = new Date(nowMs);
+    const sevenDaysAgo = nowMs - SEVEN_DAYS_MS;
 
     // Session events from last 7 days
     if (sessions) {
@@ -106,5 +111,5 @@ export function useActivityFeed(): { groups: ActivityGroup[]; totalCount: number
     if (olderEvents.length > 0) groups.push({ label: 'Last 7 days', events: olderEvents });
 
     return { groups, totalCount };
-  }, [sessions, runs]);
+  }, [nowMs, sessions, runs]);
 }

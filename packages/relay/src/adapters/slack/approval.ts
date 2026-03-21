@@ -17,7 +17,6 @@ import {
   truncateText,
 } from '../../lib/payload-utils.js';
 import type { ApprovalData } from '../../lib/payload-utils.js';
-import { MAX_MESSAGE_LENGTH } from './inbound.js';
 import { wrapSlackCall } from './stream.js';
 
 // === Approval timeout state ===

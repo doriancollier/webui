@@ -3,6 +3,9 @@ import { Slider as SliderPrimitive } from 'radix-ui';
 
 import { cn } from '@/layers/shared/lib';
 
+/**
+ *
+ */
 function Slider({
   className,
   defaultValue,

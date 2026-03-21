@@ -3,6 +3,7 @@ import { useSessions } from '@/layers/entities/session';
 import { useRuns } from '@/layers/entities/pulse';
 import { useAggregatedDeadLetters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
+import { useNow } from '@/layers/shared/model';
 import { useNavigate } from '@tanstack/react-router';
 import type { LucideIcon } from 'lucide-react';
 import { Clock, XCircle, Mail, WifiOff } from 'lucide-react';
@@ -42,10 +43,10 @@ export function useAttentionItems(): AttentionItem[] {
   const { data: deadLetters } = useAggregatedDeadLetters();
   const { data: meshStatus } = useMeshStatus();
   const navigate = useNavigate();
+  const now = useNow();
 
   return useMemo(() => {
     const items: AttentionItem[] = [];
-    const now = Date.now();
     const twentyFourHoursAgo = now - TWENTY_FOUR_HOURS_MS;
     const thirtyMinutesAgo = now - THIRTY_MINUTES_MS;
 
@@ -137,7 +138,7 @@ export function useAttentionItems(): AttentionItem[] {
         icon: WifiOff,
         title: `${count} agent${count > 1 ? 's' : ''} offline`,
         description: `${count} mesh agent${count > 1 ? 's' : ''} unreachable`,
-        timestamp: new Date().toISOString(),
+        timestamp: new Date(now).toISOString(),
         action: {
           label: 'View →',
           onClick: () =>
@@ -154,5 +155,5 @@ export function useAttentionItems(): AttentionItem[] {
     items.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
     return items.slice(0, MAX_ITEMS);
-  }, [sessions, failedRuns, deadLetters, meshStatus, navigate]);
+  }, [now, sessions, failedRuns, deadLetters, meshStatus, navigate]);
 }

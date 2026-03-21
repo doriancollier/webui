@@ -5,6 +5,9 @@ import { Separator as SeparatorPrimitive } from 'radix-ui';
 
 import { cn } from '@/layers/shared/lib/utils';
 
+/**
+ *
+ */
 function Separator({
   className,
   orientation = 'horizontal',

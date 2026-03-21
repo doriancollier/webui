@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { Transport } from '@dorkos/shared/transport';
 import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
-import { TooltipProvider, SidebarProvider } from '@/layers/shared/ui';
+import { TooltipProvider } from '@/layers/shared/ui';
 
 // ── Route-aware mock: control the pathname returned by useRouterState ──
 

@@ -26,6 +26,10 @@ import type {
 /** Timeout for adapter.start() calls within register() (ms). */
 const ADAPTER_START_TIMEOUT_MS = 30_000;
 
+/**
+ * Registry that manages the lifecycle of external channel adapters and routes
+ * outbound messages to the correct adapter by subject prefix.
+ */
 export class AdapterRegistry implements AdapterRegistryLike {
   private readonly adapters = new Map<string, RelayAdapter>();
   private relay: RelayPublisher | null = null;

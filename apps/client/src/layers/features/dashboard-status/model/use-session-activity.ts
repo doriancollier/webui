@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { useSessions } from '@/layers/entities/session';
+import { useNow } from '@/layers/shared/model';
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 const BUCKET_COUNT = 7;
@@ -12,12 +13,13 @@ const BUCKET_COUNT = 7;
  */
 export function useSessionActivity(): number[] {
   const { sessions } = useSessions();
+  const nowMs = useNow();
 
   return useMemo(() => {
     const buckets = Array(BUCKET_COUNT).fill(0) as number[];
     if (!sessions.length) return buckets;
 
-    const now = new Date();
+    const now = new Date(nowMs);
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
     for (const session of sessions) {
@@ -35,5 +37,5 @@ export function useSessionActivity(): number[] {
       }
     }
     return buckets;
-  }, [sessions]);
+  }, [nowMs, sessions]);
 }

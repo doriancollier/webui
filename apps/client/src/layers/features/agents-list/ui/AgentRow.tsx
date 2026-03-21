@@ -107,6 +107,7 @@ export function AgentRow({
               <div className="flex-1" />
 
               {/* Session action — stop propagation so clicking doesn't toggle row */}
+              {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- Event boundary only, not interactive itself */}
               <div onClick={(e) => e.stopPropagation()}>
                 <SessionLaunchPopover projectPath={projectPath} />
               </div>

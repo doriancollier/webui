@@ -3,13 +3,13 @@ import { useMeshAgentPaths } from '@/layers/entities/mesh';
 import { useCommands } from '@/layers/entities/command';
 import { useSessions } from '@/layers/entities/session';
 import { useActiveRunCount } from '@/layers/entities/pulse';
-import { useAppStore } from '@/layers/shared/model';
+import { useAppStore, useNow } from '@/layers/shared/model';
 import { shortenHomePath } from '@/layers/shared/lib';
 import { useAgentFrecency } from './use-agent-frecency';
 import type { SearchableItem } from './use-palette-search';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 
-interface FeatureItem {
+export interface FeatureItem {
   id: string;
   label: string;
   /** Lucide icon name */
@@ -19,14 +19,14 @@ interface FeatureItem {
   action: string;
 }
 
-interface QuickActionItem {
+export interface QuickActionItem {
   id: string;
   label: string;
   icon: string;
   action: string;
 }
 
-interface CommandItemData {
+export interface CommandItemData {
   name: string;
   description?: string;
 }
@@ -86,6 +86,7 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
   const { sessions } = useSessions();
   const { data: activeRunCount } = useActiveRunCount();
   const previousCwd = useAppStore((s) => s.previousCwd);
+  const now = useNow();
 
   const allAgents = useMemo(() => agentPathsData?.agents ?? [], [agentPathsData]);
 
@@ -163,8 +164,7 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
       if (cwdSessions.length > 0) {
         const mostRecent = cwdSessions[0];
         const lastActive = new Date(mostRecent.updatedAt ?? mostRecent.createdAt ?? '').getTime();
-        if (lastActive > Date.now() - ONE_HOUR_MS) {
-          // eslint-disable-line react-hooks/purity -- Date.now() re-evaluates when sessions change
+        if (lastActive > now - ONE_HOUR_MS) {
           items.push({
             id: 'suggestion-continue',
             label: `Continue: ${mostRecent.title ?? 'Last session'}`,
@@ -202,7 +202,7 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
     }
 
     return items.slice(0, MAX_SUGGESTIONS);
-  }, [sessions, activeCwd, activeRunCount, previousCwd, allAgents]);
+  }, [now, sessions, activeCwd, activeRunCount, previousCwd, allAgents]);
 
   return {
     recentAgents,

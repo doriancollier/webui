@@ -1,7 +1,10 @@
 import type { ActivityGroup } from '../model/use-activity-feed';
 import { ActivityFeedItem } from './ActivityFeedItem';
 
-/** @internal Format hours/days ago for the "since your last visit" separator. */
+/**
+ * Format hours/days ago for the "since your last visit" separator.
+ * @internal
+ */
 function formatTimeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const hours = Math.floor(diff / 3600000);

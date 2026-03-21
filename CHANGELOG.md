@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Resolve all ESLint warnings across the monorepo
 - Code review fixes for discovery, MCP tools, and schema
 - Add timeout guards and logging to adapter setup pipeline
 - Enable Relay and Pulse by default on fresh installs

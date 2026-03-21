@@ -116,7 +116,6 @@ vi.mock('@radix-ui/react-tabs', () => {
     value?: string;
     onValueChange?: (v: string) => void;
   }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { ref: _ref, ...rest } = props as Record<string, unknown> & { ref?: unknown };
     return React.createElement(
       TabsContext.Provider,
@@ -125,7 +124,6 @@ vi.mock('@radix-ui/react-tabs', () => {
     );
   }
   function List({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { ref: _ref, ...rest } = props as Record<string, unknown> & { ref?: unknown };
     return React.createElement('div', { role: 'tablist', ...rest }, children);
   }
@@ -134,7 +132,6 @@ vi.mock('@radix-ui/react-tabs', () => {
     value,
     ...props
   }: Record<string, unknown> & { children?: React.ReactNode; value?: string }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { ref: _ref, ...rest } = props as Record<string, unknown> & { ref?: unknown };
     const ctx = React.useContext(TabsContext);
     const isActive = ctx.value === value;
@@ -155,7 +152,6 @@ vi.mock('@radix-ui/react-tabs', () => {
     value,
     ...props
   }: Record<string, unknown> & { children?: React.ReactNode; value?: string }) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { ref: _ref, ...rest } = props as Record<string, unknown> & { ref?: unknown };
     const ctx = React.useContext(TabsContext);
     if (ctx.value !== value) return null;

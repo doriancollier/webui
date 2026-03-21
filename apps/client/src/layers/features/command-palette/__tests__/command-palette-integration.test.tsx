@@ -71,6 +71,7 @@ vi.mock('@/layers/shared/model', () => ({
   },
   useTheme: () => ({ theme: mockTheme, setTheme: mockSetTheme }),
   useIsMobile: () => false,
+  useNow: () => Date.now(),
 }));
 
 const mockSetDir = vi.fn();

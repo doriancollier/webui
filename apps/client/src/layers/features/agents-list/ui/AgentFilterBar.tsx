@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { Search } from 'lucide-react';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import { Button } from '@/layers/shared/ui/button';

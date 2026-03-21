@@ -122,7 +122,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
     );
     observer.observe(container);
     return () => observer.disconnect();
-  }, [messages.length, scrollToBottom]);
+  }, [scrollRef, messages.length, scrollToBottom]);
 
   useImperativeHandle(
     ref,

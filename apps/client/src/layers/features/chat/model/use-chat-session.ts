@@ -161,6 +161,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   });
 
   // Keep rateLimitClearRef in sync — avoids stale closures in the stream handler
+  // eslint-disable-next-line react-hooks/refs -- Intentional render-time ref sync to avoid stale closures
   rateLimitClearRef.current = () => {
     setIsRateLimited(false);
     setRateLimitRetryAfter(null);
@@ -186,14 +187,17 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   const onSessionIdChangeRef = useRef(options.onSessionIdChange);
   const onStreamingDoneRef = useRef(options.onStreamingDone);
   const transformContentRef = useRef(options.transformContent);
+  /* eslint-disable react-hooks/refs -- Intentional render-time ref sync to avoid stale closures in stream callbacks */
   onTaskEventRef.current = options.onTaskEvent;
   onSessionIdChangeRef.current = options.onSessionIdChange;
   onStreamingDoneRef.current = options.onStreamingDone;
   transformContentRef.current = options.transformContent;
+  /* eslint-enable react-hooks/refs */
 
   // Create stream event handler at hook level for the SSE streaming path
   const streamEventHandler = useMemo(
     () =>
+      // eslint-disable-next-line react-hooks/refs -- refs are captured by the factory and read inside callbacks, not during construction
       createStreamEventHandler({
         currentPartsRef,
         orphanHooksRef,
@@ -409,7 +413,7 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
           finalContent,
           (event) => streamEventHandler(event.type, event.data, assistantIdRef.current),
           abortController.signal,
-          selectedCwd ?? undefined,
+          selectedCwdRef.current ?? undefined,
           { clientMessageId: pendingUserId }
         );
         pendingUserIdRef.current = null;
@@ -443,9 +447,8 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
         setIsRateLimited(false);
         setRateLimitRetryAfter(null);
       }
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: stable refs for transport/options/cwd
     },
-    [sessionId, streamEventHandler, queryClient]
+    [sessionId, transport, streamEventHandler, queryClient]
   );
 
   const handleSubmit = useCallback(async () => {

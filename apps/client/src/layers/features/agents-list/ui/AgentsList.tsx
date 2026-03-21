@@ -5,7 +5,7 @@ import { useSessions } from '@/layers/entities/session';
 import { Skeleton } from '@/layers/shared/ui/skeleton';
 import { ScrollArea } from '@/layers/shared/ui/scroll-area';
 import { AgentRow } from './AgentRow';
-import { AgentFilterBar, type FilterState, type StatusFilter } from './AgentFilterBar';
+import { AgentFilterBar, type FilterState } from './AgentFilterBar';
 
 interface AgentsListProps {
   agents: TopologyAgent[];

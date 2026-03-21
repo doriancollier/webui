@@ -19,7 +19,10 @@ const TYPE_LABELS: Record<ActivityEvent['type'], string> = {
   system: 'System',
 };
 
-/** @internal Format a timestamp as h:mm a for today or MMM d for older dates. */
+/**
+ * Format a timestamp as h:mm a for today or MMM d for older dates.
+ * @internal
+ */
 function formatEventTime(iso: string): string {
   const date = new Date(iso);
   const now = new Date();

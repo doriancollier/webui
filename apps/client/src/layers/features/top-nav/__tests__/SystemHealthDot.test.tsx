@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
 import { TooltipProvider } from '@/layers/shared/ui';
 import { SystemHealthDot } from '../ui/SystemHealthDot';
 

@@ -5,6 +5,9 @@ import { cn } from '@/layers/shared/lib/utils';
 import { Label } from '@/layers/shared/ui/label';
 import { Separator } from '@/layers/shared/ui/separator';
 
+/**
+ *
+ */
 function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   return (
     <fieldset
@@ -19,6 +22,9 @@ function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
   );
 }
 
+/**
+ *
+ */
 function FieldLegend({
   className,
   variant = 'legend',
@@ -39,6 +45,9 @@ function FieldLegend({
   );
 }
 
+/**
+ *
+ */
 function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -73,6 +82,9 @@ const fieldVariants = cva('group/field flex w-full gap-3 data-[invalid=true]:tex
   },
 });
 
+/**
+ *
+ */
 function Field({
   className,
   orientation = 'vertical',
@@ -89,6 +101,9 @@ function Field({
   );
 }
 
+/**
+ *
+ */
 function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -99,6 +114,9 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ *
+ */
 function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
   return (
     <Label
@@ -114,6 +132,9 @@ function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>)
   );
 }
 
+/**
+ *
+ */
 function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
   return (
     <div
@@ -127,6 +148,9 @@ function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
   );
 }
 
+/**
+ *
+ */
 function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
   return (
     <p
@@ -142,6 +166,9 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
   );
 }
 
+/**
+ *
+ */
 function FieldSeparator({
   children,
   className,
@@ -172,6 +199,9 @@ function FieldSeparator({
   );
 }
 
+/**
+ *
+ */
 function FieldError({
   className,
   children,

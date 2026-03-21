@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useSessions } from '@/layers/entities/session';
 import { useResolvedAgents } from '@/layers/entities/agent';
+import { useNow } from '@/layers/shared/model';
 
 /** Two hours in milliseconds — sessions not updated within this window are excluded. */
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
@@ -29,12 +30,13 @@ export interface ActiveSession {
  */
 export function useActiveSessions(): { sessions: ActiveSession[]; totalCount: number } {
   const { sessions: allSessions } = useSessions();
+  const now = useNow();
 
   const recentSessions = useMemo(() => {
     if (!allSessions) return [];
-    const twoHoursAgo = Date.now() - TWO_HOURS_MS;
+    const twoHoursAgo = now - TWO_HOURS_MS;
     return allSessions.filter((s) => new Date(s.updatedAt).getTime() > twoHoursAgo);
-  }, [allSessions]);
+  }, [allSessions, now]);
 
   const uniquePaths = useMemo(
     () => [...new Set(recentSessions.map((s) => s.cwd ?? '').filter(Boolean))],
@@ -44,14 +46,14 @@ export function useActiveSessions(): { sessions: ActiveSession[]; totalCount: nu
   const { data: agents } = useResolvedAgents(uniquePaths);
 
   const sessions = useMemo(() => {
-    const fiveMinutesAgo = Date.now() - FIVE_MINUTES_MS;
+    const fiveMinutesAgo = now - FIVE_MINUTES_MS;
     return recentSessions
       .map((session) => {
         const cwd = session.cwd ?? '';
         const agent = cwd ? (agents?.[cwd] ?? null) : null;
         const updatedTime = new Date(session.updatedAt).getTime();
         const createdTime = new Date(session.createdAt).getTime();
-        const elapsed = Date.now() - createdTime;
+        const elapsed = now - createdTime;
         return {
           id: session.id,
           title: session.title ?? session.id,
@@ -65,12 +67,15 @@ export function useActiveSessions(): { sessions: ActiveSession[]; totalCount: nu
         } satisfies ActiveSession;
       })
       .slice(0, MAX_SESSIONS);
-  }, [recentSessions, agents]);
+  }, [now, recentSessions, agents]);
 
   return { sessions, totalCount: recentSessions.length };
 }
 
-/** @internal Exported for testing only. */
+/**
+ * Format elapsed milliseconds as a compact duration string (e.g. "5m", "2h 30m", "1d").
+ * @internal Exported for testing only.
+ */
 export function formatElapsed(ms: number): string {
   const minutes = Math.floor(ms / 60000);
   if (minutes < 60) return `${minutes}m`;

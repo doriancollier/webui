@@ -5,6 +5,7 @@ import {
   useAggregatedDeadLetters,
 } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
+import { useNow } from '@/layers/shared/model';
 
 /** Derived health data for the Pulse scheduler subsystem. */
 interface PulseStatus {
@@ -45,8 +46,8 @@ const MS_PER_HOUR = 60 * MS_PER_MINUTE;
 const MS_PER_DAY = 24 * MS_PER_HOUR;
 
 /** Format a future timestamp as a relative time string (e.g. "47m", "2h"). */
-function formatNextRunIn(nextRun: string): string | null {
-  const diff = new Date(nextRun).getTime() - Date.now();
+function formatNextRunIn(nextRun: string, now: number): string | null {
+  const diff = new Date(nextRun).getTime() - now;
   if (diff <= 0) return null;
   if (diff < MS_PER_HOUR) return `${Math.floor(diff / MS_PER_MINUTE)}m`;
   if (diff < MS_PER_DAY) return `${Math.floor(diff / MS_PER_HOUR)}h`;
@@ -67,7 +68,7 @@ export function useSubsystemStatus(): SubsystemStatus {
   const { data: meshStatus } = useMeshStatus();
 
   // Pulse: find earliest next run across all enabled schedules
-  const now = Date.now();
+  const now = useNow();
   const twentyFourHoursAgo = now - MS_PER_DAY;
 
   const nextRunIn = (() => {
@@ -78,7 +79,7 @@ export function useSubsystemStatus(): SubsystemStatus {
       .filter((t) => t > now)
       .sort((a, b) => a - b);
     if (nextRunTimes.length === 0) return null;
-    return formatNextRunIn(new Date(nextRunTimes[0]).toISOString());
+    return formatNextRunIn(new Date(nextRunTimes[0]).toISOString(), now);
   })();
 
   const failedRunCount = failedRuns

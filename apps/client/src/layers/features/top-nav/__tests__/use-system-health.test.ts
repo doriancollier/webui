@@ -21,6 +21,10 @@ vi.mock('@/layers/entities/mesh', () => ({
   useMeshStatus: vi.fn().mockReturnValue({ data: undefined }),
 }));
 
+vi.mock('@/layers/shared/model', () => ({
+  useNow: vi.fn().mockReturnValue(Date.now()),
+}));
+
 import { useRuns } from '@/layers/entities/pulse';
 import { useAggregatedDeadLetters, useRelayAdapters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';

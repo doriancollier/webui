@@ -20,7 +20,13 @@ export { useGlobalPalette } from './model/use-global-palette';
 export { useAgentFrecency, calcFrecencyScore } from './model/use-agent-frecency';
 export type { FrecencyRecord } from './model/use-agent-frecency';
 export { usePaletteItems } from './model/use-palette-items';
-export type { PaletteItems, SuggestionItem } from './model/use-palette-items';
+export type {
+  PaletteItems,
+  SuggestionItem,
+  FeatureItem,
+  QuickActionItem,
+  CommandItemData,
+} from './model/use-palette-items';
 export { usePaletteSearch, parsePrefix } from './model/use-palette-search';
 export type { SearchableItem, SearchResult } from './model/use-palette-search';
 export { usePaletteActions } from './model/use-palette-actions';

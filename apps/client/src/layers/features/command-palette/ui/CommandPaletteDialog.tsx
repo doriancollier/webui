@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, LayoutGroup } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useAppStore, useIsMobile } from '@/layers/shared/model';
 import { cn } from '@/layers/shared/lib';
 import {
@@ -9,75 +9,20 @@ import {
   CommandInput,
   CommandList,
   CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandSeparator,
   ScrollArea,
 } from '@/layers/shared/ui';
 import { usePaletteItems } from '../model/use-palette-items';
 import { useGlobalPalette } from '../model/use-global-palette';
 import { usePaletteSearch } from '../model/use-palette-search';
 import { usePaletteActions } from '../model/use-palette-actions';
-import { AgentCommandItem } from './AgentCommandItem';
 import { AgentPreviewPanel } from './AgentPreviewPanel';
 import { AgentSubMenu } from './AgentSubMenu';
 import { PaletteFooter } from './PaletteFooter';
+import { PaletteRootPage } from './PaletteRootPage';
 import { usePreviewData } from '../model/use-preview-data';
-import { Clock, Radio, Globe, Settings, Plus, Search, FolderOpen, Moon } from 'lucide-react';
+import { dialogVariants } from './palette-constants';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 import type { FuseResultMatch } from 'fuse.js';
-
-const ICON_MAP: Record<string, React.ElementType> = {
-  Clock,
-  Radio,
-  Globe,
-  Settings,
-  Plus,
-  Search,
-  FolderOpen,
-  Moon,
-};
-
-/** Ease-out curve for entrances (design system standard). */
-const EASE_OUT = [0, 0, 0.2, 1] as const;
-
-/** Ease-in curve for exits (design system standard). */
-const EASE_IN = [0.4, 0, 1, 1] as const;
-
-/** Dialog entrance/exit animation variants. */
-const dialogVariants = {
-  hidden: { opacity: 0, scale: 0.96, y: -8 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.2, ease: EASE_OUT },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.96,
-    y: -8,
-    transition: { duration: 0.12, ease: EASE_IN },
-  },
-} as const;
-
-/** Stagger container variants — applied to a key-changed wrapper to re-trigger on open/page. */
-const listVariants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.035, delayChildren: 0.04 },
-  },
-} as const;
-
-/** Stagger child variants — used on the first 8 items only. */
-const itemVariants = {
-  hidden: { opacity: 0, y: -4 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.15, ease: EASE_OUT },
-  },
-} as const;
 
 /**
  * Global command palette dialog.
@@ -381,203 +326,28 @@ export function CommandPaletteDialog() {
                   >
                     {/* Root page content — stagger entrance re-triggers on staggerKey change */}
                     {!page && (
-                      <motion.div
-                        key={staggerKey}
-                        variants={listVariants}
-                        initial="hidden"
-                        animate="visible"
-                      >
-                        {/* Contextual suggestions — shown at top of zero-query state */}
-                        {isZeroQuery && suggestions.length > 0 && (
-                          <CommandGroup heading="Suggestions">
-                            {suggestions.map((s, index) => {
-                              const Icon = ICON_MAP[s.icon];
-                              return (
-                                <motion.div
-                                  key={s.id}
-                                  variants={index < 8 ? itemVariants : undefined}
-                                >
-                                  <CommandItem
-                                    value={s.id}
-                                    onSelect={() => {
-                                      if (s.action === 'openPulse') {
-                                        handleFeatureAction('openPulse');
-                                      } else if (s.action.startsWith('switchAgent:')) {
-                                        const agentId = s.action.split(':')[1];
-                                        const agent = allAgents.find((a) => a.id === agentId);
-                                        if (agent) handleAgentSelect(agent);
-                                      } else if (s.action.startsWith('continueSession:')) {
-                                        closePalette();
-                                      }
-                                    }}
-                                  >
-                                    <motion.div
-                                      whileHover={{ x: 2 }}
-                                      transition={{ duration: 0.1, ease: EASE_OUT }}
-                                      className="flex w-full items-center gap-2"
-                                    >
-                                      {Icon && <Icon className="size-4" />}
-                                      <div className="min-w-0 flex-1">
-                                        <span className="text-sm">{s.label}</span>
-                                        <span className="text-muted-foreground ml-2 text-xs">
-                                          {s.description}
-                                        </span>
-                                      </div>
-                                    </motion.div>
-                                  </CommandItem>
-                                </motion.div>
-                              );
-                            })}
-                          </CommandGroup>
-                        )}
-
-                        {/* Zero-query state: Recent Agents group */}
-                        {isZeroQuery && recentAgents.length > 0 && (
-                          <CommandGroup heading="Recent Agents">
-                            <LayoutGroup id="cmd-palette-recent">
-                              {recentAgents.map((agent, index) => (
-                                <motion.div
-                                  key={agent.id}
-                                  variants={index < 8 ? itemVariants : undefined}
-                                >
-                                  <AgentCommandItem
-                                    agent={agent}
-                                    isActive={agent.projectPath === selectedCwd}
-                                    isSelected={selectedValue === agent.name}
-                                    onSelect={() => goToAgentActions(agent)}
-                                  />
-                                </motion.div>
-                              ))}
-                            </LayoutGroup>
-                          </CommandGroup>
-                        )}
-
-                        {/* Search state: All Agents — always shown in @ mode or when searching */}
-                        {!isZeroQuery && searchAgents.length > 0 && (
-                          <CommandGroup heading="All Agents">
-                            <LayoutGroup id="cmd-palette-all">
-                              {searchAgents.map((agent, index) => (
-                                <motion.div
-                                  key={agent.id}
-                                  variants={index < 8 ? itemVariants : undefined}
-                                >
-                                  <AgentCommandItem
-                                    agent={agent}
-                                    isActive={agent.projectPath === selectedCwd}
-                                    isSelected={selectedValue === agent.name}
-                                    onSelect={() => goToAgentActions(agent)}
-                                    nameIndices={
-                                      agentMatchMap.get(agent.id)?.find((m) => m.key === 'name')
-                                        ?.indices as readonly [number, number][] | undefined
-                                    }
-                                  />
-                                </motion.div>
-                              ))}
-                            </LayoutGroup>
-                          </CommandGroup>
-                        )}
-
-                        {/* Features — hidden in @ and > mode; shown in zero-query and non-prefix search */}
-                        {!isAtMode && !isCommandMode && searchFeatures.length > 0 && (
-                          <>
-                            <CommandSeparator />
-                            <CommandGroup heading="Features">
-                              {searchFeatures.map((f, index) => {
-                                const Icon = ICON_MAP[f.icon];
-                                return (
-                                  <motion.div
-                                    key={f.id}
-                                    variants={index < 8 ? itemVariants : undefined}
-                                  >
-                                    <CommandItem
-                                      value={f.label}
-                                      onSelect={() => handleFeatureAction(f.action)}
-                                    >
-                                      <motion.div
-                                        whileHover={{ x: 2 }}
-                                        transition={{ duration: 0.1, ease: EASE_OUT }}
-                                        className="flex w-full items-center gap-2"
-                                      >
-                                        {Icon && <Icon className="size-4" />}
-                                        <span>{f.label}</span>
-                                        {f.shortcut && (
-                                          <span className="text-muted-foreground ml-auto text-xs">
-                                            {f.shortcut}
-                                          </span>
-                                        )}
-                                      </motion.div>
-                                    </CommandItem>
-                                  </motion.div>
-                                );
-                              })}
-                            </CommandGroup>
-                          </>
-                        )}
-
-                        {/* Commands — hidden in @ mode; shown in > mode or when searching */}
-                        {!isAtMode &&
-                          (isCommandMode || search.length > 0) &&
-                          searchCommands.length > 0 && (
-                            <>
-                              <CommandSeparator />
-                              <CommandGroup heading="Commands">
-                                {searchCommands.map((cmd, index) => (
-                                  <motion.div
-                                    key={cmd.name}
-                                    variants={index < 8 ? itemVariants : undefined}
-                                  >
-                                    <CommandItem value={cmd.name}>
-                                      <motion.div
-                                        whileHover={{ x: 2 }}
-                                        transition={{ duration: 0.1, ease: EASE_OUT }}
-                                        className="flex w-full items-center gap-2"
-                                      >
-                                        <span className="font-mono text-xs">{cmd.name}</span>
-                                        {cmd.description && (
-                                          <span className="text-muted-foreground ml-2 text-xs">
-                                            {cmd.description}
-                                          </span>
-                                        )}
-                                      </motion.div>
-                                    </CommandItem>
-                                  </motion.div>
-                                ))}
-                              </CommandGroup>
-                            </>
-                          )}
-
-                        {/* Quick Actions — hidden in @ and > mode; shown in zero-query and non-prefix search */}
-                        {!isAtMode && !isCommandMode && searchQuickActions.length > 0 && (
-                          <>
-                            <CommandSeparator />
-                            <CommandGroup heading="Quick Actions">
-                              {searchQuickActions.map((qa, index) => {
-                                const Icon = ICON_MAP[qa.icon];
-                                return (
-                                  <motion.div
-                                    key={qa.id}
-                                    variants={index < 8 ? itemVariants : undefined}
-                                  >
-                                    <CommandItem
-                                      value={qa.label}
-                                      onSelect={() => handleQuickAction(qa.action)}
-                                    >
-                                      <motion.div
-                                        whileHover={{ x: 2 }}
-                                        transition={{ duration: 0.1, ease: EASE_OUT }}
-                                        className="flex w-full items-center gap-2"
-                                      >
-                                        {Icon && <Icon className="size-4" />}
-                                        <span>{qa.label}</span>
-                                      </motion.div>
-                                    </CommandItem>
-                                  </motion.div>
-                                );
-                              })}
-                            </CommandGroup>
-                          </>
-                        )}
-                      </motion.div>
+                      <PaletteRootPage
+                        staggerKey={staggerKey}
+                        isZeroQuery={isZeroQuery}
+                        isAtMode={isAtMode}
+                        isCommandMode={isCommandMode}
+                        search={search}
+                        selectedCwd={selectedCwd}
+                        selectedValue={selectedValue}
+                        suggestions={suggestions}
+                        recentAgents={recentAgents}
+                        allAgents={allAgents}
+                        searchAgents={searchAgents}
+                        searchFeatures={searchFeatures}
+                        searchCommands={searchCommands}
+                        searchQuickActions={searchQuickActions}
+                        agentMatchMap={agentMatchMap}
+                        onFeatureAction={handleFeatureAction}
+                        onAgentSelect={handleAgentSelect}
+                        onQuickAction={handleQuickAction}
+                        onGoToAgentActions={goToAgentActions}
+                        onClose={closePalette}
+                      />
                     )}
 
                     {/* Agent actions sub-menu page */}
