@@ -1,7 +1,7 @@
 ---
 number: 173
 title: Static Template Rendering for Personality Traits
-status: draft
+status: proposed
 created: 2026-03-22
 spec: agent-personality-convention-files
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: agent-personality-convention-files)
+Proposed
 
 ## Context
 
