@@ -99,7 +99,7 @@ function createStatefulBindingStore() {
 function createMockAdapterManager(overrides?: Partial<AdapterManager>): AdapterManager {
   return {
     listAdapters: vi.fn().mockReturnValue([]),
-    getAdapter: vi.fn().mockReturnValue(undefined),
+    getAdapter: vi.fn().mockReturnValue({ id: 'mock-adapter' }),
     enable: vi.fn().mockResolvedValue(undefined),
     disable: vi.fn().mockResolvedValue(undefined),
     reload: vi.fn().mockResolvedValue(undefined),
@@ -111,6 +111,7 @@ function createMockAdapterManager(overrides?: Partial<AdapterManager>): AdapterM
     testConnection: vi.fn().mockResolvedValue({ ok: true }),
     getBindingStore: vi.fn().mockReturnValue(undefined),
     getBindingRouter: vi.fn().mockReturnValue(undefined),
+    getMeshCore: vi.fn().mockReturnValue(undefined),
     ...overrides,
   } as unknown as AdapterManager;
 }

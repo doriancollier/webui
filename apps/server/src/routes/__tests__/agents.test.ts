@@ -21,6 +21,7 @@ const mockWriteManifest = vi.fn();
 vi.mock('@dorkos/shared/manifest', () => ({
   readManifest: (...args: unknown[]) => mockReadManifest(...args),
   writeManifest: (...args: unknown[]) => mockWriteManifest(...args),
+  MANIFEST_DIR: '.dork',
 }));
 
 const mockReadConventionFile = vi.fn().mockResolvedValue(null);
@@ -37,6 +38,11 @@ vi.mock('@dorkos/shared/convention-files', () => ({
     (name: string) => `<!-- TRAITS:START -->\ntraits\n<!-- TRAITS:END -->\n\nYou are ${name}`
   ),
   defaultNopeTemplate: vi.fn(() => '# Safety Boundaries'),
+}));
+
+vi.mock('@dorkos/shared/convention-files-io', () => ({
+  readConventionFile: (...args: unknown[]) => mockReadConventionFile(...args),
+  writeConventionFile: (...args: unknown[]) => mockWriteConventionFile(...args),
 }));
 
 vi.mock('@dorkos/shared/trait-renderer', () => ({
