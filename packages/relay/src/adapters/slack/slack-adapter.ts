@@ -25,6 +25,8 @@ import {
   clearAllApprovalTimeouts,
 } from './outbound.js';
 import type { ActiveStream, SlackOutboundState } from './outbound.js';
+import { SlackPlatformClient } from './slack-platform-client.js';
+import { SlackThreadIdCodec } from '../../lib/thread-id.js';
 
 /**
  * Slack App Manifest YAML for one-click app creation.
@@ -233,6 +235,8 @@ export class SlackAdapter extends BaseRelayAdapter {
   /** FIFO queue of message timestamps with pending hourglass reactions, keyed by channelId. */
   private pendingReactions: import('./stream.js').PendingReactions = new Map();
   private readonly outboundState: SlackOutboundState = createSlackOutboundState();
+  private platformClient: SlackPlatformClient | null = null;
+  private readonly codec = new SlackThreadIdCodec();
 
   constructor(id: string, config: SlackAdapterConfig, displayName = 'Slack') {
     super(id, SUBJECT_PREFIX, displayName);
@@ -321,6 +325,11 @@ export class SlackAdapter extends BaseRelayAdapter {
     this.logger.info('connecting via Socket Mode');
     await app.start();
     this.app = app;
+    this.platformClient = new SlackPlatformClient(
+      app.client,
+      { nativeStreaming: this.config.nativeStreaming },
+      this.logger
+    );
   }
 
   /** Disconnect from Slack and clean up state. */
@@ -332,6 +341,10 @@ export class SlackAdapter extends BaseRelayAdapter {
         // best-effort — app may already be disconnected
       }
       this.app = null;
+    }
+    if (this.platformClient) {
+      await this.platformClient.destroy();
+      this.platformClient = null;
     }
     this.botUserId = '';
     this.streamState.clear();
@@ -369,6 +382,39 @@ export class SlackAdapter extends BaseRelayAdapter {
       approvalState: this.outboundState,
       logger: this.logger,
     });
+  }
+
+  /**
+   * Stream an aggregated response to Slack via the platform client.
+   *
+   * Called by AdapterStreamManager with an AsyncIterable of text chunks.
+   * Delegates to SlackPlatformClient.stream() which handles post+update.
+   *
+   * @param subject - The relay subject
+   * @param threadId - The Slack channel ID
+   * @param stream - Async iterable of text chunks
+   * @param _context - Optional adapter context (unused)
+   */
+  async deliverStream(
+    _subject: string,
+    threadId: string,
+    stream: AsyncIterable<string>,
+    _context?: AdapterContext
+  ): Promise<DeliveryResult> {
+    if (!this.platformClient) {
+      return { success: false, error: 'Adapter not started' };
+    }
+    try {
+      await this.platformClient.stream(threadId, stream);
+      this.trackOutbound();
+      return { success: true };
+    } catch (err) {
+      this.recordError(err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   /**

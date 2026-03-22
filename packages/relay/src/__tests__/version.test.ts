@@ -10,7 +10,7 @@ describe('RELAY_ADAPTER_API_VERSION', () => {
     expect(RELAY_ADAPTER_API_VERSION).toMatch(/^\d+\.\d+\.\d+$/);
   });
 
-  it('is 0.1.0 for the initial release', () => {
-    expect(RELAY_ADAPTER_API_VERSION).toBe('0.1.0');
+  it('is 0.2.0 for the current release', () => {
+    expect(RELAY_ADAPTER_API_VERSION).toBe('0.2.0');
   });
 });

@@ -13,14 +13,15 @@ import type { StandardPayload } from '@dorkos/shared/relay-schemas';
 import type { RelayPublisher, AdapterInboundCallbacks, RelayLogger } from '../../types.js';
 import { noopLogger } from '../../types.js';
 import type { PendingReactions } from './stream.js';
+import { SlackThreadIdCodec } from '../../lib/thread-id.js';
 
 // === Constants ===
 
 /** Subject prefix for all Slack adapter subjects. */
 export const SUBJECT_PREFIX = 'relay.human.slack';
 
-/** Subject prefix segment added for group channels. */
-const GROUP_SEGMENT = 'group';
+/** Codec for encoding/decoding Slack thread IDs in relay subjects. */
+const codec = new SlackThreadIdCodec();
 
 /** Max length for a single Slack message (Slack's hard limit is 4000). */
 export const MAX_MESSAGE_LENGTH = 4000;
@@ -123,10 +124,7 @@ const channelNameCache = new Map<string, CacheEntry>();
  * @param isGroup - Whether the channel is a group (C/G prefix) vs DM (D prefix)
  */
 export function buildSubject(channelId: string, isGroup: boolean): string {
-  if (isGroup) {
-    return `${SUBJECT_PREFIX}.${GROUP_SEGMENT}.${channelId}`;
-  }
-  return `${SUBJECT_PREFIX}.${channelId}`;
+  return codec.encode(channelId, isGroup ? 'group' : 'dm');
 }
 
 /**
@@ -137,19 +135,8 @@ export function buildSubject(channelId: string, isGroup: boolean): string {
  * @param subject - A Relay subject under the slack prefix
  */
 export function extractChannelId(subject: string): string | null {
-  if (!subject.startsWith(SUBJECT_PREFIX)) return null;
-
-  const remainder = subject.slice(SUBJECT_PREFIX.length + 1);
-  if (!remainder) return null;
-
-  // Group format: group.{channelId}
-  if (remainder.startsWith(`${GROUP_SEGMENT}.`)) {
-    const id = remainder.slice(GROUP_SEGMENT.length + 1);
-    return id || null;
-  }
-
-  // DM format: {channelId}
-  return remainder;
+  const decoded = codec.decode(subject);
+  return decoded?.platformId ?? null;
 }
 
 /**

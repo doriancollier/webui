@@ -7,6 +7,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { RelayAdapter } from '../types.js';
+import type { ThreadIdCodec } from '../lib/thread-id.js';
 import { createMockRelayPublisher } from './mock-relay-publisher.js';
 import { createMockRelayEnvelope } from './mock-relay-envelope.js';
 
@@ -18,6 +19,10 @@ export interface ComplianceSuiteOptions {
   createAdapter: () => RelayAdapter;
   /** Subject to use for delivery tests. Must match the adapter's subjectPrefix. */
   deliverSubject: string;
+  /** Optional ThreadIdCodec for round-trip compliance testing. */
+  codec?: ThreadIdCodec;
+  /** Sample platform ID for codec round-trip tests (e.g., '12345'). */
+  samplePlatformId?: string;
 }
 
 /**
@@ -45,7 +50,7 @@ export interface ComplianceSuiteOptions {
  * ```
  */
 export function runAdapterComplianceSuite(options: ComplianceSuiteOptions): void {
-  const { name, createAdapter, deliverSubject } = options;
+  const { name, createAdapter, deliverSubject, codec, samplePlatformId } = options;
 
   describe(`${name} — Adapter Compliance Suite`, () => {
     let adapter: RelayAdapter;
@@ -156,5 +161,44 @@ export function runAdapterComplianceSuite(options: ComplianceSuiteOptions): void
         expect(typeof result.error).toBe('string');
       }
     });
+
+    // --- deliverStream() shape (optional) ---
+
+    it('deliverStream() is a function if present', () => {
+      if (!('deliverStream' in adapter)) return;
+      expect(typeof (adapter as { deliverStream: unknown }).deliverStream).toBe('function');
+    });
+
+    // --- ThreadIdCodec compliance (optional) ---
+
+    if (codec && samplePlatformId) {
+      describe('ThreadIdCodec round-trip', () => {
+        it('round-trips DM encode/decode', () => {
+          const subject = codec.encode(samplePlatformId, 'dm');
+          const decoded = codec.decode(subject);
+          expect(decoded).toEqual({ platformId: samplePlatformId, channelType: 'dm' });
+        });
+
+        it('round-trips group encode/decode', () => {
+          const subject = codec.encode(samplePlatformId, 'group');
+          const decoded = codec.decode(subject);
+          expect(decoded).toEqual({ platformId: samplePlatformId, channelType: 'group' });
+        });
+
+        it('decode returns null for non-matching subject', () => {
+          expect(codec.decode('relay.unrelated.prefix.123')).toBeNull();
+        });
+
+        it('encoded DM subject starts with codec prefix', () => {
+          const subject = codec.encode(samplePlatformId, 'dm');
+          expect(subject.startsWith(codec.prefix)).toBe(true);
+        });
+
+        it('encoded group subject starts with codec prefix', () => {
+          const subject = codec.encode(samplePlatformId, 'group');
+          expect(subject.startsWith(codec.prefix)).toBe(true);
+        });
+      });
+    }
   });
 }

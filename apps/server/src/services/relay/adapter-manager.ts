@@ -18,6 +18,7 @@ import {
   WEBHOOK_MANIFEST,
   SLACK_MANIFEST,
   CLAUDE_CODE_MANIFEST,
+  TELEGRAM_CHATSDK_MANIFEST,
 } from '@dorkos/relay';
 import type { ClaudeCodeAgentRuntimeLike, TraceStoreLike, PulseStoreLike } from '@dorkos/relay';
 import type { AdapterManifest, CatalogEntry } from '@dorkos/shared/relay-schemas';
@@ -522,6 +523,7 @@ export class AdapterManager {
     this.manifests.set('webhook', WEBHOOK_MANIFEST);
     this.manifests.set('slack', SLACK_MANIFEST);
     this.manifests.set('claude-code', CLAUDE_CODE_MANIFEST);
+    this.manifests.set('telegram-chatsdk', TELEGRAM_CHATSDK_MANIFEST);
   }
 
   /**

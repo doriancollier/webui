@@ -376,6 +376,26 @@ export interface RelayAdapter {
   getStatus(): AdapterStatus;
 
   /**
+   * Deliver a streaming response to the external channel.
+   *
+   * Optional — adapters that support incremental message updates (e.g., live
+   * edit of a Telegram message as tokens arrive) implement this method.
+   * Adapters that do not implement it fall back to buffering the full stream
+   * and calling `deliver()` with the concatenated result.
+   *
+   * @param subject - The target subject
+   * @param threadId - Platform-specific thread or chat identifier
+   * @param stream - Async iterable of content chunks to deliver incrementally
+   * @param context - Optional rich context for informed dispatch decisions
+   */
+  deliverStream?(
+    subject: string,
+    threadId: string,
+    stream: AsyncIterable<string>,
+    context?: AdapterContext
+  ): Promise<DeliveryResult>;
+
+  /**
    * Lightweight connection test — validate credentials without starting the
    * full adapter lifecycle (e.g., long-polling loops, webhook servers).
    *
@@ -384,6 +404,124 @@ export interface RelayAdapter {
    * 409 Conflict when a polling session lingers.
    */
   testConnection?(): Promise<{ ok: boolean; error?: string; botUsername?: string }>;
+}
+
+/**
+ * Low-level platform communication interface.
+ *
+ * Abstracts the mechanics of sending/editing/streaming messages on a
+ * specific platform (Telegram, Slack, etc.) from the relay adapter's
+ * orchestration concerns (subject routing, envelope handling, status).
+ *
+ * A RelayAdapter owns a PlatformClient and delegates platform API calls
+ * to it. The PlatformClient never touches RelayEnvelopes or subjects —
+ * it operates on thread IDs and content strings.
+ */
+export interface PlatformClient {
+  /** Human-readable platform name for logging and diagnostics. */
+  readonly platform: string;
+
+  /**
+   * Post a new message to a thread.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   * @param content - Message body text
+   * @param format - Optional content format hint (e.g., 'markdown', 'html')
+   * @returns The platform-assigned message ID
+   */
+  postMessage(threadId: string, content: string, format?: string): Promise<{ messageId: string }>;
+
+  /**
+   * Edit an existing message in place.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   * @param messageId - ID of the message to edit
+   * @param content - Replacement message body text
+   */
+  editMessage(threadId: string, messageId: string, content: string): Promise<void>;
+
+  /**
+   * Delete a message from the thread.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   * @param messageId - ID of the message to delete
+   */
+  deleteMessage(threadId: string, messageId: string): Promise<void>;
+
+  /**
+   * Wire up inbound message handling from the platform.
+   *
+   * Called once during adapter start. The client should forward all
+   * inbound platform messages to the relay via `relay.publish()`.
+   *
+   * @param relay - The RelayPublisher to publish inbound messages to
+   */
+  handleInbound(relay: RelayPublisher): void;
+
+  /**
+   * Stream content to a thread using incremental platform edits.
+   *
+   * Optional — platforms that support live message editing (e.g., Telegram
+   * via `editMessageText`) implement this for lower-latency streaming UX.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   * @param content - Async iterable of content chunks to deliver incrementally
+   * @returns The platform-assigned message ID of the final message
+   */
+  stream?(threadId: string, content: AsyncIterable<string>): Promise<{ messageId: string }>;
+
+  /**
+   * Post an interactive action prompt with selectable options.
+   *
+   * Optional — platforms that support inline keyboards or action buttons
+   * (e.g., Telegram inline keyboards, Slack Block Kit buttons) implement this.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   * @param prompt - Prompt text displayed above the action buttons
+   * @param actions - Ordered list of label/value pairs for each action button
+   * @returns The platform-assigned message ID
+   */
+  postAction?(
+    threadId: string,
+    prompt: string,
+    actions: Array<{ label: string; value: string }>
+  ): Promise<{ messageId: string }>;
+
+  /**
+   * Signal to the platform that the bot is composing a response.
+   *
+   * Optional — platforms that support typing indicators (e.g., Telegram
+   * `sendChatAction`) implement this for better perceived responsiveness.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   */
+  startTyping?(threadId: string): void;
+
+  /**
+   * Cancel any active typing indicator for the thread.
+   *
+   * Optional — called after `startTyping` once the response is ready to send.
+   *
+   * @param threadId - Platform-specific thread or chat identifier
+   */
+  stopTyping?(threadId: string): void;
+
+  /**
+   * Tear down the platform client — close connections and release resources.
+   *
+   * Must drain any in-flight requests before resolving.
+   */
+  destroy(): Promise<void>;
+}
+
+/** Type guard for adapters that implement optional deliverStream(). */
+export interface StreamableAdapter extends RelayAdapter {
+  deliverStream(
+    subject: string,
+    threadId: string,
+    stream: AsyncIterable<string>,
+    context?: AdapterContext
+  ): Promise<DeliveryResult>;
 }
 
 /**

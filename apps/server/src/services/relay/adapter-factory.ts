@@ -14,12 +14,14 @@ import type {
   WebhookAdapterConfig,
   SlackAdapterConfig,
   AdapterStatus,
+  ChatSdkTelegramAdapterConfig,
 } from '@dorkos/relay';
 import {
   TelegramAdapter,
   WebhookAdapter,
   SlackAdapter,
   ClaudeCodeAdapter,
+  ChatSdkTelegramAdapter,
   loadAdapters,
 } from '@dorkos/relay';
 import type {
@@ -88,6 +90,14 @@ export async function createAdapter(
         agentSessionStore: deps.agentSessionStore,
         logger,
       });
+    case 'telegram-chatsdk': {
+      const adapter = new ChatSdkTelegramAdapter(
+        config.id,
+        config.config as ChatSdkTelegramAdapterConfig
+      );
+      adapter.setLogger(createTaggedLogger(`telegram-chatsdk:${config.id}`));
+      return adapter;
+    }
     case 'plugin':
       return loadPluginAdapter(config, configPath, onPluginManifest);
     default:

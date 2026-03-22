@@ -20,11 +20,13 @@
     "lint": "eslint ."
   },
   "dependencies": {
+    "@chat-adapter/telegram": "^4.20.2",
     "@dorkos/db": "workspace:*",
     "@dorkos/shared": "workspace:*",
     "@grammyjs/auto-retry": "^2.0.2",
     "@slack/bolt": "^4.6.0",
     "@slack/web-api": "^7.15.0",
+    "chat": "^4.20.2",
     "chokidar": "^4.0.0",
     "grammy": "^1.40.0",
     "slackify-markdown": "^5.0.0",

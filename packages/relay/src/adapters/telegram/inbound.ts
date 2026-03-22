@@ -12,14 +12,12 @@ import type { Context as GrammyContext } from 'grammy';
 import type { StandardPayload } from '@dorkos/shared/relay-schemas';
 import type { RelayPublisher, AdapterInboundCallbacks, RelayLogger } from '../../types.js';
 import { noopLogger } from '../../types.js';
+import { TelegramThreadIdCodec } from '../../lib/thread-id.js';
 
 // === Constants ===
 
 /** Subject prefix for all Telegram adapter subjects. */
 export const SUBJECT_PREFIX = 'relay.human.telegram';
-
-/** Subject prefix segment added for group chats. */
-const GROUP_SEGMENT = 'group';
 
 /** Max length for a single Telegram message (Telegram's hard limit is 4096). */
 export const MAX_MESSAGE_LENGTH = 4096;
@@ -40,6 +38,9 @@ const TELEGRAM_FORMATTING_RULES = [
   `- Keep responses concise. Messages over ${MAX_MESSAGE_LENGTH} characters are split.`,
 ].join('\n');
 
+/** Codec for encoding/decoding Telegram thread IDs in relay subjects. */
+const codec = new TelegramThreadIdCodec();
+
 // === Helpers ===
 
 /**
@@ -49,10 +50,7 @@ const TELEGRAM_FORMATTING_RULES = [
  * @param isGroup - Whether the chat is a group or supergroup
  */
 export function buildSubject(chatId: number, isGroup: boolean): string {
-  if (isGroup) {
-    return `${SUBJECT_PREFIX}.${GROUP_SEGMENT}.${chatId}`;
-  }
-  return `${SUBJECT_PREFIX}.${chatId}`;
+  return codec.encode(String(chatId), isGroup ? 'group' : 'dm');
 }
 
 /**
@@ -63,21 +61,9 @@ export function buildSubject(chatId: number, isGroup: boolean): string {
  * @param subject - A Relay subject under the telegram prefix
  */
 export function extractChatId(subject: string): number | null {
-  if (!subject.startsWith(SUBJECT_PREFIX)) return null;
-
-  const remainder = subject.slice(SUBJECT_PREFIX.length + 1);
-  if (!remainder) return null;
-
-  // Group format: group.{chatId}
-  if (remainder.startsWith(`${GROUP_SEGMENT}.`)) {
-    const idStr = remainder.slice(GROUP_SEGMENT.length + 1);
-    if (!idStr) return null; // Guard: Number("") === 0, which is invalid
-    const id = Number(idStr);
-    return Number.isInteger(id) ? id : null;
-  }
-
-  // DM format: {chatId}
-  const id = Number(remainder);
+  const decoded = codec.decode(subject);
+  if (!decoded) return null;
+  const id = Number(decoded.platformId);
   return Number.isInteger(id) ? id : null;
 }
 

@@ -21,6 +21,8 @@ import type {
   Unsubscribe,
 } from '../../types.js';
 import { SUBJECT_PREFIX, handleInboundMessage } from './inbound.js';
+import { GrammyPlatformClient } from './grammy-platform-client.js';
+import { TelegramThreadIdCodec } from '../../lib/thread-id.js';
 import {
   deliverMessage,
   handleTypingSignal,
@@ -170,6 +172,8 @@ export class TelegramAdapter extends BaseRelayAdapter {
   private responseBuffers = new Map<number, ResponseBuffer>();
   /** Instance-scoped outbound state — prevents cross-adapter leakage when multiInstance: true. */
   private readonly outboundState: TelegramOutboundState = createTelegramOutboundState();
+  private platformClient: GrammyPlatformClient | null = null;
+  private readonly codec = new TelegramThreadIdCodec();
 
   constructor(id: string, config: TelegramAdapterConfig, displayName = 'Telegram') {
     super(id, SUBJECT_PREFIX, displayName);
@@ -243,6 +247,7 @@ export class TelegramAdapter extends BaseRelayAdapter {
 
     bot.catch((err) => this.recordError(err));
     this.bot = bot;
+    this.platformClient = new GrammyPlatformClient(bot, this.logger);
 
     this.signalUnsub = relay.onSignal(`${SUBJECT_PREFIX}.>`, (subject: string, signal: Signal) => {
       if (signal.type === 'typing')
@@ -284,6 +289,11 @@ export class TelegramAdapter extends BaseRelayAdapter {
     this.outboundState.pendingApprovalTimeouts.clear();
     this.outboundState.callbackIdMap.clear();
 
+    if (this.platformClient) {
+      await this.platformClient.destroy();
+      this.platformClient = null;
+    }
+
     if (this.bot) {
       if (this.config.mode === 'webhook') {
         try {
@@ -322,6 +332,40 @@ export class TelegramAdapter extends BaseRelayAdapter {
       streaming: this.config.streaming ?? true,
       logger: this.logger,
     });
+  }
+
+  /**
+   * Stream an aggregated response to Telegram via the platform client.
+   *
+   * Called by AdapterStreamManager with an AsyncIterable of text chunks.
+   * Delegates to GrammyPlatformClient.stream() which handles
+   * sendMessageDraft throttling and final message send.
+   *
+   * @param subject - The relay subject
+   * @param threadId - The Telegram chat ID as string
+   * @param stream - Async iterable of text chunks
+   * @param _context - Optional adapter context (unused)
+   */
+  async deliverStream(
+    subject: string,
+    threadId: string,
+    stream: AsyncIterable<string>,
+    _context?: AdapterContext
+  ): Promise<DeliveryResult> {
+    if (!this.platformClient) {
+      return { success: false, error: 'Adapter not started' };
+    }
+    try {
+      await this.platformClient.stream(threadId, stream);
+      this.trackOutbound();
+      return { success: true };
+    } catch (err) {
+      this.recordError(err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
   }
 
   // --- Private helpers ---
