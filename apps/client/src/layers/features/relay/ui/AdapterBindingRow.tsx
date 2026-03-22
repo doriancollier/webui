@@ -1,4 +1,4 @@
-import { ArrowRight, ShieldCheck } from 'lucide-react';
+import { BellOff, MessageSquareOff, Zap } from 'lucide-react';
 import { Badge } from '@/layers/shared/ui/badge';
 import {
   Tooltip,
@@ -13,11 +13,11 @@ interface AdapterBindingRowProps {
   sessionStrategy: string;
   chatId?: string;
   channelType?: string;
-  /** Whether the agent can initiate messages unprompted. Non-default (true) shows a shield indicator. */
+  /** Whether the agent can initiate messages unprompted. Non-default (true) shows a zap indicator. */
   canInitiate?: boolean;
-  /** Whether the agent can reply to inbound messages. Non-default (false) shows a badge. */
+  /** Whether the agent can reply to inbound messages. Non-default (false) shows an icon. */
   canReply?: boolean;
-  /** Whether inbound messages are delivered to the agent. Non-default (false) shows a badge. */
+  /** Whether inbound messages are delivered to the agent. Non-default (false) shows an icon. */
   canReceive?: boolean;
 }
 
@@ -33,7 +33,6 @@ export function AdapterBindingRow({
 }: AdapterBindingRowProps) {
   return (
     <div className="text-muted-foreground flex items-center gap-2 text-sm">
-      <ArrowRight className="size-3 shrink-0" />
       <span className="truncate">{agentName}</span>
 
       {/* Session strategy badge — hidden when default (per-chat) */}
@@ -49,30 +48,39 @@ export function AdapterBindingRow({
         </Badge>
       )}
 
-      {/* Permission indicators — only shown for non-default values */}
-      {canInitiate && (
-        <TooltipProvider>
+      {/* Permission indicators — icon + tooltip for all non-default values */}
+      <TooltipProvider>
+        {canInitiate && (
           <Tooltip>
             <TooltipTrigger asChild>
-              <ShieldCheck
-                className="size-3 shrink-0 text-amber-500"
-                aria-label="Can initiate messages"
-              />
+              <Zap className="size-3 shrink-0 text-amber-500" aria-label="Can initiate messages" />
             </TooltipTrigger>
             <TooltipContent>Can initiate messages</TooltipContent>
           </Tooltip>
-        </TooltipProvider>
-      )}
-      {!canReply && (
-        <Badge variant="outline" className="text-muted-foreground shrink-0 text-[10px]">
-          Reply disabled
-        </Badge>
-      )}
-      {!canReceive && (
-        <Badge variant="outline" className="text-muted-foreground shrink-0 text-[10px]">
-          Receive disabled
-        </Badge>
-      )}
+        )}
+        {!canReply && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <MessageSquareOff
+                className="text-muted-foreground/70 size-3 shrink-0"
+                aria-label="Reply disabled"
+              />
+            </TooltipTrigger>
+            <TooltipContent>Reply disabled</TooltipContent>
+          </Tooltip>
+        )}
+        {!canReceive && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <BellOff
+                className="text-muted-foreground/70 size-3 shrink-0"
+                aria-label="Receive disabled"
+              />
+            </TooltipTrigger>
+            <TooltipContent>Receive disabled</TooltipContent>
+          </Tooltip>
+        )}
+      </TooltipProvider>
     </div>
   );
 }

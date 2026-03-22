@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Improve binding row UX with consistent icons and clearer overflow
 - Add missing traits_json and conventions_json migration
 ---
 

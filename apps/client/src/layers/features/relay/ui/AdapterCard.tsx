@@ -278,7 +278,7 @@ export function AdapterCard({
                   className="text-muted-foreground hover:text-foreground mt-1 text-xs hover:underline"
                   onClick={() => setShowAllBindings(true)}
                 >
-                  and {overflowCount} more
+                  Show {overflowCount} more
                 </button>
               )}
               {showAllBindings && boundAgentRows.length > MAX_VISIBLE_BINDINGS && (

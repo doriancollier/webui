@@ -358,7 +358,7 @@ describe('AdapterCard', () => {
       ],
     });
     render(<AdapterCard {...defaultProps()} />);
-    expect(screen.getByText('and 2 more')).toBeTruthy();
+    expect(screen.getByText('Show 2 more')).toBeTruthy();
   });
 
   // -------------------------------------------------------------------------
