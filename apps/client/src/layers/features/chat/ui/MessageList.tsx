@@ -74,7 +74,7 @@ export const MessageList = forwardRef<MessageListHandle, MessageListProps>(funct
 
   const { scrollRef, contentRef, isAtBottom, scrollToBottom } = useStickToBottom({
     resize: 'smooth',
-    initial: 'smooth',
+    initial: 'instant',
   });
 
   useEffect(() => {
