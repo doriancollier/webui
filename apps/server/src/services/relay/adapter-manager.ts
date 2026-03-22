@@ -85,6 +85,21 @@ export class AdapterManager {
     await this.enrichManifestsWithDocs();
     await ensureDefaultAdapterConfig(this.configPath);
     this.configs = await loadAdapterConfig(this.configPath);
+
+    // Correct builtin flag on user-created adapters.
+    // Only the built-in claude-code adapter should have builtin: true.
+    let needsSave = false;
+    for (const config of this.configs) {
+      if (config.builtin && config.type !== 'claude-code') {
+        config.builtin = false;
+        needsSave = true;
+      }
+    }
+    if (needsSave) {
+      await saveAdapterConfig(this.configPath, this.configs);
+      logger.info('[AdapterManager] Corrected builtin flag on user-created adapter(s)');
+    }
+
     await this.initBindingSubsystem();
     await this.startEnabledAdapters();
     this.configWatcher = watchAdapterConfig(this.configPath, () => {
@@ -108,10 +123,7 @@ export class AdapterManager {
       meshCore: this.deps.meshCore,
       agentManager: this.deps.agentManager,
       configPath: this.configPath,
-      resolveAdapterInstanceId: (platformType: string) => {
-        const match = this.configs.find((c) => c.type === platformType && c.enabled);
-        return match?.id;
-      },
+      eventRecorder: this.deps.eventRecorder,
     });
   }
 
@@ -231,6 +243,11 @@ export class AdapterManager {
     return this.bindingSubsystem?.getBindingRouter();
   }
 
+  /** Get the MeshCore dependency, or undefined if not provided. */
+  getMeshCore(): AdapterMeshCoreLike | undefined {
+    return this.deps.meshCore;
+  }
+
   /** Enrich AdapterContext with Mesh agent info if meshCore is available. */
   buildContext(subject: string): AdapterContext | undefined {
     if (!this.deps.meshCore) return undefined;
@@ -264,7 +281,7 @@ export class AdapterManager {
       id: `__test_${type}_${Date.now()}`,
       type,
       enabled: true,
-      builtin: manifest.builtin,
+      builtin: false,
       config,
     } as AdapterConfig;
 
@@ -309,7 +326,7 @@ export class AdapterManager {
       id,
       type,
       enabled,
-      builtin: manifest.builtin,
+      builtin: false, // User-created instances are never builtin
       ...(label ? { label } : {}),
       config,
     } as AdapterConfig;

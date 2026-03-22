@@ -11,6 +11,10 @@ import type { SlackMessageEvent } from '../inbound.js';
 import type { WebClient } from '@slack/web-api';
 import type { AdapterInboundCallbacks } from '../../../types.js';
 import type { RelayPublisher } from '../../../types.js';
+import { SlackThreadIdCodec } from '../../../lib/thread-id.js';
+
+/** Shared codec for tests — no instance ID so prefix is `relay.human.slack`. */
+const testCodec = new SlackThreadIdCodec();
 
 function createMockRelay(): RelayPublisher {
   return {
@@ -57,33 +61,33 @@ function createEvent(overrides: Partial<SlackMessageEvent> = {}): SlackMessageEv
 
 describe('buildSubject', () => {
   it('returns DM subject for non-group', () => {
-    expect(buildSubject('D12345', false)).toBe('relay.human.slack.D12345');
+    expect(buildSubject(testCodec, 'D12345', false)).toBe('relay.human.slack.D12345');
   });
 
   it('returns group subject for group channel', () => {
-    expect(buildSubject('C12345', true)).toBe('relay.human.slack.group.C12345');
+    expect(buildSubject(testCodec, 'C12345', true)).toBe('relay.human.slack.group.C12345');
   });
 });
 
 describe('extractChannelId', () => {
   it('extracts channel ID from DM subject', () => {
-    expect(extractChannelId('relay.human.slack.D12345')).toBe('D12345');
+    expect(extractChannelId(testCodec, 'relay.human.slack.D12345')).toBe('D12345');
   });
 
   it('extracts channel ID from group subject', () => {
-    expect(extractChannelId('relay.human.slack.group.C12345')).toBe('C12345');
+    expect(extractChannelId(testCodec, 'relay.human.slack.group.C12345')).toBe('C12345');
   });
 
   it('returns null for non-slack subject', () => {
-    expect(extractChannelId('relay.human.telegram.12345')).toBeNull();
+    expect(extractChannelId(testCodec, 'relay.human.telegram.12345')).toBeNull();
   });
 
   it('returns null for empty remainder', () => {
-    expect(extractChannelId('relay.human.slack')).toBeNull();
+    expect(extractChannelId(testCodec, 'relay.human.slack')).toBeNull();
   });
 
   it('returns null for empty group suffix', () => {
-    expect(extractChannelId('relay.human.slack.group.')).toBeNull();
+    expect(extractChannelId(testCodec, 'relay.human.slack.group.')).toBeNull();
   });
 });
 

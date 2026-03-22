@@ -239,7 +239,7 @@ describe('TelegramAdapter', () => {
     _capturedOnStart = null;
     lastMockServer = null;
 
-    adapter = new TelegramAdapter('telegram', { token: 'test-token', mode: 'polling' });
+    adapter = new TelegramAdapter('tg1', { token: 'test-token', mode: 'polling' });
     mockRelay = createMockRelay();
   });
 
@@ -257,8 +257,8 @@ describe('TelegramAdapter', () => {
   // --- Identity ---
 
   it('has correct id, subjectPrefix, and displayName', () => {
-    expect(adapter.id).toBe('telegram');
-    expect(adapter.subjectPrefix).toBe('relay.human.telegram');
+    expect(adapter.id).toBe('tg1');
+    expect(adapter.subjectPrefix).toBe('relay.human.telegram.tg1');
     expect(adapter.displayName).toBe('Telegram');
   });
 
@@ -311,7 +311,10 @@ describe('TelegramAdapter', () => {
 
   it('start() subscribes to relay signals', async () => {
     await adapter.start(mockRelay);
-    expect(mockRelay.onSignal).toHaveBeenCalledWith('relay.human.telegram.>', expect.any(Function));
+    expect(mockRelay.onSignal).toHaveBeenCalledWith(
+      'relay.human.telegram.tg1.>',
+      expect.any(Function)
+    );
   });
 
   it('start() is idempotent — second call is a no-op', async () => {
@@ -362,16 +365,16 @@ describe('TelegramAdapter', () => {
     await capturedMessageHandler!(ctx);
 
     expect(mockRelay.publish).toHaveBeenCalledWith(
-      'relay.human.telegram.12345',
+      'relay.human.telegram.tg1.12345',
       expect.objectContaining({
         content: 'Hello!',
         channelType: 'dm',
       }),
-      { from: 'relay.human.telegram.bot', replyTo: 'relay.human.telegram.12345' }
+      { from: 'relay.human.telegram.tg1.bot', replyTo: 'relay.human.telegram.tg1.12345' }
     );
   });
 
-  it('publishes inbound group message to relay.human.telegram.group.{chatId}', async () => {
+  it('publishes inbound group message to relay.human.telegram.tg1.group.{chatId}', async () => {
     await adapter.start(mockRelay);
 
     const ctx = createInboundCtx({
@@ -383,12 +386,12 @@ describe('TelegramAdapter', () => {
     await capturedMessageHandler!(ctx);
 
     expect(mockRelay.publish).toHaveBeenCalledWith(
-      'relay.human.telegram.group.-100111222',
+      'relay.human.telegram.tg1.group.-100111222',
       expect.objectContaining({
         content: 'Group message',
         channelType: 'group',
       }),
-      { from: 'relay.human.telegram.bot', replyTo: 'relay.human.telegram.group.-100111222' }
+      { from: 'relay.human.telegram.tg1.bot', replyTo: 'relay.human.telegram.tg1.group.-100111222' }
     );
   });
 
@@ -474,11 +477,11 @@ describe('TelegramAdapter', () => {
   it('deliver() skips messages originating from this adapter (echo prevention)', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.12345', { content: 'Echo!' });
+    const envelope = createEnvelope('relay.human.telegram.tg1.12345', { content: 'Echo!' });
     // Override 'from' to simulate the adapter's own inbound publish
-    envelope.from = 'relay.human.telegram.bot';
+    envelope.from = 'relay.human.telegram.tg1.bot';
 
-    const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+    const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
     expect(result.success).toBe(true);
     expect(mockSendMessage).not.toHaveBeenCalled();
   });
@@ -486,9 +489,9 @@ describe('TelegramAdapter', () => {
   it('deliver() allows messages from non-telegram sources', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.12345', { content: 'Agent reply' });
+    const envelope = createEnvelope('relay.human.telegram.tg1.12345', { content: 'Agent reply' });
     // from is 'relay.agent.backend' — should NOT be filtered
-    const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+    const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
     expect(result.success).toBe(true);
     expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Agent reply', { parse_mode: 'HTML' });
   });
@@ -498,8 +501,10 @@ describe('TelegramAdapter', () => {
   it('deliver() sends a Telegram message to the correct chat', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.12345', { content: 'Hello from agent!' });
-    await adapter.deliver('relay.human.telegram.12345', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
+      content: 'Hello from agent!',
+    });
+    await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
     expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Hello from agent!', {
       parse_mode: 'HTML',
@@ -509,8 +514,8 @@ describe('TelegramAdapter', () => {
   it('deliver() sends to group chat ID (negative)', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.group.-100111222', 'Group reply');
-    await adapter.deliver('relay.human.telegram.group.-100111222', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.group.-100111222', 'Group reply');
+    await adapter.deliver('relay.human.telegram.tg1.group.-100111222', envelope);
 
     expect(mockSendMessage).toHaveBeenCalledWith(-100111222, 'Group reply', { parse_mode: 'HTML' });
   });
@@ -518,8 +523,8 @@ describe('TelegramAdapter', () => {
   it('deliver() increments outbound message count', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.1', { content: 'hi' });
-    await adapter.deliver('relay.human.telegram.1', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.1', { content: 'hi' });
+    await adapter.deliver('relay.human.telegram.tg1.1', envelope);
 
     expect(adapter.getStatus().messageCount.outbound).toBe(1);
   });
@@ -528,8 +533,8 @@ describe('TelegramAdapter', () => {
     await adapter.start(mockRelay);
 
     const longContent = 'A'.repeat(5000);
-    const envelope = createEnvelope('relay.human.telegram.1', { content: longContent });
-    await adapter.deliver('relay.human.telegram.1', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.1', { content: longContent });
+    await adapter.deliver('relay.human.telegram.tg1.1', envelope);
 
     const sentText = vi.mocked(mockSendMessage).mock.calls[0][1] as string;
     expect(sentText.length).toBeLessThanOrEqual(4096);
@@ -546,8 +551,8 @@ describe('TelegramAdapter', () => {
   });
 
   it('deliver() returns failure if not started', async () => {
-    const envelope = createEnvelope('relay.human.telegram.1', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.1', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.1', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.1', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/not started/);
   });
@@ -557,8 +562,8 @@ describe('TelegramAdapter', () => {
 
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.1', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.1', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.1', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.1', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/Telegram API error/);
 
@@ -571,8 +576,8 @@ describe('TelegramAdapter', () => {
     it('handles string payload', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', 'plain text message');
-      await adapter.deliver('relay.human.telegram.12345', envelope);
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', 'plain text message');
+      await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'plain text message', {
         parse_mode: 'HTML',
@@ -582,11 +587,11 @@ describe('TelegramAdapter', () => {
     it('handles object payload with content field', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', {
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
         content: 'structured message',
         metadata: {},
       });
-      await adapter.deliver('relay.human.telegram.12345', envelope);
+      await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'structured message', {
         parse_mode: 'HTML',
@@ -596,11 +601,11 @@ describe('TelegramAdapter', () => {
     it('handles object payload with text field', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', {
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
         text: 'text field message',
         metadata: {},
       });
-      await adapter.deliver('relay.human.telegram.12345', envelope);
+      await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'text field message', {
         parse_mode: 'HTML',
@@ -611,8 +616,8 @@ describe('TelegramAdapter', () => {
       await adapter.start(mockRelay);
 
       const payload = { data: 'raw data', count: 5 };
-      const envelope = createEnvelope('relay.human.telegram.12345', payload);
-      await adapter.deliver('relay.human.telegram.12345', envelope);
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', payload);
+      await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, JSON.stringify(payload), {
         parse_mode: 'HTML',
@@ -622,8 +627,8 @@ describe('TelegramAdapter', () => {
     it('handles null payload', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', null);
-      await adapter.deliver('relay.human.telegram.12345', envelope);
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', null);
+      await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'null', { parse_mode: 'HTML' });
     });
@@ -631,8 +636,8 @@ describe('TelegramAdapter', () => {
     it('handles numeric payload', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', 42);
-      await adapter.deliver('relay.human.telegram.12345', envelope);
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', 42);
+      await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
 
       expect(mockSendMessage).toHaveBeenCalledWith(12345, '42', { parse_mode: 'HTML' });
     });
@@ -640,21 +645,21 @@ describe('TelegramAdapter', () => {
 
   // --- Float chat ID rejection (Number.isInteger guard) ---
 
-  it('deliver() rejects a float DM subject (e.g. relay.human.telegram.1.5)', async () => {
+  it('deliver() rejects a float DM subject (e.g. relay.human.telegram.tg1.1.5)', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.1.5', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.1.5', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.1.5', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.1.5', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/cannot extract chat ID/);
     expect(mockSendMessage).not.toHaveBeenCalled();
   });
 
-  it('deliver() rejects a float group subject (e.g. relay.human.telegram.group.1.5)', async () => {
+  it('deliver() rejects a float group subject (e.g. relay.human.telegram.tg1.group.1.5)', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.group.1.5', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.group.1.5', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.group.1.5', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.group.1.5', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/cannot extract chat ID/);
     expect(mockSendMessage).not.toHaveBeenCalled();
@@ -666,7 +671,7 @@ describe('TelegramAdapter', () => {
     const relay = mockRelay as ReturnType<typeof createMockRelay> & {
       _emitSignal: (subject: string, signal: { type: string; state: string }) => void;
     };
-    relay._emitSignal('relay.human.telegram.1.5', { type: 'typing', state: 'active' });
+    relay._emitSignal('relay.human.telegram.tg1.1.5', { type: 'typing', state: 'active' });
 
     await Promise.resolve();
 
@@ -681,7 +686,7 @@ describe('TelegramAdapter', () => {
     const relay = mockRelay as ReturnType<typeof createMockRelay> & {
       _emitSignal: (subject: string, signal: { type: string; state: string }) => void;
     };
-    relay._emitSignal('relay.human.telegram.12345', { type: 'typing', state: 'active' });
+    relay._emitSignal('relay.human.telegram.tg1.12345', { type: 'typing', state: 'active' });
 
     // Allow microtask queue to drain
     await Promise.resolve();
@@ -695,7 +700,7 @@ describe('TelegramAdapter', () => {
     const relay = mockRelay as ReturnType<typeof createMockRelay> & {
       _emitSignal: (subject: string, signal: { type: string; state: string }) => void;
     };
-    relay._emitSignal('relay.human.telegram.12345', { type: 'typing', state: 'stopped' });
+    relay._emitSignal('relay.human.telegram.tg1.12345', { type: 'typing', state: 'stopped' });
 
     await Promise.resolve();
 
@@ -708,7 +713,7 @@ describe('TelegramAdapter', () => {
     const relay = mockRelay as ReturnType<typeof createMockRelay> & {
       _emitSignal: (subject: string, signal: { type: string; state: string }) => void;
     };
-    relay._emitSignal('relay.human.telegram.12345', { type: 'presence', state: 'online' });
+    relay._emitSignal('relay.human.telegram.tg1.12345', { type: 'presence', state: 'online' });
 
     await Promise.resolve();
 
@@ -725,7 +730,7 @@ describe('TelegramAdapter', () => {
     };
 
     // Should not throw
-    relay._emitSignal('relay.human.telegram.12345', { type: 'typing', state: 'active' });
+    relay._emitSignal('relay.human.telegram.tg1.12345', { type: 'typing', state: 'active' });
     await Promise.resolve();
 
     // Error count should NOT be incremented for typing signal failures
@@ -1130,10 +1135,10 @@ describe('TelegramAdapter', () => {
   it('deliver() rejects empty group suffix that would produce chat ID 0 (C2)', async () => {
     await adapter.start(mockRelay);
 
-    // Subject "relay.human.telegram.group." has no ID after the final dot.
+    // Subject "relay.human.telegram.tg1.group." has no ID after the final dot.
     // Without the guard, Number("") === 0 would be treated as valid.
-    const envelope = createEnvelope('relay.human.telegram.group.', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.group.', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.group.', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.group.', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/cannot extract chat ID/);
     expect(mockSendMessage).not.toHaveBeenCalled();
@@ -1142,8 +1147,8 @@ describe('TelegramAdapter', () => {
   it('deliver() accepts valid group chat IDs', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.group.12345', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.group.12345', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.group.12345', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.group.12345', envelope);
     expect(result.success).toBe(true);
     expect(mockSendMessage).toHaveBeenCalledWith(12345, 'hi', { parse_mode: 'HTML' });
   });
@@ -1151,8 +1156,8 @@ describe('TelegramAdapter', () => {
   it('deliver() accepts valid DM chat IDs', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.67890', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.67890', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.67890', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.67890', envelope);
     expect(result.success).toBe(true);
     expect(mockSendMessage).toHaveBeenCalledWith(67890, 'hi', { parse_mode: 'HTML' });
   });
@@ -1160,8 +1165,8 @@ describe('TelegramAdapter', () => {
   it('deliver() rejects non-integer chat IDs', async () => {
     await adapter.start(mockRelay);
 
-    const envelope = createEnvelope('relay.human.telegram.abc', { content: 'hi' });
-    const result = await adapter.deliver('relay.human.telegram.abc', envelope);
+    const envelope = createEnvelope('relay.human.telegram.tg1.abc', { content: 'hi' });
+    const result = await adapter.deliver('relay.human.telegram.tg1.abc', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toMatch(/cannot extract chat ID/);
   });
@@ -1175,21 +1180,21 @@ describe('TelegramAdapter', () => {
       // Send 3 text_delta events — sendMessage should NOT be called yet
       const deltas = ['Hello', ' from', ' agent!'];
       for (const text of deltas) {
-        const envelope = createEnvelope('relay.human.telegram.12345', {
+        const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
           type: 'text_delta',
           data: { text },
         });
-        const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+        const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
         expect(result.success).toBe(true);
       }
       expect(mockSendMessage).not.toHaveBeenCalled();
 
       // Send done event — should flush buffer as a single message
-      const doneEnvelope = createEnvelope('relay.human.telegram.12345', {
+      const doneEnvelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'done',
         data: {},
       });
-      const doneResult = await adapter.deliver('relay.human.telegram.12345', doneEnvelope);
+      const doneResult = await adapter.deliver('relay.human.telegram.tg1.12345', doneEnvelope);
       expect(doneResult.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledTimes(1);
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Hello from agent!', {
@@ -1201,18 +1206,18 @@ describe('TelegramAdapter', () => {
       await adapter.start(mockRelay);
 
       // Buffer some text
-      const textEnvelope = createEnvelope('relay.human.telegram.12345', {
+      const textEnvelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'text_delta',
         data: { text: 'Partial response' },
       });
-      await adapter.deliver('relay.human.telegram.12345', textEnvelope);
+      await adapter.deliver('relay.human.telegram.tg1.12345', textEnvelope);
 
       // Send error event
-      const errorEnvelope = createEnvelope('relay.human.telegram.12345', {
+      const errorEnvelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'error',
         data: { message: 'Context limit exceeded' },
       });
-      const result = await adapter.deliver('relay.human.telegram.12345', errorEnvelope);
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', errorEnvelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledTimes(1);
       expect(mockSendMessage).toHaveBeenCalledWith(
@@ -1225,11 +1230,11 @@ describe('TelegramAdapter', () => {
     it('sends error-only message when no text was buffered', async () => {
       await adapter.start(mockRelay);
 
-      const errorEnvelope = createEnvelope('relay.human.telegram.12345', {
+      const errorEnvelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'error',
         data: { message: 'Session failed' },
       });
-      const result = await adapter.deliver('relay.human.telegram.12345', errorEnvelope);
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', errorEnvelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledWith(12345, '[Error: Session failed]', {
         parse_mode: 'HTML',
@@ -1239,11 +1244,11 @@ describe('TelegramAdapter', () => {
     it('silently skips session_status events', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', {
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'session_status',
         data: { sessionId: 'abc-123', costUsd: 0, contextTokens: 0 },
       });
-      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
     });
@@ -1251,11 +1256,11 @@ describe('TelegramAdapter', () => {
     it('silently skips tool_call_start events', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', {
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'tool_call_start',
         data: { id: 'tc-1', name: 'Read', input: {} },
       });
-      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
     });
@@ -1263,11 +1268,11 @@ describe('TelegramAdapter', () => {
     it('silently skips tool_call_end events', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', {
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'tool_call_end',
         data: { id: 'tc-1' },
       });
-      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
     });
@@ -1275,8 +1280,10 @@ describe('TelegramAdapter', () => {
     it('still handles StandardPayload directly (non-StreamEvent)', async () => {
       await adapter.start(mockRelay);
 
-      const envelope = createEnvelope('relay.human.telegram.12345', { content: 'Direct message' });
-      const result = await adapter.deliver('relay.human.telegram.12345', envelope);
+      const envelope = createEnvelope('relay.human.telegram.tg1.12345', {
+        content: 'Direct message',
+      });
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', envelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Direct message', { parse_mode: 'HTML' });
     });
@@ -1284,11 +1291,11 @@ describe('TelegramAdapter', () => {
     it('done with empty buffer does not send a message', async () => {
       await adapter.start(mockRelay);
 
-      const doneEnvelope = createEnvelope('relay.human.telegram.12345', {
+      const doneEnvelope = createEnvelope('relay.human.telegram.tg1.12345', {
         type: 'done',
         data: {},
       });
-      const result = await adapter.deliver('relay.human.telegram.12345', doneEnvelope);
+      const result = await adapter.deliver('relay.human.telegram.tg1.12345', doneEnvelope);
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
     });
@@ -1298,8 +1305,8 @@ describe('TelegramAdapter', () => {
 
       // Buffer text in chat 111
       await adapter.deliver(
-        'relay.human.telegram.111',
-        createEnvelope('relay.human.telegram.111', {
+        'relay.human.telegram.tg1.111',
+        createEnvelope('relay.human.telegram.tg1.111', {
           type: 'text_delta',
           data: { text: 'Chat A' },
         })
@@ -1307,8 +1314,8 @@ describe('TelegramAdapter', () => {
 
       // Buffer text in chat 222
       await adapter.deliver(
-        'relay.human.telegram.222',
-        createEnvelope('relay.human.telegram.222', {
+        'relay.human.telegram.tg1.222',
+        createEnvelope('relay.human.telegram.tg1.222', {
           type: 'text_delta',
           data: { text: 'Chat B' },
         })
@@ -1316,8 +1323,8 @@ describe('TelegramAdapter', () => {
 
       // Flush chat 111
       await adapter.deliver(
-        'relay.human.telegram.111',
-        createEnvelope('relay.human.telegram.111', {
+        'relay.human.telegram.tg1.111',
+        createEnvelope('relay.human.telegram.tg1.111', {
           type: 'done',
           data: {},
         })
@@ -1328,8 +1335,8 @@ describe('TelegramAdapter', () => {
 
       // Flush chat 222
       await adapter.deliver(
-        'relay.human.telegram.222',
-        createEnvelope('relay.human.telegram.222', {
+        'relay.human.telegram.tg1.222',
+        createEnvelope('relay.human.telegram.tg1.222', {
           type: 'done',
           data: {},
         })
@@ -1343,15 +1350,15 @@ describe('TelegramAdapter', () => {
       await adapter.start(mockRelay);
 
       await adapter.deliver(
-        'relay.human.telegram.12345',
-        createEnvelope('relay.human.telegram.12345', {
+        'relay.human.telegram.tg1.12345',
+        createEnvelope('relay.human.telegram.tg1.12345', {
           type: 'text_delta',
           data: { text: 'hi' },
         })
       );
       await adapter.deliver(
-        'relay.human.telegram.12345',
-        createEnvelope('relay.human.telegram.12345', {
+        'relay.human.telegram.tg1.12345',
+        createEnvelope('relay.human.telegram.tg1.12345', {
           type: 'done',
           data: {},
         })
@@ -1416,12 +1423,12 @@ describe('TelegramAdapter', () => {
     await capturedMessageHandler!(ctx);
 
     expect(mockRelay.publish).toHaveBeenCalledWith(
-      'relay.human.telegram.12345',
+      'relay.human.telegram.tg1.12345',
       expect.objectContaining({
         content: 'Photo description',
         channelType: 'dm',
       }),
-      { from: 'relay.human.telegram.bot', replyTo: 'relay.human.telegram.12345' }
+      { from: 'relay.human.telegram.tg1.bot', replyTo: 'relay.human.telegram.tg1.12345' }
     );
   });
 });

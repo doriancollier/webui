@@ -16,8 +16,9 @@ import {
 import { BaseRelayAdapter } from '../../base-adapter.js';
 import type { RelayPublisher, AdapterContext, DeliveryResult } from '../../types.js';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
-import { SUBJECT_PREFIX, handleInboundMessage } from './inbound.js';
+import { handleInboundMessage } from './inbound.js';
 import { deliverMessage, deliverStream as deliverStreamMsg } from './outbound.js';
+import { ChatSdkTelegramThreadIdCodec } from '../../lib/thread-id.js';
 
 /** Configuration for the Chat SDK Telegram adapter. */
 export interface ChatSdkTelegramAdapterConfig {
@@ -145,6 +146,7 @@ class MemoryStateAdapter implements StateAdapter {
  */
 export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
   private readonly config: ChatSdkTelegramAdapterConfig;
+  private readonly codec: ChatSdkTelegramThreadIdCodec;
   private chat: Chat | null = null;
   /** Underlying Chat SDK TelegramAdapter, stored separately for direct postMessage access. */
   private telegramAdapter: ChatSdkTelegramAdapterImpl | null = null;
@@ -154,7 +156,9 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
     config: ChatSdkTelegramAdapterConfig,
     displayName = 'Telegram (Chat SDK)'
   ) {
-    super(id, SUBJECT_PREFIX, displayName);
+    const codec = new ChatSdkTelegramThreadIdCodec(id);
+    super(id, codec.prefix, displayName);
+    this.codec = codec;
     this.config = config;
   }
 
@@ -188,17 +192,38 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
     chat.onDirectMessage(async (thread: Thread, message: Message) => {
       // Echo prevention: skip messages from our own bot subject prefix
       if (this.isOwnEcho(message)) return;
-      await handleInboundMessage(thread, message, relay, this.makeInboundCallbacks(), this.logger);
+      await handleInboundMessage(
+        thread,
+        message,
+        relay,
+        this.makeInboundCallbacks(),
+        this.logger,
+        this.codec
+      );
     });
 
     chat.onNewMention(async (thread: Thread, message: Message) => {
       if (this.isOwnEcho(message)) return;
-      await handleInboundMessage(thread, message, relay, this.makeInboundCallbacks(), this.logger);
+      await handleInboundMessage(
+        thread,
+        message,
+        relay,
+        this.makeInboundCallbacks(),
+        this.logger,
+        this.codec
+      );
     });
 
     chat.onSubscribedMessage(async (thread: Thread, message: Message) => {
       if (this.isOwnEcho(message)) return;
-      await handleInboundMessage(thread, message, relay, this.makeInboundCallbacks(), this.logger);
+      await handleInboundMessage(
+        thread,
+        message,
+        relay,
+        this.makeInboundCallbacks(),
+        this.logger,
+        this.codec
+      );
     });
 
     // Initialize chat (starts polling or registers webhook handler)
@@ -242,7 +267,7 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
     _context?: AdapterContext
   ): Promise<DeliveryResult> {
     // Echo prevention: skip messages published by this adapter
-    if (envelope.from?.startsWith(SUBJECT_PREFIX)) {
+    if (envelope.from?.startsWith(this.codec.prefix)) {
       return { success: true };
     }
 
@@ -251,7 +276,8 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
       envelope,
       this.telegramAdapter,
       this.makeOutboundCallbacks(),
-      this.logger
+      this.logger,
+      this.codec
     );
   }
 
@@ -277,7 +303,8 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
       stream,
       this.telegramAdapter,
       this.makeOutboundCallbacks(),
-      this.logger
+      this.logger,
+      this.codec
     );
   }
 

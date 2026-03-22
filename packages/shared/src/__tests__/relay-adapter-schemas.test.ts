@@ -1,9 +1,41 @@
 import { describe, it, expect } from 'vitest';
 import {
+  AdapterBindingSchema,
   ConfigFieldSchema,
   AdapterManifestSchema,
   SlackAdapterConfigSchema,
 } from '../relay-adapter-schemas.js';
+
+describe('AdapterBindingSchema', () => {
+  const baseBinding = {
+    id: '00000000-0000-0000-0000-000000000000',
+    adapterId: 'telegram-bot-1',
+    agentId: '01ABC123',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  it('rejects empty agentId', () => {
+    const result = AdapterBindingSchema.safeParse({
+      ...baseBinding,
+      agentId: '',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects empty adapterId', () => {
+    const result = AdapterBindingSchema.safeParse({
+      ...baseBinding,
+      adapterId: '',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts valid non-empty IDs', () => {
+    const result = AdapterBindingSchema.safeParse(baseBinding);
+    expect(result.success).toBe(true);
+  });
+});
 
 describe('ConfigFieldSchema', () => {
   const baseField = {

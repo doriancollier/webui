@@ -17,7 +17,7 @@ import type {
   DeliveryResult,
   PublishOptions,
 } from '../../types.js';
-import { SUBJECT_PREFIX, handleInboundMessage, clearCaches } from './inbound.js';
+import { handleInboundMessage, clearCaches } from './inbound.js';
 import {
   deliverMessage,
   clearApprovalTimeout,
@@ -236,10 +236,12 @@ export class SlackAdapter extends BaseRelayAdapter {
   private pendingReactions: import('./stream.js').PendingReactions = new Map();
   private readonly outboundState: SlackOutboundState = createSlackOutboundState();
   private platformClient: SlackPlatformClient | null = null;
-  private readonly codec = new SlackThreadIdCodec();
+  private readonly codec: SlackThreadIdCodec;
 
   constructor(id: string, config: SlackAdapterConfig, displayName = 'Slack') {
-    super(id, SUBJECT_PREFIX, displayName);
+    const codec = new SlackThreadIdCodec(id);
+    super(id, codec.prefix, displayName);
+    this.codec = codec;
     this.config = config;
   }
 
@@ -289,7 +291,8 @@ export class SlackAdapter extends BaseRelayAdapter {
         this.makeInboundCallbacks(),
         this.logger,
         this.config.typingIndicator ?? 'none',
-        this.pendingReactions
+        this.pendingReactions,
+        this.codec
       );
     });
 
@@ -302,7 +305,8 @@ export class SlackAdapter extends BaseRelayAdapter {
         this.makeInboundCallbacks(),
         this.logger,
         this.config.typingIndicator ?? 'none',
-        this.pendingReactions
+        this.pendingReactions,
+        this.codec
       );
     });
 
@@ -380,6 +384,7 @@ export class SlackAdapter extends BaseRelayAdapter {
       nativeStreaming: this.config.nativeStreaming ?? true,
       typingIndicator: this.config.typingIndicator ?? 'none',
       approvalState: this.outboundState,
+      codec: this.codec,
       logger: this.logger,
     });
   }

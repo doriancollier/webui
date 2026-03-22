@@ -20,7 +20,7 @@ import type {
   TelegramAdapterConfig,
   Unsubscribe,
 } from '../../types.js';
-import { SUBJECT_PREFIX, handleInboundMessage } from './inbound.js';
+import { handleInboundMessage } from './inbound.js';
 import { GrammyPlatformClient } from './grammy-platform-client.js';
 import { TelegramThreadIdCodec } from '../../lib/thread-id.js';
 import {
@@ -173,10 +173,12 @@ export class TelegramAdapter extends BaseRelayAdapter {
   /** Instance-scoped outbound state — prevents cross-adapter leakage when multiInstance: true. */
   private readonly outboundState: TelegramOutboundState = createTelegramOutboundState();
   private platformClient: GrammyPlatformClient | null = null;
-  private readonly codec = new TelegramThreadIdCodec();
+  private readonly codec: TelegramThreadIdCodec;
 
   constructor(id: string, config: TelegramAdapterConfig, displayName = 'Telegram') {
-    super(id, SUBJECT_PREFIX, displayName);
+    const codec = new TelegramThreadIdCodec(id);
+    super(id, codec.prefix, displayName);
+    this.codec = codec;
     this.config = config;
   }
 
@@ -196,7 +198,7 @@ export class TelegramAdapter extends BaseRelayAdapter {
     const bot = new Bot(this.config.token);
     bot.api.config.use(autoRetry());
     bot.on('message', (ctx) =>
-      handleInboundMessage(ctx, relay, this.makeInboundCallbacks(), this.logger)
+      handleInboundMessage(ctx, relay, this.makeInboundCallbacks(), this.logger, this.codec)
     );
 
     // Register callback query handler for tool approval inline keyboard buttons
@@ -249,10 +251,13 @@ export class TelegramAdapter extends BaseRelayAdapter {
     this.bot = bot;
     this.platformClient = new GrammyPlatformClient(bot, this.logger);
 
-    this.signalUnsub = relay.onSignal(`${SUBJECT_PREFIX}.>`, (subject: string, signal: Signal) => {
-      if (signal.type === 'typing')
-        void handleTypingSignal(this.bot, subject, this.outboundState, signal.state);
-    });
+    this.signalUnsub = relay.onSignal(
+      `${this.codec.prefix}.>`,
+      (subject: string, signal: Signal) => {
+        if (signal.type === 'typing')
+          void handleTypingSignal(this.bot, subject, this.outboundState, signal.state, this.codec);
+      }
+    );
 
     if (this.config.mode === 'webhook') {
       this.logger.info('starting webhook mode', {
@@ -330,6 +335,7 @@ export class TelegramAdapter extends BaseRelayAdapter {
       state: this.outboundState,
       callbacks: this.makeOutboundCallbacks(),
       streaming: this.config.streaming ?? true,
+      codec: this.codec,
       logger: this.logger,
     });
   }
@@ -434,7 +440,7 @@ export class TelegramAdapter extends BaseRelayAdapter {
       const newBot = new Bot(this.config.token);
       newBot.api.config.use(autoRetry());
       newBot.on('message', (ctx) =>
-        handleInboundMessage(ctx, this.relay!, this.makeInboundCallbacks(), this.logger)
+        handleInboundMessage(ctx, this.relay!, this.makeInboundCallbacks(), this.logger, this.codec)
       );
       newBot.catch((e) => this.recordError(e));
       this.bot = newBot;

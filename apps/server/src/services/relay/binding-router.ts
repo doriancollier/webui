@@ -45,8 +45,10 @@ export interface BindingRouterDeps {
   agentManager: AgentSessionCreator;
   meshCore: AdapterMeshCoreLike;
   relayDir: string;
-  /** Maps a platform type (e.g., 'telegram') to the adapter instance ID from config. */
-  resolveAdapterInstanceId?: (platformType: string) => string | undefined;
+  /** Optional recorder for binding routing failure events. */
+  eventRecorder?: {
+    insertAdapterEvent(adapterId: string, eventType: string, message: string): void;
+  };
 }
 
 /**
@@ -150,6 +152,11 @@ export class BindingRouter {
       if (!projectPath) {
         logger.warn(
           `BindingRouter: agent '${binding.agentId}' not found in mesh registry, skipping`
+        );
+        this.deps.eventRecorder?.insertAdapterEvent(
+          binding.adapterId,
+          'binding.routing_failed',
+          `Agent '${binding.agentId}' not found in mesh registry`
         );
         return;
       }
@@ -282,13 +289,12 @@ export class BindingRouter {
   /**
    * Parse a relay subject into adapter routing components.
    *
-   * Expected patterns:
-   * - `relay.human.{platformType}.{chatId}` (DM)
-   * - `relay.human.{platformType}.group.{chatId}` (group chat — chatId may be negative)
+   * Expected patterns (instance-aware format):
+   * - `relay.human.{platformType}.{instanceId}.{chatId}` (DM)
+   * - `relay.human.{platformType}.{instanceId}.group.{chatId}` (group chat)
    *
-   * The platform type (e.g., 'telegram') is resolved to the adapter instance ID
-   * via the `resolveAdapterInstanceId` dependency. Falls back to the raw
-   * platform type when no resolver is provided.
+   * The instance ID segment is the adapter's unique ID and is used directly
+   * as the `adapterId` for binding resolution.
    */
   private parseSubject(subject: string): {
     adapterId?: string;
@@ -301,20 +307,23 @@ export class BindingRouter {
     const platformType = parts[2];
     if (!platformType) return {};
 
-    // Resolve platform type → adapter instance ID (e.g., 'telegram' → 'tg-bot-1')
-    const adapterId = this.deps.resolveAdapterInstanceId?.(platformType) ?? platformType;
-
-    // Remaining tokens form the chat context
     const remaining = parts.slice(3);
+
+    // First remaining token is the instance ID (adapter ID)
+    const instanceId = remaining[0];
+    if (!instanceId) return {};
+
+    const adapterId = instanceId;
+    const afterInstance = remaining.slice(1);
+
     let chatId: string | undefined;
     let channelType: string | undefined;
 
-    if (remaining.length >= 2 && remaining[0] === 'group') {
+    if (afterInstance.length >= 2 && afterInstance[0] === 'group') {
       channelType = 'group';
-      // Join remaining tokens to handle negative group IDs (e.g., '-123456')
-      chatId = remaining.slice(1).join('.');
-    } else if (remaining.length >= 1) {
-      chatId = remaining.join('.');
+      chatId = afterInstance.slice(1).join('.');
+    } else if (afterInstance.length >= 1) {
+      chatId = afterInstance.join('.');
     }
 
     return { adapterId, chatId, channelType };

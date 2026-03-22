@@ -3,22 +3,23 @@ import type { WebClient } from '@slack/web-api';
 import { deliverMessage, createSlackOutboundState } from '../outbound.js';
 import type { ActiveStream } from '../outbound.js';
 import type { AdapterOutboundCallbacks } from '../../../types.js';
+import { SlackThreadIdCodec } from '../../../lib/thread-id.js';
+
+/** Shared codec for tests — no instance ID so prefix is `relay.human.slack`. */
+const testCodec = new SlackThreadIdCodec();
 
 // Mock the inbound module since it is developed in parallel.
 // These constants match the values defined in inbound.ts.
 vi.mock('../inbound.js', () => ({
   SUBJECT_PREFIX: 'relay.human.slack',
   MAX_MESSAGE_LENGTH: 4000,
-  extractChannelId: (subject: string) => {
-    const prefix = 'relay.human.slack';
-    if (!subject.startsWith(prefix)) return null;
-    const remainder = subject.slice(prefix.length + 1);
-    if (!remainder) return null;
-    if (remainder.startsWith('group.')) {
-      const id = remainder.slice('group.'.length);
-      return id || null;
-    }
-    return remainder;
+  extractChannelId: (
+    codec: { decode: (s: string) => { platformId: string } | null },
+    subject: string
+  ) => {
+    const decoded = codec.decode(subject);
+    if (!decoded) return null;
+    return decoded.platformId || null;
   },
 }));
 
@@ -200,6 +201,7 @@ function deliver(
     nativeStreaming,
     typingIndicator,
     approvalState: createSlackOutboundState(),
+    codec: testCodec,
   });
 }
 

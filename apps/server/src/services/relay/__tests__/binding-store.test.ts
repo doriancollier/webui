@@ -360,6 +360,104 @@ describe('BindingStore', () => {
       await freshStore.shutdown();
     });
 
+    it('loads only valid entries and auto-saves when mix of valid and invalid', async () => {
+      const mixedData = {
+        bindings: [
+          {
+            id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+            adapterId: 'telegram-main',
+            agentId: 'agent-1',
+            sessionStrategy: 'per-chat',
+            label: 'Valid',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
+            adapterId: 'telegram-main',
+            agentId: '', // invalid: empty agentId
+            sessionStrategy: 'per-chat',
+            label: 'Empty AgentId',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a33',
+            adapterId: '', // invalid: empty adapterId
+            agentId: 'agent-2',
+            sessionStrategy: 'per-chat',
+            label: 'Empty AdapterId',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify(mixedData));
+      vi.mocked(writeFile).mockClear();
+      vi.mocked(rename).mockClear();
+
+      const freshStore = new BindingStore('/tmp/relay');
+      await freshStore.init();
+
+      expect(freshStore.getAll()).toHaveLength(1);
+      expect(freshStore.getById('a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')).toBeDefined();
+      expect(freshStore.getById('b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22')).toBeUndefined();
+      expect(freshStore.getById('c2eebc99-9c0b-4ef8-bb6d-6bb9bd380a33')).toBeUndefined();
+      // Auto-saved the cleaned file
+      expect(writeFile).toHaveBeenCalled();
+      expect(rename).toHaveBeenCalled();
+
+      await freshStore.shutdown();
+    });
+
+    it('loads all entries without re-saving when all are valid', async () => {
+      const validData = {
+        bindings: [
+          {
+            id: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11',
+            adapterId: 'telegram-main',
+            agentId: 'agent-1',
+            sessionStrategy: 'per-chat',
+            label: 'First',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+          {
+            id: 'b1eebc99-9c0b-4ef8-bb6d-6bb9bd380a22',
+            adapterId: 'slack-main',
+            agentId: 'agent-2',
+            sessionStrategy: 'stateless',
+            label: 'Second',
+            createdAt: '2026-01-01T00:00:00.000Z',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        ],
+      };
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify(validData));
+      vi.mocked(writeFile).mockClear();
+      vi.mocked(rename).mockClear();
+
+      const freshStore = new BindingStore('/tmp/relay');
+      await freshStore.init();
+
+      expect(freshStore.getAll()).toHaveLength(2);
+      // No re-save when all entries are valid
+      expect(writeFile).not.toHaveBeenCalled();
+      expect(rename).not.toHaveBeenCalled();
+
+      await freshStore.shutdown();
+    });
+
+    it('handles file with invalid top-level structure gracefully', async () => {
+      vi.mocked(readFile).mockResolvedValue(JSON.stringify({ notBindings: [] }));
+
+      const freshStore = new BindingStore('/tmp/relay');
+      await freshStore.init();
+
+      expect(freshStore.getAll()).toEqual([]);
+      await freshStore.shutdown();
+    });
+
     it('strips legacy projectPath and agentDir fields on load', async () => {
       const legacyData = {
         bindings: [

@@ -25,7 +25,8 @@ import {
   extractSessionIdFromEnvelope,
 } from '../../lib/payload-utils.js';
 import type { ApprovalData } from '../../lib/payload-utils.js';
-import { extractChatId, SUBJECT_PREFIX, MAX_MESSAGE_LENGTH } from './inbound.js';
+import { extractChatId, MAX_MESSAGE_LENGTH } from './inbound.js';
+import type { TelegramThreadIdCodec } from '../../lib/thread-id.js';
 import { sendMessageDraft } from './stream-api.js';
 
 /** Telegram sendChatAction type for typing indicator. */
@@ -114,6 +115,8 @@ export interface TelegramDeliverOptions {
   state: TelegramOutboundState;
   callbacks: AdapterOutboundCallbacks;
   streaming: boolean;
+  /** Instance-scoped codec for subject encoding/decoding. */
+  codec: TelegramThreadIdCodec;
   logger?: RelayLogger;
 }
 
@@ -170,15 +173,16 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
     state,
     callbacks,
     streaming,
+    codec,
     logger = noopLogger,
   } = opts;
   const startTime = Date.now();
 
   // Guard: skip messages that originated from this adapter to prevent echo.
-  // Inbound messages are published with `from: relay.human.telegram.bot`,
+  // Inbound messages are published with `from: <prefix>.bot`,
   // which starts with our subject prefix. Without this guard the publish
   // pipeline routes the message right back to deliver(), creating a loop.
-  if (envelope.from.startsWith(SUBJECT_PREFIX)) {
+  if (envelope.from.startsWith(codec.prefix)) {
     logger.debug('deliver: echo prevention — skipping self-originated message');
     return { success: true, durationMs: Date.now() - startTime };
   }
@@ -191,7 +195,7 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
     };
   }
 
-  const chatId = extractChatId(subject);
+  const chatId = extractChatId(codec, subject);
   if (chatId === null) {
     return {
       success: false,
@@ -336,11 +340,12 @@ export async function handleTypingSignal(
   bot: Bot | null,
   subject: string,
   outboundState: TelegramOutboundState,
-  signalState: string
+  signalState: string,
+  codec: TelegramThreadIdCodec
 ): Promise<void> {
   if (!bot) return;
 
-  const chatId = extractChatId(subject);
+  const chatId = extractChatId(codec, subject);
   if (chatId === null) return;
 
   if (signalState === 'active') {

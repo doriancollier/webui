@@ -205,6 +205,25 @@ export function createAdapterRouter(
     if (!result.success) {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
+    // Validate adapter exists
+    const adapterExists = adapterManager.getAdapter(result.data.adapterId);
+    if (!adapterExists) {
+      return res.status(400).json({
+        error: `Adapter '${result.data.adapterId}' not found`,
+      });
+    }
+
+    // Validate agent exists in mesh registry
+    const meshCore = adapterManager.getMeshCore();
+    if (meshCore && result.data.agentId) {
+      const projectPath = meshCore.getProjectPath(result.data.agentId);
+      if (!projectPath) {
+        return res.status(400).json({
+          error: `Agent '${result.data.agentId}' not found in mesh registry`,
+        });
+      }
+    }
+
     try {
       const binding = await bindingStore.create(result.data);
       return res.status(201).json({ binding });

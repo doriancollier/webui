@@ -6,7 +6,8 @@
  * represent human-facing communication channels (DMs and group chats).
  *
  * Each codec owns a unique subject prefix and handles the encode/decode
- * round-trip for its platform.
+ * round-trip for its platform. Codecs accept an optional `instanceId` to
+ * disambiguate multiple instances of the same adapter type.
  *
  * @module relay/lib/thread-id
  */
@@ -92,7 +93,16 @@ function decodeSubject(
  * - Group: `relay.human.telegram.group.<chatId>`
  */
 export class TelegramThreadIdCodec implements ThreadIdCodec {
-  readonly prefix = 'relay.human.telegram';
+  readonly prefix: string;
+
+  /**
+   * @param instanceId - Optional instance identifier for disambiguating multiple
+   *   Telegram adapter instances. When provided, the prefix becomes
+   *   `relay.human.telegram.<instanceId>`.
+   */
+  constructor(instanceId?: string) {
+    this.prefix = instanceId ? `relay.human.telegram.${instanceId}` : 'relay.human.telegram';
+  }
 
   /**
    * Encode a Telegram chat ID and channel type into a Relay subject.
@@ -126,7 +136,16 @@ export class TelegramThreadIdCodec implements ThreadIdCodec {
  * - Group: `relay.human.slack.group.<channelId>`
  */
 export class SlackThreadIdCodec implements ThreadIdCodec {
-  readonly prefix = 'relay.human.slack';
+  readonly prefix: string;
+
+  /**
+   * @param instanceId - Optional instance identifier for disambiguating multiple
+   *   Slack adapter instances. When provided, the prefix becomes
+   *   `relay.human.slack.<instanceId>`.
+   */
+  constructor(instanceId?: string) {
+    this.prefix = instanceId ? `relay.human.slack.${instanceId}` : 'relay.human.slack';
+  }
 
   /**
    * Encode a Slack channel ID and channel type into a Relay subject.
@@ -163,7 +182,18 @@ export class SlackThreadIdCodec implements ThreadIdCodec {
  * - Group: `relay.human.telegram-chatsdk.group.<chatId>`
  */
 export class ChatSdkTelegramThreadIdCodec implements ThreadIdCodec {
-  readonly prefix = 'relay.human.telegram-chatsdk';
+  readonly prefix: string;
+
+  /**
+   * @param instanceId - Optional instance identifier for disambiguating multiple
+   *   Chat SDK Telegram adapter instances. When provided, the prefix becomes
+   *   `relay.human.telegram-chatsdk.<instanceId>`.
+   */
+  constructor(instanceId?: string) {
+    this.prefix = instanceId
+      ? `relay.human.telegram-chatsdk.${instanceId}`
+      : 'relay.human.telegram-chatsdk';
+  }
 
   /**
    * Encode a Chat SDK Telegram chat ID and channel type into a Relay subject.

@@ -90,7 +90,7 @@ describe('SlackAdapter', () => {
   // Identity
   it('has correct id, subjectPrefix, and displayName', () => {
     expect(adapter.id).toBe('slack-1');
-    expect(adapter.subjectPrefix).toBe('relay.human.slack');
+    expect(adapter.subjectPrefix).toBe('relay.human.slack.slack-1');
     expect(adapter.displayName).toBe('Slack');
   });
 
@@ -219,7 +219,7 @@ describe('SlackAdapter', () => {
     await adapter.start(mockRelay);
     const envelope = {
       id: 'e1',
-      subject: 'relay.human.slack.D123',
+      subject: 'relay.human.slack.slack-1.D123',
       from: 'relay.agent.backend',
       budget: {
         hopCount: 0,
@@ -231,7 +231,7 @@ describe('SlackAdapter', () => {
       createdAt: new Date().toISOString(),
       payload: { content: 'Hello from agent!' },
     };
-    const result = await adapter.deliver('relay.human.slack.D123', envelope);
+    const result = await adapter.deliver('relay.human.slack.slack-1.D123', envelope);
     expect(result.success).toBe(true);
     expect(mockPostMessage).toHaveBeenCalled();
   });
@@ -240,7 +240,7 @@ describe('SlackAdapter', () => {
     // Never started — client is null
     const envelope = {
       id: 'e1',
-      subject: 'relay.human.slack.D123',
+      subject: 'relay.human.slack.slack-1.D123',
       from: 'relay.agent.backend',
       budget: {
         hopCount: 0,
@@ -252,7 +252,7 @@ describe('SlackAdapter', () => {
       createdAt: new Date().toISOString(),
       payload: { content: 'Hello' },
     };
-    const result = await adapter.deliver('relay.human.slack.D123', envelope);
+    const result = await adapter.deliver('relay.human.slack.slack-1.D123', envelope);
     expect(result.success).toBe(false);
     expect(result.error).toContain('not started');
   });

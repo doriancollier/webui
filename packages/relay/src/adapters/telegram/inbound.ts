@@ -38,18 +38,20 @@ const TELEGRAM_FORMATTING_RULES = [
   `- Keep responses concise. Messages over ${MAX_MESSAGE_LENGTH} characters are split.`,
 ].join('\n');
 
-/** Codec for encoding/decoding Telegram thread IDs in relay subjects. */
-const codec = new TelegramThreadIdCodec();
-
 // === Helpers ===
 
 /**
  * Build the Relay subject for a given Telegram chat.
  *
+ * @param codec - The thread ID codec to use for encoding
  * @param chatId - The Telegram chat ID (numeric, may be negative for groups)
  * @param isGroup - Whether the chat is a group or supergroup
  */
-export function buildSubject(chatId: number, isGroup: boolean): string {
+export function buildSubject(
+  codec: TelegramThreadIdCodec,
+  chatId: number,
+  isGroup: boolean
+): string {
   return codec.encode(String(chatId), isGroup ? 'group' : 'dm');
 }
 
@@ -58,9 +60,10 @@ export function buildSubject(chatId: number, isGroup: boolean): string {
  *
  * Returns null if the subject does not match the expected pattern.
  *
+ * @param codec - The thread ID codec to use for decoding
  * @param subject - A Relay subject under the telegram prefix
  */
-export function extractChatId(subject: string): number | null {
+export function extractChatId(codec: TelegramThreadIdCodec, subject: string): number | null {
   const decoded = codec.decode(subject);
   if (!decoded) return null;
   const id = Number(decoded.platformId);
@@ -106,8 +109,11 @@ export async function handleInboundMessage(
   ctx: GrammyContext,
   relay: RelayPublisher,
   callbacks: AdapterInboundCallbacks,
-  logger: RelayLogger = noopLogger
+  logger: RelayLogger = noopLogger,
+  codec?: TelegramThreadIdCodec
 ): Promise<void> {
+  const resolvedCodec = codec ?? new TelegramThreadIdCodec();
+
   if (!ctx.message) {
     logger.debug('inbound skipped: no message in context');
     return;
@@ -120,7 +126,7 @@ export async function handleInboundMessage(
   }
 
   const isGroup = isGroupChat(chat.type);
-  const subject = buildSubject(chat.id, isGroup);
+  const subject = buildSubject(resolvedCodec, chat.id, isGroup);
 
   const rawText = message.text ?? message.caption ?? '';
   if (!rawText) {
@@ -158,7 +164,7 @@ export async function handleInboundMessage(
 
   try {
     const result = await relay.publish(subject, payload, {
-      from: `${SUBJECT_PREFIX}.bot`,
+      from: `${resolvedCodec.prefix}.bot`,
       replyTo: subject,
     });
 

@@ -21,7 +21,8 @@ import {
   formatForPlatform,
   truncateText,
 } from '../../lib/payload-utils.js';
-import { extractChannelId, SUBJECT_PREFIX, MAX_MESSAGE_LENGTH } from './inbound.js';
+import { extractChannelId, MAX_MESSAGE_LENGTH } from './inbound.js';
+import type { SlackThreadIdCodec } from '../../lib/thread-id.js';
 import {
   handleTextDelta,
   handleDone,
@@ -61,6 +62,8 @@ export interface SlackDeliverOptions {
   nativeStreaming: boolean;
   typingIndicator: 'none' | 'reaction';
   approvalState: SlackOutboundState;
+  /** Instance-scoped codec for subject encoding/decoding. */
+  codec: SlackThreadIdCodec;
   logger?: RelayLogger;
 }
 
@@ -135,7 +138,7 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
   }
 
   // Echo prevention: skip messages originating from this adapter
-  if (envelope.from.startsWith(SUBJECT_PREFIX)) {
+  if (envelope.from.startsWith(opts.codec.prefix)) {
     logger.debug('deliver: echo prevention — skipping self-originated message');
     return { success: true, durationMs: Date.now() - startTime };
   }
@@ -148,7 +151,7 @@ export async function deliverMessage(opts: SlackDeliverOptions): Promise<Deliver
     };
   }
 
-  const channelId = extractChannelId(subject);
+  const channelId = extractChannelId(opts.codec, subject);
   if (!channelId) {
     return {
       success: false,

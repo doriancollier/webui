@@ -85,7 +85,7 @@ describe('BindingRouter', () => {
     vi.mocked(mockBindingStore.resolve!).mockReturnValue(undefined);
     const envelope = {
       id: 'msg-1',
-      subject: 'relay.human.telegram.123',
+      subject: 'relay.human.telegram.tg-bot.123',
       payload: 'hi',
       from: 'tg',
       budget: {
@@ -104,7 +104,7 @@ describe('BindingRouter', () => {
   it('skips envelopes originating from agents to prevent feedback loop', async () => {
     vi.mocked(mockBindingStore.resolve!).mockReturnValue({
       id: 'bind-1',
-      adapterId: 'telegram',
+      adapterId: 'tg-bot',
       agentId: 'agent-a',
       permissionMode: 'acceptEdits' as const,
       sessionStrategy: 'per-chat',
@@ -114,7 +114,7 @@ describe('BindingRouter', () => {
     });
 
     await capturedHandler!({
-      subject: 'relay.human.telegram.12345',
+      subject: 'relay.human.telegram.tg-bot.12345',
       from: 'agent:session-abc',
       replyTo: undefined,
       payload: { type: 'text_delta', data: { text: 'hello' } },
@@ -137,7 +137,7 @@ describe('BindingRouter', () => {
   it('routes human-originated messages normally', async () => {
     vi.mocked(mockBindingStore.resolve!).mockReturnValue({
       id: 'bind-1',
-      adapterId: 'telegram',
+      adapterId: 'tg-bot',
       agentId: 'agent-a',
       permissionMode: 'acceptEdits' as const,
       sessionStrategy: 'per-chat',
@@ -147,9 +147,9 @@ describe('BindingRouter', () => {
     });
 
     await capturedHandler!({
-      subject: 'relay.human.telegram.12345',
+      subject: 'relay.human.telegram.tg-bot.12345',
       from: 'relay.human.telegram.bot',
-      replyTo: 'relay.human.telegram.12345',
+      replyTo: 'relay.human.telegram.tg-bot.12345',
       payload: { content: 'Hello from Telegram' },
       budget: {
         hopCount: 0,
@@ -172,7 +172,7 @@ describe('BindingRouter', () => {
   it('routes to relay.agent.{sessionId} when binding matches', async () => {
     vi.mocked(mockBindingStore.resolve!).mockReturnValue({
       id: 'bind-1',
-      adapterId: 'telegram',
+      adapterId: 'tg-bot',
       agentId: 'agent-a',
       permissionMode: 'acceptEdits' as const,
       sessionStrategy: 'per-chat',
@@ -182,7 +182,7 @@ describe('BindingRouter', () => {
     });
     const envelope = {
       id: 'msg-1',
-      subject: 'relay.human.telegram.123',
+      subject: 'relay.human.telegram.tg-bot.123',
       payload: { text: 'hello' },
       from: 'tg',
       budget: {
@@ -203,11 +203,11 @@ describe('BindingRouter', () => {
     );
   });
 
-  it('resolves binding with adapterId and chatId from subject', async () => {
+  it('resolves binding with adapterId (instance ID) and chatId from subject', async () => {
     vi.mocked(mockBindingStore.resolve!).mockReturnValue(undefined);
     const envelope = {
       id: 'msg-1',
-      subject: 'relay.human.telegram.12345',
+      subject: 'relay.human.telegram.tg-bot.12345',
       payload: 'hi',
       from: 'tg',
       budget: {
@@ -220,13 +220,51 @@ describe('BindingRouter', () => {
       createdAt: '2026-01-01T00:00:00.000Z',
     };
     await capturedHandler!(envelope);
-    expect(mockBindingStore.resolve).toHaveBeenCalledWith('telegram', '12345', undefined);
+    expect(mockBindingStore.resolve).toHaveBeenCalledWith('tg-bot', '12345', undefined);
+  });
+
+  describe('parseSubject with instance-aware format', () => {
+    it('extracts adapterId from instance ID segment', () => {
+      const result = router['parseSubject']('relay.human.telegram.my-bot.123456');
+      expect(result.adapterId).toBe('my-bot');
+      expect(result.chatId).toBe('123456');
+      expect(result.channelType).toBeUndefined();
+    });
+
+    it('extracts group channel type with instance ID', () => {
+      const result = router['parseSubject']('relay.human.telegram.my-bot.group.-789');
+      expect(result.adapterId).toBe('my-bot');
+      expect(result.chatId).toBe('-789');
+      expect(result.channelType).toBe('group');
+    });
+
+    it('handles slack instance-aware subjects', () => {
+      const result = router['parseSubject']('relay.human.slack.slack-1.C12345');
+      expect(result.adapterId).toBe('slack-1');
+      expect(result.chatId).toBe('C12345');
+    });
+
+    it('returns empty for subjects without instance ID', () => {
+      const result = router['parseSubject']('relay.human.telegram');
+      expect(result.adapterId).toBeUndefined();
+    });
+
+    it('handles chat IDs with dots', () => {
+      const result = router['parseSubject']('relay.human.telegram.my-bot.123.456');
+      expect(result.adapterId).toBe('my-bot');
+      expect(result.chatId).toBe('123.456');
+    });
+
+    it('returns empty for non-relay subjects', () => {
+      const result = router['parseSubject']('some.other.subject');
+      expect(result).toEqual({});
+    });
   });
 
   describe('session strategies', () => {
     const makeBinding = (strategy: string) => ({
       id: 'bind-1',
-      adapterId: 'telegram',
+      adapterId: 'tg-bot',
       agentId: 'agent-a',
       permissionMode: 'acceptEdits' as const,
       sessionStrategy: strategy,
@@ -237,7 +275,7 @@ describe('BindingRouter', () => {
 
     const makeEnvelope = (chatId: string) => ({
       id: 'msg-1',
-      subject: `relay.human.telegram.${chatId}`,
+      subject: `relay.human.telegram.tg-bot.${chatId}`,
       payload: 'hi',
       from: 'tg',
       budget: {
@@ -288,7 +326,7 @@ describe('BindingRouter', () => {
     it('saves session map to disk after creating a session', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -298,7 +336,7 @@ describe('BindingRouter', () => {
       });
       await capturedHandler!({
         id: 'msg-1',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -330,7 +368,7 @@ describe('BindingRouter', () => {
       // Now route a message to the same binding+chat — should reuse existing session
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -346,7 +384,7 @@ describe('BindingRouter', () => {
 
       await freshHandler!({
         id: 'msg-1',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -375,7 +413,7 @@ describe('BindingRouter', () => {
     it('removes session entries for deleted bindings', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -387,7 +425,7 @@ describe('BindingRouter', () => {
       // Create a session
       await capturedHandler!({
         id: 'msg-1',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -409,7 +447,7 @@ describe('BindingRouter', () => {
       // Now route again — should create a NEW session since the old one was cleaned up
       await capturedHandler!({
         id: 'msg-2',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi again',
         from: 'tg',
         budget: {
@@ -428,7 +466,7 @@ describe('BindingRouter', () => {
     it('preserves session entries for active bindings', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -439,7 +477,7 @@ describe('BindingRouter', () => {
 
       await capturedHandler!({
         id: 'msg-1',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -466,7 +504,7 @@ describe('BindingRouter', () => {
     it('catches and logs errors when publish() throws', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -480,7 +518,7 @@ describe('BindingRouter', () => {
       await expect(
         capturedHandler!({
           id: 'msg-1',
-          subject: 'relay.human.telegram.123',
+          subject: 'relay.human.telegram.tg-bot.123',
           payload: 'hi',
           from: 'tg',
           budget: {
@@ -498,7 +536,7 @@ describe('BindingRouter', () => {
     it('catches and logs errors when createSession() throws', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -513,7 +551,7 @@ describe('BindingRouter', () => {
       await expect(
         capturedHandler!({
           id: 'msg-1',
-          subject: 'relay.human.telegram.123',
+          subject: 'relay.human.telegram.tg-bot.123',
           payload: 'hi',
           from: 'tg',
           budget: {
@@ -542,7 +580,7 @@ describe('BindingRouter', () => {
 
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -553,7 +591,7 @@ describe('BindingRouter', () => {
 
       const envelope = {
         id: 'msg-1',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -611,7 +649,7 @@ describe('BindingRouter', () => {
 
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-new',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -623,7 +661,7 @@ describe('BindingRouter', () => {
       // This should trigger eviction of the oldest entry
       await evictionHandler!({
         id: 'msg-new',
-        subject: 'relay.human.telegram.new-chat',
+        subject: 'relay.human.telegram.tg-bot.new-chat',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -642,7 +680,7 @@ describe('BindingRouter', () => {
       vi.mocked(mockAgentManager.createSession).mockClear();
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-old',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -653,7 +691,7 @@ describe('BindingRouter', () => {
 
       await evictionHandler!({
         id: 'msg-evicted',
-        subject: 'relay.human.telegram.0',
+        subject: 'relay.human.telegram.tg-bot.0',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -677,7 +715,7 @@ describe('BindingRouter', () => {
     it('does not throw when saveSessionMap fails during session creation', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -693,7 +731,7 @@ describe('BindingRouter', () => {
       await expect(
         capturedHandler!({
           id: 'msg-1',
-          subject: 'relay.human.telegram.123',
+          subject: 'relay.human.telegram.tg-bot.123',
           payload: 'hi',
           from: 'tg',
           budget: {
@@ -719,7 +757,7 @@ describe('BindingRouter', () => {
     it('does not throw when saveSessionMap fails during cleanup', async () => {
       vi.mocked(mockBindingStore.resolve!).mockReturnValue({
         id: 'bind-1',
-        adapterId: 'telegram',
+        adapterId: 'tg-bot',
         agentId: 'agent-a',
 
         sessionStrategy: 'per-chat',
@@ -731,7 +769,7 @@ describe('BindingRouter', () => {
       // Create a session first
       await capturedHandler!({
         id: 'msg-1',
-        subject: 'relay.human.telegram.123',
+        subject: 'relay.human.telegram.tg-bot.123',
         payload: 'hi',
         from: 'tg',
         budget: {
@@ -763,7 +801,7 @@ describe('BindingRouter', () => {
   describe('permission enforcement', () => {
     const makeEnvelope = (chatId = '123') => ({
       id: 'msg-1',
-      subject: `relay.human.telegram.${chatId}`,
+      subject: `relay.human.telegram.tg-bot.${chatId}`,
       payload: { content: 'hello' },
       from: 'tg',
       budget: {
@@ -778,7 +816,7 @@ describe('BindingRouter', () => {
 
     const makeBinding = (overrides: Record<string, unknown> = {}) => ({
       id: 'bind-1',
-      adapterId: 'telegram',
+      adapterId: 'tg-bot',
       agentId: 'agent-a',
       sessionStrategy: 'per-chat',
       label: '',

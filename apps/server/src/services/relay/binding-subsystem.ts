@@ -26,11 +26,10 @@ export interface BindingSubsystemDeps {
   agentManager: ClaudeCodeAgentRuntimeLike;
   /** Absolute path to the adapter config file (used to derive relayDir). */
   configPath: string;
-  /**
-   * Callback to resolve an enabled adapter instance ID by platform type.
-   * Used by BindingRouter to determine which adapter instance to target.
-   */
-  resolveAdapterInstanceId: (platformType: string) => string | undefined;
+  /** Optional recorder for binding routing failure events. */
+  eventRecorder?: {
+    insertAdapterEvent(adapterId: string, eventType: string, message: string): void;
+  };
 }
 
 /**
@@ -88,7 +87,7 @@ export class BindingSubsystem {
         agentManager: sessionCreator,
         meshCore: deps.meshCore,
         relayDir,
-        resolveAdapterInstanceId: deps.resolveAdapterInstanceId,
+        eventRecorder: deps.eventRecorder,
       });
       await subsystem.bindingRouter.init();
       logger.info('[BindingSubsystem] BindingRouter initialized');

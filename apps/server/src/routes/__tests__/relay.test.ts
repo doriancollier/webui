@@ -480,6 +480,7 @@ function createMockAdapterManager(): AdapterManager & { _mockWebhookAdapter: Web
     testConnection: vi.fn().mockResolvedValue({ ok: true }),
     getBindingStore: vi.fn().mockReturnValue(undefined),
     getBindingRouter: vi.fn().mockReturnValue(undefined),
+    getMeshCore: vi.fn().mockReturnValue(undefined),
     _mockWebhookAdapter: mockWebhookAdapter,
   } as unknown as AdapterManager & { _mockWebhookAdapter: WebhookAdapter };
 }

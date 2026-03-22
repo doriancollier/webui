@@ -20,9 +20,6 @@ import { SlackThreadIdCodec } from '../../lib/thread-id.js';
 /** Subject prefix for all Slack adapter subjects. */
 export const SUBJECT_PREFIX = 'relay.human.slack';
 
-/** Codec for encoding/decoding Slack thread IDs in relay subjects. */
-const codec = new SlackThreadIdCodec();
-
 /** Max length for a single Slack message (Slack's hard limit is 4000). */
 export const MAX_MESSAGE_LENGTH = 4000;
 
@@ -120,10 +117,15 @@ const channelNameCache = new Map<string, CacheEntry>();
 /**
  * Build the Relay subject for a given Slack channel.
  *
+ * @param codec - The thread ID codec to use for encoding
  * @param channelId - The Slack channel ID
  * @param isGroup - Whether the channel is a group (C/G prefix) vs DM (D prefix)
  */
-export function buildSubject(channelId: string, isGroup: boolean): string {
+export function buildSubject(
+  codec: SlackThreadIdCodec,
+  channelId: string,
+  isGroup: boolean
+): string {
   return codec.encode(channelId, isGroup ? 'group' : 'dm');
 }
 
@@ -132,9 +134,10 @@ export function buildSubject(channelId: string, isGroup: boolean): string {
  *
  * Returns null if the subject does not match the expected pattern.
  *
+ * @param codec - The thread ID codec to use for decoding
  * @param subject - A Relay subject under the slack prefix
  */
-export function extractChannelId(subject: string): string | null {
+export function extractChannelId(codec: SlackThreadIdCodec, subject: string): string | null {
   const decoded = codec.decode(subject);
   return decoded?.platformId ?? null;
 }
@@ -273,7 +276,8 @@ export async function handleInboundMessage(
   callbacks: AdapterInboundCallbacks,
   logger: RelayLogger = noopLogger,
   typingIndicator: 'none' | 'reaction' = 'none',
-  pendingReactions?: PendingReactions
+  pendingReactions?: PendingReactions,
+  codec?: SlackThreadIdCodec
 ): Promise<void> {
   // Skip bot's own messages (echo prevention)
   if (event.user === botUserId) {
@@ -297,8 +301,9 @@ export async function handleInboundMessage(
     return;
   }
 
+  const resolvedCodec = codec ?? new SlackThreadIdCodec();
   const isGroup = isGroupChannel(event.channel);
-  const subject = buildSubject(event.channel, isGroup);
+  const subject = buildSubject(resolvedCodec, event.channel, isGroup);
 
   // Cap inbound content to prevent oversized payloads
   const content = event.text.slice(0, MAX_CONTENT_LENGTH);
@@ -364,7 +369,7 @@ export async function handleInboundMessage(
 
   try {
     const result = await relay.publish(subject, payload, {
-      from: `${SUBJECT_PREFIX}.bot`,
+      from: `${resolvedCodec.prefix}.bot`,
       replyTo: subject,
     });
 

@@ -19,9 +19,6 @@ import {
 import { MAX_MESSAGE_LENGTH } from './inbound.js';
 import { ChatSdkTelegramThreadIdCodec } from '../../lib/thread-id.js';
 
-/** Codec for extracting the platform thread ID from relay subjects. */
-const codec = new ChatSdkTelegramThreadIdCodec();
-
 /**
  * Deliver a relay envelope to a Telegram thread via the Chat SDK adapter.
  *
@@ -39,13 +36,15 @@ export async function deliverMessage(
   envelope: RelayEnvelope,
   telegramAdapter: TelegramAdapter | null,
   callbacks: AdapterOutboundCallbacks,
-  logger: RelayLogger = noopLogger
+  logger: RelayLogger = noopLogger,
+  codec?: ChatSdkTelegramThreadIdCodec
 ): Promise<DeliveryResult> {
   if (!telegramAdapter) {
     return { success: false, error: 'TelegramAdapter not initialized' };
   }
 
-  const decoded = codec.decode(subject);
+  const resolvedCodec = codec ?? new ChatSdkTelegramThreadIdCodec();
+  const decoded = resolvedCodec.decode(subject);
   if (!decoded) {
     return { success: false, error: `Subject does not match codec: ${subject}` };
   }
@@ -157,13 +156,15 @@ export async function deliverStream(
   stream: AsyncIterable<string>,
   telegramAdapter: TelegramAdapter | null,
   callbacks: AdapterOutboundCallbacks,
-  logger: RelayLogger = noopLogger
+  logger: RelayLogger = noopLogger,
+  codec?: ChatSdkTelegramThreadIdCodec
 ): Promise<DeliveryResult> {
   if (!telegramAdapter) {
     return { success: false, error: 'TelegramAdapter not initialized' };
   }
 
-  const decoded = codec.decode(subject);
+  const resolvedCodec = codec ?? new ChatSdkTelegramThreadIdCodec();
+  const decoded = resolvedCodec.decode(subject);
   if (!decoded) {
     return { success: false, error: `Subject does not match codec: ${subject}` };
   }

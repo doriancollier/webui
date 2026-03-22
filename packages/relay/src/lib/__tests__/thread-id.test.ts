@@ -207,6 +207,158 @@ describe('ChatSdkTelegramThreadIdCodec', () => {
   });
 });
 
+// === Instance ID support ===
+
+describe('TelegramThreadIdCodec with instanceId', () => {
+  const codec = new TelegramThreadIdCodec('bot-alpha');
+
+  it('uses instance-aware prefix', () => {
+    expect(codec.prefix).toBe('relay.human.telegram.bot-alpha');
+  });
+
+  it('encodes a DM subject with instance ID', () => {
+    expect(codec.encode('123', 'dm')).toBe('relay.human.telegram.bot-alpha.123');
+  });
+
+  it('encodes a group subject with instance ID', () => {
+    expect(codec.encode('-100999', 'group')).toBe('relay.human.telegram.bot-alpha.group.-100999');
+  });
+
+  it('round-trips a DM subject', () => {
+    const subject = codec.encode('42', 'dm');
+    expect(codec.decode(subject)).toEqual({ platformId: '42', channelType: 'dm' });
+  });
+
+  it('round-trips a group subject', () => {
+    const subject = codec.encode('-100123', 'group');
+    expect(codec.decode(subject)).toEqual({ platformId: '-100123', channelType: 'group' });
+  });
+
+  it('does not decode subjects from a different instance', () => {
+    const other = new TelegramThreadIdCodec('bot-beta');
+    const subject = other.encode('123', 'dm');
+    expect(codec.decode(subject)).toBeNull();
+  });
+
+  it('does not decode legacy (no-instance) subjects', () => {
+    const legacy = new TelegramThreadIdCodec();
+    const subject = legacy.encode('123', 'dm');
+    expect(codec.decode(subject)).toBeNull();
+  });
+
+  it('legacy codec sees instance ID as part of platformId (known overlap)', () => {
+    // The legacy prefix `relay.human.telegram` is a leading substring of the
+    // instance-aware prefix `relay.human.telegram.bot-alpha`, so the legacy
+    // codec will match but treat the instance ID as part of the platform ID.
+    // This is expected — consumers should not mix legacy and instance-aware
+    // codecs for the same adapter type.
+    const legacy = new TelegramThreadIdCodec();
+    const subject = codec.encode('123', 'dm');
+    expect(legacy.decode(subject)).toEqual({
+      platformId: 'bot-alpha.123',
+      channelType: 'dm',
+    });
+  });
+});
+
+describe('SlackThreadIdCodec with instanceId', () => {
+  const codec = new SlackThreadIdCodec('workspace-a');
+
+  it('uses instance-aware prefix', () => {
+    expect(codec.prefix).toBe('relay.human.slack.workspace-a');
+  });
+
+  it('encodes a DM subject with instance ID', () => {
+    expect(codec.encode('D999', 'dm')).toBe('relay.human.slack.workspace-a.D999');
+  });
+
+  it('encodes a group subject with instance ID', () => {
+    expect(codec.encode('C111', 'group')).toBe('relay.human.slack.workspace-a.group.C111');
+  });
+
+  it('round-trips a DM subject', () => {
+    const subject = codec.encode('D999', 'dm');
+    expect(codec.decode(subject)).toEqual({ platformId: 'D999', channelType: 'dm' });
+  });
+
+  it('round-trips a group subject', () => {
+    const subject = codec.encode('C111', 'group');
+    expect(codec.decode(subject)).toEqual({ platformId: 'C111', channelType: 'group' });
+  });
+
+  it('does not decode subjects from a different instance', () => {
+    const other = new SlackThreadIdCodec('workspace-b');
+    const subject = other.encode('D999', 'dm');
+    expect(codec.decode(subject)).toBeNull();
+  });
+
+  it('does not decode legacy (no-instance) subjects', () => {
+    const legacy = new SlackThreadIdCodec();
+    const subject = legacy.encode('D999', 'dm');
+    expect(codec.decode(subject)).toBeNull();
+  });
+});
+
+describe('ChatSdkTelegramThreadIdCodec with instanceId', () => {
+  const codec = new ChatSdkTelegramThreadIdCodec('sdk-prod');
+
+  it('uses instance-aware prefix', () => {
+    expect(codec.prefix).toBe('relay.human.telegram-chatsdk.sdk-prod');
+  });
+
+  it('encodes a DM subject with instance ID', () => {
+    expect(codec.encode('555', 'dm')).toBe('relay.human.telegram-chatsdk.sdk-prod.555');
+  });
+
+  it('encodes a group subject with instance ID', () => {
+    expect(codec.encode('-100777', 'group')).toBe(
+      'relay.human.telegram-chatsdk.sdk-prod.group.-100777'
+    );
+  });
+
+  it('round-trips a DM subject', () => {
+    const subject = codec.encode('555', 'dm');
+    expect(codec.decode(subject)).toEqual({ platformId: '555', channelType: 'dm' });
+  });
+
+  it('round-trips a group subject', () => {
+    const subject = codec.encode('-100777', 'group');
+    expect(codec.decode(subject)).toEqual({ platformId: '-100777', channelType: 'group' });
+  });
+
+  it('does not decode subjects from a different instance', () => {
+    const other = new ChatSdkTelegramThreadIdCodec('sdk-staging');
+    const subject = other.encode('555', 'dm');
+    expect(codec.decode(subject)).toBeNull();
+  });
+
+  it('does not decode legacy (no-instance) subjects', () => {
+    const legacy = new ChatSdkTelegramThreadIdCodec();
+    const subject = legacy.encode('555', 'dm');
+    expect(codec.decode(subject)).toBeNull();
+  });
+});
+
+describe('backward compatibility: no instanceId produces legacy format', () => {
+  it('TelegramThreadIdCodec without instanceId has legacy prefix', () => {
+    const codec = new TelegramThreadIdCodec();
+    expect(codec.prefix).toBe('relay.human.telegram');
+    expect(codec.encode('123', 'dm')).toBe('relay.human.telegram.123');
+  });
+
+  it('SlackThreadIdCodec without instanceId has legacy prefix', () => {
+    const codec = new SlackThreadIdCodec();
+    expect(codec.prefix).toBe('relay.human.slack');
+    expect(codec.encode('D01', 'dm')).toBe('relay.human.slack.D01');
+  });
+
+  it('ChatSdkTelegramThreadIdCodec without instanceId has legacy prefix', () => {
+    const codec = new ChatSdkTelegramThreadIdCodec();
+    expect(codec.prefix).toBe('relay.human.telegram-chatsdk');
+    expect(codec.encode('111', 'dm')).toBe('relay.human.telegram-chatsdk.111');
+  });
+});
+
 // === Prefix isolation ===
 
 describe('Codec prefix isolation', () => {

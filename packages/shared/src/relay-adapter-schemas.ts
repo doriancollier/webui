@@ -274,8 +274,8 @@ export type SessionStrategy = z.infer<typeof SessionStrategySchema>;
 export const AdapterBindingSchema = z
   .object({
     id: z.string().uuid(),
-    adapterId: z.string(),
-    agentId: z.string(),
+    adapterId: z.string().min(1),
+    agentId: z.string().min(1),
     chatId: z.string().optional(),
     channelType: ChannelTypeSchema.optional(),
     sessionStrategy: SessionStrategySchema.default('per-chat'),

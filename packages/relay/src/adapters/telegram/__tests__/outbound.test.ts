@@ -9,17 +9,20 @@ import {
 import type { ResponseBuffer, TelegramOutboundState } from '../outbound.js';
 import type { Bot } from 'grammy';
 import type { AdapterOutboundCallbacks } from '../../../types.js';
+import { TelegramThreadIdCodec } from '../../../lib/thread-id.js';
 
 // Mock inbound.js for extractChatId and constants
 vi.mock('../inbound.js', () => ({
   SUBJECT_PREFIX: 'relay.human.telegram',
   MAX_MESSAGE_LENGTH: 4096,
-  extractChatId: (subject: string) => {
-    const parts = subject.split('.');
-    const chatIdStr = parts[parts.length - 1];
-    if (!chatIdStr) return null;
-    const num = Number(chatIdStr);
-    return Number.isNaN(num) ? null : num;
+  extractChatId: (
+    codec: { decode: (s: string) => { platformId: string } | null },
+    subject: string
+  ) => {
+    const decoded = codec.decode(subject);
+    if (!decoded) return null;
+    const id = Number(decoded.platformId);
+    return Number.isInteger(id) ? id : null;
   },
 }));
 
@@ -157,6 +160,9 @@ function createEnvelope(subject: string, payload: unknown, from = 'relay.agent.b
   };
 }
 
+/** Shared codec for tests — no instance ID so prefix is `relay.human.telegram`. */
+const testCodec = new TelegramThreadIdCodec();
+
 describe('typing indicator -- interval refresh', () => {
   let bot: Bot;
   let state: TelegramOutboundState;
@@ -174,13 +180,13 @@ describe('typing indicator -- interval refresh', () => {
   });
 
   it('calls sendChatAction immediately on active signal', async () => {
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active');
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active', testCodec);
     expect(mockSendChatAction).toHaveBeenCalledTimes(1);
     expect(mockSendChatAction).toHaveBeenCalledWith(12345, 'typing');
   });
 
   it('refreshes sendChatAction every 4 seconds', async () => {
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active');
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active', testCodec);
     expect(mockSendChatAction).toHaveBeenCalledTimes(1);
 
     // Advance 4 seconds -- first interval tick
@@ -193,11 +199,11 @@ describe('typing indicator -- interval refresh', () => {
   });
 
   it('clears interval on non-active signal', async () => {
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active');
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active', testCodec);
     expect(mockSendChatAction).toHaveBeenCalledTimes(1);
 
     // Stop typing
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'stopped');
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'stopped', testCodec);
 
     // Advance time -- should NOT trigger additional calls
     await vi.advanceTimersByTimeAsync(8_000);
@@ -205,7 +211,7 @@ describe('typing indicator -- interval refresh', () => {
   });
 
   it('clears interval when sendChatAction fails', async () => {
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active');
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active', testCodec);
 
     // Make the interval tick fail
     mockSendChatAction.mockRejectedValueOnce(new Error('chat not found'));
@@ -218,8 +224,8 @@ describe('typing indicator -- interval refresh', () => {
   });
 
   it('replaces existing interval on repeated active signals', async () => {
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active');
-    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active');
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active', testCodec);
+    await handleTypingSignal(bot, 'relay.human.telegram.12345', state, 'active', testCodec);
 
     // Should have called immediately twice (once per active signal)
     expect(mockSendChatAction).toHaveBeenCalledTimes(2);
@@ -230,13 +236,13 @@ describe('typing indicator -- interval refresh', () => {
   });
 
   it('does nothing when bot is null', async () => {
-    await handleTypingSignal(null, 'relay.human.telegram.12345', state, 'active');
+    await handleTypingSignal(null, 'relay.human.telegram.12345', state, 'active', testCodec);
     expect(mockSendChatAction).not.toHaveBeenCalled();
   });
 
   it('clearAllTypingIntervals clears all active intervals', async () => {
-    await handleTypingSignal(bot, 'relay.human.telegram.111', state, 'active');
-    await handleTypingSignal(bot, 'relay.human.telegram.222', state, 'active');
+    await handleTypingSignal(bot, 'relay.human.telegram.111', state, 'active', testCodec);
+    await handleTypingSignal(bot, 'relay.human.telegram.222', state, 'active', testCodec);
 
     clearAllTypingIntervals(state);
 
@@ -276,6 +282,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
@@ -294,6 +301,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(false);
       expect(result.error).toContain('not started');
@@ -310,6 +318,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(false);
       expect(result.error).toContain('cannot extract chat ID');
@@ -328,6 +337,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Hello!', { parse_mode: 'HTML' });
@@ -350,6 +360,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
@@ -371,6 +382,7 @@ describe('deliverMessage', () => {
           state,
           callbacks,
           streaming: false,
+          codec: testCodec,
         });
       }
       expect(responseBuffers.get(12345)?.text).toBe('Hello world!');
@@ -394,6 +406,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Accumulated text', {
@@ -417,6 +430,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
@@ -439,6 +453,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledWith(
@@ -463,6 +478,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(mockSendMessage).toHaveBeenCalledWith(12345, '[Error: Session failed]', {
         parse_mode: 'HTML',
@@ -507,6 +523,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
@@ -532,6 +549,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: true,
+        codec: testCodec,
       });
       expect(mockSendMessageDraft).toHaveBeenCalledWith(12345, 'Hello');
     });
@@ -550,6 +568,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: true,
+        codec: testCodec,
       });
       expect(mockSendMessageDraft).not.toHaveBeenCalled();
       // Still buffers the text
@@ -570,6 +589,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(mockSendMessageDraft).not.toHaveBeenCalled();
     });
@@ -592,6 +612,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: true,
+        codec: testCodec,
       });
       expect(mockSendMessageDraft).toHaveBeenCalledTimes(1);
 
@@ -609,6 +630,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: true,
+        codec: testCodec,
       });
       expect(mockSendMessageDraft).toHaveBeenCalledTimes(1);
 
@@ -630,6 +652,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: true,
+        codec: testCodec,
       });
       // Should succeed — draft is best-effort
       expect(result.success).toBe(true);
@@ -652,6 +675,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: true,
+        codec: testCodec,
       });
       expect(mockSendMessage).toHaveBeenCalledWith(12345, 'Full response', { parse_mode: 'HTML' });
     });
@@ -674,6 +698,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
 
       expect(responseBuffers.has(99999)).toBe(false);
@@ -694,6 +719,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
 
       expect(responseBuffers.has(99999)).toBe(true);
@@ -717,6 +743,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
 
       const buf = responseBuffers.get(12345);
@@ -747,6 +774,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).toHaveBeenCalledWith(
@@ -787,6 +815,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(state.callbackIdMap.size).toBe(1);
       const entry = [...state.callbackIdMap.values()][0];
@@ -821,6 +850,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       const call = mockSendMessage.mock.calls[0];
       const keyboard = (
@@ -852,6 +882,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(state.callbackIdMap.size).toBe(1);
 
@@ -876,6 +907,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(result.success).toBe(true);
       expect(mockSendMessage).not.toHaveBeenCalled();
@@ -901,6 +933,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
       expect(mockSendMessage).not.toHaveBeenCalled(); // buffered only
 
@@ -929,6 +962,7 @@ describe('deliverMessage', () => {
         state,
         callbacks,
         streaming: false,
+        codec: testCodec,
       });
 
       // First call: flushed buffer text; second call: approval card
