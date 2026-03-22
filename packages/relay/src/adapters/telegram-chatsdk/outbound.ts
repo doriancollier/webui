@@ -2,11 +2,14 @@
  * Outbound message delivery for the Chat SDK Telegram adapter.
  *
  * Handles posting text messages and tool approval prompts to Telegram
- * via the Chat SDK TelegramAdapter's postMessage API.
+ * via direct Telegram Bot API calls with `parse_mode: 'HTML'`.
+ *
+ * The Chat SDK's `postMessage({ raw })` omits `parse_mode`, causing HTML
+ * tags to render as literal text in Telegram. This module bypasses the
+ * Chat SDK for outbound delivery and calls the Telegram API directly.
  *
  * @module relay/adapters/telegram-chatsdk/outbound
  */
-import type { TelegramAdapter } from '@chat-adapter/telegram';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import type { AdapterOutboundCallbacks, DeliveryResult, RelayLogger } from '../../types.js';
 import { noopLogger } from '../../types.js';
@@ -22,6 +25,38 @@ import {
 } from '../../lib/payload-utils.js';
 import { MAX_MESSAGE_LENGTH } from './inbound.js';
 import { ChatSdkTelegramThreadIdCodec } from '../../lib/thread-id.js';
+
+/**
+ * Function that sends an HTML-formatted message to a Telegram chat.
+ *
+ * Injected by the adapter so outbound delivery is decoupled from the
+ * transport layer (Chat SDK vs direct API).
+ */
+export type TelegramSender = (chatId: string, html: string) => Promise<void>;
+
+/**
+ * Create a {@link TelegramSender} that calls the Telegram Bot API directly.
+ *
+ * The Chat SDK's `postMessage({ raw })` omits `parse_mode`, causing HTML tags
+ * to render as literal text. This sender bypasses the Chat SDK and posts with
+ * `parse_mode: 'HTML'` so Telegram interprets our formatted output.
+ *
+ * @param botToken - The Telegram bot token from BotFather
+ */
+export function createTelegramSender(botToken: string): TelegramSender {
+  const baseUrl = `https://api.telegram.org/bot${botToken}/sendMessage`;
+  return async (chatId: string, html: string) => {
+    const res = await fetch(baseUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: html, parse_mode: 'HTML' }),
+    });
+    if (!res.ok) {
+      const body = await res.text().catch(() => '(unreadable)');
+      throw new Error(`Telegram sendMessage failed (${res.status}): ${body}`);
+    }
+  };
+}
 
 /** TTL for response buffers (ms). Buffers older than this are reaped to prevent memory leaks. */
 export const BUFFER_TTL_MS = 5 * 60 * 1_000;
@@ -40,7 +75,7 @@ export interface ResponseBuffer {
 }
 
 /**
- * Deliver a relay envelope to a Telegram thread via the Chat SDK adapter.
+ * Deliver a relay envelope to a Telegram thread.
  *
  * Handles StreamEvent payloads (text_delta, done, error, approval_required)
  * with per-chat buffering, and falls back to plain text delivery for
@@ -48,7 +83,7 @@ export interface ResponseBuffer {
  *
  * @param subject - The relay subject (e.g., relay.human.telegram-chatsdk.123456)
  * @param envelope - The relay envelope to deliver
- * @param telegramAdapter - The Chat SDK TelegramAdapter instance
+ * @param send - Telegram sender function (null when adapter is not started)
  * @param responseBuffers - Per-chat response buffer map for StreamEvent accumulation
  * @param callbacks - Callbacks to track outbound counts and errors
  * @param logger - Logger for debug/warn output
@@ -57,13 +92,13 @@ export interface ResponseBuffer {
 export async function deliverMessage(
   subject: string,
   envelope: RelayEnvelope,
-  telegramAdapter: TelegramAdapter | null,
+  send: TelegramSender | null,
   responseBuffers: Map<string, ResponseBuffer>,
   callbacks: AdapterOutboundCallbacks,
   logger: RelayLogger = noopLogger,
   codec?: ChatSdkTelegramThreadIdCodec
 ): Promise<DeliveryResult> {
-  if (!telegramAdapter) {
+  if (!send) {
     return { success: false, error: 'TelegramAdapter not initialized' };
   }
 
@@ -116,7 +151,7 @@ export async function deliverMessage(
         const text = buffered
           ? truncateText(`${buffered}\n\n[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH)
           : truncateText(`[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH);
-        return await deliverTextContent(platformId, text, telegramAdapter, callbacks, logger);
+        return await deliverTextContent(platformId, text, send, callbacks, logger);
       }
 
       // done: flush accumulated buffer as a single message
@@ -130,7 +165,7 @@ export async function deliverMessage(
           return await deliverTextContent(
             platformId,
             truncateText(buffered.text, MAX_MESSAGE_LENGTH),
-            telegramAdapter,
+            send,
             callbacks,
             logger
           );
@@ -153,13 +188,13 @@ export async function deliverMessage(
             await deliverTextContent(
               platformId,
               truncateText(buffered.text, MAX_MESSAGE_LENGTH),
-              telegramAdapter,
+              send,
               callbacks,
               logger
             );
           }
 
-          return await deliverApprovalRequest(platformId, data, telegramAdapter, callbacks, logger);
+          return await deliverApprovalRequest(platformId, data, send, callbacks, logger);
         }
       }
 
@@ -169,7 +204,7 @@ export async function deliverMessage(
     }
 
     // --- Standard payload (non-StreamEvent) ---
-    return await deliverText(platformId, envelope, telegramAdapter, callbacks, logger);
+    return await deliverText(platformId, envelope, send, callbacks, logger);
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     callbacks.recordError(err);
@@ -179,21 +214,21 @@ export async function deliverMessage(
 }
 
 /**
- * Deliver plain text to a Telegram chat via the Chat SDK adapter.
+ * Deliver plain text to a Telegram chat.
  *
  * Converts Markdown content to Telegram HTML and posts it, splitting
  * messages that exceed Telegram's 4096-character limit.
  *
  * @param threadId - The Telegram chat ID (as string)
  * @param envelope - The relay envelope with text payload
- * @param telegramAdapter - The Chat SDK TelegramAdapter instance
+ * @param send - Telegram sender function
  * @param callbacks - Outbound tracking callbacks
  * @param logger - Logger for debug output
  */
 async function deliverText(
   threadId: string,
   envelope: RelayEnvelope,
-  telegramAdapter: TelegramAdapter,
+  send: TelegramSender,
   callbacks: AdapterOutboundCallbacks,
   logger: RelayLogger
 ): Promise<DeliveryResult> {
@@ -202,7 +237,7 @@ async function deliverText(
   const chunks = splitMessage(content, MAX_MESSAGE_LENGTH);
 
   for (const chunk of chunks) {
-    await telegramAdapter.postMessage(threadId, { raw: chunk });
+    await send(threadId, chunk);
   }
 
   callbacks.trackOutbound();
@@ -218,14 +253,14 @@ async function deliverText(
  *
  * @param threadId - The Telegram chat ID (as string)
  * @param content - Pre-assembled text content (Markdown)
- * @param telegramAdapter - The Chat SDK TelegramAdapter instance
+ * @param send - Telegram sender function
  * @param callbacks - Outbound tracking callbacks
  * @param logger - Logger for debug output
  */
 async function deliverTextContent(
   threadId: string,
   content: string,
-  telegramAdapter: TelegramAdapter,
+  send: TelegramSender,
   callbacks: AdapterOutboundCallbacks,
   logger: RelayLogger
 ): Promise<DeliveryResult> {
@@ -233,7 +268,7 @@ async function deliverTextContent(
   const chunks = splitMessage(formatted, MAX_MESSAGE_LENGTH);
 
   for (const chunk of chunks) {
-    await telegramAdapter.postMessage(threadId, { raw: chunk });
+    await send(threadId, chunk);
   }
 
   callbacks.trackOutbound();
@@ -242,31 +277,30 @@ async function deliverTextContent(
 }
 
 /**
- * Deliver a tool approval prompt to a Telegram chat via the Chat SDK adapter.
+ * Deliver a tool approval prompt to a Telegram chat.
  *
- * Posts a plain text prompt since inline keyboards require native grammy
- * integration. The user responds with "approve" or "deny".
+ * Posts an HTML-formatted prompt. The user responds with "approve" or "deny".
  *
  * @param threadId - The Telegram chat ID (as string)
  * @param approvalData - Parsed tool approval data
- * @param telegramAdapter - The Chat SDK TelegramAdapter instance
+ * @param send - Telegram sender function
  * @param callbacks - Outbound tracking callbacks
  * @param logger - Logger for debug output
  */
 async function deliverApprovalRequest(
   threadId: string,
   approvalData: NonNullable<ReturnType<typeof extractApprovalData>>,
-  telegramAdapter: TelegramAdapter,
+  send: TelegramSender,
   callbacks: AdapterOutboundCallbacks,
   logger: RelayLogger
 ): Promise<DeliveryResult> {
   const description = formatToolDescription(approvalData.toolName, approvalData.input);
   const text =
-    `\u{1F6A8} *Tool Approval Required*\n\n` +
+    `\u{1F6A8} <b>Tool Approval Required</b>\n\n` +
     `Your agent ${description}.\n\n` +
-    `Reply \`approve\` to allow or \`deny\` to block.`;
+    `Reply <code>approve</code> to allow or <code>deny</code> to block.`;
 
-  await telegramAdapter.postMessage(threadId, { raw: text });
+  await send(threadId, text);
 
   callbacks.trackOutbound();
   logger.debug(
@@ -276,26 +310,27 @@ async function deliverApprovalRequest(
 }
 
 /**
- * Deliver a streaming response to a Telegram thread via the Chat SDK adapter.
+ * Deliver a streaming response to a Telegram thread.
  *
- * Uses the adapter's native stream() method if available, otherwise
- * falls back to accumulating all chunks and posting the full text.
+ * Accumulates all chunks from the async iterable, formats the complete
+ * text for Telegram, then posts it as one or more messages.
  *
  * @param subject - The relay subject to derive the Telegram thread ID from
  * @param stream - Async iterable of text chunks to deliver incrementally
- * @param telegramAdapter - The Chat SDK TelegramAdapter instance
+ * @param send - Telegram sender function (null when adapter is not started)
  * @param callbacks - Outbound tracking callbacks
  * @param logger - Logger for debug output
+ * @param codec - ThreadIdCodec for subject decoding
  */
 export async function deliverStream(
   subject: string,
   stream: AsyncIterable<string>,
-  telegramAdapter: TelegramAdapter | null,
+  send: TelegramSender | null,
   callbacks: AdapterOutboundCallbacks,
   logger: RelayLogger = noopLogger,
   codec?: ChatSdkTelegramThreadIdCodec
 ): Promise<DeliveryResult> {
-  if (!telegramAdapter) {
+  if (!send) {
     return { success: false, error: 'TelegramAdapter not initialized' };
   }
 
@@ -308,8 +343,8 @@ export async function deliverStream(
   const { platformId } = decoded;
 
   try {
-    // Accumulate the full stream then post — TelegramAdapter has no native
-    // streaming API at the adapter level (streaming is thread-level only).
+    // Accumulate the full stream then post — Telegram has no native
+    // streaming API, so we batch and send the complete response.
     let accumulated = '';
     for await (const chunk of stream) {
       accumulated += chunk;
@@ -317,7 +352,7 @@ export async function deliverStream(
     if (accumulated) {
       const chunks = splitMessage(formatForPlatform(accumulated, 'telegram'), MAX_MESSAGE_LENGTH);
       for (const chunk of chunks) {
-        await telegramAdapter.postMessage(platformId, { raw: chunk });
+        await send(platformId, chunk);
       }
     }
 

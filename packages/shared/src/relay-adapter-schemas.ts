@@ -230,6 +230,11 @@ export const AdapterManifestSchema = z
     setupSteps: z.array(AdapterSetupStepSchema).optional(),
     setupInstructions: z.string().optional(),
     multiInstance: z.boolean().default(false),
+    /**
+     * When true, the adapter is hidden from the "Add Adapter" catalog.
+     * Existing configured instances continue to function normally.
+     */
+    deprecated: z.boolean().optional(),
     /** Relay adapter API version this adapter targets (e.g., '0.1.0'). */
     apiVersion: z.string().optional(),
     /** Deep-link button shown in the Configure step banner (e.g. to open @BotFather). */

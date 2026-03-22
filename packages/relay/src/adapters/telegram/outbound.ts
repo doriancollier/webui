@@ -1,7 +1,7 @@
 /**
  * Telegram outbound message delivery.
  *
- * Handles deliver() implementation including message truncation for
+ * Handles deliver() implementation including message splitting for
  * Telegram's 4096-character limit, StreamEvent-aware buffering,
  * and typing signal management.
  *
@@ -121,11 +121,45 @@ export interface TelegramDeliverOptions {
 }
 
 /**
- * Send a text message to Telegram and update outbound counter.
+ * Split a message string into chunks that respect Telegram's character limit.
+ *
+ * Prefers splitting at newline boundaries to avoid breaking mid-sentence.
+ * Unlike truncation, this preserves all content across multiple messages.
+ *
+ * @param text - The full message text (already HTML-formatted)
+ * @param maxLen - Maximum characters per chunk
+ */
+export function splitMessage(text: string, maxLen: number): string[] {
+  if (text.length <= maxLen) return [text];
+
+  const chunks: string[] = [];
+  let remaining = text;
+
+  while (remaining.length > maxLen) {
+    // Prefer splitting at a newline boundary within the limit
+    const boundary = remaining.lastIndexOf('\n', maxLen);
+    const splitAt = boundary > 0 ? boundary + 1 : maxLen;
+    chunks.push(remaining.slice(0, splitAt));
+    remaining = remaining.slice(splitAt);
+  }
+
+  if (remaining.length > 0) {
+    chunks.push(remaining);
+  }
+
+  return chunks;
+}
+
+/**
+ * Format, split, and send a text message to Telegram.
+ *
+ * Converts Markdown to Telegram HTML, splits into chunks that fit within
+ * Telegram's 4096-character limit (preferring newline boundaries), and
+ * sends each chunk sequentially.
  *
  * @param bot - The grammy Bot instance
  * @param chatId - The Telegram chat ID
- * @param text - The message text to send
+ * @param text - The message text to send (Markdown)
  * @param startTime - Timestamp (ms) for delivery duration calculation
  * @param callbacks - Callbacks to mutate adapter state
  */
@@ -138,9 +172,14 @@ async function sendAndTrack(
 ): Promise<DeliveryResult> {
   try {
     const html = formatForPlatform(text, 'telegram');
-    await bot.api.sendMessage(chatId, html, { parse_mode: 'HTML' } as Parameters<
-      typeof bot.api.sendMessage
-    >[2]);
+    const chunks = splitMessage(html, MAX_MESSAGE_LENGTH);
+
+    for (const chunk of chunks) {
+      await bot.api.sendMessage(chatId, chunk, { parse_mode: 'HTML' } as Parameters<
+        typeof bot.api.sendMessage
+      >[2]);
+    }
+
     callbacks.trackOutbound();
     return { success: true, durationMs: Date.now() - startTime };
   } catch (err) {
@@ -157,9 +196,10 @@ async function sendAndTrack(
  * Deliver a Relay message to the Telegram chat identified by the subject.
  *
  * Extracts the chat ID from the subject, reads the payload content, and
- * sends it via the Telegram Bot API. Outbound content is truncated to
- * Telegram's 4096-character message limit. StreamEvent payloads are buffered
- * per-chat and flushed on 'done' or 'error' events.
+ * sends it via the Telegram Bot API. Messages exceeding Telegram's
+ * 4096-character limit are split at newline boundaries into multiple
+ * messages. StreamEvent payloads are buffered per-chat and flushed on
+ * 'done' or 'error' events.
  *
  * @param opts - Delivery options
  */
@@ -260,9 +300,7 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
       const buffered = responseBuffers.get(chatId)?.text ?? '';
       responseBuffers.delete(chatId);
       state.lastDraftUpdate.delete(chatId);
-      const text = buffered
-        ? truncateText(`${buffered}\n\n[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH)
-        : truncateText(`[Error: ${errorMsg}]`, MAX_MESSAGE_LENGTH);
+      const text = buffered ? `${buffered}\n\n[Error: ${errorMsg}]` : `[Error: ${errorMsg}]`;
       return sendAndTrack(bot, chatId, text, startTime, callbacks);
     }
 
@@ -275,13 +313,7 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
       responseBuffers.delete(chatId);
       state.lastDraftUpdate.delete(chatId);
       if (buffered) {
-        return sendAndTrack(
-          bot,
-          chatId,
-          truncateText(buffered.text, MAX_MESSAGE_LENGTH),
-          startTime,
-          callbacks
-        );
+        return sendAndTrack(bot, chatId, buffered.text, startTime, callbacks);
       }
       return { success: true, durationMs: Date.now() - startTime };
     }
@@ -298,13 +330,7 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
         if (buffered?.text) {
           responseBuffers.delete(chatId);
           state.lastDraftUpdate.delete(chatId);
-          await sendAndTrack(
-            bot,
-            chatId,
-            truncateText(buffered.text, MAX_MESSAGE_LENGTH),
-            startTime,
-            callbacks
-          );
+          await sendAndTrack(bot, chatId, buffered.text, startTime, callbacks);
         }
 
         return handleApprovalRequired(bot, chatId, data, envelope, state, callbacks, startTime);
@@ -319,9 +345,8 @@ export async function deliverMessage(opts: TelegramDeliverOptions): Promise<Deli
 
   // --- Standard payload (non-StreamEvent) ---
   const content = extractPayloadContent(envelope.payload);
-  const text = truncateText(content, MAX_MESSAGE_LENGTH);
-  logger.debug(`deliver: standard payload to chat ${chatId} (${text.length} chars)`);
-  return sendAndTrack(bot, chatId, text, startTime, callbacks);
+  logger.debug(`deliver: standard payload to chat ${chatId} (${content.length} chars)`);
+  return sendAndTrack(bot, chatId, content, startTime, callbacks);
 }
 
 /**

@@ -1,9 +1,13 @@
 /**
  * Chat SDK-backed Telegram adapter for the Relay message bus.
  *
- * Uses the `chat` package and `@chat-adapter/telegram` to receive messages
- * via long-polling or webhooks, and to deliver messages back to Telegram
- * chats. Extends {@link BaseRelayAdapter} for lifecycle and status management.
+ * Uses the `chat` package and `@chat-adapter/telegram` for **inbound only**:
+ * polling/webhooks, update parsing, thread/message typing, and echo detection.
+ *
+ * **Outbound bypasses the Chat SDK entirely.** The Chat SDK's `postMessage()`
+ * never sets `parse_mode` for non-card messages — our HTML-formatted content
+ * was rendering as literal `<b>` tags in Telegram. Instead, the outbound
+ * module calls the Telegram Bot API directly with `parse_mode: 'HTML'`.
  *
  * @module relay/adapters/telegram-chatsdk/adapter
  */
@@ -17,8 +21,12 @@ import { BaseRelayAdapter } from '../../base-adapter.js';
 import type { RelayPublisher, AdapterContext, DeliveryResult } from '../../types.js';
 import type { RelayEnvelope } from '@dorkos/shared/relay-schemas';
 import { handleInboundMessage } from './inbound.js';
-import { deliverMessage, deliverStream as deliverStreamMsg } from './outbound.js';
-import type { ResponseBuffer } from './outbound.js';
+import {
+  deliverMessage,
+  deliverStream as deliverStreamMsg,
+  createTelegramSender,
+} from './outbound.js';
+import type { ResponseBuffer, TelegramSender } from './outbound.js';
 import { ChatSdkTelegramThreadIdCodec } from '../../lib/thread-id.js';
 
 /** Configuration for the Chat SDK Telegram adapter. */
@@ -140,19 +148,30 @@ class MemoryStateAdapter implements StateAdapter {
 /**
  * Chat SDK Telegram adapter for the Relay message bus.
  *
- * Extends {@link BaseRelayAdapter} to bridge Telegram chats into the Relay
- * subject hierarchy via the `chat` + `@chat-adapter/telegram` packages.
- * Delegates message parsing to the inbound sub-module and delivery to the
- * outbound sub-module.
+ * The Chat SDK handles **inbound** concerns: Telegram polling/webhooks,
+ * update parsing into Thread/Message objects, and bot echo detection.
+ *
+ * For **outbound**, we bypass the Chat SDK and call the Telegram Bot API
+ * directly via {@link TelegramSender}. This is necessary because the Chat
+ * SDK's `postMessage({ raw })` omits `parse_mode`, causing our HTML-formatted
+ * content to display as literal tags (e.g., `<b>bold</b>` instead of **bold**).
  */
 export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
   private readonly config: ChatSdkTelegramAdapterConfig;
   private readonly codec: ChatSdkTelegramThreadIdCodec;
   /** Per-chat response buffers for StreamEvent accumulation. */
   private readonly responseBuffers = new Map<string, ResponseBuffer>();
+  /** Chat SDK instance — manages polling, message handlers, and shutdown. */
   private chat: Chat | null = null;
-  /** Underlying Chat SDK TelegramAdapter, stored separately for direct postMessage access. */
+  /** Chat SDK TelegramAdapter — used only for inbound lifecycle (start/stop). */
   private telegramAdapter: ChatSdkTelegramAdapterImpl | null = null;
+  /**
+   * Direct Telegram Bot API sender for outbound messages.
+   *
+   * Bypasses the Chat SDK's `postMessage()` which never sets `parse_mode`
+   * for non-card messages, causing our HTML to render as literal tags.
+   */
+  private sender: TelegramSender | null = null;
 
   constructor(
     id: string,
@@ -234,6 +253,7 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
 
     this.chat = chat;
     this.telegramAdapter = telegramAdapter;
+    this.sender = createTelegramSender(this.config.token);
     this.logger.info('[TelegramChatSdk] started', { mode: this.config.mode ?? 'polling' });
   }
 
@@ -251,6 +271,7 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
       }
       this.chat = null;
       this.telegramAdapter = null;
+      this.sender = null;
     }
     this.responseBuffers.clear();
   }
@@ -278,7 +299,7 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
     return deliverMessage(
       subject,
       envelope,
-      this.telegramAdapter,
+      this.sender,
       this.responseBuffers,
       this.makeOutboundCallbacks(),
       this.logger,
@@ -287,10 +308,10 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
   }
 
   /**
-   * Deliver a streaming response to Telegram incrementally.
+   * Deliver a streaming response to Telegram.
    *
-   * Delegates to the outbound module's deliverStream helper which uses
-   * the Chat SDK adapter's native stream() method when available.
+   * Accumulates chunks from the async iterable, formats the complete
+   * text as Telegram HTML, then posts via direct API call.
    *
    * @param subject - The target relay subject
    * @param _threadId - Unused (subject encodes the thread ID)
@@ -306,7 +327,7 @@ export class ChatSdkTelegramAdapter extends BaseRelayAdapter {
     return deliverStreamMsg(
       subject,
       stream,
-      this.telegramAdapter,
+      this.sender,
       this.makeOutboundCallbacks(),
       this.logger,
       this.codec

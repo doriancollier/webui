@@ -18,19 +18,17 @@ import { runAdapterComplianceSuite } from '../../../testing/compliance-suite.js'
 
 // vi.hoisted() runs before vi.mock() factories — the returned values can be
 // safely referenced inside mock factories even though factories are hoisted.
-const { mockPostMessage, mockChatInitialize, mockChatShutdown, messageHandlers } = vi.hoisted(
-  () => {
-    // Use a plain object for message handlers so we can mutate it in-place
-    // (vi.hoisted() returns a const binding that can't be reassigned).
-    const handlers: Record<string, (thread: unknown, message: unknown) => Promise<void>> = {};
-    return {
-      mockPostMessage: vi.fn().mockResolvedValue(undefined),
-      mockChatInitialize: vi.fn().mockResolvedValue(undefined),
-      mockChatShutdown: vi.fn().mockResolvedValue(undefined),
-      messageHandlers: handlers,
-    };
-  }
-);
+const { mockSend, mockChatInitialize, mockChatShutdown, messageHandlers } = vi.hoisted(() => {
+  // Use a plain object for message handlers so we can mutate it in-place
+  // (vi.hoisted() returns a const binding that can't be reassigned).
+  const handlers: Record<string, (thread: unknown, message: unknown) => Promise<void>> = {};
+  return {
+    mockSend: vi.fn().mockResolvedValue(undefined),
+    mockChatInitialize: vi.fn().mockResolvedValue(undefined),
+    mockChatShutdown: vi.fn().mockResolvedValue(undefined),
+    messageHandlers: handlers,
+  };
+});
 
 // Use a stable constructor function so `new Chat(...)` works after vi.clearAllMocks().
 // Arrow functions cannot be used as constructors; a regular function is required here.
@@ -57,10 +55,18 @@ vi.mock('chat', () => {
 vi.mock('@chat-adapter/telegram', () => ({
   TelegramAdapter: vi.fn(),
   createTelegramAdapter: vi.fn().mockReturnValue({
-    postMessage: mockPostMessage,
     userName: 'test_bot',
   }),
 }));
+
+// Mock createTelegramSender to return our mockSend spy instead of making real HTTP calls.
+vi.mock('../outbound.js', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../outbound.js')>();
+  return {
+    ...actual,
+    createTelegramSender: vi.fn().mockReturnValue(mockSend),
+  };
+});
 
 // --- Test helpers ---
 
@@ -160,12 +166,12 @@ describe('ChatSdkTelegramAdapter', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(mockPostMessage).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   // --- Text delivery ---
 
-  it('calls postMessage when delivering a text payload', async () => {
+  it('sends a message when delivering a text payload', async () => {
     await adapter.start(relay);
 
     const envelope = createMockRelayEnvelope({
@@ -179,14 +185,11 @@ describe('ChatSdkTelegramAdapter', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
-    expect(mockPostMessage).toHaveBeenCalledWith(
-      '12345',
-      expect.objectContaining({ raw: expect.any(String) })
-    );
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    expect(mockSend).toHaveBeenCalledWith('12345', expect.any(String));
   });
 
-  it('calls postMessage with approval text when delivering approval_required payload', async () => {
+  it('sends approval text when delivering approval_required payload', async () => {
     await adapter.start(relay);
 
     // extractApprovalData expects { type, data: { toolCallId, toolName, input } }
@@ -209,11 +212,11 @@ describe('ChatSdkTelegramAdapter', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
-    const [threadId, { raw }] = mockPostMessage.mock.calls[0] as [string, { raw: string }];
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const [threadId, html] = mockSend.mock.calls[0] as [string, string];
     expect(threadId).toBe('12345');
-    expect(raw).toContain('Tool Approval Required');
-    expect(raw).toContain('bash');
+    expect(html).toContain('Tool Approval Required');
+    expect(html).toContain('bash');
   });
 
   // --- StreamEvent handling ---
@@ -239,15 +242,15 @@ describe('ChatSdkTelegramAdapter', () => {
     await adapter.deliver(subject, delta1);
     await adapter.deliver(subject, delta2);
     // No message sent yet — still buffering
-    expect(mockPostMessage).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
 
     await adapter.deliver(subject, done);
     // Now the buffer should have flushed
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
-    const [threadId, { raw }] = mockPostMessage.mock.calls[0] as [string, { raw: string }];
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const [threadId, html] = mockSend.mock.calls[0] as [string, string];
     expect(threadId).toBe('12345');
-    expect(raw).toContain('Hello');
-    expect(raw).toContain('world');
+    expect(html).toContain('Hello');
+    expect(html).toContain('world');
   });
 
   it('silently drops session_status StreamEvents without sending', async () => {
@@ -264,7 +267,7 @@ describe('ChatSdkTelegramAdapter', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(mockPostMessage).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   it('flushes buffer with error message on error StreamEvent', async () => {
@@ -282,13 +285,13 @@ describe('ChatSdkTelegramAdapter', () => {
     });
 
     await adapter.deliver(subject, delta);
-    expect(mockPostMessage).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
 
     await adapter.deliver(subject, error);
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
-    const [, { raw }] = mockPostMessage.mock.calls[0] as [string, { raw: string }];
-    expect(raw).toContain('Partial response');
-    expect(raw).toContain('Something went wrong');
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const [, html] = mockSend.mock.calls[0] as [string, string];
+    expect(html).toContain('Partial response');
+    expect(html).toContain('Something went wrong');
   });
 
   it('flushes buffered text before approval_required event', async () => {
@@ -317,11 +320,11 @@ describe('ChatSdkTelegramAdapter', () => {
     await adapter.deliver(subject, approval);
 
     // Two messages: flushed buffer + approval prompt
-    expect(mockPostMessage).toHaveBeenCalledTimes(2);
-    const [, first] = mockPostMessage.mock.calls[0] as [string, { raw: string }];
-    const [, second] = mockPostMessage.mock.calls[1] as [string, { raw: string }];
-    expect(first.raw).toContain('Before approval');
-    expect(second.raw).toContain('Tool Approval Required');
+    expect(mockSend).toHaveBeenCalledTimes(2);
+    const [, firstHtml] = mockSend.mock.calls[0] as [string, string];
+    const [, secondHtml] = mockSend.mock.calls[1] as [string, string];
+    expect(firstHtml).toContain('Before approval');
+    expect(secondHtml).toContain('Tool Approval Required');
   });
 
   it('done with empty buffer succeeds without posting', async () => {
@@ -335,7 +338,7 @@ describe('ChatSdkTelegramAdapter', () => {
     const result = await adapter.deliver('relay.human.telegram-chatsdk.test-chatsdk.12345', done);
 
     expect(result.success).toBe(true);
-    expect(mockPostMessage).not.toHaveBeenCalled();
+    expect(mockSend).not.toHaveBeenCalled();
   });
 
   // --- deliverStream ---
@@ -355,7 +358,7 @@ describe('ChatSdkTelegramAdapter', () => {
     expect(result.error).toMatch(/not initialized/i);
   });
 
-  it('deliverStream accumulates chunks and calls postMessage after start', async () => {
+  it('deliverStream accumulates chunks and sends after start', async () => {
     await adapter.start(relay);
 
     async function* multiChunk() {
@@ -371,11 +374,11 @@ describe('ChatSdkTelegramAdapter', () => {
     );
 
     expect(result.success).toBe(true);
-    expect(mockPostMessage).toHaveBeenCalledTimes(1);
-    const [threadId, { raw }] = mockPostMessage.mock.calls[0] as [string, { raw: string }];
+    expect(mockSend).toHaveBeenCalledTimes(1);
+    const [threadId, html] = mockSend.mock.calls[0] as [string, string];
     expect(threadId).toBe('12345');
-    expect(raw).toContain('Hello');
-    expect(raw).toContain('world');
+    expect(html).toContain('Hello');
+    expect(html).toContain('world');
   });
 
   // --- Inbound forwarding ---

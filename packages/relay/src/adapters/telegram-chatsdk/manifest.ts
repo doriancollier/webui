@@ -9,7 +9,9 @@ import type { AdapterManifest } from '@dorkos/shared/relay-schemas';
 export const TELEGRAM_CHATSDK_MANIFEST: AdapterManifest = {
   type: 'telegram-chatsdk',
   displayName: 'Telegram (Chat SDK)',
-  description: 'Send and receive messages via Telegram using the Chat SDK. Experimental.',
+  description:
+    'Deprecated — use the Telegram adapter instead. Lacks streaming previews, interactive approvals, typing indicators, and reconnection logic.',
+  deprecated: true,
   iconEmoji: '\u2708\uFE0F',
   category: 'messaging',
   docsUrl: 'https://github.com/anthropics/chat',

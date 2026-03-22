@@ -529,16 +529,19 @@ describe('TelegramAdapter', () => {
     expect(adapter.getStatus().messageCount.outbound).toBe(1);
   });
 
-  it('deliver() truncates content exceeding 4096 characters', async () => {
+  it('deliver() splits content exceeding 4096 characters into multiple messages', async () => {
     await adapter.start(mockRelay);
 
     const longContent = 'A'.repeat(5000);
     const envelope = createEnvelope('relay.human.telegram.tg1.1', { content: longContent });
     await adapter.deliver('relay.human.telegram.tg1.1', envelope);
 
-    const sentText = vi.mocked(mockSendMessage).mock.calls[0][1] as string;
-    expect(sentText.length).toBeLessThanOrEqual(4096);
-    expect(sentText.endsWith('...')).toBe(true);
+    // Should send 2 messages: first chunk (4096 chars) + remainder
+    expect(vi.mocked(mockSendMessage)).toHaveBeenCalledTimes(2);
+    const firstChunk = vi.mocked(mockSendMessage).mock.calls[0][1] as string;
+    const secondChunk = vi.mocked(mockSendMessage).mock.calls[1][1] as string;
+    expect(firstChunk.length).toBeLessThanOrEqual(4096);
+    expect(firstChunk.length + secondChunk.length).toBe(5000);
   });
 
   it('deliver() returns failure for invalid subject (non-telegram prefix)', async () => {

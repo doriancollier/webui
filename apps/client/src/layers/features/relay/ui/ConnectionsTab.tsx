@@ -58,9 +58,11 @@ export function ConnectionsTab({ enabled }: ConnectionsTabProps) {
     entry.instances.map((inst) => ({ instance: inst, manifest: entry.manifest }))
   );
 
-  // Available: entries with no instances, OR multiInstance entries (can always add more).
+  // Available: non-deprecated entries with no instances, OR multiInstance entries (can always add more).
+  // Deprecated adapters are hidden from the catalog but existing instances continue working.
   const availableEntries = catalog.filter(
-    (entry) => entry.instances.length === 0 || entry.manifest.multiInstance
+    (entry) =>
+      !entry.manifest.deprecated && (entry.instances.length === 0 || entry.manifest.multiInstance)
   );
 
   const openWizardForAdd = (manifest: AdapterManifest) => {
