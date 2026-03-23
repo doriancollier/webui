@@ -27,11 +27,7 @@ vi.mock('@/layers/entities/mesh', () => ({
   useRegisteredAgents: (...args: unknown[]) => mockUseRegisteredAgents(...args),
 }));
 
-// Stub BindingDialog to avoid deep rendering — AdapterCard tests focus on card behaviour.
-vi.mock('@/layers/features/mesh/ui/BindingDialog', () => ({
-  BindingDialog: ({ open }: { open: boolean }) =>
-    open ? <div data-testid="binding-dialog" /> : null,
-}));
+// BindingDialog is no longer rendered inside AdapterCard — dialogs live in ConnectionsTab.
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -122,7 +118,10 @@ function defaultProps(overrides: Partial<Parameters<typeof AdapterCard>[0]> = {}
     manifest: baseManifest,
     onToggle: vi.fn(),
     onConfigure: vi.fn(),
-    onRemove: vi.fn(),
+    onShowEvents: vi.fn(),
+    onEditBinding: vi.fn(),
+    onRemoveConfirm: vi.fn(),
+    onAddBinding: vi.fn(),
     ...overrides,
   };
 }
@@ -534,8 +533,9 @@ describe('AdapterCard', () => {
     expect(onConfigure).toHaveBeenCalledTimes(1);
   });
 
-  it('opens confirmation dialog when Remove menu item is clicked', async () => {
-    render(<AdapterCard {...defaultProps()} />);
+  it('calls onRemoveConfirm when Remove menu item is clicked', async () => {
+    const onRemoveConfirm = vi.fn();
+    render(<AdapterCard {...defaultProps({ onRemoveConfirm })} />);
 
     await openKebabMenu();
 
@@ -547,39 +547,41 @@ describe('AdapterCard', () => {
       fireEvent.click(screen.getByRole('menuitem', { name: /Remove/i }));
     });
 
-    await waitFor(() => {
-      expect(screen.getByText('Remove adapter')).toBeTruthy();
-      expect(screen.getByText(/Are you sure you want to remove/)).toBeTruthy();
-    });
+    expect(onRemoveConfirm).toHaveBeenCalledWith('tg-main', 'Main Telegram');
   });
 
-  it('calls onRemove when confirmation dialog is confirmed', async () => {
-    const onRemove = vi.fn();
-    render(<AdapterCard {...defaultProps({ onRemove })} />);
+  it('calls onShowEvents when Events menu item is clicked', async () => {
+    const onShowEvents = vi.fn();
+    render(<AdapterCard {...defaultProps({ onShowEvents })} />);
 
     await openKebabMenu();
 
     await waitFor(() => {
-      expect(screen.getByRole('menuitem', { name: /Remove/i })).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: /Events/i })).toBeTruthy();
     });
 
     await act(async () => {
-      fireEvent.click(screen.getByRole('menuitem', { name: /Remove/i }));
+      fireEvent.click(screen.getByRole('menuitem', { name: /Events/i }));
     });
+
+    expect(onShowEvents).toHaveBeenCalledWith('tg-main');
+  });
+
+  it('calls onAddBinding when Add Binding menu item is clicked', async () => {
+    const onAddBinding = vi.fn();
+    render(<AdapterCard {...defaultProps({ onAddBinding })} />);
+
+    await openKebabMenu();
 
     await waitFor(() => {
-      expect(screen.getByRole('alertdialog')).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: /Add Binding/i })).toBeTruthy();
     });
-
-    const dialog = screen.getByRole('alertdialog');
-    const buttons = dialog.querySelectorAll('button');
-    const confirmBtn = buttons[buttons.length - 1];
 
     await act(async () => {
-      fireEvent.click(confirmBtn);
+      fireEvent.click(screen.getByRole('menuitem', { name: /Add Binding/i }));
     });
 
-    expect(onRemove).toHaveBeenCalledTimes(1);
+    expect(onAddBinding).toHaveBeenCalledWith('tg-main', 'tg-main');
   });
 
   it('disables Remove for built-in claude-code adapter', async () => {

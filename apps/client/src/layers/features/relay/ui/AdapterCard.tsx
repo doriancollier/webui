@@ -1,88 +1,40 @@
-import { useMemo, useState } from 'react';
-import {
-  Activity,
-  AlertTriangle,
-  ChevronRight,
-  Link2,
-  MoreVertical,
-  Plus,
-  Settings,
-  Trash2,
-} from 'lucide-react';
+import { useMemo } from 'react';
 import { toast } from 'sonner';
-import { Badge } from '@/layers/shared/ui/badge';
-import { Button } from '@/layers/shared/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/layers/shared/ui/collapsible';
-import { Switch } from '@/layers/shared/ui/switch';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/layers/shared/ui/dropdown-menu';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/layers/shared/ui/alert-dialog';
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/layers/shared/ui/sheet';
 import { cn } from '@/layers/shared/lib';
 import type {
   AdapterBinding,
   AdapterManifest,
   CatalogInstance,
 } from '@dorkos/shared/relay-schemas';
-import {
-  useBindings,
-  useCreateBinding,
-  useDeleteBinding,
-  useUpdateBinding,
-} from '@/layers/entities/binding';
+import { useBindings, useCreateBinding } from '@/layers/entities/binding';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
-import { getCategoryColorClasses } from '../lib/category-colors';
-import { AdapterEventLog } from './AdapterEventLog';
-import { AdapterBindingRow } from './AdapterBindingRow';
-import { BindingDialog, type BindingFormValues } from '@/layers/features/mesh/ui/BindingDialog';
-import { QuickBindingPopover } from './QuickBindingPopover';
-
-/** Maximum binding rows to display before showing overflow link. */
-const MAX_VISIBLE_BINDINGS = 3;
+import { AdapterCardHeader } from './AdapterCardHeader';
+import { AdapterCardBindings } from './AdapterCardBindings';
+import { AdapterCardError } from './AdapterCardError';
 
 interface AdapterCardProps {
   instance: CatalogInstance;
   manifest: AdapterManifest;
   onToggle: (enabled: boolean) => void;
   onConfigure: () => void;
-  onRemove: () => void;
+  onShowEvents: (instanceId: string) => void;
+  onEditBinding: (binding: AdapterBinding) => void;
+  onRemoveConfirm: (instanceId: string, name: string) => void;
+  onAddBinding: (instanceId: string, adapterId: string) => void;
 }
 
-/** Displays a configured adapter instance with status, toggle, and kebab menu actions. */
+/** Displays a configured adapter instance — delegates rendering to sub-components. */
 export function AdapterCard({
   instance,
   manifest,
   onToggle,
   onConfigure,
-  onRemove,
+  onShowEvents,
+  onEditBinding,
+  onRemoveConfirm,
+  onAddBinding,
 }: AdapterCardProps) {
-  const [removeDialogOpen, setRemoveDialogOpen] = useState(false);
-  const [eventsSheetOpen, setEventsSheetOpen] = useState(false);
-  const [bindingDialogOpen, setBindingDialogOpen] = useState(false);
-  const [bindingDialogMode, setBindingDialogMode] = useState<'create' | 'edit'>('create');
-  const [editingBinding, setEditingBinding] = useState<AdapterBinding | null>(null);
-  const [showAllBindings, setShowAllBindings] = useState(false);
-
   const createBinding = useCreateBinding();
-  const updateBinding = useUpdateBinding();
-  const deleteBinding = useDeleteBinding();
 
   const isBuiltinClaude = manifest.type === 'claude-code' && manifest.builtin;
 
@@ -138,22 +90,6 @@ export function AdapterCard({
     ) && 'bg-gray-400'
   );
 
-  const visibleBindings = showAllBindings
-    ? boundAgentRows
-    : boundAgentRows.slice(0, MAX_VISIBLE_BINDINGS);
-  const overflowCount = boundAgentRows.length - MAX_VISIBLE_BINDINGS;
-
-  /** Resolves a registered agent's display name from its ID. */
-  function lookupAgentName(agentId: string) {
-    return agents.find((a) => a.id === agentId)?.name ?? agentId;
-  }
-
-  function openBindingCreate() {
-    setBindingDialogMode('create');
-    setEditingBinding(null);
-    setBindingDialogOpen(true);
-  }
-
   async function handleQuickBind(agentId: string) {
     try {
       await createBinding.mutateAsync({
@@ -168,295 +104,40 @@ export function AdapterCard({
     }
   }
 
-  async function handleBindingConfirm(values: BindingFormValues) {
-    try {
-      if (bindingDialogMode === 'edit' && editingBinding) {
-        await updateBinding.mutateAsync({ id: editingBinding.id, updates: values });
-        toast.success('Binding updated');
-      } else {
-        await createBinding.mutateAsync(values);
-        toast.success('Binding created');
-      }
-      setBindingDialogOpen(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to save binding');
-    }
-  }
-
-  async function handleBindingDelete(bindingId: string) {
-    try {
-      await deleteBinding.mutateAsync(bindingId);
-      toast.success('Binding deleted');
-      setBindingDialogOpen(false);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to delete binding');
-    }
-  }
-
   return (
-    <>
-      <div
-        className={cn(
-          'shadow-soft hover:shadow-elevated rounded-xl border p-5 transition-shadow',
-          isBuiltinClaude && 'border-dashed'
-        )}
-      >
-        {/* Header: status dot, emoji, name, toggle, kebab */}
-        <div className="flex items-start justify-between">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <div className={statusDotClass} aria-hidden />
-            {manifest.iconEmoji && (
-              <span className="text-sm" role="img" aria-hidden>
-                {manifest.iconEmoji}
-              </span>
-            )}
-            <span className="text-sm font-medium">{primaryName}</span>
-          </div>
-
-          <div className="flex shrink-0 items-center gap-2">
-            <Switch checked={instance.enabled} onCheckedChange={onToggle} />
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="size-7 p-0"
-                  aria-label="Adapter actions"
-                >
-                  <MoreVertical className="size-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setEventsSheetOpen(true)}>
-                  <Activity className="mr-2 size-3.5" />
-                  Events
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={openBindingCreate}>
-                  <Link2 className="mr-2 size-3.5" />
-                  Add Binding
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onConfigure}>
-                  <Settings className="mr-2 size-3.5" />
-                  Configure
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setRemoveDialogOpen(true)}
-                  disabled={isBuiltinClaude}
-                  className="text-red-600 focus:text-red-600"
-                >
-                  <Trash2 className="mr-2 size-3.5" />
-                  Remove
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        </div>
-
-        {/* Subtitle: adapter type + category + deprecation badge */}
-        <div className="mt-1 flex items-center gap-2 pl-[18px]">
-          {secondaryName && <span className="text-muted-foreground text-xs">{secondaryName}</span>}
-          {secondaryName && <span className="text-muted-foreground/50 text-xs">&middot;</span>}
-          <Badge
-            variant="secondary"
-            className={cn('text-xs', getCategoryColorClasses(manifest.category))}
-          >
-            {manifest.category}
-          </Badge>
-          {manifest.deprecated && (
-            <Badge variant="outline" className="text-xs text-amber-600 dark:text-amber-500">
-              Deprecated
-            </Badge>
-          )}
-        </div>
-
-        {/* Body: bindings or CCA summary */}
-        <div className="mt-3 space-y-1.5 pl-[18px]">
-          {isBuiltinClaude ? (
-            <p className="text-muted-foreground text-sm">
-              Serving {totalAgentCount} {totalAgentCount === 1 ? 'agent' : 'agents'} &middot; Chat +
-              Pulse
-            </p>
-          ) : hasBindings ? (
-            <>
-              {visibleBindings.map((row, idx) => {
-                const binding = adapterBindings[idx];
-                return (
-                  <button
-                    key={row.bindingId}
-                    type="button"
-                    className="group/row hover:bg-muted/50 flex w-full cursor-pointer items-center gap-1.5 rounded px-1 py-0.5 text-left transition-colors"
-                    onClick={() => {
-                      setEditingBinding(binding);
-                      setBindingDialogMode('edit');
-                      setBindingDialogOpen(true);
-                    }}
-                  >
-                    <AdapterBindingRow
-                      agentName={row.agentName}
-                      sessionStrategy={row.sessionStrategy}
-                      chatId={row.chatId}
-                      channelType={row.channelType}
-                      canInitiate={row.canInitiate}
-                      canReply={row.canReply}
-                      canReceive={row.canReceive}
-                    />
-                  </button>
-                );
-              })}
-              {overflowCount > 0 && !showAllBindings && (
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground mt-1 text-xs hover:underline"
-                  onClick={() => setShowAllBindings(true)}
-                >
-                  Show {overflowCount} more
-                </button>
-              )}
-              {showAllBindings && boundAgentRows.length > MAX_VISIBLE_BINDINGS && (
-                <button
-                  type="button"
-                  className="text-muted-foreground hover:text-foreground mt-1 text-xs hover:underline"
-                  onClick={() => setShowAllBindings(false)}
-                >
-                  Show less
-                </button>
-              )}
-              <QuickBindingPopover
-                adapterId={instance.id}
-                onQuickBind={handleQuickBind}
-                onAdvanced={openBindingCreate}
-                isPending={createBinding.isPending}
-              >
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground mt-1 h-6 gap-1 px-2 text-xs"
-                >
-                  <Plus className="size-3" />
-                  Add binding
-                </Button>
-              </QuickBindingPopover>
-            </>
-          ) : isConnected ? (
-            <QuickBindingPopover
-              adapterId={instance.id}
-              onQuickBind={handleQuickBind}
-              onAdvanced={openBindingCreate}
-              isPending={createBinding.isPending}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-1 h-6 gap-1 px-2 text-xs text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-500 dark:hover:bg-amber-950"
-              >
-                <Plus className="size-3" />
-                Add binding
-              </Button>
-            </QuickBindingPopover>
-          ) : null}
-        </div>
-
-        {/* Footer: error indicator only */}
-        {(instance.status.errorCount > 0 || instance.status.lastError) && (
-          <div className="mt-3 pl-[18px]">
-            {instance.status.errorCount > 0 && !instance.status.lastError && (
-              <div className="flex items-center gap-1 text-xs text-red-500">
-                <AlertTriangle className="size-3" />
-                <span>
-                  {instance.status.errorCount}{' '}
-                  {instance.status.errorCount === 1 ? 'error' : 'errors'}
-                </span>
-              </div>
-            )}
-            {instance.status.lastError && (
-              <Collapsible>
-                <div className="flex items-center gap-1">
-                  <CollapsibleTrigger asChild>
-                    <button
-                      className="flex items-center gap-1 text-xs text-red-500 hover:text-red-600"
-                      aria-label="Toggle full error message"
-                    >
-                      <ChevronRight className="size-3 transition-transform data-[state=open]:rotate-90" />
-                      {instance.status.errorCount > 0 && <AlertTriangle className="size-3" />}
-                      <span className="max-w-[200px] truncate">
-                        {instance.status.errorCount > 0
-                          ? `${instance.status.errorCount} ${instance.status.errorCount === 1 ? 'error' : 'errors'}`
-                          : instance.status.lastError}
-                      </span>
-                    </button>
-                  </CollapsibleTrigger>
-                </div>
-                <CollapsibleContent>
-                  <div className="mt-1 rounded-md bg-red-50 p-2 font-mono text-xs text-red-700 dark:bg-red-950 dark:text-red-300">
-                    {instance.status.lastError}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-          </div>
-        )}
-      </div>
-
-      <AlertDialog open={removeDialogOpen} onOpenChange={setRemoveDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove adapter</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove &quot;{primaryName}&quot;? This will stop the adapter
-              and remove its configuration. Messages to its subjects will no longer be delivered.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={onRemove}
-              className="bg-red-600 hover:bg-red-700 focus:ring-red-600"
-            >
-              Remove
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Sheet open={eventsSheetOpen} onOpenChange={setEventsSheetOpen}>
-        <SheetContent className="flex flex-col sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Events: {primaryName}</SheetTitle>
-          </SheetHeader>
-          <div className="flex-1 overflow-hidden">
-            <AdapterEventLog adapterId={instance.id} />
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      <BindingDialog
-        open={bindingDialogOpen}
-        onOpenChange={setBindingDialogOpen}
-        mode={bindingDialogMode}
-        initialValues={
-          bindingDialogMode === 'edit' && editingBinding
-            ? {
-                adapterId: editingBinding.adapterId,
-                agentId: editingBinding.agentId,
-                sessionStrategy: editingBinding.sessionStrategy,
-                label: editingBinding.label ?? '',
-                permissionMode: editingBinding.permissionMode,
-                chatId: editingBinding.chatId,
-                channelType: editingBinding.channelType,
-                canInitiate: editingBinding.canInitiate,
-                canReply: editingBinding.canReply,
-                canReceive: editingBinding.canReceive,
-              }
-            : { adapterId: instance.id }
-        }
-        adapterName={manifest.displayName}
-        agentName={editingBinding ? lookupAgentName(editingBinding.agentId) : undefined}
-        onConfirm={handleBindingConfirm}
-        onDelete={editingBinding ? handleBindingDelete : undefined}
-        bindingId={editingBinding?.id}
-        isPending={createBinding.isPending || updateBinding.isPending}
+    <div
+      className={cn(
+        'shadow-soft hover:shadow-elevated rounded-xl border p-5 transition-shadow',
+        isBuiltinClaude && 'border-dashed'
+      )}
+    >
+      <AdapterCardHeader
+        manifest={manifest}
+        instance={instance}
+        primaryName={primaryName}
+        secondaryName={secondaryName}
+        statusDotClass={statusDotClass}
+        onToggle={onToggle}
+        onShowEvents={() => onShowEvents(instance.id)}
+        onConfigure={onConfigure}
+        onRemove={() => onRemoveConfirm(instance.id, primaryName)}
+        onAddBinding={() => onAddBinding(instance.id, instance.id)}
+        isBuiltinClaude={isBuiltinClaude}
       />
-    </>
+      <AdapterCardBindings
+        instance={instance}
+        isBuiltinClaude={isBuiltinClaude}
+        boundAgentRows={boundAgentRows}
+        adapterBindings={adapterBindings}
+        totalAgentCount={totalAgentCount}
+        isConnected={isConnected}
+        hasBindings={hasBindings}
+        onEditBinding={(binding) => onEditBinding(binding)}
+        onQuickBind={handleQuickBind}
+        onAdvancedBind={() => onAddBinding(instance.id, instance.id)}
+        createBindingPending={createBinding.isPending}
+      />
+      <AdapterCardError instance={instance} />
+    </div>
   );
 }

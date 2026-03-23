@@ -1,81 +1,95 @@
-import { usePulseEnabled } from '@/layers/entities/pulse';
+import { usePulseEnabled, useSchedules } from '@/layers/entities/pulse';
 import { useRelayEnabled } from '@/layers/entities/relay';
 import { useMeshAgentHealth } from '@/layers/entities/mesh';
-import { Badge } from '@/layers/shared/ui';
+import { useBindings } from '@/layers/entities/binding';
+import { useAppStore } from '@/layers/shared/model';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
+import { SubsystemRow } from './SubsystemRow';
 
 interface ConnectionsTabProps {
   agent: AgentManifest;
 }
 
 /**
- * Read-only connections tab showing status of Pulse, Relay, and Mesh subsystems
- * for the current agent.
+ * Agent-Settings connections tab showing Pulse, Relay, and Mesh subsystem status
+ * with real data and deep-link navigation to each subsystem panel.
  */
 export function ConnectionsTab({ agent }: ConnectionsTabProps) {
   const pulseEnabled = usePulseEnabled();
   const relayEnabled = useRelayEnabled();
   const { data: health } = useMeshAgentHealth(agent.id);
+  const { data: schedules = [] } = useSchedules(pulseEnabled);
+  const { data: bindings = [] } = useBindings();
+  const { setAgentDialogOpen, setRelayOpen, openPulseForAgent } = useAppStore();
+
+  const agentScheduleCount = schedules.filter((s) => s.agentId === agent.id).length;
+  const agentBindingCount = bindings.filter((b) => b.agentId === agent.id).length;
+
+  /** Close the agent dialog then open the target panel after the close animation completes. */
+  const navigateTo = (open: () => void) => {
+    setAgentDialogOpen(false);
+    // Small delay to let dialog close animation complete before opening new panel
+    requestAnimationFrame(() => open());
+  };
 
   return (
     <div className="space-y-6">
       {/* Pulse */}
-      <section className="space-y-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">Pulse Schedules</h3>
-          <Badge variant={pulseEnabled ? 'default' : 'secondary'} className="text-xs">
-            {pulseEnabled ? 'Enabled' : 'Disabled'}
-          </Badge>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {pulseEnabled
-            ? 'Configure automated schedules for this agent in the Pulse panel.'
-            : 'Enable Pulse to schedule automated agent runs.'}
-        </p>
-      </section>
+      <SubsystemRow
+        label="Pulse Schedules"
+        enabled={pulseEnabled}
+        summary={
+          pulseEnabled
+            ? agentScheduleCount > 0
+              ? `${agentScheduleCount} ${agentScheduleCount === 1 ? 'schedule' : 'schedules'}`
+              : 'No schedules'
+            : undefined
+        }
+        action={
+          pulseEnabled
+            ? {
+                label: 'View in Pulse',
+                onClick: () => navigateTo(() => openPulseForAgent(agent.id)),
+              }
+            : undefined
+        }
+      />
 
       {/* Relay */}
-      <section className="space-y-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">Relay Endpoints</h3>
-          <Badge variant={relayEnabled ? 'default' : 'secondary'} className="text-xs">
-            {relayEnabled ? 'Enabled' : 'Disabled'}
-          </Badge>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          {relayEnabled
-            ? 'Manage messaging endpoints for this agent in the Relay panel.'
-            : 'Enable Relay for inter-agent messaging.'}
-        </p>
-      </section>
+      <SubsystemRow
+        label="Relay Bindings"
+        enabled={relayEnabled}
+        summary={
+          relayEnabled
+            ? agentBindingCount > 0
+              ? `${agentBindingCount} ${agentBindingCount === 1 ? 'binding' : 'bindings'}`
+              : 'No bindings'
+            : undefined
+        }
+        action={
+          relayEnabled
+            ? {
+                label: 'View in Relay',
+                onClick: () => navigateTo(() => setRelayOpen(true)),
+              }
+            : undefined
+        }
+      />
 
       {/* Mesh */}
-      <section className="space-y-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-medium">Mesh Health</h3>
-          <Badge variant="default" className="text-xs">
-            Enabled
-          </Badge>
-        </div>
-        {health ? (
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground text-sm">Status:</span>
-            <Badge
-              variant={health.status === 'active' ? 'default' : 'secondary'}
-              className="text-xs"
-            >
-              {health.status}
-            </Badge>
-            {health.lastSeenAt && (
-              <span className="text-muted-foreground text-xs">
-                Last seen {new Date(health.lastSeenAt).toLocaleString()}
-              </span>
-            )}
-          </div>
-        ) : (
-          <p className="text-muted-foreground text-sm">Loading health information...</p>
-        )}
-      </section>
+      <SubsystemRow
+        label="Mesh Health"
+        enabled={true}
+        status={
+          health
+            ? {
+                state: health.status,
+                lastSeenAt: health.lastSeenAt,
+              }
+            : undefined
+        }
+        loading={!health}
+      />
     </div>
   );
 }

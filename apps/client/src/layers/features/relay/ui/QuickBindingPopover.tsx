@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 import {
   Popover,
@@ -12,9 +12,10 @@ import {
   Button,
 } from '@/layers/shared/ui';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
+import { useBindings } from '@/layers/entities/binding';
 
 interface QuickBindingPopoverProps {
-  /** The adapter ID to create a binding for. Passed through to onQuickBind context. */
+  /** The adapter ID to create a binding for. Used to filter already-bound agents. */
   adapterId: string;
   /** Called with the selected agent ID to create a binding with defaults. */
   onQuickBind: (agentId: string) => Promise<void>;
@@ -29,9 +30,10 @@ interface QuickBindingPopoverProps {
 /**
  * Inline agent picker popover for one-click binding creation.
  *
- * Shows a searchable list of registered agents. Selecting one fires
- * `onQuickBind` to create a binding with all defaults. An "Advanced..."
- * link opens the full BindingDialog for detailed configuration.
+ * Shows a searchable list of registered agents, excluding agents that already
+ * have a binding to this adapter. Selecting one fires `onQuickBind` to create
+ * a binding with all defaults. An "Advanced..." link opens the full
+ * BindingDialog for detailed configuration.
  */
 export function QuickBindingPopover({
   adapterId,
@@ -42,7 +44,19 @@ export function QuickBindingPopover({
 }: QuickBindingPopoverProps) {
   const [open, setOpen] = useState(false);
   const { data: agentsData } = useRegisteredAgents();
-  const agents = agentsData?.agents ?? [];
+  const { data: bindings = [] } = useBindings();
+
+  // Exclude agents that already have a binding to this adapter so users
+  // cannot create duplicate adapter-agent pairs via the quick picker.
+  const boundAgentIds = useMemo(
+    () => new Set(bindings.filter((b) => b.adapterId === adapterId).map((b) => b.agentId)),
+    [bindings, adapterId]
+  );
+
+  const availableAgents = useMemo(
+    () => (agentsData?.agents ?? []).filter((a) => !boundAgentIds.has(a.id)),
+    [agentsData, boundAgentIds]
+  );
 
   async function handleSelect(agentId: string) {
     await onQuickBind(agentId);
@@ -54,9 +68,6 @@ export function QuickBindingPopover({
     onAdvanced();
   }
 
-  // Suppress unused variable lint — adapterId is accepted for future filtering.
-  void adapterId;
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
@@ -65,7 +76,7 @@ export function QuickBindingPopover({
           <CommandInput placeholder="Search agents..." />
           <CommandList>
             <CommandEmpty>No agents registered</CommandEmpty>
-            {agents.map((agent) => (
+            {availableAgents.map((agent) => (
               <CommandItem
                 key={agent.id}
                 value={agent.name}
