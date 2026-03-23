@@ -3,7 +3,6 @@ import { JsonView, darkStyles, collapseAllNested } from 'react-json-view-lite';
 import 'react-json-view-lite/dist/index.css';
 import Ansi from 'ansi-to-react';
 import { classifyContent } from '@/layers/shared/lib';
-import { cn } from '@/layers/shared/lib';
 
 const DiffViewer = lazy(() => import('react-diff-viewer-continued'));
 
@@ -255,7 +254,7 @@ export function OutputRenderer({ content, toolName, input }: OutputRendererProps
         isRaw={isRaw}
         onToggleRaw={() => setIsRaw((v) => !v)}
       >
-        <pre className={cn('max-h-64 overflow-y-auto text-xs whitespace-pre-wrap')}>
+        <pre className="max-h-64 overflow-y-auto text-xs whitespace-pre-wrap">
           <Ansi>{content}</Ansi>
         </pre>
       </OutputWrapper>

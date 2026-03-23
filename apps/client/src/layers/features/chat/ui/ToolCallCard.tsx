@@ -188,11 +188,13 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
         <TruncatedOutput content={toolCall.progressOutput} />
       )}
       {toolCall.result && (
-        <OutputRenderer
-          content={toolCall.result}
-          toolName={toolCall.toolName}
-          input={toolCall.input}
-        />
+        <div className="mt-2 border-t pt-2">
+          <OutputRenderer
+            content={toolCall.result}
+            toolName={toolCall.toolName}
+            input={toolCall.input}
+          />
+        </div>
       )}
     </CollapsibleCard>
   );
