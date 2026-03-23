@@ -62,10 +62,12 @@ function createMinimalDeps() {
 }
 
 describe('stream-event-handler — error events', () => {
-  it('categorized error appends ErrorPart to message parts', () => {
+  it('categorized error appends ErrorPart to message parts without killing streaming status', () => {
     // Purpose: SDK result errors with a category should render inline in the message stream
     // rather than using the error banner, so they persist in scroll history.
-    const { handler, currentPartsRef, setError } = createMinimalDeps();
+    // Critically, they must NOT set status to 'error' — the stream may continue
+    // after SDK recovery, and inference indicators should remain visible.
+    const { handler, currentPartsRef, setError, setStatus } = createMinimalDeps();
 
     handler(
       'error',
@@ -88,6 +90,8 @@ describe('stream-event-handler — error events', () => {
     }
     // Should NOT set banner error for categorized errors
     expect(setError).not.toHaveBeenCalled();
+    // Should NOT kill streaming status — stream continues after inline errors
+    expect(setStatus).not.toHaveBeenCalled();
   });
 
   it('uncategorized error sets banner error state', () => {

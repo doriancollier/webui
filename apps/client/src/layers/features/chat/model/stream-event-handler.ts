@@ -162,7 +162,9 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         break;
       case 'error': {
         const errorData = data as ErrorEvent;
-        // SDK result errors with a category render inline in the message stream
+        // SDK result errors with a category render inline in the message stream.
+        // The stream may continue after these (e.g. SDK recovery), so keep status
+        // as 'streaming' to preserve inference indicators until the done event.
         if (errorData.category) {
           currentPartsRef.current.push({
             type: 'error',
@@ -172,16 +174,15 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           });
           helpers.updateAssistantMessage(assistantId);
         } else {
-          // Transport-level errors (no category) use the banner
+          // Transport-level errors (no category) use the banner and kill streaming
+          // status — no more events will follow.
           setError({
             heading: 'Error',
             message: errorData.message,
             retryable: false,
           });
+          setStatus('error');
         }
-        // Always update session status to 'error' — the subsequent done event
-        // will reset it to 'idle', but this ensures correct status between events.
-        setStatus('error');
         break;
       }
       case 'rate_limit': {

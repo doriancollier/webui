@@ -257,7 +257,10 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     // (e.g. session created by CLI or a prior server run). Brand new sessions
     // must start with hasStarted=false to avoid passing a DorkOS UUID as the
     // SDK resume ID, which crashes the Claude Code process.
-    if (!this.sessions.has(sessionId)) {
+    // Use findSession (checks reverse index) so remapped SDK session IDs
+    // resolve to the original AgentSession — preserving permissionMode, model, etc.
+    const existingSession = this.findSession(sessionId);
+    if (!existingSession) {
       const effectiveCwd = opts?.cwd ?? this.cwd;
       const hasTranscript = await this.transcriptReader.hasTranscript(effectiveCwd, sessionId);
       logger.debug('[sendMessage] auto-creating session', {
@@ -271,7 +274,6 @@ export class ClaudeCodeRuntime implements AgentRuntime {
         hasStarted: hasTranscript,
       });
     } else {
-      const existingSession = this.sessions.get(sessionId)!;
       // If updateSession auto-created the session (e.g. model change before first
       // message after server restart), hasStarted is false and needsTranscriptCheck
       // is set. Check transcript on disk so we correctly resume.
@@ -288,7 +290,7 @@ export class ClaudeCodeRuntime implements AgentRuntime {
       }
     }
 
-    const session = this.sessions.get(sessionId)!;
+    const session = this.findSession(sessionId) ?? this.sessions.get(sessionId)!;
 
     yield* executeSdkQuery(
       sessionId,

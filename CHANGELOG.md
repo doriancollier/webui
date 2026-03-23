@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Preserve session state across SDK remaps and inline errors
 ---
 
 ## [0.21.0] - 2026-03-23
