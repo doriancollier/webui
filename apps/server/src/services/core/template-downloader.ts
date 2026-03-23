@@ -40,6 +40,19 @@ export class TemplateDownloadError extends Error {
 const GIGET_TIMEOUT_MS = 30_000;
 
 /**
+ * Redact auth tokens from error messages to prevent credential leaks.
+ *
+ * Replaces `x-access-token:<token>@` patterns with `x-access-token:[REDACTED]@`
+ * in git clone stderr output and error messages.
+ *
+ * @param message - Raw error message that may contain embedded tokens
+ * @returns Sanitized message with tokens replaced
+ */
+export function redactAuthTokens(message: string): string {
+  return message.replace(/x-access-token:[^@]+@/g, 'x-access-token:[REDACTED]@');
+}
+
+/**
  * Resolve a shorthand source to a full git URL.
  *
  * Supports `github:org/repo`, `gitlab:org/repo`, `bitbucket:org/repo`,
@@ -182,7 +195,7 @@ export async function execGitClone(
 
     proc.on('close', async (code) => {
       if (code !== 0) {
-        reject(new Error(`git clone exited with code ${code}: ${stderr}`));
+        reject(new Error(`git clone exited with code ${code}: ${redactAuthTokens(stderr)}`));
         return;
       }
 
@@ -221,7 +234,11 @@ export async function downloadTemplate(
     await execGitClone(gitUrl, targetPath, auth, onProgress);
     return;
   } catch (gitErr) {
-    logger.debug('Git clone failed, falling back to giget', { source, error: gitErr });
+    const redactedError =
+      gitErr instanceof Error
+        ? new Error(redactAuthTokens(gitErr.message))
+        : redactAuthTokens(String(gitErr));
+    logger.debug('Git clone failed, falling back to giget', { source, error: redactedError });
   }
 
   // Fallback: giget with timeout

@@ -14,6 +14,8 @@ export function useCreateAgent() {
     mutationFn: (opts: CreateAgentOptions) => transport.createAgent(opts),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['mesh', 'agents'] });
+      queryClient.invalidateQueries({ queryKey: ['mesh', 'agent-paths'] });
     },
   });
 }

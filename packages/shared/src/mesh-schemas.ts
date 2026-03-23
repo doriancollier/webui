@@ -9,6 +9,7 @@
  */
 import { z } from 'zod';
 import { extendZodWithOpenApi } from '@asteasolutions/zod-to-openapi';
+import { AGENT_NAME_REGEX } from './validation.js';
 
 extendZodWithOpenApi(z);
 
@@ -335,7 +336,7 @@ export type ResolveAgentsResponse = z.infer<typeof ResolveAgentsResponseSchema>;
 /** Options for programmatic agent creation — used by CLI, client, and server creation pipeline. */
 export const CreateAgentOptionsSchema = z
   .object({
-    name: z.string().regex(/^[a-z][a-z0-9-]{0,62}[a-z0-9]$|^[a-z]$/, 'Kebab-case required'),
+    name: z.string().regex(AGENT_NAME_REGEX, 'Kebab-case required'),
     directory: z.string().optional(),
     template: z.string().optional(),
     description: z.string().optional(),

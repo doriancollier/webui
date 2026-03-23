@@ -1,14 +1,5 @@
-import { create } from 'zustand';
-
-interface AgentCreationState {
-  isOpen: boolean;
-  open: () => void;
-  close: () => void;
-}
-
-/** Global dialog state for the Create Agent dialog. */
-export const useAgentCreationStore = create<AgentCreationState>((set) => ({
-  isOpen: false,
-  open: () => set({ isOpen: true }),
-  close: () => set({ isOpen: false }),
-}));
+/**
+ * Re-export from shared layer — the store lives in shared/model to allow
+ * cross-feature access (command-palette, top-nav) without FSD violations.
+ */
+export { useAgentCreationStore } from '@/layers/shared/model';

@@ -9,7 +9,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/layers/shared/ui/responsive-dialog';
 import { DiscoveryView } from '@/layers/features/mesh';
-import { useAgentCreationStore } from '@/layers/features/agent-creation';
+import { useAgentCreationStore } from '@/layers/shared/model';
 import { useIsMobile } from '@/layers/shared/model';
 import { cn } from '@/layers/shared/lib';
 import type { AgentsSearch } from '@/router';

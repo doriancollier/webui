@@ -3,7 +3,7 @@ import { z } from 'zod';
 /** Sensitive fields that trigger a warning when set via CLI or API */
 export const SENSITIVE_CONFIG_KEYS = ['tunnel.authtoken', 'tunnel.auth'] as const;
 
-/** The three guided onboarding steps a first-time user walks through. */
+/** The guided onboarding steps a first-time user walks through. */
 export const ONBOARDING_STEPS = ['meet-dorkbot', 'discovery', 'pulse', 'adapters'] as const;
 
 export const OnboardingStepSchema = z.enum(ONBOARDING_STEPS);

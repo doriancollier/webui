@@ -35,6 +35,7 @@ import {
   classifyGigetError,
   execGitClone,
   downloadTemplate,
+  redactAuthTokens,
   TemplateDownloadError,
 } from '../template-downloader.js';
 
@@ -58,6 +59,32 @@ beforeEach(() => {
   // Default: gh CLI not available (most tests don't need auth)
   vi.mocked(execSync).mockImplementation(() => {
     throw new Error('gh not found');
+  });
+});
+
+describe('redactAuthTokens', () => {
+  it('redacts x-access-token from HTTPS URLs', () => {
+    const raw =
+      'fatal: could not read from https://x-access-token:ghp_abc123@github.com/org/repo.git';
+    expect(redactAuthTokens(raw)).toBe(
+      'fatal: could not read from https://x-access-token:[REDACTED]@github.com/org/repo.git'
+    );
+  });
+
+  it('redacts multiple tokens in the same message', () => {
+    const raw = 'tried https://x-access-token:tok1@a.com then https://x-access-token:tok2@b.com';
+    expect(redactAuthTokens(raw)).toBe(
+      'tried https://x-access-token:[REDACTED]@a.com then https://x-access-token:[REDACTED]@b.com'
+    );
+  });
+
+  it('returns the message unchanged when no token is present', () => {
+    const raw = 'fatal: repository not found';
+    expect(redactAuthTokens(raw)).toBe(raw);
+  });
+
+  it('handles empty string', () => {
+    expect(redactAuthTokens('')).toBe('');
   });
 });
 
@@ -246,6 +273,28 @@ describe('execGitClone', () => {
     mockProc._emit('close', 128);
 
     await expect(promise).rejects.toThrow('git clone exited with code 128');
+  });
+
+  it('redacts auth tokens from error messages on failure', async () => {
+    const mockProc = createMockProcess();
+    vi.mocked(spawn).mockReturnValue(mockProc);
+
+    const promise = execGitClone(
+      'https://github.com/org/repo.git',
+      '/tmp/target',
+      'ghp_secret_token'
+    );
+
+    mockProc.stderr!.emit(
+      'data',
+      Buffer.from(
+        'fatal: could not read from https://x-access-token:ghp_secret_token@github.com/org/repo.git'
+      )
+    );
+    mockProc._emit('close', 128);
+
+    await expect(promise).rejects.toThrow('[REDACTED]');
+    await expect(promise).rejects.not.toThrow('ghp_secret_token');
   });
 
   it('rejects on spawn error', async () => {

@@ -36,9 +36,14 @@ vi.mock('../../../lib/boundary.js', () => ({
   },
 }));
 
+vi.mock('../../../lib/logger.js', () => ({
+  logger: { debug: vi.fn(), warn: vi.fn(), info: vi.fn(), error: vi.fn() },
+}));
+
 vi.mock('../config-manager.js', () => ({
   configManager: {
-    get: vi.fn(() => ({ defaultDirectory: '/tmp/agents' })),
+    get: vi.fn(() => ({ defaultDirectory: '/tmp/agents', defaultAgent: 'dorkbot' })),
+    set: vi.fn(),
   },
 }));
 

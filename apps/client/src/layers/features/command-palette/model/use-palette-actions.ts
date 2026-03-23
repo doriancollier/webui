@@ -3,7 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '@/layers/shared/model';
 import { useTheme } from '@/layers/shared/model';
 import { useDirectoryState } from '@/layers/entities/session';
-import { useAgentCreationStore } from '@/layers/features/agent-creation';
+import { useAgentCreationStore } from '@/layers/shared/model';
 import { useAgentFrecency } from './use-agent-frecency';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 

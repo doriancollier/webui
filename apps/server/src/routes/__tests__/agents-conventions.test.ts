@@ -244,9 +244,11 @@ describe('Agent Convention File Operations', () => {
       expect(res.status).toBe(200);
       expect(mockWriteManifest).toHaveBeenCalledWith(
         '/home/user/project',
-        expect.objectContaining({ conventions })
+        expect.objectContaining({
+          conventions: expect.objectContaining({ soul: true, nope: false }),
+        })
       );
-      expect(res.body.conventions).toEqual(conventions);
+      expect(res.body.conventions).toEqual(expect.objectContaining({ soul: true, nope: false }));
     });
 
     it('does not write convention files when content is not provided', async () => {

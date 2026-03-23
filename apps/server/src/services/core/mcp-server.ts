@@ -434,7 +434,6 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
     {
       name: z.string().describe('Agent name (kebab-case, e.g. my-agent)'),
       directory: z.string().optional().describe('Optional workspace directory path'),
-      template: z.string().optional().describe('Optional template ID or GitHub URL'),
       description: z.string().optional().describe('Optional agent description'),
       runtime: z.string().optional().describe('Agent runtime (default: claude-code)'),
     },

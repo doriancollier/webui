@@ -1,7 +1,16 @@
 {
   "version": 1,
-  "nextNumber": 187,
+  "nextNumber": 188,
   "decisions": [
+    {
+      "number": 187,
+      "slug": "typed-adapter-icon-identifiers",
+      "title": "Typed Adapter Icon Identifiers Replace Emoji Icons",
+      "status": "draft",
+      "created": "2026-03-23",
+      "extractedFrom": "real-brand-adapter-logos",
+      "specSlug": "real-brand-adapter-logos"
+    },
     {
       "number": 185,
       "slug": "two-layer-dorkos-knowledge-architecture",

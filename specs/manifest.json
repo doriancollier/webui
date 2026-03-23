@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "nextNumber": 170,
+  "nextNumber": 171,
   "specs": [
+    {
+      "number": 170,
+      "slug": "real-brand-adapter-logos",
+      "title": "Real Brand Adapter Logos",
+      "created": "2026-03-23",
+      "status": "specified"
+    },
     {
       "number": 169,
       "slug": "tool-call-display-overhaul",

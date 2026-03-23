@@ -53,7 +53,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
       setDirection(1);
       setCurrentStep((prev) => prev + 1);
     } else {
-      // Also mark adapters as skipped since we removed that step
+      // Mark adapters as completed since we removed that step from the visible flow
       completeStep('adapters');
       setShowComplete(true);
     }

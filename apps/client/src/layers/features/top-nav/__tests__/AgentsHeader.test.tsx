@@ -15,18 +15,15 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => mockNavigate,
 }));
 
+const mockOpenCreateDialog = vi.fn();
 vi.mock('@/layers/shared/model', () => ({
   useIsMobile: () => mockIsMobile,
+  useAgentCreationStore: (selector: (s: { open: () => void }) => unknown) =>
+    selector({ open: mockOpenCreateDialog }),
 }));
 
 vi.mock('@/layers/features/mesh', () => ({
   DiscoveryView: () => <div data-testid="discovery-view">DiscoveryView</div>,
-}));
-
-const mockOpenCreateDialog = vi.fn();
-vi.mock('@/layers/features/agent-creation', () => ({
-  useAgentCreationStore: (selector: (s: { open: () => void }) => unknown) =>
-    selector({ open: mockOpenCreateDialog }),
 }));
 
 vi.mock('../ui/CommandPaletteTrigger', () => ({

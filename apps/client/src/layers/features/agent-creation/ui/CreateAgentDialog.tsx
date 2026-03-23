@@ -25,6 +25,7 @@ import {
 import { cn } from '@/layers/shared/lib';
 import { useAgentCreationStore } from '../model/store';
 import { useCreateAgent } from '../model/use-create-agent';
+import { TemplatePicker } from './TemplatePicker';
 
 const DEFAULT_TRAITS: Traits = {
   tone: 3,
@@ -56,6 +57,8 @@ export function CreateAgentDialog() {
   // Form state
   const [name, setName] = useState('');
   const [directoryOverride, setDirectoryOverride] = useState('');
+  const [template, setTemplate] = useState<string | null>(null);
+  const [templateOpen, setTemplateOpen] = useState(false);
   const [traits, setTraits] = useState<Traits>({ ...DEFAULT_TRAITS });
   const [personalityOpen, setPersonalityOpen] = useState(false);
 
@@ -81,6 +84,7 @@ export function CreateAgentDialog() {
       {
         name,
         ...(directoryOverride ? { directory: directoryOverride } : {}),
+        ...(template ? { template } : {}),
         traits,
       },
       {
@@ -94,11 +98,13 @@ export function CreateAgentDialog() {
         },
       }
     );
-  }, [canSubmit, name, directoryOverride, traits, createAgent, close]);
+  }, [canSubmit, name, directoryOverride, template, traits, createAgent, close]);
 
   function resetForm() {
     setName('');
     setDirectoryOverride('');
+    setTemplate(null);
+    setTemplateOpen(false);
     setTraits({ ...DEFAULT_TRAITS });
     setPersonalityOpen(false);
   }
@@ -153,6 +159,32 @@ export function CreateAgentDialog() {
               onChange={(e) => setDirectoryOverride(e.target.value)}
             />
           </div>
+
+          {/* Template section (collapsible) */}
+          <Collapsible open={templateOpen} onOpenChange={setTemplateOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="text-muted-foreground hover:text-foreground flex w-full items-center gap-1 text-sm transition-colors"
+                data-testid="template-toggle"
+              >
+                <ChevronDown
+                  className={cn('size-4 transition-transform', templateOpen && 'rotate-180')}
+                />
+                Template
+                {template && (
+                  <span className="bg-primary/10 text-primary ml-1 rounded px-1.5 py-0.5 text-xs">
+                    selected
+                  </span>
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="pt-3" data-testid="template-section">
+                <TemplatePicker selectedTemplate={template} onSelect={setTemplate} />
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Personality section (collapsible) */}
           <Collapsible open={personalityOpen} onOpenChange={setPersonalityOpen}>

@@ -19,3 +19,4 @@ export { useInteractiveShortcuts } from './use-interactive-shortcuts';
 export { useLongPress } from './use-long-press';
 export { useFeatureEnabled } from './use-feature-enabled';
 export { useNow } from './use-now';
+export { useAgentCreationStore } from './agent-creation-store';
