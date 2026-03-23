@@ -43,6 +43,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const taskState = useTaskState(sessionId);
   const celebrations = useCelebrations();
   const enableNotificationSound = useAppStore((s) => s.enableNotificationSound);
+  const dorkbotFirstMessage = useAppStore((s) => s.dorkbotFirstMessage);
+  const setDorkbotFirstMessage = useAppStore((s) => s.setDorkbotFirstMessage);
   const [cwd] = useDirectoryState();
 
   const fileUpload = useFileUpload();
@@ -292,10 +294,29 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
           </div>
         ) : messages.length === 0 ? (
           <div className="flex h-full items-center justify-center">
-            <div className="text-center">
-              <p className="text-muted-foreground text-base">Start a conversation</p>
-              <p className="text-muted-foreground/60 mt-2 text-sm">Type a message below to begin</p>
-            </div>
+            {dorkbotFirstMessage ? (
+              <div className="flex flex-col items-center gap-4 text-center">
+                <motion.div
+                  layoutId="dorkbot-first-message"
+                  className="bg-muted/50 w-full max-w-md rounded-lg border p-4"
+                  data-testid="dorkbot-welcome-message"
+                  onLayoutAnimationComplete={() => {
+                    // Clear after the layout animation fires once so it becomes a normal element
+                    setDorkbotFirstMessage(null);
+                  }}
+                >
+                  <p className="text-muted-foreground text-sm">{dorkbotFirstMessage}</p>
+                </motion.div>
+                <p className="text-muted-foreground/60 text-sm">Type a message below to begin</p>
+              </div>
+            ) : (
+              <div className="text-center">
+                <p className="text-muted-foreground text-base">Start a conversation</p>
+                <p className="text-muted-foreground/60 mt-2 text-sm">
+                  Type a message below to begin
+                </p>
+              </div>
+            )}
           </div>
         ) : (
           <MessageList

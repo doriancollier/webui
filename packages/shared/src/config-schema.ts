@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const SENSITIVE_CONFIG_KEYS = ['tunnel.authtoken', 'tunnel.auth'] as const;
 
 /** The three guided onboarding steps a first-time user walks through. */
-export const ONBOARDING_STEPS = ['discovery', 'pulse', 'adapters'] as const;
+export const ONBOARDING_STEPS = ['meet-dorkbot', 'discovery', 'pulse', 'adapters'] as const;
 
 export const OnboardingStepSchema = z.enum(ONBOARDING_STEPS);
 export type OnboardingStep = z.infer<typeof OnboardingStepSchema>;
@@ -108,6 +108,12 @@ export const UserConfigSchema = z.object({
       maxFiles: 10,
       allowedTypes: ['*/*'],
     })),
+  agents: z
+    .object({
+      defaultDirectory: z.string().default('~/.dork/agents'),
+      defaultAgent: z.string().default('dorkbot'),
+    })
+    .default(() => ({ defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' })),
 });
 
 export type UserConfig = z.infer<typeof UserConfigSchema>;

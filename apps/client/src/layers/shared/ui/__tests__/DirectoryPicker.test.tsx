@@ -8,6 +8,11 @@ import type { Transport } from '@dorkos/shared/transport';
 import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { DirectoryPicker } from '../DirectoryPicker';
+import { toast } from 'sonner';
+
+vi.mock('sonner', () => ({
+  toast: { error: vi.fn(), success: vi.fn() },
+}));
 
 // Mock app-store (recentCwds)
 vi.mock('@/layers/shared/model/app-store', () => ({
@@ -66,6 +71,14 @@ function renderPicker(props: { onSelect?: (path: string) => void; initialPath?: 
       </TransportProvider>
     </QueryClientProvider>
   );
+}
+
+/** Switch to browse view and wait for entries to appear. */
+async function switchToBrowse() {
+  fireEvent.click(screen.getByLabelText('Browse directories'));
+  await waitFor(() => {
+    expect(screen.getByText('Documents')).toBeDefined();
+  });
 }
 
 describe('DirectoryPicker', () => {
@@ -134,5 +147,152 @@ describe('DirectoryPicker', () => {
     fireEvent.click(screen.getByText('~/project-a'));
 
     expect(onSelect).toHaveBeenCalledWith('/home/user/project-a');
+  });
+
+  // --- New Folder tests ---
+
+  describe('New Folder', () => {
+    it('renders New Folder button in browse toolbar', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      expect(screen.getByLabelText('New Folder')).toBeDefined();
+    });
+
+    it('shows inline text input when New Folder is clicked', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+
+      const input = screen.getByLabelText('New folder name');
+      expect(input).toBeDefined();
+      expect(document.activeElement).toBe(input);
+    });
+
+    it('shows error text for invalid folder name', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      const input = screen.getByLabelText('New folder name');
+
+      fireEvent.change(input, { target: { value: 'INVALID_NAME' } });
+
+      expect(
+        screen.getByText('Lowercase letters, numbers, and hyphens only. Must start with a letter.')
+      ).toBeDefined();
+    });
+
+    it('enables confirm button for valid name', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      const input = screen.getByLabelText('New folder name');
+
+      fireEvent.change(input, { target: { value: 'my-new-folder' } });
+
+      const confirmBtn = screen.getByLabelText('Confirm new folder');
+      expect(confirmBtn).not.toHaveProperty('disabled', true);
+    });
+
+    it('disables confirm button when name has error', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      const input = screen.getByLabelText('New folder name');
+
+      fireEvent.change(input, { target: { value: '-bad' } });
+
+      const confirmBtn = screen.getByLabelText('Confirm new folder');
+      expect((confirmBtn as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it('calls transport.createDirectory on Enter key', async () => {
+      vi.mocked(mockTransport.createDirectory).mockResolvedValue({
+        path: '/home/user/my-folder',
+      });
+
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      const input = screen.getByLabelText('New folder name');
+
+      fireEvent.change(input, { target: { value: 'my-folder' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() => {
+        expect(mockTransport.createDirectory).toHaveBeenCalledWith('/home/user', 'my-folder');
+      });
+    });
+
+    it('cancels inline input on Escape key', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      expect(screen.getByLabelText('New folder name')).toBeDefined();
+
+      fireEvent.keyDown(screen.getByLabelText('New folder name'), { key: 'Escape' });
+
+      expect(screen.queryByLabelText('New folder name')).toBeNull();
+    });
+
+    it('cancels inline input on X button click', async () => {
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      expect(screen.getByLabelText('New folder name')).toBeDefined();
+
+      fireEvent.click(screen.getByLabelText('Cancel new folder'));
+
+      expect(screen.queryByLabelText('New folder name')).toBeNull();
+    });
+
+    it('refetches directory listing on success', async () => {
+      vi.mocked(mockTransport.createDirectory).mockResolvedValue({
+        path: '/home/user/new-dir',
+      });
+
+      renderPicker();
+      await switchToBrowse();
+
+      // Record call count before create
+      const callsBefore = vi.mocked(mockTransport.browseDirectory).mock.calls.length;
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      fireEvent.change(screen.getByLabelText('New folder name'), {
+        target: { value: 'new-dir' },
+      });
+      fireEvent.keyDown(screen.getByLabelText('New folder name'), { key: 'Enter' });
+
+      await waitFor(() => {
+        // browseDirectory should have been called again after folder creation
+        expect(vi.mocked(mockTransport.browseDirectory).mock.calls.length).toBeGreaterThan(
+          callsBefore
+        );
+      });
+    });
+
+    it('shows toast on creation error', async () => {
+      vi.mocked(mockTransport.createDirectory).mockRejectedValue(new Error('Permission denied'));
+
+      renderPicker();
+      await switchToBrowse();
+
+      fireEvent.click(screen.getByLabelText('New Folder'));
+      fireEvent.change(screen.getByLabelText('New folder name'), {
+        target: { value: 'my-folder' },
+      });
+      fireEvent.keyDown(screen.getByLabelText('New folder name'), { key: 'Enter' });
+
+      await waitFor(() => {
+        expect(toast.error).toHaveBeenCalledWith('Permission denied');
+      });
+    });
   });
 });

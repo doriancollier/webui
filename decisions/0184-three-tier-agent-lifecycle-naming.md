@@ -1,7 +1,7 @@
 ---
 number: 184
 title: Three-Tier Agent Lifecycle Naming (Create > Init > Register)
-status: draft
+status: proposed
 created: 2026-03-23
 spec: agent-creation-and-templates
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: agent-creation-and-templates)
+Proposed
 
 ## Context
 

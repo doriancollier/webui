@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Palette, Settings2, LayoutList, Server, Wrench, Cog } from 'lucide-react';
+import { Palette, Settings2, LayoutList, Server, Wrench, Cog, Bot } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTransport, useAppStore, useTheme } from '@/layers/shared/model';
 import { FONT_CONFIGS, type FontFamilyKey } from '@/layers/shared/lib';
@@ -32,6 +32,7 @@ import { TunnelDialog } from './TunnelDialog';
 import { AdvancedTab } from './AdvancedTab';
 import { ServerRestartOverlay } from './ServerRestartOverlay';
 import { ToolsTab } from './ToolsTab';
+import { AgentsTab } from './AgentsTab';
 
 interface SettingsDialogProps {
   open: boolean;
@@ -127,6 +128,9 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               </NavigationLayoutItem>
               <NavigationLayoutItem value="tools" icon={Wrench}>
                 Tools
+              </NavigationLayoutItem>
+              <NavigationLayoutItem value="agents" icon={Bot}>
+                Agents
               </NavigationLayoutItem>
               <NavigationLayoutItem value="advanced" icon={Cog}>
                 Advanced
@@ -394,6 +398,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                 <div className="space-y-4">
                   <NavigationLayoutPanelHeader>Tools</NavigationLayoutPanelHeader>
                   <ToolsTab />
+                </div>
+              </NavigationLayoutPanel>
+
+              <NavigationLayoutPanel value="agents">
+                <div className="space-y-4">
+                  <NavigationLayoutPanelHeader>Agents</NavigationLayoutPanelHeader>
+                  <AgentsTab />
                 </div>
               </NavigationLayoutPanel>
 

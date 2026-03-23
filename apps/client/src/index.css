@@ -409,6 +409,26 @@ body {
   }
 }
 
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+.dorkbot-avatar {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.dorkbot-avatar.reacting {
+  animation-duration: 0.8s;
+}
+
 @keyframes shimmer-pulse {
   0%,
   100% {

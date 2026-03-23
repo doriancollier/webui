@@ -333,6 +333,7 @@ export const UserConfigSchema = z.object({
   agents: z
     .object({
       defaultDirectory: z.string().default('~/.dork/agents'),
+      defaultAgent: z.string().default('dorkbot'), // Name of the primary/default agent
     })
     .default({}),
   // ... existing fields ...
@@ -793,6 +794,37 @@ If DorkBot is deleted, a "Recreate DorkBot" button appears in Settings → Agent
 6. On success: toast "DorkBot recreated", invalidate queries
 
 **Key principle:** DorkBot won't auto-recreate if deleted. That would be presumptuous. The user made a deliberate choice; we respect it and provide a manual restoration path.
+
+### 10.5 Default/Primary Agent
+
+The system tracks which agent is the "default" or "primary" agent via `config.agents.defaultAgent` (default: `'dorkbot'`). This is the agent that:
+
+- Is opened after onboarding completes (post-onboarding navigation uses this, not hardcoded 'dorkbot')
+- Could be used as the default session target for quick actions
+
+**Changing the default agent:**
+
+In Settings → Agents section, a "Default Agent" dropdown allows the user to select any registered agent as the primary. On the `/agents` page, each agent card has a "Set as Default" action in its context menu (or a star/pin icon).
+
+```typescript
+// Transport method
+setDefaultAgent(agentName: string): Promise<void>;
+
+// Server endpoint
+PUT /api/config/agents/defaultAgent
+Body: { value: "my-other-agent" }
+```
+
+When an agent is created via `createAgent()`, if it's the first agent ever (no default set), it becomes the default automatically.
+
+**Post-onboarding navigation update:**
+
+```typescript
+// Uses config, not hardcoded 'dorkbot'
+const defaultAgent = config.agents?.defaultAgent || 'dorkbot';
+const agentPath = path.join(config.agents.defaultDirectory, defaultAgent);
+navigate({ to: '/session', search: { dir: agentPath } });
+```
 
 ### 11. Name Validation
 

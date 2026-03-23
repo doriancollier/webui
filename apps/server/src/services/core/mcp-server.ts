@@ -38,6 +38,7 @@ import {
   createRelayGetTraceHandler,
   createRelayGetMetricsHandler,
 } from '../runtimes/claude-code/mcp-tools/trace-tools.js';
+import { createCreateAgentHandler } from '../runtimes/claude-code/mcp-tools/agent-tools.js';
 import {
   createMeshDiscoverHandler,
   createMeshRegisterHandler,
@@ -424,6 +425,20 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
       namespace: z.string().optional().describe('Caller namespace (omit for admin view)'),
     },
     createMeshQueryTopologyHandler(deps)
+  );
+
+  // ── Agent tools ────────────────────────────────────────────────────────
+  server.tool(
+    'create_agent',
+    'Create a new DorkOS agent workspace with scaffolded config files',
+    {
+      name: z.string().describe('Agent name (kebab-case, e.g. my-agent)'),
+      directory: z.string().optional().describe('Optional workspace directory path'),
+      template: z.string().optional().describe('Optional template ID or GitHub URL'),
+      description: z.string().optional().describe('Optional agent description'),
+      runtime: z.string().optional().describe('Agent runtime (default: claude-code)'),
+    },
+    createCreateAgentHandler(deps)
   );
 
   return server;

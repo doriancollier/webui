@@ -78,7 +78,7 @@ Transport
 
   -- Agent Identity --
   getAgentByPath(cwd)        -> AgentManifest | null
-  createAgent(cwd, name?, description?, runtime?) -> AgentManifest
+  initAgent(cwd, name?, description?, runtime?) -> AgentManifest
   updateAgentByPath(cwd, updates) -> AgentManifest
   resolveAgents(paths)       -> Record<string, AgentManifest | null>
 ```

@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTransport, useAppStore, type RecentCwd } from '@/layers/shared/model';
 import {
   formatRelativeTime,
@@ -15,7 +15,19 @@ import {
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from './responsive-dialog';
-import { Folder, FolderOpen, Eye, EyeOff, Clock, Loader2 } from 'lucide-react';
+import {
+  Folder,
+  FolderOpen,
+  Eye,
+  EyeOff,
+  Clock,
+  Loader2,
+  FolderPlus,
+  Check,
+  X,
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { validateAgentName } from '@dorkos/shared/validation';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 
 type PickerView = 'browse' | 'recent';
@@ -54,12 +66,18 @@ export function DirectoryPicker({
   resolvedAgents,
 }: DirectoryPickerProps) {
   const transport = useTransport();
+  const queryClient = useQueryClient();
   const { recentCwds } = useAppStore();
   const [currentPath, setCurrentPath] = useState(initialPath || '');
   const [showHidden, setShowHidden] = useState(false);
   const [view, setView] = useState<PickerView>(() =>
     getInitialView(recentCwds, initialPath ?? null)
   );
+
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newFolderError, setNewFolderError] = useState<string | null>(null);
+  const newFolderInputRef = useRef<HTMLInputElement>(null);
 
   const onClose = useCallback(() => onOpenChange(false), [onOpenChange]);
 
@@ -100,6 +118,60 @@ export function DirectoryPicker({
     },
     [onSelect, onClose]
   );
+
+  const startCreatingFolder = useCallback(() => {
+    setIsCreatingFolder(true);
+    setNewFolderName('');
+    setNewFolderError(null);
+  }, []);
+
+  const cancelCreatingFolder = useCallback(() => {
+    setIsCreatingFolder(false);
+    setNewFolderName('');
+    setNewFolderError(null);
+  }, []);
+
+  const handleNewFolderNameChange = useCallback((value: string) => {
+    setNewFolderName(value);
+    if (!value) {
+      setNewFolderError(null);
+      return;
+    }
+    const result = validateAgentName(value);
+    setNewFolderError(result.valid ? null : (result.error ?? 'Invalid name'));
+  }, []);
+
+  const confirmCreateFolder = useCallback(async () => {
+    if (!data?.path || !newFolderName || newFolderError) return;
+    try {
+      const result = await transport.createDirectory(data.path, newFolderName);
+      setIsCreatingFolder(false);
+      setNewFolderName('');
+      setNewFolderError(null);
+      // Invalidate to refetch the listing with the new folder visible
+      await queryClient.invalidateQueries({ queryKey: ['directory', currentPath, showHidden] });
+      // Auto-navigate into the new folder
+      handleNavigate(result.path);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to create folder');
+    }
+  }, [
+    data?.path,
+    newFolderName,
+    newFolderError,
+    transport,
+    queryClient,
+    currentPath,
+    showHidden,
+    handleNavigate,
+  ]);
+
+  // Focus the input when the new folder row appears
+  useEffect(() => {
+    if (isCreatingFolder) {
+      newFolderInputRef.current?.focus();
+    }
+  }, [isCreatingFolder]);
 
   const toggleBtn = (active: boolean, position: 'left' | 'right') =>
     `p-1.5 transition-colors ${position === 'left' ? 'rounded-l-md' : 'rounded-r-md'} ${
@@ -152,6 +224,14 @@ export function DirectoryPicker({
               />
               <div className="flex-1" />
               <button
+                onClick={startCreatingFolder}
+                className="hover:bg-accent flex-shrink-0 rounded p-1 transition-colors max-md:p-2"
+                aria-label="New Folder"
+                title="New Folder"
+              >
+                <FolderPlus className="text-muted-foreground size-(--size-icon-sm)" />
+              </button>
+              <button
                 onClick={() => setShowHidden(!showHidden)}
                 className="hover:bg-accent flex-shrink-0 rounded p-1 transition-colors max-md:p-2"
                 aria-label={showHidden ? 'Hide hidden folders' : 'Show hidden folders'}
@@ -183,6 +263,44 @@ export function DirectoryPicker({
                 </div>
               ) : (
                 <div className="py-1">
+                  {isCreatingFolder && (
+                    <div className="flex items-center gap-2 px-4 py-1.5">
+                      <FolderPlus className="text-muted-foreground size-(--size-icon-md) flex-shrink-0" />
+                      <input
+                        ref={newFolderInputRef}
+                        type="text"
+                        value={newFolderName}
+                        onChange={(e) => handleNewFolderNameChange(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') void confirmCreateFolder();
+                          if (e.key === 'Escape') cancelCreatingFolder();
+                        }}
+                        placeholder="folder-name"
+                        aria-label="New folder name"
+                        className={`min-w-0 flex-1 rounded border bg-transparent px-2 py-0.5 text-sm outline-none ${
+                          newFolderError ? 'border-destructive' : 'border-border'
+                        }`}
+                      />
+                      <button
+                        onClick={() => void confirmCreateFolder()}
+                        disabled={!newFolderName || !!newFolderError}
+                        aria-label="Confirm new folder"
+                        className="hover:bg-accent flex-shrink-0 rounded p-0.5 transition-colors disabled:opacity-30"
+                      >
+                        <Check className="size-(--size-icon-sm)" />
+                      </button>
+                      <button
+                        onClick={cancelCreatingFolder}
+                        aria-label="Cancel new folder"
+                        className="hover:bg-accent flex-shrink-0 rounded p-0.5 transition-colors"
+                      >
+                        <X className="text-muted-foreground size-(--size-icon-sm)" />
+                      </button>
+                    </div>
+                  )}
+                  {isCreatingFolder && newFolderError && (
+                    <p className="text-destructive px-4 pb-1 text-xs">{newFolderError}</p>
+                  )}
                   {data?.parent && (
                     <button
                       onClick={() => handleNavigate(data.parent!)}

@@ -14,5 +14,14 @@ export { initSSEStream, sendSSEEvent, endSSEStream } from './stream-adapter.js';
 export { TunnelManager, tunnelManager } from './tunnel-manager.js';
 export type { TunnelConfig } from './tunnel-manager.js';
 export type { TunnelStatus } from '@dorkos/shared/types';
+export {
+  downloadTemplate,
+  resolveGitUrl,
+  resolveGitAuth,
+  execGitClone,
+  classifyGigetError,
+  TemplateDownloadError,
+} from './template-downloader.js';
+export type { ProgressCallback, TemplateErrorCode } from './template-downloader.js';
 export { getLatestVersion, resetCache } from './update-checker.js';
 export { uploadHandler } from './upload-handler.js';

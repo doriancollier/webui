@@ -181,4 +181,57 @@ describe('buildAgentBlock conventions', () => {
     const result = await buildAgentBlock('/test');
     expect(result).not.toContain('<agent_persona>');
   });
+
+  it('injects <dorkos_context> by default when conventions is undefined', async () => {
+    vi.mocked(readManifest).mockResolvedValue(createTestManifest());
+    vi.mocked(readConventionFile).mockResolvedValue(null);
+
+    const result = await buildAgentBlock('/test');
+    expect(result).toContain('<dorkos_context>');
+    expect(result).toContain('DorkOS is the operating system');
+    expect(result).toContain('</dorkos_context>');
+  });
+
+  it('injects <dorkos_context> when dorkosKnowledge is true', async () => {
+    vi.mocked(readManifest).mockResolvedValue(
+      createTestManifest({ conventions: { soul: true, nope: true, dorkosKnowledge: true } })
+    );
+    vi.mocked(readConventionFile).mockResolvedValue(null);
+
+    const result = await buildAgentBlock('/test');
+    expect(result).toContain('<dorkos_context>');
+  });
+
+  it('omits <dorkos_context> when dorkosKnowledge is false', async () => {
+    vi.mocked(readManifest).mockResolvedValue(
+      createTestManifest({ conventions: { soul: true, nope: true, dorkosKnowledge: false } })
+    );
+    vi.mocked(readConventionFile).mockResolvedValue(null);
+
+    const result = await buildAgentBlock('/test');
+    expect(result).not.toContain('<dorkos_context>');
+  });
+
+  it('injects <dorkos_context> when conventions exists but dorkosKnowledge is not set', async () => {
+    vi.mocked(readManifest).mockResolvedValue(
+      createTestManifest({ conventions: { soul: true, nope: true } })
+    );
+    vi.mocked(readConventionFile).mockResolvedValue(null);
+
+    const result = await buildAgentBlock('/test');
+    expect(result).toContain('<dorkos_context>');
+  });
+
+  it('<dorkos_context> contains subsystem and doc links', async () => {
+    vi.mocked(readManifest).mockResolvedValue(createTestManifest());
+    vi.mocked(readConventionFile).mockResolvedValue(null);
+
+    const result = await buildAgentBlock('/test');
+    expect(result).toContain('Console (chat)');
+    expect(result).toContain('Pulse (scheduling)');
+    expect(result).toContain('Relay (messaging)');
+    expect(result).toContain('Mesh (discovery)');
+    expect(result).toContain('https://dorkos.ai/llms.txt');
+    expect(result).toContain('https://dorkos.ai/docs');
+  });
 });

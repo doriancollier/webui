@@ -4,6 +4,7 @@ import {
   USER_CONFIG_DEFAULTS,
   SENSITIVE_CONFIG_KEYS,
   LOG_LEVEL_MAP,
+  ONBOARDING_STEPS,
 } from '../config-schema.js';
 import type { UserConfig } from '../config-schema.js';
 
@@ -22,6 +23,7 @@ describe('UserConfigSchema', () => {
       onboarding: { completedSteps: [], skippedSteps: [], startedAt: null, dismissedAt: null },
       agentContext: { relayTools: true, meshTools: true, adapterTools: true, pulseTools: true },
       uploads: { maxFileSize: 10 * 1024 * 1024, maxFiles: 10, allowedTypes: ['*/*'] },
+      agents: { defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' },
     });
   });
 
@@ -201,6 +203,7 @@ describe('USER_CONFIG_DEFAULTS', () => {
       onboarding: { completedSteps: [], skippedSteps: [], startedAt: null, dismissedAt: null },
       agentContext: { relayTools: true, meshTools: true, adapterTools: true, pulseTools: true },
       uploads: { maxFileSize: 10 * 1024 * 1024, maxFiles: 10, allowedTypes: ['*/*'] },
+      agents: { defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' },
     });
   });
 
@@ -313,5 +316,57 @@ describe('LOG_LEVEL_MAP', () => {
     const values = Object.values(LOG_LEVEL_MAP);
     expect(new Set(values).size).toBe(values.length);
     expect(values.every(Number.isInteger)).toBe(true);
+  });
+});
+
+describe('ONBOARDING_STEPS', () => {
+  it('includes meet-dorkbot', () => {
+    expect(ONBOARDING_STEPS).toContain('meet-dorkbot');
+  });
+
+  it('has meet-dorkbot as the first step', () => {
+    expect(ONBOARDING_STEPS[0]).toBe('meet-dorkbot');
+  });
+
+  it('contains all expected steps', () => {
+    expect(ONBOARDING_STEPS).toEqual(['meet-dorkbot', 'discovery', 'pulse', 'adapters']);
+  });
+});
+
+describe('UserConfigSchema agents', () => {
+  it('agents.defaultDirectory defaults to ~/.dork/agents', () => {
+    const result = UserConfigSchema.parse({ version: 1 });
+    expect(result.agents.defaultDirectory).toBe('~/.dork/agents');
+  });
+
+  it('agents.defaultAgent defaults to dorkbot', () => {
+    const result = UserConfigSchema.parse({ version: 1 });
+    expect(result.agents.defaultAgent).toBe('dorkbot');
+  });
+
+  it('accepts custom agents.defaultDirectory', () => {
+    const result = UserConfigSchema.parse({
+      version: 1,
+      agents: { defaultDirectory: '/custom/agents' },
+    });
+    expect(result.agents.defaultDirectory).toBe('/custom/agents');
+  });
+
+  it('accepts custom agents.defaultAgent', () => {
+    const result = UserConfigSchema.parse({
+      version: 1,
+      agents: { defaultAgent: 'my-agent' },
+    });
+    expect(result.agents.defaultAgent).toBe('my-agent');
+  });
+
+  it('agents section defaults when omitted', () => {
+    const result = UserConfigSchema.parse({ version: 1 });
+    expect(result.agents).toEqual({ defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' });
+  });
+
+  it('agents section defaults when empty object provided', () => {
+    const result = UserConfigSchema.parse({ version: 1, agents: {} });
+    expect(result.agents).toEqual({ defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' });
   });
 });

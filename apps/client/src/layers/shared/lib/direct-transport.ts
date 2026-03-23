@@ -1,4 +1,5 @@
 import type { Transport, UploadFile } from '@dorkos/shared/transport';
+import type { TemplateEntry } from '@dorkos/shared/template-catalog';
 import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import type {
@@ -273,7 +274,7 @@ export class DirectTransport implements Transport {
     return result;
   }
 
-  async createAgent(
+  async initAgent(
     agentPath: string,
     name?: string,
     description?: string,
@@ -325,6 +326,26 @@ export class DirectTransport implements Transport {
     };
   }
 
+  // --- Directory Operations ---
+
+  /** Create a new directory using direct filesystem access. */
+  async createDirectory(parentPath: string, folderName: string): Promise<{ path: string }> {
+    const fs = await import('fs/promises');
+    const pathMod = await import('path');
+    const newDirPath = pathMod.default.join(parentPath, folderName);
+
+    try {
+      await fs.default.access(newDirPath);
+      throw new Error('Directory already exists');
+    } catch (err: unknown) {
+      if (err instanceof Error && err.message === 'Directory already exists') throw err;
+      // Expected — directory does not exist yet
+    }
+
+    await fs.default.mkdir(newDirPath, { recursive: true });
+    return { path: newDirPath };
+  }
+
   // --- File Uploads ---
 
   /** Upload files to `{cwd}/.dork/.temp/uploads/` using direct filesystem access. */
@@ -362,6 +383,13 @@ export class DirectTransport implements Transport {
     return results;
   }
 
+  // --- Templates ---
+
+  async getTemplates(): Promise<TemplateEntry[]> {
+    const { DEFAULT_TEMPLATES } = await import('@dorkos/shared/template-catalog');
+    return DEFAULT_TEMPLATES;
+  }
+
   // --- Embedded mode stubs (Pulse, Relay, Mesh, etc.) ---
   // These subsystems are server-only. See embedded-mode-stubs.ts for implementations.
 
@@ -372,6 +400,8 @@ export class DirectTransport implements Transport {
   resetAllData = serverOnlyStubs.resetAllData;
   restartServer = serverOnlyStubs.restartServer;
   scan = serverOnlyStubs.scan;
+  createAgent = serverOnlyStubs.createAgent;
+  setDefaultAgent = serverOnlyStubs.setDefaultAgent;
 
   listSchedules = pulseStubs.listSchedules;
   createSchedule = pulseStubs.createSchedule;

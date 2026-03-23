@@ -235,8 +235,11 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     // Agent Identity
     getAgentByPath: vi.fn().mockResolvedValue(null),
     resolveAgents: vi.fn().mockResolvedValue({}),
-    createAgent: vi.fn().mockResolvedValue(mockAgent),
+    initAgent: vi.fn().mockResolvedValue(mockAgent),
     updateAgentByPath: vi.fn().mockResolvedValue(mockAgent),
+    createAgent: vi.fn().mockResolvedValue(mockAgent),
+    // Default Agent
+    setDefaultAgent: vi.fn().mockResolvedValue(undefined),
     // Relay Bindings
     getBindings: vi.fn().mockResolvedValue([]),
     createBinding: vi.fn().mockResolvedValue({
@@ -265,6 +268,8 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
         ...updates,
       })),
     updateConfig: vi.fn().mockResolvedValue(undefined),
+    // Directory Operations
+    createDirectory: vi.fn().mockResolvedValue({ path: '/test/new-folder' }),
     // Discovery
     scan: vi.fn().mockResolvedValue(undefined),
     // Uploads
@@ -273,6 +278,8 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     getMcpConfig: vi.fn().mockResolvedValue({ servers: [] }),
     resetAllData: vi.fn().mockResolvedValue({ message: 'Reset initiated. Server will restart.' }),
     restartServer: vi.fn().mockResolvedValue({ message: 'Restart initiated.' }),
+    // Templates
+    getTemplates: vi.fn().mockResolvedValue([]),
     ...overrides,
   };
 }

@@ -9,6 +9,7 @@ export type { PulsePreset } from '@/layers/entities/pulse';
 export { PresetCard } from '@/layers/features/pulse';
 export { OnboardingFlow } from './ui/OnboardingFlow';
 export { WelcomeStep } from './ui/WelcomeStep';
+export { MeetDorkBotStep } from './ui/MeetDorkBotStep';
 export { AgentDiscoveryStep } from './ui/AgentDiscoveryStep';
 export { NoAgentsFound } from './ui/NoAgentsFound';
 export { PulsePresetsStep } from './ui/PulsePresetsStep';

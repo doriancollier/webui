@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Button, Input, Textarea, DirectoryPicker, Label } from '@/layers/shared/ui';
-import { useCreateAgent } from '@/layers/entities/agent';
+import { useInitAgent } from '@/layers/entities/agent';
 import { FolderOpen, Loader2, CheckCircle2, Bot } from 'lucide-react';
 import { shortenHomePath } from '@/layers/shared/lib';
 
@@ -22,12 +22,12 @@ export function NoAgentsFound({ onAgentCreated }: NoAgentsFoundProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [created, setCreated] = useState(false);
 
-  const createAgent = useCreateAgent();
+  const initAgent = useInitAgent();
 
   const handleCreate = useCallback(() => {
     if (!directory || !name.trim()) return;
 
-    createAgent.mutate(
+    initAgent.mutate(
       {
         path: directory,
         name: name.trim(),
@@ -41,7 +41,7 @@ export function NoAgentsFound({ onAgentCreated }: NoAgentsFoundProps) {
         },
       }
     );
-  }, [directory, name, persona, createAgent, onAgentCreated]);
+  }, [directory, name, persona, initAgent, onAgentCreated]);
 
   if (created) {
     return (
@@ -121,9 +121,9 @@ export function NoAgentsFound({ onAgentCreated }: NoAgentsFoundProps) {
         <Button
           className="w-full"
           onClick={handleCreate}
-          disabled={!directory || !name.trim() || createAgent.isPending}
+          disabled={!directory || !name.trim() || initAgent.isPending}
         >
-          {createAgent.isPending ? (
+          {initAgent.isPending ? (
             <>
               <Loader2 className="size-4 animate-spin" />
               Creating...
@@ -134,9 +134,9 @@ export function NoAgentsFound({ onAgentCreated }: NoAgentsFoundProps) {
         </Button>
 
         {/* Error message */}
-        {createAgent.isError && (
+        {initAgent.isError && (
           <p className="text-destructive text-center text-sm">
-            Failed to create agent. {createAgent.error?.message ?? 'Please try again.'}
+            Failed to initialize agent. {initAgent.error?.message ?? 'Please try again.'}
           </p>
         )}
       </div>

@@ -95,6 +95,7 @@ export const ConventionsSchema = z
   .object({
     soul: z.boolean().default(true),
     nope: z.boolean().default(true),
+    dorkosKnowledge: z.boolean().default(true),
   })
   .openapi('Conventions');
 
@@ -330,6 +331,21 @@ export const ResolveAgentsResponseSchema = z
   .openapi('ResolveAgentsResponse');
 
 export type ResolveAgentsResponse = z.infer<typeof ResolveAgentsResponseSchema>;
+
+/** Options for programmatic agent creation — used by CLI, client, and server creation pipeline. */
+export const CreateAgentOptionsSchema = z
+  .object({
+    name: z.string().regex(/^[a-z][a-z0-9-]{0,62}[a-z0-9]$|^[a-z]$/, 'Kebab-case required'),
+    directory: z.string().optional(),
+    template: z.string().optional(),
+    description: z.string().optional(),
+    runtime: AgentRuntimeSchema.optional(),
+    traits: TraitsSchema.optional(),
+    conventions: ConventionsSchema.optional(),
+  })
+  .openapi('CreateAgentOptions');
+
+export type CreateAgentOptions = z.infer<typeof CreateAgentOptionsSchema>;
 
 /** Request body for POST /api/mesh/agents/create */
 export const CreateAgentRequestSchema = z

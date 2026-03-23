@@ -349,6 +349,9 @@ importers:
       express-rate-limit:
         specifier: ^8.2.1
         version: 8.2.1(express@4.22.1)
+      giget:
+        specifier: ^3.1.2
+        version: 3.1.2
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -8710,6 +8713,13 @@ packages:
       {
         integrity: sha512-shZT/QMiSHc/YBLxxOkMtgSid5HFoauqCE3/exfsEcwg1WkeqjG+V40yBbBrsD+jW2HDXcs28xOfcbm2jI8Ddw==,
       }
+
+  giget@3.1.2:
+    resolution:
+      {
+        integrity: sha512-T2qUpKBHeUTwHcIhydgnJzhL0Hj785ms+JkxaaWQH9SDM/llXeewnOkfJcFShAHjWI+26hOChwUfCoupaXLm8g==,
+      }
+    hasBin: true
 
   github-from-package@0.0.0:
     resolution:
@@ -18351,6 +18361,8 @@ snapshots:
   get-tsconfig@4.13.6:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  giget@3.1.2: {}
 
   github-from-package@0.0.0: {}
 

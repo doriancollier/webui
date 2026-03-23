@@ -50,6 +50,21 @@ vi.mock('ulidx', () => ({
   ulid: vi.fn(() => 'MOCK_ULID_001'),
 }));
 
+vi.mock('@dorkos/shared/dorkbot-templates', () => ({
+  dorkbotClaudeMdTemplate: vi.fn(() => '# DorkBot\n\nYou are DorkBot.'),
+}));
+
+vi.mock('../../services/core/config-manager.js', () => ({
+  configManager: {
+    get: vi.fn((key: string) => {
+      if (key === 'agents') return { defaultDirectory: '/mock/agents', defaultAgent: 'dorkbot' };
+      return undefined;
+    }),
+    set: vi.fn(),
+    getAll: vi.fn(),
+  },
+}));
+
 import request from 'supertest';
 import express from 'express';
 import { createAgentsRouter } from '../agents.js';

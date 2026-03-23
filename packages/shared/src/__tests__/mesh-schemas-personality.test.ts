@@ -97,31 +97,40 @@ describe('TraitsSchema — invalid range', () => {
 });
 
 describe('ConventionsSchema — defaults', () => {
-  it('defaults soul and nope to true when parsed with empty object', () => {
+  it('defaults soul, nope, and dorkosKnowledge to true when parsed with empty object', () => {
     const result = ConventionsSchema.parse({});
-    expect(result).toEqual({ soul: true, nope: true });
+    expect(result).toEqual({ soul: true, nope: true, dorkosKnowledge: true });
   });
 
   it('accepts explicit false for soul', () => {
     const result = ConventionsSchema.parse({ soul: false });
     expect(result.soul).toBe(false);
     expect(result.nope).toBe(true);
+    expect(result.dorkosKnowledge).toBe(true);
   });
 
   it('accepts explicit false for nope', () => {
     const result = ConventionsSchema.parse({ nope: false });
     expect(result.soul).toBe(true);
     expect(result.nope).toBe(false);
+    expect(result.dorkosKnowledge).toBe(true);
   });
 
-  it('accepts both set to false', () => {
-    const result = ConventionsSchema.parse({ soul: false, nope: false });
-    expect(result).toEqual({ soul: false, nope: false });
+  it('accepts explicit false for dorkosKnowledge', () => {
+    const result = ConventionsSchema.parse({ dorkosKnowledge: false });
+    expect(result.soul).toBe(true);
+    expect(result.nope).toBe(true);
+    expect(result.dorkosKnowledge).toBe(false);
   });
 
-  it('accepts both set to true explicitly', () => {
-    const result = ConventionsSchema.parse({ soul: true, nope: true });
-    expect(result).toEqual({ soul: true, nope: true });
+  it('accepts all set to false', () => {
+    const result = ConventionsSchema.parse({ soul: false, nope: false, dorkosKnowledge: false });
+    expect(result).toEqual({ soul: false, nope: false, dorkosKnowledge: false });
+  });
+
+  it('accepts all set to true explicitly', () => {
+    const result = ConventionsSchema.parse({ soul: true, nope: true, dorkosKnowledge: true });
+    expect(result).toEqual({ soul: true, nope: true, dorkosKnowledge: true });
   });
 
   it('rejects non-boolean values', () => {
@@ -161,9 +170,7 @@ describe('AgentManifestSchema — traits field', () => {
   });
 
   it('rejects out-of-range trait values inside a manifest', () => {
-    expect(() =>
-      AgentManifestSchema.parse({ ...baseManifest, traits: { tone: 0 } })
-    ).toThrow();
+    expect(() => AgentManifestSchema.parse({ ...baseManifest, traits: { tone: 0 } })).toThrow();
   });
 });
 
@@ -178,12 +185,12 @@ describe('AgentManifestSchema — conventions field', () => {
       ...baseManifest,
       conventions: { soul: true, nope: false },
     });
-    expect(result.conventions).toEqual({ soul: true, nope: false });
+    expect(result.conventions).toEqual({ soul: true, nope: false, dorkosKnowledge: true });
   });
 
   it('applies ConventionsSchema defaults when conventions is provided as empty object', () => {
     const result = AgentManifestSchema.parse({ ...baseManifest, conventions: {} });
-    expect(result.conventions).toEqual({ soul: true, nope: true });
+    expect(result.conventions).toEqual({ soul: true, nope: true, dorkosKnowledge: true });
   });
 });
 
@@ -257,9 +264,7 @@ describe('UpdateAgentConventionsSchema', () => {
   });
 
   it('rejects soulContent exceeding 4000 chars', () => {
-    expect(() =>
-      UpdateAgentConventionsSchema.parse({ soulContent: 'a'.repeat(4001) })
-    ).toThrow();
+    expect(() => UpdateAgentConventionsSchema.parse({ soulContent: 'a'.repeat(4001) })).toThrow();
   });
 
   it('accepts valid nopeContent within 2000 chars', () => {
@@ -273,9 +278,7 @@ describe('UpdateAgentConventionsSchema', () => {
   });
 
   it('rejects nopeContent exceeding 2000 chars', () => {
-    expect(() =>
-      UpdateAgentConventionsSchema.parse({ nopeContent: 'b'.repeat(2001) })
-    ).toThrow();
+    expect(() => UpdateAgentConventionsSchema.parse({ nopeContent: 'b'.repeat(2001) })).toThrow();
   });
 
   it('accepts traits with valid values', () => {
@@ -285,9 +288,7 @@ describe('UpdateAgentConventionsSchema', () => {
   });
 
   it('rejects traits with out-of-range values', () => {
-    expect(() =>
-      UpdateAgentConventionsSchema.parse({ traits: { creativity: 0 } })
-    ).toThrow();
+    expect(() => UpdateAgentConventionsSchema.parse({ traits: { creativity: 0 } })).toThrow();
   });
 
   it('accepts conventions toggles', () => {
@@ -296,6 +297,7 @@ describe('UpdateAgentConventionsSchema', () => {
     });
     expect(result.conventions?.soul).toBe(false);
     expect(result.conventions?.nope).toBe(true);
+    expect(result.conventions?.dorkosKnowledge).toBe(true);
   });
 
   it('accepts all fields together', () => {
@@ -311,5 +313,6 @@ describe('UpdateAgentConventionsSchema', () => {
     expect(result.traits?.autonomy).toBe(4);
     expect(result.conventions?.soul).toBe(true);
     expect(result.conventions?.nope).toBe(false);
+    expect(result.conventions?.dorkosKnowledge).toBe(true);
   });
 });

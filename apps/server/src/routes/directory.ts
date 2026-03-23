@@ -1,8 +1,15 @@
 import { Router } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
+import { z } from 'zod';
 import { BrowseDirectoryQuerySchema } from '@dorkos/shared/schemas';
+import { AGENT_NAME_REGEX } from '@dorkos/shared/validation';
 import { validateBoundary, getBoundary, BoundaryError } from '../lib/boundary.js';
+
+const CreateDirectoryBodySchema = z.object({
+  parentPath: z.string().min(1),
+  folderName: z.string().min(1),
+});
 
 const router = Router();
 
@@ -67,6 +74,53 @@ router.get('/', async (req, res) => {
 // GET /api/directory/default - Get the server's default working directory
 router.get('/default', (_req, res) => {
   res.json({ path: process.cwd() });
+});
+
+// POST /api/directory - Create a new directory within the boundary
+router.post('/', async (req, res) => {
+  const parsed = CreateDirectoryBodySchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
+  }
+
+  const { parentPath, folderName } = parsed.data;
+
+  // Validate folder name is kebab-case
+  if (!AGENT_NAME_REGEX.test(folderName)) {
+    return res.status(400).json({
+      error:
+        'Invalid folder name. Lowercase letters, numbers, and hyphens only. Must start with a letter.',
+    });
+  }
+
+  // Validate parentPath is within boundary
+  let resolvedParent: string;
+  try {
+    resolvedParent = await validateBoundary(parentPath);
+  } catch (err: unknown) {
+    if (err instanceof BoundaryError) {
+      if (err.code === 'NULL_BYTE')
+        return res.status(400).json({ error: err.message, code: err.code });
+      return res.status(403).json({ error: err.message, code: err.code });
+    }
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT') return res.status(404).json({ error: 'Parent directory not found' });
+    if (code === 'EACCES') return res.status(403).json({ error: 'Permission denied' });
+    throw err;
+  }
+
+  const newDirPath = path.join(resolvedParent, folderName);
+
+  // Check if directory already exists
+  try {
+    await fs.access(newDirPath);
+    return res.status(409).json({ error: 'Directory already exists' });
+  } catch {
+    // Expected — directory does not exist yet
+  }
+
+  await fs.mkdir(newDirPath, { recursive: true });
+  res.status(201).json({ path: newDirPath });
 });
 
 export default router;

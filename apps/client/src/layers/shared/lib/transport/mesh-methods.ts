@@ -6,6 +6,7 @@
 import type {
   AgentManifest,
   AgentPathEntry,
+  CreateAgentOptions,
   DiscoveryCandidate,
   DenialRecord,
   AgentHealth,
@@ -149,7 +150,7 @@ export function createMeshMethods(baseUrl: string) {
       return data.agents;
     },
 
-    createAgent(
+    initAgent(
       path: string,
       name?: string,
       description?: string,
@@ -170,6 +171,13 @@ export function createMeshMethods(baseUrl: string) {
       return fetchJSON<AgentManifest>(baseUrl, `/agents/current?path=${encodeURIComponent(path)}`, {
         method: 'PATCH',
         body: JSON.stringify(updates),
+      });
+    },
+
+    createAgent(opts: CreateAgentOptions): Promise<AgentManifest> {
+      return fetchJSON<AgentManifest>(baseUrl, '/agents/create', {
+        method: 'POST',
+        body: JSON.stringify(opts),
       });
     },
   };

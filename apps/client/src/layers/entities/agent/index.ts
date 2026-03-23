@@ -5,7 +5,7 @@
  * @module entities/agent
  */
 export { useCurrentAgent } from './model/use-current-agent';
-export { useCreateAgent } from './model/use-create-agent';
+export { useInitAgent } from './model/use-init-agent';
 export { useUpdateAgent } from './model/use-update-agent';
 export { useResolvedAgents } from './model/use-resolved-agents';
 export { useAgentVisual } from './model/use-agent-visual';

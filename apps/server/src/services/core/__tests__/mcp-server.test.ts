@@ -82,6 +82,10 @@ vi.mock('../../runtimes/claude-code/mcp-tools/trace-tools.js', () => ({
   createRelayGetMetricsHandler: stubFactory,
 }));
 
+vi.mock('../../runtimes/claude-code/mcp-tools/agent-tools.js', () => ({
+  createCreateAgentHandler: stubFactory,
+}));
+
 vi.mock('../../runtimes/claude-code/mcp-tools/mesh-tools.js', () => ({
   createMeshDiscoverHandler: stubFactory,
   createMeshRegisterHandler: stubFactory,
@@ -139,11 +143,11 @@ describe('createExternalMcpServer', () => {
     expect(typeof server.connect).toBe('function');
   });
 
-  it('registers all 33 tools', () => {
+  it('registers all 34 tools', () => {
     // Purpose: regression guard against accidental tool omissions or additions.
     // This count changes intentionally when new MCP tools are added.
     createExternalMcpServer(createMinimalDeps());
-    expect(registeredTools).toHaveLength(33);
+    expect(registeredTools).toHaveLength(34);
   });
 
   it('registers all expected tool names', () => {
@@ -196,6 +200,9 @@ describe('createExternalMcpServer', () => {
     expect(toolNames).toContain('mesh_status');
     expect(toolNames).toContain('mesh_inspect');
     expect(toolNames).toContain('mesh_query_topology');
+
+    // Agent tools (1)
+    expect(toolNames).toContain('create_agent');
   });
 
   it('registers no duplicate tool names', () => {
@@ -250,7 +257,7 @@ describe('createExternalMcpServer', () => {
     const bindingTools = toolNames.filter((n) => n.startsWith('binding_'));
     const meshTools = toolNames.filter((n) => n.startsWith('mesh_'));
 
-    expect(coreTools).toHaveLength(4);
+    expect(coreTools).toHaveLength(5); // 4 core + 1 agent (create_agent)
     expect(pulseTools).toHaveLength(5);
     expect(relayTools).toHaveLength(13); // 7 relay + 4 adapter + 2 trace
     expect(bindingTools).toHaveLength(3);

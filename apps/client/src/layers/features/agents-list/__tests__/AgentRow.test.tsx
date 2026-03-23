@@ -6,6 +6,8 @@ import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
+import { createMockTransport } from '@dorkos/test-utils';
+import { TransportProvider } from '@/layers/shared/model';
 
 // ---------------------------------------------------------------------------
 // Mocks
@@ -95,8 +97,15 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
+  const transport = createMockTransport({
+    getConfig: vi.fn().mockResolvedValue({
+      agents: { defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' },
+    }),
+  });
   return ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <TransportProvider transport={transport}>{children}</TransportProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -361,5 +370,107 @@ describe('AgentRow', () => {
 
     const dot = container.querySelector('.bg-amber-500');
     expect(dot).not.toHaveClass('animate-health-pulse');
+  });
+
+  it('shows "Default" badge when agent is the default', async () => {
+    const transport = createMockTransport({
+      getConfig: vi.fn().mockResolvedValue({
+        agents: { defaultDirectory: '~/.dork/agents', defaultAgent: 'Frontend Agent' },
+      }),
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TransportProvider transport={transport}>{children}</TransportProvider>
+      </QueryClientProvider>
+    );
+
+    render(
+      <AgentRow
+        agent={agentFixture}
+        projectPath="/projects/frontend"
+        sessionCount={0}
+        healthStatus="active"
+        lastActive={null}
+      />,
+      { wrapper }
+    );
+
+    const badge = await screen.findByTestId('default-agent-badge');
+    expect(badge).toBeInTheDocument();
+    expect(badge).toHaveTextContent('Default');
+  });
+
+  it('does not show "Default" badge when agent is not the default', () => {
+    render(
+      <AgentRow
+        agent={agentFixture}
+        projectPath="/projects/frontend"
+        sessionCount={0}
+        healthStatus="active"
+        lastActive={null}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    expect(screen.queryByTestId('default-agent-badge')).not.toBeInTheDocument();
+  });
+
+  it('shows "Set as Default" button in expanded state for non-default agent', () => {
+    const { container } = render(
+      <AgentRow
+        agent={agentFixture}
+        projectPath="/projects/frontend"
+        sessionCount={0}
+        healthStatus="active"
+        lastActive={null}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    // Expand the row
+    const trigger = container.querySelector('.cursor-pointer') as HTMLElement;
+    fireEvent.click(trigger);
+
+    expect(screen.getByTestId('set-default-btn')).toBeInTheDocument();
+    expect(screen.getByTestId('set-default-btn')).toHaveTextContent('Set as Default');
+  });
+
+  it('hides "Set as Default" button when agent is already the default', async () => {
+    const transport = createMockTransport({
+      getConfig: vi.fn().mockResolvedValue({
+        agents: { defaultDirectory: '~/.dork/agents', defaultAgent: 'Frontend Agent' },
+      }),
+    });
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0 } },
+    });
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <QueryClientProvider client={queryClient}>
+        <TransportProvider transport={transport}>{children}</TransportProvider>
+      </QueryClientProvider>
+    );
+
+    const { container } = render(
+      <AgentRow
+        agent={agentFixture}
+        projectPath="/projects/frontend"
+        sessionCount={0}
+        healthStatus="active"
+        lastActive={null}
+      />,
+      { wrapper }
+    );
+
+    // Wait for config query to settle
+    await screen.findByTestId('default-agent-badge');
+
+    // Expand the row
+    const trigger = container.querySelector('.cursor-pointer') as HTMLElement;
+    fireEvent.click(trigger);
+
+    expect(screen.queryByTestId('set-default-btn')).not.toBeInTheDocument();
   });
 });

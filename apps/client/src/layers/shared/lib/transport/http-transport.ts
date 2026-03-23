@@ -35,6 +35,7 @@ import type {
   UploadFile,
   McpConfigResponse,
 } from '@dorkos/shared/transport';
+import type { TemplateEntry } from '@dorkos/shared/template-catalog';
 import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type {
   TraceSpan,
@@ -48,6 +49,7 @@ import type {
 import type {
   AgentManifest,
   AgentPathEntry,
+  CreateAgentOptions,
   DiscoveryCandidate,
   DenialRecord,
   AgentHealth,
@@ -194,7 +196,7 @@ export class HttpTransport implements Transport {
   declare getMeshAgentAccess: (agentId: string) => Promise<{ agents: AgentManifest[] }>;
   declare getAgentByPath: (path: string) => Promise<AgentManifest | null>;
   declare resolveAgents: (paths: string[]) => Promise<Record<string, AgentManifest | null>>;
-  declare createAgent: (
+  declare initAgent: (
     path: string,
     name?: string,
     description?: string,
@@ -204,6 +206,7 @@ export class HttpTransport implements Transport {
     path: string,
     updates: Partial<AgentManifest>
   ) => Promise<AgentManifest>;
+  declare createAgent: (opts: CreateAgentOptions) => Promise<AgentManifest>;
 
   constructor(private baseUrl: string) {
     this.clientId = `web-${crypto.randomUUID()}`;
@@ -362,6 +365,13 @@ export class HttpTransport implements Transport {
     return fetchJSON<BrowseDirectoryResponse>(this.baseUrl, `/directory${qs}`);
   }
 
+  createDirectory(parentPath: string, folderName: string): Promise<{ path: string }> {
+    return fetchJSON<{ path: string }>(this.baseUrl, '/directory', {
+      method: 'POST',
+      body: JSON.stringify({ parentPath, folderName }),
+    });
+  }
+
   getDefaultCwd(): Promise<{ path: string }> {
     return fetchJSON<{ path: string }>(this.baseUrl, '/directory/default');
   }
@@ -474,6 +484,13 @@ export class HttpTransport implements Transport {
 
   // --- File Uploads ---
 
+  // --- Templates ---
+
+  async getTemplates(): Promise<TemplateEntry[]> {
+    const data = await fetchJSON<{ templates: TemplateEntry[] }>(this.baseUrl, '/templates');
+    return data.templates;
+  }
+
   getMcpConfig(projectPath: string): Promise<McpConfigResponse> {
     return fetchJSON<McpConfigResponse>(
       this.baseUrl,
@@ -526,6 +543,15 @@ export class HttpTransport implements Transport {
       xhr.addEventListener('abort', () => reject(new Error('Upload aborted')));
 
       xhr.send(formData);
+    });
+  }
+
+  // --- Default Agent ---
+
+  async setDefaultAgent(agentName: string): Promise<void> {
+    await fetchJSON<{ success: boolean }>(this.baseUrl, '/config/agents/defaultAgent', {
+      method: 'PUT',
+      body: JSON.stringify({ value: agentName }),
     });
   }
 }

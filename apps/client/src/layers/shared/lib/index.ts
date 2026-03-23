@@ -20,6 +20,7 @@ export {
   setFavicon,
 } from './favicon-utils';
 export { playNotificationSound } from './notification-sound';
+export { playSliderTick, playCelebration } from './sound';
 export {
   groupSessionsByTime,
   shortenHomePath,

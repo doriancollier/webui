@@ -55,6 +55,18 @@
     "./trait-renderer": {
       "types": "./src/trait-renderer.ts",
       "default": "./dist/trait-renderer.js"
+    },
+    "./validation": {
+      "types": "./src/validation.ts",
+      "default": "./dist/validation.js"
+    },
+    "./template-catalog": {
+      "types": "./src/template-catalog.ts",
+      "default": "./dist/template-catalog.js"
+    },
+    "./dorkbot-templates": {
+      "types": "./src/dorkbot-templates.ts",
+      "default": "./dist/dorkbot-templates.js"
     }
   },
   "scripts": {

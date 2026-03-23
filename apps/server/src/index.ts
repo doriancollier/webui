@@ -27,6 +27,7 @@ import { setMeshEnabled, setMeshInitError } from './services/mesh/mesh-state.js'
 import { createA2aRouter } from './routes/a2a.js';
 import { createAgentsRouter } from './routes/agents.js';
 import { createDiscoveryRouter } from './routes/discovery.js';
+import { createTemplateRouter } from './routes/templates.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createExternalMcpServer } from './services/core/mcp-server.js';
 import { createMcpRouter } from './routes/mcp.js';
@@ -305,6 +306,9 @@ async function start() {
   // Always mounted — not behind any feature flag.
   // ADR-0043: pass meshCore (when available) so writes sync to Mesh DB cache.
   app.use('/api/agents', createAgentsRouter(meshCore));
+
+  // Template catalog — always available, merges built-in + user templates.
+  app.use('/api/templates', createTemplateRouter(dorkHome));
 
   // Mount Discovery routes when MeshCore is available (delegates to meshCore.discover())
   if (meshCore) {

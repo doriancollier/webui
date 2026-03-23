@@ -5,6 +5,7 @@ import { Check, Circle, Minus, X } from 'lucide-react';
 import type { OnboardingStep } from '@dorkos/shared/config-schema';
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
+  'meet-dorkbot': 'Meet DorkBot',
   discovery: 'Discover agents',
   pulse: 'Set up Pulse schedules',
   adapters: 'Connect adapters',

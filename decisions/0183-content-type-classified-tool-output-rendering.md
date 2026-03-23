@@ -1,7 +1,7 @@
 ---
 number: 183
 title: Content-Type Classified Tool Output Rendering
-status: draft
+status: proposed
 created: 2026-03-23
 spec: tool-call-display-overhaul
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: tool-call-display-overhaul)
+Proposed
 
 ## Context
 

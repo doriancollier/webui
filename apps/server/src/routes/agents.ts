@@ -11,12 +11,14 @@
  * @module routes/agents
  */
 import { Router } from 'express';
+import fs from 'fs/promises';
 import path from 'path';
 import { ulid } from 'ulidx';
 import { readManifest, writeManifest } from '@dorkos/shared/manifest';
 import {
   ResolveAgentsRequestSchema,
   CreateAgentRequestSchema,
+  CreateAgentOptionsSchema,
   UpdateAgentRequestSchema,
   UpdateAgentConventionsSchema,
 } from '@dorkos/shared/mesh-schemas';
@@ -28,8 +30,30 @@ import {
 } from '@dorkos/shared/convention-files';
 import { readConventionFile, writeConventionFile } from '@dorkos/shared/convention-files-io';
 import { renderTraits, DEFAULT_TRAITS } from '@dorkos/shared/trait-renderer';
+import { dorkbotClaudeMdTemplate } from '@dorkos/shared/dorkbot-templates';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
+import { configManager } from '../services/core/config-manager.js';
 import { logger } from '../lib/logger.js';
+
+/**
+ * Check whether a directory contains a package.json with post-install hooks.
+ *
+ * Detects `postinstall`, `setup`, and `prepare` scripts that the user
+ * may need to run after template download.
+ *
+ * @param dir - Directory to check for package.json
+ * @returns True if a post-install hook script is present
+ */
+async function checkForPostInstallHook(dir: string): Promise<boolean> {
+  try {
+    const pkgPath = path.join(dir, 'package.json');
+    const raw = await fs.readFile(pkgPath, 'utf-8');
+    const pkg = JSON.parse(raw);
+    return !!(pkg.scripts?.postinstall || pkg.scripts?.setup || pkg.scripts?.prepare);
+  } catch {
+    return false;
+  }
+}
 
 /** Minimal MeshCore interface for sync-on-write. */
 interface MeshCoreLike {
@@ -159,6 +183,160 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
         return res.status(403).json({ error: err.message, code: err.code });
       }
       logger.error('[agents] POST / failed', { err });
+      return res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // POST /api/agents/create
+  // Full creation pipeline: mkdir + scaffold + optional template + register
+  router.post('/create', async (req, res) => {
+    try {
+      const result = CreateAgentOptionsSchema.safeParse(req.body);
+      if (!result.success) {
+        return res
+          .status(400)
+          .json({ error: 'Validation failed', details: result.error.flatten() });
+      }
+
+      const opts = result.data;
+      const agentsConfig = configManager.get('agents');
+      const resolvedPath = opts.directory
+        ? path.resolve(opts.directory)
+        : path.resolve(
+            agentsConfig.defaultDirectory.replace(/^~/, process.env.HOME || ''),
+            opts.name
+          );
+
+      await validateBoundary(resolvedPath);
+
+      // Check collision — 409 if directory already exists
+      try {
+        await fs.stat(resolvedPath);
+        return res.status(409).json({ error: 'Directory already exists', path: resolvedPath });
+      } catch (err: unknown) {
+        if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
+        // ENOENT is expected — directory doesn't exist yet
+      }
+
+      // Create parent directory (recursive) then agent directory (non-recursive)
+      const parentDir = path.dirname(resolvedPath);
+      await fs.mkdir(parentDir, { recursive: true });
+      await fs.mkdir(resolvedPath);
+
+      // Template download (git clone with giget fallback)
+      let hasPostInstall = false;
+      let templateMethod: string | undefined;
+
+      if (opts.template) {
+        try {
+          const { downloadTemplate } = await import('../services/core/template-downloader.js');
+          await downloadTemplate(opts.template, resolvedPath);
+          templateMethod = 'git'; // downloadTemplate tries git first, giget fallback
+          hasPostInstall = await checkForPostInstallHook(resolvedPath);
+        } catch (templateErr) {
+          // Rollback: remove the created directory on template failure
+          try {
+            await fs.rm(resolvedPath, { recursive: true, force: true });
+          } catch {
+            /* best-effort cleanup */
+          }
+          const message = templateErr instanceof Error ? templateErr.message : String(templateErr);
+          return res.status(500).json({ error: `Template download failed: ${message}` });
+        }
+      }
+
+      try {
+        // Create .dork/ subdirectory
+        const dorkDir = path.join(resolvedPath, '.dork');
+        await fs.mkdir(dorkDir);
+
+        // Scaffold agent.json
+        const traits = opts.traits ?? {
+          tone: 3,
+          autonomy: 3,
+          caution: 3,
+          communication: 3,
+          creativity: 3,
+        };
+        const conventions = opts.conventions ?? {
+          soul: true,
+          nope: true,
+          dorkosKnowledge: true,
+        };
+
+        const manifest: AgentManifest = {
+          id: ulid(),
+          name: opts.name,
+          description: opts.description ?? '',
+          runtime: opts.runtime ?? 'claude-code',
+          capabilities: [],
+          behavior: { responseMode: 'always' },
+          budget: { maxHopsPerMessage: 5, maxCallsPerHour: 100 },
+          traits,
+          conventions,
+          registeredAt: new Date().toISOString(),
+          registeredBy: 'dorkos-ui',
+          personaEnabled: true,
+          enabledToolGroups: {},
+        };
+
+        await writeManifest(resolvedPath, manifest);
+
+        // Scaffold SOUL.md
+        const traitBlock = renderTraits(traits);
+        const soulContent = defaultSoulTemplate(manifest.name, traitBlock);
+        await writeConventionFile(resolvedPath, 'SOUL.md', soulContent);
+
+        // Scaffold NOPE.md
+        const nopeContent = defaultNopeTemplate();
+        await writeConventionFile(resolvedPath, 'NOPE.md', nopeContent);
+
+        // DorkBot gets an additional CLAUDE.md
+        if (opts.name === 'dorkbot') {
+          const claudeMd = dorkbotClaudeMdTemplate();
+          await fs.writeFile(path.join(dorkDir, 'CLAUDE.md'), claudeMd, 'utf-8');
+        }
+
+        // ADR-0043: sync to Mesh DB cache (best-effort)
+        try {
+          await meshCore?.syncFromDisk(resolvedPath);
+        } catch {
+          /* non-fatal */
+        }
+
+        // Auto-set as default agent when it's the first agent created
+        try {
+          const currentDefault = agentsConfig.defaultAgent;
+          const defaultAgentDir = path.resolve(
+            agentsConfig.defaultDirectory.replace(/^~/, process.env.HOME || ''),
+            currentDefault
+          );
+          // If the current default agent directory doesn't exist, adopt the new agent
+          await fs.stat(path.join(defaultAgentDir, '.dork', 'agent.json'));
+        } catch {
+          // Default agent doesn't exist on disk — adopt the newly created agent
+          configManager.set('agents', { ...agentsConfig, defaultAgent: opts.name });
+          logger.debug(`[agents] Auto-set default agent to "${opts.name}"`);
+        }
+
+        return res.status(201).json({
+          ...manifest,
+          ...(opts.template ? { _meta: { hasPostInstall, templateMethod } } : {}),
+        });
+      } catch (scaffoldErr) {
+        // Rollback: remove the created directory on scaffold failure
+        try {
+          await fs.rm(resolvedPath, { recursive: true, force: true });
+        } catch {
+          /* best-effort cleanup */
+        }
+        throw scaffoldErr;
+      }
+    } catch (err) {
+      if (err instanceof BoundaryError) {
+        return res.status(403).json({ error: err.message, code: err.code });
+      }
+      logger.error('[agents] POST /create failed', { err });
       return res.status(500).json({ error: 'Internal server error' });
     }
   });

@@ -179,3 +179,73 @@ export function renderTraits(traits: Record<TraitName, number>): string {
 function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+// --- Trait Preview Text ---
+
+/** Short human-readable preview text for each trait at each level (5 traits x 5 levels = 25 entries). */
+export const TRAIT_PREVIEWS: Record<TraitName, Record<number, string>> = {
+  tone: {
+    1: 'Formal, precise, no-nonsense.',
+    2: 'Brief and direct — skips the small talk.',
+    3: 'Balanced — explains when it matters.',
+    4: 'Thorough and conversational.',
+    5: 'Playful, witty, personality-forward.',
+  },
+  autonomy: {
+    1: 'Always asks before acting.',
+    2: 'Checks in before big decisions.',
+    3: 'Acts independently on routine tasks.',
+    4: 'Highly autonomous — asks only when stakes are high.',
+    5: 'Full autonomy — acts first, reports after.',
+  },
+  caution: {
+    1: 'Moves fast, worries later.',
+    2: 'Biases toward action, verifies destructive ops.',
+    3: 'Careful with irreversible changes.',
+    4: 'Double-checks everything, runs tests proactively.',
+    5: 'Triple-checks everything — paranoid by design.',
+  },
+  communication: {
+    1: 'Works in silence.',
+    2: 'Reports on completion or errors only.',
+    3: 'Provides status updates for longer tasks.',
+    4: 'Proactive — shares progress and flags concerns.',
+    5: 'Narrates everything in real time.',
+  },
+  creativity: {
+    1: 'Strictly follows established patterns.',
+    2: 'Conservative — deviates only when clearly needed.',
+    3: 'Follows conventions, suggests clear improvements.',
+    4: 'Exploratory — proposes creative solutions.',
+    5: 'Rethinks from first principles.',
+  },
+};
+
+/**
+ * Compose a single preview string from all trait values.
+ *
+ * @param traits - Record of trait name to level (1-5). Missing traits default to level 3.
+ */
+export function getPreviewText(traits: Record<TraitName, number>): string {
+  return TRAIT_ORDER.map((name) => {
+    const level = traits[name] ?? 3;
+    return `${capitalize(name)}: ${TRAIT_PREVIEWS[name][level]}`;
+  }).join(' ');
+}
+
+/**
+ * Deterministic hash of preview text for cache-busting or comparison.
+ * Uses a simple DJB2a hash, returned as a hex string.
+ *
+ * @param text - Input text to hash
+ */
+export function hashPreviewText(text: string): string {
+  let hash = 5381;
+  for (let i = 0; i < text.length; i++) {
+    // eslint-disable-next-line no-bitwise
+    hash = ((hash << 5) + hash) ^ text.charCodeAt(i);
+  }
+  // Convert to unsigned 32-bit then hex
+  // eslint-disable-next-line no-bitwise
+  return (hash >>> 0).toString(16);
+}

@@ -347,7 +347,7 @@ async function buildAgentBlock(cwd: string): Promise<string> {
     persona?: string;
     personaEnabled?: boolean;
     traits?: Record<string, number>;
-    conventions?: { soul?: boolean; nope?: boolean };
+    conventions?: { soul?: boolean; nope?: boolean; dorkosKnowledge?: boolean };
   };
 
   // --- Identity block ---
@@ -390,7 +390,22 @@ async function buildAgentBlock(cwd: string): Promise<string> {
     }
   }
 
+  // --- DorkOS knowledge block (default ON) ---
+  if (conventions?.dorkosKnowledge !== false) {
+    blocks.push(buildDorkosContextBlock());
+  }
+
   return blocks.join('\n\n');
+}
+
+/** Build the `<dorkos_context>` block with platform overview and doc links. */
+function buildDorkosContextBlock(): string {
+  return `<dorkos_context>
+DorkOS is the operating system for autonomous AI agents.
+Subsystems: Console (chat), Pulse (scheduling), Relay (messaging), Mesh (discovery).
+Documentation: https://dorkos.ai/llms.txt
+Full docs: https://dorkos.ai/docs
+</dorkos_context>`;
 }
 
 /** @internal Exported for testing only. */

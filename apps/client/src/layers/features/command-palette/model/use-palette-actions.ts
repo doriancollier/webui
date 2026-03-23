@@ -3,6 +3,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '@/layers/shared/model';
 import { useTheme } from '@/layers/shared/model';
 import { useDirectoryState } from '@/layers/entities/session';
+import { useAgentCreationStore } from '@/layers/features/agent-creation';
 import { useAgentFrecency } from './use-agent-frecency';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 
@@ -79,6 +80,9 @@ export function usePaletteActions(closePalette: () => void): PaletteActions {
       switch (action) {
         case 'navigateDashboard':
           navigate({ to: '/' });
+          break;
+        case 'createAgent':
+          useAgentCreationStore.getState().open();
           break;
         case 'discoverAgents':
           setMeshOpen(true);

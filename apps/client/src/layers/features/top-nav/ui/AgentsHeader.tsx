@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScanSearch } from 'lucide-react';
+import { Plus, ScanSearch } from 'lucide-react';
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/layers/shared/ui/button';
 import {
@@ -9,6 +9,7 @@ import {
   ResponsiveDialogTitle,
 } from '@/layers/shared/ui/responsive-dialog';
 import { DiscoveryView } from '@/layers/features/mesh';
+import { useAgentCreationStore } from '@/layers/features/agent-creation';
 import { useIsMobile } from '@/layers/shared/model';
 import { cn } from '@/layers/shared/lib';
 import type { AgentsSearch } from '@/router';
@@ -29,6 +30,7 @@ interface AgentsHeaderProps {
 /** Page header for the /agents route — title, view switcher, scan trigger, and command palette. */
 export function AgentsHeader({ viewMode }: AgentsHeaderProps) {
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
+  const openCreateDialog = useAgentCreationStore((s) => s.open);
   const navigate = useNavigate();
   const isMobile = useIsMobile();
 
@@ -59,6 +61,14 @@ export function AgentsHeader({ viewMode }: AgentsHeaderProps) {
         </div>
       )}
       <div className="ml-auto flex items-center gap-2">
+        <Button
+          size="sm"
+          className="h-7 min-h-[44px] gap-1.5 text-xs sm:min-h-0"
+          onClick={openCreateDialog}
+        >
+          <Plus className="size-3.5" />
+          New Agent
+        </Button>
         <Button
           variant="outline"
           size="sm"

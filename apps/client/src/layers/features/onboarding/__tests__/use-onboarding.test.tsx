@@ -61,7 +61,7 @@ describe('useOnboarding', () => {
     const transport = createMockTransport();
     vi.mocked(transport.getConfig).mockResolvedValue({
       onboarding: {
-        completedSteps: ['discovery', 'pulse', 'adapters'],
+        completedSteps: ['meet-dorkbot', 'discovery', 'pulse', 'adapters'],
         skippedSteps: [],
         startedAt: null,
         dismissedAt: null,

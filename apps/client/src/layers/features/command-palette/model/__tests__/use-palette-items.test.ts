@@ -100,12 +100,13 @@ describe('usePaletteItems', () => {
     expect(ids).toContain('settings');
   });
 
-  it('quickActions is a static list of 5 items', () => {
+  it('quickActions is a static list of 6 items', () => {
     const { result } = renderHook(() => usePaletteItems(null));
-    expect(result.current.quickActions).toHaveLength(5);
+    expect(result.current.quickActions).toHaveLength(6);
     const ids = result.current.quickActions.map((q) => q.id);
     expect(ids).toContain('dashboard');
     expect(ids).toContain('new-session');
+    expect(ids).toContain('create-agent');
     expect(ids).toContain('discover');
     expect(ids).toContain('browse');
     expect(ids).toContain('theme');

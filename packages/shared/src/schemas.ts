@@ -819,6 +819,17 @@ export const ServerConfigSchema = z
       })
       .optional()
       .openapi({ description: 'Agent tool context injection toggles' }),
+    agents: z
+      .object({
+        defaultDirectory: z
+          .string()
+          .openapi({ description: 'Default directory for agent workspaces' }),
+        defaultAgent: z
+          .string()
+          .openapi({ description: 'Slug of the default agent to launch after onboarding' }),
+      })
+      .optional()
+      .openapi({ description: 'Agent creation and defaults configuration' }),
   })
   .openapi('ServerConfig');
 

@@ -23,6 +23,12 @@ vi.mock('@/layers/features/mesh', () => ({
   DiscoveryView: () => <div data-testid="discovery-view">DiscoveryView</div>,
 }));
 
+const mockOpenCreateDialog = vi.fn();
+vi.mock('@/layers/features/agent-creation', () => ({
+  useAgentCreationStore: (selector: (s: { open: () => void }) => unknown) =>
+    selector({ open: mockOpenCreateDialog }),
+}));
+
 vi.mock('../ui/CommandPaletteTrigger', () => ({
   CommandPaletteTrigger: () => (
     <button data-testid="command-palette-trigger" aria-label="Open command palette">
@@ -70,6 +76,17 @@ describe('AgentsHeader', () => {
     // The title is a <span> with class text-sm font-medium — query by its specific role/selector
     // to avoid collision with the "Agents" view-switcher tab button.
     expect(screen.getByText('Agents', { selector: 'span' })).toBeInTheDocument();
+  });
+
+  it('renders New Agent button', () => {
+    render(<AgentsHeader viewMode="list" />);
+    expect(screen.getByRole('button', { name: /new agent/i })).toBeInTheDocument();
+  });
+
+  it('clicking New Agent calls useAgentCreationStore.open()', () => {
+    render(<AgentsHeader viewMode="list" />);
+    fireEvent.click(screen.getByRole('button', { name: /new agent/i }));
+    expect(mockOpenCreateDialog).toHaveBeenCalledTimes(1);
   });
 
   it('renders Scan for Agents button', () => {

@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Check } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
@@ -7,11 +8,15 @@ import { cn } from '@/layers/shared/lib';
 import { useMeshAgentPaths } from '@/layers/entities/mesh';
 import { useOnboarding } from '../model/use-onboarding';
 import { WelcomeStep } from './WelcomeStep';
+import { MeetDorkBotStep } from './MeetDorkBotStep';
 import { AgentDiscoveryStep } from './AgentDiscoveryStep';
 import { PulsePresetsStep } from './PulsePresetsStep';
 import { OnboardingComplete } from './OnboardingComplete';
 
-const STEPS = ['discovery', 'pulse'] as const;
+const STEPS = ['meet-dorkbot', 'discovery', 'pulse'] as const;
+
+/** Index of the Pulse step within STEPS — used for auto-skip logic. */
+const PULSE_STEP_INDEX = STEPS.indexOf('pulse');
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -22,7 +27,7 @@ interface OnboardingFlowProps {
  * Full-screen onboarding container managing step navigation, skip controls,
  * and animated transitions between onboarding steps.
  *
- * Flow: Welcome -> Discovery -> Pulse -> Complete
+ * Flow: Welcome -> Meet DorkBot -> Discovery -> Pulse -> Complete
  *
  * @param onComplete - Called when onboarding finishes (last step or skip all)
  * @param initialStep - Zero-based index of the starting step (default: -1 for welcome)
@@ -31,7 +36,8 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
   const [currentStep, setCurrentStep] = useState(initialStep);
   const [direction, setDirection] = useState(1);
   const [showComplete, setShowComplete] = useState(false);
-  const { completeStep, skipStep, dismiss, startOnboarding } = useOnboarding();
+  const { completeStep, skipStep, dismiss, startOnboarding, config } = useOnboarding();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const reducedMotion = useReducedMotion();
   const agentPaths = useMeshAgentPaths();
@@ -84,9 +90,22 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
     setCurrentStep(0);
   }, []);
 
+  /** Navigate to a chat session with the configured default agent. */
+  const navigateToDefaultAgent = useCallback(() => {
+    const defaultAgent = config?.agents?.defaultAgent || 'dorkbot';
+    const defaultDir = config?.agents?.defaultDirectory || '~/.dork/agents';
+    const agentPath = `${defaultDir}/${defaultAgent}`;
+    navigate({ to: '/session', search: { dir: agentPath } });
+    onComplete();
+  }, [config, navigate, onComplete]);
+
   // Auto-skip Pulse step when no agents are registered
   useEffect(() => {
-    if (currentStep === 1 && !agentPaths.isLoading && agentPaths.data?.agents.length === 0) {
+    if (
+      currentStep === PULSE_STEP_INDEX &&
+      !agentPaths.isLoading &&
+      agentPaths.data?.agents.length === 0
+    ) {
       completeStep('pulse');
       goNext();
     }
@@ -96,7 +115,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
   if (showComplete) {
     return (
       <div className="bg-background fixed inset-0 z-50 flex items-center justify-center">
-        <OnboardingComplete onComplete={onComplete} />
+        <OnboardingComplete onComplete={navigateToDefaultAgent} />
       </div>
     );
   }
@@ -195,8 +214,9 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
             className="absolute inset-0 flex flex-col"
           >
             <div className="mx-auto flex min-h-0 w-full max-w-2xl flex-1 flex-col px-4 py-4 sm:px-6">
-              {currentStep === 0 && <AgentDiscoveryStep onStepComplete={handleStepComplete} />}
-              {currentStep === 1 && (
+              {currentStep === 0 && <MeetDorkBotStep onStepComplete={handleStepComplete} />}
+              {currentStep === 1 && <AgentDiscoveryStep onStepComplete={handleStepComplete} />}
+              {currentStep === 2 && (
                 <PulsePresetsStep
                   onStepComplete={handleStepComplete}
                   agents={agentPaths.data?.agents ?? []}

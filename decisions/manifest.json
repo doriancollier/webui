@@ -3,19 +3,10 @@
   "nextNumber": 187,
   "decisions": [
     {
-      "number": 186,
-      "slug": "git-primary-giget-fallback-template-engine",
-      "title": "Git Primary + giget Fallback Template Download Engine",
-      "status": "draft",
-      "created": "2026-03-23",
-      "extractedFrom": "agent-creation-and-templates",
-      "specSlug": "agent-creation-and-templates"
-    },
-    {
       "number": 185,
       "slug": "two-layer-dorkos-knowledge-architecture",
       "title": "Two-Layer DorkOS Knowledge Architecture (System Prompt + CLAUDE.md)",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-23",
       "extractedFrom": "agent-creation-and-templates",
       "specSlug": "agent-creation-and-templates"
@@ -24,7 +15,7 @@
       "number": 184,
       "slug": "three-tier-agent-lifecycle-naming",
       "title": "Three-Tier Agent Lifecycle Naming (Create > Init > Register)",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-23",
       "extractedFrom": "agent-creation-and-templates",
       "specSlug": "agent-creation-and-templates"
@@ -33,7 +24,7 @@
       "number": 183,
       "slug": "content-type-classified-tool-output-rendering",
       "title": "Content-Type Classified Tool Output Rendering",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-23",
       "extractedFrom": "tool-call-display-overhaul",
       "specSlug": "tool-call-display-overhaul"
@@ -42,7 +33,7 @@
       "number": 182,
       "slug": "shared-message-splitting-utility",
       "title": "Shared Message Splitting Utility Across Relay Adapters",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-22",
       "extractedFrom": "slack-adapter-world-class",
       "specSlug": "slack-adapter-world-class"
@@ -51,7 +42,7 @@
       "number": 181,
       "slug": "thread-aware-respond-mode-default",
       "title": "Default Slack Adapter to Thread-Aware Respond Mode",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-22",
       "extractedFrom": "slack-adapter-world-class",
       "specSlug": "slack-adapter-world-class"

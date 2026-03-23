@@ -87,7 +87,7 @@ let mockToolStatus = {
 };
 vi.mock('@/layers/entities/agent', () => ({
   useCurrentAgent: () => ({ data: null, isLoading: false }),
-  useCreateAgent: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useInitAgent: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useAgentVisual: () => ({ color: 'hsl(0,70%,55%)', emoji: '🤖' }),
   useResolvedAgents: () => ({ data: undefined }),
   useAgentToolStatus: () => mockToolStatus,

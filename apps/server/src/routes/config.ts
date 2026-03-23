@@ -125,6 +125,10 @@ router.get('/', async (_req, res) => {
       meshTools: true,
       adapterTools: true,
     },
+    agents: configManager.get('agents') ?? {
+      defaultDirectory: '~/.dork/agents',
+      defaultAgent: 'dorkbot',
+    },
   });
 });
 
@@ -175,6 +179,28 @@ router.patch('/', (req, res) => {
     });
   } catch (err) {
     logger.error('[Config] PATCH failed', logError(err));
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/** PUT /api/config/agents/defaultAgent — set the default agent by name. */
+router.put('/agents/defaultAgent', (req, res) => {
+  try {
+    const { value } = req.body ?? {};
+    if (typeof value !== 'string' || !value.trim()) {
+      return res.status(400).json({ error: 'Body must include a non-empty "value" string' });
+    }
+
+    const agents = configManager.get('agents') ?? {
+      defaultDirectory: '~/.dork/agents',
+      defaultAgent: 'dorkbot',
+    };
+    configManager.set('agents', { ...agents, defaultAgent: value.trim() });
+    logger.debug(`[Config] Default agent set to "${value.trim()}"`);
+
+    return res.json({ success: true, defaultAgent: value.trim() });
+  } catch (err) {
+    logger.error('[Config] PUT agents/defaultAgent failed', logError(err));
     return res.status(500).json({ error: 'Internal server error' });
   }
 });

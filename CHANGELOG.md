@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implement agent creation pipeline with workspace templates
 - Overhaul tool call display with MCP parsing, streaming fixes, and classified output rendering
 - Redesign agents page as fleet management surface
 - Add 8 world-class Slack adapter improvements

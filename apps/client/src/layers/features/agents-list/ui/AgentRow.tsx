@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { AgentManifest, AgentHealthStatus } from '@dorkos/shared/mesh-schemas';
 import { Badge } from '@/layers/shared/ui/badge';
 import { Button } from '@/layers/shared/ui/button';
 import { cn } from '@/layers/shared/lib';
+import { useTransport } from '@/layers/shared/model';
 import { AgentDialog } from '@/layers/features/agent-settings';
 import { relativeTime } from '@/layers/features/mesh/lib/relative-time';
 import { SessionLaunchPopover } from './SessionLaunchPopover';
@@ -58,6 +60,21 @@ export function AgentRow({
   const [open, setOpen] = useState(false);
   const [unregisterOpen, setUnregisterOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+
+  const { data: config } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => transport.getConfig(),
+    staleTime: 30_000,
+  });
+
+  const isDefault = config?.agents?.defaultAgent === agent.name;
+
+  async function handleSetAsDefault() {
+    await transport.setDefaultAgent(agent.name);
+    await queryClient.invalidateQueries({ queryKey: ['config'] });
+  }
 
   return (
     <>
@@ -77,6 +94,13 @@ export function AgentRow({
             />
 
             <span className="text-sm font-medium">{agent.name}</span>
+
+            {isDefault && (
+              <Badge variant="outline" className="text-xs" data-testid="default-agent-badge">
+                <Star className="mr-0.5 size-3 fill-current" />
+                Default
+              </Badge>
+            )}
 
             <Badge variant="secondary">{agent.runtime}</Badge>
 
@@ -173,6 +197,17 @@ export function AgentRow({
 
                 {/* Management actions */}
                 <div className="flex gap-2 pt-1">
+                  {!isDefault && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSetAsDefault}
+                      data-testid="set-default-btn"
+                    >
+                      <Star className="mr-1 size-3" />
+                      Set as Default
+                    </Button>
+                  )}
                   <Button variant="outline" size="sm" onClick={() => setSettingsOpen(true)}>
                     Edit
                   </Button>

@@ -13,6 +13,7 @@ import { getAdapterTools } from './adapter-tools.js';
 import { getBindingTools } from './binding-tools.js';
 import { getTraceTools } from './trace-tools.js';
 import { getMeshTools } from './mesh-tools.js';
+import { getAgentTools } from './agent-tools.js';
 
 // Re-export types and handlers for external consumers
 export type { McpToolDeps } from './types.js';
@@ -51,6 +52,7 @@ export {
   createBindingDeleteHandler,
 } from './binding-tools.js';
 export { createRelayGetTraceHandler, createRelayGetMetricsHandler } from './trace-tools.js';
+export { createCreateAgentHandler } from './agent-tools.js';
 export {
   createMeshDiscoverHandler,
   createMeshRegisterHandler,
@@ -79,6 +81,7 @@ export function createDorkOsToolServer(deps: McpToolDeps) {
       ...getBindingTools(deps),
       ...getTraceTools(deps),
       ...getMeshTools(deps),
+      ...getAgentTools(deps),
     ],
   });
 }

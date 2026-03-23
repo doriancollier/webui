@@ -72,6 +72,9 @@ interface AppState {
   setAgentDialogOpen: (open: boolean) => void;
   onboardingStep: number | null;
   setOnboardingStep: (step: number | null) => void;
+  /** First message generated during onboarding, used for the magic transition animation. */
+  dorkbotFirstMessage: string | null;
+  setDorkbotFirstMessage: (msg: string | null) => void;
   globalPaletteOpen: boolean;
   setGlobalPaletteOpen: (open: boolean) => void;
   toggleGlobalPalette: () => void;
@@ -273,6 +276,8 @@ export const useAppStore = create<AppState>()(
       setAgentDialogOpen: (open) => set({ agentDialogOpen: open }),
       onboardingStep: null,
       setOnboardingStep: (step) => set({ onboardingStep: step }),
+      dorkbotFirstMessage: null,
+      setDorkbotFirstMessage: (msg) => set({ dorkbotFirstMessage: msg }),
       globalPaletteOpen: false,
       setGlobalPaletteOpen: (open) => set({ globalPaletteOpen: open }),
       toggleGlobalPalette: () => set((s) => ({ globalPaletteOpen: !s.globalPaletteOpen })),

@@ -17,6 +17,7 @@ import type {
 } from '@dorkos/shared/relay-schemas';
 import type {
   AgentManifest,
+  CreateAgentOptions,
   DiscoveryCandidate,
   DenialRecord,
   AgentHealth,
@@ -361,5 +362,13 @@ export const serverOnlyStubs = {
     _signal?: AbortSignal
   ): Promise<void> {
     throw new Error('Discovery scan is not supported in Obsidian plugin mode.');
+  },
+
+  async createAgent(_opts: CreateAgentOptions): Promise<AgentManifest> {
+    throw new Error('Agent creation is not supported in Obsidian plugin mode.');
+  },
+
+  async setDefaultAgent(_agentName: string): Promise<void> {
+    // No-op in embedded mode — config is not persisted via DirectTransport.
   },
 };

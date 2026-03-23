@@ -23,7 +23,7 @@ const defaultProps = {
   agentDescription: 'A test agent',
   agentCapabilities: ['coding'],
   traits: { tone: 3, autonomy: 3, caution: 3, communication: 3, creativity: 3 },
-  conventions: { soul: true, nope: true },
+  conventions: { soul: true, nope: true, dorkosKnowledge: true },
   soulContent: '<!-- TRAITS:START -->\ntraits\n<!-- TRAITS:END -->\n\n## Identity',
   nopeContent: '# Safety Boundaries',
 };
@@ -52,7 +52,10 @@ describe('InjectionPreview', () => {
 
   it('omits persona block when soul toggle is off', () => {
     const { container } = render(
-      <InjectionPreview {...defaultProps} conventions={{ soul: false, nope: true }} />
+      <InjectionPreview
+        {...defaultProps}
+        conventions={{ soul: false, nope: true, dorkosKnowledge: true }}
+      />
     );
 
     fireEvent.click(within(container).getByText('Preview injected prompt'));
@@ -61,7 +64,10 @@ describe('InjectionPreview', () => {
 
   it('omits safety block when nope toggle is off', () => {
     const { container } = render(
-      <InjectionPreview {...defaultProps} conventions={{ soul: true, nope: false }} />
+      <InjectionPreview
+        {...defaultProps}
+        conventions={{ soul: true, nope: false, dorkosKnowledge: true }}
+      />
     );
 
     fireEvent.click(within(container).getByText('Preview injected prompt'));

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { Users, Clock, Radio } from 'lucide-react';
+import { Bot, Users, Clock, Radio } from 'lucide-react';
 import { HoverBorderGradient } from '@/layers/shared/ui';
 import { fireConfetti } from '@/layers/shared/lib';
 import { useOnboarding } from '../model/use-onboarding';
@@ -31,10 +31,16 @@ export function OnboardingComplete({ onComplete }: OnboardingCompleteProps) {
     }
   }, []);
 
+  const meetDorkbotDone = state.completedSteps.includes('meet-dorkbot');
   const discoveryDone = state.completedSteps.includes('discovery');
   const pulseDone = state.completedSteps.includes('pulse');
 
   const summaryItems = [
+    {
+      icon: Bot,
+      label: meetDorkbotDone ? 'Met DorkBot' : 'DorkBot skipped',
+      done: meetDorkbotDone,
+    },
     {
       icon: Users,
       label: discoveryDone ? 'Agents discovered' : 'Agents skipped',

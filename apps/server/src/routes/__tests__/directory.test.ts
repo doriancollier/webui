@@ -18,13 +18,19 @@ vi.mock('../../lib/boundary.js', () => ({
 
 // Mock fs/promises
 const mockReaddir = vi.fn();
+const mockAccess = vi.fn();
+const mockMkdir = vi.fn();
 vi.mock('fs/promises', () => ({
   default: {
     realpath: vi.fn(),
     readdir: (...args: unknown[]) => mockReaddir(...args),
+    access: (...args: unknown[]) => mockAccess(...args),
+    mkdir: (...args: unknown[]) => mockMkdir(...args),
   },
   realpath: vi.fn(),
   readdir: (...args: unknown[]) => mockReaddir(...args),
+  access: (...args: unknown[]) => mockAccess(...args),
+  mkdir: (...args: unknown[]) => mockMkdir(...args),
 }));
 
 vi.mock('../../services/core/tunnel-manager.js', () => ({
@@ -206,6 +212,76 @@ describe('Directory Routes', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.path).toBe(process.cwd());
+    });
+  });
+
+  describe('POST /api/directory', () => {
+    it('creates a directory and returns 201 with path', async () => {
+      const parentPath = `${BOUNDARY}/projects`;
+      mockValidateBoundary.mockResolvedValue(parentPath);
+      // fs.access throws ENOENT — directory does not exist yet
+      mockAccess.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
+      mockMkdir.mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .post('/api/directory')
+        .send({ parentPath, folderName: 'my-new-agent' });
+
+      expect(res.status).toBe(201);
+      expect(res.body.path).toBe(`${parentPath}/my-new-agent`);
+      expect(mockMkdir).toHaveBeenCalledWith(`${parentPath}/my-new-agent`, { recursive: true });
+    });
+
+    it('returns 409 when directory already exists', async () => {
+      const parentPath = `${BOUNDARY}/projects`;
+      mockValidateBoundary.mockResolvedValue(parentPath);
+      // fs.access succeeds — directory exists
+      mockAccess.mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .post('/api/directory')
+        .send({ parentPath, folderName: 'existing-dir' });
+
+      expect(res.status).toBe(409);
+      expect(res.body.error).toContain('already exists');
+    });
+
+    it('returns 400 for invalid folder names (uppercase)', async () => {
+      const res = await request(app)
+        .post('/api/directory')
+        .send({ parentPath: `${BOUNDARY}/projects`, folderName: 'MyAgent' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Invalid folder name');
+    });
+
+    it('returns 400 for invalid folder names (special chars)', async () => {
+      const res = await request(app)
+        .post('/api/directory')
+        .send({ parentPath: `${BOUNDARY}/projects`, folderName: 'my_agent!' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Invalid folder name');
+    });
+
+    it('returns 403 for paths outside boundary', async () => {
+      mockValidateBoundary.mockRejectedValue(
+        new BoundaryError('Access denied: path outside directory boundary', 'OUTSIDE_BOUNDARY')
+      );
+
+      const res = await request(app)
+        .post('/api/directory')
+        .send({ parentPath: '/etc', folderName: 'my-agent' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.code).toBe('OUTSIDE_BOUNDARY');
+    });
+
+    it('returns 400 when parentPath is missing', async () => {
+      const res = await request(app).post('/api/directory').send({ folderName: 'my-agent' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Validation failed');
     });
   });
 });

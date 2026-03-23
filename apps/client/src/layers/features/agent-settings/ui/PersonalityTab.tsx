@@ -57,7 +57,7 @@ export function PersonalityTab({
     agentAny.traits ?? { tone: 3, autonomy: 3, caution: 3, communication: 3, creativity: 3 }
   );
   const [conventions, setConventions] = useState<Conventions>(
-    agentAny.conventions ?? { soul: true, nope: true }
+    agentAny.conventions ?? { soul: true, nope: true, dorkosKnowledge: true }
   );
 
   // Initialize SOUL.md content: use server content, or build from traits if none exists

@@ -22,6 +22,36 @@ vi.mock('../../../lib/version.js', () => ({
 
 vi.mock('@dorkos/shared/manifest', () => ({
   readManifest: vi.fn(),
+  writeManifest: vi.fn(),
+}));
+
+// Mocks required by agent-creator.ts (transitively imported via agent-tools)
+vi.mock('@dorkos/shared/convention-files', () => ({
+  defaultSoulTemplate: vi.fn(() => '# SOUL'),
+  defaultNopeTemplate: vi.fn(() => '# NOPE'),
+  buildSoulContent: vi.fn(() => '# SOUL'),
+}));
+vi.mock('@dorkos/shared/convention-files-io', () => ({
+  writeConventionFile: vi.fn(),
+  readConventionFile: vi.fn(),
+}));
+vi.mock('@dorkos/shared/trait-renderer', () => ({
+  renderTraits: vi.fn(() => ''),
+  DEFAULT_TRAITS: { tone: 3, autonomy: 3, caution: 3, communication: 3, creativity: 3 },
+}));
+vi.mock('@dorkos/shared/dorkbot-templates', () => ({
+  dorkbotClaudeMdTemplate: vi.fn(() => '# DorkBot'),
+}));
+vi.mock('../../../lib/boundary.js', () => ({
+  validateBoundary: vi.fn(),
+  BoundaryError: class BoundaryError extends Error {
+    code = 'BOUNDARY_VIOLATION';
+  },
+}));
+vi.mock('../config-manager.js', () => ({
+  configManager: {
+    get: vi.fn(() => ({ defaultDirectory: '/tmp/agents' })),
+  },
 }));
 
 vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
@@ -497,11 +527,11 @@ describe('MCP Tool Handlers', () => {
       expect(server.version).toBe('1.0.0');
     });
 
-    it('registers 16 tools (4 core + 5 pulse + 7 relay)', () => {
+    it('registers 17 tools (4 core + 5 pulse + 7 relay + 1 agent)', () => {
       // Purpose: regression guard against accidental tool omissions or additions.
       // This count changes intentionally when new MCP tools are added.
       const server = createDorkOsToolServer(makeMockDeps()) as unknown as MockServer;
-      expect(server.tools).toHaveLength(16);
+      expect(server.tools).toHaveLength(17);
     });
 
     it('registers tools with correct names', () => {

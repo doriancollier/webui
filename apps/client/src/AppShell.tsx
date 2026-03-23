@@ -5,7 +5,7 @@ import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entitie
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
 import type { AgentVisual } from '@/layers/entities/agent';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
-import { motion, AnimatePresence, MotionConfig } from 'motion/react';
+import { motion, AnimatePresence, LayoutGroup, MotionConfig } from 'motion/react';
 import { PermissionBanner, DialogHost } from '@/layers/widgets/app-layout';
 import { SessionSidebar, SidebarFooterBar } from '@/layers/features/session-list';
 import { DashboardSidebar } from '@/layers/features/dashboard-sidebar';
@@ -23,6 +23,7 @@ import {
   SidebarRail,
 } from '@/layers/shared/ui';
 import { CommandPaletteDialog } from '@/layers/features/command-palette';
+import { CreateAgentDialog } from '@/layers/features/agent-creation';
 import { ShortcutsPanel, useShortcutsPanel } from '@/layers/features/shortcuts';
 
 // ── Private slot types ────────────────────────────────────────
@@ -183,96 +184,99 @@ export function AppShell() {
   return (
     <TooltipProvider>
       <MotionConfig reducedMotion="user">
-        <AnimatePresence mode="wait">
-          {showOnboarding ? (
-            <motion.div
-              key="onboarding"
-              initial={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
-            >
-              <OnboardingFlow onComplete={handleOnboardingComplete} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="main-app"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
-              className="h-dvh"
-            >
-              <div
-                data-testid="app-shell"
-                className="bg-background text-foreground flex h-dvh flex-col"
+        <LayoutGroup id="onboarding-to-chat">
+          <AnimatePresence mode="wait">
+            {showOnboarding ? (
+              <motion.div
+                key="onboarding"
+                initial={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
               >
-                <PermissionBanner sessionId={activeSessionId} />
-                <SidebarProvider
-                  open={sidebarOpen}
-                  onOpenChange={setSidebarOpen}
-                  className="flex-1 overflow-hidden"
-                  style={{ '--sidebar-width': '20rem' } as React.CSSProperties}
+                <OnboardingFlow onComplete={handleOnboardingComplete} />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="main-app"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2 }}
+                className="h-dvh"
+              >
+                <div
+                  data-testid="app-shell"
+                  className="bg-background text-foreground flex h-dvh flex-col"
                 >
-                  <Sidebar variant="floating">
-                    {/* ── Dynamic sidebar body with cross-fade ── */}
-                    <AnimatePresence mode="wait" initial={false}>
-                      <motion.div
-                        key={sidebarSlot.key}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.1 }}
-                        className="flex min-h-0 flex-1 flex-col overflow-hidden"
-                      >
-                        {sidebarSlot.body}
-                      </motion.div>
-                    </AnimatePresence>
-
-                    {/* ── Static footer — never animates ── */}
-                    <SidebarFooter className="border-t p-3">
-                      {shouldShowOnboarding && (
-                        <div className="mb-2">
-                          <ProgressCard
-                            onStepClick={(stepIndex) => setOnboardingStep(stepIndex)}
-                            onDismiss={dismissOnboarding}
-                          />
-                        </div>
-                      )}
-                      <SidebarFooterBar />
-                    </SidebarFooter>
-                    <SidebarRail />
-                  </Sidebar>
-                  <SidebarInset className="overflow-hidden">
-                    <header
-                      className="relative flex h-9 shrink-0 items-center gap-2 border-b px-2 transition-[border-color] duration-300"
-                      style={headerSlot.borderStyle}
-                    >
-                      <SidebarTrigger className="-ml-0.5" />
-                      <Separator orientation="vertical" className="mr-1 h-4" />
-                      {/* ── Dynamic header content with cross-fade ── */}
+                  <PermissionBanner sessionId={activeSessionId} />
+                  <SidebarProvider
+                    open={sidebarOpen}
+                    onOpenChange={setSidebarOpen}
+                    className="flex-1 overflow-hidden"
+                    style={{ '--sidebar-width': '20rem' } as React.CSSProperties}
+                  >
+                    <Sidebar variant="floating">
+                      {/* ── Dynamic sidebar body with cross-fade ── */}
                       <AnimatePresence mode="wait" initial={false}>
                         <motion.div
-                          key={headerSlot.key}
+                          key={sidebarSlot.key}
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           transition={{ duration: 0.1 }}
-                          className="flex min-w-0 flex-1 items-center gap-2"
+                          className="flex min-h-0 flex-1 flex-col overflow-hidden"
                         >
-                          {headerSlot.content}
+                          {sidebarSlot.body}
                         </motion.div>
                       </AnimatePresence>
-                    </header>
-                    <main className="flex-1 overflow-hidden">
-                      <Outlet />
-                    </main>
-                  </SidebarInset>
-                </SidebarProvider>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+
+                      {/* ── Static footer — never animates ── */}
+                      <SidebarFooter className="border-t p-3">
+                        {shouldShowOnboarding && (
+                          <div className="mb-2">
+                            <ProgressCard
+                              onStepClick={(stepIndex) => setOnboardingStep(stepIndex)}
+                              onDismiss={dismissOnboarding}
+                            />
+                          </div>
+                        )}
+                        <SidebarFooterBar />
+                      </SidebarFooter>
+                      <SidebarRail />
+                    </Sidebar>
+                    <SidebarInset className="overflow-hidden">
+                      <header
+                        className="relative flex h-9 shrink-0 items-center gap-2 border-b px-2 transition-[border-color] duration-300"
+                        style={headerSlot.borderStyle}
+                      >
+                        <SidebarTrigger className="-ml-0.5" />
+                        <Separator orientation="vertical" className="mr-1 h-4" />
+                        {/* ── Dynamic header content with cross-fade ── */}
+                        <AnimatePresence mode="wait" initial={false}>
+                          <motion.div
+                            key={headerSlot.key}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.1 }}
+                            className="flex min-w-0 flex-1 items-center gap-2"
+                          >
+                            {headerSlot.content}
+                          </motion.div>
+                        </AnimatePresence>
+                      </header>
+                      <main className="flex-1 overflow-hidden">
+                        <Outlet />
+                      </main>
+                    </SidebarInset>
+                  </SidebarProvider>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </LayoutGroup>
         <DialogHost />
         <CommandPaletteDialog />
+        <CreateAgentDialog />
         <ShortcutsPanel />
         <Toaster />
       </MotionConfig>

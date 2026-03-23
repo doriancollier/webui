@@ -62,6 +62,7 @@ const FEATURES: FeatureItem[] = [
 const QUICK_ACTIONS: QuickActionItem[] = [
   { id: 'dashboard', label: 'Go to Dashboard', icon: 'Home', action: 'navigateDashboard' },
   { id: 'new-session', label: 'New Session', icon: 'Plus', action: 'newSession' },
+  { id: 'create-agent', label: 'Create Agent', icon: 'Plus', action: 'createAgent' },
   { id: 'discover', label: 'Discover Agents', icon: 'Search', action: 'discoverAgents' },
   { id: 'browse', label: 'Browse Filesystem', icon: 'FolderOpen', action: 'browseFilesystem' },
   { id: 'theme', label: 'Toggle Theme', icon: 'Moon', action: 'toggleTheme' },

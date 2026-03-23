@@ -1,7 +1,7 @@
 ---
 number: 181
 title: Default Slack Adapter to Thread-Aware Respond Mode
-status: draft
+status: proposed
 created: 2026-03-22
 spec: slack-adapter-world-class
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: slack-adapter-world-class)
+Proposed
 
 ## Context
 

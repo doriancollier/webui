@@ -44,6 +44,7 @@ import type {
 import type {
   AgentManifest,
   AgentPathEntry,
+  CreateAgentOptions,
   DiscoveryCandidate,
   DenialRecord,
   AgentHealth,
@@ -55,6 +56,7 @@ import type {
   TransportScanOptions,
 } from './mesh-schemas.js';
 import type { RuntimeCapabilities } from './agent-runtime.js';
+import type { TemplateEntry } from './template-catalog.js';
 
 /** A single entry in the adapter list — config plus live status. */
 export interface AdapterListItem {
@@ -379,8 +381,8 @@ export interface Transport {
   getAgentByPath(path: string): Promise<AgentManifest | null>;
   /** Batch resolve agents for multiple paths. Returns a map of path -> manifest|null. */
   resolveAgents(paths: string[]): Promise<Record<string, AgentManifest | null>>;
-  /** Create a new agent at the given path. Returns the created manifest. */
-  createAgent(
+  /** Initialize an agent at the given path (write config to existing directory). Returns the created manifest. */
+  initAgent(
     path: string,
     name?: string,
     description?: string,
@@ -388,6 +390,8 @@ export interface Transport {
   ): Promise<AgentManifest>;
   /** Update an agent's fields by path. Returns the updated manifest. */
   updateAgentByPath(path: string, updates: Partial<AgentManifest>): Promise<AgentManifest>;
+  /** Create a new agent: mkdir + scaffold files + register. Returns the created manifest. */
+  createAgent(opts: CreateAgentOptions): Promise<AgentManifest>;
 
   // --- Discovery ---
 
@@ -423,6 +427,11 @@ export interface Transport {
     onProgress?: (progress: UploadProgress) => void
   ): Promise<UploadResult[]>;
 
+  // --- Directory Operations ---
+
+  /** Create a new directory within the boundary. Used by DirectoryPicker "New Folder". */
+  createDirectory(parentPath: string, folderName: string): Promise<{ path: string }>;
+
   // --- Admin Operations ---
 
   /** Read MCP server entries from `.mcp.json` in the given project directory. */
@@ -432,4 +441,14 @@ export interface Transport {
   resetAllData(confirm: string): Promise<{ message: string }>;
   /** Initiate a graceful server restart. */
   restartServer(): Promise<{ message: string }>;
+
+  // --- Templates ---
+
+  /** Fetch the merged template catalog (builtin + user templates). */
+  getTemplates(): Promise<TemplateEntry[]>;
+
+  // --- Default Agent ---
+
+  /** Set the default agent by name. Updates config.agents.defaultAgent. */
+  setDefaultAgent(agentName: string): Promise<void>;
 }

@@ -7,7 +7,7 @@ import type { Transport } from '@dorkos/shared/transport';
 import { createMockTransport } from '@dorkos/test-utils';
 import { TransportProvider } from '@/layers/shared/model';
 import { useCurrentAgent } from '../model/use-current-agent';
-import { useCreateAgent } from '../model/use-create-agent';
+import { useInitAgent } from '../model/use-init-agent';
 import { useUpdateAgent } from '../model/use-update-agent';
 import { useResolvedAgents } from '../model/use-resolved-agents';
 import { useAgentVisual } from '../model/use-agent-visual';
@@ -115,20 +115,20 @@ describe('useCurrentAgent', () => {
 });
 
 // ---------------------------------------------------------------------------
-// useCreateAgent
+// useInitAgent
 // ---------------------------------------------------------------------------
-describe('useCreateAgent', () => {
+describe('useInitAgent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('calls transport.createAgent with path and optional fields', async () => {
+  it('calls transport.initAgent with path and optional fields', async () => {
     const transport = createMockTransport({
-      createAgent: vi.fn().mockResolvedValue(mockAgent),
+      initAgent: vi.fn().mockResolvedValue(mockAgent),
     });
     const { Wrapper } = createWrapper(transport);
 
-    const { result } = renderHook(() => useCreateAgent(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useInitAgent(), { wrapper: Wrapper });
 
     result.current.mutate({
       path: '/projects/newapp',
@@ -141,7 +141,7 @@ describe('useCreateAgent', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(transport.createAgent).toHaveBeenCalledWith(
+    expect(transport.initAgent).toHaveBeenCalledWith(
       '/projects/newapp',
       'New Agent',
       'A new agent',
@@ -150,13 +150,13 @@ describe('useCreateAgent', () => {
     expect(result.current.data).toEqual(mockAgent);
   });
 
-  it('calls transport.createAgent with only path when no optional fields', async () => {
+  it('calls transport.initAgent with only path when no optional fields', async () => {
     const transport = createMockTransport({
-      createAgent: vi.fn().mockResolvedValue(mockAgent),
+      initAgent: vi.fn().mockResolvedValue(mockAgent),
     });
     const { Wrapper } = createWrapper(transport);
 
-    const { result } = renderHook(() => useCreateAgent(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useInitAgent(), { wrapper: Wrapper });
 
     result.current.mutate({ path: '/projects/minimal' });
 
@@ -164,7 +164,7 @@ describe('useCreateAgent', () => {
       expect(result.current.isSuccess).toBe(true);
     });
 
-    expect(transport.createAgent).toHaveBeenCalledWith(
+    expect(transport.initAgent).toHaveBeenCalledWith(
       '/projects/minimal',
       undefined,
       undefined,
@@ -174,7 +174,7 @@ describe('useCreateAgent', () => {
 
   it('invalidates agent queries on success', async () => {
     const transport = createMockTransport({
-      createAgent: vi.fn().mockResolvedValue(mockAgent),
+      initAgent: vi.fn().mockResolvedValue(mockAgent),
       getAgentByPath: vi.fn().mockResolvedValue(null),
     });
     const { Wrapper, queryClient } = createWrapper(transport);
@@ -187,7 +187,7 @@ describe('useCreateAgent', () => {
       expect(agentResult.current.isSuccess).toBe(true);
     });
 
-    const { result } = renderHook(() => useCreateAgent(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useInitAgent(), { wrapper: Wrapper });
 
     result.current.mutate({ path: '/projects/newapp' });
 
@@ -205,11 +205,11 @@ describe('useCreateAgent', () => {
 
   it('exposes error state on transport failure', async () => {
     const transport = createMockTransport({
-      createAgent: vi.fn().mockRejectedValue(new Error('Create failed')),
+      initAgent: vi.fn().mockRejectedValue(new Error('Create failed')),
     });
     const { Wrapper } = createWrapper(transport);
 
-    const { result } = renderHook(() => useCreateAgent(), { wrapper: Wrapper });
+    const { result } = renderHook(() => useInitAgent(), { wrapper: Wrapper });
 
     result.current.mutate({ path: '/projects/failing' });
 
