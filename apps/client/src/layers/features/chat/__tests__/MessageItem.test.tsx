@@ -433,8 +433,8 @@ describe('MessageItem', () => {
     expect(allText).toContain('Done');
     expect(allText).toContain('Some response text');
 
-    // The tool call card for 'TodoWrite' should render (tool name appears in card)
-    expect(allText).toContain('TodoWrite');
+    // The tool call card for 'TodoWrite' should render (label appears in card)
+    expect(allText).toContain('Update tasks');
 
     // All three parts should produce exactly 3 child elements in the parts container.
     // The parts container is the flex-col div wrapping the message parts.

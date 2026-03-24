@@ -14,10 +14,20 @@ vi.mock('../../StreamingText', () => ({
   ),
 }));
 
-// Mock ToolCallCard
+// Mock ToolCallCard — expose timestamps as data attrs for passthrough assertions
 vi.mock('../../ToolCallCard', () => ({
-  ToolCallCard: ({ toolCall }: { toolCall: { toolName: string } }) => (
-    <div data-testid="tool-call-card">{toolCall.toolName}</div>
+  ToolCallCard: ({
+    toolCall,
+  }: {
+    toolCall: { toolName: string; startedAt?: number; completedAt?: number };
+  }) => (
+    <div
+      data-testid="tool-call-card"
+      data-started-at={toolCall.startedAt ?? ''}
+      data-completed-at={toolCall.completedAt ?? ''}
+    >
+      {toolCall.toolName}
+    </div>
   ),
 }));
 
@@ -118,5 +128,50 @@ describe('AssistantMessageContent — React key stability', () => {
       .flat()
       .filter((arg) => typeof arg === 'string' && arg.includes('same key'));
     expect(keyWarnings).toHaveLength(0);
+  });
+});
+
+describe('AssistantMessageContent — timestamp passthrough', () => {
+  afterEach(() => {
+    cleanup();
+  });
+
+  it('passes startedAt and completedAt from tool_call part to ToolCallCard', () => {
+    const parts = [
+      {
+        type: 'tool_call' as const,
+        toolCallId: 'tc-timing',
+        toolName: 'Read',
+        input: '{"file":"test.ts"}',
+        status: 'complete' as const,
+        startedAt: 1000,
+        completedAt: 2234,
+      },
+    ];
+
+    const { getByTestId } = render(<AssistantMessageContent message={makeMessage(parts)} />);
+
+    const card = getByTestId('tool-call-card');
+    expect(card).toHaveAttribute('data-started-at', '1000');
+    expect(card).toHaveAttribute('data-completed-at', '2234');
+  });
+
+  it('passes undefined timestamps without error', () => {
+    const parts = [
+      {
+        type: 'tool_call' as const,
+        toolCallId: 'tc-no-timing',
+        toolName: 'Bash',
+        input: '{"cmd":"ls"}',
+        status: 'running' as const,
+      },
+    ];
+
+    const { getByTestId } = render(<AssistantMessageContent message={makeMessage(parts)} />);
+
+    const card = getByTestId('tool-call-card');
+    // When timestamps are undefined, data attrs render as empty string
+    expect(card).toHaveAttribute('data-started-at', '');
+    expect(card).toHaveAttribute('data-completed-at', '');
   });
 });

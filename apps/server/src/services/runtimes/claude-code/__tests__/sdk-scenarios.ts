@@ -188,6 +188,136 @@ export async function* sdkTodoWrite(
 }
 
 /**
+ * Produces a full MCP tool call sequence: content_block_start → optional
+ * input_json_delta → content_block_stop → assistant message → user message
+ * with tool_result. Unlike built-in tools, MCP tools do NOT emit
+ * tool_use_summary.
+ *
+ * @param toolName - MCP tool name (e.g., 'mcp__dorkos__mesh_list')
+ * @param toolId - Unique tool use ID
+ * @param input - Tool input object (empty `{}` to test the empty-input case)
+ * @param resultContent - Tool result text content
+ */
+export async function* sdkMcpToolCall(
+  toolName: string,
+  toolId: string,
+  input: object,
+  resultContent: string
+): AsyncGenerator<SDKMessage> {
+  yield makeInit();
+
+  // content_block_start — tool_use
+  yield {
+    type: 'stream_event',
+    event: {
+      type: 'content_block_start',
+      index: 0,
+      content_block: { type: 'tool_use', id: toolId, name: toolName, input: {} },
+    },
+    parent_tool_use_id: null,
+    session_id: SESSION_ID,
+    uuid: BASE_UUID,
+  } as SDKMessage;
+
+  // input_json_delta — only if input is non-empty
+  const hasInput = Object.keys(input).length > 0;
+  if (hasInput) {
+    yield {
+      type: 'stream_event',
+      event: {
+        type: 'content_block_delta',
+        index: 0,
+        delta: { type: 'input_json_delta', partial_json: JSON.stringify(input) },
+      },
+      parent_tool_use_id: null,
+      session_id: SESSION_ID,
+      uuid: BASE_UUID,
+    } as SDKMessage;
+  }
+
+  // content_block_stop
+  yield {
+    type: 'stream_event',
+    event: { type: 'content_block_stop', index: 0 },
+    parent_tool_use_id: null,
+    session_id: SESSION_ID,
+    uuid: BASE_UUID,
+  } as SDKMessage;
+
+  // assistant message — contains the full tool_use block with resolved input
+  yield {
+    type: 'assistant',
+    message: {
+      role: 'assistant',
+      content: [
+        {
+          type: 'tool_use',
+          id: toolId,
+          name: toolName,
+          input,
+        },
+      ],
+    },
+    session_id: SESSION_ID,
+    uuid: BASE_UUID,
+  } as SDKMessage;
+
+  // user message — contains tool_result blocks (MCP results arrive here)
+  yield {
+    type: 'user',
+    message: {
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: toolId,
+          content: [
+            {
+              type: 'text',
+              text: resultContent,
+            },
+          ],
+        },
+      ],
+    },
+    session_id: SESSION_ID,
+    uuid: BASE_UUID,
+  } as SDKMessage;
+
+  yield makeResult();
+}
+
+/**
+ * Produces a user message with `isReplay: true` for testing the replay guard.
+ *
+ * @param toolId - Tool use ID to reference in the tool_result block
+ * @param resultContent - Tool result text
+ */
+export function sdkReplayUserMessage(toolId: string, resultContent: string): SDKMessage {
+  return {
+    type: 'user',
+    isReplay: true,
+    message: {
+      role: 'user',
+      content: [
+        {
+          type: 'tool_result',
+          tool_use_id: toolId,
+          content: [
+            {
+              type: 'text',
+              text: resultContent,
+            },
+          ],
+        },
+      ],
+    },
+    session_id: SESSION_ID,
+    uuid: BASE_UUID,
+  } as SDKMessage;
+}
+
+/**
  * Produces an error result (subtype: 'error_during_execution') from the SDK.
  *
  * @param message - Error message text

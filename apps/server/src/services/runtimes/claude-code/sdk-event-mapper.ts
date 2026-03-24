@@ -1,8 +1,19 @@
 import type { SDKMessage } from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent, ErrorCategory } from '@dorkos/shared/types';
 import type { AgentSession, ToolState } from './agent-types.js';
-import { buildTaskEvent, TASK_TOOL_NAMES } from './build-task-event.js';
+import { buildTaskEvent, buildTodoWriteEvent, TASK_TOOL_NAMES } from './build-task-event.js';
 import { logger } from '../../../lib/logger.js';
+
+/** Extract text from a tool_result content field (file-local, loosely-typed for SDK messages). */
+function extractToolResultText(content: unknown): string {
+  if (!content) return '';
+  if (typeof content === 'string') return content;
+  if (!Array.isArray(content)) return '';
+  return (content as Array<Record<string, unknown>>)
+    .filter((b) => b.type === 'text' && b.text)
+    .map((b) => b.text as string)
+    .join('\n');
+}
 
 /** Hook events that correlate to a specific tool call and render inside ToolCallCard. */
 const TOOL_CONTEXTUAL_HOOK_EVENTS = new Set(['PreToolUse', 'PostToolUse', 'PostToolUseFailure']);
@@ -226,6 +237,7 @@ export async function* mapSdkMessage(
       } else if (delta?.type === 'text_delta' && !toolState.inTool) {
         yield { type: 'text_delta', data: { text: delta.text as string } };
       } else if (delta?.type === 'input_json_delta' && toolState.inTool) {
+        toolState.toolInputReceived.add(toolState.currentToolId);
         if (TASK_TOOL_NAMES.has(toolState.currentToolName)) {
           toolState.appendTaskInput(delta.partial_json as string);
         }
@@ -276,7 +288,10 @@ export async function* mapSdkMessage(
         if (wasTaskTool && toolState.taskToolInput) {
           try {
             const input = JSON.parse(toolState.taskToolInput);
-            const taskEvent = buildTaskEvent(taskToolName, input);
+            const taskEvent =
+              taskToolName === 'TodoWrite'
+                ? buildTodoWriteEvent(input)
+                : buildTaskEvent(taskToolName, input);
             if (taskEvent) {
               yield { type: 'task_update', data: taskEvent };
             }
@@ -290,10 +305,70 @@ export async function* mapSdkMessage(
     return;
   }
 
+  // Backfill tool input from completed assistant message (for MCP tools with empty input)
+  if (message.type === 'assistant') {
+    const content = (message as Record<string, unknown>).message;
+    const contentBlocks = (content as Record<string, unknown>)?.content;
+    if (Array.isArray(contentBlocks)) {
+      for (const block of contentBlocks as Array<Record<string, unknown>>) {
+        if (
+          block.type === 'tool_use' &&
+          typeof block.id === 'string' &&
+          !toolState.toolInputReceived.has(block.id) &&
+          toolState.toolNameById.has(block.id)
+        ) {
+          const inputStr = JSON.stringify(block.input ?? {});
+          yield {
+            type: 'tool_call_delta',
+            data: {
+              toolCallId: block.id,
+              toolName: toolState.toolNameById.get(block.id) ?? '',
+              input: inputStr,
+              status: 'running',
+            },
+          };
+        }
+      }
+    }
+    return;
+  }
+
+  // Extract tool results from user messages (MCP tools deliver results here, not via tool_use_summary)
+  if (message.type === 'user') {
+    // Skip replay messages during session resume
+    if ((message as Record<string, unknown>).isReplay) return;
+
+    const content = (message as Record<string, unknown>).message;
+    const contentBlocks = (content as Record<string, unknown>)?.content;
+    if (Array.isArray(contentBlocks)) {
+      for (const block of contentBlocks as Array<Record<string, unknown>>) {
+        if (block.type === 'tool_result' && typeof block.tool_use_id === 'string') {
+          // Skip tools already resolved via tool_use_summary (built-in tools)
+          if (toolState.resolvedResultIds.has(block.tool_use_id)) continue;
+
+          const resultText = extractToolResultText(block.content);
+          if (resultText) {
+            yield {
+              type: 'tool_result',
+              data: {
+                toolCallId: block.tool_use_id,
+                toolName: toolState.toolNameById.get(block.tool_use_id) ?? '',
+                result: resultText,
+                status: 'complete',
+              },
+            };
+          }
+        }
+      }
+    }
+    return;
+  }
+
   // Handle tool use summaries
   if (message.type === 'tool_use_summary') {
     const summary = message as { summary: string; preceding_tool_use_ids: string[] };
     for (const toolUseId of summary.preceding_tool_use_ids) {
+      toolState.resolvedResultIds.add(toolUseId);
       yield {
         type: 'tool_result',
         data: {

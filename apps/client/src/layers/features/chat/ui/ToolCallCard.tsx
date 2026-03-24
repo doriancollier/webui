@@ -161,11 +161,11 @@ export function ToolCallCard({ toolCall, defaultExpanded = false }: ToolCallCard
               {badge}
             </span>
           )}
-          <span className="text-3xs font-mono">
+          <span className="text-3xs flex-1 text-left font-mono">
             {getToolLabel(toolCall.toolName, toolCall.input)}
           </span>
           {duration !== undefined && (
-            <span className="text-muted-foreground text-3xs ml-auto tabular-nums">
+            <span className="text-muted-foreground text-3xs tabular-nums">
               {formatDuration(duration)}
             </span>
           )}

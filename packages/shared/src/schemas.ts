@@ -293,6 +293,7 @@ export const TaskUpdateEventSchema = z
   .object({
     action: z.enum(['create', 'update', 'snapshot']),
     task: TaskItemSchema,
+    tasks: z.array(TaskItemSchema).optional(),
   })
   .openapi('TaskUpdateEvent');
 

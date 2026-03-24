@@ -30,6 +30,10 @@ export interface ToolState {
   thinkingStartMs: number;
   /** Lookup table mapping tool_use block IDs to tool names for result correlation. */
   toolNameById: Map<string, string>;
+  /** Tool IDs whose results were already delivered via tool_use_summary. */
+  resolvedResultIds: Set<string>;
+  /** Tool IDs that received at least one input_json_delta during streaming. */
+  toolInputReceived: Set<string>;
   appendTaskInput: (chunk: string) => void;
   resetTaskInput: () => void;
   setToolState: (tool: boolean, name: string, id: string) => void;
@@ -44,6 +48,8 @@ export function createToolState(): ToolState {
   let inThinking = false;
   let thinkingStartMs = 0;
   const toolNameById = new Map<string, string>();
+  const resolvedResultIds = new Set<string>();
+  const toolInputReceived = new Set<string>();
   return {
     get inTool() {
       return inTool;
@@ -70,6 +76,8 @@ export function createToolState(): ToolState {
       thinkingStartMs = v;
     },
     toolNameById,
+    resolvedResultIds,
+    toolInputReceived,
     appendTaskInput: (chunk: string) => {
       taskToolInput += chunk;
     },

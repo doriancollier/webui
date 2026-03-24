@@ -93,6 +93,10 @@ export function handleToolCallEnd(
     // pending until the user responds (tool_result handles the final status).
     if (!existing.interactiveType) {
       existing.status = 'complete';
+      // Set completedAt if not already set (MCP tools complete here, not via tool_result)
+      if (!existing.completedAt) {
+        existing.completedAt = Date.now();
+      }
     }
   } else {
     console.warn('[stream] tool_call_end: unknown toolCallId', tc.toolCallId);

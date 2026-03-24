@@ -106,6 +106,26 @@ describe('getToolLabel', () => {
     expect(getToolLabel('TaskList', '{}')).toBe('List tasks');
   });
 
+  // TodoWrite
+  it('shows item count for TodoWrite with multiple items', () => {
+    expect(
+      getToolLabel(
+        'TodoWrite',
+        '{"todos":[{"content":"Buy milk","status":"pending"},{"content":"Buy eggs","status":"pending"},{"content":"Buy bread","status":"pending"}]}'
+      )
+    ).toBe('Update tasks (3 items)');
+  });
+
+  it('shows singular for TodoWrite with one item', () => {
+    expect(getToolLabel('TodoWrite', '{"todos":[{"content":"Buy milk","status":"pending"}]}')).toBe(
+      'Update tasks (1 item)'
+    );
+  });
+
+  it('shows zero count for TodoWrite with empty todos', () => {
+    expect(getToolLabel('TodoWrite', '{"todos":[]}')).toBe('Update tasks (0 items)');
+  });
+
   // Skill
   it('shows skill name for Skill', () => {
     expect(getToolLabel('Skill', '{"skill":"daily-note"}')).toBe('Skill daily-note');
@@ -141,6 +161,14 @@ describe('getToolLabel', () => {
 
   it('humanizes MCP tool name for unknown server', () => {
     expect(getToolLabel('mcp__my_custom_server__do_thing', '{}')).toBe('Do Thing');
+  });
+
+  it('humanizes MCP tool name when input is empty string', () => {
+    expect(getToolLabel('mcp__dorkos__mesh_list', '')).toBe('Mesh List');
+  });
+
+  it('humanizes MCP tool name when input is invalid JSON', () => {
+    expect(getToolLabel('mcp__slack__send_message', 'not json')).toBe('Send Message');
   });
 
   it('returns raw name for mcp__ prefix with only one segment', () => {

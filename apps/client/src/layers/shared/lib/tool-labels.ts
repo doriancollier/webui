@@ -82,9 +82,16 @@ export function getToolLabel(toolName: string, input: string): string {
   try {
     parsed = JSON.parse(input);
   } catch {
+    // Input not valid JSON — still try MCP name parsing before falling back
+    const mcp = parseMcpToolName(toolName);
+    if (mcp) return mcp.toolLabel;
     return toolName;
   }
-  if (!parsed || typeof parsed !== 'object') return toolName;
+  if (!parsed || typeof parsed !== 'object') {
+    const mcp = parseMcpToolName(toolName);
+    if (mcp) return mcp.toolLabel;
+    return toolName;
+  }
 
   switch (toolName) {
     case 'Bash':
@@ -119,6 +126,11 @@ export function getToolLabel(toolName: string, input: string): string {
     case 'TaskGet': {
       const id = str(parsed.taskId);
       return `Get task #${id}`;
+    }
+    case 'TodoWrite': {
+      const todos = parsed.todos;
+      const count = Array.isArray(todos) ? todos.length : 0;
+      return count === 1 ? 'Update tasks (1 item)' : `Update tasks (${count} items)`;
     }
     case 'NotebookEdit':
       return `Edit notebook ${basename(str(parsed.notebook_path))}`;

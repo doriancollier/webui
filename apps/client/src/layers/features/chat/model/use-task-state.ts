@@ -79,7 +79,15 @@ export function useTaskState(sessionId: string | null): TaskState {
   const handleTaskEvent = useCallback((event: TaskUpdateEvent) => {
     setTaskMap((prev) => {
       const next = new Map(prev);
-      if (event.action === 'create') {
+      if (event.action === 'snapshot') {
+        // TodoWrite: full overwrite — clear and rebuild from tasks array
+        next.clear();
+        const items = event.tasks ?? [event.task];
+        for (const item of items) {
+          next.set(item.id, item);
+        }
+        nextIdRef.current = items.length + 1;
+      } else if (event.action === 'create') {
         const id = String(nextIdRef.current++);
         next.set(id, { ...event.task, id });
       } else if (event.action === 'update' && event.task.id) {

@@ -60,6 +60,8 @@ function AutoHideToolCall({
     progressOutput?: string;
     status: 'pending' | 'running' | 'complete' | 'error';
     hooks?: HookState[];
+    startedAt?: number;
+    completedAt?: number;
   };
   autoHide: boolean;
   expandToolCalls: boolean;
@@ -85,6 +87,8 @@ function AutoHideToolCall({
               progressOutput: part.progressOutput,
               status: part.status,
               hooks: part.hooks,
+              startedAt: part.startedAt,
+              completedAt: part.completedAt,
             }}
             defaultExpanded={expandToolCalls}
           />
