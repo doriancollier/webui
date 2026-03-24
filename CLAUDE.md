@@ -188,7 +188,7 @@ These are non-negotiable constraints enforced by ESLint, CI, or convention:
 3. **`os.homedir()` banned** — use `lib/dork-home.ts` instead (carve-out only for that file)
 4. **TSDoc on exports** — `eslint-plugin-jsdoc` enforces documentation on exported functions/classes
 5. **Prettier + Tailwind** — `prettier-plugin-tailwindcss` sorts classes automatically
-6. 9 path-specific rules in `.claude/rules/` provide contextual guidance (see `.claude/README.md`)
+6. 10 path-specific rules in `.claude/rules/` provide contextual guidance (see `.claude/README.md`)
 
 ## Testing
 

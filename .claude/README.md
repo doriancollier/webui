@@ -19,14 +19,14 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 | Component    | Count | Location                                                                   |
 | ------------ | ----- | -------------------------------------------------------------------------- |
-| Commands     | 47    | `.claude/commands/`                                                        |
+| Commands     | 48    | `.claude/commands/`                                                        |
 | Agents       | 5     | `.claude/agents/`                                                          |
-| Skills       | 11    | `.claude/skills/`                                                          |
+| Skills       | 12    | `.claude/skills/`                                                          |
 | Rules        | 10    | `.claude/rules/`                                                           |
-| Claude Hooks | 10    | `.claude/hooks/`, configured in `.claude/settings.json`                    |
+| Claude Hooks | 11    | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
 | MCP Servers  | 3     | `.mcp.json`                                                                |
-| ADRs         | 56    | `decisions/`                                                               |
+| ADRs         | 164   | `decisions/`                                                               |
 | Guides       | 18    | `contributing/` (17 guides + INDEX.md)                                     |
 
 ## Component Types
@@ -51,6 +51,7 @@ Slash commands are triggered explicitly by typing `/command`. They're expanded p
 | `browsertest/` | (root), maintain                                                      | Browser test execution, maintenance, health audit                                       |
 | `changelog/`   | backfill                                                              | Changelog backfill from git commits                                                     |
 | `research/`    | curate                                                                | Research file curation and status management                                            |
+| `chat/`        | self-test                                                             | Chat UI self-testing in live browser session                                            |
 | root           | ideate, ideate-to-spec, review-recent-work                            | Feature development                                                                     |
 
 ### Agents (Tool-Invoked)
@@ -98,6 +99,7 @@ Skills provide reusable expertise that Claude applies automatically when relevan
 | `executing-specs`              | Parallel spec implementation, incremental persistence | Orchestrating `/spec:execute` with batch result tracking           |
 | `writing-adrs`                 | Architecture Decision Records, decision signals       | Creating ADRs, extracting decisions from specs, ADR quality        |
 | `browser-testing`              | Browser test methodology, Playwright patterns         | Writing and maintaining DorkOS browser tests                       |
+| `reading-session-transcripts`  | DorkOS session URL → JSONL file resolution            | User shares session URLs, asks to read transcripts/chats           |
 
 ### Rules (Path-Triggered)
 
@@ -124,13 +126,13 @@ Hooks run automatically at lifecycle events. Configured in `settings.json` with 
 
 Git hooks (post-commit, etc.) are separate and live in `.claude/git-hooks/`. Install via `.claude/scripts/install-git-hooks.sh`.
 
-| Event              | Hooks                                                            | Purpose                                                                                            |
-| ------------------ | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| `PreToolUse`       | file-guard                                                       | Block access to sensitive files (.env, .key, .pem)                                                 |
-| `PostToolUse`      | typecheck-changed, lint-changed, check-any-changed, test-changed | Validate code after edits                                                                          |
-| `UserPromptSubmit` | thinking-level                                                   | Adjust Claude's thinking mode based on prompt complexity                                           |
-| `Stop`             | create-checkpoint, check-docs-changed, autonomous-check          | Session cleanup, checkpoint creation, doc reminders, prevent premature stop during autonomous work |
-| `SessionStart`     | check-adr-curation                                               | Remind about draft ADRs needing curation                                                           |
+| Event              | Hooks                                                                            | Purpose                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `PreToolUse`       | file-guard                                                                       | Block access to sensitive files (.env, .key, .pem)                                                 |
+| `PostToolUse`      | format-changed, typecheck-changed, lint-changed, check-any-changed, test-changed | Format, validate, and test code after edits                                                        |
+| `UserPromptSubmit` | thinking-level                                                                   | Adjust Claude's thinking mode based on prompt complexity                                           |
+| `Stop`             | create-checkpoint, check-docs-changed, autonomous-check                          | Session cleanup, checkpoint creation, doc reminders, prevent premature stop during autonomous work |
+| `SessionStart`     | check-adr-curation                                                               | Remind about draft ADRs needing curation                                                           |
 
 ### MCP Servers
 
@@ -233,7 +235,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 ├── settings.json          # Hooks, permissions, environment
 ├── settings.local.json    # Local overrides, MCP servers
 │
-├── commands/              # Slash commands (47 total)
+├── commands/              # Slash commands (48 total)
 │   ├── adr/               # Architecture Decision Records
 │   ├── app/               # Application maintenance
 │   ├── spec/              # Specification workflow
@@ -248,6 +250,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   │   └── ide/           # IDE color schemes
 │   ├── template/          # Upstream template management
 │   ├── worktree/          # Git worktree management
+│   ├── chat/              # Chat UI testing
 │   ├── browsertest.md     # Browser test execution
 │   ├── browsertest:maintain.md  # Browser test health audit
 │   ├── ideate.md          # Feature ideation
@@ -263,7 +266,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── product-manager.md
 │   └── research-expert.md
 │
-├── skills/                # Reusable expertise (11 total)
+├── skills/                # Reusable expertise (12 total)
 │   ├── browser-testing/
 │   ├── clarifying-requirements/
 │   ├── debugging-systematically/
@@ -274,6 +277,7 @@ Project-wide documentation? ─────────────► CLAUDE.md
 │   ├── writing-adrs/
 │   ├── writing-developer-guides/
 │   ├── orchestrating-parallel-work/
+│   ├── reading-session-transcripts/
 │   └── writing-changelogs/
 │
 └── rules/                 # Path-specific guidance (10 total)
