@@ -38,7 +38,7 @@ const baseProps = {
 describe('ToolApproval', () => {
   it('renders tool name and approve/deny buttons', () => {
     render(<ToolApproval {...baseProps} />);
-    expect(screen.getByText('Write')).toBeDefined();
+    expect(screen.getByText('Write test.txt')).toBeDefined();
     expect(screen.getByText('Tool approval required')).toBeDefined();
     expect(screen.getByRole('button', { name: /approve/i })).toBeDefined();
     expect(screen.getByRole('button', { name: /deny/i })).toBeDefined();
@@ -161,7 +161,7 @@ describe('ToolApproval', () => {
       await waitFor(() => {
         const toolNameEl = screen.getByTestId('tool-approval-decided').querySelector('.font-mono');
         expect(toolNameEl).not.toBeNull();
-        expect(toolNameEl!.textContent).toBe('Write');
+        expect(toolNameEl!.textContent).toBe('Write test.txt');
         expect(toolNameEl!.className).toContain('text-3xs');
       });
     });
@@ -345,6 +345,48 @@ describe('ToolApproval', () => {
       await act(async () => vi.advanceTimersByTime(60_000)); // 1 minute elapsed
       const progressBar = screen.getByRole('progressbar');
       expect(progressBar.getAttribute('aria-valuenow')).toBe('540');
+    });
+  });
+
+  describe('friendly tool name formatting', () => {
+    it('renders friendly label for MCP tool names with server badge', () => {
+      render(
+        <ToolApproval
+          {...baseProps}
+          toolName="mcp__slack__send_message"
+          input='{"channel": "#general"}'
+        />
+      );
+      expect(screen.getByText('Slack')).toBeDefined();
+      expect(screen.getByText('Send Message')).toBeDefined();
+    });
+
+    it('suppresses badge for DorkOS tools but shows friendly label', () => {
+      render(
+        <ToolApproval {...baseProps} toolName="mcp__dorkos__binding_list_sessions" input="{}" />
+      );
+      expect(screen.queryByText('DorkOS')).toBeNull();
+      expect(screen.getByText('Binding List Sessions')).toBeDefined();
+    });
+
+    it('shows friendly label in decided state for MCP tools', async () => {
+      const ref = createRef<ToolApprovalHandle>();
+      render(
+        <ToolApproval
+          {...baseProps}
+          toolName="mcp__slack__send_message"
+          input='{"channel": "#general"}'
+          ref={ref}
+        />
+      );
+
+      ref.current!.approve();
+
+      await waitFor(() => {
+        const toolNameEl = screen.getByTestId('tool-approval-decided').querySelector('.font-mono');
+        expect(toolNameEl).not.toBeNull();
+        expect(toolNameEl!.textContent).toBe('Send Message');
+      });
     });
   });
 });

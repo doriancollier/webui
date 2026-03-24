@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useMemo, useImperativeHandle, useCallback 
 import { motion, AnimatePresence } from 'motion/react';
 import { Check, X, Shield } from 'lucide-react';
 import { useTransport } from '@/layers/shared/model';
-import { ToolArgumentsDisplay, cn } from '@/layers/shared/lib';
+import { ToolArgumentsDisplay, cn, getToolLabel, getMcpServerBadge } from '@/layers/shared/lib';
 import { Kbd, Button } from '@/layers/shared/ui';
 import { CompactResultRow, InteractiveCard } from './primitives';
 
@@ -70,6 +70,8 @@ export function ToolApproval({
   timeoutMs,
 }: ToolApprovalProps) {
   const transport = useTransport();
+  const badge = getMcpServerBadge(toolName);
+  const label = getToolLabel(toolName, input);
   const [responding, setResponding] = useState(false);
   const [decided, setDecided] = useState<'approved' | 'denied' | null>(null);
 
@@ -191,7 +193,7 @@ export function ToolApproval({
               <X className="text-status-error size-(--size-icon-sm) shrink-0" />
             )
           }
-          label={<span className="text-3xs font-mono">{toolName}</span>}
+          label={<span className="text-3xs font-mono">{label}</span>}
           trailing={
             <span
               className={cn(
@@ -278,7 +280,14 @@ export function ToolApproval({
         )}
       </AnimatePresence>
 
-      <div className="mb-2 font-mono text-xs">{toolName}</div>
+      <div className="mb-2 flex items-center gap-1.5">
+        {badge && (
+          <span className="bg-muted text-muted-foreground text-3xs rounded px-1 py-0.5 font-medium">
+            {badge}
+          </span>
+        )}
+        <span className="font-mono text-xs">{label}</span>
+      </div>
       {input && (
         <div className="bg-muted mb-3 rounded p-2">
           <ToolArgumentsDisplay toolName={toolName} input={input} />
