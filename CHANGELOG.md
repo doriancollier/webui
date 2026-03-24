@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix indicator bar exit animation and always-render pattern
 - Move useCallback hooks before early return in TaskListPanel
 ---
 

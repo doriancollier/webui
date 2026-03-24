@@ -270,7 +270,7 @@ export function ChatInputContainer({
               onRemove={onQueueRemove}
             />
 
-            {runningAgents.length > 0 && <RunningAgentIndicator agents={runningAgents} />}
+            <RunningAgentIndicator agents={runningAgents} />
 
             <ChatInput
               ref={chatInputRef}
