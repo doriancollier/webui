@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add animated background agent indicator with running figures
+
 ### Changed
 
 - Extract useTabVisibility to shared model
