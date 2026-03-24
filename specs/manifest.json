@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "nextNumber": 177,
+  "nextNumber": 178,
   "specs": [
+    {
+      "number": 177,
+      "slug": "background-task-visibility",
+      "title": "Background Task Visibility — Unified Indicator for Agents and Bash",
+      "created": "2026-03-24",
+      "status": "ideation"
+    },
     {
       "number": 176,
       "slug": "friendly-tool-name-display",
