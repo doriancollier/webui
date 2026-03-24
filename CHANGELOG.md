@@ -9,21 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Enhance StatusShowcases with taskMap and statusTimestamps
-- Rebuild TaskListPanel with progress bar, deps, and expand
-- Add animated background agent indicator with running figures
+### Changed
+
+### Fixed
+
+---
+
+## [0.23.0] - 2026-03-23
+
+> Task visibility and execution awareness — progress bars, dependencies, and animated background indicators bring your agent fleet to life.
+
+### Added
+
+- View task dependencies and progress at a glance — TaskListPanel now displays real-time progress bars, dependency-aware sorting (blocked tasks dimmed), and click-to-expand detail view with description, owner, elapsed time, and dependency links
+- See running background agents with animated indicator showing active subagent execution
+- Poll tasks automatically when background refresh is enabled — subagent todo updates appear without manual reload
 
 ### Changed
 
-- Extract useTabVisibility to shared model
-- Extract TaskActiveForm component
-- Add task list 10x implementation plan
-- Add task list 10x design spec
+- Extract shared `useTabVisibility` hook for consistent tab-aware polling across features
+- Decompose TaskListPanel into focused sub-components (TaskProgressHeader, TaskRow, TaskDetail, TaskActiveForm)
 
 ### Fixed
 
 - Fix indicator bar exit animation and always-render pattern
-- Move useCallback hooks before early return in TaskListPanel
+- Fix Rules of Hooks violation in TaskListPanel where useCallback was called after conditional return
+
 ---
 
 ## [0.22.0] - 2026-03-23

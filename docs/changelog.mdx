@@ -5,6 +5,28 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.23.0] - 2026-03-23
+
+> Task visibility and execution awareness — progress bars, dependencies, and animated background indicators bring your agent fleet to life.
+
+### Added
+
+- View task dependencies and progress at a glance — TaskListPanel now displays real-time progress bars, dependency-aware sorting (blocked tasks dimmed), and click-to-expand detail view with description, owner, elapsed time, and dependency links
+- See running background agents with animated indicator showing active subagent execution
+- Poll tasks automatically when background refresh is enabled — subagent todo updates appear without manual reload
+
+### Changed
+
+- Extract shared `useTabVisibility` hook for consistent tab-aware polling across features
+- Decompose TaskListPanel into focused sub-components (TaskProgressHeader, TaskRow, TaskDetail, TaskActiveForm)
+
+### Fixed
+
+- Fix indicator bar exit animation and always-render pattern
+- Fix Rules of Hooks violation in TaskListPanel where useCallback was called after conditional return
+
+---
+
 ## [0.22.0] - 2026-03-23
 
 > TodoWrite task system, speculative sessions, and brand icon refresh

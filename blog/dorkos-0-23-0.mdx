@@ -1,0 +1,40 @@
+---
+title: DorkOS 0.23.0
+description: Task visibility and execution awareness — progress bars, dependencies, and animated background indicators bring your agent fleet to life.
+date: 2026-03-23
+author: DorkOS Team
+category: release
+tags: [release, tasks, monitoring, agents]
+---
+
+Your agent fleet just got a lot more visible. This release rebuilds the task panel from scratch with dependency-aware progress tracking and adds animated indicators for background agent execution.
+
+## Highlights
+
+The task list is no longer a flat checklist — it's a heads-up display for your running agents. Dependencies surface automatically, blocked tasks dim out of the way, and a single click reveals the full context behind any task.
+
+Background agents now announce themselves visually, so you always know when subagents are working on your behalf.
+
+## All Changes
+
+### Added
+
+- View task dependencies and progress at a glance — TaskListPanel now displays real-time progress bars, dependency-aware sorting (blocked tasks dimmed), and click-to-expand detail view with description, owner, elapsed time, and dependency links
+- See running background agents with animated indicator showing active subagent execution
+- Poll tasks automatically when background refresh is enabled — subagent todo updates appear without manual reload
+
+### Changed
+
+- Extract shared `useTabVisibility` hook for consistent tab-aware polling across features
+- Decompose TaskListPanel into focused sub-components (TaskProgressHeader, TaskRow, TaskDetail, TaskActiveForm)
+
+### Fixed
+
+- Fix indicator bar exit animation and always-render pattern
+- Fix Rules of Hooks violation in TaskListPanel where useCallback was called after conditional return
+
+## Install / Update
+
+```
+npm install -g dorkos@0.23.0
+```
