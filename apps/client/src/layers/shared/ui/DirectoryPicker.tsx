@@ -5,8 +5,7 @@ import {
   formatRelativeTime,
   shortenHomePath,
   STORAGE_KEYS,
-  hashToHslColor,
-  hashToEmoji,
+  resolveAgentVisual,
 } from '@/layers/shared/lib';
 import { PathBreadcrumb } from './path-breadcrumb';
 import {
@@ -327,8 +326,11 @@ export function DirectoryPicker({
             <div className="py-1">
               {recentCwds.slice(0, 10).map((recent) => {
                 const agent = resolvedAgents?.[recent.path] ?? null;
-                const color = agent?.color ?? hashToHslColor(agent?.id ?? recent.path);
-                const emoji = agent?.icon ?? hashToEmoji(agent?.id ?? recent.path);
+                const { color, emoji } = resolveAgentVisual({
+                  id: agent?.id ?? recent.path,
+                  color: agent?.color,
+                  icon: agent?.icon,
+                });
 
                 return (
                   <button

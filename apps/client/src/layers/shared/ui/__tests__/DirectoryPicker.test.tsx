@@ -32,8 +32,7 @@ vi.mock('@/layers/shared/lib', () => ({
   formatRelativeTime: () => '1h ago',
   shortenHomePath: (p: string) => p.replace('/home/user', '~'),
   STORAGE_KEYS: { PICKER_VIEW: 'dorkos-picker-view' },
-  hashToHslColor: () => 'hsl(200, 60%, 50%)',
-  hashToEmoji: () => '🤖',
+  resolveAgentVisual: () => ({ color: 'hsl(200, 60%, 50%)', emoji: '🤖' }),
 }));
 
 beforeAll(() => {

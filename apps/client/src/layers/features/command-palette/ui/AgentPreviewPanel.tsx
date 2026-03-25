@@ -1,6 +1,6 @@
 import { motion } from 'motion/react';
 import { Badge } from '@/layers/shared/ui';
-import { hashToHslColor, hashToEmoji, shortenHomePath } from '@/layers/shared/lib';
+import { shortenHomePath, resolveAgentVisual } from '@/layers/shared/lib';
 import { usePreviewData } from '../model/use-preview-data';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 
@@ -20,8 +20,7 @@ interface AgentPreviewPanelProps {
  */
 export function AgentPreviewPanel({ agent }: AgentPreviewPanelProps) {
   const { sessionCount, recentSessions, health } = usePreviewData(agent.id, agent.projectPath);
-  const color = agent.color ?? hashToHslColor(agent.id);
-  const emoji = agent.icon ?? hashToEmoji(agent.id);
+  const { color, emoji } = resolveAgentVisual(agent);
 
   return (
     <motion.div

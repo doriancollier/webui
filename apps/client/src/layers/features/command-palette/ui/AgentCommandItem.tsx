@@ -1,7 +1,7 @@
 import { Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import { CommandItem } from '@/layers/shared/ui';
-import { hashToHslColor, hashToEmoji, shortenHomePath } from '@/layers/shared/lib';
+import { shortenHomePath, resolveAgentVisual } from '@/layers/shared/lib';
 import { HighlightedText } from './HighlightedText';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 
@@ -46,8 +46,7 @@ export function AgentCommandItem({
   nameIndices,
   isSelected,
 }: AgentCommandItemProps) {
-  const color = agent.color ?? hashToHslColor(agent.id);
-  const emoji = agent.icon ?? hashToEmoji(agent.id);
+  const { color, emoji } = resolveAgentVisual(agent);
 
   return (
     <CommandItem

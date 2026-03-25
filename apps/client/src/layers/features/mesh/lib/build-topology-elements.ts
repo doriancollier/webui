@@ -12,6 +12,7 @@ import type { AdapterBinding } from '@dorkos/shared/relay-schemas';
 import type { AgentNodeData } from '../ui/AgentNode';
 import type { AdapterNodeData } from '../ui/AdapterNode';
 import type { BindingEdgeData } from '../ui/BindingEdge';
+import { resolveAgentVisual } from '@/layers/shared/lib';
 import { getNamespaceColor } from './namespace-colors';
 
 /** Structured result from building topology elements. */
@@ -172,7 +173,7 @@ export function buildTopologyElements(
             : undefined,
           behavior: agent.behavior ? { responseMode: agent.behavior.responseMode } : undefined,
           color: typedAgent.color ?? null,
-          emoji: typedAgent.icon ?? null,
+          emoji: resolveAgentVisual(typedAgent).emoji,
           projectPath: typedAgent.projectPath ?? '',
           onOpenSettings: (id: string) =>
             callbacks.onOpenSettings?.(id, typedAgent.projectPath ?? ''),

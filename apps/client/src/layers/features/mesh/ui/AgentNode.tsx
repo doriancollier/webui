@@ -29,7 +29,7 @@ export interface AgentNodeData extends Record<string, unknown> {
   budget?: { maxHopsPerMessage: number; maxCallsPerHour: number };
   behavior?: { responseMode: string };
   color?: string | null;
-  emoji?: string | null;
+  emoji: string;
   /** Absolute filesystem path for the agent's project directory. */
   projectPath?: string;
   onOpenSettings?: (agentId: string) => void;

@@ -18,9 +18,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/layers/shared/ui';
-import { cn } from '@/layers/shared/lib';
-import { shortenHomePath } from '@/layers/shared/lib';
-import { hashToHslColor, hashToEmoji } from '@/layers/shared/lib/favicon-utils';
+import { cn, shortenHomePath, resolveAgentVisual } from '@/layers/shared/lib';
 import type { PulseSchedule } from '@dorkos/shared/types';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import { RunHistoryPanel } from './RunHistoryPanel';
@@ -70,6 +68,7 @@ export function ScheduleRow({
   const triggerSchedule = useTriggerSchedule();
   const deleteSchedule = useDeleteSchedule();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const agentVisual = agent ? resolveAgentVisual(agent) : null;
 
   const handleRunNow = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -121,11 +120,9 @@ export function ScheduleRow({
                 <>
                   <span
                     className="inline-block size-2 shrink-0 rounded-full"
-                    style={{ backgroundColor: agent.color ?? hashToHslColor(agent.id) }}
+                    style={{ backgroundColor: agentVisual!.color }}
                   />
-                  <span className="text-xs leading-none">
-                    {agent.icon ?? hashToEmoji(agent.id)}
-                  </span>
+                  <span className="text-xs leading-none">{agentVisual!.emoji}</span>
                   <span className="text-sm font-medium">{agent.name}</span>
                   <span className="text-muted-foreground text-xs">&middot;</span>
                 </>

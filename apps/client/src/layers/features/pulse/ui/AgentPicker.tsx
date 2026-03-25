@@ -8,9 +8,7 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/layers/shared/ui';
-import { cn } from '@/layers/shared/lib';
-import { hashToHslColor, hashToEmoji } from '@/layers/shared/lib/favicon-utils';
-import { shortenHomePath } from '@/layers/shared/lib';
+import { cn, shortenHomePath, resolveAgentVisual } from '@/layers/shared/lib';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 
 interface AgentPickerProps {
@@ -37,6 +35,7 @@ export function AgentPicker({ agents, value, onValueChange }: AgentPickerProps) 
   }, [open]);
 
   const selectedAgent = agents.find((a) => a.id === value);
+  const selectedVisual = selectedAgent ? resolveAgentVisual(selectedAgent) : null;
 
   function handleSelect(agentId: string) {
     onValueChange(agentId === value ? undefined : agentId);
@@ -71,11 +70,9 @@ export function AgentPicker({ agents, value, onValueChange }: AgentPickerProps) 
           <span className="flex items-center gap-2 truncate">
             <span
               className="inline-block size-2 shrink-0 rounded-full"
-              style={{ backgroundColor: selectedAgent.color ?? hashToHslColor(selectedAgent.id) }}
+              style={{ backgroundColor: selectedVisual!.color }}
             />
-            <span className="text-xs leading-none">
-              {selectedAgent.icon ?? hashToEmoji(selectedAgent.id)}
-            </span>
+            <span className="text-xs leading-none">{selectedVisual!.emoji}</span>
             <span className="truncate">{selectedAgent.name}</span>
           </span>
         ) : (
@@ -91,26 +88,27 @@ export function AgentPicker({ agents, value, onValueChange }: AgentPickerProps) 
             <CommandList className="max-h-60">
               <CommandEmpty>No agents found.</CommandEmpty>
               <CommandGroup>
-                {agents.map((agent) => (
-                  <CommandItem
-                    key={agent.id}
-                    value={`${agent.name} ${agent.projectPath}`}
-                    onSelect={() => handleSelect(agent.id)}
-                  >
-                    <span
-                      className="inline-block size-2 shrink-0 rounded-full"
-                      style={{ backgroundColor: agent.color ?? hashToHslColor(agent.id) }}
-                    />
-                    <span className="text-xs leading-none">
-                      {agent.icon ?? hashToEmoji(agent.id)}
-                    </span>
-                    <span className="truncate font-medium">{agent.name}</span>
-                    <span className="text-muted-foreground truncate text-xs">
-                      {shortenHomePath(agent.projectPath)}
-                    </span>
-                    {agent.id === value && <Check className="ml-auto size-4 shrink-0" />}
-                  </CommandItem>
-                ))}
+                {agents.map((agent) => {
+                  const visual = resolveAgentVisual(agent);
+                  return (
+                    <CommandItem
+                      key={agent.id}
+                      value={`${agent.name} ${agent.projectPath}`}
+                      onSelect={() => handleSelect(agent.id)}
+                    >
+                      <span
+                        className="inline-block size-2 shrink-0 rounded-full"
+                        style={{ backgroundColor: visual.color }}
+                      />
+                      <span className="text-xs leading-none">{visual.emoji}</span>
+                      <span className="truncate font-medium">{agent.name}</span>
+                      <span className="text-muted-foreground truncate text-xs">
+                        {shortenHomePath(agent.projectPath)}
+                      </span>
+                      {agent.id === value && <Check className="ml-auto size-4 shrink-0" />}
+                    </CommandItem>
+                  );
+                })}
               </CommandGroup>
             </CommandList>
           </Command>
