@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Exclude desktop from default dev, approve electron builds
 ---
 
 ## [0.23.0] - 2026-03-23

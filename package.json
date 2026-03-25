@@ -6,7 +6,8 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
-    "dev": "dotenv -- turbo dev",
+    "dev": "dotenv -- turbo dev --filter=!@dorkos/desktop",
+    "dev:desktop": "dotenv -- turbo dev --filter=@dorkos/desktop",
     "build": "dotenv -- turbo build",
     "test": "dotenv -- turbo test",
     "typecheck": "dotenv -- turbo typecheck",
@@ -44,11 +45,15 @@
     "onlyBuiltDependencies": [
       "better-sqlite3",
       "esbuild",
+      "electron",
       "lefthook",
       "sharp",
       "protobufjs",
       "unrs-resolver",
       "core-js"
+    ],
+    "ignoredBuiltDependencies": [
+      "electron-winstaller"
     ]
   }
 }
