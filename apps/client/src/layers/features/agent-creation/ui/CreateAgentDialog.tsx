@@ -77,6 +77,15 @@ export function CreateAgentDialog() {
     setTraits((prev) => ({ ...prev, [traitName]: value }));
   }, []);
 
+  function resetForm() {
+    setName('');
+    setDirectoryOverride('');
+    setTemplate(null);
+    setTemplateOpen(false);
+    setTraits({ ...DEFAULT_TRAITS });
+    setPersonalityOpen(false);
+  }
+
   const handleCreate = useCallback(() => {
     if (!canSubmit) return;
 
@@ -99,15 +108,6 @@ export function CreateAgentDialog() {
       }
     );
   }, [canSubmit, name, directoryOverride, template, traits, createAgent, close]);
-
-  function resetForm() {
-    setName('');
-    setDirectoryOverride('');
-    setTemplate(null);
-    setTemplateOpen(false);
-    setTraits({ ...DEFAULT_TRAITS });
-    setPersonalityOpen(false);
-  }
 
   function handleOpenChange(open: boolean) {
     if (!open) {

@@ -129,7 +129,7 @@ export function useAdapterSetupForm(
       setErrors(newErrors);
       return Object.keys(newErrors).length === 0;
     },
-    [values]
+    [values, manifest]
   );
 
   const reset = useCallback(() => {

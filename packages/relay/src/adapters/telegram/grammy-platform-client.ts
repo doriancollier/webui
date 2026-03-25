@@ -48,6 +48,8 @@ export class GrammyPlatformClient implements PlatformClient {
   readonly #logger: RelayLogger;
 
   /**
+   * Create a Grammy platform client for sending messages via the Telegram Bot API.
+   *
    * @param bot - The grammy Bot instance (must be started before API calls)
    * @param logger - Optional logger for diagnostics
    */

@@ -96,6 +96,8 @@ export class TelegramThreadIdCodec implements ThreadIdCodec {
   readonly prefix: string;
 
   /**
+   * Create a thread ID codec for native Telegram adapter threads.
+   *
    * @param instanceId - Optional instance identifier for disambiguating multiple
    *   Telegram adapter instances. When provided, the prefix becomes
    *   `relay.human.telegram.<instanceId>`.
@@ -139,6 +141,8 @@ export class SlackThreadIdCodec implements ThreadIdCodec {
   readonly prefix: string;
 
   /**
+   * Create a thread ID codec for Slack adapter threads.
+   *
    * @param instanceId - Optional instance identifier for disambiguating multiple
    *   Slack adapter instances. When provided, the prefix becomes
    *   `relay.human.slack.<instanceId>`.
@@ -185,6 +189,8 @@ export class ChatSdkTelegramThreadIdCodec implements ThreadIdCodec {
   readonly prefix: string;
 
   /**
+   * Create a thread ID codec for Chat SDK Telegram adapter threads.
+   *
    * @param instanceId - Optional instance identifier for disambiguating multiple
    *   Chat SDK Telegram adapter instances. When provided, the prefix becomes
    *   `relay.human.telegram-chatsdk.<instanceId>`.
