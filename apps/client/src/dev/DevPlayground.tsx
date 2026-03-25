@@ -36,6 +36,7 @@ import {
   Monitor,
   Moon,
   Search,
+  Megaphone,
 } from 'lucide-react';
 import { createPlaygroundTransport } from './playground-transport';
 import { ChatPage } from './pages/ChatPage';
@@ -44,6 +45,7 @@ import { TokensPage } from './pages/TokensPage';
 import { FormsPage } from './pages/FormsPage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { OverviewPage } from './pages/OverviewPage';
+import { PromosPage } from './pages/PromosPage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { PlaygroundSearch } from './PlaygroundSearch';
 import type { Page, PlaygroundSection } from './playground-registry';
@@ -80,6 +82,7 @@ function getRouteFromPath(): PlaygroundRoute {
   if (path.startsWith('/dev/components')) return { page: 'components', anchor };
   if (path.startsWith('/dev/chat')) return { page: 'chat', anchor };
   if (path.startsWith('/dev/features')) return { page: 'features', anchor };
+  if (path.startsWith('/dev/promos')) return { page: 'promos', anchor };
   if (path.startsWith('/dev/simulator')) return { page: 'simulator', anchor };
   return { page: 'overview', anchor };
 }
@@ -99,6 +102,7 @@ const DESIGN_SYSTEM_NAV: NavItem[] = [
 const FEATURES_NAV: NavItem[] = [
   { id: 'chat', label: 'Chat', icon: MessageSquare },
   { id: 'features', label: 'Features', icon: Blocks },
+  { id: 'promos', label: 'Feature Promos', icon: Megaphone },
   { id: 'simulator', label: 'Simulator', icon: Play },
 ];
 
@@ -285,6 +289,7 @@ function DevPlaygroundShell() {
             {page === 'components' && <ComponentsPage />}
             {page === 'chat' && <ChatPage />}
             {page === 'features' && <FeaturesPage />}
+            {page === 'promos' && <PromosPage />}
             {page === 'simulator' && <SimulatorPage />}
           </SidebarInset>
 

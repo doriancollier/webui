@@ -6,6 +6,7 @@ import {
   COMPONENTS_SECTIONS,
   CHAT_SECTIONS,
   FEATURES_SECTIONS,
+  PROMOS_SECTIONS,
   SIMULATOR_SECTIONS,
 } from '../playground-registry';
 import { slugify } from '../lib/slugify';
@@ -31,6 +32,7 @@ describe('playground-registry', () => {
       'components',
       'chat',
       'features',
+      'promos',
       'simulator',
     ]);
     for (const section of PLAYGROUND_REGISTRY) {
@@ -45,6 +47,7 @@ describe('playground-registry', () => {
       ...COMPONENTS_SECTIONS,
       ...CHAT_SECTIONS,
       ...FEATURES_SECTIONS,
+      ...PROMOS_SECTIONS,
       ...SIMULATOR_SECTIONS,
     ];
     expect(PLAYGROUND_REGISTRY).toEqual(combined);

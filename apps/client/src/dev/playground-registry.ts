@@ -6,6 +6,7 @@ export type Page =
   | 'components'
   | 'chat'
   | 'features'
+  | 'promos'
   | 'simulator';
 
 /** A single searchable/navigable section in the playground. */
@@ -27,6 +28,7 @@ export { FORMS_SECTIONS } from './sections/forms-sections';
 export { COMPONENTS_SECTIONS } from './sections/components-sections';
 export { CHAT_SECTIONS } from './sections/chat-sections';
 export { FEATURES_SECTIONS } from './sections/features-sections';
+export { PROMOS_SECTIONS } from './sections/promos-sections';
 export { SIMULATOR_SECTIONS } from './sections/simulator-sections';
 
 // Imported under aliases to compose the full registry without circular re-export issues.
@@ -35,6 +37,7 @@ import { FORMS_SECTIONS as forms } from './sections/forms-sections';
 import { COMPONENTS_SECTIONS as components } from './sections/components-sections';
 import { CHAT_SECTIONS as chat } from './sections/chat-sections';
 import { FEATURES_SECTIONS as features } from './sections/features-sections';
+import { PROMOS_SECTIONS as promos } from './sections/promos-sections';
 import { SIMULATOR_SECTIONS as simulator } from './sections/simulator-sections';
 
 /**
@@ -48,5 +51,6 @@ export const PLAYGROUND_REGISTRY: PlaygroundSection[] = [
   ...components,
   ...chat,
   ...features,
+  ...promos,
   ...simulator,
 ];

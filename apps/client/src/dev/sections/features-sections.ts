@@ -6,6 +6,21 @@ import type { PlaygroundSection } from '../playground-registry';
  * Sources: RelayShowcases, MeshShowcases, PulseShowcases, OnboardingShowcases.
  */
 export const FEATURES_SECTIONS: PlaygroundSection[] = [
+  // AgentIdentityShowcases
+  {
+    id: 'agentavatar',
+    title: 'AgentAvatar',
+    page: 'features',
+    category: 'Agent',
+    keywords: ['agent', 'avatar', 'emoji', 'color', 'identity', 'health', 'status'],
+  },
+  {
+    id: 'agentidentity',
+    title: 'AgentIdentity',
+    page: 'features',
+    category: 'Agent',
+    keywords: ['agent', 'identity', 'card', 'name', 'avatar', 'detail', 'profile'],
+  },
   // RelayShowcases
   {
     id: 'catalogcard',
@@ -114,49 +129,6 @@ export const FEATURES_SECTIONS: PlaygroundSection[] = [
     page: 'features',
     category: 'Pulse',
     keywords: ['preset', 'card', 'schedule', 'toggle', 'selectable', 'cron', 'pulse'],
-  },
-  // PromoShowcases
-  {
-    id: 'promo-registry',
-    title: 'Promo Registry',
-    page: 'features',
-    category: 'Promos',
-    keywords: ['promo', 'registry', 'feature', 'discovery', 'shouldshow', 'placement', 'priority'],
-  },
-  {
-    id: 'promoslot-dashboard-main',
-    title: 'PromoSlot — dashboard-main',
-    page: 'features',
-    category: 'Promos',
-    keywords: ['promo', 'slot', 'dashboard', 'main', 'grid', 'card', 'discover'],
-  },
-  {
-    id: 'promoslot-dashboard-sidebar',
-    title: 'PromoSlot — dashboard-sidebar',
-    page: 'features',
-    category: 'Promos',
-    keywords: ['promo', 'slot', 'dashboard', 'sidebar', 'compact'],
-  },
-  {
-    id: 'promoslot-agent-sidebar',
-    title: 'PromoSlot — agent-sidebar',
-    page: 'features',
-    category: 'Promos',
-    keywords: ['promo', 'slot', 'agent', 'sidebar', 'compact', 'session'],
-  },
-  {
-    id: 'override-controls',
-    title: 'Override Controls',
-    page: 'features',
-    category: 'Promos',
-    keywords: ['promo', 'dismiss', 'reset', 'toggle', 'global', 'override', 'localstorage'],
-  },
-  {
-    id: 'dialog-previews',
-    title: 'Dialog Previews',
-    page: 'features',
-    category: 'Promos',
-    keywords: ['promo', 'dialog', 'preview', 'modal', 'relay', 'schedule', 'remote', 'access'],
   },
   // OnboardingShowcases
   {

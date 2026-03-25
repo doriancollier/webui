@@ -21,6 +21,7 @@ const PAGE_LABELS: Record<Page, string> = {
   components: 'Components',
   chat: 'Chat',
   features: 'Features',
+  promos: 'Feature Promos',
   simulator: 'Simulator',
 };
 
@@ -32,6 +33,7 @@ const PAGE_ORDER: Page[] = [
   'components',
   'chat',
   'features',
+  'promos',
   'simulator',
 ];
 
