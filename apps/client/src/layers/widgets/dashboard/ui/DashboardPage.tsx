@@ -9,6 +9,7 @@ import {
 import { ActiveSessionsSection } from '@/layers/features/dashboard-sessions';
 import { SystemStatusRow } from '@/layers/features/dashboard-status';
 import { RecentActivityFeed } from '@/layers/features/dashboard-activity';
+import { PromoSlot } from '@/layers/features/feature-promos';
 import { useSearch, useNavigate } from '@tanstack/react-router';
 import type { DashboardSearch } from '@/router';
 
@@ -35,6 +36,7 @@ export function DashboardPage() {
       <ScrollArea className="h-full">
         <div className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:space-y-8 sm:px-6 sm:py-8">
           <NeedsAttentionSection />
+          <PromoSlot placement="dashboard-main" maxUnits={4} />
           <ActiveSessionsSection />
           <SystemStatusRow />
           <RecentActivityFeed />

@@ -19,6 +19,7 @@ import { SessionsView } from './SessionsView';
 import { SchedulesView } from './SchedulesView';
 import { ConnectionsView } from './ConnectionsView';
 import { Home, Plus } from 'lucide-react';
+import { PromoSlot } from '@/layers/features/feature-promos';
 import { useNavigate } from '@tanstack/react-router';
 import { useConnectionsStatus } from '../model/use-connections-status';
 
@@ -97,17 +98,20 @@ export function SessionSidebar() {
   const navigate = useNavigate();
 
   const visibleTabs = useMemo(() => {
-    const tabs: ('sessions' | 'schedules' | 'connections')[] = ['sessions'];
+    const tabs: ('overview' | 'sessions' | 'schedules' | 'connections')[] = [
+      'overview',
+      'sessions',
+    ];
     if (pulseToolEnabled) tabs.push('schedules');
     // Connections always visible (Mesh has no server feature flag)
     tabs.push('connections');
     return tabs;
   }, [pulseToolEnabled]);
 
-  // Fall back to 'sessions' if active tab becomes hidden due to feature flag changes
+  // Fall back to 'overview' if active tab becomes hidden due to feature flag changes
   useEffect(() => {
     if (!visibleTabs.includes(sidebarActiveTab)) {
-      setSidebarActiveTab('sessions');
+      setSidebarActiveTab('overview');
     }
   }, [visibleTabs, sidebarActiveTab, setSidebarActiveTab]);
 
@@ -119,10 +123,11 @@ export function SessionSidebar() {
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!(e.metaKey || e.ctrlKey)) return;
-      const tabMap: Record<string, 'sessions' | 'schedules' | 'connections'> = {
-        '1': 'sessions',
-        '2': 'schedules',
-        '3': 'connections',
+      const tabMap: Record<string, 'overview' | 'sessions' | 'schedules' | 'connections'> = {
+        '1': 'overview',
+        '2': 'sessions',
+        '3': 'schedules',
+        '4': 'connections',
       };
       const tab = tabMap[e.key];
       if (tab && visibleTabs.includes(tab)) {
@@ -196,6 +201,33 @@ export function SessionSidebar() {
       />
 
       <SidebarContent data-testid="session-list" className="!overflow-hidden">
+        {/* Overview tab panel */}
+        <div
+          role="tabpanel"
+          id="sidebar-tabpanel-overview"
+          aria-labelledby="sidebar-tab-overview"
+          className={cn('h-full', sidebarActiveTab !== 'overview' && 'hidden')}
+        >
+          <div className="space-y-4 p-3">
+            {currentAgent ? (
+              <div className="space-y-1">
+                <p className="text-xs font-medium">{currentAgent.name}</p>
+                <p className="text-muted-foreground text-[11px]">
+                  {currentAgent.description || 'No description'}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <p className="text-xs font-medium">Welcome</p>
+                <p className="text-muted-foreground text-[11px]">
+                  Select an agent or start a new session
+                </p>
+              </div>
+            )}
+            <PromoSlot placement="agent-sidebar" maxUnits={3} />
+          </div>
+        </div>
+
         {/* Sessions view */}
         <div
           role="tabpanel"

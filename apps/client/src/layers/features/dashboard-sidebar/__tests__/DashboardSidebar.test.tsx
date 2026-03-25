@@ -33,6 +33,10 @@ vi.mock('@/layers/entities/agent', () => ({
   useAgentVisual: () => ({ color: '#aaaaaa', emoji: '🤖' }),
 }));
 
+vi.mock('@/layers/features/feature-promos', () => ({
+  PromoSlot: () => null,
+}));
+
 // ---------------------------------------------------------------------------
 // Browser API mocks
 // ---------------------------------------------------------------------------

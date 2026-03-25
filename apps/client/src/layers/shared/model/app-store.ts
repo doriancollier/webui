@@ -48,8 +48,8 @@ interface AppState {
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
 
-  sidebarActiveTab: 'sessions' | 'schedules' | 'connections';
-  setSidebarActiveTab: (tab: 'sessions' | 'schedules' | 'connections') => void;
+  sidebarActiveTab: 'overview' | 'sessions' | 'schedules' | 'connections';
+  setSidebarActiveTab: (tab: 'overview' | 'sessions' | 'schedules' | 'connections') => void;
 
   // Transient dialog state (survives mobile sidebar remount)
   settingsOpen: boolean;
@@ -124,8 +124,6 @@ interface AppState {
   setEnablePulseNotifications: (v: boolean) => void;
   showStatusBarSound: boolean;
   setShowStatusBarSound: (v: boolean) => void;
-  showStatusBarVersion: boolean;
-  setShowStatusBarVersion: (v: boolean) => void;
   showStatusBarTunnel: boolean;
   setShowStatusBarTunnel: (v: boolean) => void;
   showStatusBarSync: boolean;
@@ -141,6 +139,12 @@ interface AppState {
   fontFamily: FontFamilyKey;
   setFontFamily: (key: FontFamilyKey) => void;
   resetPreferences: () => void;
+
+  // Feature promo state
+  dismissedPromoIds: string[];
+  dismissPromo: (id: string) => void;
+  promoEnabled: boolean;
+  setPromoEnabled: (enabled: boolean) => void;
 
   previousCwd: string | null;
   setPreviousCwd: (cwd: string | null) => void;
@@ -179,12 +183,12 @@ const BOOL_KEYS = {
   enableNotificationSound: 'dorkos-enable-notification-sound',
   enablePulseNotifications: 'dorkos-enable-pulse-notifications',
   showStatusBarSound: 'dorkos-show-status-bar-sound',
-  showStatusBarVersion: 'dorkos-show-status-bar-version',
   showStatusBarTunnel: 'dorkos-show-status-bar-tunnel',
   showStatusBarSync: 'dorkos-show-status-bar-sync',
   showStatusBarPolling: 'dorkos-show-status-bar-polling',
   enableCrossClientSync: 'dorkos-enable-cross-client-sync',
   enableMessagePolling: 'dorkos-enable-message-polling',
+  promoEnabled: 'dorkos-promo-enabled',
 } as const;
 
 // Default values for each persisted boolean
@@ -204,12 +208,12 @@ const BOOL_DEFAULTS: Record<keyof typeof BOOL_KEYS, boolean> = {
   enableNotificationSound: true,
   enablePulseNotifications: true,
   showStatusBarSound: true,
-  showStatusBarVersion: true,
   showStatusBarTunnel: true,
   showStatusBarSync: true,
   showStatusBarPolling: true,
   enableCrossClientSync: false,
   enableMessagePolling: false,
+  promoEnabled: true,
 };
 
 export const useAppStore = create<AppState>()(
@@ -236,11 +240,16 @@ export const useAppStore = create<AppState>()(
       sidebarActiveTab: (() => {
         try {
           const stored = localStorage.getItem('dorkos-sidebar-active-tab');
-          if (stored === 'sessions' || stored === 'schedules' || stored === 'connections')
+          if (
+            stored === 'overview' ||
+            stored === 'sessions' ||
+            stored === 'schedules' ||
+            stored === 'connections'
+          )
             return stored;
         } catch {}
-        return 'sessions';
-      })() as 'sessions' | 'schedules' | 'connections',
+        return 'overview';
+      })() as 'overview' | 'sessions' | 'schedules' | 'connections',
       setSidebarActiveTab: (tab) => {
         try {
           localStorage.setItem('dorkos-sidebar-active-tab', tab);
@@ -393,11 +402,6 @@ export const useAppStore = create<AppState>()(
         writeBool(BOOL_KEYS.showStatusBarSound, v);
         set({ showStatusBarSound: v });
       },
-      showStatusBarVersion: readBool(BOOL_KEYS.showStatusBarVersion, true),
-      setShowStatusBarVersion: (v) => {
-        writeBool(BOOL_KEYS.showStatusBarVersion, v);
-        set({ showStatusBarVersion: v });
-      },
       showStatusBarTunnel: readBool(BOOL_KEYS.showStatusBarTunnel, true),
       setShowStatusBarTunnel: (v) => {
         writeBool(BOOL_KEYS.showStatusBarTunnel, v);
@@ -429,6 +433,33 @@ export const useAppStore = create<AppState>()(
         writeBool(BOOL_KEYS.enableMessagePolling, v);
         set({ enableMessagePolling: v });
       },
+
+      promoEnabled: readBool(BOOL_KEYS.promoEnabled, BOOL_DEFAULTS.promoEnabled),
+      setPromoEnabled: (v) => {
+        writeBool(BOOL_KEYS.promoEnabled, v);
+        set({ promoEnabled: v });
+      },
+      dismissedPromoIds: (() => {
+        try {
+          const stored = localStorage.getItem('dorkos-dismissed-promo-ids');
+          if (stored) {
+            const parsed: unknown = JSON.parse(stored);
+            if (Array.isArray(parsed))
+              return parsed.filter((id): id is string => typeof id === 'string');
+          }
+        } catch {}
+        return [];
+      })(),
+      dismissPromo: (id) =>
+        set((s) => {
+          if (s.dismissedPromoIds.includes(id)) return s;
+          const next = [...s.dismissedPromoIds, id];
+          try {
+            localStorage.setItem('dorkos-dismissed-promo-ids', JSON.stringify(next));
+          } catch {}
+          return { dismissedPromoIds: next };
+        }),
+
       fontSize: (() => {
         try {
           const stored = localStorage.getItem(STORAGE_KEYS.FONT_SIZE);
@@ -489,6 +520,7 @@ export const useAppStore = create<AppState>()(
           localStorage.removeItem(STORAGE_KEYS.FONT_SIZE);
           localStorage.removeItem(STORAGE_KEYS.FONT_FAMILY);
           localStorage.removeItem('dorkos-sidebar-active-tab');
+          localStorage.removeItem('dorkos-dismissed-promo-ids');
         } catch {}
         document.documentElement.style.setProperty('--user-font-scale', '1');
         const defaultConfig = getFontConfig(DEFAULT_FONT);
@@ -499,7 +531,8 @@ export const useAppStore = create<AppState>()(
           devtoolsOpen: false,
           fontSize: 'medium',
           fontFamily: DEFAULT_FONT,
-          sidebarActiveTab: 'sessions',
+          sidebarActiveTab: 'overview',
+          dismissedPromoIds: [],
         });
       },
 

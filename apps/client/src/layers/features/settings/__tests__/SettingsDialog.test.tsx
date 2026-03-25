@@ -191,24 +191,23 @@ describe('SettingsDialog', () => {
     expect(screen.getByText('Font size')).toBeDefined();
   });
 
-  // Verifies Status Bar section shows toggle switches
+  // Verifies Status Bar section shows registry-driven toggle switches
   it('navigates to Status Bar and shows toggle switches', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
-    expect(screen.getByText(/show directory/i)).toBeDefined();
-    expect(screen.getByText(/show permission mode/i)).toBeDefined();
-    expect(screen.getByText(/show model/i)).toBeDefined();
-    expect(screen.getByText(/show cost/i)).toBeDefined();
-    expect(screen.getByText(/show context usage/i)).toBeDefined();
+    // Labels come from STATUS_BAR_REGISTRY
+    expect(screen.getByText('Directory')).toBeDefined();
+    expect(screen.getByText('Permission Mode')).toBeDefined();
+    expect(screen.getByText('Model')).toBeDefined();
+    expect(screen.getByText('Cost')).toBeDefined();
+    expect(screen.getByText('Context Usage')).toBeDefined();
   });
 
-  // Verifies status bar toggles default to ON
+  // Verifies all 11 status bar toggles (including version, which was missing before) default to ON
   it('has all status bar toggles enabled by default', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
-    const panel = screen
-      .getByText(/show directory/i)
-      .closest('[data-slot="navigation-layout-panel"]')!;
+    const panel = screen.getByText('Directory').closest('[data-slot="navigation-layout-panel"]')!;
     const switches = panel.querySelectorAll('[role="switch"]');
     expect(switches.length).toBe(10);
     switches.forEach((sw) => {
@@ -233,17 +232,17 @@ describe('SettingsDialog', () => {
     expect(screen.getByText('Display shortcut hints below the message input')).toBeDefined();
   });
 
-  it('shows "Show git status" toggle in Status Bar', () => {
+  it('shows "Git Status" toggle in Status Bar', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
-    expect(screen.getByText('Show git status')).toBeDefined();
-    expect(screen.getByText('Display branch name and change count')).toBeDefined();
+    expect(screen.getByText('Git Status')).toBeDefined();
+    expect(screen.getByText('Branch name and change count')).toBeDefined();
   });
 
   it('has git status toggle enabled by default', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
-    const label = screen.getByText('Show git status');
+    const label = screen.getByText('Git Status');
     // Traverse up to the row container — works for both the private SettingRow
     // (div.justify-between) and the Field-based shared SettingRow (data-slot="field").
     const row = label.closest('[data-slot="field"], [class~="justify-between"]')!;
@@ -273,10 +272,88 @@ describe('SettingsDialog', () => {
     ).toBeDefined();
   });
 
-  it('renders "Show sound toggle" in Status Bar', () => {
+  it('renders "Sound" toggle in Status Bar', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
-    expect(screen.getByText('Show sound toggle')).toBeDefined();
-    expect(screen.getByText('Display notification sound toggle')).toBeDefined();
+    expect(screen.getByText('Sound')).toBeDefined();
+    expect(screen.getByText('Notification sound toggle')).toBeDefined();
+  });
+
+  // Verifies all 10 registry items are rendered in the Status Bar tab
+  it('renders all 10 registry items in the Status Bar tab', () => {
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
+    navigateTo(/status bar/i);
+    const expectedLabels = [
+      'Directory',
+      'Git Status',
+      'Model',
+      'Cost',
+      'Context Usage',
+      'Permission Mode',
+      'Sound',
+      'Sync',
+      'Refresh',
+      'Remote',
+    ];
+    for (const label of expectedLabels) {
+      expect(screen.getByText(label)).toBeDefined();
+    }
+  });
+
+  // Verifies the Status Bar tab has a "Reset to defaults" button
+  it('renders a "Reset to defaults" button in the Status Bar tab', () => {
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
+    navigateTo(/status bar/i);
+    const panel = screen.getByText('Directory').closest('[data-slot="navigation-layout-panel"]')!;
+    const resetBtn = panel.querySelector('button');
+    expect(resetBtn?.textContent).toBe('Reset to defaults');
+  });
+
+  // Verifies the Appearance tab still has its own "Reset to defaults" button (global reset)
+  it('renders a "Reset to defaults" button in the Appearance tab', () => {
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
+    // Appearance is the default tab
+    const panel = screen.getByText('Theme').closest('[data-slot="navigation-layout-panel"]')!;
+    const resetBtn = panel.querySelector('button');
+    expect(resetBtn?.textContent).toBe('Reset to defaults');
+  });
+
+  // Verifies the Feature suggestions toggle renders in the Preferences tab
+  it('renders "Feature suggestions" toggle in Preferences tab', () => {
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
+    navigateTo(/preferences/i);
+    expect(screen.getByText('Feature suggestions')).toBeDefined();
+    expect(
+      screen.getByText('Show feature discovery cards on the dashboard and sidebar')
+    ).toBeDefined();
+  });
+
+  // Verifies Feature suggestions toggle is enabled (promoEnabled defaults to true)
+  it('has Feature suggestions toggle enabled by default', () => {
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
+    navigateTo(/preferences/i);
+    const label = screen.getByText('Feature suggestions');
+    const row = label.closest('[data-slot="field"], [class~="justify-between"]')!;
+    const toggle = row.querySelector('[role="switch"]');
+    expect(toggle).toBeDefined();
+    expect(toggle?.getAttribute('data-state')).toBe('checked');
+  });
+
+  // Verifies Feature suggestions toggle appears between Pulse run notifications and Show dev tools
+  it('positions Feature suggestions between Pulse run notifications and Show dev tools', () => {
+    render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
+    navigateTo(/preferences/i);
+    const panel = screen
+      .getByText('Show timestamps')
+      .closest('[data-slot="navigation-layout-panel"]')!;
+    const labels = Array.from(panel.querySelectorAll('[data-slot="field-label"]')).map(
+      (el) => el.textContent
+    );
+    const pulseIdx = labels.indexOf('Pulse run notifications');
+    const promoIdx = labels.indexOf('Feature suggestions');
+    const devToolsIdx = labels.indexOf('Show dev tools');
+    expect(pulseIdx).toBeGreaterThanOrEqual(0);
+    expect(promoIdx).toBeGreaterThan(pulseIdx);
+    expect(devToolsIdx).toBeGreaterThan(promoIdx);
   });
 });

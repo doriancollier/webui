@@ -199,9 +199,15 @@ function SessionsViewShowcase() {
 // ---------------------------------------------------------------------------
 
 function SidebarTabRowShowcase() {
-  const [tab1, setTab1] = useState<'sessions' | 'schedules' | 'connections'>('sessions');
-  const [tab2, setTab2] = useState<'sessions' | 'schedules' | 'connections'>('sessions');
-  const [tab3, setTab3] = useState<'sessions' | 'schedules' | 'connections'>('sessions');
+  const [tab1, setTab1] = useState<'overview' | 'sessions' | 'schedules' | 'connections'>(
+    'sessions'
+  );
+  const [tab2, setTab2] = useState<'overview' | 'sessions' | 'schedules' | 'connections'>(
+    'sessions'
+  );
+  const [tab3, setTab3] = useState<'overview' | 'sessions' | 'schedules' | 'connections'>(
+    'sessions'
+  );
 
   return (
     <PlaygroundSection

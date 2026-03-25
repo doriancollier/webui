@@ -1,7 +1,21 @@
 {
   "version": 1,
-  "nextNumber": 178,
+  "nextNumber": 180,
   "specs": [
+    {
+      "number": 179,
+      "slug": "sidebar-upgrade-notification",
+      "title": "Sidebar Upgrade Notification — Move Version Display to Sidebar Footer",
+      "created": "2026-03-24",
+      "status": "specified"
+    },
+    {
+      "number": 178,
+      "slug": "feature-promo-system",
+      "title": "Feature Promo System — Declarative Feature Discovery Framework",
+      "created": "2026-03-24",
+      "status": "specified"
+    },
     {
       "number": 177,
       "slug": "background-task-visibility",

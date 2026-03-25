@@ -1,10 +1,10 @@
 import { useRef, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { MessageSquare, Clock, Plug2 } from 'lucide-react';
+import { MessageSquare, Clock, Plug2, LayoutGrid } from 'lucide-react';
 import { cn, isMac } from '@/layers/shared/lib';
 import { Tooltip, TooltipTrigger, TooltipContent } from '@/layers/shared/ui';
 
-type SidebarTab = 'sessions' | 'schedules' | 'connections';
+type SidebarTab = 'overview' | 'sessions' | 'schedules' | 'connections';
 
 interface SidebarTabRowProps {
   activeTab: SidebarTab;
@@ -15,9 +15,10 @@ interface SidebarTabRowProps {
 }
 
 const TAB_CONFIG = [
-  { id: 'sessions' as const, icon: MessageSquare, label: 'Sessions', shortcut: 1 },
-  { id: 'schedules' as const, icon: Clock, label: 'Schedules', shortcut: 2 },
-  { id: 'connections' as const, icon: Plug2, label: 'Connections', shortcut: 3 },
+  { id: 'overview' as const, icon: LayoutGrid, label: 'Overview', shortcut: 1 },
+  { id: 'sessions' as const, icon: MessageSquare, label: 'Sessions', shortcut: 2 },
+  { id: 'schedules' as const, icon: Clock, label: 'Schedules', shortcut: 3 },
+  { id: 'connections' as const, icon: Plug2, label: 'Connections', shortcut: 4 },
 ] as const;
 
 const STATUS_DOT_COLORS: Record<string, string> = {

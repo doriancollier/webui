@@ -3,6 +3,7 @@ import { AdapterWizardShowcases } from '../showcases/AdapterWizardShowcases';
 import { MeshShowcases } from '../showcases/MeshShowcases';
 import { PulseShowcases } from '../showcases/PulseShowcases';
 import { OnboardingShowcases } from '../showcases/OnboardingShowcases';
+import { PromoShowcases } from '../showcases/PromoShowcases';
 import { TocSidebar } from '../TocSidebar';
 import { FEATURES_SECTIONS } from '../playground-registry';
 
@@ -24,6 +25,7 @@ export function FeaturesPage() {
           <MeshShowcases />
           <PulseShowcases />
           <OnboardingShowcases />
+          <PromoShowcases />
         </main>
         <TocSidebar sections={FEATURES_SECTIONS} />
       </div>

@@ -36,9 +36,9 @@ const mockSetOnboardingStep = vi.fn();
 const mockSetRelayOpen = vi.fn();
 const mockSetMeshOpen = vi.fn();
 const mockSetSettingsOpen = vi.fn();
-let mockSidebarActiveTab: 'sessions' | 'schedules' | 'connections' = 'sessions';
+let mockSidebarActiveTab: 'overview' | 'sessions' | 'schedules' | 'connections' = 'overview';
 const mockSetSidebarActiveTab = vi.fn((tab: string) => {
-  mockSidebarActiveTab = tab as 'sessions' | 'schedules' | 'connections';
+  mockSidebarActiveTab = tab as 'overview' | 'sessions' | 'schedules' | 'connections';
 });
 vi.mock('@/layers/shared/model/app-store', () => ({
   useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
@@ -121,10 +121,11 @@ vi.mock('@/layers/entities/relay', () => ({
   useRelayAdapters: () => ({ data: [] }),
 }));
 
-// Mock useRegisteredAgents and useAgentAccess (used by ConnectionsView)
+// Mock useRegisteredAgents, useAgentAccess, and useMeshEnabled (used by ConnectionsView and PromoSlot)
 vi.mock('@/layers/entities/mesh', () => ({
   useRegisteredAgents: () => ({ data: { agents: [] } }),
   useAgentAccess: () => ({ data: undefined, isLoading: false }),
+  useMeshEnabled: () => false,
 }));
 
 // Mock useTheme (used by SidebarFooterBar)
@@ -206,7 +207,7 @@ describe('SessionSidebar', () => {
     vi.clearAllMocks();
     mockTransport = createMockTransport();
     mockSetSidebarOpen.mockClear();
-    mockSidebarActiveTab = 'sessions';
+    mockSidebarActiveTab = 'overview';
     mockPathname = '/session';
   });
   afterEach(() => {
@@ -309,12 +310,14 @@ describe('SessionSidebar', () => {
       expect(screen.getAllByRole('tab').length).toBeGreaterThanOrEqual(2);
     });
 
-    it('shows sessions tabpanel by default and hides others', () => {
+    it('shows overview tabpanel by default and hides others', () => {
       renderWithQuery(<SessionSidebar />);
+      const overviewPanel = document.getElementById('sidebar-tabpanel-overview');
       const sessionsPanel = document.getElementById('sidebar-tabpanel-sessions');
       const schedulesPanel = document.getElementById('sidebar-tabpanel-schedules');
       const connectionsPanel = document.getElementById('sidebar-tabpanel-connections');
-      expect(sessionsPanel?.classList.contains('hidden')).toBe(false);
+      expect(overviewPanel?.classList.contains('hidden')).toBe(false);
+      expect(sessionsPanel?.classList.contains('hidden')).toBe(true);
       expect(schedulesPanel?.classList.contains('hidden')).toBe(true);
       expect(connectionsPanel?.classList.contains('hidden')).toBe(true);
     });
@@ -342,28 +345,34 @@ describe('SessionSidebar', () => {
   });
 
   describe('keyboard shortcuts', () => {
-    it('Cmd+1 switches to sessions tab when sidebar is open', () => {
+    it('Cmd+1 switches to overview tab when sidebar is open', () => {
       renderWithQuery(<SessionSidebar />);
       fireEvent.keyDown(document, { key: '1', metaKey: true });
+      expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('overview');
+    });
+
+    it('Cmd+2 switches to sessions tab when sidebar is open', () => {
+      renderWithQuery(<SessionSidebar />);
+      fireEvent.keyDown(document, { key: '2', metaKey: true });
       expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('sessions');
     });
 
-    it('Cmd+2 switches to schedules tab when visible and sidebar open', () => {
+    it('Cmd+3 switches to schedules tab when visible and sidebar open', () => {
       renderWithQuery(<SessionSidebar />);
-      fireEvent.keyDown(document, { key: '2', metaKey: true });
+      fireEvent.keyDown(document, { key: '3', metaKey: true });
       expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('schedules');
     });
 
-    it('Cmd+3 switches to connections tab when visible and sidebar open', () => {
+    it('Cmd+4 switches to connections tab when visible and sidebar open', () => {
       renderWithQuery(<SessionSidebar />);
-      fireEvent.keyDown(document, { key: '3', metaKey: true });
+      fireEvent.keyDown(document, { key: '4', metaKey: true });
       expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('connections');
     });
 
     it('Ctrl+number also works (cross-platform)', () => {
       renderWithQuery(<SessionSidebar />);
       fireEvent.keyDown(document, { key: '2', ctrlKey: true });
-      expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('schedules');
+      expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('sessions');
     });
 
     it('plain number keys without modifier do not switch tabs', () => {
@@ -410,8 +419,8 @@ describe('SessionSidebar', () => {
 
       renderWithQuery(<SessionSidebar />);
 
-      // The fallback effect should call setSidebarActiveTab('sessions')
-      expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('sessions');
+      // The fallback effect should call setSidebarActiveTab('overview')
+      expect(mockSetSidebarActiveTab).toHaveBeenCalledWith('overview');
     });
   });
 });

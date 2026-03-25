@@ -27,12 +27,28 @@ import {
   FieldCard,
   FieldCardContent,
 } from '@/layers/shared/ui';
+import {
+  STATUS_BAR_REGISTRY,
+  useStatusBarVisibility,
+  resetStatusBarPreferences,
+} from '@/layers/features/status';
+import type { StatusBarItemConfig } from '@/layers/features/status';
 import { ServerTab } from './ServerTab';
 import { TunnelDialog } from './TunnelDialog';
 import { AdvancedTab } from './AdvancedTab';
 import { ServerRestartOverlay } from './ServerRestartOverlay';
 import { ToolsTab } from './ToolsTab';
 import { AgentsTab } from './AgentsTab';
+
+/** Toggle row for a single status bar registry item. */
+function StatusBarSettingRow({ item }: { item: StatusBarItemConfig }) {
+  const [visible, setVisible] = useStatusBarVisibility(item.key);
+  return (
+    <SettingRow label={item.label} description={item.description}>
+      <Switch checked={visible} onCheckedChange={setVisible} />
+    </SettingRow>
+  );
+}
 
 interface SettingsDialogProps {
   open: boolean;
@@ -59,18 +75,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     fontFamily,
     setFontFamily,
     resetPreferences,
-    showStatusBarCwd,
-    setShowStatusBarCwd,
-    showStatusBarPermission,
-    setShowStatusBarPermission,
-    showStatusBarModel,
-    setShowStatusBarModel,
-    showStatusBarCost,
-    setShowStatusBarCost,
-    showStatusBarContext,
-    setShowStatusBarContext,
-    showStatusBarGit,
-    setShowStatusBarGit,
     showShortcutChips,
     setShowShortcutChips,
     showTaskCelebrations,
@@ -79,14 +83,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setEnableNotificationSound,
     enablePulseNotifications,
     setEnablePulseNotifications,
-    showStatusBarSound,
-    setShowStatusBarSound,
-    showStatusBarSync,
-    setShowStatusBarSync,
-    showStatusBarPolling,
-    setShowStatusBarPolling,
-    showStatusBarTunnel,
-    setShowStatusBarTunnel,
+    promoEnabled,
+    setPromoEnabled,
   } = useAppStore();
 
   const transport = useTransport();
@@ -290,6 +288,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                         />
                       </SettingRow>
 
+                      <SettingRow
+                        label="Feature suggestions"
+                        description="Show feature discovery cards on the dashboard and sidebar"
+                      >
+                        <Switch checked={promoEnabled} onCheckedChange={setPromoEnabled} />
+                      </SettingRow>
+
                       <SettingRow label="Show dev tools" description="Enable developer tools panel">
                         <Switch checked={devtoolsOpen} onCheckedChange={() => toggleDevtools()} />
                       </SettingRow>
@@ -300,84 +305,23 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
               <NavigationLayoutPanel value="statusBar">
                 <div className="space-y-4">
-                  <NavigationLayoutPanelHeader>Status Bar</NavigationLayoutPanelHeader>
+                  <NavigationLayoutPanelHeader
+                    actions={
+                      <button
+                        onClick={resetStatusBarPreferences}
+                        className="text-muted-foreground hover:text-foreground text-xs transition-colors duration-150"
+                      >
+                        Reset to defaults
+                      </button>
+                    }
+                  >
+                    Status Bar
+                  </NavigationLayoutPanelHeader>
                   <FieldCard>
                     <FieldCardContent>
-                      <SettingRow
-                        label="Show directory"
-                        description="Display current working directory"
-                      >
-                        <Switch checked={showStatusBarCwd} onCheckedChange={setShowStatusBarCwd} />
-                      </SettingRow>
-                      <SettingRow
-                        label="Show git status"
-                        description="Display branch name and change count"
-                      >
-                        <Switch checked={showStatusBarGit} onCheckedChange={setShowStatusBarGit} />
-                      </SettingRow>
-                      <SettingRow
-                        label="Show permission mode"
-                        description="Display current permission setting"
-                      >
-                        <Switch
-                          checked={showStatusBarPermission}
-                          onCheckedChange={setShowStatusBarPermission}
-                        />
-                      </SettingRow>
-                      <SettingRow label="Show model" description="Display selected AI model">
-                        <Switch
-                          checked={showStatusBarModel}
-                          onCheckedChange={setShowStatusBarModel}
-                        />
-                      </SettingRow>
-                      <SettingRow label="Show cost" description="Display session cost in USD">
-                        <Switch
-                          checked={showStatusBarCost}
-                          onCheckedChange={setShowStatusBarCost}
-                        />
-                      </SettingRow>
-                      <SettingRow
-                        label="Show context usage"
-                        description="Display context window utilization"
-                      >
-                        <Switch
-                          checked={showStatusBarContext}
-                          onCheckedChange={setShowStatusBarContext}
-                        />
-                      </SettingRow>
-                      <SettingRow
-                        label="Show sound toggle"
-                        description="Display notification sound toggle"
-                      >
-                        <Switch
-                          checked={showStatusBarSound}
-                          onCheckedChange={setShowStatusBarSound}
-                        />
-                      </SettingRow>
-                      <SettingRow
-                        label="Show sync toggle"
-                        description="Display multi-window sync toggle"
-                      >
-                        <Switch
-                          checked={showStatusBarSync}
-                          onCheckedChange={setShowStatusBarSync}
-                        />
-                      </SettingRow>
-                      <SettingRow
-                        label="Show refresh toggle"
-                        description="Display background refresh toggle"
-                      >
-                        <Switch
-                          checked={showStatusBarPolling}
-                          onCheckedChange={setShowStatusBarPolling}
-                        />
-                      </SettingRow>
-                      <SettingRow label="Show remote" description="Display remote control">
-                        <Switch
-                          checked={showStatusBarTunnel}
-                          onCheckedChange={setShowStatusBarTunnel}
-                        />
-                      </SettingRow>
+                      {STATUS_BAR_REGISTRY.map((item) => (
+                        <StatusBarSettingRow key={item.key} item={item} />
+                      ))}
                     </FieldCardContent>
                   </FieldCard>
                 </div>

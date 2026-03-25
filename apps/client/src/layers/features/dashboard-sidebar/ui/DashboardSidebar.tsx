@@ -11,6 +11,7 @@ import {
 } from '@/layers/shared/ui';
 import { useAppStore } from '@/layers/shared/model';
 import { useResolvedAgents } from '@/layers/entities/agent';
+import { PromoSlot } from '@/layers/features/feature-promos';
 import { RecentAgentItem } from './RecentAgentItem';
 
 /** Maximum number of recent agents shown in the sidebar. */
@@ -82,6 +83,7 @@ export function DashboardSidebar() {
             </SidebarMenu>
           </SidebarGroup>
         )}
+        <PromoSlot placement="dashboard-sidebar" maxUnits={3} />
       </SidebarContent>
     </>
   );
