@@ -15,6 +15,12 @@ vi.mock('@/layers/entities/agent', () => ({
     color: '#ff6b6b',
     emoji: path === '/projects/test' ? '🤖' : '⚡',
   }),
+  AgentIdentity: ({ name, emoji }: { name: string; emoji: string }) => (
+    <span>
+      <span>{emoji}</span>
+      <span className="truncate">{name}</span>
+    </span>
+  ),
 }));
 
 vi.mock('@/layers/shared/ui', () => ({
@@ -98,12 +104,10 @@ describe('RecentAgentItem', () => {
     expect(onClick).toHaveBeenCalledOnce();
   });
 
-  it('renders color dot', () => {
-    const { container } = render(
-      <RecentAgentItem path="/projects/test" agent={makeAgent()} onClick={vi.fn()} />
-    );
-    const dot = container.querySelector('.rounded-full');
-    expect(dot).toBeInTheDocument();
+  it('renders agent visual identity', () => {
+    render(<RecentAgentItem path="/projects/test" agent={makeAgent()} onClick={vi.fn()} />);
+    // The mock AgentIdentity renders the emoji from useAgentVisual
+    expect(screen.getByText('🤖')).toBeInTheDocument();
   });
 
   it('has truncate class on display name for long names', () => {

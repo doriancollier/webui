@@ -92,6 +92,12 @@ vi.mock('@/layers/entities/agent', () => ({
   useResolvedAgents: () => ({ data: undefined }),
   useAgentToolStatus: () => mockToolStatus,
   useMcpConfig: () => ({ data: undefined }),
+  AgentIdentity: ({ name, emoji }: { name: string; emoji: string }) => (
+    <span>
+      <span>{emoji}</span>
+      <span>{name}</span>
+    </span>
+  ),
 }));
 
 // Mock usePulseEnabled
@@ -99,9 +105,10 @@ vi.mock('@/layers/entities/pulse/model/use-pulse-config', () => ({
   usePulseEnabled: () => true,
 }));
 
-// Mock useActiveRunCount
+// Mock useActiveRunCount and useRuns
 vi.mock('@/layers/entities/pulse/model/use-runs', () => ({
   useActiveRunCount: () => ({ data: 0 }),
+  useRuns: () => ({ data: [] }),
 }));
 
 // Mock useCompletedRunBadge
@@ -243,8 +250,9 @@ describe('SessionSidebar', () => {
       expect(screen.getByText('Older')).toBeDefined();
     });
 
-    expect(screen.getByText('Today session')).toBeDefined();
-    expect(screen.getByText('Old session')).toBeDefined();
+    // Sessions appear in both the overview "Recent Sessions" and the sessions tab
+    expect(screen.getAllByText('Today session').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Old session').length).toBeGreaterThanOrEqual(1);
   });
 
   it('sets active session to a UUID on "New session" click', () => {
@@ -283,7 +291,7 @@ describe('SessionSidebar', () => {
     renderWithQuery(<SessionSidebar />);
 
     await waitFor(() => {
-      expect(screen.getByText('Only today')).toBeDefined();
+      expect(screen.getAllByText('Only today').length).toBeGreaterThanOrEqual(1);
     });
 
     expect(screen.queryByText('Today')).toBeNull();

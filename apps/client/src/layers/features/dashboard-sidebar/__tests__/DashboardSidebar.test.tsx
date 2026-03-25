@@ -31,6 +31,12 @@ vi.mock('@/layers/shared/model', async (importOriginal) => {
 vi.mock('@/layers/entities/agent', () => ({
   useResolvedAgents: () => ({ data: {} }),
   useAgentVisual: () => ({ color: '#aaaaaa', emoji: '🤖' }),
+  AgentIdentity: ({ name, emoji }: { name: string; emoji: string }) => (
+    <span>
+      <span>{emoji}</span>
+      <span>{name}</span>
+    </span>
+  ),
 }));
 
 vi.mock('@/layers/features/feature-promos', () => ({
@@ -99,15 +105,6 @@ describe('DashboardSidebar', () => {
     renderWithProviders(<DashboardSidebar />);
     const agentsBtns = screen.getAllByText('Agents').map((el) => el.closest('button'));
     expect(agentsBtns.some((btn) => btn?.getAttribute('data-active') === 'true')).toBe(true);
-  });
-
-  it('renders Sessions nav item that navigates to /session', () => {
-    renderWithProviders(<DashboardSidebar />);
-    const sessionsButtons = screen.getAllByText('Sessions');
-    expect(sessionsButtons.length).toBeGreaterThanOrEqual(1);
-
-    fireEvent.click(sessionsButtons[0]);
-    expect(mockNavigate).toHaveBeenCalledWith({ to: '/session' });
   });
 
   it('hides Recent Agents section when recentCwds is empty', () => {

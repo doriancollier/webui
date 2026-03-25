@@ -3,7 +3,7 @@ import type { PlaygroundSection } from '../playground-registry';
 /**
  * Feature component sections from FeaturesPage.
  *
- * Sources: RelayShowcases, MeshShowcases, PulseShowcases, OnboardingShowcases.
+ * Sources: AgentIdentityShowcases, RelayShowcases, MeshShowcases, PulseShowcases, OnboardingShowcases, PromoShowcases.
  */
 export const FEATURES_SECTIONS: PlaygroundSection[] = [
   // AgentIdentityShowcases
