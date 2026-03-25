@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import type { Transition } from 'motion/react';
+import { cn } from '@/layers/shared/lib';
 
 /** @internal StatusLine compound component context. Not part of the public API. */
 interface StatusLineContextValue {
@@ -97,7 +98,7 @@ function StatusLineRoot({
             transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
             className="overflow-hidden"
           >
-            <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 px-1 pt-2 text-xs whitespace-nowrap sm:justify-start">
+            <StatusLineScroller>
               <AnimatePresence initial={false} mode="popLayout">
                 {React.Children.map(children, (child) => {
                   if (!React.isValidElement(child)) return child;
@@ -105,7 +106,7 @@ function StatusLineRoot({
                   return itemKey ? React.cloneElement(child, { key: itemKey }) : child;
                 })}
               </AnimatePresence>
-            </div>
+            </StatusLineScroller>
           </motion.div>
         )}
       </AnimatePresence>
@@ -173,6 +174,63 @@ function StatusLineSeparator() {
     <span className="text-muted-foreground/30" aria-hidden="true">
       &middot;
     </span>
+  );
+}
+
+/**
+ * Horizontally scrollable container for status items.
+ *
+ * Shows a right-edge fade gradient when content overflows, hinting that
+ * more items are available. Hides the scrollbar for a clean appearance.
+ *
+ * @internal
+ */
+function StatusLineScroller({ children }: { children: React.ReactNode }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const checkOverflow = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    // Allow 1px tolerance for sub-pixel rounding
+    setCanScrollRight(el.scrollWidth - el.scrollLeft - el.clientWidth > 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    checkOverflow();
+
+    el.addEventListener('scroll', checkOverflow, { passive: true });
+
+    // ResizeObserver catches layout changes (items added/removed, viewport resize)
+    const ro = new ResizeObserver(checkOverflow);
+    ro.observe(el);
+
+    return () => {
+      el.removeEventListener('scroll', checkOverflow);
+      ro.disconnect();
+    };
+  }, [checkOverflow]);
+
+  return (
+    <div className="relative">
+      <div
+        ref={scrollRef}
+        className="text-muted-foreground scrollbar-none flex items-center gap-2 overflow-x-auto px-1 text-xs whitespace-nowrap"
+      >
+        {children}
+      </div>
+      {/* Right fade gradient — hints at scrollable overflow */}
+      <div
+        className={cn(
+          'from-background pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l to-transparent transition-opacity duration-200',
+          canScrollRight ? 'opacity-100' : 'opacity-0'
+        )}
+        aria-hidden
+      />
+    </div>
   );
 }
 

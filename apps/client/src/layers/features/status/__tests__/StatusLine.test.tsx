@@ -6,6 +6,13 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 import { StatusLine } from '../ui/StatusLine';
 
+// ResizeObserver is not available in jsdom — provide a minimal stub.
+globalThis.ResizeObserver ??= class {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+} as unknown as typeof ResizeObserver;
+
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -106,7 +113,7 @@ describe('StatusLine', () => {
           </StatusLine.Item>
         </StatusLine>
       );
-      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(0);
+      expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(0);
     });
 
     it('renders exactly one separator between two visible items', () => {
@@ -120,7 +127,7 @@ describe('StatusLine', () => {
           </StatusLine.Item>
         </StatusLine>
       );
-      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
+      expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(1);
     });
 
     it('renders N-1 separators for N visible items', () => {
@@ -137,7 +144,7 @@ describe('StatusLine', () => {
           </StatusLine.Item>
         </StatusLine>
       );
-      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2);
+      expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(2);
     });
 
     it('does not render a separator before the first visible item when earlier items are invisible', () => {
@@ -154,7 +161,7 @@ describe('StatusLine', () => {
           </StatusLine.Item>
         </StatusLine>
       );
-      expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(1);
+      expect(container.querySelectorAll('span[aria-hidden="true"]')).toHaveLength(1);
     });
 
     it('renders the middot character as separator content', () => {
@@ -168,7 +175,7 @@ describe('StatusLine', () => {
           </StatusLine.Item>
         </StatusLine>
       );
-      const separator = container.querySelector('[aria-hidden="true"]');
+      const separator = container.querySelector('span[aria-hidden="true"]');
       expect(separator?.textContent).toBe('\u00B7');
     });
   });

@@ -3,8 +3,8 @@ import { Field, FieldContent, FieldDescription, FieldLabel } from './field';
 import { cn } from '@/layers/shared/lib';
 
 interface SettingRowProps {
-  /** Label text displayed on the left. */
-  label: string;
+  /** Label content displayed on the left. Accepts strings or React nodes (e.g., icon + text). */
+  label: React.ReactNode;
   /** Description text below the label. */
   description: string;
   /** Control element (Switch, Button, Select, etc.) rendered on the right. */

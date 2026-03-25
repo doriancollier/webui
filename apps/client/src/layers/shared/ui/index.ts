@@ -113,6 +113,13 @@ export {
   useNavigationLayout,
 } from './navigation-layout';
 export {
+  ContextMenu,
+  ContextMenuTrigger,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+} from './context-menu';
+export {
   ResponsiveDialog,
   ResponsiveDialogTrigger,
   ResponsiveDialogContent,
@@ -125,6 +132,13 @@ export {
   ResponsiveDialogFullscreenToggle,
   useResponsiveDialog,
 } from './responsive-dialog';
+export {
+  ResponsivePopover,
+  ResponsivePopoverTrigger,
+  ResponsivePopoverContent,
+  ResponsivePopoverTitle,
+  useResponsivePopover,
+} from './responsive-popover';
 export { ScanLine } from './ScanLine';
 export { ScrollArea, ScrollBar } from './scroll-area';
 export {
