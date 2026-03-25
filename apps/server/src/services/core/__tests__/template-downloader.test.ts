@@ -26,9 +26,14 @@ vi.mock('../../../lib/logger.js', () => ({
   },
 }));
 
+vi.mock('../../../env.js', () => ({
+  env: {} as Record<string, string | undefined>,
+}));
+
 import { spawn, execSync } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import { downloadTemplate as gigetDownload } from 'giget';
+import { env as mockEnv } from '../../../env.js';
 import {
   resolveGitUrl,
   resolveGitAuth,
@@ -55,7 +60,7 @@ function createMockProcess(): ChildProcess & { _emit: (event: string, data?: unk
 
 beforeEach(() => {
   vi.clearAllMocks();
-  delete process.env.GITHUB_TOKEN;
+  delete mockEnv.GITHUB_TOKEN;
   // Default: gh CLI not available (most tests don't need auth)
   vi.mocked(execSync).mockImplementation(() => {
     throw new Error('gh not found');
@@ -118,11 +123,11 @@ describe('resolveGitUrl', () => {
 
 describe('resolveGitAuth', () => {
   afterEach(() => {
-    delete process.env.GITHUB_TOKEN;
+    delete mockEnv.GITHUB_TOKEN;
   });
 
   it('returns GITHUB_TOKEN env var when set', () => {
-    process.env.GITHUB_TOKEN = 'ghp_test123';
+    mockEnv.GITHUB_TOKEN = 'ghp_test123';
     expect(resolveGitAuth()).toBe('ghp_test123');
   });
 
@@ -144,7 +149,7 @@ describe('resolveGitAuth', () => {
   });
 
   it('prefers GITHUB_TOKEN over gh CLI', () => {
-    process.env.GITHUB_TOKEN = 'ghp_env_token';
+    mockEnv.GITHUB_TOKEN = 'ghp_env_token';
     vi.mocked(execSync).mockReturnValue('gho_cli_token\n');
     expect(resolveGitAuth()).toBe('ghp_env_token');
     expect(execSync).not.toHaveBeenCalled();
@@ -444,7 +449,7 @@ describe('downloadTemplate', () => {
   });
 
   it('passes auth to giget fallback', async () => {
-    process.env.GITHUB_TOKEN = 'ghp_test_token';
+    mockEnv.GITHUB_TOKEN = 'ghp_test_token';
 
     const mockProc = createMockProcess();
     vi.mocked(spawn).mockReturnValue(mockProc);

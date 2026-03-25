@@ -11,6 +11,7 @@ import { spawn, execSync } from 'node:child_process';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { logger } from '../../lib/logger.js';
+import { env } from '../../env.js';
 
 /** Progress callback invoked during git clone. */
 export type ProgressCallback = (percent: number, phase: string) => void;
@@ -93,8 +94,8 @@ export function resolveGitUrl(source: string): string {
  * @returns Auth token or undefined
  */
 export function resolveGitAuth(): string | undefined {
-  if (process.env.GITHUB_TOKEN) {
-    return process.env.GITHUB_TOKEN;
+  if (env.GITHUB_TOKEN) {
+    return env.GITHUB_TOKEN;
   }
 
   try {

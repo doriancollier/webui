@@ -7,6 +7,9 @@ const boolFlag = z
   .transform((v) => v === 'true');
 
 const serverEnvSchema = z.object({
+  // System
+  HOME: z.string().optional(),
+  GITHUB_TOKEN: z.string().optional(),
   // Runtime
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   DORKOS_PORT: z.coerce.number().int().min(1).max(65535).default(4242),

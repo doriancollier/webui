@@ -21,6 +21,7 @@ import { dorkbotClaudeMdTemplate } from '@dorkos/shared/dorkbot-templates';
 import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
 import { configManager } from './config-manager.js';
 import { logger } from '../../lib/logger.js';
+import { env } from '../../env.js';
 
 /** Minimal MeshCore interface for sync-on-write. */
 interface MeshCoreLike {
@@ -83,7 +84,7 @@ async function maybeSetDefaultAgent(agentName: string): Promise<void> {
     const agentsConfig = configManager.get('agents');
     const currentDefault = agentsConfig.defaultAgent;
     const defaultAgentDir = path.resolve(
-      agentsConfig.defaultDirectory.replace(/^~/, process.env.HOME || ''),
+      agentsConfig.defaultDirectory.replace(/^~/, env.HOME || ''),
       currentDefault
     );
     // If the current default agent directory doesn't exist, adopt the new agent
@@ -128,7 +129,7 @@ export async function createAgentWorkspace(
   const agentsConfig = configManager.get('agents');
   const resolvedPath = opts.directory
     ? path.resolve(opts.directory)
-    : path.resolve(agentsConfig.defaultDirectory.replace(/^~/, process.env.HOME || ''), opts.name);
+    : path.resolve(agentsConfig.defaultDirectory.replace(/^~/, env.HOME || ''), opts.name);
 
   // Boundary validation
   try {
