@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Move version display from status bar to sidebar footer
 - Add declarative feature promo system with contextual discovery
 - Add SSE resilience infrastructure with connection health UI
 - Display friendly tool names in ToolApproval

@@ -121,16 +121,31 @@ vi.mock('@/layers/shared/model/app-store', () => ({
       setIsWaitingForUser: vi.fn(),
       setActiveForm: vi.fn(),
       showStatusBarCwd: false,
+      setShowStatusBarCwd: vi.fn(),
       showStatusBarPermission: false,
+      setShowStatusBarPermission: vi.fn(),
       showStatusBarModel: false,
+      setShowStatusBarModel: vi.fn(),
       showStatusBarCost: false,
+      setShowStatusBarCost: vi.fn(),
       showStatusBarContext: false,
+      setShowStatusBarContext: vi.fn(),
       showStatusBarGit: false,
+      setShowStatusBarGit: vi.fn(),
       showStatusBarSound: false,
+      setShowStatusBarSound: vi.fn(),
+      showStatusBarSync: false,
+      setShowStatusBarSync: vi.fn(),
+      showStatusBarPolling: false,
+      setShowStatusBarPolling: vi.fn(),
       showStatusBarTunnel: false,
-      showStatusBarVersion: false,
+      setShowStatusBarTunnel: vi.fn(),
       enableNotificationSound: false,
       setEnableNotificationSound: vi.fn(),
+      enableCrossClientSync: false,
+      setEnableCrossClientSync: vi.fn(),
+      enableMessagePolling: false,
+      setEnableMessagePolling: vi.fn(),
     };
     return selector ? selector(state) : state;
   },
@@ -168,9 +183,14 @@ vi.mock('@/layers/features/status', () => ({
   SyncItem: vi.fn(() => null),
   PollingItem: vi.fn(() => null),
   TunnelItem: vi.fn(() => null),
-  VersionItem: vi.fn(() => null),
   ConnectionItem: vi.fn(() => null),
+  ClientsItem: vi.fn(() => null),
+  StatusBarConfigurePopover: vi.fn(({ children }: { children: React.ReactNode }) => (
+    <>{children}</>
+  )),
   useGitStatus: vi.fn(() => ({ data: undefined })),
+  STATUS_BAR_REGISTRY: [],
+  resetStatusBarPreferences: vi.fn(),
 }));
 
 vi.mock('../ui/TaskListPanel', () => ({

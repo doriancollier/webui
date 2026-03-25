@@ -1,7 +1,24 @@
 {
   "version": 1,
-  "nextNumber": 193,
+  "nextNumber": 195,
   "decisions": [
+    {
+      "number": 194,
+      "slug": "version-display-in-sidebar-not-status-bar",
+      "title": "Display Version in Sidebar Footer, Not Status Bar",
+      "created": "2026-03-24",
+      "status": "draft",
+      "extractedFrom": "sidebar-upgrade-notification",
+      "specSlug": "sidebar-upgrade-notification"
+    },
+    {
+      "number": 193,
+      "slug": "generic-background-task-system",
+      "title": "Generic Background Task System Replacing Subagent-Specific Tracking",
+      "status": "accepted",
+      "created": "2026-03-24",
+      "specSlug": "background-task-visibility"
+    },
     {
       "number": 192,
       "slug": "relay-notify-user-convenience-tool",
