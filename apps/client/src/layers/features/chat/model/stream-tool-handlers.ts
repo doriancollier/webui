@@ -1,5 +1,5 @@
 /**
- * Tool, hook, and subagent event handlers for the stream event processor.
+ * Tool, hook, and background task event handlers for the stream event processor.
  *
  * Each handler receives a `StreamHandlerHelpers` context, the event data, and
  * the assistant message ID. They mutate `currentPartsRef` and call
@@ -12,9 +12,9 @@ import type {
   ApprovalEvent,
   QuestionPromptEvent,
   ToolProgressEvent,
-  SubagentStartedEvent,
-  SubagentProgressEvent,
-  SubagentDoneEvent,
+  BackgroundTaskStartedEvent,
+  BackgroundTaskProgressEvent,
+  BackgroundTaskDoneEvent,
   HookStartedEvent,
   HookProgressEvent,
   HookResponseEvent,
@@ -185,58 +185,60 @@ export function handleQuestionPrompt(
 }
 
 // ---------------------------------------------------------------------------
-// Subagent lifecycle
+// Background task lifecycle (SSE events: background_task_* -> BackgroundTaskPart)
 // ---------------------------------------------------------------------------
 
-/** Handle a subagent being started. */
+/** Handle a background task being started — creates a BackgroundTaskPart. */
 export function handleSubagentStarted(
   helpers: StreamHandlerHelpers,
   data: unknown,
   assistantId: string
 ) {
-  const { taskId, description } = data as SubagentStartedEvent;
+  const { taskId, description } = data as BackgroundTaskStartedEvent;
   helpers.currentPartsRef.current.push({
-    type: 'subagent',
+    type: 'background_task',
     taskId,
-    description,
+    taskType: 'agent',
     status: 'running',
+    startedAt: Date.now(),
+    description,
   });
   helpers.updateAssistantMessage(assistantId);
 }
 
-/** Handle subagent progress updates. */
+/** Handle background task progress updates. */
 export function handleSubagentProgress(
   helpers: StreamHandlerHelpers,
   data: unknown,
   assistantId: string
 ) {
-  const progress = data as SubagentProgressEvent;
-  const subagentPart = helpers.findSubagentPart(progress.taskId);
-  if (subagentPart) {
-    subagentPart.toolUses = progress.toolUses;
-    subagentPart.lastToolName = progress.lastToolName;
-    subagentPart.durationMs = progress.durationMs;
+  const progress = data as BackgroundTaskProgressEvent;
+  const taskPart = helpers.findBackgroundTaskPart(progress.taskId);
+  if (taskPart) {
+    taskPart.toolUses = progress.toolUses;
+    taskPart.lastToolName = progress.lastToolName;
+    taskPart.durationMs = progress.durationMs;
   } else {
-    console.warn('[stream] subagent_progress: unknown taskId', progress.taskId);
+    console.warn('[stream] background_task_progress: unknown taskId', progress.taskId);
   }
   helpers.updateAssistantMessage(assistantId);
 }
 
-/** Handle a subagent completing. */
+/** Handle a background task completing. */
 export function handleSubagentDone(
   helpers: StreamHandlerHelpers,
   data: unknown,
   assistantId: string
 ) {
-  const done = data as SubagentDoneEvent;
-  const subagentPartDone = helpers.findSubagentPart(done.taskId);
-  if (subagentPartDone) {
-    subagentPartDone.status = done.status === 'completed' ? 'complete' : 'error';
-    subagentPartDone.summary = done.summary;
-    if (done.toolUses !== undefined) subagentPartDone.toolUses = done.toolUses;
-    if (done.durationMs !== undefined) subagentPartDone.durationMs = done.durationMs;
+  const done = data as BackgroundTaskDoneEvent;
+  const taskPartDone = helpers.findBackgroundTaskPart(done.taskId);
+  if (taskPartDone) {
+    taskPartDone.status = done.status === 'completed' ? 'complete' : 'error';
+    taskPartDone.summary = done.summary;
+    if (done.toolUses !== undefined) taskPartDone.toolUses = done.toolUses;
+    if (done.durationMs !== undefined) taskPartDone.durationMs = done.durationMs;
   } else {
-    console.warn('[stream] subagent_done: unknown taskId', done.taskId);
+    console.warn('[stream] background_task_done: unknown taskId', done.taskId);
   }
   helpers.updateAssistantMessage(assistantId);
 }

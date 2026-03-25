@@ -2,17 +2,19 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import { SubagentBlock } from '../SubagentBlock';
-import type { SubagentPart } from '@dorkos/shared/types';
+import type { BackgroundTaskPart } from '@dorkos/shared/types';
 
 afterEach(() => {
   cleanup();
 });
 
-const basePart: SubagentPart = {
-  type: 'subagent',
+const basePart: BackgroundTaskPart = {
+  type: 'background_task',
   taskId: 'task-1',
-  description: 'Run code analysis',
+  taskType: 'agent',
   status: 'running',
+  startedAt: Date.now(),
+  description: 'Run code analysis',
 };
 
 describe('SubagentBlock', () => {
@@ -32,7 +34,7 @@ describe('SubagentBlock', () => {
   it('sets aria-label on the button', () => {
     render(<SubagentBlock part={basePart} />);
     const button = screen.getByRole('button');
-    expect(button.getAttribute('aria-label')).toBe('Subagent: Run code analysis');
+    expect(button.getAttribute('aria-label')).toBe('Background task: Run code analysis');
   });
 
   it('does not show expand chevron when there is no expandable content', () => {

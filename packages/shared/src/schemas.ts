@@ -47,9 +47,9 @@ export const StreamEventTypeSchema = z
     'message_delivered',
     'relay_message',
     'thinking_delta',
-    'subagent_started',
-    'subagent_progress',
-    'subagent_done',
+    'background_task_started',
+    'background_task_progress',
+    'background_task_done',
     'system_status',
     'compact_boundary',
     'prompt_suggestion',
@@ -346,31 +346,44 @@ export const RelayMessageEventSchema = z
 
 export type RelayMessageEvent = z.infer<typeof RelayMessageEventSchema>;
 
-// === Subagent Lifecycle Events ===
+// === Background Task Type/Status (needed by both events and parts) ===
 
-export const SubagentStartedEventSchema = z
+export const BackgroundTaskTypeSchema = z.enum(['agent', 'bash']).openapi('BackgroundTaskType');
+export type BackgroundTaskType = z.infer<typeof BackgroundTaskTypeSchema>;
+
+export const BackgroundTaskStatusSchema = z
+  .enum(['running', 'complete', 'error', 'stopped'])
+  .openapi('BackgroundTaskStatus');
+export type BackgroundTaskStatus = z.infer<typeof BackgroundTaskStatusSchema>;
+
+// === Background Task Lifecycle Events ===
+
+export const BackgroundTaskStartedEventSchema = z
   .object({
     taskId: z.string(),
-    subagentSessionId: z.string(),
+    taskType: BackgroundTaskTypeSchema,
+    startedAt: z.number(),
+    subagentSessionId: z.string().optional(),
     toolUseId: z.string().optional(),
-    description: z.string(),
+    description: z.string().optional(),
+    command: z.string().optional(),
   })
-  .openapi('SubagentStartedEvent');
+  .openapi('BackgroundTaskStartedEvent');
 
-export type SubagentStartedEvent = z.infer<typeof SubagentStartedEventSchema>;
+export type BackgroundTaskStartedEvent = z.infer<typeof BackgroundTaskStartedEventSchema>;
 
-export const SubagentProgressEventSchema = z
+export const BackgroundTaskProgressEventSchema = z
   .object({
     taskId: z.string(),
-    toolUses: z.number().int(),
+    toolUses: z.number().int().optional(),
     lastToolName: z.string().optional(),
     durationMs: z.number().int(),
   })
-  .openapi('SubagentProgressEvent');
+  .openapi('BackgroundTaskProgressEvent');
 
-export type SubagentProgressEvent = z.infer<typeof SubagentProgressEventSchema>;
+export type BackgroundTaskProgressEvent = z.infer<typeof BackgroundTaskProgressEventSchema>;
 
-export const SubagentDoneEventSchema = z
+export const BackgroundTaskDoneEventSchema = z
   .object({
     taskId: z.string(),
     status: z.enum(['completed', 'failed', 'stopped']),
@@ -378,9 +391,9 @@ export const SubagentDoneEventSchema = z
     toolUses: z.number().int().optional(),
     durationMs: z.number().int().optional(),
   })
-  .openapi('SubagentDoneEvent');
+  .openapi('BackgroundTaskDoneEvent');
 
-export type SubagentDoneEvent = z.infer<typeof SubagentDoneEventSchema>;
+export type BackgroundTaskDoneEvent = z.infer<typeof BackgroundTaskDoneEventSchema>;
 
 export const SystemStatusEventSchema = z
   .object({
@@ -481,9 +494,9 @@ export const StreamEventSchema = z
       RelayReceiptEventSchema,
       MessageDeliveredEventSchema,
       RelayMessageEventSchema,
-      SubagentStartedEventSchema,
-      SubagentProgressEventSchema,
-      SubagentDoneEventSchema,
+      BackgroundTaskStartedEventSchema,
+      BackgroundTaskProgressEventSchema,
+      BackgroundTaskDoneEventSchema,
       SystemStatusEventSchema,
       CompactBoundaryEventSchema,
       PromptSuggestionEventSchema,
@@ -545,25 +558,28 @@ export const ToolCallPartSchema = z
 
 export type ToolCallPart = z.infer<typeof ToolCallPartSchema>;
 
-export const SubagentStatusSchema = z.enum(['running', 'complete', 'error']);
+// === Background Task Part (agent and bash) ===
 
-/** Status values for subagent lifecycle tracking. */
-export type SubagentStatus = z.infer<typeof SubagentStatusSchema>;
-
-export const SubagentPartSchema = z
+export const BackgroundTaskPartSchema = z
   .object({
-    type: z.literal('subagent'),
+    type: z.literal('background_task'),
     taskId: z.string(),
-    description: z.string(),
-    status: SubagentStatusSchema,
+    taskType: BackgroundTaskTypeSchema,
+    status: BackgroundTaskStatusSchema,
+    startedAt: z.number(),
+    // Agent-specific
+    description: z.string().optional(),
     toolUses: z.number().int().optional(),
     lastToolName: z.string().optional(),
-    durationMs: z.number().int().optional(),
     summary: z.string().optional(),
+    // Bash-specific
+    command: z.string().optional(),
+    // Shared
+    durationMs: z.number().int().optional(),
   })
-  .openapi('SubagentPart');
+  .openapi('BackgroundTaskPart');
 
-export type SubagentPart = z.infer<typeof SubagentPartSchema>;
+export type BackgroundTaskPart = z.infer<typeof BackgroundTaskPartSchema>;
 
 export const ThinkingPartSchema = z
   .object({
@@ -590,7 +606,7 @@ export type ErrorPart = z.infer<typeof ErrorPartSchema>;
 export const MessagePartSchema = z.discriminatedUnion('type', [
   TextPartSchema,
   ToolCallPartSchema,
-  SubagentPartSchema,
+  BackgroundTaskPartSchema,
   ThinkingPartSchema,
   ErrorPartSchema,
 ]);

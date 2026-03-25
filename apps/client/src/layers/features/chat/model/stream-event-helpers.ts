@@ -63,10 +63,10 @@ export function createStreamHelpers(deps: StreamEventDeps): StreamHandlerHelpers
     return undefined;
   }
 
-  function findSubagentPart(taskId: string) {
+  function findBackgroundTaskPart(taskId: string) {
     for (let i = currentPartsRef.current.length - 1; i >= 0; i--) {
       const part = currentPartsRef.current[i];
-      if (part.type === 'subagent' && part.taskId === taskId) {
+      if (part.type === 'background_task' && part.taskId === taskId) {
         return part;
       }
     }
@@ -112,7 +112,7 @@ export function createStreamHelpers(deps: StreamEventDeps): StreamHandlerHelpers
   return {
     findToolCallPart,
     findHookById,
-    findSubagentPart,
+    findBackgroundTaskPart,
     updateAssistantMessage,
     currentPartsRef,
     orphanHooksRef,

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Generalize subagent system to background task model with stopTask support
 - Add rotating placeholder hints in chat input
 - Move version display from status bar to sidebar footer
 - Add declarative feature promo system with contextual discovery

@@ -1,0 +1,204 @@
+/**
+ * @vitest-environment jsdom
+ */
+import { describe, it, expect, vi, afterEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import '@testing-library/jest-dom/vitest';
+import { BackgroundTaskBar } from '../BackgroundTaskBar';
+import type { VisibleBackgroundTask } from '../../model/use-background-tasks';
+import { TASK_COLORS } from '../../model/use-background-tasks';
+
+// Mock motion/react to avoid animation complexity in unit tests
+vi.mock('motion/react', () => ({
+  motion: {
+    div: ({ children, ...props }: Record<string, unknown> & { children?: React.ReactNode }) => {
+      // Strip motion-specific props to avoid React DOM warnings
+      const { initial: _i, animate: _a, exit: _e, transition: _t, ...domProps } = props;
+      return <div {...domProps}>{children}</div>;
+    },
+  },
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  useReducedMotion: () => false,
+}));
+
+// Mock child components to isolate BackgroundTaskBar logic
+vi.mock('../AgentRunner', () => ({
+  AgentRunner: ({ agent }: { agent: { taskId: string; description: string } }) => (
+    <div data-testid={`agent-runner-${agent.taskId}`}>{agent.description}</div>
+  ),
+}));
+
+vi.mock('../TaskDotSection', () => ({
+  TaskDotSection: ({ bashTasks }: { bashTasks: VisibleBackgroundTask[] }) => (
+    <div data-testid="task-dot-section">{bashTasks.length} dots</div>
+  ),
+}));
+
+vi.mock('../TaskDetailPanel', () => ({
+  TaskDetailPanel: ({
+    tasks,
+    onStopTask,
+  }: {
+    tasks: VisibleBackgroundTask[];
+    onStopTask: (id: string) => void;
+  }) => (
+    <div data-testid="task-detail-panel">
+      {tasks.map((t) => (
+        <button key={t.taskId} onClick={() => onStopTask(t.taskId)}>
+          Stop {t.taskId}
+        </button>
+      ))}
+    </div>
+  ),
+}));
+
+afterEach(cleanup);
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function makeTask(overrides: Partial<VisibleBackgroundTask> = {}): VisibleBackgroundTask {
+  return {
+    taskId: `task-${Math.random().toString(36).slice(2, 8)}`,
+    taskType: 'agent',
+    status: 'running',
+    color: TASK_COLORS[0],
+    startedAt: Date.now() - 30_000,
+    description: 'Background agent',
+    toolUses: 5,
+    durationMs: 30_000,
+    ...overrides,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('BackgroundTaskBar', () => {
+  it('renders nothing when tasks array is empty', () => {
+    const { container } = render(<BackgroundTaskBar tasks={[]} onStopTask={vi.fn()} />);
+    expect(container.innerHTML).toBe('');
+  });
+
+  it('renders the status bar with correct task count for a single task', () => {
+    const task = makeTask({ taskId: 'a-1' });
+    render(<BackgroundTaskBar tasks={[task]} onStopTask={vi.fn()} />);
+
+    const status = screen.getByRole('status');
+    expect(status).toBeInTheDocument();
+    expect(status).toHaveAttribute('aria-label', '1 background task running');
+    expect(screen.getByText(/task running/)).toBeInTheDocument();
+  });
+
+  it('pluralizes the task count label for multiple tasks', () => {
+    const tasks = [makeTask({ taskId: 'p-1' }), makeTask({ taskId: 'p-2' })];
+    render(<BackgroundTaskBar tasks={tasks} onStopTask={vi.fn()} />);
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', '2 background tasks running');
+    expect(screen.getByText(/tasks running/)).toBeInTheDocument();
+  });
+
+  it('renders AgentRunner for agent tasks', () => {
+    const task = makeTask({ taskId: 'agent-1', taskType: 'agent', description: 'Analyzing' });
+    render(<BackgroundTaskBar tasks={[task]} onStopTask={vi.fn()} />);
+
+    expect(screen.getByTestId('agent-runner-agent-1')).toBeInTheDocument();
+  });
+
+  it('renders TaskDotSection for bash tasks', () => {
+    const task = makeTask({
+      taskId: 'bash-1',
+      taskType: 'bash',
+      command: 'npm test',
+      description: undefined,
+    });
+    render(<BackgroundTaskBar tasks={[task]} onStopTask={vi.fn()} />);
+
+    expect(screen.getByTestId('task-dot-section')).toBeInTheDocument();
+  });
+
+  it('renders separator when both agent and bash tasks are present', () => {
+    const agentTask = makeTask({ taskId: 'sep-a', taskType: 'agent' });
+    const bashTask = makeTask({ taskId: 'sep-b', taskType: 'bash', command: 'ls' });
+
+    const { container } = render(
+      <BackgroundTaskBar tasks={[agentTask, bashTask]} onStopTask={vi.fn()} />
+    );
+
+    // Separator is a div with bg-border class
+    const separators = container.querySelectorAll('.bg-border.h-4.w-px');
+    expect(separators.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('does not render separator when only agent tasks are present', () => {
+    const tasks = [makeTask({ taskId: 'only-a', taskType: 'agent' })];
+
+    render(<BackgroundTaskBar tasks={tasks} onStopTask={vi.fn()} />);
+
+    expect(screen.queryByTestId('task-dot-section')).not.toBeInTheDocument();
+  });
+
+  it('shows tool count in stats when agents have tool uses', () => {
+    const task = makeTask({ taskId: 't-1', toolUses: 12, durationMs: 45_000 });
+    render(<BackgroundTaskBar tasks={[task]} onStopTask={vi.fn()} />);
+
+    expect(screen.getByText(/12 tools/)).toBeInTheDocument();
+    expect(screen.getByText(/45s/)).toBeInTheDocument();
+  });
+
+  it('toggles expand state on chevron button click', async () => {
+    const user = userEvent.setup();
+    const task = makeTask({ taskId: 'exp-1' });
+    render(<BackgroundTaskBar tasks={[task]} onStopTask={vi.fn()} />);
+
+    const toggle = screen.getByRole('button', { name: /expand task details/i });
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+
+    await user.click(toggle);
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByTestId('task-detail-panel')).toBeInTheDocument();
+  });
+
+  it('passes onStopTask through to TaskDetailPanel', async () => {
+    const user = userEvent.setup();
+    const onStop = vi.fn();
+    const task = makeTask({ taskId: 'stop-1' });
+    render(<BackgroundTaskBar tasks={[task]} onStopTask={onStop} />);
+
+    // Expand to show detail panel
+    await user.click(screen.getByRole('button', { name: /expand task details/i }));
+
+    // Click the stop button rendered by our mock TaskDetailPanel
+    await user.click(screen.getByText('Stop stop-1'));
+    expect(onStop).toHaveBeenCalledWith('stop-1');
+  });
+
+  it('shows overflow badge when more than 4 agent tasks', () => {
+    const tasks = Array.from({ length: 6 }, (_, i) =>
+      makeTask({ taskId: `of-${i}`, taskType: 'agent', description: `Agent ${i}` })
+    );
+
+    render(<BackgroundTaskBar tasks={tasks} onStopTask={vi.fn()} />);
+
+    // Only first 4 agents get AgentRunner, the rest are in overflow
+    expect(screen.getByTestId('agent-runner-of-0')).toBeInTheDocument();
+    expect(screen.getByTestId('agent-runner-of-3')).toBeInTheDocument();
+    expect(screen.queryByTestId('agent-runner-of-4')).not.toBeInTheDocument();
+
+    // Overflow badge shows +2
+    expect(screen.getByText('+2')).toBeInTheDocument();
+  });
+
+  it('renders mixed agent + bash tasks with correct aria-label', () => {
+    const agentTask = makeTask({ taskId: 'mx-a', taskType: 'agent' });
+    const bashTask = makeTask({ taskId: 'mx-b', taskType: 'bash', command: 'make' });
+
+    render(<BackgroundTaskBar tasks={[agentTask, bashTask]} onStopTask={vi.fn()} />);
+
+    expect(screen.getByRole('status')).toHaveAttribute('aria-label', '2 background tasks running');
+  });
+});

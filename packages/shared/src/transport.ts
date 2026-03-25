@@ -162,6 +162,14 @@ export interface Transport {
     toolCallId: string,
     answers: Record<string, string>
   ): Promise<{ ok: boolean }>;
+  /**
+   * Stop a running background task.
+   *
+   * @param sessionId - The parent session containing the task
+   * @param taskId - The background task to stop
+   * @returns Result indicating success or failure
+   */
+  stopTask(sessionId: string, taskId: string): Promise<{ success: boolean; taskId: string }>;
   /** Get the current task list for a session. */
   getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }>;
   /** Browse server filesystem directories for working directory selection. */

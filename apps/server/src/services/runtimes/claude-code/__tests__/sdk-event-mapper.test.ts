@@ -47,31 +47,33 @@ function makeToolState(): ToolState {
   } as ToolState;
 }
 
-describe('sdk-event-mapper subagent lifecycle', () => {
+describe('sdk-event-mapper background task lifecycle', () => {
   const session = makeSession();
   const sessionId = 'test-session';
   const toolState = makeToolState();
 
-  it('maps task_started to subagent_started', async () => {
+  it('maps task_started to background_task_started', async () => {
     const msg = sdkTaskStarted('task-1', 'Explore codebase');
     const events = await collectEvents(msg, session, sessionId, toolState);
 
     expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('subagent_started');
-    expect(events[0].data).toEqual({
+    expect(events[0].type).toBe('background_task_started');
+    expect(events[0].data).toMatchObject({
       taskId: 'task-1',
+      taskType: 'agent',
       subagentSessionId: 'subagent-task-1',
       toolUseId: undefined,
       description: 'Explore codebase',
     });
+    expect((events[0].data as Record<string, unknown>).startedAt).toEqual(expect.any(Number));
   });
 
-  it('maps task_progress to subagent_progress', async () => {
+  it('maps task_progress to background_task_progress', async () => {
     const msg = sdkTaskProgress('task-1', 3, 5000, 'Read');
     const events = await collectEvents(msg, session, sessionId, toolState);
 
     expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('subagent_progress');
+    expect(events[0].type).toBe('background_task_progress');
     expect(events[0].data).toEqual({
       taskId: 'task-1',
       toolUses: 3,
@@ -93,12 +95,12 @@ describe('sdk-event-mapper subagent lifecycle', () => {
     });
   });
 
-  it('maps task_notification (completed) to subagent_done', async () => {
+  it('maps task_notification (completed) to background_task_done', async () => {
     const msg = sdkTaskNotification('task-1', 'completed', 'Found 7 files');
     const events = await collectEvents(msg, session, sessionId, toolState);
 
     expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('subagent_done');
+    expect(events[0].type).toBe('background_task_done');
     expect(events[0].data).toEqual({
       taskId: 'task-1',
       status: 'completed',
@@ -108,12 +110,12 @@ describe('sdk-event-mapper subagent lifecycle', () => {
     });
   });
 
-  it('maps task_notification (failed) to subagent_done', async () => {
+  it('maps task_notification (failed) to background_task_done', async () => {
     const msg = sdkTaskNotification('task-1', 'failed', 'Error occurred');
     const events = await collectEvents(msg, session, sessionId, toolState);
 
     expect(events).toHaveLength(1);
-    expect(events[0].type).toBe('subagent_done');
+    expect(events[0].type).toBe('background_task_done');
     expect(events[0].data).toMatchObject({
       taskId: 'task-1',
       status: 'failed',

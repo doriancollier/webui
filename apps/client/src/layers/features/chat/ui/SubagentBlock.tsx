@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import type { SubagentPart } from '@dorkos/shared/types';
-import { getToolStatusIcon, CollapsibleCard } from './primitives';
+import type { BackgroundTaskPart } from '@dorkos/shared/types';
+import { getToolStatusIcon, CollapsibleCard, type ToolIconStatus } from './primitives';
 
 interface SubagentBlockProps {
-  part: SubagentPart;
+  part: BackgroundTaskPart;
 }
 
 /** Format duration from milliseconds to human-readable string. */
@@ -16,8 +16,8 @@ function formatDuration(ms: number): string {
   return `${minutes}m ${remainingSeconds}s`;
 }
 
-/** Build a tool usage summary string from subagent progress metrics. */
-function buildToolSummary(part: SubagentPart): string | null {
+/** Build a tool usage summary string from background task progress metrics. */
+function buildToolSummary(part: BackgroundTaskPart): string | null {
   const segments: string[] = [];
   if (part.toolUses) {
     segments.push(`${part.toolUses} tool ${part.toolUses === 1 ? 'call' : 'calls'}`);
@@ -28,7 +28,7 @@ function buildToolSummary(part: SubagentPart): string | null {
   return segments.length > 0 ? segments.join(' \u00b7 ') : null;
 }
 
-/** Collapsible inline block displaying a subagent's lifecycle status. */
+/** Collapsible inline block displaying a background task's lifecycle status. */
 export function SubagentBlock({ part }: SubagentBlockProps) {
   const [expanded, setExpanded] = useState(false);
 
@@ -40,13 +40,15 @@ export function SubagentBlock({ part }: SubagentBlockProps) {
       expanded={expanded}
       onToggle={() => hasExpandableContent && setExpanded(!expanded)}
       hideChevron={!hasExpandableContent}
-      ariaLabel={`Subagent: ${part.description}`}
+      ariaLabel={`Background task: ${part.description}`}
       data-testid="subagent-block"
       data-task-id={part.taskId}
       data-status={part.status}
       header={
         <>
-          {getToolStatusIcon(part.status)}
+          {getToolStatusIcon(
+            (part.status === 'stopped' ? 'complete' : part.status) as ToolIconStatus
+          )}
           <span className="text-3xs truncate font-mono">{part.description}</span>
           {toolSummary && (
             <span className="text-3xs text-muted-foreground ml-1 shrink-0">{toolSummary}</span>

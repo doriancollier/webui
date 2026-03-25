@@ -145,6 +145,15 @@ export interface AgentRuntime {
    */
   submitAnswers(sessionId: string, toolCallId: string, answers: Record<string, string>): boolean;
 
+  /**
+   * Stop a running background task (agent or bash command).
+   *
+   * @param sessionId - Target session
+   * @param taskId - The background task to stop
+   * @returns true if the task was found and stopped, false otherwise
+   */
+  stopTask(sessionId: string, taskId: string): Promise<boolean>;
+
   // --- Session queries (storage) ---
 
   /** List all sessions for a project directory. */

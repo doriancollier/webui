@@ -1,7 +1,7 @@
 import { createUserMessage, createAssistantMessage, createToolCall } from '../../mock-chat-data';
 import { buildStreamingTextSteps } from '../sim-helpers';
 import type { SimScenario } from '../sim-types';
-import type { SubagentPart } from '@dorkos/shared/types';
+import type { BackgroundTaskPart } from '@dorkos/shared/types';
 
 const USER_MSG = createUserMessage({
   id: 'sim-ks-user',
@@ -24,11 +24,13 @@ const READ_TOOL = createToolCall({
   status: 'pending',
 });
 
-const SUBAGENT_PART: SubagentPart = {
-  type: 'subagent',
+const SUBAGENT_PART: BackgroundTaskPart = {
+  type: 'background_task',
   taskId: 'sim-ks-sub',
-  description: 'Research JWT best practices and token rotation patterns',
+  taskType: 'agent',
   status: 'running',
+  startedAt: Date.now(),
+  description: 'Research JWT best practices and token rotation patterns',
   toolUses: 3,
   lastToolName: 'WebSearch',
   durationMs: 8200,

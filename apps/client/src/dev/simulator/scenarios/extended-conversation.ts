@@ -1,7 +1,7 @@
 import { createUserMessage, createAssistantMessage, createToolCall } from '../../mock-chat-data';
 import { buildStreamingTextSteps } from '../sim-helpers';
 import type { SimScenario } from '../sim-types';
-import type { SubagentPart } from '@dorkos/shared/types';
+import type { BackgroundTaskPart } from '@dorkos/shared/types';
 
 // ---------------------------------------------------------------------------
 // Turn 1: User asks about architecture
@@ -46,11 +46,13 @@ const READ_PKG = createToolCall({
   status: 'pending',
 });
 
-const SUBAGENT_1: SubagentPart = {
-  type: 'subagent',
+const SUBAGENT_1: BackgroundTaskPart = {
+  type: 'background_task',
   taskId: 'sim-ec-sub1',
-  description: 'Research CRDT vs OT approaches for collaborative editing',
+  taskType: 'agent',
   status: 'running',
+  startedAt: Date.now(),
+  description: 'Research CRDT vs OT approaches for collaborative editing',
   toolUses: 8,
   lastToolName: 'WebSearch',
   durationMs: 15600,

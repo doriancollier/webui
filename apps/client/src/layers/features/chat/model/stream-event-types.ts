@@ -3,7 +3,7 @@
  *
  * @module features/chat/model/stream-event-types
  */
-import type { MessagePart, HookPart, ToolCallPart, SubagentPart } from '@dorkos/shared/types';
+import type { MessagePart, HookPart, ToolCallPart, BackgroundTaskPart } from '@dorkos/shared/types';
 import type { ChatMessage, TransportErrorInfo } from './chat-types';
 
 /**
@@ -55,7 +55,7 @@ export interface StreamEventDeps {
 export interface StreamHandlerHelpers {
   findToolCallPart: (toolCallId: string) => ToolCallPart | undefined;
   findHookById: (hookId: string) => HookPart | undefined;
-  findSubagentPart: (taskId: string) => SubagentPart | undefined;
+  findBackgroundTaskPart: (taskId: string) => BackgroundTaskPart | undefined;
   updateAssistantMessage: (assistantId: string) => void;
   currentPartsRef: React.MutableRefObject<MessagePart[]>;
   orphanHooksRef: React.MutableRefObject<Map<string, HookPart[]>>;

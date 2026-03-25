@@ -1,13 +1,24 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/layers/shared/lib';
-import type { RunningAgent } from '../model/use-running-subagents';
 import { AgentRunnerBurst } from './AgentRunnerBurst';
 import './agent-runner.css';
 
 type RunnerPhase = 'running' | 'celebrating' | 'done';
 
+/** Shape expected by AgentRunner for rendering an animated running figure. */
+interface AgentRunnerAgent {
+  taskId: string;
+  description: string;
+  status: 'running' | 'complete' | 'error';
+  color: string;
+  toolUses?: number;
+  lastToolName?: string;
+  durationMs?: number;
+  summary?: string;
+}
+
 interface AgentRunnerProps {
-  agent: RunningAgent;
+  agent: AgentRunnerAgent;
   index: number;
 }
 
@@ -208,8 +219,8 @@ export function AgentRunner({ agent, index }: AgentRunnerProps) {
             'pointer-events-none absolute bottom-[calc(100%+8px)] left-1/2',
             '-translate-x-1/2 translate-y-1 opacity-0 transition-all duration-150',
             'group-hover:translate-y-0 group-hover:opacity-100',
-            'z-10 rounded-lg border border-[hsl(0_0%_22%)] bg-[hsl(0_0%_12%)] px-3 py-2 whitespace-nowrap',
-            'text-foreground text-[0.6875rem] shadow-[0_4px_12px_hsl(0_0%_0%/0.4)]'
+            'border-border bg-popover z-10 rounded-lg border px-3 py-2 whitespace-nowrap',
+            'text-foreground text-[0.6875rem] shadow-lg'
           )}
         >
           {/* Title with colored dot */}
@@ -234,14 +245,7 @@ export function AgentRunner({ agent, index }: AgentRunnerProps) {
           )}
 
           {/* Arrow pointing down */}
-          <div
-            className="absolute top-full left-1/2 -translate-x-1/2"
-            style={{
-              borderWidth: 5,
-              borderStyle: 'solid',
-              borderColor: 'hsl(0 0% 22%) transparent transparent transparent',
-            }}
-          />
+          <div className="border-t-border absolute top-full left-1/2 -translate-x-1/2 border-5 border-transparent" />
         </div>
       )}
     </div>

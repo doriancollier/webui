@@ -66,10 +66,12 @@ export type {
   ModelOption,
   UploadResult,
   UploadProgress,
-  SubagentStartedEvent,
-  SubagentProgressEvent,
-  SubagentDoneEvent,
-  SubagentPart,
+  BackgroundTaskStartedEvent,
+  BackgroundTaskProgressEvent,
+  BackgroundTaskDoneEvent,
+  BackgroundTaskPart,
+  BackgroundTaskType,
+  BackgroundTaskStatus,
   ThinkingDelta,
   ThinkingPart,
   SystemStatusEvent,
@@ -81,7 +83,6 @@ export type {
   HookPart,
   PresenceClient,
   PresenceUpdateEvent,
-  SubagentStatus,
 } from './schemas.js';
 
 export type {

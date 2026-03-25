@@ -86,14 +86,16 @@ describe('tagged-dedup in seed effect Branch 2', () => {
     expect(result[1]._streaming).toBe(false);
   });
 
-  it('carries over client-only subagent parts on assistant match', () => {
+  it('carries over client-only background task parts on assistant match', () => {
     const clientUserId = 'pending-user-abc';
     const clientAsstId = 'pending-asst-xyz';
-    const subagentPart: MessagePart = {
-      type: 'subagent',
+    const taskPart: MessagePart = {
+      type: 'background_task',
       taskId: 'task-1',
-      description: 'Running tests',
+      taskType: 'agent',
       status: 'complete',
+      startedAt: 0,
+      description: 'Running tests',
     };
     const current: ChatMessage[] = [
       {
@@ -108,7 +110,7 @@ describe('tagged-dedup in seed effect Branch 2', () => {
         id: clientAsstId,
         role: 'assistant',
         content: 'Done',
-        parts: [{ type: 'text', text: 'Done' }, subagentPart],
+        parts: [{ type: 'text', text: 'Done' }, taskPart],
         timestamp: '',
         _streaming: true,
       },
@@ -124,20 +126,22 @@ describe('tagged-dedup in seed effect Branch 2', () => {
     expect(result).toHaveLength(2);
     const asst = result[1];
     expect(asst.id).toBe('server-asst-1');
-    // Server has text part, client subagent part is carried over
-    const subagentInResult = asst.parts.find((p) => p.type === 'subagent');
-    expect(subagentInResult).toBeDefined();
-    expect(subagentInResult).toMatchObject({ type: 'subagent', taskId: 'task-1' });
+    // Server has text part, client background task part is carried over
+    const taskInResult = asst.parts.find((p) => p.type === 'background_task');
+    expect(taskInResult).toBeDefined();
+    expect(taskInResult).toMatchObject({ type: 'background_task', taskId: 'task-1' });
   });
 
-  it('does not duplicate subagent parts when server already includes them', () => {
+  it('does not duplicate background task parts when server already includes them', () => {
     const clientUserId = 'pending-user-abc';
     const clientAsstId = 'pending-asst-xyz';
-    const subagentPart: MessagePart = {
-      type: 'subagent',
+    const taskPart: MessagePart = {
+      type: 'background_task',
       taskId: 'task-1',
-      description: 'Running tests',
+      taskType: 'agent',
       status: 'complete',
+      startedAt: 0,
+      description: 'Running tests',
     };
     const current: ChatMessage[] = [
       {
@@ -152,12 +156,12 @@ describe('tagged-dedup in seed effect Branch 2', () => {
         id: clientAsstId,
         role: 'assistant',
         content: 'Done',
-        parts: [{ type: 'text', text: 'Done' }, subagentPart],
+        parts: [{ type: 'text', text: 'Done' }, taskPart],
         timestamp: '',
         _streaming: true,
       },
     ];
-    // Server response includes the same subagent part (transcript parser extracted it)
+    // Server response includes the same background task part (transcript parser extracted it)
     const history: HistoryMessage[] = [
       { id: 'server-user-1', role: 'user', content: 'Run tests' },
       {
@@ -166,7 +170,14 @@ describe('tagged-dedup in seed effect Branch 2', () => {
         content: 'Done',
         parts: [
           { type: 'text', text: 'Done' },
-          { type: 'subagent', taskId: 'task-1', description: 'Running tests', status: 'complete' },
+          {
+            type: 'background_task',
+            taskId: 'task-1',
+            taskType: 'agent',
+            status: 'complete',
+            startedAt: 0,
+            description: 'Running tests',
+          },
         ],
       },
     ];
@@ -175,10 +186,10 @@ describe('tagged-dedup in seed effect Branch 2', () => {
 
     const result = applySetMessages(current, setMessagesCalls);
     const asst = result[1];
-    // Should have exactly one subagent part, not two
-    const subagentParts = asst.parts.filter((p) => p.type === 'subagent');
-    expect(subagentParts).toHaveLength(1);
-    expect(subagentParts[0]).toMatchObject({ taskId: 'task-1' });
+    // Should have exactly one background task part, not two
+    const taskParts = asst.parts.filter((p) => p.type === 'background_task');
+    expect(taskParts).toHaveLength(1);
+    expect(taskParts[0]).toMatchObject({ taskId: 'task-1' });
   });
 
   it('does not match when user content differs', () => {

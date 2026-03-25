@@ -60,15 +60,18 @@ export async function* mapSdkMessage(
     return;
   }
 
-  // Handle subagent lifecycle messages (task_started, task_progress, task_notification)
+  // Handle background task lifecycle messages (task_started, task_progress, task_notification)
   if (message.type === 'system' && 'subtype' in message) {
     if (message.subtype === 'task_started') {
       const msg = message as Record<string, unknown>;
       yield {
-        type: 'subagent_started',
+        type: 'background_task_started',
         data: {
           taskId: msg.task_id as string,
+          taskType: message.session_id ? ('agent' as const) : ('bash' as const),
+          startedAt: Date.now(),
           subagentSessionId: message.session_id,
+          command: message.session_id ? undefined : (msg.command as string | undefined),
           toolUseId: msg.tool_use_id as string | undefined,
           description: msg.description as string,
         },
@@ -80,7 +83,7 @@ export async function* mapSdkMessage(
       const msg = message as Record<string, unknown>;
       const usage = msg.usage as { tool_uses: number; duration_ms: number };
       yield {
-        type: 'subagent_progress',
+        type: 'background_task_progress',
         data: {
           taskId: msg.task_id as string,
           toolUses: usage.tool_uses,
@@ -95,7 +98,7 @@ export async function* mapSdkMessage(
       const msg = message as Record<string, unknown>;
       const usage = msg.usage as { tool_uses: number; duration_ms: number } | undefined;
       yield {
-        type: 'subagent_done',
+        type: 'background_task_done',
         data: {
           taskId: msg.task_id as string,
           status: msg.status as 'completed' | 'failed' | 'stopped',

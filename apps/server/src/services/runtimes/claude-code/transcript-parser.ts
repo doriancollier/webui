@@ -5,7 +5,7 @@ import type {
   ToolCallPart,
   HistoryToolCall,
   ErrorCategory,
-  SubagentStatus,
+  BackgroundTaskStatus,
 } from '@dorkos/shared/types';
 import { SDK_TOOL_NAMES } from '@dorkos/shared/constants';
 
@@ -421,12 +421,15 @@ export function parseTranscript(lines: string[]): HistoryMessage[] {
             details: block.details ?? undefined,
           });
         } else if (block.type === 'subagent') {
-          // Subagent blocks → SubagentPart (snake_case SDK fields → camelCase client fields)
+          // Legacy subagent blocks → BackgroundTaskPart (backward compat: old JSONL → new schema)
+          const rawStatus = (block.status as BackgroundTaskStatus) ?? 'running';
           parts.push({
-            type: 'subagent',
+            type: 'background_task',
             taskId: block.task_id ?? block.id ?? '',
+            taskType: 'agent',
+            status: rawStatus,
+            startedAt: 0,
             description: block.description ?? '',
-            status: (block.status as SubagentStatus) ?? 'running',
             toolUses: block.tool_uses,
             lastToolName: block.last_tool_name,
             durationMs: block.duration_ms,

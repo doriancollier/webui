@@ -344,6 +344,15 @@ export class HttpTransport implements Transport {
     });
   }
 
+  /** Stop a running background task. */
+  stopTask(sessionId: string, taskId: string): Promise<{ success: boolean; taskId: string }> {
+    return fetchJSON<{ success: boolean; taskId: string }>(
+      this.baseUrl,
+      `/sessions/${sessionId}/tasks/${taskId}/stop`,
+      { method: 'POST' }
+    );
+  }
+
   // --- Tasks ---
 
   async getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }> {

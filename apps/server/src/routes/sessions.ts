@@ -296,6 +296,29 @@ router.post('/:id/submit-answers', async (req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/sessions/:id/tasks/:taskId/stop - Stop a running background task
+router.post('/:id/tasks/:taskId/stop', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
+  const { taskId } = req.params;
+  if (!taskId) return sendError(res, 400, 'Invalid task ID', 'INVALID_TASK_ID');
+
+  const runtime = runtimeRegistry.getDefault();
+  try {
+    const stopped = await runtime.stopTask(sessionId, taskId);
+    if (!stopped) {
+      if (runtime.hasSession(sessionId)) {
+        return sendError(res, 409, 'Task not found or already stopped', 'TASK_NOT_RUNNING');
+      }
+      return sendError(res, 404, 'Session not found', 'SESSION_NOT_FOUND');
+    }
+    res.json({ success: true, taskId });
+  } catch (err) {
+    return sendError(res, 500, 'Failed to stop task', 'STOP_TASK_ERROR');
+  }
+});
+
 // GET /api/sessions/:id/stream - Persistent SSE connection for session sync
 router.get('/:id/stream', async (req, res) => {
   const sessionId = parseSessionId(req.params.id);

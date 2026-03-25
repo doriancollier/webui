@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ArrowDown } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
-import { useRunningSubagents } from '../model/use-running-subagents';
+import { useBackgroundTasks } from '../model/use-background-tasks';
 import { useMessageQueue } from '../model/use-message-queue';
 import { useCommands } from '@/layers/entities/command';
 import { useTaskState } from '../model/use-task-state';
@@ -14,7 +14,7 @@ import { useChatStatusSync } from '../model/use-chat-status-sync';
 import { useFileUpload } from '../model/use-file-upload';
 import { buildFileEntries } from '../lib/build-file-entries';
 import { useSessionId, useSessionStatus, useDirectoryState } from '@/layers/entities/session';
-import { useAppStore } from '@/layers/shared/model';
+import { useAppStore, useTransport } from '@/layers/shared/model';
 import { playNotificationSound } from '@/layers/shared/lib';
 import { MessageList } from './MessageList';
 import type { MessageListHandle } from './MessageList';
@@ -143,7 +143,20 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     }, [enableNotificationSound, queryClient]),
   });
   const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
-  const runningAgents = useRunningSubagents(messages);
+  const backgroundTasks = useBackgroundTasks(messages);
+  const transport = useTransport();
+
+  const handleStopTask = useCallback(
+    async (taskId: string) => {
+      if (!sessionId) return;
+      try {
+        await transport.stopTask(sessionId, taskId);
+      } catch (err) {
+        console.error('[chat] Failed to stop task:', err);
+      }
+    },
+    [sessionId, transport]
+  );
 
   const { handleToolRef, focusedOptionIndex } = useToolShortcuts(activeInteraction);
   const { isAtBottom, hasNewMessages, scrollToBottom, handleScrollStateChange } = useScrollOverlay(
@@ -459,7 +472,8 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         focusedOptionIndex={focusedOptionIndex}
         onToolRef={handleToolRef}
         onToolDecided={markToolCallResponded}
-        runningAgents={runningAgents}
+        backgroundTasks={backgroundTasks}
+        onStopTask={handleStopTask}
         syncConnectionState={syncConnectionState}
         syncFailedAttempts={syncFailedAttempts}
       />

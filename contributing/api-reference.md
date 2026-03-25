@@ -59,7 +59,7 @@ Event types are documented in the `StreamEventType` enum in the OpenAPI spec. Th
 
 **Responses:**
 
-- `200` - SSE stream. Event types: `text_delta`, `thinking_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`, `tool_result`, `tool_progress`, `approval_required`, `question_prompt`, `error`, `done`, `session_status`, `task_update`, `subagent_started`, `subagent_progress`, `subagent_done`, `rate_limit`, `system_status`, `compact_boundary`, `prompt_suggestion`
+- `200` - SSE stream. Event types: `text_delta`, `thinking_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`, `tool_result`, `tool_progress`, `approval_required`, `question_prompt`, `error`, `done`, `session_status`, `task_update`, `background_task_started`, `background_task_progress`, `background_task_done`, `rate_limit`, `system_status`, `compact_boundary`, `prompt_suggestion`
 - `409` - Session locked by another client. Response body: `{ error: 'Session locked', code: 'SESSION_LOCKED', lockedBy: string, lockedAt: string }`
 
 ### GET /api/sessions/:id/stream
@@ -118,6 +118,25 @@ Fetch the current task list (TodoWrite state) for a session.
 - `200` - `{ tasks: Task[] }` with `ETag` header
 - `304` - Not Modified (when `If-None-Match` matches current `ETag`)
 - `404` - Session not found
+
+### POST /api/sessions/:id/tasks/:taskId/stop
+
+Stop a running background task (subagent or bash command). Delegates to the active runtime's `stopTask` implementation.
+
+**Path params:**
+
+- `id` - Session ID
+- `taskId` - Background task ID
+
+**Headers:**
+
+- `X-Client-Id` (optional) - Client identifier for session locking
+
+**Responses:**
+
+- `200` - `{ ok: true }` — task stop signal sent
+- `404` - Session or task not found
+- `500` - Runtime error stopping task
 
 ### GET /api/config
 

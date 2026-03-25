@@ -104,14 +104,14 @@ export function reconcileTaggedMessages(
       i === matchedUserIdx + 1 &&
       serverMsg.role === 'assistant'
     ) {
-      // Carry over subagent parts not already in the server response (the
+      // Carry over background task parts not already in the server response (the
       // transcript parser may or may not extract them depending on SDK version).
       const serverMapped = mapHistoryMessage(serverMsg);
-      const serverSubagentIds = new Set(
-        serverMapped.parts.filter((p) => p.type === 'subagent').map((p) => p.taskId)
+      const serverTaskIds = new Set(
+        serverMapped.parts.filter((p) => p.type === 'background_task').map((p) => p.taskId)
       );
       const clientOnlyParts = taggedAssistant.parts.filter(
-        (p) => p.type === 'subagent' && !serverSubagentIds.has(p.taskId)
+        (p) => p.type === 'background_task' && !serverTaskIds.has(p.taskId)
       );
       const mergedParts =
         clientOnlyParts.length > 0

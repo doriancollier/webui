@@ -1,7 +1,7 @@
 import type { ChatMessage, ToolCallState } from '@/layers/features/chat/model/chat-types';
 import type { PendingFile } from '@/layers/features/chat/model/use-file-upload';
 import type { QueueItem } from '@/layers/features/chat/model/use-message-queue';
-import type { TaskItem, QuestionItem, SubagentPart, ErrorPart } from '@dorkos/shared/types';
+import type { TaskItem, QuestionItem, BackgroundTaskPart, ErrorPart } from '@dorkos/shared/types';
 import {
   createAssistantMessage,
   createUserMessage,
@@ -16,39 +16,95 @@ import { TOOL_CALLS, TOOL_CALL_APPROVAL, TOOL_CALL_QUESTION } from './mock-tool-
 // Subagent parts
 // ---------------------------------------------------------------------------
 
-export const SUBAGENT_PARTS: Record<string, SubagentPart> = {
+export const BACKGROUND_TASK_PARTS: Record<string, BackgroundTaskPart> = {
   running: {
-    type: 'subagent',
-    taskId: 'subagent-running',
-    description: 'Exploring codebase for authentication patterns',
+    type: 'background_task',
+    taskId: 'task-running',
+    taskType: 'agent',
     status: 'running',
+    startedAt: Date.now(),
+    description: 'Exploring codebase for authentication patterns',
     toolUses: 7,
     lastToolName: 'Grep',
     durationMs: 12400,
   },
   complete: {
-    type: 'subagent',
-    taskId: 'subagent-complete',
-    description: 'Research best practices for JWT auth',
+    type: 'background_task',
+    taskId: 'task-complete',
+    taskType: 'agent',
     status: 'complete',
+    startedAt: Date.now() - 45000,
+    description: 'Research best practices for JWT auth',
     toolUses: 12,
     durationMs: 45000,
     summary: 'Found 3 viable approaches. Recommended: RS256 with rotating keys.',
   },
   error: {
-    type: 'subagent',
-    taskId: 'subagent-error',
-    description: 'Run integration test suite',
+    type: 'background_task',
+    taskId: 'task-error',
+    taskType: 'agent',
     status: 'error',
+    startedAt: Date.now() - 8500,
+    description: 'Run integration test suite',
     toolUses: 2,
     durationMs: 8500,
     summary: 'Process exited with code 1: ECONNREFUSED localhost:5432',
   },
   minimal: {
-    type: 'subagent',
-    taskId: 'subagent-minimal',
-    description: 'Quick file search',
+    type: 'background_task',
+    taskId: 'task-minimal',
+    taskType: 'agent',
     status: 'running',
+    startedAt: Date.now(),
+    description: 'Quick file search',
+  },
+  stopped: {
+    type: 'background_task',
+    taskId: 'task-stopped',
+    taskType: 'agent',
+    status: 'stopped',
+    startedAt: Date.now() - 30000,
+    description: 'Deep analysis of auth patterns',
+    toolUses: 15,
+    durationMs: 30000,
+    summary: 'Stopped by user.',
+  },
+  bash_running: {
+    type: 'background_task',
+    taskId: 'task-bash-running',
+    taskType: 'bash',
+    status: 'running',
+    startedAt: Date.now() - 120000,
+    command: 'npm run dev',
+    durationMs: 120000,
+  },
+  bash_build: {
+    type: 'background_task',
+    taskId: 'task-bash-build',
+    taskType: 'bash',
+    status: 'running',
+    startedAt: Date.now() - 15000,
+    command: 'pnpm build --filter=@dorkos/client',
+    durationMs: 15000,
+  },
+  bash_complete: {
+    type: 'background_task',
+    taskId: 'task-bash-complete',
+    taskType: 'bash',
+    status: 'complete',
+    startedAt: Date.now() - 45000,
+    command: 'pnpm test -- --run',
+    durationMs: 45000,
+  },
+  bash_error: {
+    type: 'background_task',
+    taskId: 'task-bash-error',
+    taskType: 'bash',
+    status: 'error',
+    startedAt: Date.now() - 8000,
+    command: 'docker compose up -d',
+    durationMs: 8000,
+    summary: 'Process exited with code 1: port 5432 already in use',
   },
 };
 

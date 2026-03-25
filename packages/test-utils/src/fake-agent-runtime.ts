@@ -132,4 +132,7 @@ export class FakeAgentRuntime implements AgentRuntime {
   submitAnswers = vi
     .fn<(sessionId: string, toolCallId: string, answers: Record<string, string>) => boolean>()
     .mockReturnValue(true);
+  stopTask = vi
+    .fn<(sessionId: string, taskId: string) => Promise<boolean>>()
+    .mockResolvedValue(false);
 }

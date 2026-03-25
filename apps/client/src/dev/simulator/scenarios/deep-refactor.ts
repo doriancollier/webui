@@ -6,7 +6,7 @@ import {
 } from '../../mock-chat-data';
 import { buildStreamingTextSteps } from '../sim-helpers';
 import type { SimScenario } from '../sim-types';
-import type { SubagentPart } from '@dorkos/shared/types';
+import type { BackgroundTaskPart } from '@dorkos/shared/types';
 
 // ---------------------------------------------------------------------------
 // Messages
@@ -135,11 +135,13 @@ const READ_HEALTH = createToolCall({
   status: 'pending',
 });
 
-const SUBAGENT: SubagentPart = {
-  type: 'subagent',
+const SUBAGENT: BackgroundTaskPart = {
+  type: 'background_task',
   taskId: 'sim-dr-sub',
-  description: 'Research typed Express router patterns and Zod integration approaches',
+  taskType: 'agent',
   status: 'running',
+  startedAt: Date.now(),
+  description: 'Research typed Express router patterns and Zod integration approaches',
   toolUses: 5,
   lastToolName: 'WebSearch',
   durationMs: 12400,

@@ -168,4 +168,8 @@ export class TestModeRuntime implements AgentRuntime {
   submitAnswers(_id: string, _toolCallId: string, _answers: Record<string, string>): boolean {
     return false;
   }
+
+  async stopTask(_sessionId: string, _taskId: string): Promise<boolean> {
+    return false;
+  }
 }

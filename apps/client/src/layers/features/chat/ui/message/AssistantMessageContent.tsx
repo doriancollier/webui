@@ -159,7 +159,7 @@ export function AssistantMessageContent({ message }: { message: ChatMessage }) {
             </div>
           );
         }
-        if (part.type === 'subagent') {
+        if (part.type === 'background_task') {
           return <SubagentBlock key={part.taskId} part={part} />;
         }
         if (part.type === 'error') {

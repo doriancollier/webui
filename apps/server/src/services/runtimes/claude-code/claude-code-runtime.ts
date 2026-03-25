@@ -380,6 +380,18 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     return true;
   }
 
+  /** Stop a running background task (agent or bash command). */
+  async stopTask(sessionId: string, taskId: string): Promise<boolean> {
+    const session = this.findSession(sessionId);
+    if (!session?.activeQuery) return false;
+    try {
+      await session.activeQuery.stopTask(taskId);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   // ---------------------------------------------------------------------------
   // Session queries — delegated to TranscriptReader
   // ---------------------------------------------------------------------------

@@ -1,7 +1,7 @@
 /**
  * Factory for stream event handlers that process SSE events into chat messages.
  *
- * Tool, hook, and subagent cases are delegated to `stream-tool-handlers.ts`.
+ * Tool, hook, and background task cases are delegated to `stream-tool-handlers.ts`.
  * Types live in `stream-event-types.ts`, helpers in `stream-event-helpers.ts`.
  *
  * @module features/chat/model/stream-event-handler
@@ -211,13 +211,13 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         onTaskEventRef.current?.(taskEvent);
         break;
       }
-      case 'subagent_started':
+      case 'background_task_started':
         handleSubagentStarted(helpers, data, assistantId);
         break;
-      case 'subagent_progress':
+      case 'background_task_progress':
         handleSubagentProgress(helpers, data, assistantId);
         break;
-      case 'subagent_done':
+      case 'background_task_done':
         handleSubagentDone(helpers, data, assistantId);
         break;
       case 'hook_started':

@@ -140,6 +140,24 @@ export class DirectTransport implements Transport {
     return { ok };
   }
 
+  /** Stop a running background task. DirectTransport delegates to the in-process runtime if supported. */
+  async stopTask(sessionId: string, taskId: string): Promise<{ success: boolean; taskId: string }> {
+    try {
+      // The DirectTransport runtime interface predates stopTask — use a structural check
+      // to forward the call only when the method is present (Obsidian plugin compatibility).
+      const runtime = this.services.runtime as {
+        stopTask?: (s: string, t: string) => Promise<boolean>;
+      };
+      if (typeof runtime.stopTask !== 'function') {
+        return { success: false, taskId };
+      }
+      const success = await runtime.stopTask(sessionId, taskId);
+      return { success, taskId };
+    } catch {
+      return { success: false, taskId };
+    }
+  }
+
   async getTasks(sessionId: string, cwd?: string): Promise<{ tasks: TaskItem[] }> {
     const tasks = await this.services.transcriptReader.readTasks(
       cwd || this.services.vaultRoot,
