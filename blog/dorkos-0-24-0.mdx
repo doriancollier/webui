@@ -1,0 +1,50 @@
+---
+title: DorkOS 0.24.0
+description: Desktop app, tunnel security, and resilience — native macOS distribution, passcode-gated remote access, and SSE auto-reconnect harden the operator experience.
+date: 2026-03-25
+author: DorkOS Team
+category: release
+tags: [release, desktop, security, resilience]
+---
+
+Native macOS distribution, passcode-gated remote access, and SSE auto-reconnect harden the operator experience.
+
+## Highlights
+
+**Electron Desktop App** — DorkOS now ships as a native macOS app. Download the `.dmg`, launch it, and your agent console runs outside the browser with full system integration.
+
+**Tunnel Passcode Gate** — Remote access via tunnels now requires a 6-digit passcode. No more open endpoints when you expose your agent fleet to the internet.
+
+**SSE Resilience** — The real-time event stream auto-reconnects on network hiccups with a connection health indicator so you always know your agent feed is live.
+
+## All Changes
+
+### Added
+
+- Add 6-digit passcode gate for remote access
+- Add Electron desktop app for native macOS distribution
+- Add status bar inline management with scroll and configure popover
+- Generalize subagent system to background task model with stopTask support
+- Add rotating placeholder hints in chat input
+- Move version display from status bar to sidebar footer
+- Add declarative feature promo system with contextual discovery
+- Add SSE resilience infrastructure with connection health UI
+- Display friendly tool names in ToolApproval
+- Add relay outbound awareness for agent-initiated messaging
+
+### Changed
+
+- Remove unnecessary border from SidebarFooterBar component
+- Reconcile harness inventory counts with actual files
+
+### Fixed
+
+- Target arm64, externalize manifest, skip codesign discovery
+- Remove postinstall electron-rebuild, add dual-mode server spawning
+- Exclude desktop from default dev, approve electron builds
+
+## Install / Update
+
+```
+npm install -g dorkos@0.24.0
+```

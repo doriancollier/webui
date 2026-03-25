@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.24.0] - 2026-03-25
+
+> Desktop app, tunnel security, and resilience — native macOS distribution, passcode-gated remote access, and SSE auto-reconnect harden the operator experience.
+
+### Added
+
 - Add 6-digit passcode gate for remote access
 - Add Electron desktop app for native macOS distribution
 - Add status bar inline management with scroll and configure popover
@@ -22,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Removing unnecessary border from SidebarFooterBar component
+- Remove unnecessary border from SidebarFooterBar component
 - Reconcile harness inventory counts with actual files
 
 ### Fixed
@@ -30,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Target arm64, externalize manifest, skip codesign discovery
 - Remove postinstall electron-rebuild, add dual-mode server spawning
 - Exclude desktop from default dev, approve electron builds
+
 ---
 
 ## [0.23.0] - 2026-03-23
