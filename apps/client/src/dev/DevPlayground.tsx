@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from '@tanstack/react-router';
+import {
   TooltipProvider,
   Button,
   Sidebar,
@@ -49,6 +55,15 @@ const queryClient = new QueryClient({
 });
 
 const transport = createPlaygroundTransport();
+
+// Minimal router providing TanStack Router context for hooks (useSearch, useNavigate)
+// that are called transitively by showcase components. Uses memory history so it
+// doesn't interfere with the playground's own URL-based routing.
+const devRootRoute = createRootRoute({ component: DevPlaygroundShell });
+const devRouter = createRouter({
+  routeTree: devRootRoute,
+  history: createMemoryHistory({ initialEntries: ['/dev'] }),
+});
 
 interface PlaygroundRoute {
   page: Page;
@@ -139,8 +154,12 @@ function ThemeToggle() {
   );
 }
 
-/** Dev-only playground shell with sidebar navigation, rendered at `/dev`. */
-export default function DevPlayground() {
+/**
+ * Inner shell rendered as the root route component of the dev router.
+ * Separated from the default export so that providers (QueryClient, Transport,
+ * Router) wrap it from outside.
+ */
+function DevPlaygroundShell() {
   const [page, setPage] = useState<Page>(() => getRouteFromPath().page);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -184,101 +203,108 @@ export default function DevPlayground() {
   }, []);
 
   return (
+    <TooltipProvider>
+      <div className="bg-background text-foreground h-dvh">
+        <SidebarProvider defaultOpen className="h-full min-h-0">
+          <Sidebar variant="inset">
+            <SidebarHeader>
+              <h2 className="px-2 text-sm font-semibold">DorkOS Dev</h2>
+            </SidebarHeader>
+            <SidebarContent>
+              <SidebarGroup>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={page === 'overview'}
+                      onClick={() => navigateTo('overview')}
+                    >
+                      <LayoutDashboard className="size-4" />
+                      Overview
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroup>
+              <SidebarGroup>
+                <SidebarGroupLabel>Design System</SidebarGroupLabel>
+                <SidebarMenu>
+                  {DESIGN_SYSTEM_NAV.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        isActive={page === item.id}
+                        onClick={() => navigateTo(item.id)}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+              <SidebarGroup>
+                <SidebarGroupLabel>Features</SidebarGroupLabel>
+                <SidebarMenu>
+                  {FEATURES_NAV.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        isActive={page === item.id}
+                        onClick={() => navigateTo(item.id)}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+            </SidebarContent>
+            <ThemeToggle />
+          </Sidebar>
+
+          <SidebarInset className="overflow-y-auto">
+            <header className="flex h-9 shrink-0 items-center gap-2 border-b px-2">
+              <SidebarTrigger className="-ml-0.5" />
+              <Separator orientation="vertical" className="mr-1 h-4" />
+              <span className="text-muted-foreground text-xs">Dev Playground</span>
+              <div className="ml-auto flex items-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSearchOpen(true)}
+                  className="text-muted-foreground h-7 gap-1.5 px-2 text-xs"
+                  aria-label="Search sections (Cmd+K)"
+                >
+                  <Search className="size-3.5" />
+                  Search
+                  <kbd className="bg-muted rounded px-1 py-0.5 font-mono text-[10px]">⌘K</kbd>
+                </Button>
+              </div>
+            </header>
+            {page === 'overview' && <OverviewPage onNavigate={navigateTo} />}
+            {page === 'tokens' && <TokensPage />}
+            {page === 'forms' && <FormsPage />}
+            {page === 'components' && <ComponentsPage />}
+            {page === 'chat' && <ChatPage />}
+            {page === 'features' && <FeaturesPage />}
+            {page === 'simulator' && <SimulatorPage />}
+          </SidebarInset>
+
+          <PlaygroundSearch
+            open={searchOpen}
+            onOpenChange={setSearchOpen}
+            onSelect={handleSelect}
+          />
+        </SidebarProvider>
+      </div>
+    </TooltipProvider>
+  );
+}
+
+/** Dev-only playground shell with sidebar navigation, rendered at `/dev`. */
+export default function DevPlayground() {
+  return (
     <QueryClientProvider client={queryClient}>
       <TransportProvider transport={transport}>
-        <TooltipProvider>
-          <div className="bg-background text-foreground h-dvh">
-            <SidebarProvider defaultOpen className="h-full min-h-0">
-              <Sidebar variant="inset">
-                <SidebarHeader>
-                  <h2 className="px-2 text-sm font-semibold">DorkOS Dev</h2>
-                </SidebarHeader>
-                <SidebarContent>
-                  <SidebarGroup>
-                    <SidebarMenu>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          isActive={page === 'overview'}
-                          onClick={() => navigateTo('overview')}
-                        >
-                          <LayoutDashboard className="size-4" />
-                          Overview
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </SidebarMenu>
-                  </SidebarGroup>
-                  <SidebarGroup>
-                    <SidebarGroupLabel>Design System</SidebarGroupLabel>
-                    <SidebarMenu>
-                      {DESIGN_SYSTEM_NAV.map((item) => (
-                        <SidebarMenuItem key={item.id}>
-                          <SidebarMenuButton
-                            isActive={page === item.id}
-                            onClick={() => navigateTo(item.id)}
-                          >
-                            <item.icon className="size-4" />
-                            {item.label}
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroup>
-                  <SidebarGroup>
-                    <SidebarGroupLabel>Features</SidebarGroupLabel>
-                    <SidebarMenu>
-                      {FEATURES_NAV.map((item) => (
-                        <SidebarMenuItem key={item.id}>
-                          <SidebarMenuButton
-                            isActive={page === item.id}
-                            onClick={() => navigateTo(item.id)}
-                          >
-                            <item.icon className="size-4" />
-                            {item.label}
-                          </SidebarMenuButton>
-                        </SidebarMenuItem>
-                      ))}
-                    </SidebarMenu>
-                  </SidebarGroup>
-                </SidebarContent>
-                <ThemeToggle />
-              </Sidebar>
-
-              <SidebarInset className="overflow-y-auto">
-                <header className="flex h-9 shrink-0 items-center gap-2 border-b px-2">
-                  <SidebarTrigger className="-ml-0.5" />
-                  <Separator orientation="vertical" className="mr-1 h-4" />
-                  <span className="text-muted-foreground text-xs">Dev Playground</span>
-                  <div className="ml-auto flex items-center">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setSearchOpen(true)}
-                      className="text-muted-foreground h-7 gap-1.5 px-2 text-xs"
-                      aria-label="Search sections (Cmd+K)"
-                    >
-                      <Search className="size-3.5" />
-                      Search
-                      <kbd className="bg-muted rounded px-1 py-0.5 font-mono text-[10px]">⌘K</kbd>
-                    </Button>
-                  </div>
-                </header>
-                {page === 'overview' && <OverviewPage onNavigate={navigateTo} />}
-                {page === 'tokens' && <TokensPage />}
-                {page === 'forms' && <FormsPage />}
-                {page === 'components' && <ComponentsPage />}
-                {page === 'chat' && <ChatPage />}
-                {page === 'features' && <FeaturesPage />}
-                {page === 'simulator' && <SimulatorPage />}
-              </SidebarInset>
-
-              <PlaygroundSearch
-                open={searchOpen}
-                onOpenChange={setSearchOpen}
-                onSelect={handleSelect}
-              />
-            </SidebarProvider>
-          </div>
-        </TooltipProvider>
+        <RouterProvider router={devRouter} />
       </TransportProvider>
     </QueryClientProvider>
   );
