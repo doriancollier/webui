@@ -465,6 +465,19 @@ export function createFilterSchema<
             ? (value as string[]).map(resolveLabel).join(', ')
             : resolveLabel(value as string);
           parts.push(`${label} ${display}`);
+        } else if (def.type === 'dateRange') {
+          const dr = value as DateRangeFilterValue;
+          if (dr.preset) parts.push(`${label} past ${dr.preset}`);
+          else if (dr.after) parts.push(`${label} after ${dr.after}`);
+          else if (dr.before) parts.push(`${label} before ${dr.before}`);
+        } else if (def.type === 'numericRange') {
+          const nr = value as NumericRangeFilterValue;
+          if (nr.min !== undefined && nr.max !== undefined)
+            parts.push(`${label} ${nr.min}–${nr.max}`);
+          else if (nr.min !== undefined) parts.push(`${label} ≥ ${nr.min}`);
+          else if (nr.max !== undefined) parts.push(`${label} ≤ ${nr.max}`);
+        } else if (def.type === 'boolean') {
+          parts.push(`${label} ${value === true ? 'Yes' : 'No'}`);
         } else {
           parts.push(
             `${label} ${Array.isArray(value) ? (value as unknown[]).join(', ') : String(value)}`

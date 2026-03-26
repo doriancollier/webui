@@ -1,7 +1,11 @@
 import { useState } from 'react';
 import { FilterIcon, XIcon } from 'lucide-react';
 import { cn } from '@/layers/shared/lib/utils';
-import { isEnumFilter } from '@/layers/shared/lib/filter-engine';
+import {
+  isEnumFilter,
+  type DateRangeFilterValue,
+  type NumericRangeFilterValue,
+} from '@/layers/shared/lib/filter-engine';
 import { useIsMobile } from '@/layers/shared/model';
 import { Button } from '@/layers/shared/ui/button';
 import {
@@ -43,6 +47,21 @@ function FilterBarActiveFilters({ className }: FilterBarActiveFiltersProps) {
         displayValue = Array.isArray(value)
           ? (value as string[]).map(resolveLabel).join(', ')
           : resolveLabel(value as string);
+      } else if (def.type === 'dateRange') {
+        const dr = value as DateRangeFilterValue;
+        if (dr.preset) displayValue = `Past ${dr.preset}`;
+        else if (dr.after && dr.before) displayValue = `${dr.after} – ${dr.before}`;
+        else if (dr.after) displayValue = `After ${dr.after}`;
+        else if (dr.before) displayValue = `Before ${dr.before}`;
+        else displayValue = String(value);
+      } else if (def.type === 'numericRange') {
+        const nr = value as NumericRangeFilterValue;
+        if (nr.min !== undefined && nr.max !== undefined) displayValue = `${nr.min}–${nr.max}`;
+        else if (nr.min !== undefined) displayValue = `≥ ${nr.min}`;
+        else if (nr.max !== undefined) displayValue = `≤ ${nr.max}`;
+        else displayValue = String(value);
+      } else if (def.type === 'boolean') {
+        displayValue = value === true ? 'Yes' : 'No';
       } else if (Array.isArray(value)) {
         displayValue = (value as unknown[]).join(', ');
       } else {
