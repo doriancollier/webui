@@ -1,3 +1,5 @@
+import { PlaygroundPageLayout } from '../PlaygroundPageLayout';
+import { COMPONENTS_SECTIONS } from '../playground-registry';
 import { ButtonShowcases } from '../showcases/ButtonShowcases';
 import { FeedbackShowcases } from '../showcases/FeedbackShowcases';
 import { NavigationShowcases } from '../showcases/NavigationShowcases';
@@ -6,33 +8,23 @@ import { OverlayShowcases } from '../showcases/OverlayShowcases';
 import { DataDisplayShowcases } from '../showcases/DataDisplayShowcases';
 import { DrawerShowcases } from '../showcases/DrawerShowcases';
 import { ChatPrimitivesShowcases } from '../showcases/ChatPrimitivesShowcases';
-import { TocSidebar } from '../TocSidebar';
-import { COMPONENTS_SECTIONS } from '../playground-registry';
 
 /** UI component gallery page for the dev playground. */
 export function ComponentsPage() {
   return (
-    <>
-      <header className="border-border border-b px-6 py-4">
-        <h1 className="text-xl font-bold">Components</h1>
-        <p className="text-muted-foreground text-sm">
-          Interactive gallery of shared UI components.
-        </p>
-      </header>
-
-      <div className="flex gap-8 p-6">
-        <main className="min-w-0 flex-1 space-y-8">
-          <ButtonShowcases />
-          <FeedbackShowcases />
-          <NavigationShowcases />
-          <SidebarShowcases />
-          <OverlayShowcases />
-          <DrawerShowcases />
-          <DataDisplayShowcases />
-          <ChatPrimitivesShowcases />
-        </main>
-        <TocSidebar sections={COMPONENTS_SECTIONS} />
-      </div>
-    </>
+    <PlaygroundPageLayout
+      title="Components"
+      description="Interactive gallery of shared UI components."
+      sections={COMPONENTS_SECTIONS}
+    >
+      <ButtonShowcases />
+      <FeedbackShowcases />
+      <NavigationShowcases />
+      <SidebarShowcases />
+      <OverlayShowcases />
+      <DrawerShowcases />
+      <DataDisplayShowcases />
+      <ChatPrimitivesShowcases />
+    </PlaygroundPageLayout>
   );
 }

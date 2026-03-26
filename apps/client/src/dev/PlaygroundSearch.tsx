@@ -10,36 +10,13 @@ import {
   CommandGroup,
   CommandItem,
 } from '@/layers/shared/ui';
-import type { Page, PlaygroundSection } from './playground-registry';
+import type { PlaygroundSection } from './playground-registry';
 import { PLAYGROUND_REGISTRY } from './playground-registry';
-
-/** Human-readable heading for each playground page. */
-const PAGE_LABELS: Record<Page, string> = {
-  overview: 'Overview',
-  tokens: 'Design Tokens',
-  forms: 'Forms',
-  components: 'Components',
-  chat: 'Chat',
-  features: 'Features',
-  promos: 'Feature Promos',
-  simulator: 'Simulator',
-};
-
-/** Ordered list of pages for consistent group rendering. */
-const PAGE_ORDER: Page[] = [
-  'overview',
-  'tokens',
-  'forms',
-  'components',
-  'chat',
-  'features',
-  'promos',
-  'simulator',
-];
+import { PAGE_LABELS, PAGE_ORDER } from './playground-config';
 
 /** Group registry sections by their page. */
-function groupByPage(sections: PlaygroundSection[]): Map<Page, PlaygroundSection[]> {
-  const grouped = new Map<Page, PlaygroundSection[]>();
+function groupByPage(sections: PlaygroundSection[]): Map<string, PlaygroundSection[]> {
+  const grouped = new Map<string, PlaygroundSection[]>();
   for (const section of sections) {
     const existing = grouped.get(section.page) ?? [];
     grouped.set(section.page, [...existing, section]);

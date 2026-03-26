@@ -5,13 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup, within } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { OverviewPage } from '../pages/OverviewPage';
-import {
-  TOKENS_SECTIONS,
-  FORMS_SECTIONS,
-  COMPONENTS_SECTIONS,
-  CHAT_SECTIONS,
-  FEATURES_SECTIONS,
-} from '../playground-registry';
+import { PAGE_CONFIGS } from '../playground-config';
 import type { Page } from '../playground-registry';
 
 describe('OverviewPage', () => {
@@ -30,92 +24,49 @@ describe('OverviewPage', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('DorkOS Dev Playground');
   });
 
-  it('renders all five category cards', () => {
+  it('renders a card for every page in PAGE_CONFIGS', () => {
     render(<OverviewPage onNavigate={onNavigate} />);
-    expect(screen.getByRole('heading', { name: 'Design Tokens' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Forms' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Components' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Chat Components' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Feature Components' })).toBeInTheDocument();
+    for (const config of PAGE_CONFIGS) {
+      expect(screen.getByRole('heading', { name: config.label })).toBeInTheDocument();
+    }
   });
 
-  it('displays the correct section count for tokens', () => {
+  it('displays the correct section count for each page', () => {
     render(<OverviewPage onNavigate={onNavigate} />);
-    const card = screen.getByRole('button', { name: /design tokens/i });
-    expect(within(card).getByText(`${TOKENS_SECTIONS.length} sections`)).toBeInTheDocument();
+    const cards = screen.getAllByRole('button');
+    expect(cards).toHaveLength(PAGE_CONFIGS.length);
+    for (let i = 0; i < PAGE_CONFIGS.length; i++) {
+      expect(
+        within(cards[i]).getByText(`${PAGE_CONFIGS[i].sections.length} sections`)
+      ).toBeInTheDocument();
+    }
   });
 
-  it('displays the correct section count for forms', () => {
+  it('calls onNavigate with the correct page ID when a card is clicked', () => {
     render(<OverviewPage onNavigate={onNavigate} />);
-    const card = screen.getByRole('button', { name: /forms/i });
-    expect(within(card).getByText(`${FORMS_SECTIONS.length} sections`)).toBeInTheDocument();
-  });
-
-  it('displays the correct section count for components', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    const card = screen.getByRole('button', { name: /^components/i });
-    expect(within(card).getByText(`${COMPONENTS_SECTIONS.length} sections`)).toBeInTheDocument();
-  });
-
-  it('displays the correct section count for chat', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    const card = screen.getByRole('button', { name: /chat components/i });
-    expect(within(card).getByText(`${CHAT_SECTIONS.length} sections`)).toBeInTheDocument();
-  });
-
-  it('displays the correct section count for features', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    const card = screen.getByRole('button', { name: /feature components/i });
-    expect(within(card).getByText(`${FEATURES_SECTIONS.length} sections`)).toBeInTheDocument();
-  });
-
-  it('calls onNavigate with "tokens" when the Design Tokens card is clicked', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByRole('button', { name: /design tokens/i }));
-    expect(onNavigate).toHaveBeenCalledWith('tokens');
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onNavigate with "forms" when the Forms card is clicked', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByRole('button', { name: /forms/i }));
-    expect(onNavigate).toHaveBeenCalledWith('forms');
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onNavigate with "components" when the Components card is clicked', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByRole('button', { name: /^components/i }));
-    expect(onNavigate).toHaveBeenCalledWith('components');
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onNavigate with "chat" when the Chat Components card is clicked', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByRole('button', { name: /chat components/i }));
-    expect(onNavigate).toHaveBeenCalledWith('chat');
-    expect(onNavigate).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onNavigate with "features" when the Feature Components card is clicked', () => {
-    render(<OverviewPage onNavigate={onNavigate} />);
-    fireEvent.click(screen.getByRole('button', { name: /feature components/i }));
-    expect(onNavigate).toHaveBeenCalledWith('features');
-    expect(onNavigate).toHaveBeenCalledTimes(1);
+    const cards = screen.getAllByRole('button');
+    for (let i = 0; i < PAGE_CONFIGS.length; i++) {
+      (onNavigate as ReturnType<typeof vi.fn>).mockClear();
+      fireEvent.click(cards[i]);
+      expect(onNavigate).toHaveBeenCalledWith(PAGE_CONFIGS[i].id);
+      expect(onNavigate).toHaveBeenCalledTimes(1);
+    }
   });
 
   it('renders category card descriptions', () => {
     render(<OverviewPage onNavigate={onNavigate} />);
-    expect(screen.getByText(/Color palette, typography/)).toBeInTheDocument();
-    expect(screen.getByText(/Form primitives and composed input/)).toBeInTheDocument();
-    expect(screen.getByText(/Interactive gallery of shared UI primitives/)).toBeInTheDocument();
-    expect(screen.getByText(/Visual testing gallery for chat UI/)).toBeInTheDocument();
-    expect(screen.getByText(/Domain-specific components from Relay/)).toBeInTheDocument();
+    for (const config of PAGE_CONFIGS) {
+      // Match first 30 chars of description to avoid brittle full-string matching
+      const prefix = config.description.slice(0, 30);
+      expect(
+        screen.getByText(new RegExp(prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+      ).toBeInTheDocument();
+    }
   });
 
   it('each category card is an accessible button', () => {
     render(<OverviewPage onNavigate={onNavigate} />);
     const buttons = screen.getAllByRole('button');
-    expect(buttons).toHaveLength(5);
+    expect(buttons).toHaveLength(PAGE_CONFIGS.length);
   });
 });

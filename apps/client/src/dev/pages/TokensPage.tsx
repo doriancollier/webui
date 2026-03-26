@@ -1,9 +1,9 @@
 import { cn } from '@/layers/shared/lib';
 import { PlaygroundSection } from '../PlaygroundSection';
+import { PlaygroundPageLayout } from '../PlaygroundPageLayout';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { Button } from '@/layers/shared/ui';
 import { Settings } from 'lucide-react';
-import { TocSidebar } from '../TocSidebar';
 import { TOKENS_SECTIONS } from '../playground-registry';
 
 interface ColorToken {
@@ -115,28 +115,20 @@ const SHADOWS = [
 /** Design tokens reference page — colors, typography, spacing, radii, shadows. */
 export function TokensPage() {
   return (
-    <>
-      <header className="border-border border-b px-6 py-4">
-        <h1 className="text-xl font-bold">Design Tokens</h1>
-        <p className="text-muted-foreground text-sm">
-          Visual reference for the design system&apos;s color, type, spacing, and shape tokens.
-        </p>
-      </header>
-
-      <div className="flex gap-8 p-6">
-        <main className="min-w-0 flex-1 space-y-8">
-          <SemanticColorsSection />
-          <StatusColorsSection />
-          <SidebarColorsSection />
-          <TypographySection />
-          <SpacingSection />
-          <RadiiSection />
-          <ShadowsSection />
-          <SizesSection />
-        </main>
-        <TocSidebar sections={TOKENS_SECTIONS} />
-      </div>
-    </>
+    <PlaygroundPageLayout
+      title="Design Tokens"
+      description="Visual reference for the design system's color, type, spacing, and shape tokens."
+      sections={TOKENS_SECTIONS}
+    >
+      <SemanticColorsSection />
+      <StatusColorsSection />
+      <SidebarColorsSection />
+      <TypographySection />
+      <SpacingSection />
+      <RadiiSection />
+      <ShadowsSection />
+      <SizesSection />
+    </PlaygroundPageLayout>
   );
 }
 

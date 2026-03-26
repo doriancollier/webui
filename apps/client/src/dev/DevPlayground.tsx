@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createMemoryHistory,
@@ -24,20 +24,7 @@ import {
   Separator,
 } from '@/layers/shared/ui';
 import { TransportProvider, useTheme } from '@/layers/shared/model';
-import {
-  LayoutDashboard,
-  Palette,
-  TextCursorInput,
-  Component,
-  MessageSquare,
-  Blocks,
-  Play,
-  Sun,
-  Monitor,
-  Moon,
-  Search,
-  Megaphone,
-} from 'lucide-react';
+import { LayoutDashboard, Sun, Monitor, Moon, Search } from 'lucide-react';
 import { createPlaygroundTransport } from './playground-transport';
 import { ChatPage } from './pages/ChatPage';
 import { FeaturesPage } from './pages/FeaturesPage';
@@ -46,8 +33,11 @@ import { FormsPage } from './pages/FormsPage';
 import { ComponentsPage } from './pages/ComponentsPage';
 import { OverviewPage } from './pages/OverviewPage';
 import { PromosPage } from './pages/PromosPage';
+import { CommandPalettePage } from './pages/CommandPalettePage';
 import { SimulatorPage } from './pages/SimulatorPage';
+import { TopologyPage } from './pages/TopologyPage';
 import { PlaygroundSearch } from './PlaygroundSearch';
+import { DESIGN_SYSTEM_NAV, FEATURES_NAV, getPageFromPath } from './playground-config';
 import type { Page, PlaygroundSection } from './playground-registry';
 
 const queryClient = new QueryClient({
@@ -67,44 +57,28 @@ const devRouter = createRouter({
   history: createMemoryHistory({ initialEntries: ['/dev'] }),
 });
 
-interface PlaygroundRoute {
-  page: Page;
-  anchor: string | null;
+/** Platform-aware modifier key symbol. */
+const MOD_KEY =
+  typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl+';
+
+/** Props shared by all playground page components. Only OverviewPage uses `onNavigate`. */
+interface PlaygroundPageProps {
+  onNavigate?: (page: Page) => void;
 }
 
-function getRouteFromPath(): PlaygroundRoute {
-  const path = window.location.pathname;
-  const anchor = window.location.hash.slice(1) || null;
-
-  if (path === '/dev' || path === '/dev/') return { page: 'overview', anchor };
-  if (path.startsWith('/dev/tokens')) return { page: 'tokens', anchor };
-  if (path.startsWith('/dev/forms')) return { page: 'forms', anchor };
-  if (path.startsWith('/dev/components')) return { page: 'components', anchor };
-  if (path.startsWith('/dev/chat')) return { page: 'chat', anchor };
-  if (path.startsWith('/dev/features')) return { page: 'features', anchor };
-  if (path.startsWith('/dev/promos')) return { page: 'promos', anchor };
-  if (path.startsWith('/dev/simulator')) return { page: 'simulator', anchor };
-  return { page: 'overview', anchor };
-}
-
-interface NavItem {
-  id: Page;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-}
-
-const DESIGN_SYSTEM_NAV: NavItem[] = [
-  { id: 'tokens', label: 'Tokens', icon: Palette },
-  { id: 'forms', label: 'Forms', icon: TextCursorInput },
-  { id: 'components', label: 'Components', icon: Component },
-];
-
-const FEATURES_NAV: NavItem[] = [
-  { id: 'chat', label: 'Chat', icon: MessageSquare },
-  { id: 'features', label: 'Features', icon: Blocks },
-  { id: 'promos', label: 'Feature Promos', icon: Megaphone },
-  { id: 'simulator', label: 'Simulator', icon: Play },
-];
+/** Page component lookup — maps page IDs to their React components. */
+const PAGE_COMPONENTS: Record<string, React.ComponentType<PlaygroundPageProps>> = {
+  overview: OverviewPage as React.ComponentType<PlaygroundPageProps>,
+  tokens: TokensPage,
+  forms: FormsPage,
+  components: ComponentsPage,
+  chat: ChatPage,
+  features: FeaturesPage,
+  topology: TopologyPage,
+  promos: PromosPage,
+  'command-palette': CommandPalettePage,
+  simulator: SimulatorPage,
+};
 
 /**
  * Scroll the SidebarInset scroll container to the element with the given id.
@@ -164,7 +138,7 @@ function ThemeToggle() {
  * Router) wrap it from outside.
  */
 function DevPlaygroundShell() {
-  const [page, setPage] = useState<Page>(() => getRouteFromPath().page);
+  const [page, setPage] = useState<Page>(() => getPageFromPath(window.location.pathname) as Page);
   const [searchOpen, setSearchOpen] = useState(false);
 
   // Use `/dev` for the overview page; all other pages use `/dev/<id>`.
@@ -182,14 +156,14 @@ function DevPlaygroundShell() {
 
   // Sync page state when the user navigates with browser back/forward.
   useEffect(() => {
-    const onPopState = () => setPage(getRouteFromPath().page);
+    const onPopState = () => setPage(getPageFromPath(window.location.pathname) as Page);
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   // Scroll to any hash anchor after the page has rendered.
   useEffect(() => {
-    const { anchor } = getRouteFromPath();
+    const anchor = window.location.hash.slice(1) || null;
     if (anchor) {
       scrollToSection(anchor);
     }
@@ -205,6 +179,8 @@ function DevPlaygroundShell() {
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
+
+  const ActivePage = useMemo(() => PAGE_COMPONENTS[page], [page]);
 
   return (
     <TooltipProvider>
@@ -235,7 +211,7 @@ function DevPlaygroundShell() {
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
                         isActive={page === item.id}
-                        onClick={() => navigateTo(item.id)}
+                        onClick={() => navigateTo(item.id as Page)}
                       >
                         <item.icon className="size-4" />
                         {item.label}
@@ -251,7 +227,7 @@ function DevPlaygroundShell() {
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
                         isActive={page === item.id}
-                        onClick={() => navigateTo(item.id)}
+                        onClick={() => navigateTo(item.id as Page)}
                       >
                         <item.icon className="size-4" />
                         {item.label}
@@ -275,22 +251,17 @@ function DevPlaygroundShell() {
                   size="sm"
                   onClick={() => setSearchOpen(true)}
                   className="text-muted-foreground h-7 gap-1.5 px-2 text-xs"
-                  aria-label="Search sections (Cmd+K)"
+                  aria-label={`Search sections (${MOD_KEY}K)`}
                 >
                   <Search className="size-3.5" />
                   Search
-                  <kbd className="bg-muted rounded px-1 py-0.5 font-mono text-[10px]">⌘K</kbd>
+                  <kbd className="bg-muted rounded px-1 py-0.5 font-mono text-[10px]">
+                    {MOD_KEY}K
+                  </kbd>
                 </Button>
               </div>
             </header>
-            {page === 'overview' && <OverviewPage onNavigate={navigateTo} />}
-            {page === 'tokens' && <TokensPage />}
-            {page === 'forms' && <FormsPage />}
-            {page === 'components' && <ComponentsPage />}
-            {page === 'chat' && <ChatPage />}
-            {page === 'features' && <FeaturesPage />}
-            {page === 'promos' && <PromosPage />}
-            {page === 'simulator' && <SimulatorPage />}
+            {ActivePage && <ActivePage onNavigate={navigateTo} />}
           </SidebarInset>
 
           <PlaygroundSearch

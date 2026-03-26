@@ -7,7 +7,9 @@ export type Page =
   | 'chat'
   | 'features'
   | 'promos'
-  | 'simulator';
+  | 'command-palette'
+  | 'simulator'
+  | 'topology';
 
 /** A single searchable/navigable section in the playground. */
 export interface PlaygroundSection {
@@ -29,7 +31,9 @@ export { COMPONENTS_SECTIONS } from './sections/components-sections';
 export { CHAT_SECTIONS } from './sections/chat-sections';
 export { FEATURES_SECTIONS } from './sections/features-sections';
 export { PROMOS_SECTIONS } from './sections/promos-sections';
+export { COMMAND_PALETTE_SECTIONS } from './sections/command-palette-sections';
 export { SIMULATOR_SECTIONS } from './sections/simulator-sections';
+export { TOPOLOGY_SECTIONS } from './sections/topology-sections';
 
 // Imported under aliases to compose the full registry without circular re-export issues.
 import { TOKENS_SECTIONS as tokens } from './sections/tokens-sections';
@@ -38,7 +42,9 @@ import { COMPONENTS_SECTIONS as components } from './sections/components-section
 import { CHAT_SECTIONS as chat } from './sections/chat-sections';
 import { FEATURES_SECTIONS as features } from './sections/features-sections';
 import { PROMOS_SECTIONS as promos } from './sections/promos-sections';
+import { COMMAND_PALETTE_SECTIONS as commandPalette } from './sections/command-palette-sections';
 import { SIMULATOR_SECTIONS as simulator } from './sections/simulator-sections';
+import { TOPOLOGY_SECTIONS as topology } from './sections/topology-sections';
 
 /**
  * Full playground registry combining all page-level section arrays.
@@ -52,5 +58,7 @@ export const PLAYGROUND_REGISTRY: PlaygroundSection[] = [
   ...chat,
   ...features,
   ...promos,
+  ...commandPalette,
   ...simulator,
+  ...topology,
 ];

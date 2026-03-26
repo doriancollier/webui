@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { cn } from '@/layers/shared/lib';
 import { useTocScrollspy } from './lib/use-toc-scrollspy';
 import type { PlaygroundSection } from './playground-registry';
@@ -14,7 +15,7 @@ interface TocSidebarProps {
  * @param sections - Ordered list of sections to render as anchor links
  */
 export function TocSidebar({ sections }: TocSidebarProps) {
-  const sectionIds = sections.map((s) => s.id);
+  const sectionIds = useMemo(() => sections.map((s) => s.id), [sections]);
   const activeId = useTocScrollspy(sectionIds);
 
   return (
