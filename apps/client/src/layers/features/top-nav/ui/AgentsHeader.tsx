@@ -12,7 +12,6 @@ import { DiscoveryView } from '@/layers/features/mesh';
 import { useAgentCreationStore } from '@/layers/shared/model';
 import { useIsMobile } from '@/layers/shared/model';
 import { cn } from '@/layers/shared/lib';
-import type { AgentsSearch } from '@/router';
 import { CommandPaletteTrigger } from './CommandPaletteTrigger';
 
 type ViewMode = 'list' | 'topology';

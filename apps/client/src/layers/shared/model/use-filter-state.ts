@@ -7,7 +7,7 @@
  * @module shared/model/use-filter-state
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate, useRouter, useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import type { FilterDefinition, FilterSchema, FilterValues } from '../lib/filter-engine';
 
 // Alias for the route-agnostic search updater type used internally.

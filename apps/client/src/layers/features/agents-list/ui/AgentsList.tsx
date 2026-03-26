@@ -1,14 +1,15 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import type { TopologyAgent } from '@dorkos/shared/mesh-schemas';
 import { useSessions } from '@/layers/entities/session';
-import { useMeshStatus } from '@/layers/entities/mesh';
+import { applySortAndFilter } from '@/layers/shared/lib';
+import { useFilterState } from '@/layers/shared/model';
+import { FilterBar } from '@/layers/shared/ui/filter-bar';
 import { Skeleton } from '@/layers/shared/ui/skeleton';
 import { ScrollArea } from '@/layers/shared/ui/scroll-area';
+import { agentFilterSchema, agentSortOptions } from '../lib/agent-filter-schema';
 import { AgentRow } from './AgentRow';
 import { AgentEmptyFilterState } from './AgentEmptyFilterState';
-import { AgentFilterBar, type FilterState, type StatusFilter } from './AgentFilterBar';
-import { FleetHealthBar } from './FleetHealthBar';
 
 /** Items beyond this index are rendered without stagger delay to keep animation snappy. */
 const STAGGER_ITEM_LIMIT = 8;
@@ -30,68 +31,39 @@ interface AgentsListProps {
   isLoading: boolean;
 }
 
-const defaultFilterState: FilterState = {
-  searchQuery: '',
-  statusFilter: 'all',
-  namespaceFilter: 'all',
-};
-
-/** Apply filter state to a topology agent array. Pure function — no side effects. */
-function applyFilters(agents: TopologyAgent[], filterState: FilterState): TopologyAgent[] {
-  let result = agents;
-
-  if (filterState.searchQuery.trim()) {
-    const q = filterState.searchQuery.toLowerCase();
-    result = result.filter(
-      (a) =>
-        a.name.toLowerCase().includes(q) ||
-        (a.description?.toLowerCase().includes(q) ?? false) ||
-        a.capabilities.some((c) => c.toLowerCase().includes(q))
-    );
-  }
-
-  if (filterState.statusFilter !== 'all') {
-    result = result.filter((a) => a.healthStatus === filterState.statusFilter);
-  }
-
-  if (filterState.namespaceFilter !== 'all') {
-    result = result.filter((a) => a.namespace === filterState.namespaceFilter);
-  }
-
-  return result;
-}
-
 /**
  * Agent list container — renders expandable AgentRow components with
- * optional namespace grouping, integrated filter bar, fleet health bar,
- * and entrance animations that play once on mount.
+ * optional namespace grouping, composable filter bar, and entrance
+ * animations that play once on mount.
  */
 export function AgentsList({ agents, isLoading }: AgentsListProps) {
-  const [filterState, setFilterState] = useState<FilterState>(defaultFilterState);
+  const filterState = useFilterState(agentFilterSchema, {
+    debounce: { search: 200 },
+  });
   // staggerKey is intentionally never updated — keeping it stable prevents the
   // stagger container from remounting (and re-animating) on filter changes.
   const [staggerKey] = useState(0);
 
   const { sessions } = useSessions();
-  const { data: meshStatus } = useMeshStatus();
 
-  const handleStatusFilter = useCallback((status: StatusFilter) => {
-    setFilterState((prev) => ({ ...prev, statusFilter: status }));
-  }, []);
-
-  const handleClearFilters = useCallback(() => {
-    setFilterState(defaultFilterState);
-  }, []);
-
-  // Derive filtered agents from filter state (no useEffect, no callback loop)
-  const filteredAgents = useMemo(() => applyFilters(agents, filterState), [agents, filterState]);
-
-  // Auto-group when multiple namespaces exist
-  const namespaces = useMemo(
+  // Derive dynamic namespace options from the agent list
+  const namespaceOptions = useMemo(
     () => [...new Set(agents.map((a) => a.namespace).filter((ns): ns is string => Boolean(ns)))],
     [agents]
   );
-  const shouldGroup = namespaces.length > 1;
+
+  // Apply filters and sort
+  const filteredAgents = useMemo(
+    () =>
+      applySortAndFilter(agents, agentFilterSchema, filterState.values, agentSortOptions, {
+        field: filterState.sortField,
+        direction: filterState.sortDirection,
+      }),
+    [agents, filterState.values, filterState.sortField, filterState.sortDirection]
+  );
+
+  // Auto-group when multiple namespaces exist
+  const shouldGroup = namespaceOptions.length > 1;
 
   // Group filtered agents by namespace
   const grouped = useMemo(() => {
@@ -125,33 +97,21 @@ export function AgentsList({ agents, isLoading }: AgentsListProps) {
 
   return (
     <div className="flex h-full flex-col overflow-hidden">
-      {meshStatus && (
-        <FleetHealthBar
-          status={meshStatus}
-          activeFilter={filterState.statusFilter}
-          onStatusFilter={handleStatusFilter}
-        />
-      )}
-      <AgentFilterBar
-        agents={agents}
-        filterState={filterState}
-        onFilterStateChange={setFilterState}
-        filteredCount={filteredAgents.length}
-        statusCounts={
-          meshStatus
-            ? {
-                active: meshStatus.activeCount,
-                inactive: meshStatus.inactiveCount,
-                stale: meshStatus.staleCount,
-                unreachable: meshStatus.unreachableCount,
-              }
-            : undefined
-        }
-      />
+      <FilterBar state={filterState}>
+        <FilterBar.Search placeholder="Filter agents..." />
+        <FilterBar.Primary name="status" />
+        <FilterBar.AddFilter dynamicOptions={{ namespace: namespaceOptions }} />
+        <FilterBar.Sort options={agentSortOptions} />
+        <FilterBar.ResultCount count={filteredAgents.length} total={agents.length} noun="agent" />
+        <FilterBar.ActiveFilters />
+      </FilterBar>
       <ScrollArea className="min-h-0 flex-1">
         <div className="space-y-2 p-4 pt-0">
           {filteredAgents.length === 0 && agents.length > 0 ? (
-            <AgentEmptyFilterState onClearFilters={handleClearFilters} />
+            <AgentEmptyFilterState
+              onClearFilters={filterState.clearAll}
+              filterDescription={filterState.describeActive()}
+            />
           ) : (
             Object.entries(grouped).map(([namespace, groupAgents]) => (
               <div key={namespace}>

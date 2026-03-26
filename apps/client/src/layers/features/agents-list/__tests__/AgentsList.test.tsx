@@ -2,29 +2,34 @@
  * @vitest-environment jsdom
  */
 import { describe, it, expect, vi, beforeEach, beforeAll, afterEach } from 'vitest';
-import { render, screen, cleanup, fireEvent } from '@testing-library/react';
+import { render, screen, cleanup, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import type { TopologyAgent, MeshStatus } from '@dorkos/shared/mesh-schemas';
+import type { TopologyAgent } from '@dorkos/shared/mesh-schemas';
 
 // ---------------------------------------------------------------------------
-// Mocks
+// Mocks — URL search state is simulated via a mutable record.
 // ---------------------------------------------------------------------------
 
 vi.mock('@/layers/entities/session', () => ({
   useSessions: () => ({ sessions: [], isLoading: false }),
 }));
 
+let currentSearch: Record<string, string | undefined> = {};
+
 vi.mock('@tanstack/react-router', () => ({
-  useNavigate: () => vi.fn(),
-}));
-
-const mockUseMeshStatus = vi.fn();
-
-vi.mock('@/layers/entities/mesh', () => ({
-  useUnregisterAgent: () => ({ mutate: vi.fn() }),
-  useMeshStatus: () => mockUseMeshStatus(),
+  useNavigate: () => {
+    return ({
+      search,
+    }: {
+      search: (prev: Record<string, string | undefined>) => Record<string, string | undefined>;
+    }) => {
+      currentSearch = { ...search(currentSearch) };
+    };
+  },
+  useSearch: () => currentSearch,
+  useRouter: () => ({ state: { location: { search: currentSearch } } }),
 }));
 
 vi.mock('@/layers/features/agent-settings', () => ({
@@ -40,7 +45,12 @@ vi.mock('../ui/AgentRow', () => ({
 
 // Mock AgentEmptyFilterState to make it easily assertable
 vi.mock('../ui/AgentEmptyFilterState', () => ({
-  AgentEmptyFilterState: ({ onClearFilters }: { onClearFilters: () => void }) => (
+  AgentEmptyFilterState: ({
+    onClearFilters,
+  }: {
+    onClearFilters: () => void;
+    filterDescription?: string;
+  }) => (
     <div data-testid="agent-empty-filter-state">
       <button onClick={onClearFilters}>Clear filters</button>
     </div>
@@ -122,28 +132,18 @@ const multiNsAgents: TopologyAgent[] = [
   makeAgent({ id: '3', name: 'Agent C', namespace: 'api', projectPath: '/c' }),
 ];
 
-const makeMeshStatus = (overrides: Partial<MeshStatus> = {}): MeshStatus => ({
-  totalAgents: 3,
-  activeCount: 2,
-  inactiveCount: 1,
-  staleCount: 0,
-  unreachableCount: 0,
-  byRuntime: {},
-  byProject: {},
-  ...overrides,
-});
-
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  currentSearch = {};
+});
 
 describe('AgentsList', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    // Default: no mesh status data available
-    mockUseMeshStatus.mockReturnValue({ data: undefined });
   });
 
   it('renders loading skeleton when isLoading is true', () => {
@@ -181,51 +181,30 @@ describe('AgentsList', () => {
       wrapper: createWrapper(),
     });
 
-    // No namespace group headers should be shown
     expect(screen.queryByText('web')).not.toBeInTheDocument();
     expect(screen.queryByText('api')).not.toBeInTheDocument();
   });
 
-  it('renders FleetHealthBar when mesh status data is available', () => {
-    mockUseMeshStatus.mockReturnValue({ data: makeMeshStatus() });
-
+  it('renders the composable FilterBar with search input', () => {
     render(<AgentsList agents={multiNsAgents} isLoading={false} />, {
       wrapper: createWrapper(),
     });
 
-    // FleetHealthBar renders status counts as accessible buttons
-    expect(screen.getByRole('button', { name: '2 Active' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '1 Inactive' })).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('Filter agents...')).toBeInTheDocument();
   });
 
-  it('does not render FleetHealthBar when mesh status data is unavailable', () => {
-    mockUseMeshStatus.mockReturnValue({ data: undefined });
-
+  it('renders result count', () => {
     render(<AgentsList agents={multiNsAgents} isLoading={false} />, {
       wrapper: createWrapper(),
     });
 
-    expect(screen.queryByRole('button', { name: /Active/ })).not.toBeInTheDocument();
+    expect(screen.getByText('3 agents')).toBeInTheDocument();
   });
 
-  it('clicking a health bar count updates the status filter', () => {
-    mockUseMeshStatus.mockReturnValue({ data: makeMeshStatus() });
+  it('shows empty state when search param filters out all agents', () => {
+    // Pre-set the URL search state to simulate an active search filter
+    currentSearch = { search: 'xyzzy-no-match' };
 
-    render(<AgentsList agents={multiNsAgents} isLoading={false} />, {
-      wrapper: createWrapper(),
-    });
-
-    const activeButton = screen.getByRole('button', { name: '2 Active' });
-    fireEvent.click(activeButton);
-
-    // After clicking "Active", the button should be styled as active (font-medium text-foreground).
-    // The filter bar's "active" chip should now be in default (active) variant.
-    // Verify by checking the active chip inside the filter bar is rendered.
-    expect(screen.getAllByRole('button', { name: /active/i }).length).toBeGreaterThan(0);
-  });
-
-  it('renders AgentEmptyFilterState when filters match zero agents but agents exist', () => {
-    // All agents have healthStatus 'active'; filtering by 'inactive' yields zero results
     render(
       <AgentsList
         agents={multiNsAgents.map((a) => ({ ...a, healthStatus: 'active' as const }))}
@@ -234,13 +213,23 @@ describe('AgentsList', () => {
       { wrapper: createWrapper() }
     );
 
-    // Simulate filtering to a status that matches nothing by directly triggering
-    // the search input to a term that matches no agent name
-    const searchInput = screen.getByPlaceholderText('Filter agents...');
-    fireEvent.change(searchInput, { target: { value: 'xyzzy-no-match' } });
-
     expect(screen.getByTestId('agent-empty-filter-state')).toBeInTheDocument();
     expect(screen.queryByTestId('agent-row-1')).not.toBeInTheDocument();
+  });
+
+  it('shows empty state when status param filters out all agents', () => {
+    // All agents are 'active'; filter by 'inactive' via URL
+    currentSearch = { status: 'inactive' };
+
+    render(
+      <AgentsList
+        agents={multiNsAgents.map((a) => ({ ...a, healthStatus: 'active' as const }))}
+        isLoading={false}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    expect(screen.getByTestId('agent-empty-filter-state')).toBeInTheDocument();
   });
 
   it('does not render AgentEmptyFilterState when the agents array is empty', () => {
@@ -249,8 +238,11 @@ describe('AgentsList', () => {
     expect(screen.queryByTestId('agent-empty-filter-state')).not.toBeInTheDocument();
   });
 
-  it('clicking "Clear filters" in AgentEmptyFilterState restores the agent list', () => {
-    render(
+  it('clear filters via AgentEmptyFilterState restores the agent list', () => {
+    // Start with an active filter that matches nothing
+    currentSearch = { search: 'xyzzy-no-match' };
+
+    const { rerender } = render(
       <AgentsList
         agents={multiNsAgents.map((a) => ({ ...a, healthStatus: 'active' as const }))}
         isLoading={false}
@@ -258,15 +250,21 @@ describe('AgentsList', () => {
       { wrapper: createWrapper() }
     );
 
-    // Apply a filter that matches nothing
-    const searchInput = screen.getByPlaceholderText('Filter agents...');
-    fireEvent.change(searchInput, { target: { value: 'xyzzy-no-match' } });
     expect(screen.getByTestId('agent-empty-filter-state')).toBeInTheDocument();
 
-    // Clear filters via the empty state button
-    fireEvent.click(screen.getByRole('button', { name: 'Clear filters' }));
+    // Click clear — navigate mock updates currentSearch
+    act(() => {
+      screen.getByRole('button', { name: 'Clear filters' }).click();
+    });
 
-    // Agents should be visible again; empty state should be gone
+    // Re-render to pick up the cleared search state
+    rerender(
+      <AgentsList
+        agents={multiNsAgents.map((a) => ({ ...a, healthStatus: 'active' as const }))}
+        isLoading={false}
+      />
+    );
+
     expect(screen.queryByTestId('agent-empty-filter-state')).not.toBeInTheDocument();
     expect(screen.getByTestId('agent-row-1')).toBeInTheDocument();
   });

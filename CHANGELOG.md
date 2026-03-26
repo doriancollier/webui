@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Migrate agents list to shared composable filter system
 - Simplify AgentNode, extract sidebar hooks, update session list
 - Consolidate agent display to use shared AgentAvatar primitive
 - Unify dev playground with PAGE_CONFIG and shared layout
