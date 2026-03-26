@@ -218,3 +218,4 @@ export {
   useSidebar,
   SidebarContext,
 } from './sidebar';
+export { FilterBar } from './filter-bar';
