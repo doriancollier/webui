@@ -2,8 +2,28 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'node:path';
+import fs from 'node:fs';
 
 const clientRoot = path.resolve(__dirname, '../client');
+const sharedSrc = path.resolve(__dirname, '../../packages/shared/src');
+
+/**
+ * Build alias entries for @dorkos/shared subpath exports.
+ *
+ * electron-vite runs from apps/desktop/ with root set to apps/client/.
+ * In CI, pnpm's strict module isolation prevents Rollup from resolving
+ * workspace subpath exports across this directory boundary. We resolve
+ * them directly to TypeScript source files instead.
+ */
+function sharedSubpathAliases(): Record<string, string> {
+  const aliases: Record<string, string> = {};
+  const files = fs.readdirSync(sharedSrc).filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'));
+  for (const file of files) {
+    const name = file.replace(/\.ts$/, '');
+    aliases[`@dorkos/shared/${name}`] = path.resolve(sharedSrc, file);
+  }
+  return aliases;
+}
 
 export default defineConfig({
   main: {
@@ -27,11 +47,8 @@ export default defineConfig({
     resolve: {
       alias: {
         '@': path.resolve(clientRoot, 'src'),
+        ...sharedSubpathAliases(),
       },
-      // electron-vite runs from apps/desktop/ but the renderer root is
-      // apps/client/. Without this, Rollup can't find packages installed
-      // in the client's node_modules (e.g. @dorkos/shared subpath exports).
-      modules: [path.resolve(clientRoot, 'node_modules'), 'node_modules'],
     },
     build: {
       outDir: path.resolve(__dirname, 'dist/renderer'),
