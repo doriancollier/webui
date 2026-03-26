@@ -160,8 +160,7 @@ function FilterBarAddFilter({ dynamicOptions, className }: FilterBarAddFilterPro
             <Checkbox checked={selected.includes(option)} onCheckedChange={() => toggle(option)} />
             {enumDef.colors?.[option] && (
               <span
-                className="size-2 shrink-0 rounded-full"
-                style={{ backgroundColor: enumDef.colors[option] }}
+                className={cn('size-2 shrink-0 rounded-full bg-current', enumDef.colors[option])}
               />
             )}
             <span>{enumDef.labels?.[option] ?? option}</span>

@@ -30,6 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Fix dynamic enum deserialize and color dot rendering in FilterBar
 - Provide TanStack Router context in DevPlayground
 - Implement readTodosFromFile and getTodoFileETag on TranscriptReader
 ---

@@ -140,7 +140,7 @@ export function enumFilter<TItem>(config: EnumFilterConfig<TItem>): EnumFilterDe
         return raw
           .split(',')
           .map((v) => v.trim())
-          .filter((v) => options.includes(v));
+          .filter((v) => v && (dynamic || options.includes(v)));
       },
       match(item, value) {
         const selected = value as string[];
@@ -167,7 +167,7 @@ export function enumFilter<TItem>(config: EnumFilterConfig<TItem>): EnumFilterDe
       return value as string;
     },
     deserialize(raw) {
-      if (raw && options.includes(raw)) return raw;
+      if (raw && (dynamic || options.includes(raw))) return raw;
       return '';
     },
     match(item, value) {
