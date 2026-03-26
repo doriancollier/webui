@@ -9,7 +9,8 @@ export type Page =
   | 'promos'
   | 'command-palette'
   | 'simulator'
-  | 'topology';
+  | 'topology'
+  | 'filter-bar';
 
 /** A single searchable/navigable section in the playground. */
 export interface PlaygroundSection {
@@ -34,6 +35,7 @@ export { PROMOS_SECTIONS } from './sections/promos-sections';
 export { COMMAND_PALETTE_SECTIONS } from './sections/command-palette-sections';
 export { SIMULATOR_SECTIONS } from './sections/simulator-sections';
 export { TOPOLOGY_SECTIONS } from './sections/topology-sections';
+export { FILTER_BAR_SECTIONS } from './sections/filter-bar-sections';
 
 // Imported under aliases to compose the full registry without circular re-export issues.
 import { TOKENS_SECTIONS as tokens } from './sections/tokens-sections';
@@ -45,6 +47,7 @@ import { PROMOS_SECTIONS as promos } from './sections/promos-sections';
 import { COMMAND_PALETTE_SECTIONS as commandPalette } from './sections/command-palette-sections';
 import { SIMULATOR_SECTIONS as simulator } from './sections/simulator-sections';
 import { TOPOLOGY_SECTIONS as topology } from './sections/topology-sections';
+import { FILTER_BAR_SECTIONS as filterBar } from './sections/filter-bar-sections';
 
 /**
  * Full playground registry combining all page-level section arrays.
@@ -61,4 +64,5 @@ export const PLAYGROUND_REGISTRY: PlaygroundSection[] = [
   ...commandPalette,
   ...simulator,
   ...topology,
+  ...filterBar,
 ];

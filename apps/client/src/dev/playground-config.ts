@@ -8,6 +8,7 @@ import {
   Megaphone,
   Terminal,
   Network,
+  Filter,
 } from 'lucide-react';
 import type { PlaygroundSection } from './playground-registry';
 import {
@@ -20,6 +21,7 @@ import {
   COMMAND_PALETTE_SECTIONS,
   SIMULATOR_SECTIONS,
   TOPOLOGY_SECTIONS,
+  FILTER_BAR_SECTIONS,
 } from './playground-registry';
 
 /** Navigation group a page belongs to in the sidebar. */
@@ -137,6 +139,16 @@ export const PAGE_CONFIGS: PageConfig[] = [
     group: 'features',
     sections: SIMULATOR_SECTIONS,
     path: 'simulator',
+  },
+  {
+    id: 'filter-bar',
+    label: 'Filter Bar',
+    description:
+      'Composable filter system with text search, enum, date range, sort, and responsive active filters.',
+    icon: Filter,
+    group: 'features',
+    sections: FILTER_BAR_SECTIONS,
+    path: 'filter-bar',
   },
 ];
 

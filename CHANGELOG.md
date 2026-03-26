@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add FilterBar to dev playground with mock data demo
 - Add agent filter schema and integrate with router search params
 - Add FilterBar compound UI components
 - Add useFilterState hook with URL sync via TanStack Router

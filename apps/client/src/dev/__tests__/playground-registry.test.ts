@@ -10,6 +10,7 @@ import {
   COMMAND_PALETTE_SECTIONS,
   SIMULATOR_SECTIONS,
   TOPOLOGY_SECTIONS,
+  FILTER_BAR_SECTIONS,
 } from '../playground-registry';
 import { slugify } from '../lib/slugify';
 import { PAGE_CONFIGS, PAGE_ORDER, PAGE_LABELS } from '../playground-config';
@@ -45,6 +46,7 @@ describe('playground-registry', () => {
       ...COMMAND_PALETTE_SECTIONS,
       ...SIMULATOR_SECTIONS,
       ...TOPOLOGY_SECTIONS,
+      ...FILTER_BAR_SECTIONS,
     ];
     expect(PLAYGROUND_REGISTRY).toEqual(combined);
   });
