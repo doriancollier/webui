@@ -1,0 +1,59 @@
+---
+title: DorkOS 0.25.0
+description: Extensibility platform and composable filtering — agents can now build and install extensions, and every list surface gets URL-synced, filterable, sortable data views.
+date: 2026-03-27
+author: DorkOS Team
+category: release
+tags: [release, extensions, filtering, agent-ui]
+---
+
+Agents can now build and install extensions as a first-class capability, and every list surface gains URL-synced filtering and sorting powered by a shared filter engine.
+
+## Highlights
+
+**Extensibility Platform** — A four-phase system that turns DorkOS into a programmable surface. Agents can observe the UI, register extension points, compile and install extensions, and build their own tools — all without leaving the conversation.
+
+**Composable Filter System** — Every list surface gets text search, enum pills, date ranges, and sort controls with URL-synced state that survives navigation and is shareable via URL. Built as a pure TypeScript engine with React bindings.
+
+**Agent Identity Primitives** — AgentAvatar and AgentIdentity components give every agent a consistent visual presence across dashboard, sidebar, and topology views.
+
+## All Changes
+
+### Added
+
+- Build extensions that agents install, configure, and run — the extensibility platform spans agent UI control, extension point registry, extension system core, and agent-built extensions (Phases 1–4)
+- Filter and sort agent lists with a composable filter system — text search, enum pills, date ranges, boolean toggles, and URL-synced state
+- Redesign Remote Access dialog with progressive disclosure
+- Show the default agent in the dashboard sidebar
+- Add AgentAvatar and AgentIdentity primitives for consistent agent visual identity
+- Add /adr:review command for ADR lifecycle management
+- Absorb superpowers plugin into first-party skills and agents
+- Add dedicated Feature Promos page to dev playground
+
+### Changed
+
+- Migrate agents list to the composable filter system
+- Consolidate agent display to use shared AgentAvatar primitive
+- Simplify AgentNode, extract sidebar hooks, update session list
+- Unify dev playground with PAGE_CONFIG and shared layout
+- Extract resolveAgentVisual for consistent agent visual identity
+- Update README screenshot to dark mode with real chat session
+- Reconcile contributing and doc guides for extensions and FilterBar
+
+### Fixed
+
+- Wire UI tools to session and align sidebar tab schema
+- Harden extension system security and fix flaky tests
+- Display human-readable labels for dateRange, boolean, and numericRange filters
+- Fix dynamic enum deserialize and color dot rendering in FilterBar
+- Resolve workspace packages in electron-vite renderer build
+- Alias @dorkos/shared subpaths to source for CI compat
+- Add better-sqlite3 as direct dependency for packaging
+- Update SchedulesView tests to match rewritten component
+- Provide TanStack Router context in DevPlayground
+
+## Install / Update
+
+```
+npm install -g dorkos@0.25.0
+```

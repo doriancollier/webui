@@ -9,50 +9,48 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add /adr:review command and complete first lifecycle review
+### Changed
+
+### Fixed
+
+---
+
+## [0.25.0] - 2026-03-27
+
+> Extensibility platform and composable filtering — agents can now build and install extensions, and every list surface gets URL-synced, filterable, sortable data views.
+
+### Added
+
+- Build extensions that agents install, configure, and run — the extensibility platform spans agent UI control, extension point registry, extension system core, and agent-built extensions (Phases 1–4)
+- Filter and sort agent lists with a composable filter system — text search, enum pills, date ranges, boolean toggles, and URL-synced state
 - Redesign Remote Access dialog with progressive disclosure
-- Implement Phase 4 — Agent-Built Extensions
-- Implement Phase 3 — Extension System Core
-- Implement Phase 2 — Extension Point Registry
-- Implement Phase 1 — Agent UI Control & Canvas
+- Show the default agent in the dashboard sidebar
+- Add AgentAvatar and AgentIdentity primitives for consistent agent visual identity
+- Add /adr:review command for ADR lifecycle management
 - Absorb superpowers plugin into first-party skills and agents
-- Absorb superpowers plugin into first-party skills and agents
-- Absorb superpowers plugin into first-party skills and agents
-- Absorb superpowers plugin into first-party skills and agents
-- Add FilterBar to dev playground with mock data demo
-- Add agent filter schema and integrate with router search params
-- Add FilterBar compound UI components
-- Add useFilterState hook with URL sync via TanStack Router
-- Complete filter engine with all filter types, sort, and describeActive
-- Add enumFilter and Zod searchValidator to filter engine
-- Add filter engine foundation with textFilter
-- Show default agent in dashboard sidebar
-- Add AgentAvatar and AgentIdentity entity primitives
 - Add dedicated Feature Promos page to dev playground
 
 ### Changed
 
-- Reconcile guides for FilterBar, extensions, and agent UI control
-- Update README screenshot to dark mode with real chat session
-- Reconcile contributing guides for Phase 1 and Phase 2
-- Migrate agents list to shared composable filter system
-- Simplify AgentNode, extract sidebar hooks, update session list
+- Migrate agents list to the composable filter system
 - Consolidate agent display to use shared AgentAvatar primitive
+- Simplify AgentNode, extract sidebar hooks, update session list
 - Unify dev playground with PAGE_CONFIG and shared layout
 - Extract resolveAgentVisual for consistent agent visual identity
+- Update README screenshot to dark mode with real chat session
+- Reconcile contributing and doc guides for extensions and FilterBar
 
 ### Fixed
 
-- Wire UI tools to session, align sidebar tab schema
-- Harden extension system security, fix flaky tests, resolve lint warnings
-- Add better-sqlite3 as direct dependency for packaging
-- Alias @dorkos/shared subpaths to source for CI compat
-- Update SchedulesView tests to match rewritten component
-- Resolve workspace packages in electron-vite renderer build
-- Display human-readable labels for dateRange, boolean, numericRange filters
+- Wire UI tools to session and align sidebar tab schema
+- Harden extension system security and fix flaky tests
+- Display human-readable labels for dateRange, boolean, and numericRange filters
 - Fix dynamic enum deserialize and color dot rendering in FilterBar
+- Resolve workspace packages in electron-vite renderer build
+- Alias @dorkos/shared subpaths to source for CI compat
+- Add better-sqlite3 as direct dependency for packaging
+- Update SchedulesView tests to match rewritten component
 - Provide TanStack Router context in DevPlayground
-- Implement readTodosFromFile and getTodoFileETag on TranscriptReader
 
 ---
 
