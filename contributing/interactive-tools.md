@@ -11,6 +11,8 @@ Two interactive tools exist today:
 
 The pattern is designed to be extensible. Any new tool that requires user interaction mid-stream can follow the same architecture.
 
+A separate but related system -- **Agent UI Control** -- lets agents control the client UI without blocking the SDK. See the [Agent UI Control](#agent-ui-control) section below.
+
 ## Architecture
 
 The interactive tools pattern connects three layers: the SDK callback, the streaming generator, and the client UI. The key challenge is that `canUseTool` is a synchronous callback that must return a `Promise<PermissionResult>`, while the user response arrives later over HTTP or in-process transport.
@@ -490,6 +492,111 @@ if (tc.interactiveType === 'my_new_type') {
   return <MyNewInteractive key={tc.toolCallId} sessionId={sessionId} toolCallId={tc.toolCallId} /* ... */ />;
 }
 ```
+
+## Agent UI Control
+
+Unlike interactive tools (which pause the SDK to wait for user input), agent UI control is a **fire-and-forget** system. The agent calls an MCP tool, the server emits an SSE event, and the client mutates its UI state immediately. The SDK is never blocked.
+
+### `control_ui` MCP Tool
+
+The `control_ui` tool is exposed on the external MCP server (`/mcp`) and available to any connected agent. It accepts a `UiCommand` -- a discriminated union on `action` with 14 variants:
+
+| Action                 | Parameters                                                      | Effect                                  |
+| ---------------------- | --------------------------------------------------------------- | --------------------------------------- |
+| `open_panel`           | `panel`: `settings` / `pulse` / `relay` / `mesh` / `picker`     | Open a named panel                      |
+| `close_panel`          | `panel`: (same as above)                                        | Close a named panel                     |
+| `toggle_panel`         | `panel`: (same as above)                                        | Toggle a named panel                    |
+| `open_sidebar`         | (none)                                                          | Open the sidebar                        |
+| `close_sidebar`        | (none)                                                          | Close the sidebar                       |
+| `switch_sidebar_tab`   | `tab`: `sessions` / `agents`                                    | Switch sidebar tab (also opens sidebar) |
+| `open_canvas`          | `content`: `UiCanvasContent`, `preferredWidth?`: 20--80         | Open canvas panel with content          |
+| `update_canvas`        | `content`: `UiCanvasContent`                                    | Update canvas content without reopening |
+| `close_canvas`         | (none)                                                          | Close the canvas panel                  |
+| `show_toast`           | `message`, `level?`: success/error/info/warning, `description?` | Show a toast notification               |
+| `set_theme`            | `theme`: `light` / `dark`                                       | Switch the UI theme                     |
+| `scroll_to_message`    | `messageId?` (omit for bottom)                                  | Scroll to a specific message            |
+| `switch_agent`         | `cwd`: working directory path                                   | Switch to a different agent             |
+| `open_command_palette` | (none)                                                          | Open the command palette                |
+
+Canvas content (`UiCanvasContent`) is discriminated on `type`:
+
+- `url` -- renders an iframe (`url`, optional `title`)
+- `markdown` -- renders markdown (`markdown`, optional `title`)
+- `json` -- renders formatted JSON (`data`, optional `title`)
+
+The `UiCommand` schema is defined in `packages/shared/src/schemas.ts` and validated with Zod on both server and client.
+
+### `get_ui_state` MCP Tool
+
+The companion `get_ui_state` tool returns the current client UI state -- which panels are open, sidebar tab, canvas state, and active agent. Agents can call this after `control_ui` to verify the result, or to make UI-aware decisions.
+
+### Data Flow
+
+```
+Agent calls control_ui MCP tool
+  |
+  |  1. Server validates command against UiCommandSchema
+  |  2. Pushes StreamEvent { type: 'ui_command', data: { command } } to session.eventQueue
+  |  3. Calls session.eventQueueNotify() to wake the generator
+  |  4. Returns { success: true, action } to the agent immediately (no blocking)
+  |
+  v
+sendMessage() generator drains queue, yields ui_command event
+  |
+  v
+Client stream-event-handler.ts receives 'ui_command' event
+  |
+  |  Extracts the UiCommand from event data
+  |  Gets the current Zustand store state
+  |  Calls executeUiCommand(ctx, command)
+  |
+  v
+UiActionDispatcher (shared/lib/ui-action-dispatcher.ts)
+  |
+  |  Pure side-effect dispatcher — switches on command.action
+  |  Calls the appropriate store setter, toast, or handler
+  |
+  v
+UI updates reactively via Zustand subscription
+```
+
+The `UiActionDispatcher` is a pure function with no React dependencies. It is callable from stream event handlers, keyboard shortcuts, and command palette actions with equal safety.
+
+### UI State Awareness
+
+The client can send a `uiState` snapshot with each `sendMessage()` request. This is an optional `uiState` field on `SendMessageRequest` (validated against `UiStateSchema`), which the server injects into the agent's system prompt as context. This gives agents situational awareness of what the user is currently viewing:
+
+```typescript
+// UiState shape (packages/shared/src/schemas.ts)
+{
+  canvas: { open: boolean, contentType: string | null },
+  panels: { settings: boolean, pulse: boolean, relay: boolean, mesh: boolean },
+  sidebar: { open: boolean, activeTab: 'sessions' | 'agents' | null },
+  agent: { id: string | null, cwd: string | null },
+}
+```
+
+This two-way channel -- `uiState` in (client tells agent what is visible) and `ui_command` out (agent tells client what to change) -- enables agents to make contextual UI decisions rather than issuing commands blindly.
+
+### Key Differences from Interactive Tools
+
+| Aspect          | Interactive Tools (AskUserQuestion, Tool Approval) | Agent UI Control (`control_ui`)            |
+| --------------- | -------------------------------------------------- | ------------------------------------------ |
+| Direction       | Agent asks user, waits for response                | Agent commands UI, no response expected    |
+| SDK blocking    | Blocks via deferred promise until user responds    | Non-blocking, returns immediately          |
+| Event queue     | Uses same `session.eventQueue` mechanism           | Uses same `session.eventQueue` mechanism   |
+| Promise.race    | Yields event while SDK is blocked                  | Yields event alongside normal SDK messages |
+| Transport layer | Requires resolve endpoint (POST)                   | No resolve endpoint needed                 |
+| Timeout         | 10-minute timeout per interaction                  | No timeout (fire-and-forget)               |
+
+### Implementation Files
+
+| File                                                                  | Purpose                                                                  |
+| --------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `packages/shared/src/schemas.ts`                                      | `UiCommandSchema`, `UiStateSchema`, `UiCanvasContentSchema` definitions  |
+| `apps/server/src/services/runtimes/claude-code/mcp-tools/ui-tools.ts` | `control_ui` and `get_ui_state` MCP tool handlers                        |
+| `apps/client/src/layers/shared/lib/ui-action-dispatcher.ts`           | `executeUiCommand()` -- pure dispatcher, no React dependencies           |
+| `apps/client/src/layers/features/chat/model/stream-event-handler.ts`  | Processes `ui_command` SSE events and dispatches to `executeUiCommand()` |
 
 ## Key Patterns
 

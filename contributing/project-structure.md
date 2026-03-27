@@ -46,7 +46,7 @@ src/
 │   ├── shared/          # Reusable utilities, UI primitives, hooks & stores
 │   │   ├── ui/          # Shadcn components (button, card, dialog, etc.)
 │   │   ├── model/       # TransportContext, app-store, extension-registry, hooks (useTheme, useIsMobile, etc.)
-│   │   └── lib/         # cn(), Transports, font-config, favicon-utils, celebrations
+│   │   └── lib/         # cn(), Transports, font-config, favicon-utils, celebrations, ui-action-dispatcher
 │   ├── entities/        # Business domain objects
 │   │   ├── session/     # Session types, hooks, transport calls
 │   │   │   ├── ui/
@@ -86,6 +86,7 @@ src/
 │   │   ├── relay/       # RelayPanel, ActivityFeed, AdapterCard, AdapterSetupWizard
 │   │   ├── mesh/        # MeshPanel, TopologyGraph, AgentNode, BindingDialog
 │   │   ├── onboarding/  # OnboardingFlow, AgentDiscoveryStep, PulsePresetsStep
+│   │   ├── canvas/      # AgentCanvas split-view panel (JSON, Markdown, URL content renderers)
 │   │   └── status/      # StatusLine, GitStatusItem, ModelItem
 │   └── widgets/         # Large UI compositions
 │       ├── app-layout/  # Header, Layout, main workspace

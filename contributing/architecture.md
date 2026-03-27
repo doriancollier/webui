@@ -19,7 +19,8 @@ Transport
   getSession(id, cwd?)           -> Session
   updateSession(id, opts, cwd?)  -> Session
   getMessages(sessionId, cwd?)   -> { messages: HistoryMessage[] }
-  sendMessage(id, content, onEvent, signal?, cwd?) -> void
+  sendMessage(id, content, onEvent, signal?, cwd?, options?) -> void
+                                          # options: { clientMessageId?, uiState? }
   approveTool(sessionId, toolCallId)  -> { ok: boolean }
   denyTool(sessionId, toolCallId)     -> { ok: boolean }
   submitAnswers(sessionId, toolCallId, answers) -> { ok: boolean }
@@ -85,7 +86,7 @@ Transport
 
 ### Key Design Decision: Callback-Based Streaming
 
-`sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. An optional `cwd` parameter is passed through so the SDK uses the correct project directory when resuming sessions. An optional `options` bag supports `clientMessageId` for server-echo ID reconciliation. This normalizes both transports:
+`sendMessage` uses `onEvent: (event: StreamEvent) => void` callbacks rather than returning an `AsyncGenerator`. An optional `cwd` parameter is passed through so the SDK uses the correct project directory when resuming sessions. An optional `options` bag supports `clientMessageId` for server-echo ID reconciliation and `uiState` for passing a client UI state snapshot to the agent (see [Agent UI Control](#agent-ui-control)). This normalizes both transports:
 
 - **HttpTransport** parses SSE events from a `ReadableStream` and calls `onEvent`
 - **DirectTransport** iterates the `AsyncGenerator` from the runtime and calls `onEvent`
@@ -195,7 +196,13 @@ User input -> ChatPanel -> useChatSession.handleSubmit()
 Cross-client sync (when idle):
   -> GET /api/sessions/:id/stream (persistent EventSource)
     -> sync_update event -> queryClient.invalidateQueries()
+
+Agent UI commands (during streaming):
+  -> onEvent({ type: 'ui_command', data: { command } })
+    -> executeUiCommand(ctx, command) -> Zustand store mutations / toast / theme change
 ```
+
+The `ui_command` stream event type carries agent-issued `UiCommand` payloads back to the client. See [Agent UI Control](#agent-ui-control) for the full bidirectional pattern.
 
 ### Obsidian Plugin (DirectTransport)
 
@@ -206,6 +213,49 @@ User input -> ChatPanel -> useChatSession.handleSubmit()
       -> AsyncGenerator<StreamEvent>
         -> onEvent(event) -> React state updates -> UI re-render
 ```
+
+## Agent UI Control
+
+Agents can observe and control the DorkOS client UI through a bidirectional pattern:
+
+**Client → Agent** (UI state awareness): The client captures a `UiState` snapshot (canvas, panels, sidebar, active agent) and passes it via `sendMessage(id, content, onEvent, signal, cwd, { uiState })`. The server forwards this to the SDK as context injection, giving the agent situational awareness of what the user sees.
+
+**Agent → Client** (UI commands): The agent calls the `control_ui` MCP tool, which validates a `UiCommand` via `UiCommandSchema` and emits a `ui_command` stream event to the SSE stream. The client dispatches this via `executeUiCommand()` (`layers/shared/lib/ui-action-dispatcher.ts`), a pure side-effect dispatcher that mutates the Zustand store.
+
+A companion `get_ui_state` MCP tool lets agents query the current UI state without sending a message.
+
+### UiCommand Actions
+
+| Action                                        | Effect                                                       |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| `open_canvas`                                 | Opens the canvas panel with URL, markdown, or JSON content   |
+| `update_canvas`                               | Updates canvas content without toggling visibility           |
+| `close_canvas`                                | Closes the canvas panel                                      |
+| `open_panel` / `close_panel` / `toggle_panel` | Controls named panels (settings, pulse, relay, mesh, picker) |
+| `open_sidebar` / `close_sidebar`              | Controls sidebar visibility                                  |
+| `switch_sidebar_tab`                          | Switches sidebar to a named tab                              |
+| `show_toast`                                  | Shows a toast notification (success, error, info, warning)   |
+| `set_theme`                                   | Switches between light and dark theme                        |
+| `scroll_to_message`                           | Scrolls chat to a specific message ID                        |
+| `switch_agent`                                | Switches to a different agent by working directory           |
+| `open_command_palette`                        | Opens the command palette                                    |
+
+### Key Types
+
+- `UiState` — client snapshot (canvas, panels, sidebar, agent) passed to the agent
+- `UiCanvasContent` — discriminated union (`url` | `markdown` | `json`) for canvas payloads
+- `UiCommand` — discriminated union on `action` (14 variants)
+- `UiCommandEvent` — SSE event wrapper (`{ type: 'ui_command', command }`)
+
+All types defined in `packages/shared/src/schemas.ts`, re-exported from `packages/shared/src/types.ts`.
+
+### Files
+
+| File                                                                  | Purpose                                                                             |
+| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `packages/shared/src/schemas.ts`                                      | `UiStateSchema`, `UiCommandSchema`, `UiCommandEventSchema`, `UiCanvasContentSchema` |
+| `apps/server/src/services/runtimes/claude-code/mcp-tools/ui-tools.ts` | `control_ui` and `get_ui_state` MCP tool definitions                                |
+| `apps/client/src/layers/shared/lib/ui-action-dispatcher.ts`           | `executeUiCommand()` — pure dispatcher, no React deps                               |
 
 ## Runtime Registry
 
@@ -285,7 +335,7 @@ All Claude Code-specific services live under `services/runtimes/claude-code/`:
 | `task-reader.ts`          | Task state parser                                                          |
 | `sdk-utils.ts`            | `makeUserPrompt()`, `resolveClaudeCliPath()`                               |
 | `message-sender.ts`       | Extracted send-message logic (streaming, tool filtering, context building) |
-| `mcp-tools/`              | MCP tool server (core, pulse, relay, mesh, adapter, binding tools)         |
+| `mcp-tools/`              | MCP tool server (core, pulse, relay, mesh, adapter, binding, UI tools)     |
 | `index.ts`                | Barrel export for `ClaudeCodeRuntime`                                      |
 
 SDK imports (`@anthropic-ai/claude-agent-sdk`) are contained exclusively within `services/runtimes/claude-code/`. No other server code imports the SDK directly. This is enforced by a `no-restricted-imports` rule in the server's `eslint.config.js`.

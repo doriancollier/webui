@@ -45,6 +45,7 @@ Key state owned by the app store:
 - `sidebarOpen` — persisted to localStorage; always `false` on mobile on first load
 - `previousCwd` — transient; used by command palette for "switch back" suggestions
 - Dialog open states (`settingsOpen`, `pulseOpen`, `relayOpen`, `meshOpen`, etc.) — transient, not persisted
+- Canvas panel state (`canvasOpen`, `canvasContent`, `canvasPreferredWidth`) — transient; controls the agent-driven canvas side panel visibility, content, and width
 - `selectedCwd` — writes to `recentCwds` in localStorage on change
 - UI preferences (`showTimestamps`, `expandToolCalls`, font size/family, etc.) — persisted
 

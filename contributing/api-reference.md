@@ -57,9 +57,14 @@ Event types are documented in the `StreamEventType` enum in the OpenAPI spec. Th
 
 - `X-Client-Id` (optional) - Client identifier for session locking. If another client holds the lock, returns 409 `SESSION_LOCKED`.
 
+**Request body:** `SendMessageRequest` (from `@dorkos/shared/schemas`)
+
+- `content` (string, required) - User message text
+- `uiState` (optional) - `UiState` object describing the current client UI state (canvas visibility, content, dimensions). Passed to the agent runtime so agents can reason about UI context.
+
 **Responses:**
 
-- `200` - SSE stream. Event types: `text_delta`, `thinking_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`, `tool_result`, `tool_progress`, `approval_required`, `question_prompt`, `error`, `done`, `session_status`, `task_update`, `background_task_started`, `background_task_progress`, `background_task_done`, `rate_limit`, `system_status`, `compact_boundary`, `prompt_suggestion`
+- `200` - SSE stream. Event types: `text_delta`, `thinking_delta`, `tool_call_start`, `tool_call_delta`, `tool_call_end`, `tool_result`, `tool_progress`, `approval_required`, `question_prompt`, `error`, `done`, `session_status`, `task_update`, `background_task_started`, `background_task_progress`, `background_task_done`, `rate_limit`, `system_status`, `compact_boundary`, `prompt_suggestion`, `ui_command`
 - `409` - Session locked by another client. Response body: `{ error: 'Session locked', code: 'SESSION_LOCKED', lockedBy: string, lockedAt: string }`
 
 ### GET /api/sessions/:id/stream
@@ -1176,7 +1181,7 @@ Requests to `/mcp` pass through this middleware chain in order:
 
 ### Available Tools
 
-All DorkOS tools are registered on the external MCP server: core tools (ping, server info, session count, agent identity), Pulse scheduling tools, Relay messaging tools, adapter management tools, binding tools, trace/metrics tools, and Mesh discovery tools. Feature-guarded tools return descriptive errors when their service is disabled rather than being omitted from the tool list.
+All DorkOS tools are registered on the external MCP server: core tools (ping, server info, session count, agent identity), Pulse scheduling tools, Relay messaging tools, adapter management tools, binding tools, trace/metrics tools, Mesh discovery tools, and UI control tools (`controlUI` — opens/updates/closes the canvas panel). Feature-guarded tools return descriptive errors when their service is disabled rather than being omitted from the tool list.
 
 ### Client Configuration
 

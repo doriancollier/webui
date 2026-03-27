@@ -41,25 +41,25 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 
 ## Maintenance Tracking
 
-| Guide                            | Last Reviewed | Reviewer | Notes                                                                                                   |
-| -------------------------------- | ------------- | -------- | ------------------------------------------------------------------------------------------------------- |
-| `project-structure.md`           | 2026-03-06    | Claude   | Added eslint-config and icons packages                                                                  |
-| `architecture.md`                | 2026-03-19    | Claude   | Added getLastMessageIds to Transport and AgentRuntime, sendMessage options parameter                    |
-| `design-system.md`               | 2026-03-19    | Claude   | Added FieldCard/FieldCardContent/CollapsibleFieldCard to Form Fields section                            |
-| `api-reference.md`               | 2026-03-19    | Claude   | Reconciled — route changes are bug fixes, no new API surface                                            |
-| `configuration.md`               | 2026-03-21    | Claude   | Updated DORKOS_RELAY_ENABLED default false → true (enabled by default)                                  |
-| `interactive-tools.md`           | 2026-03-19    | Claude   | Added onDecided to QuestionPrompt, 409 INTERACTION_ALREADY_RESOLVED handling, force-complete safety net |
-| `keyboard-shortcuts.md`          | 2026-03-19    | Claude   | Reconciled — no matching changes                                                                        |
-| `obsidian-plugin-development.md` | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                                   |
-| `data-fetching.md`               | 2026-03-19    | Claude   | Added refetchIntervalInBackground background-tab optimization pattern                                   |
-| `state-management.md`            | 2026-03-19    | Claude   | Reconciled — entity hook changes are polling config only                                                |
-| `animations.md`                  | 2026-03-19    | Claude   | Reconciled — no matching changes                                                                        |
-| `styling-theming.md`             | 2026-03-19    | Claude   | Reconciled — new shared/ui components covered in design-system.md                                       |
-| `parallel-execution.md`          | 2026-03-19    | Claude   | Reconciled — command file tweaks only                                                                   |
-| `relay-adapters.md`              | 2026-03-22    | Claude   | Added telegram-chatsdk to AdapterConfig type union (chat-sdk-relay-adapter-refactor spec)               |
-| `adapter-catalog.md`             | 2026-03-22    | Claude   | Added Slack and Telegram Chat SDK to Built-in Adapter Manifests section                                 |
-| `browser-testing.md`             | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                                   |
-| `environment-variables.md`       | 2026-03-19    | Claude   | Reconciled — already updated in port convention commit                                                  |
+| Guide                            | Last Reviewed | Reviewer | Notes                                                                                      |
+| -------------------------------- | ------------- | -------- | ------------------------------------------------------------------------------------------ |
+| `project-structure.md`           | 2026-03-26    | Claude   | Added canvas/ feature module, ui-action-dispatcher, init-extensions.ts, extension-registry |
+| `architecture.md`                | 2026-03-26    | Claude   | Added Agent UI Control section (uiState, ui_command events, controlUI MCP tool)            |
+| `design-system.md`               | 2026-03-19    | Claude   | Added FieldCard/FieldCardContent/CollapsibleFieldCard to Form Fields section               |
+| `api-reference.md`               | 2026-03-26    | Claude   | Added ui_command event, uiState request field, controlUI MCP tool                          |
+| `configuration.md`               | 2026-03-21    | Claude   | Updated DORKOS_RELAY_ENABLED default false → true (enabled by default)                     |
+| `interactive-tools.md`           | 2026-03-26    | Claude   | Added Agent UI Control section (controlUI/get_ui_state MCP tools, ui_command events)       |
+| `keyboard-shortcuts.md`          | 2026-03-19    | Claude   | Reconciled — no matching changes                                                           |
+| `obsidian-plugin-development.md` | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                      |
+| `data-fetching.md`               | 2026-03-26    | Claude   | Reconciled — Phase 1 ui_command is action dispatch, not data fetching                      |
+| `state-management.md`            | 2026-03-26    | Claude   | Added extension registry pattern, canvas state (canvasOpen/Content/Width)                  |
+| `animations.md`                  | 2026-03-19    | Claude   | Reconciled — no matching changes                                                           |
+| `styling-theming.md`             | 2026-03-19    | Claude   | Reconciled — new shared/ui components covered in design-system.md                          |
+| `parallel-execution.md`          | 2026-03-19    | Claude   | Reconciled — command file tweaks only                                                      |
+| `relay-adapters.md`              | 2026-03-22    | Claude   | Added telegram-chatsdk to AdapterConfig type union (chat-sdk-relay-adapter-refactor spec)  |
+| `adapter-catalog.md`             | 2026-03-22    | Claude   | Added Slack and Telegram Chat SDK to Built-in Adapter Manifests section                    |
+| `browser-testing.md`             | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                      |
+| `environment-variables.md`       | 2026-03-19    | Claude   | Reconciled — already updated in port convention commit                                     |
 
 ## External Docs Coverage
 
