@@ -40,6 +40,25 @@ vi.mock('../../core/config-manager.js', () => ({
   },
 }));
 
+const mockAccess = vi.fn();
+const mockMkdir = vi.fn();
+const mockWriteFile = vi.fn();
+const mockReadFile = vi.fn();
+const mockReaddir = vi.fn();
+const mockRm = vi.fn();
+const mockStat = vi.fn();
+vi.mock('fs/promises', () => ({
+  default: {
+    access: (...args: unknown[]) => mockAccess(...args),
+    mkdir: (...args: unknown[]) => mockMkdir(...args),
+    writeFile: (...args: unknown[]) => mockWriteFile(...args),
+    readFile: (...args: unknown[]) => mockReadFile(...args),
+    readdir: (...args: unknown[]) => mockReaddir(...args),
+    rm: (...args: unknown[]) => mockRm(...args),
+    stat: (...args: unknown[]) => mockStat(...args),
+  },
+}));
+
 // --- Helpers ---
 
 function makeRecord(id: string, overrides: Partial<ExtensionRecord> = {}): ExtensionRecord {
@@ -383,5 +402,248 @@ describe('ExtensionManager', () => {
 
     expect(bundle).toBe('active-bundle');
     expect(mockReadBundle).toHaveBeenCalledWith('ext-k', 'activehash');
+  });
+
+  // === createExtension ===
+
+  describe('createExtension', () => {
+    beforeEach(() => {
+      // Default: directory does not exist (ENOENT)
+      mockAccess.mockRejectedValue(Object.assign(new Error('ENOENT'), { code: 'ENOENT' }));
+      mockMkdir.mockResolvedValue(undefined);
+      mockWriteFile.mockResolvedValue(undefined);
+    });
+
+    it('scaffolds a global extension directory with manifest and index.ts', async () => {
+      // After reload the new extension is discovered and compiled
+      const newRecord = makeRecord('my-widget', { status: 'enabled' });
+      mockDiscover
+        .mockResolvedValueOnce([]) // initialize
+        .mockResolvedValueOnce([newRecord]); // reload from createExtension (enable does not call reload)
+      mockCompile.mockResolvedValue({ code: 'bundle', sourceHash: 'hash123' });
+
+      await manager.initialize(null);
+
+      const result = await manager.createExtension({
+        name: 'my-widget',
+        description: 'A dashboard widget',
+        template: 'dashboard-card',
+        scope: 'global',
+      });
+
+      expect(result.id).toBe('my-widget');
+      expect(result.scope).toBe('global');
+      expect(result.template).toBe('dashboard-card');
+      expect(result.files).toEqual(['extension.json', 'index.ts']);
+      expect(mockMkdir).toHaveBeenCalledWith('/fake/dork-home/extensions/my-widget', {
+        recursive: true,
+      });
+      // extension.json and index.ts should have been written
+      expect(mockWriteFile).toHaveBeenCalledTimes(2);
+    });
+
+    it('scaffolds a local extension when scope is local', async () => {
+      const newRecord = makeRecord('local-ext', { status: 'enabled', scope: 'local' });
+      mockDiscover
+        .mockResolvedValueOnce([]) // initialize
+        .mockResolvedValueOnce([newRecord]); // reload from createExtension (enable does not call reload)
+      mockCompile.mockResolvedValue({ code: 'bundle', sourceHash: 'hash456' });
+
+      await manager.initialize('/my/project');
+
+      const result = await manager.createExtension({
+        name: 'local-ext',
+        template: 'command',
+        scope: 'local',
+      });
+
+      expect(result.scope).toBe('local');
+      expect(mockMkdir).toHaveBeenCalledWith('/my/project/.dork/extensions/local-ext', {
+        recursive: true,
+      });
+    });
+
+    it('throws when creating local extension without active CWD', async () => {
+      await manager.initialize(null);
+
+      await expect(
+        manager.createExtension({
+          name: 'orphan-ext',
+          template: 'dashboard-card',
+          scope: 'local',
+        })
+      ).rejects.toThrow('Cannot create local extension: no working directory is active');
+    });
+
+    it('throws when extension directory already exists', async () => {
+      // Directory exists (access succeeds)
+      mockAccess.mockResolvedValue(undefined);
+
+      await manager.initialize(null);
+
+      await expect(
+        manager.createExtension({
+          name: 'existing-ext',
+          template: 'dashboard-card',
+          scope: 'global',
+        })
+      ).rejects.toThrow("Extension 'existing-ext' already exists");
+    });
+
+    it('includes compilation errors in result when compile fails', async () => {
+      const newRecord = makeRecord('bad-ext', {
+        status: 'compile_error',
+        error: {
+          code: 'compilation_failed',
+          message: 'Syntax error',
+          details: 'Unexpected token at line 5',
+        },
+      });
+      mockDiscover
+        .mockResolvedValueOnce([]) // initialize
+        .mockResolvedValueOnce([newRecord]); // reload from createExtension (enable does not call reload)
+      mockCompile.mockResolvedValue({
+        error: {
+          code: 'compilation_failed',
+          message: 'Syntax error',
+          errors: [{ text: 'Unexpected token at line 5' }],
+        },
+        sourceHash: 'badhash',
+      });
+
+      await manager.initialize(null);
+
+      const result = await manager.createExtension({
+        name: 'bad-ext',
+        template: 'dashboard-card',
+        scope: 'global',
+      });
+
+      expect(result.status).toBe('compile_error');
+      expect(result.bundleReady).toBe(false);
+      expect(result.error).toBeDefined();
+      expect(result.error!.code).toBe('compilation_failed');
+    });
+
+    it('enables the extension after scaffolding', async () => {
+      const newRecord = makeRecord('auto-enable', { status: 'enabled' });
+      mockDiscover
+        .mockResolvedValueOnce([]) // initialize
+        .mockResolvedValueOnce([newRecord]); // reload from createExtension (enable does not call reload)
+      mockCompile.mockResolvedValue({ code: 'bundle', sourceHash: 'hash' });
+
+      await manager.initialize(null);
+
+      await manager.createExtension({
+        name: 'auto-enable',
+        template: 'dashboard-card',
+        scope: 'global',
+      });
+
+      // compile should have been called: once during reload's compileEnabled and once during enable
+      expect(mockCompile).toHaveBeenCalled();
+      // Config should have been updated with the new extension enabled
+      expect(mockConfigSet).toHaveBeenCalledWith('extensions', {
+        enabled: ['auto-enable'],
+      });
+    });
+  });
+
+  // === reloadExtension (single) ===
+
+  describe('reloadExtension', () => {
+    it('recompiles a single extension and returns compiled result', async () => {
+      // Use 'disabled' status so compileEnabled() skips it during initialize
+      const record = makeRecord('my-ext', { status: 'disabled' });
+      mockDiscover.mockResolvedValue([record]);
+      mockCompile.mockResolvedValue({ code: 'new-bundle', sourceHash: 'newhash' });
+
+      await manager.initialize(null);
+
+      const result = await manager.reloadExtension('my-ext');
+
+      expect(result.id).toBe('my-ext');
+      expect(result.status).toBe('compiled');
+      expect(result.bundleReady).toBe(true);
+      expect(result.sourceHash).toBe('newhash');
+      expect(result.error).toBeUndefined();
+    });
+
+    it('returns compile_error when recompilation fails', async () => {
+      const record = makeRecord('broken-ext', { status: 'disabled' });
+      mockDiscover.mockResolvedValue([record]);
+      mockCompile.mockResolvedValue({
+        error: {
+          code: 'compilation_failed',
+          message: 'Type error',
+          errors: [
+            {
+              text: 'Type X not assignable to Y',
+              location: { file: 'index.ts', line: 10, column: 5 },
+            },
+          ],
+        },
+        sourceHash: 'hash2',
+      });
+
+      await manager.initialize(null);
+
+      const result = await manager.reloadExtension('broken-ext');
+
+      expect(result.id).toBe('broken-ext');
+      expect(result.status).toBe('compile_error');
+      expect(result.bundleReady).toBe(false);
+      expect(result.sourceHash).toBe('hash2');
+      expect(result.error).toBeDefined();
+      expect(result.error!.code).toBe('compilation_failed');
+      expect(result.error!.errors).toHaveLength(1);
+      expect(result.error!.errors![0].text).toBe('Type X not assignable to Y');
+    });
+
+    it('throws when extension ID is not found', async () => {
+      await manager.initialize(null);
+
+      await expect(manager.reloadExtension('nonexistent')).rejects.toThrow(
+        "Extension 'nonexistent' not found"
+      );
+    });
+
+    it('updates the internal record status after successful reload', async () => {
+      const record = makeRecord('ext-reload', { status: 'disabled' });
+      mockDiscover.mockResolvedValue([record]);
+      mockCompile.mockResolvedValue({ code: 'bundle', sourceHash: 'newhash' });
+
+      await manager.initialize(null);
+
+      await manager.reloadExtension('ext-reload');
+
+      const updated = manager.get('ext-reload');
+      expect(updated?.status).toBe('compiled');
+      expect(updated?.bundleReady).toBe(true);
+      expect(updated?.sourceHash).toBe('newhash');
+      expect(updated?.error).toBeUndefined();
+    });
+
+    it('updates the internal record status after failed reload', async () => {
+      const record = makeRecord('ext-fail', { status: 'disabled' });
+      mockDiscover.mockResolvedValue([record]);
+      mockCompile.mockResolvedValue({
+        error: {
+          code: 'compilation_failed',
+          message: 'Parse error',
+          errors: [{ text: 'Unexpected end of input' }],
+        },
+        sourceHash: 'hash2',
+      });
+
+      await manager.initialize(null);
+
+      await manager.reloadExtension('ext-fail');
+
+      const updated = manager.get('ext-fail');
+      expect(updated?.status).toBe('compile_error');
+      expect(updated?.bundleReady).toBe(false);
+      expect(updated?.error?.code).toBe('compilation_failed');
+    });
   });
 });

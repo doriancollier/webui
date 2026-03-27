@@ -15,6 +15,7 @@ import { getTraceTools } from './trace-tools.js';
 import { getMeshTools } from './mesh-tools.js';
 import { getAgentTools } from './agent-tools.js';
 import { getUiTools } from './ui-tools.js';
+import { getExtensionTools } from './extension-tools.js';
 
 // Re-export types and handlers for external consumers
 export type { McpToolDeps } from './types.js';
@@ -67,6 +68,14 @@ export {
   createMeshQueryTopologyHandler,
 } from './mesh-tools.js';
 export { createControlUiHandler, createGetUiStateHandler, type UiToolSession } from './ui-tools.js';
+export {
+  createListExtensionsHandler,
+  createGetExtensionErrorsHandler,
+  createGetExtensionApiHandler,
+  createCreateExtensionHandler,
+  createReloadExtensionsHandler,
+  createTestExtensionHandler,
+} from './extension-tools.js';
 
 /**
  * Create the DorkOS MCP tool server with all registered tools.
@@ -95,6 +104,7 @@ export function createDorkOsToolServer(
       ...getMeshTools(deps),
       ...getAgentTools(deps),
       ...getUiTools(deps, session),
+      ...getExtensionTools(deps),
     ],
   });
 }

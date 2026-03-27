@@ -97,6 +97,15 @@ vi.mock('../../runtimes/claude-code/mcp-tools/mesh-tools.js', () => ({
   createMeshQueryTopologyHandler: stubFactory,
 }));
 
+vi.mock('../../runtimes/claude-code/mcp-tools/extension-tools.js', () => ({
+  createListExtensionsHandler: stubFactory,
+  createGetExtensionErrorsHandler: stubFactory,
+  createGetExtensionApiHandler: stubFactory,
+  createCreateExtensionHandler: stubFactory,
+  createReloadExtensionsHandler: stubFactory,
+  createTestExtensionHandler: stubFactory,
+}));
+
 import { createExternalMcpServer } from '../mcp-server.js';
 import type { McpToolDeps } from '../../runtimes/claude-code/mcp-tools/types.js';
 
@@ -143,11 +152,11 @@ describe('createExternalMcpServer', () => {
     expect(typeof server.connect).toBe('function');
   });
 
-  it('registers all 34 tools', () => {
+  it('registers all 41 tools', () => {
     // Purpose: regression guard against accidental tool omissions or additions.
     // This count changes intentionally when new MCP tools are added.
     createExternalMcpServer(createMinimalDeps());
-    expect(registeredTools).toHaveLength(34);
+    expect(registeredTools).toHaveLength(41);
   });
 
   it('registers all expected tool names', () => {
@@ -203,6 +212,13 @@ describe('createExternalMcpServer', () => {
 
     // Agent tools (1)
     expect(toolNames).toContain('create_agent');
+
+    // Extension tools (5)
+    expect(toolNames).toContain('get_extension_api');
+    expect(toolNames).toContain('list_extensions');
+    expect(toolNames).toContain('get_extension_errors');
+    expect(toolNames).toContain('create_extension');
+    expect(toolNames).toContain('reload_extensions');
   });
 
   it('registers no duplicate tool names', () => {
@@ -257,7 +273,7 @@ describe('createExternalMcpServer', () => {
     const bindingTools = toolNames.filter((n) => n.startsWith('binding_'));
     const meshTools = toolNames.filter((n) => n.startsWith('mesh_'));
 
-    expect(coreTools).toHaveLength(5); // 4 core + 1 agent (create_agent)
+    expect(coreTools).toHaveLength(10); // 4 core + 1 agent (create_agent) + 5 extension (get_extension_api, list_extensions, get_extension_errors, create_extension, reload_extensions)
     expect(pulseTools).toHaveLength(5);
     expect(relayTools).toHaveLength(13); // 7 relay + 4 adapter + 2 trace
     expect(bindingTools).toHaveLength(3);

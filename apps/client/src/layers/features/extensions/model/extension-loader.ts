@@ -145,6 +145,82 @@ export class ExtensionLoader {
     this.loaded.clear();
   }
 
+  /**
+   * Hot-reload specific extensions: deactivate, re-import, and reactivate.
+   *
+   * Extensions not in the provided list are untouched — their state and
+   * registrations are preserved. Cache busting is achieved by appending
+   * `?t=${Date.now()}` to the bundle URL, which forces fresh ESM evaluation
+   * even when the server sets `Cache-Control: no-store`.
+   *
+   * @param ids - Extension IDs to reload
+   * @returns Updated loaded map and refreshed extension list
+   */
+  async reloadExtensions(ids: string[]): Promise<{
+    extensions: ExtensionRecordPublic[];
+    loaded: Map<string, LoadedExtension>;
+  }> {
+    // 1. Deactivate only the specified extensions
+    for (const id of ids) {
+      const ext = this.loaded.get(id);
+      if (ext) {
+        try {
+          ext.deactivate?.();
+        } catch (err) {
+          console.error(`[extensions] Error deactivating ${id}:`, err);
+        }
+
+        for (const cleanup of ext.cleanups) {
+          try {
+            cleanup();
+          } catch (err) {
+            console.error(`[extensions] Error in cleanup for ${id}:`, err);
+          }
+        }
+
+        this.loaded.delete(id);
+      }
+    }
+
+    // 2. Fetch updated extension list from server
+    const extensions = await fetchExtensions();
+
+    // 3. Re-import and reactivate the specified extensions
+    for (const id of ids) {
+      const rec = extensions.find((e) => e.id === id);
+      if (!rec || rec.status !== 'compiled' || !rec.bundleReady) {
+        continue;
+      }
+
+      try {
+        // Cache-bust: append timestamp to force fresh ESM module evaluation.
+        // The browser's module registry keys by URL, so a new query string
+        // yields a new module instance distinct from the pre-reload one.
+        const module = (await import(
+          /* @vite-ignore */ `/api/extensions/${id}/bundle?t=${Date.now()}`
+        )) as ExtensionModule;
+
+        const { api, cleanups } = createExtensionAPI(id, this.deps);
+        const deactivateFn = module.activate(api);
+
+        this.loaded.set(id, {
+          id,
+          manifest: rec.manifest,
+          module,
+          api,
+          cleanups,
+          deactivate: typeof deactivateFn === 'function' ? deactivateFn : undefined,
+        });
+
+        console.log(`[extensions] Hot-reloaded: ${rec.manifest.name} v${rec.manifest.version}`);
+      } catch (err) {
+        console.error(`[extensions] Failed to hot-reload ${id}:`, err);
+      }
+    }
+
+    return { extensions, loaded: this.loaded };
+  }
+
   /** Return the map of all currently loaded extensions. */
   getLoaded(): Map<string, LoadedExtension> {
     return this.loaded;

@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implement Phase 4 — Agent-Built Extensions
 - Implement Phase 3 — Extension System Core
 - Implement Phase 2 — Extension Point Registry
 - Implement Phase 1 — Agent UI Control & Canvas
@@ -49,6 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix dynamic enum deserialize and color dot rendering in FilterBar
 - Provide TanStack Router context in DevPlayground
 - Implement readTodosFromFile and getTodoFileETag on TranscriptReader
+
 ---
 
 ## [0.24.0] - 2026-03-25

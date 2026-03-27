@@ -4,11 +4,38 @@
  * @module routes/extensions
  */
 import { Router } from 'express';
+import type { Response } from 'express';
 import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import type { ExtensionManager } from '../services/extensions/extension-manager.js';
 import { logger } from '../lib/logger.js';
+
+/** Connected SSE clients for extension lifecycle events. */
+const sseClients = new Set<Response>();
+
+/**
+ * Broadcast an `extension_reloaded` event to all connected SSE clients.
+ * Only call this after at least one extension has compiled successfully.
+ *
+ * @param extensionIds - IDs of the extensions that were reloaded
+ */
+export function broadcastExtensionReloaded(extensionIds: string[]): void {
+  const data = JSON.stringify({
+    type: 'extension_reloaded',
+    extensionIds,
+    timestamp: Date.now(),
+  });
+
+  for (const client of sseClients) {
+    try {
+      client.write(`event: extension_reloaded\ndata: ${data}\n\n`);
+    } catch {
+      // Client disconnected — will be removed on close event
+      sseClients.delete(client);
+    }
+  }
+}
 
 const CwdChangedBodySchema = z.object({
   cwd: z.string().nullable(),
@@ -30,6 +57,26 @@ export function createExtensionsRouter(
   getCwd: () => string | null
 ): Router {
   const router = Router();
+
+  // GET /api/extensions/events -- SSE stream for extension lifecycle events
+  router.get('/events', (_req, res) => {
+    res.set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    });
+    res.flushHeaders();
+
+    sseClients.add(res);
+
+    // Send initial heartbeat so the client knows the connection is live
+    res.write(':ok\n\n');
+
+    // Clean up on disconnect
+    res.on('close', () => {
+      sseClients.delete(res);
+    });
+  });
 
   // GET /api/extensions -- List all discovered extensions with status
   router.get('/', async (_req, res) => {

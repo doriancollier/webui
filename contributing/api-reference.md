@@ -1181,7 +1181,72 @@ Requests to `/mcp` pass through this middleware chain in order:
 
 ### Available Tools
 
-All DorkOS tools are registered on the external MCP server: core tools (ping, server info, session count, agent identity), Pulse scheduling tools, Relay messaging tools, adapter management tools, binding tools, trace/metrics tools, Mesh discovery tools, and UI control tools (`controlUI` — opens/updates/closes the canvas panel). Feature-guarded tools return descriptive errors when their service is disabled rather than being omitted from the tool list.
+All DorkOS tools are registered on the external MCP server: core tools (ping, server info, session count, agent identity), Pulse scheduling tools, Relay messaging tools, adapter management tools, binding tools, trace/metrics tools, Mesh discovery tools, UI control tools (`controlUI` — opens/updates/closes the canvas panel), and extension management tools. Feature-guarded tools return descriptive errors when their service is disabled rather than being omitted from the tool list.
+
+### Extension MCP Tools
+
+Six tools enable agents to autonomously build and manage extensions:
+
+#### `list_extensions`
+
+- **Parameters**: None
+- **Returns**: `{ extensions: ExtensionInfo[], count: number }`
+
+Each extension includes: `id`, `name`, `version`, `status`, `scope`, `bundleReady`, optionally `description` and `error`.
+
+#### `create_extension`
+
+- **Parameters**:
+  - `name` (string, required): Extension ID, kebab-case (e.g. `github-prs`). Must match `/^[a-z0-9][a-z0-9-]*$/`.
+  - `description` (string, optional): Short description shown in settings UI
+  - `template` (enum, optional): `dashboard-card` | `command` | `settings-panel` (default: `dashboard-card`)
+  - `scope` (enum, optional): `global` | `local` (default: `global`)
+- **Returns**: `{ created: true, id, path, scope, template, status, bundleReady, files, message }`
+- **Errors**: Directory already exists, no CWD for local scope, compilation failure (returns `created: true` with `status: 'compile_error'`)
+
+#### `reload_extensions`
+
+- **Parameters**:
+  - `id` (string, optional): Extension ID for targeted hot-reload. Omit for full re-scan.
+- **Returns** (single): `{ ok: true, extension: ReloadResult }`
+- **Returns** (all): `{ ok: true, extensions: ExtensionRecordPublic[], count: number }`
+
+Broadcasts an `extension_reloaded` SSE event to connected clients when extensions are successfully compiled.
+
+#### `get_extension_errors`
+
+- **Parameters**: None
+- **Returns**: `{ errors: ExtensionInfo[], count: number }`
+
+Filters to extensions with status `invalid`, `incompatible`, `compile_error`, or `activate_error`. Each error includes structured details.
+
+#### `get_extension_api`
+
+- **Parameters**: None
+- **Returns**: Full ExtensionAPI type definitions and usage examples as markdown text
+
+Always available even when the extension system is not initialized.
+
+#### `test_extension`
+
+- **Parameters**:
+  - `id` (string, required): Extension ID to test
+- **Returns** (success): `{ status: 'ok', id, contributions: Record<ExtensionPointId, number> }`
+- **Returns** (error): `{ status: 'error', id, phase: 'compilation' | 'activation', errors?, error?, stack? }`
+
+Compiles the extension and activates it against a server-side mock API. Reports per-slot contribution counts on success, or structured errors with file/line/column on failure.
+
+### SSE Extension Events
+
+**Endpoint**: `GET /api/extensions/events`
+
+**Event**: `extension_reloaded`
+
+```json
+{ "extensions": ["ext-id"], "timestamp": "2026-03-26T14:30:00.000Z" }
+```
+
+Sent when extensions are recompiled via `reload_extensions` or `create_extension`. The client uses this to trigger a live reload of the extension bundle.
 
 ### Client Configuration
 

@@ -6,6 +6,7 @@ import type { BindingStore } from '../../../relay/binding-store.js';
 import type { BindingRouter } from '../../../relay/binding-router.js';
 import type { TraceStore } from '../../../relay/trace-store.js';
 import type { MeshCore } from '@dorkos/mesh';
+import type { ExtensionManager } from '../../../extensions/extension-manager.js';
 
 /**
  * Explicit dependency interface for MCP tool handlers.
@@ -29,6 +30,8 @@ export interface McpToolDeps {
   bindingRouter?: BindingRouter;
   /** Optional MeshCore — undefined when Mesh is disabled */
   meshCore?: MeshCore;
+  /** Optional ExtensionManager — undefined when extensions are disabled */
+  extensionManager?: ExtensionManager;
 }
 
 /** Helper to return a JSON content block for MCP tool responses. */

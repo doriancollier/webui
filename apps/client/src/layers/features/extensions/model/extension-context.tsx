@@ -1,8 +1,10 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { ExtensionRecordPublic } from '@dorkos/extension-api';
 import type { LoadedExtension, ExtensionAPIDeps } from './types.js';
 import { ExtensionLoader } from './extension-loader.js';
 import { useCwdExtensionSync } from './use-cwd-extension-sync.js';
+import { extensionKeys } from '../api/queries.js';
 
 /** Context value exposed to the app tree. */
 export interface ExtensionContextValue {
@@ -55,12 +57,16 @@ interface ExtensionProviderProps {
  */
 export function ExtensionProvider({ deps, children }: ExtensionProviderProps) {
   const [state, setState] = useState<ExtensionContextValue>(defaultContextValue);
+  const loaderRef = useRef<ExtensionLoader | null>(null);
+  const queryClient = useQueryClient();
 
   // Watch for CWD changes and reload the page if the extension set differs.
   useCwdExtensionSync();
 
+  // Initial load — store the loader in a ref so the SSE effect can access it.
   useEffect(() => {
     const loader = new ExtensionLoader(deps);
+    loaderRef.current = loader;
 
     loader
       .initialize()
@@ -74,8 +80,45 @@ export function ExtensionProvider({ deps, children }: ExtensionProviderProps) {
 
     return () => {
       loader.deactivateAll();
+      loaderRef.current = null;
     };
     // deps is constructed once in main.tsx and is stable across re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // SSE subscription for per-extension hot reload.
+  // The server broadcasts `extension_reloaded` after a successful recompile.
+  // We deactivate the affected extensions, re-import their bundles with a
+  // cache-busted URL, reactivate them, and sync TanStack Query so any
+  // consumers of useExtensions() see the refreshed server state.
+  useEffect(() => {
+    const eventSource = new EventSource('/api/extensions/events');
+
+    eventSource.addEventListener('extension_reloaded', (event: MessageEvent) => {
+      const loader = loaderRef.current;
+      if (!loader) return;
+
+      void (async () => {
+        try {
+          const data = JSON.parse(event.data as string) as {
+            extensions: string[];
+            timestamp: string;
+          };
+          const { extensions, loaded } = await loader.reloadExtensions(data.extensions);
+          setState({ extensions, loaded, ready: true });
+          // Keep TanStack Query in sync so UI consumers of useExtensions() reflect
+          // the refreshed status without waiting for the next poll interval.
+          queryClient.invalidateQueries({ queryKey: extensionKeys.lists() });
+        } catch (err) {
+          console.error('[extensions] Hot reload failed:', err);
+        }
+      })();
+    });
+
+    return () => {
+      eventSource.close();
+    };
+    // queryClient is stable for the lifetime of the provider; no re-subscription needed.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

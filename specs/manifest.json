@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "nextNumber": 186,
+  "nextNumber": 187,
   "specs": [
+    {
+      "number": 186,
+      "slug": "remote-dialog-ux-redesign",
+      "title": "Remote Access Dialog UX Redesign",
+      "created": "2026-03-27",
+      "status": "implemented"
+    },
     {
       "number": 185,
       "slug": "absorb-superpowers-plugin",
@@ -14,7 +21,7 @@
       "slug": "ext-platform-04-agent-extensions",
       "title": "Extensibility Platform Phase 4 \u2014 Agent-Built Extensions",
       "created": "2026-03-26",
-      "status": "brief",
+      "status": "implemented",
       "project": "extensibility-platform"
     },
     {

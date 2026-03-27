@@ -194,3 +194,102 @@ Use CSS custom properties (`var(--border)`, `var(--muted-foreground)`) from the 
 - No access to the Transport layer or server APIs.
 - No extension marketplace or auto-update mechanism.
 - Storage is local-only (no sync across machines).
+
+---
+
+## Agent-Built Extensions
+
+DorkOS agents (Claude Code, Cursor, Windsurf) can create and manage extensions autonomously via MCP tools. The agent writes files to disk, compiles, tests, and reloads — the user sees the result in the DorkOS client immediately. No manual file creation or settings toggling required.
+
+### MCP Tools Reference
+
+Six MCP tools provide the complete extension lifecycle:
+
+| Tool                   | Parameters                                    | Description                                                        |
+| ---------------------- | --------------------------------------------- | ------------------------------------------------------------------ |
+| `get_extension_api`    | None                                          | Full ExtensionAPI type definitions and usage examples as markdown  |
+| `list_extensions`      | None                                          | List all extensions with status, scope, and errors                 |
+| `create_extension`     | `name`, `description?`, `template?`, `scope?` | Scaffold, compile, and enable a new extension in one step          |
+| `reload_extensions`    | `id?`                                         | Recompile all extensions, or a single extension by ID (hot reload) |
+| `get_extension_errors` | None                                          | Get only extensions in an error state with diagnostic details      |
+| `test_extension`       | `id`                                          | Headless smoke test: compile + activate against mock API           |
+
+### Agent Workflow
+
+The recommended iteration loop:
+
+```
+1. get_extension_api         # Understand the API surface
+2. create_extension          # Scaffold with a starter template
+3. Edit index.ts             # Write the extension logic
+4. test_extension            # Verify compilation and activation (headless)
+5. reload_extensions --id    # Hot-reload into the running client
+6. Iterate from step 3       # Fix errors, add features
+```
+
+The `create_extension` tool handles scaffolding, compilation, and enabling in a single call. After that, the edit-test-reload cycle is the core loop. Use `test_extension` for fast headless validation before triggering a visual reload.
+
+### Template Types
+
+The `create_extension` tool accepts a `template` parameter:
+
+**`dashboard-card`** (default) — Registers a React component in the `dashboard.sections` slot. Produces a styled card with heading and description. Good starting point for data display extensions.
+
+**`command`** — Registers a command palette item (`Cmd+K`). The starter template fires a toast notification on execution. Use for action-oriented extensions that do not need a persistent UI.
+
+**`settings-panel`** — Registers a tab in the settings dialog. The starter template includes a settings panel skeleton with `loadData`/`saveData` hooks for persistence. Use for extensions that need user configuration.
+
+All templates include an inline API Quick Reference comment at the top of `index.ts` listing the most common methods and all available slot names. Templates compile and activate out of the box — the agent can modify from a known-working baseline.
+
+### Scope: Global vs Local
+
+The `scope` parameter controls where the extension is installed:
+
+- **`global`** (`~/.dork/extensions/{id}/`) — Available in all projects. Use for general-purpose utilities.
+- **`local`** (`.dork/extensions/{id}/` in the active CWD) — Scoped to the current project. Use for project-specific dashboards or tools.
+
+When the same extension ID exists in both scopes, local overrides global. When the user switches projects (CWD change), local extensions are re-scanned and the client reloads automatically.
+
+Default scope for `create_extension` is `global`.
+
+### Error Handling
+
+Agents can diagnose and fix errors autonomously using structured error feedback:
+
+**Compilation errors** — Returned by `test_extension` and `reload_extensions` with file, line, and column information:
+
+```json
+{
+  "status": "error",
+  "phase": "compilation",
+  "errors": [
+    { "text": "Expected ';'", "location": { "file": "index.ts", "line": 12, "column": 5 } }
+  ]
+}
+```
+
+**Activation errors** — Returned by `test_extension` when the extension compiles but throws during `activate()`:
+
+```json
+{
+  "status": "error",
+  "phase": "activation",
+  "error": "Cannot read property 'registerComponent' of undefined",
+  "stack": "TypeError: ..."
+}
+```
+
+**Diagnostic workflow:**
+
+1. Call `get_extension_errors` to see all extensions with problems
+2. Read the structured error (phase, message, location)
+3. Edit the source file to fix the issue
+4. Call `test_extension` to verify the fix (headless, sub-300ms)
+5. Call `reload_extensions --id` to push the fix to the client
+
+### What Agents Should Not Do
+
+- **Do not create `node_modules` or install npm packages.** Extensions cannot have external dependencies beyond `react`, `react-dom`, and `@dorkos/extension-api` (provided by the host).
+- **Do not modify `extension.json` after creation** unless changing metadata. The `id` field must remain stable.
+- **Do not write to extension directories owned by other extensions.** Each extension has an isolated directory.
+- **Do not create extensions that import from `@dorkos/shared` or server internals.** Only `@dorkos/extension-api` is available at runtime.

@@ -318,27 +318,44 @@ router.get('/sessions', async (req, res) => {
 
 All Claude Code-specific services live under `services/runtimes/claude-code/`:
 
-| File                      | Purpose                                                                    |
-| ------------------------- | -------------------------------------------------------------------------- |
-| `claude-code-runtime.ts`  | `ClaudeCodeRuntime` class implementing `AgentRuntime`                      |
-| `agent-types.ts`          | `AgentSession` and `ToolState` interfaces                                  |
-| `sdk-event-mapper.ts`     | SDK message to `StreamEvent` transformation                                |
-| `context-builder.ts`      | Runtime context injection for system prompt                                |
-| `tool-filter.ts`          | Per-agent MCP tool filtering                                               |
-| `interactive-handlers.ts` | Tool approval and question flows                                           |
-| `transcript-reader.ts`    | JSONL session data reader                                                  |
-| `transcript-parser.ts`    | JSONL line parser                                                          |
-| `session-broadcaster.ts`  | Cross-client session sync via file watching                                |
-| `session-lock.ts`         | Session write locks                                                        |
-| `command-registry.ts`     | Slash command discovery                                                    |
-| `build-task-event.ts`     | Task event builder                                                         |
-| `task-reader.ts`          | Task state parser                                                          |
-| `sdk-utils.ts`            | `makeUserPrompt()`, `resolveClaudeCliPath()`                               |
-| `message-sender.ts`       | Extracted send-message logic (streaming, tool filtering, context building) |
-| `mcp-tools/`              | MCP tool server (core, pulse, relay, mesh, adapter, binding, UI tools)     |
-| `index.ts`                | Barrel export for `ClaudeCodeRuntime`                                      |
+| File                      | Purpose                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------- |
+| `claude-code-runtime.ts`  | `ClaudeCodeRuntime` class implementing `AgentRuntime`                             |
+| `agent-types.ts`          | `AgentSession` and `ToolState` interfaces                                         |
+| `sdk-event-mapper.ts`     | SDK message to `StreamEvent` transformation                                       |
+| `context-builder.ts`      | Runtime context injection for system prompt                                       |
+| `tool-filter.ts`          | Per-agent MCP tool filtering                                                      |
+| `interactive-handlers.ts` | Tool approval and question flows                                                  |
+| `transcript-reader.ts`    | JSONL session data reader                                                         |
+| `transcript-parser.ts`    | JSONL line parser                                                                 |
+| `session-broadcaster.ts`  | Cross-client session sync via file watching                                       |
+| `session-lock.ts`         | Session write locks                                                               |
+| `command-registry.ts`     | Slash command discovery                                                           |
+| `build-task-event.ts`     | Task event builder                                                                |
+| `task-reader.ts`          | Task state parser                                                                 |
+| `sdk-utils.ts`            | `makeUserPrompt()`, `resolveClaudeCliPath()`                                      |
+| `message-sender.ts`       | Extracted send-message logic (streaming, tool filtering, context building)        |
+| `mcp-tools/`              | MCP tool server (core, pulse, relay, mesh, adapter, binding, UI, extension tools) |
+| `index.ts`                | Barrel export for `ClaudeCodeRuntime`                                             |
 
 SDK imports (`@anthropic-ai/claude-agent-sdk`) are contained exclusively within `services/runtimes/claude-code/`. No other server code imports the SDK directly. This is enforced by a `no-restricted-imports` rule in the server's `eslint.config.js`.
+
+### Extension MCP Tools
+
+The external MCP server registers 6 extension management tools:
+
+| Tool                   | Description                                       |
+| ---------------------- | ------------------------------------------------- |
+| `list_extensions`      | List all extensions with status and scope         |
+| `create_extension`     | Scaffold a new extension with template code       |
+| `reload_extensions`    | Recompile and reload (all or single)              |
+| `get_extension_errors` | Get extensions in an error state with diagnostics |
+| `get_extension_api`    | Get full ExtensionAPI type reference              |
+| `test_extension`       | Headless smoke test (compile + mock activate)     |
+
+Tools are implemented in `apps/server/src/services/runtimes/claude-code/mcp-tools/extension-tools.ts` and registered in `mcp-server.ts`. All handlers guard on `deps.extensionManager` — when extensions are disabled, tools return descriptive errors.
+
+The agent iteration loop: `create_extension` -> `test_extension` (smoke) -> `reload_extensions` (visual) -> iterate.
 
 ## Per-Session Tool Filtering
 

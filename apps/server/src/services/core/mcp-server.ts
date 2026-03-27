@@ -49,6 +49,14 @@ import {
   createMeshInspectHandler,
   createMeshQueryTopologyHandler,
 } from '../runtimes/claude-code/mcp-tools/mesh-tools.js';
+import {
+  createListExtensionsHandler,
+  createGetExtensionErrorsHandler,
+  createGetExtensionApiHandler,
+  createCreateExtensionHandler,
+  createReloadExtensionsHandler,
+  createTestExtensionHandler,
+} from '../runtimes/claude-code/mcp-tools/extension-tools.js';
 
 /**
  * Create the external MCP server instance with all DorkOS tools registered.
@@ -438,6 +446,61 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
       runtime: z.string().optional().describe('Agent runtime (default: claude-code)'),
     },
     createCreateAgentHandler(deps)
+  );
+
+  // ── Extension tools ──────────────────────────────────────────────────
+  server.tool(
+    'get_extension_api',
+    'Get the full ExtensionAPI type definitions and usage examples. Call this when writing or debugging an extension to understand the available API surface. Returns TypeScript interface definitions for ExtensionAPI, ExtensionPointId, ExtensionReadableState, and ExtensionModule.',
+    {},
+    createGetExtensionApiHandler(deps)
+  );
+  server.tool(
+    'list_extensions',
+    'List all discovered DorkOS extensions with their status, scope, and errors. Returns both global (~/.dork/extensions/) and local (.dork/extensions/ in active CWD) extensions.',
+    {},
+    createListExtensionsHandler(deps)
+  );
+  server.tool(
+    'get_extension_errors',
+    'Get only extensions in an error state (invalid manifest, incompatible version, compile error, or activation failure). Returns error details for diagnosis.',
+    {},
+    createGetExtensionErrorsHandler(deps)
+  );
+  server.tool(
+    'create_extension',
+    'Scaffold a new DorkOS extension with manifest and starter code. Creates the directory, writes extension.json and index.ts, compiles, and enables the extension in one step.',
+    {
+      name: z.string().describe('Extension name (kebab-case, e.g. my-dashboard-widget)'),
+      description: z.string().optional().describe('Short description shown in settings UI'),
+      template: z
+        .enum(['dashboard-card', 'command', 'settings-panel'])
+        .optional()
+        .describe('Starter template (default: dashboard-card)'),
+      scope: z
+        .enum(['global', 'local'])
+        .optional()
+        .describe(
+          'Install scope: global (~/.dork/extensions/) or local (.dork/extensions/ in CWD). Default: global'
+        ),
+    },
+    createCreateExtensionHandler(deps)
+  );
+  server.tool(
+    'reload_extensions',
+    'Re-scan the filesystem for extensions and recompile any that changed. When id is provided, performs a targeted hot-reload of a single extension (recompile only). When omitted, runs a full discovery + recompile cycle.',
+    {
+      id: z.string().optional().describe('Extension ID for targeted reload. Omit to reload all.'),
+    },
+    createReloadExtensionsHandler(deps)
+  );
+  server.tool(
+    'test_extension',
+    'Compile an extension and activate it against a mock API to verify it loads without errors. Returns contribution counts per UI slot on success, or detailed error information on failure.',
+    {
+      id: z.string().describe('Extension ID to test'),
+    },
+    createTestExtensionHandler(deps)
   );
 
   return server;
