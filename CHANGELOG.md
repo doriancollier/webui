@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Update background/separator styling and add mobile Sheet
 - Update client tests for fetch-based SSE and QueryClient mock
 ---
 

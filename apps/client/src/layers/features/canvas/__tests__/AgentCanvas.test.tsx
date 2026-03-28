@@ -23,8 +23,10 @@ vi.mock('react-resizable-panels', () => ({
       {children}
     </div>
   ),
-  PanelResizeHandle: ({ className }: { className?: string }) => (
-    <div data-testid="resize-handle" className={className} />
+  PanelResizeHandle: ({ className, children }: React.PropsWithChildren<{ className?: string }>) => (
+    <div data-testid="resize-handle" className={className}>
+      {children}
+    </div>
   ),
   PanelGroup: ({ children }: React.PropsWithChildren) => (
     <div data-testid="panel-group">{children}</div>
@@ -47,6 +49,25 @@ function PassThrough({ children, ...rest }: Record<string, unknown>) {
   );
 }
 
+// Mock Sheet components for mobile canvas
+vi.mock('@/layers/shared/ui', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  const Passthrough = ({ children }: React.PropsWithChildren) => <>{children}</>;
+  return {
+    ...actual,
+    Sheet: ({ children, open }: React.PropsWithChildren<{ open?: boolean }>) =>
+      open ? <div data-testid="sheet">{children}</div> : null,
+    SheetContent: ({ children, className }: React.PropsWithChildren<{ className?: string }>) => (
+      <div data-testid="sheet-content" className={className}>
+        {children}
+      </div>
+    ),
+    SheetHeader: Passthrough,
+    SheetTitle: Passthrough,
+    SheetDescription: Passthrough,
+  };
+});
+
 vi.mock('motion/react', () => ({
   motion: new Proxy({} as Record<string, typeof PassThrough>, {
     get: () => PassThrough,
@@ -57,6 +78,7 @@ vi.mock('motion/react', () => ({
 
 const mockSetCanvasOpen = vi.fn();
 const mockSetCanvasContent = vi.fn();
+let mockIsMobile = false;
 
 const mockState = {
   canvasOpen: false as boolean,
@@ -71,6 +93,7 @@ const mockState = {
 
 vi.mock('@/layers/shared/model', () => ({
   useAppStore: (selector: (s: typeof mockState) => unknown) => selector(mockState),
+  useIsMobile: () => mockIsMobile,
 }));
 
 import { AgentCanvas } from '../ui/AgentCanvas';
@@ -82,6 +105,7 @@ describe('AgentCanvas', () => {
     vi.clearAllMocks();
     mockState.canvasOpen = false;
     mockState.canvasContent = null;
+    mockIsMobile = false;
   });
 
   it('returns null when canvas is closed', () => {
@@ -136,5 +160,16 @@ describe('AgentCanvas', () => {
     mockState.canvasContent = { type: 'url', url: 'https://example.com' };
     render(<AgentCanvas />);
     expect(screen.getByText('Web Page')).toBeInTheDocument();
+  });
+
+  it('renders as Sheet on mobile instead of Panel', () => {
+    mockIsMobile = true;
+    mockState.canvasOpen = true;
+    mockState.canvasContent = { type: 'markdown', content: '# Hello', title: 'Mobile Doc' };
+    render(<AgentCanvas />);
+    expect(screen.getByTestId('sheet')).toBeInTheDocument();
+    expect(screen.queryByTestId('panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('resize-handle')).not.toBeInTheDocument();
+    expect(screen.getByText('Mobile Doc')).toBeInTheDocument();
   });
 });
