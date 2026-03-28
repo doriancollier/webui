@@ -4,7 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { createAppRouter } from './router';
 import { HttpTransport, QUERY_TIMING } from '@/layers/shared/lib';
-import { TransportProvider, useAppStore, useExtensionRegistry } from '@/layers/shared/model';
+import {
+  TransportProvider,
+  useAppStore,
+  useExtensionRegistry,
+  EventStreamProvider,
+} from '@/layers/shared/model';
 import { PasscodeGateWrapper } from '@/layers/features/tunnel-gate';
 import { ExtensionProvider } from '@/layers/features/extensions';
 import type { ExtensionAPIDeps } from '@/layers/features/extensions';
@@ -39,15 +44,16 @@ function Root() {
     );
   }
 
-  const router = createAppRouter(queryClient);
   return (
     <QueryClientProvider client={queryClient}>
       <TransportProvider transport={transport}>
-        <ExtensionProvider deps={extensionDeps}>
-          <PasscodeGateWrapper>
-            <RouterProvider router={router} />
-          </PasscodeGateWrapper>
-        </ExtensionProvider>
+        <EventStreamProvider>
+          <ExtensionProvider deps={extensionDeps}>
+            <PasscodeGateWrapper>
+              <RouterProvider router={router} />
+            </PasscodeGateWrapper>
+          </ExtensionProvider>
+        </EventStreamProvider>
       </TransportProvider>
       {import.meta.env.DEV && <DevtoolsToggle />}
     </QueryClientProvider>
@@ -62,6 +68,11 @@ const queryClient = new QueryClient({
     },
   },
 });
+
+// Router at module scope — creating it inside Root() caused StrictMode to
+// remount the entire provider tree (including EventStreamProvider) on every
+// render, producing duplicate SSE connections.
+const router = createAppRouter(queryClient);
 
 /**
  * Detect Electron environment and resolve the API base URL.
@@ -96,9 +107,9 @@ const extensionDeps: ExtensionAPIDeps = {
       document.documentElement.classList.toggle('dark', theme === 'dark');
     },
   },
-  // navigate is provided as a no-op here; the router is not yet created at
-  // module-init time. Extensions calling navigate() after mount will use the
-  // router instance captured via closure when createAppRouter() runs in Root().
+  // navigate is provided as a no-op here. Extensions calling navigate() after
+  // mount should use the router instance directly. The no-op prevents crashes
+  // if an extension calls navigate() during module initialization.
   navigate: (opts) => {
     console.warn('[extensions] navigate called before router ready:', opts);
   },

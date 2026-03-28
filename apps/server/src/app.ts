@@ -18,6 +18,7 @@ import modelRoutes from './routes/models.js';
 import capabilitiesRoutes from './routes/capabilities.js';
 import uploadRoutes from './routes/uploads.js';
 import mcpConfigRoutes from './routes/mcp-config.js';
+import eventsRouter from './routes/events.js';
 import { generateOpenAPISpec } from './services/core/openapi-registry.js';
 import { errorHandler } from './middleware/error-handler.js';
 import { requestLogger } from './middleware/request-logger.js';
@@ -121,6 +122,7 @@ export function createApp() {
   app.use('/api/capabilities', capabilitiesRoutes);
   app.use('/api/uploads', uploadRoutes);
   app.use('/api/mcp-config', mcpConfigRoutes);
+  app.use('/api/events', eventsRouter);
 
   // Test control routes — only mounted when DORKOS_TEST_RUNTIME=true.
   // The router is always imported (safe: no vitest/SDK deps), but routes are

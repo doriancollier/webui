@@ -10,6 +10,7 @@ import path from 'path';
 import { z } from 'zod';
 import type { ExtensionManager } from '../services/extensions/extension-manager.js';
 import { logger } from '../lib/logger.js';
+import { eventFanOut } from '../services/core/event-fan-out.js';
 
 /** Connected SSE clients for extension lifecycle events. */
 const sseClients = new Set<Response>();
@@ -27,6 +28,14 @@ export function broadcastExtensionReloaded(extensionIds: string[]): void {
     timestamp: Date.now(),
   });
 
+  // Broadcast to unified stream
+  eventFanOut.broadcast('extension_reloaded', {
+    type: 'extension_reloaded',
+    extensionIds,
+    timestamp: Date.now(),
+  });
+
+  // Backward compat: also broadcast to old SSE clients (deprecated endpoint)
   for (const client of sseClients) {
     try {
       client.write(`event: extension_reloaded\ndata: ${data}\n\n`);
@@ -60,6 +69,7 @@ export function createExtensionsRouter(
 
   // GET /api/extensions/events -- SSE stream for extension lifecycle events
   router.get('/events', (_req, res) => {
+    logger.warn('[DEPRECATED] GET /api/extensions/events — use GET /api/events instead');
     res.set({
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache',

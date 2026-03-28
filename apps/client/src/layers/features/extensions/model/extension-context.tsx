@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ExtensionRecordPublic } from '@dorkos/extension-api';
+import { useEventSubscription } from '@/layers/shared/model';
 import type { LoadedExtension, ExtensionAPIDeps } from './types.js';
 import { ExtensionLoader } from './extension-loader.js';
 import { useCwdExtensionSync } from './use-cwd-extension-sync.js';
@@ -91,36 +92,24 @@ export function ExtensionProvider({ deps, children }: ExtensionProviderProps) {
   // We deactivate the affected extensions, re-import their bundles with a
   // cache-busted URL, reactivate them, and sync TanStack Query so any
   // consumers of useExtensions() see the refreshed server state.
-  useEffect(() => {
-    const eventSource = new EventSource('/api/extensions/events');
+  useEventSubscription('extension_reloaded', (raw) => {
+    const loader = loaderRef.current;
+    if (!loader) return;
 
-    eventSource.addEventListener('extension_reloaded', (event: MessageEvent) => {
-      const loader = loaderRef.current;
-      if (!loader) return;
+    const data = raw as { extensionIds: string[]; timestamp: number };
 
-      void (async () => {
-        try {
-          const data = JSON.parse(event.data as string) as {
-            extensions: string[];
-            timestamp: string;
-          };
-          const { extensions, loaded } = await loader.reloadExtensions(data.extensions);
-          setState({ extensions, loaded, ready: true });
-          // Keep TanStack Query in sync so UI consumers of useExtensions() reflect
-          // the refreshed status without waiting for the next poll interval.
-          queryClient.invalidateQueries({ queryKey: extensionKeys.lists() });
-        } catch (err) {
-          console.error('[extensions] Hot reload failed:', err);
-        }
-      })();
-    });
-
-    return () => {
-      eventSource.close();
-    };
-    // queryClient is stable for the lifetime of the provider; no re-subscription needed.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    void (async () => {
+      try {
+        const { extensions, loaded } = await loader.reloadExtensions(data.extensionIds);
+        setState({ extensions, loaded, ready: true });
+        // Keep TanStack Query in sync so UI consumers of useExtensions() reflect
+        // the refreshed status without waiting for the next poll interval.
+        queryClient.invalidateQueries({ queryKey: extensionKeys.lists() });
+      } catch (err) {
+        console.error('[extensions] Hot reload failed:', err);
+      }
+    })();
+  });
 
   return <ExtensionContext.Provider value={state}>{children}</ExtensionContext.Provider>;
 }

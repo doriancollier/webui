@@ -38,6 +38,7 @@ import { validateMcpOrigin } from './middleware/mcp-origin.js';
 import { createDb, runMigrations } from '@dorkos/db';
 import { INTERVALS } from './config/constants.js';
 import { resolveDorkHome } from './lib/dork-home.js';
+import { eventFanOut } from './services/core/event-fan-out.js';
 import { env } from './env.js';
 
 const PORT = env.DORKOS_PORT;
@@ -319,6 +320,21 @@ async function start() {
     // Store relayCore on app.locals so the sessions router can access it
     app.locals.relayCore = relayCore;
 
+    // Wire relay events to unified SSE stream
+    relayCore.subscribe('relay.human.console.>', (envelope) => {
+      eventFanOut.broadcast('relay_message', envelope);
+    });
+
+    relayCore.onSignal('relay.human.console.>', (_subject, signal) => {
+      const eventType = signal.type === 'backpressure' ? 'relay_backpressure' : 'relay_signal';
+      eventFanOut.broadcast(eventType, signal);
+    });
+
+    eventFanOut.broadcast('relay_connected', {
+      pattern: 'relay.human.console.>',
+      connectedAt: new Date().toISOString(),
+    });
+
     logger.info('[Relay] Routes mounted');
   }
 
@@ -442,6 +458,11 @@ async function start() {
       );
     }
   }
+
+  // Wire tunnel status changes to unified SSE stream
+  tunnelManager.on('status_change', (status) => {
+    eventFanOut.broadcast('tunnel_status', status);
+  });
 }
 
 // Ordered teardown of all running services WITHOUT calling process.exit().

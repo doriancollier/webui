@@ -16,6 +16,7 @@ import type { TunnelStatus } from '@dorkos/shared/types';
 import { tunnelManager } from '../services/core/tunnel-manager.js';
 import { configManager } from '../services/core/config-manager.js';
 import { verifyPasscode, hashPasscode } from '../lib/passcode-hash.js';
+import { logger } from '../lib/logger.js';
 
 const router = Router();
 
@@ -38,6 +39,7 @@ router.get('/status', (_req, res) => {
 
 /** GET /api/tunnel/stream — SSE endpoint for real-time tunnel status events. */
 router.get('/stream', (req, res) => {
+  logger.warn('[DEPRECATED] GET /api/tunnel/stream — use GET /api/events instead');
   res.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache',

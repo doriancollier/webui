@@ -28,6 +28,15 @@ export {
 } from './use-sse-connection';
 export { useFilterState, type UseFilterStateReturn } from './use-filter-state';
 export {
+  EventStreamProvider,
+  useEventStream,
+  useEventSubscription,
+  type EventHandler,
+  type SubscribeFn,
+  type KnownEvent,
+  type EventStreamContextValue,
+} from './event-stream-context';
+export {
   useExtensionRegistry,
   useSlotContributions,
   createInitialSlots,

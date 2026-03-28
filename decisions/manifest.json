@@ -1,7 +1,25 @@
 {
   "version": 1,
-  "nextNumber": 204,
+  "nextNumber": 206,
   "decisions": [
+    {
+      "number": 205,
+      "slug": "sse-event-routing-via-event-field",
+      "title": "Use SSE event Field for Multiplexed Stream Routing",
+      "created": "2026-03-27",
+      "status": "draft",
+      "extractedFrom": "sse-connection-optimization-01-consolidate",
+      "specSlug": "sse-connection-optimization-01-consolidate"
+    },
+    {
+      "number": 204,
+      "slug": "consolidate-sse-connections-into-unified-stream",
+      "title": "Consolidate SSE Connections into Unified Event Stream",
+      "created": "2026-03-27",
+      "status": "draft",
+      "extractedFrom": "sse-connection-optimization-01-consolidate",
+      "specSlug": "sse-connection-optimization-01-consolidate"
+    },
     {
       "number": 203,
       "slug": "extension-api-includes-ui-control-for-phase-4",

@@ -25,3 +25,4 @@ export {
 export type { ProgressCallback, TemplateErrorCode } from './template-downloader.js';
 export { getLatestVersion, resetCache } from './update-checker.js';
 export { uploadHandler } from './upload-handler.js';
+export { eventFanOut } from './event-fan-out.js';

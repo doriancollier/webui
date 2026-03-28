@@ -20,6 +20,7 @@ import { resolveSubjectLabels, type SubjectLabel } from '../services/relay/subje
 import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { readManifest } from '@dorkos/shared/manifest';
 import { createAdapterRouter } from './relay-adapters.js';
+import { logger } from '../lib/logger.js';
 
 /** Allowed subject prefixes for SSE subscription patterns. */
 const ALLOWED_PREFIXES = ['relay.human.console.', 'relay.system.', 'relay.signal.'];
@@ -362,6 +363,7 @@ export function createRelayRouter(
 
   // GET /stream — SSE event stream with server-side subject filtering
   router.get('/stream', (req, res) => {
+    logger.warn('[DEPRECATED] GET /api/relay/stream — use GET /api/events instead');
     const pattern = (req.query.subject as string) || 'relay.human.console.>';
     if (!validateSubscriptionPattern(pattern)) {
       return res

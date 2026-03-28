@@ -1,31 +1,34 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { renderHook, cleanup } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 
-// Mock BroadcastChannel
-vi.mock('@/layers/shared/lib', () => ({
-  createChannel: vi.fn(() => ({
-    postMessage: vi.fn(),
-    onMessage: vi.fn(() => () => {}),
-    close: vi.fn(),
-  })),
-}));
+// Partially mock @/layers/shared/lib — preserve all real exports, override createChannel only
+vi.mock('@/layers/shared/lib', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/layers/shared/lib')>();
+  return {
+    ...actual,
+    createChannel: vi.fn(() => ({
+      postMessage: vi.fn(),
+      onMessage: vi.fn(() => () => {}),
+      close: vi.fn(),
+    })),
+  };
+});
 
-// Mock EventSource
-const mockEventSource = {
-  addEventListener: vi.fn(),
-  close: vi.fn(),
-};
-
-beforeAll(() => {
-  // @ts-expect-error -- mock EventSource globally
-  globalThis.EventSource = vi.fn(() => mockEventSource);
+// Mock useEventSubscription from the shared model barrel
+vi.mock('@/layers/shared/model', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/layers/shared/model')>();
+  return {
+    ...actual,
+    useEventSubscription: vi.fn(),
+  };
 });
 
 import { useTunnelSync, broadcastTunnelChange } from '../model/use-tunnel-sync';
 import { createChannel } from '@/layers/shared/lib';
+import { useEventSubscription } from '@/layers/shared/model';
 
 afterEach(() => {
   cleanup();
@@ -56,13 +59,13 @@ describe('useTunnelSync', () => {
     expect(mockOnMessage).toHaveBeenCalled();
   });
 
-  it('creates EventSource for SSE stream', () => {
+  it('subscribes to tunnel_status via useEventSubscription', () => {
     renderHook(() => useTunnelSync(), { wrapper: createWrapper() });
 
-    expect(globalThis.EventSource).toHaveBeenCalledWith('/api/tunnel/stream');
+    expect(useEventSubscription).toHaveBeenCalledWith('tunnel_status', expect.any(Function));
   });
 
-  it('cleans up on unmount', () => {
+  it('cleans up BroadcastChannel on unmount', () => {
     const mockClose = vi.fn();
     const mockUnsub = vi.fn();
     vi.mocked(createChannel).mockReturnValue({
@@ -76,7 +79,6 @@ describe('useTunnelSync', () => {
 
     expect(mockUnsub).toHaveBeenCalled();
     expect(mockClose).toHaveBeenCalled();
-    expect(mockEventSource.close).toHaveBeenCalled();
   });
 });
 
