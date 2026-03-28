@@ -9,17 +9,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Replace EventSource with fetch-based SSE transport
-- Consolidate SSE connections into unified /api/events stream
-- Add splash screen, command palette entry, and fix tool approval timeout
-
 ### Changed
-
-- Reconcile architecture guide for fetch-based SSE transport
 
 ### Fixed
 
-- Update MCP server tool count for test_extension tool
+---
+
+## [0.26.0] - 2026-03-28
+
+> Network resilience and operator onboarding — faster SSE streams with custom headers and a welcoming first-time experience.
+
+### Added
+
+- Upgrade to fetch-based SSE transport with custom headers, HTTP/2 multiplexing, and retry backoff for more reliable streaming
+- Consolidate all SSE connections into a unified /api/events stream for simpler client integration and improved sync reliability
+- Add splash screen with onboarding flow and command palette quick-launch entry for faster agent discovery
+
+### Changed
+
+- Update architecture guide to reflect fetch-based SSE transport implementation
+
 ---
 
 ## [0.25.0] - 2026-03-27
