@@ -19,23 +19,25 @@ This guide covers state management patterns in DorkOS. Zustand manages complex c
 | Extension init       | `apps/client/src/app/init-extensions.ts`                          |
 | Filter engine        | `apps/client/src/layers/shared/lib/filter-engine.ts`              |
 | Filter state hook    | `apps/client/src/layers/shared/model/use-filter-state.ts`         |
+| EventStreamProvider  | `apps/client/src/layers/shared/model/event-stream-context.tsx`    |
 
 ## When to Use What
 
-| State Type                 | Tool                                | Example                                                             | Why                                                                                    |
-| -------------------------- | ----------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Server state               | TanStack Query                      | Sessions, messages, commands                                        | Handles caching, revalidation, background refetching                                   |
-| Complex client state       | Zustand                             | Sidebar open/closed, active panel                                   | Global access, no prop drilling, middleware support                                    |
-| Simple UI state            | React useState                      | Modal open/close, toggle visibility                                 | Scoped to component, no persistence needed                                             |
-| URL state (standalone)     | TanStack Router search params       | `?session=` ID, `?dir=` working directory                           | Shareable links, browser history, bookmarkable                                         |
-| URL state (Obsidian)       | Zustand                             | Session ID, working directory                                       | No URL bar in Obsidian; Zustand replaces router search params                          |
-| Persistent client state    | localStorage + useSyncExternalStore | Agent frecency scores (Slack bucket system)                         | Survives page reloads, reactive updates via subscribe/getSnapshot                      |
-| Dialog-scoped state        | React useState                      | Pages stack in CommandPaletteDialog                                 | Resets when dialog closes, no persistence needed                                       |
-| Debounced derived state    | useDeferredValue                    | Preview panel data during rapid navigation                          | Defers expensive fetches without state management overhead                             |
-| Multi-source derived state | TanStack Query + `useMemo`          | Feature flags + entity data combined                                | Each source stays in TanStack Query; derivation happens in a custom hook via `useMemo` |
-| Cross-feature signal       | Zustand (entity layer)              | `usePulsePresetDialog` — sidebar triggers dialog in sibling feature | Entity-layer store avoids FSD model cross-import violation                             |
-| Slot-based UI contribution | Extension registry (Zustand)        | Command palette items, sidebar tabs, dialogs                        | Decouples rendering surface from contributing features via typed slots                 |
-| URL-synced filter state    | useFilterState + TanStack Router    | Agent list filters, sort, search — serialized to URL search params  | Shareable, bookmarkable, composable; debounced text inputs via per-key config          |
+| State Type                 | Tool                                              | Example                                                             | Why                                                                                    |
+| -------------------------- | ------------------------------------------------- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Server state               | TanStack Query                                    | Sessions, messages, commands                                        | Handles caching, revalidation, background refetching                                   |
+| Complex client state       | Zustand                                           | Sidebar open/closed, active panel                                   | Global access, no prop drilling, middleware support                                    |
+| Simple UI state            | React useState                                    | Modal open/close, toggle visibility                                 | Scoped to component, no persistence needed                                             |
+| URL state (standalone)     | TanStack Router search params                     | `?session=` ID, `?dir=` working directory                           | Shareable links, browser history, bookmarkable                                         |
+| URL state (Obsidian)       | Zustand                                           | Session ID, working directory                                       | No URL bar in Obsidian; Zustand replaces router search params                          |
+| Persistent client state    | localStorage + useSyncExternalStore               | Agent frecency scores (Slack bucket system)                         | Survives page reloads, reactive updates via subscribe/getSnapshot                      |
+| Dialog-scoped state        | React useState                                    | Pages stack in CommandPaletteDialog                                 | Resets when dialog closes, no persistence needed                                       |
+| Debounced derived state    | useDeferredValue                                  | Preview panel data during rapid navigation                          | Defers expensive fetches without state management overhead                             |
+| Multi-source derived state | TanStack Query + `useMemo`                        | Feature flags + entity data combined                                | Each source stays in TanStack Query; derivation happens in a custom hook via `useMemo` |
+| Cross-feature signal       | Zustand (entity layer)                            | `usePulsePresetDialog` — sidebar triggers dialog in sibling feature | Entity-layer store avoids FSD model cross-import violation                             |
+| Slot-based UI contribution | Extension registry (Zustand)                      | Command palette items, sidebar tabs, dialogs                        | Decouples rendering surface from contributing features via typed slots                 |
+| URL-synced filter state    | useFilterState + TanStack Router                  | Agent list filters, sort, search — serialized to URL search params  | Shareable, bookmarkable, composable; debounced text inputs via per-key config          |
+| Real-time SSE events       | `useEventSubscription` from `EventStreamProvider` | Tunnel status, relay messages, extension reload signals             | Single shared connection, ref-stabilized handlers, module-level singleton              |
 
 ## Core Patterns
 
@@ -315,6 +317,48 @@ Available slots: `sidebar.footer`, `sidebar.tabs`, `dashboard.sections`, `header
 
 **When to use**: Any UI surface that accepts contributions from multiple features (command palette items, dialogs, sidebar tabs). Prefer over hardcoded imports when the rendering component should not know about every contributor.
 
+### Event Stream (SSE Subscriptions)
+
+The `EventStreamProvider` manages a single SSE connection to `/api/events` shared across the entire app. All system-wide real-time events (tunnel status, relay messages, extension reloads) flow through this one connection instead of each consumer opening its own `EventSource`.
+
+**Architecture**: The underlying `SSEConnection` is a module-level singleton created outside React, so React StrictMode double-mounts and Vite HMR cycles cannot create duplicate connections. The `import.meta.hot.data` API preserves both the connection instance and the listener map across HMR updates — in production, these guards are tree-shaken.
+
+**Lazy connect**: The `SSEConnection` constructor is side-effect-free (no `EventSource` creation). The actual `connect()` call is deferred to the first `EventStreamProvider` mount. This avoids `EventSource` failures in test environments that lack a polyfill.
+
+**Provider**: `EventStreamProvider` is mounted once near the top of the provider tree in `main.tsx`. It wires React state (connection status, failed attempt count) to the singleton's state change callbacks.
+
+**Consumer API**: `useEventSubscription(eventName, handler)` subscribes to a named event for the lifetime of the calling component. The handler is ref-stabilized — its identity may change between renders without causing re-subscriptions.
+
+**Available events** (the `KnownEvent` union type):
+
+- `connected` — initial connection acknowledgement
+- `tunnel_status` — tunnel state change
+- `extension_reloaded` — an extension was hot-reloaded
+- `relay_connected` — relay adapter connected
+- `relay_message` — inbound relay message
+- `relay_backpressure` — relay backpressure signal
+- `relay_signal` — relay control signal
+
+**Example** (from `use-tunnel-sync.ts`):
+
+```typescript
+import { useEventSubscription } from '@/layers/shared/model';
+
+useEventSubscription('tunnel_status', (data) => {
+  queryClient.setQueryData(['tunnel-status'], data as TunnelStatus);
+  queryClient.invalidateQueries({ queryKey: ['config'] });
+});
+```
+
+**Note**: The `useSSEConnection` hook still exists for per-endpoint SSE streams (e.g., session sync stream at `/api/sessions/:id/stream`) but should NOT be used for system-wide events — use `useEventSubscription` instead.
+
+**Key files:**
+
+| File                                            | Purpose                                            |
+| ----------------------------------------------- | -------------------------------------------------- |
+| `layers/shared/model/event-stream-context.tsx`  | Singleton connection, provider, subscription hooks |
+| `layers/shared/lib/transport/sse-connection.ts` | `SSEConnection` class (transport layer)            |
+
 ### URL-Synced Filter State (useFilterState)
 
 The `useFilterState` hook bridges the pure filter engine (`shared/lib/filter-engine.ts`) to TanStack Router search params. Filter values are serialized to the URL (shareable, bookmarkable, survives browser back/forward) and deserialized on load. Text filters support per-key debounce to avoid hammering the URL on every keystroke.
@@ -548,6 +592,33 @@ const sidebarOpen = useAppStore((state) => state.sidebarOpen);
 
 **Cause**: Using Zustand instead of TanStack Router search params for URL-synced state in standalone mode.
 **Fix**: Use `useSessionSearch()` / `useNavigate()` from TanStack Router for state that should persist in the URL.
+
+### Duplicate SSE connections or provider remounts
+
+**Cause**: Creating long-lived singletons (QueryClient, Transport, Router, SSEConnection) inside a React component. StrictMode double-mounts will recreate them on every render cycle, and in the case of `createAppRouter(queryClient)`, it remounts the entire provider tree — including `EventStreamProvider` — producing duplicate SSE connections.
+
+**Fix**: Create singletons at module scope in `main.tsx`:
+
+```typescript
+// ✅ Module scope — survives StrictMode and HMR
+const queryClient = new QueryClient({ ... });
+const transport = new HttpTransport();
+const router = createAppRouter(queryClient);
+
+function Root() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TransportProvider transport={transport}>
+        <EventStreamProvider>
+          <RouterProvider router={router} />
+        </EventStreamProvider>
+      </TransportProvider>
+    </QueryClientProvider>
+  );
+}
+```
+
+General pattern: any object that should live for the entire app lifetime (QueryClient, Transport, Router, SSEConnection) belongs at module scope, not inside a React component.
 
 ### "Cannot use store outside React components"
 

@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { createAppRouter } from './router';
-import { HttpTransport, QUERY_TIMING } from '@/layers/shared/lib';
+import { HttpTransport, queryClient } from '@/layers/shared/lib';
 import {
   TransportProvider,
   useAppStore,
@@ -59,15 +59,6 @@ function Root() {
     </QueryClientProvider>
   );
 }
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: QUERY_TIMING.DEFAULT_STALE_TIME_MS,
-      retry: QUERY_TIMING.DEFAULT_RETRY,
-    },
-  },
-});
 
 // Router at module scope — creating it inside Root() caused StrictMode to
 // remount the entire provider tree (including EventStreamProvider) on every

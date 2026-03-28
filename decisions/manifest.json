@@ -1,7 +1,25 @@
 {
   "version": 1,
-  "nextNumber": 206,
+  "nextNumber": 208,
   "decisions": [
+    {
+      "number": 207,
+      "slug": "refetch-on-reconnect-cache-invalidation",
+      "title": "Invalidate TanStack Query Caches on SSE Reconnect",
+      "created": "2026-03-27",
+      "status": "draft",
+      "extractedFrom": "sse-connection-optimization-02-fetch-transport",
+      "specSlug": "sse-connection-optimization-02-fetch-transport"
+    },
+    {
+      "number": 206,
+      "slug": "fetch-based-sse-transport",
+      "title": "Use fetch() Instead of EventSource for SSE Connections",
+      "created": "2026-03-27",
+      "status": "draft",
+      "extractedFrom": "sse-connection-optimization-02-fetch-transport",
+      "specSlug": "sse-connection-optimization-02-fetch-transport"
+    },
     {
       "number": 205,
       "slug": "sse-event-routing-via-event-field",

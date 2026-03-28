@@ -78,6 +78,7 @@ export {
 export type { TextEffectMode, TextEffectConfig } from './text-effects';
 export { useAppForm, withForm, formOptions, useFieldContext, useFormContext } from './form';
 export { formatDuration } from './format-duration';
+export { queryClient } from './query-client';
 export { classifyContent, type ContentType } from './classify-content';
 export { resolveAgentVisual } from './resolve-agent-visual';
 export type { AgentVisual, AgentVisualSource } from './resolve-agent-visual';

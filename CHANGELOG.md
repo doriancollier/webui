@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Replace EventSource with fetch-based SSE transport
 - Consolidate SSE connections into unified /api/events stream
 - Add splash screen, command palette entry, and fix tool approval timeout
 

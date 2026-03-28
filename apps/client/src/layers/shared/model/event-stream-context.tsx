@@ -82,6 +82,13 @@ const listeners: Map<string, Set<EventHandler>> = (import.meta.hot?.data?.listen
  */
 const stateListeners: Set<StateListener> = new Set();
 
+/**
+ * Track previous connection state so we can detect reconnecting → connected
+ * transitions and invalidate TanStack Query caches (refetch-on-reconnect).
+ */
+let previousConnectionState: ConnectionState =
+  (import.meta.hot?.data?.previousConnectionState as ConnectionState | undefined) ?? 'connecting';
+
 /** Build event handlers that dispatch to the shared listeners map. */
 function buildEventHandlers(): Record<string, (data: unknown) => void> {
   const handlers: Record<string, (data: unknown) => void> = {};
@@ -108,6 +115,24 @@ function getOrCreateConnection(): SSEConnection {
   const conn = new SSEConnection('/api/events', {
     eventHandlers: buildEventHandlers(),
     onStateChange: (state, attempts) => {
+      // Refetch-on-reconnect: invalidate caches when recovering from disconnect
+      if (state === 'connected' && previousConnectionState === 'reconnecting') {
+        import('@/layers/shared/lib/query-client').then(
+          ({ queryClient }) => {
+            queryClient.invalidateQueries();
+          },
+          () => {
+            // Silently ignore — query client may not be available in test environments
+          }
+        );
+      }
+      previousConnectionState = state;
+
+      // Persist across HMR
+      if (import.meta.hot?.data) {
+        import.meta.hot.data.previousConnectionState = previousConnectionState;
+      }
+
       for (const listener of stateListeners) {
         listener(state, attempts);
       }
@@ -115,9 +140,9 @@ function getOrCreateConnection(): SSEConnection {
   });
 
   // NOTE: connect() is NOT called here. The SSEConnection constructor is safe
-  // (no EventSource creation), but connect() creates a new EventSource which
-  // fails in test environments without a jsdom EventSource polyfill. Instead,
-  // connect() is called lazily on first EventStreamProvider mount.
+  // (no fetch), but connect() opens a fetch-based SSE stream which fails in
+  // test environments without proper fetch mocking. Instead, connect() is
+  // called lazily on first EventStreamProvider mount.
 
   // Persist across HMR. import.meta.hot is undefined in production (tree-shaken).
   // import.meta.hot.data may be undefined in test environments (Vitest).

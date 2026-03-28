@@ -1,79 +1,54 @@
+/**
+ * @vitest-environment jsdom
+ */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ConnectionState } from '@dorkos/shared/types';
 import { SSEConnection, type SSEConnectionOptions } from '../sse-connection';
 
 // ---------------------------------------------------------------------------
-// Mock EventSource
+// Mock fetch + SSE stream helpers
 // ---------------------------------------------------------------------------
 
-class MockEventSource {
-  static instances: MockEventSource[] = [];
-  static readonly CONNECTING = 0;
-  static readonly OPEN = 1;
-  static readonly CLOSED = 2;
+function createMockSSEStream() {
+  const { readable, writable } = new TransformStream<Uint8Array>();
+  const writer = writable.getWriter();
+  const encoder = new TextEncoder();
 
-  url: string;
-  readyState = MockEventSource.CONNECTING;
-  onopen: ((ev: Event) => void) | null = null;
-  onerror: ((ev: Event) => void) | null = null;
-  private listeners = new Map<string, ((ev: MessageEvent) => void)[]>();
-
-  constructor(url: string) {
-    this.url = url;
-    MockEventSource.instances.push(this);
-  }
-
-  addEventListener(type: string, handler: (ev: MessageEvent) => void) {
-    const list = this.listeners.get(type) ?? [];
-    list.push(handler);
-    this.listeners.set(type, list);
-  }
-
-  removeEventListener(type: string, handler: (ev: MessageEvent) => void) {
-    const list = this.listeners.get(type) ?? [];
-    this.listeners.set(
-      type,
-      list.filter((h) => h !== handler)
-    );
-  }
-
-  close() {
-    this.readyState = MockEventSource.CLOSED;
-  }
-
-  // Test helpers
-  simulateOpen() {
-    this.readyState = MockEventSource.OPEN;
-    this.onopen?.(new Event('open'));
-  }
-
-  simulateError() {
-    this.onerror?.(new Event('error'));
-  }
-
-  simulateEvent(type: string, data: unknown) {
-    const event = new MessageEvent(type, { data: JSON.stringify(data) });
-    for (const handler of this.listeners.get(type) ?? []) {
-      handler(event);
-    }
-  }
-
-  static reset() {
-    MockEventSource.instances = [];
-  }
-
-  static latest() {
-    return MockEventSource.instances[MockEventSource.instances.length - 1];
-  }
+  return {
+    readable,
+    writer,
+    sendEvent(type: string, data: unknown) {
+      writer.write(encoder.encode(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`));
+    },
+    sendHeartbeat() {
+      writer.write(encoder.encode(`: heartbeat\n\n`));
+    },
+    sendComment(text: string) {
+      writer.write(encoder.encode(`: ${text}\n\n`));
+    },
+    sendRetry(ms: number) {
+      // retry: alone has no data, so the parser won't yield an event.
+      // Pair with a data event so the retry value is delivered to SSEConnection.
+      writer.write(encoder.encode(`retry: ${ms}\nevent: sync_update\ndata: {"retry":true}\n\n`));
+    },
+    sendEventWithId(type: string, data: unknown, id: string) {
+      writer.write(encoder.encode(`id: ${id}\nevent: ${type}\ndata: ${JSON.stringify(data)}\n\n`));
+    },
+    sendRawData(type: string, raw: string) {
+      writer.write(encoder.encode(`event: ${type}\ndata: ${raw}\n\n`));
+    },
+    close() {
+      return writer.close();
+    },
+    error(err: Error) {
+      return writer.abort(err);
+    },
+  };
 }
 
-// ---------------------------------------------------------------------------
-// Test setup
-// ---------------------------------------------------------------------------
+let mockStream: ReturnType<typeof createMockSSEStream>;
+let fetchCallCount: number;
 
-vi.stubGlobal('EventSource', MockEventSource);
-
-/** Shorthand defaults for test options. */
 const TEST_URL = 'http://localhost:6242/api/sessions/test/stream';
 
 function createConnection(overrides: Partial<SSEConnectionOptions> = {}) {
@@ -96,10 +71,66 @@ function createConnection(overrides: Partial<SSEConnectionOptions> = {}) {
   return { conn, onStateChange, onError, handler };
 }
 
+function setupFetchMock() {
+  mockStream = createMockSSEStream();
+  fetchCallCount = 0;
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(() => {
+      fetchCallCount++;
+      // Each call after the first creates a new stream
+      if (fetchCallCount > 1) {
+        mockStream = createMockSSEStream();
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        body: mockStream.readable,
+      });
+    })
+  );
+}
+
+/**
+ * Set up fetch mock that returns an HTTP error response.
+ *
+ * @param status - HTTP status code
+ * @param statusText - HTTP status text
+ */
+function setupFetchErrorMock(status: number, statusText: string) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(() =>
+      Promise.resolve({
+        ok: false,
+        status,
+        statusText,
+        body: null,
+      })
+    )
+  );
+}
+
+/**
+ * Set up fetch mock that throws a network error (like DNS failure or offline).
+ */
+function setupFetchNetworkError() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockImplementation(() => Promise.reject(new TypeError('Failed to fetch')))
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Test suite
+// ---------------------------------------------------------------------------
+
 describe('SSEConnection', () => {
   beforeEach(() => {
     vi.useFakeTimers();
-    MockEventSource.reset();
+    setupFetchMock();
   });
 
   afterEach(() => {
@@ -117,44 +148,79 @@ describe('SSEConnection', () => {
       expect(conn.getState()).toBe('connecting');
     });
 
-    it('transitions to connecting then connected on open', () => {
+    it('transitions to connecting then connected on successful fetch', async () => {
       const { conn, onStateChange } = createConnection();
       conn.connect();
 
-      // connect() sets state to 'connecting' (already the initial state, so
-      // setState is a no-op because state === newState)
-      MockEventSource.latest().simulateOpen();
+      // Let fetch resolve and stream consumption begin
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getState()).toBe('connected');
       expect(onStateChange).toHaveBeenCalledWith('connected', 0);
     });
 
-    it('transitions to reconnecting on error', () => {
+    it('transitions to reconnecting when stream ends unexpectedly', async () => {
       const { conn, onStateChange } = createConnection();
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
+      expect(conn.getState()).toBe('connected');
       onStateChange.mockClear();
-      MockEventSource.latest().simulateError();
+
+      // Close the stream — simulates server disconnect
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getState()).toBe('reconnecting');
       expect(conn.getFailedAttempts()).toBe(1);
       expect(onStateChange).toHaveBeenCalledWith('reconnecting', 1);
     });
 
-    it('reconnects automatically after backoff delay', () => {
+    it('reconnects automatically after backoff delay', async () => {
       const { conn } = createConnection();
       conn.connect();
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(0);
+
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getState()).toBe('reconnecting');
-      const instancesBefore = MockEventSource.instances.length;
 
       // Advance past the maximum possible backoff for attempt 1: cap = min(1000, 100*2^1) = 200
-      vi.advanceTimersByTime(201);
+      await vi.advanceTimersByTimeAsync(201);
 
-      expect(MockEventSource.instances.length).toBe(instancesBefore + 1);
+      // After backoff, connect() is called again -> fetch resolves -> connected
+      expect(conn.getState()).toBe('connected');
+    });
+
+    it('transitions to disconnected after threshold failures', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      const { conn, onStateChange } = createConnection({
+        disconnectedThreshold: 2,
+        heartbeatTimeoutMs: 0,
+        stabilityWindowMs: 60_000,
+      });
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(conn.getState()).toBe('connected');
+
+      // First failure -> reconnecting
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
+      expect(conn.getState()).toBe('reconnecting');
+      expect(conn.getFailedAttempts()).toBe(1);
+
+      // Attempt 1: max = min(1000, 100*2^1) = 200, delay = 0.5 * 200 = 100
+      await vi.advanceTimersByTimeAsync(101);
+      expect(conn.getState()).toBe('connected');
+
+      // Second failure -> exceeds threshold -> disconnected
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(conn.getState()).toBe('disconnected');
+      expect(conn.getFailedAttempts()).toBe(2);
+      expect(onStateChange).toHaveBeenCalledWith('disconnected', 2);
     });
   });
 
@@ -163,41 +229,43 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('backoff calculation', () => {
-    it('delay is within expected range based on attempt count', () => {
-      // We test indirectly: after error, the reconnect must happen within
-      // the maximum possible delay (full jitter: 0 to min(cap, base*2^attempt))
+    it('delay is within expected range based on attempt count', async () => {
       const { conn } = createConnection();
       vi.spyOn(Math, 'random').mockReturnValue(0.5);
 
       conn.connect();
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(0);
+
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       // Attempt 1: max = min(1000, 100*2^1) = 200, delay = 0.5 * 200 = 100
-      const instancesBefore = MockEventSource.instances.length;
+      expect(conn.getState()).toBe('reconnecting');
 
-      vi.advanceTimersByTime(99);
-      expect(MockEventSource.instances.length).toBe(instancesBefore);
+      await vi.advanceTimersByTimeAsync(99);
+      expect(conn.getState()).toBe('reconnecting');
 
-      vi.advanceTimersByTime(1);
-      expect(MockEventSource.instances.length).toBe(instancesBefore + 1);
+      await vi.advanceTimersByTimeAsync(1);
+      // After backoff fires, connect() fires -> fetch resolves -> connected
+      expect(conn.getState()).toBe('connected');
     });
 
-    it('caps backoff at backoffCapMs', () => {
-      const { conn } = createConnection({ backoffCapMs: 500 });
+    it('caps backoff at backoffCapMs', async () => {
+      const { conn } = createConnection({ backoffCapMs: 500, disconnectedThreshold: 10 });
       vi.spyOn(Math, 'random').mockReturnValue(1);
 
       conn.connect();
-      // Fail multiple times to increase attempt count
-      for (let i = 0; i < 2; i++) {
-        MockEventSource.latest().simulateOpen();
-        MockEventSource.latest().simulateError();
-        // Advance past max backoff to trigger reconnect
-        vi.advanceTimersByTime(501);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Fail multiple times to push attempt count high
+      for (let i = 0; i < 5; i++) {
+        mockStream.close();
+        await vi.advanceTimersByTimeAsync(0);
+        // Advance past max backoff cap
+        await vi.advanceTimersByTimeAsync(501);
       }
 
-      // At attempt 2: min(500, 100*2^2) = 400, random=1 -> delay=400
-      // Verify the connection is still reconnecting (not disconnected yet)
+      // Should still be reconnecting / connected, not disconnected
       expect(conn.getState()).not.toBe('disconnected');
     });
   });
@@ -207,56 +275,58 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('heartbeat watchdog', () => {
-    it('fires reconnection after heartbeat timeout with no events', () => {
+    it('fires reconnection after heartbeat timeout with no events', async () => {
       const { conn } = createConnection({ heartbeatTimeoutMs: 3_000 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getState()).toBe('connected');
 
-      vi.advanceTimersByTime(3_000);
+      await vi.advanceTimersByTimeAsync(3_000);
 
       expect(conn.getState()).toBe('reconnecting');
       expect(conn.getFailedAttempts()).toBe(1);
     });
 
-    it('resets watchdog timer when an event is received', () => {
+    it('resets watchdog timer when an event is received', async () => {
       const { conn, handler } = createConnection({ heartbeatTimeoutMs: 3_000 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       // Advance 2 seconds, then receive an event
-      vi.advanceTimersByTime(2_000);
-      MockEventSource.latest().simulateEvent('sync_update', { type: 'test' });
+      await vi.advanceTimersByTimeAsync(2_000);
+      mockStream.sendEvent('sync_update', { type: 'test' });
+      await vi.advanceTimersByTimeAsync(0);
 
       // Advance another 2 seconds — should still be connected because watchdog was reset
-      vi.advanceTimersByTime(2_000);
+      await vi.advanceTimersByTimeAsync(2_000);
       expect(conn.getState()).toBe('connected');
 
       // Advance to full timeout from last event — should trigger reconnect
-      vi.advanceTimersByTime(1_000);
+      await vi.advanceTimersByTimeAsync(1_000);
       expect(conn.getState()).toBe('reconnecting');
       expect(handler).toHaveBeenCalledWith({ type: 'test' });
     });
 
-    it('resets watchdog on heartbeat events', () => {
+    it('resets watchdog on heartbeat comments', async () => {
       const { conn } = createConnection({ heartbeatTimeoutMs: 3_000 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
-      vi.advanceTimersByTime(2_000);
-      MockEventSource.latest().simulateEvent('heartbeat', {});
+      await vi.advanceTimersByTimeAsync(2_000);
+      mockStream.sendHeartbeat();
+      await vi.advanceTimersByTimeAsync(0);
 
-      vi.advanceTimersByTime(2_000);
+      await vi.advanceTimersByTimeAsync(2_000);
       expect(conn.getState()).toBe('connected');
     });
 
-    it('does not start watchdog when heartbeatTimeoutMs is 0', () => {
+    it('does not start watchdog when heartbeatTimeoutMs is 0', async () => {
       const { conn } = createConnection({ heartbeatTimeoutMs: 0 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
-      vi.advanceTimersByTime(100_000);
+      await vi.advanceTimersByTimeAsync(100_000);
       expect(conn.getState()).toBe('connected');
     });
   });
@@ -266,40 +336,51 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('max retries', () => {
-    it('enters disconnected state after threshold failures', () => {
-      const { conn, onStateChange } = createConnection({ disconnectedThreshold: 3 });
+    it('enters disconnected state after threshold failures', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      const { conn, onStateChange } = createConnection({
+        disconnectedThreshold: 3,
+        heartbeatTimeoutMs: 0,
+        stabilityWindowMs: 60_000,
+      });
       conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
 
+      // Fail twice, reconnecting each time
       for (let i = 0; i < 2; i++) {
-        MockEventSource.latest().simulateOpen();
-        MockEventSource.latest().simulateError();
-        // After error: state is 'reconnecting', then backoff fires → connect() → 'connecting'
-        vi.advanceTimersByTime(10_000); // past any backoff
+        mockStream.close();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(conn.getState()).toBe('reconnecting');
+        // Attempt i+1: backoff = 0.5 * min(1000, 100*2^(i+1))
+        // i=0: 0.5 * 200 = 100, i=1: 0.5 * 400 = 200
+        await vi.advanceTimersByTimeAsync(201);
+        expect(conn.getState()).toBe('connected');
       }
 
-      // After backoff fires, connect() sets state to 'connecting'
-      expect(conn.getState()).toBe('connecting');
+      expect(conn.getFailedAttempts()).toBe(2);
 
       // Third failure pushes past threshold
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getState()).toBe('disconnected');
       expect(conn.getFailedAttempts()).toBe(3);
       expect(onStateChange).toHaveBeenCalledWith('disconnected', 3);
     });
 
-    it('does not attempt reconnection after entering disconnected state', () => {
+    it('does not attempt reconnection after entering disconnected state', async () => {
       const { conn } = createConnection({ disconnectedThreshold: 1 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(0);
+
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getState()).toBe('disconnected');
-      const instanceCount = MockEventSource.instances.length;
+      const callCount = fetchCallCount;
 
-      vi.advanceTimersByTime(100_000);
-      expect(MockEventSource.instances.length).toBe(instanceCount);
+      await vi.advanceTimersByTimeAsync(100_000);
+      expect(fetchCallCount).toBe(callCount);
     });
   });
 
@@ -308,41 +389,45 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('stability window', () => {
-    it('resets attempt counter after connection is stable', () => {
-      const { conn, onStateChange } = createConnection({
-        stabilityWindowMs: 2_000,
-      });
+    it('resets attempt counter after connection is stable', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0.5);
+      const { conn, onStateChange } = createConnection({ stabilityWindowMs: 2_000 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(0);
 
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
       expect(conn.getFailedAttempts()).toBe(1);
 
-      // Reconnect after backoff
-      vi.advanceTimersByTime(10_000);
-      MockEventSource.latest().simulateOpen();
+      // Attempt 1: max = min(1000, 100*2^1) = 200, delay = 0.5 * 200 = 100
+      // Advance just past backoff to trigger reconnect, then let fetch resolve
+      await vi.advanceTimersByTimeAsync(101);
+      expect(conn.getState()).toBe('connected');
 
-      // Wait for stability window
-      vi.advanceTimersByTime(2_000);
+      // Now wait for stability window (2000ms) from the reconnected state
+      await vi.advanceTimersByTimeAsync(2_000);
 
       expect(conn.getFailedAttempts()).toBe(0);
       expect(onStateChange).toHaveBeenCalledWith('connected', 0);
     });
 
-    it('does not reset attempt counter if connection fails before stability window', () => {
+    it('does not reset attempt counter if connection fails before stability window', async () => {
       const { conn } = createConnection({ stabilityWindowMs: 5_000 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(0);
 
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
       expect(conn.getFailedAttempts()).toBe(1);
 
-      vi.advanceTimersByTime(10_000);
-      MockEventSource.latest().simulateOpen();
+      // Reconnect after backoff
+      await vi.advanceTimersByTimeAsync(10_000);
+      expect(conn.getState()).toBe('connected');
 
       // Fail before stability window elapses
-      vi.advanceTimersByTime(3_000);
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(3_000);
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getFailedAttempts()).toBe(2);
     });
@@ -353,41 +438,47 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('destroy', () => {
-    it('closes EventSource and clears all timers', () => {
+    it('aborts fetch and prevents future connections', async () => {
       const { conn } = createConnection();
       conn.connect();
-      const es = MockEventSource.latest();
-      es.simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       conn.destroy();
 
-      expect(es.readyState).toBe(MockEventSource.CLOSED);
+      const callCount = fetchCallCount;
+      conn.connect();
+      // connect() should be a no-op after destroy
+      expect(fetchCallCount).toBe(callCount);
     });
 
-    it('prevents reconnection after destroy', () => {
+    it('prevents reconnection after destroy', async () => {
       const { conn } = createConnection();
       conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
       conn.destroy();
 
-      const instanceCount = MockEventSource.instances.length;
+      const callCount = fetchCallCount;
       conn.connect();
-      expect(MockEventSource.instances.length).toBe(instanceCount);
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      expect(fetchCallCount).toBe(callCount);
     });
 
-    it('does not trigger watchdog after destroy', () => {
+    it('does not trigger watchdog after destroy', async () => {
       const { conn, onStateChange } = createConnection({ heartbeatTimeoutMs: 1_000 });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       onStateChange.mockClear();
       conn.destroy();
 
-      vi.advanceTimersByTime(5_000);
-      // No state change after destroy (the 'connecting' to 'connected' already happened)
+      await vi.advanceTimersByTimeAsync(5_000);
+      // No reconnecting state change should occur after destroy
       expect(onStateChange).not.toHaveBeenCalledWith('reconnecting', expect.any(Number));
     });
 
-    it('removes visibility listener', () => {
+    it('removes visibility listener', async () => {
       const spy = vi.spyOn(document, 'removeEventListener');
       const { conn } = createConnection();
       conn.connect();
@@ -403,29 +494,32 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('disconnect', () => {
-    it('closes EventSource and sets state to disconnected', () => {
+    it('aborts fetch and sets state to disconnected', async () => {
       const { conn, onStateChange } = createConnection();
       conn.connect();
-      const es = MockEventSource.latest();
-      es.simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       onStateChange.mockClear();
       conn.disconnect();
 
-      expect(es.readyState).toBe(MockEventSource.CLOSED);
       expect(conn.getState()).toBe('disconnected');
       expect(onStateChange).toHaveBeenCalledWith('disconnected', 0);
     });
 
-    it('can reconnect after disconnect (unlike destroy)', () => {
+    it('can reconnect after disconnect (unlike destroy)', async () => {
       const { conn } = createConnection();
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
       conn.disconnect();
 
-      const instanceCount = MockEventSource.instances.length;
+      expect(conn.getState()).toBe('disconnected');
+
+      const callCount = fetchCallCount;
       conn.connect();
-      expect(MockEventSource.instances.length).toBe(instanceCount + 1);
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(fetchCallCount).toBe(callCount + 1);
+      expect(conn.getState()).toBe('connected');
     });
   });
 
@@ -434,54 +528,49 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('event handlers', () => {
-    it('dispatches parsed JSON data to the correct handler', () => {
+    it('dispatches parsed JSON data to the correct handler', async () => {
       const { conn, handler } = createConnection();
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
-      MockEventSource.latest().simulateEvent('sync_update', { id: 42, name: 'test' });
+      mockStream.sendEvent('sync_update', { id: 42, name: 'test' });
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(handler).toHaveBeenCalledTimes(1);
       expect(handler).toHaveBeenCalledWith({ id: 42, name: 'test' });
     });
 
-    it('passes raw data when JSON parsing fails', () => {
+    it('passes raw data when JSON parsing fails', async () => {
       const rawHandler = vi.fn();
       const conn = new SSEConnection(TEST_URL, {
         eventHandlers: { raw_event: rawHandler },
         heartbeatTimeoutMs: 0,
       });
-      conn.connect();
-      MockEventSource.latest().simulateOpen();
 
-      // Simulate an event with non-JSON data
-      const event = new MessageEvent('raw_event', { data: 'not-json' });
-      const es = MockEventSource.latest();
-      // Access private listeners via the addEventListener that was called
-      const listeners = (
-        es as unknown as { listeners: Map<string, ((ev: MessageEvent) => void)[]> }
-      ).listeners;
-      for (const h of listeners.get('raw_event') ?? []) {
-        h(event);
-      }
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      mockStream.sendRawData('raw_event', 'not-json');
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(rawHandler).toHaveBeenCalledWith('not-json');
     });
 
-    it('updates lastEventAt on receiving events', () => {
+    it('updates lastEventAt on receiving events', async () => {
       const { conn } = createConnection();
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getLastEventAt()).toBeNull();
 
       vi.setSystemTime(new Date('2026-01-01T00:00:05Z'));
-      MockEventSource.latest().simulateEvent('sync_update', {});
+      mockStream.sendEvent('sync_update', {});
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(conn.getLastEventAt()).toBe(new Date('2026-01-01T00:00:05Z').getTime());
     });
 
-    it('registers handlers for multiple event types', () => {
+    it('registers handlers for multiple event types', async () => {
       const handler1 = vi.fn();
       const handler2 = vi.fn();
 
@@ -490,10 +579,12 @@ describe('SSEConnection', () => {
         heartbeatTimeoutMs: 0,
       });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
-      MockEventSource.latest().simulateEvent('type_a', { a: 1 });
-      MockEventSource.latest().simulateEvent('type_b', { b: 2 });
+      mockStream.sendEvent('type_a', { a: 1 });
+      await vi.advanceTimersByTimeAsync(0);
+      mockStream.sendEvent('type_b', { b: 2 });
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(handler1).toHaveBeenCalledWith({ a: 1 });
       expect(handler2).toHaveBeenCalledWith({ b: 2 });
@@ -505,21 +596,31 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('onStateChange callback', () => {
-    it('is called with correct state and attempt count on each transition', () => {
-      const { conn, onStateChange } = createConnection({ disconnectedThreshold: 2 });
+    it('is called with correct state and attempt count on each transition', async () => {
+      const { conn, onStateChange } = createConnection({
+        disconnectedThreshold: 2,
+        // Large stability window so it doesn't reset failedAttempts during test
+        stabilityWindowMs: 60_000,
+      });
       conn.connect();
-      MockEventSource.latest().simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(onStateChange).toHaveBeenCalledWith('connected', 0);
 
-      MockEventSource.latest().simulateError();
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
       expect(onStateChange).toHaveBeenCalledWith('reconnecting', 1);
 
-      vi.advanceTimersByTime(10_000);
+      // Backoff fires -> connect() -> 'connecting'
+      await vi.advanceTimersByTimeAsync(10_000);
       expect(onStateChange).toHaveBeenCalledWith('connecting', 1);
 
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      // Fetch resolves -> 'connected'
+      expect(onStateChange).toHaveBeenCalledWith('connected', 1);
+
+      // Second failure -> disconnected
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
       expect(onStateChange).toHaveBeenCalledWith('disconnected', 2);
     });
 
@@ -527,7 +628,6 @@ describe('SSEConnection', () => {
       const { conn, onStateChange } = createConnection();
       // Initial state is 'connecting', calling connect() sets 'connecting' again — no-op
       conn.connect();
-      // setState('connecting') is a no-op because it's already 'connecting'
       expect(onStateChange).not.toHaveBeenCalledWith('connecting', expect.any(Number));
     });
   });
@@ -537,14 +637,16 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('onError callback', () => {
-    it('is called with the error event', () => {
+    it('is called with Error object when stream ends', async () => {
       const { conn, onError } = createConnection();
       conn.connect();
-      MockEventSource.latest().simulateOpen();
-      MockEventSource.latest().simulateError();
+      await vi.advanceTimersByTimeAsync(0);
+
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
 
       expect(onError).toHaveBeenCalledTimes(1);
-      expect(onError).toHaveBeenCalledWith(expect.any(Event));
+      expect(onError).toHaveBeenCalledWith(expect.any(Error));
     });
   });
 
@@ -553,16 +655,16 @@ describe('SSEConnection', () => {
   // -------------------------------------------------------------------------
 
   describe('connect() idempotency', () => {
-    it('closes existing EventSource before opening new one', () => {
+    it('aborts existing fetch before opening new one', async () => {
       const { conn } = createConnection();
       conn.connect();
-      const first = MockEventSource.latest();
-      first.simulateOpen();
+      await vi.advanceTimersByTimeAsync(0);
 
+      const firstCallCount = fetchCallCount;
       conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
 
-      expect(first.readyState).toBe(MockEventSource.CLOSED);
-      expect(MockEventSource.instances.length).toBe(2);
+      expect(fetchCallCount).toBe(firstCallCount + 1);
     });
   });
 
@@ -586,6 +688,217 @@ describe('SSEConnection', () => {
       conn.enableVisibilityOptimization(5_000);
 
       expect(spy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Custom headers
+  // -------------------------------------------------------------------------
+
+  describe('sends custom headers', () => {
+    it('includes headers option in fetch request', async () => {
+      const { conn } = createConnection({
+        headers: { Authorization: 'Bearer token-123', 'X-Custom': 'value' },
+      });
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      const fetchFn = vi.mocked(fetch);
+      expect(fetchFn).toHaveBeenCalledWith(
+        TEST_URL,
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            Accept: 'text/event-stream',
+            Authorization: 'Bearer token-123',
+            'X-Custom': 'value',
+          }),
+        })
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Last-Event-ID on reconnect
+  // -------------------------------------------------------------------------
+
+  describe('sends Last-Event-ID on reconnect', () => {
+    it('includes Last-Event-ID header after receiving id: event', async () => {
+      const { conn } = createConnection();
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Send an event with id
+      mockStream.sendEventWithId('sync_update', { id: 1 }, 'evt-42');
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Close stream to trigger reconnection
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Advance past backoff to trigger reconnect
+      await vi.advanceTimersByTimeAsync(10_000);
+
+      const fetchFn = vi.mocked(fetch);
+      const lastCall = fetchFn.mock.calls[fetchFn.mock.calls.length - 1];
+      expect(lastCall?.[1]?.headers).toEqual(
+        expect.objectContaining({
+          'Last-Event-ID': 'evt-42',
+        })
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Server retry: as backoff floor
+  // -------------------------------------------------------------------------
+
+  describe('honors server retry: as backoff floor', () => {
+    it('uses retry value as minimum backoff delay', async () => {
+      vi.spyOn(Math, 'random').mockReturnValue(0); // Minimum jitter -> 0ms client delay
+
+      const { conn } = createConnection();
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Server sends retry: 5000
+      mockStream.sendRetry(5000);
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Close stream to trigger reconnection
+      mockStream.close();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(conn.getState()).toBe('reconnecting');
+
+      // Even though client jitter is 0ms, server retry: 5000 is the floor
+      await vi.advanceTimersByTimeAsync(4_999);
+      expect(conn.getState()).toBe('reconnecting');
+
+      await vi.advanceTimersByTimeAsync(1);
+      // After 5000ms total the backoff fires
+      expect(conn.getState()).toBe('connected');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Resets watchdog on comment lines
+  // -------------------------------------------------------------------------
+
+  describe('resets watchdog on comment lines', () => {
+    it('comment keepalive prevents watchdog timeout', async () => {
+      const { conn } = createConnection({ heartbeatTimeoutMs: 3_000 });
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      await vi.advanceTimersByTimeAsync(2_000);
+      mockStream.sendComment('keepalive');
+      await vi.advanceTimersByTimeAsync(0);
+
+      // 2 more seconds — still connected because watchdog was reset by comment
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(conn.getState()).toBe('connected');
+
+      // Full timeout from last comment — should trigger reconnect
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(conn.getState()).toBe('reconnecting');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // HTTP error responses
+  // -------------------------------------------------------------------------
+
+  describe('handles HTTP error responses', () => {
+    it('4xx response triggers handleConnectionError', async () => {
+      setupFetchErrorMock(403, 'Forbidden');
+
+      const { conn, onError } = createConnection();
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(conn.getState()).toBe('reconnecting');
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'HTTP 403: Forbidden' })
+      );
+    });
+
+    it('5xx response triggers handleConnectionError', async () => {
+      setupFetchErrorMock(500, 'Internal Server Error');
+
+      const { conn, onError } = createConnection();
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(conn.getState()).toBe('reconnecting');
+      expect(onError).toHaveBeenCalledWith(
+        expect.objectContaining({ message: 'HTTP 500: Internal Server Error' })
+      );
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Fetch network errors
+  // -------------------------------------------------------------------------
+
+  describe('handles fetch network error', () => {
+    it('TypeError triggers reconnection', async () => {
+      setupFetchNetworkError();
+
+      const { conn, onError } = createConnection();
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(conn.getState()).toBe('reconnecting');
+      expect(onError).toHaveBeenCalledWith(expect.any(TypeError));
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Abort on disconnect
+  // -------------------------------------------------------------------------
+
+  describe('aborts fetch on disconnect()', () => {
+    it('AbortController signal is aborted', async () => {
+      const { conn } = createConnection();
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      // Capture the AbortSignal from the fetch call
+      const fetchFn = vi.mocked(fetch);
+      const signal = fetchFn.mock.calls[0]?.[1]?.signal as AbortSignal;
+      expect(signal.aborted).toBe(false);
+
+      conn.disconnect();
+
+      expect(signal.aborted).toBe(true);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // New AbortController on each connect()
+  // -------------------------------------------------------------------------
+
+  describe('creates new AbortController on each connect()', () => {
+    it('never reuses AbortController across connections', async () => {
+      const { conn } = createConnection();
+
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      const fetchFn = vi.mocked(fetch);
+      const firstSignal = fetchFn.mock.calls[0]?.[1]?.signal as AbortSignal;
+
+      // Reconnect
+      conn.connect();
+      await vi.advanceTimersByTimeAsync(0);
+
+      const secondSignal = fetchFn.mock.calls[1]?.[1]?.signal as AbortSignal;
+
+      // The first signal should be aborted (closeConnection called in connect())
+      expect(firstSignal.aborted).toBe(true);
+      // The second signal should be a different instance and not aborted
+      expect(secondSignal).not.toBe(firstSignal);
+      expect(secondSignal.aborted).toBe(false);
     });
   });
 });

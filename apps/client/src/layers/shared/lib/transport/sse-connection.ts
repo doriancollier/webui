@@ -1,11 +1,16 @@
 /**
- * SSEConnection — framework-agnostic EventSource connection manager with
- * exponential backoff, heartbeat watchdog, and page visibility optimization.
+ * SSEConnection — fetch-based SSE connection manager with exponential backoff,
+ * heartbeat watchdog, and page visibility optimization.
+ *
+ * Uses `fetch` + `ReadableStream` instead of the browser `EventSource` API,
+ * enabling custom headers (auth, Last-Event-ID) and server-directed retry.
  *
  * @module shared/lib/transport/sse-connection
  */
 import type { ConnectionState } from '@dorkos/shared/types';
+
 import { SSE_RESILIENCE } from '../constants';
+import { parseSSEStream } from './sse-parser';
 
 /** Configuration for an SSEConnection instance. */
 export interface SSEConnectionOptions {
@@ -13,8 +18,10 @@ export interface SSEConnectionOptions {
   eventHandlers: Record<string, (data: unknown) => void>;
   /** Called when connection state changes. */
   onStateChange?: (state: ConnectionState, failedAttempts: number) => void;
-  /** Called on EventSource error event. */
-  onError?: (error: Event) => void;
+  /** Called on connection error. */
+  onError?: (error: Error) => void;
+  /** Additional headers to send with the fetch request (e.g., auth tokens). */
+  headers?: Record<string, string>;
   /** Heartbeat watchdog timeout in ms. 0 disables watchdog. Default: 45000. */
   heartbeatTimeoutMs?: number;
   /** Backoff base in ms. Default: 500. */
@@ -31,16 +38,19 @@ export interface SSEConnectionOptions {
 type ResolvedOptions = Required<SSEConnectionOptions>;
 
 /**
- * Manages a single EventSource connection with full resilience: exponential
+ * Manages a single fetch-based SSE connection with full resilience: exponential
  * backoff with jitter, heartbeat watchdog, page visibility optimization,
- * and a state machine (connecting → connected → reconnecting → disconnected).
+ * and a state machine (connecting -> connected -> reconnecting -> disconnected).
  *
  * Framework-agnostic — no React dependency. Consumed by `useSSEConnection` hook.
  */
 export class SSEConnection {
   private url: string;
   private options: ResolvedOptions;
-  private eventSource: EventSource | null = null;
+  private abortController: AbortController | null = null;
+  private reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
+  private lastEventId: string | null = null;
+  private serverRetryMs: number | null = null;
   private state: ConnectionState = 'connecting';
   private failedAttempts = 0;
   private lastEventAt: number | null = null;
@@ -57,6 +67,7 @@ export class SSEConnection {
       eventHandlers: options.eventHandlers,
       onStateChange: options.onStateChange ?? (() => {}),
       onError: options.onError ?? (() => {}),
+      headers: options.headers ?? {},
       heartbeatTimeoutMs: options.heartbeatTimeoutMs ?? SSE_RESILIENCE.HEARTBEAT_TIMEOUT_MS,
       backoffBaseMs: options.backoffBaseMs ?? SSE_RESILIENCE.BACKOFF_BASE_MS,
       backoffCapMs: options.backoffCapMs ?? SSE_RESILIENCE.BACKOFF_CAP_MS,
@@ -80,61 +91,30 @@ export class SSEConnection {
     return this.lastEventAt;
   }
 
-  /** Open the EventSource connection. Safe to call multiple times — closes any existing connection first. */
+  /** Open a fetch-based SSE connection. Safe to call multiple times — closes any existing connection first. */
   connect(): void {
     if (this.destroyed) return;
-    this.closeEventSource();
+    this.closeConnection();
     this.setState('connecting');
 
-    const es = new EventSource(this.url);
-
-    es.onopen = () => {
-      this.setState('connected');
-      this.startStabilityTimer();
-      this.resetWatchdog();
-    };
-
-    es.onerror = (event) => {
-      this.options.onError(event);
-      this.handleConnectionError();
-    };
-
-    // Register named event handlers
-    for (const [eventType, handler] of Object.entries(this.options.eventHandlers)) {
-      es.addEventListener(eventType, (e: MessageEvent) => {
-        this.lastEventAt = Date.now();
-        this.resetWatchdog();
-        try {
-          const data: unknown = JSON.parse(e.data as string);
-          handler(data);
-        } catch {
-          handler(e.data);
-        }
-      });
-    }
-
-    // Listen for heartbeat events (resets watchdog, no app handler needed)
-    es.addEventListener('heartbeat', () => {
-      this.lastEventAt = Date.now();
-      this.resetWatchdog();
-    });
-
-    this.eventSource = es;
+    const controller = new AbortController();
+    this.abortController = controller;
+    this.openFetchConnection(controller);
   }
 
-  /** Gracefully close the connection. Can reconnect later via `connect()`. */
+  /** Gracefully abort the connection. Can reconnect later via `connect()`. */
   disconnect(): void {
-    this.closeEventSource();
+    this.closeConnection();
     this.clearAllTimers();
     if (this.state !== 'disconnected') {
       this.setState('disconnected');
     }
   }
 
-  /** Permanent teardown — removes visibility listener, closes EventSource, clears all timers. Cannot reconnect after this. */
+  /** Permanent teardown — removes visibility listener, aborts fetch, clears all timers. Cannot reconnect after this. */
   destroy(): void {
     this.destroyed = true;
-    this.closeEventSource();
+    this.closeConnection();
     this.clearAllTimers();
     if (this.visibilityHandler) {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
@@ -157,7 +137,7 @@ export class SSEConnection {
         // Tab became hidden — start grace timer
         this.visibilityGraceTimer = setTimeout(() => {
           this.visibilityGraceTimer = null;
-          this.closeEventSource();
+          this.closeConnection();
           this.clearTimers();
         }, graceMs);
       } else {
@@ -166,7 +146,7 @@ export class SSEConnection {
           clearTimeout(this.visibilityGraceTimer);
           this.visibilityGraceTimer = null;
         }
-        if (!this.eventSource || this.eventSource.readyState === EventSource.CLOSED) {
+        if (!this.abortController || this.abortController.signal.aborted) {
           this.connect();
         }
       }
@@ -179,16 +159,69 @@ export class SSEConnection {
   // Private
   // ---------------------------------------------------------------------------
 
+  /** Open the fetch connection and consume the SSE stream via parseSSEStream. */
+  private async openFetchConnection(controller: AbortController): Promise<void> {
+    try {
+      const headers: Record<string, string> = {
+        Accept: 'text/event-stream',
+        ...this.options.headers,
+      };
+      if (this.lastEventId) {
+        headers['Last-Event-ID'] = this.lastEventId;
+      }
+
+      const response = await fetch(this.url, {
+        headers,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      if (controller.signal.aborted) return;
+
+      this.setState('connected');
+      this.startStabilityTimer();
+      this.resetWatchdog();
+
+      const reader = response.body!.getReader();
+      this.reader = reader;
+
+      for await (const event of parseSSEStream(reader)) {
+        if (controller.signal.aborted) break;
+        this.lastEventAt = Date.now();
+        this.resetWatchdog();
+
+        if (event.id !== undefined) this.lastEventId = event.id;
+        if (event.retry !== undefined) this.serverRetryMs = event.retry;
+        if (event.comment) continue;
+
+        const handler = this.options.eventHandlers[event.type];
+        if (handler) handler(event.data);
+      }
+
+      // Stream ended without abort — treat as unexpected disconnect
+      if (!controller.signal.aborted) {
+        this.handleConnectionError(new Error('Stream ended'));
+      }
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      this.handleConnectionError(err instanceof Error ? err : new Error(String(err)));
+    }
+  }
+
   private setState(newState: ConnectionState): void {
     if (this.state === newState) return;
     this.state = newState;
     this.options.onStateChange(newState, this.failedAttempts);
   }
 
-  private handleConnectionError(): void {
-    this.closeEventSource();
+  private handleConnectionError(error?: Error): void {
+    this.closeConnection();
     this.clearTimers();
     this.failedAttempts++;
+
+    if (error) this.options.onError(error);
 
     if (this.failedAttempts >= this.options.disconnectedThreshold) {
       this.setState('disconnected');
@@ -203,13 +236,17 @@ export class SSEConnection {
     }, delay);
   }
 
-  /** Full jitter exponential backoff per AWS architecture blog. */
+  /** Full jitter exponential backoff with server-directed retry floor. */
   private calculateBackoff(): number {
     const exponential = Math.min(
       this.options.backoffCapMs,
       this.options.backoffBaseMs * Math.pow(2, this.failedAttempts)
     );
-    return Math.random() * exponential;
+    const clientDelay = Math.random() * exponential;
+    if (this.serverRetryMs !== null) {
+      return Math.max(clientDelay, this.serverRetryMs);
+    }
+    return clientDelay;
   }
 
   private resetWatchdog(): void {
@@ -230,11 +267,12 @@ export class SSEConnection {
     }, this.options.stabilityWindowMs);
   }
 
-  private closeEventSource(): void {
-    if (this.eventSource) {
-      this.eventSource.close();
-      this.eventSource = null;
+  private closeConnection(): void {
+    if (this.abortController) {
+      this.abortController.abort();
+      this.abortController = null;
     }
+    this.reader = null;
   }
 
   /** Clear watchdog, backoff, and stability timers (not visibility grace). */

@@ -1,0 +1,6 @@
+# Caddy reverse proxy for HTTP/2 verification.
+# Terminates TLS and reverse-proxies to the local DorkOS dev server.
+# Caddy auto-generates a self-signed certificate for localhost.
+localhost {
+	reverse_proxy host.docker.internal:6242
+}

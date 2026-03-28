@@ -47,13 +47,13 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 | `project-structure.md`           | 2026-03-26    | Claude   | Added canvas/ feature module, ui-action-dispatcher, init-extensions.ts, extension-registry |
 | `architecture.md`                | 2026-03-26    | Claude   | Added Agent UI Control section (uiState, ui_command events, controlUI MCP tool)            |
 | `design-system.md`               | 2026-03-27    | Claude   | Added FilterBar compound component section, filter engine key files                        |
-| `api-reference.md`               | 2026-03-26    | Claude   | Added ui_command event, uiState request field, controlUI MCP tool                          |
+| `api-reference.md`               | 2026-03-27    | Claude   | Added GET /api/events unified SSE, deprecated old SSE endpoints, fixed extension payload   |
 | `configuration.md`               | 2026-03-27    | Claude   | Added agents and extensions config sections                                                |
 | `interactive-tools.md`           | 2026-03-26    | Claude   | Added Agent UI Control section (controlUI/get_ui_state MCP tools, ui_command events)       |
 | `keyboard-shortcuts.md`          | 2026-03-19    | Claude   | Reconciled — no matching changes                                                           |
 | `obsidian-plugin-development.md` | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                      |
-| `data-fetching.md`               | 2026-03-26    | Claude   | Reconciled — Phase 1 ui_command is action dispatch, not data fetching                      |
-| `state-management.md`            | 2026-03-27    | Claude   | Added useFilterState URL-synced filter state pattern and filter engine key files           |
+| `data-fetching.md`               | 2026-03-27    | Claude   | Added unified SSE stream pattern, useEventSubscription, migration from EventSource         |
+| `state-management.md`            | 2026-03-27    | Claude   | Added EventStreamProvider singleton pattern, module-scope singleton guidance               |
 | `animations.md`                  | 2026-03-19    | Claude   | Reconciled — no matching changes                                                           |
 | `styling-theming.md`             | 2026-03-27    | Claude   | Added FilterBar styling section and key file reference                                     |
 | `parallel-execution.md`          | 2026-03-19    | Claude   | Reconciled — command file tweaks only                                                      |

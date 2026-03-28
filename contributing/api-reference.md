@@ -88,6 +88,31 @@ Persistent SSE connection for session sync. Broadcasts updates when the session'
 
 **Usage:** Clients should close the connection when no longer viewing the session.
 
+### GET /api/events
+
+Unified SSE stream for all real-time system events. Replaces individual per-resource SSE endpoints (`GET /api/tunnel/stream`, `GET /api/extensions/events`, `GET /api/relay/stream`) with a single multiplexed connection. Clients filter by the SSE `event:` field.
+
+**Events:**
+
+| Event                | Description                      | Payload                                       |
+| -------------------- | -------------------------------- | --------------------------------------------- |
+| `connected`          | Sent on initial connection       | `{ connectedAt: string }` (ISO timestamp)     |
+| `heartbeat`          | Keepalive (every 15 s)           | _(empty)_                                     |
+| `tunnel_status`      | Tunnel state changed             | Tunnel status object                          |
+| `extension_reloaded` | Extension(s) recompiled          | `{ type, extensionIds: string[], timestamp }` |
+| `relay_connected`    | Relay SSE connection established | Connection metadata                           |
+| `relay_message`      | New relay message published      | Relay envelope                                |
+| `relay_backpressure` | Relay back-pressure signal       | Back-pressure details                         |
+| `relay_signal`       | Relay control signal             | Signal payload                                |
+
+**Error responses:**
+
+- `503` - `{ error: 'Too many SSE clients' }` when `SSE.MAX_TOTAL_CLIENTS` (500) is exceeded
+
+**Keepalive:** `event: heartbeat\ndata: \n\n` every 15 seconds.
+
+**Usage:** Open one `EventSource` to `/api/events` and filter on `event.type`. Close when the application unmounts.
+
 ### GET /api/sessions/:id/messages
 
 Fetch message history for a session.
@@ -483,6 +508,8 @@ Relay system metrics.
 - `200` - `{ totalMessages: number, totalEndpoints: number, totalDeadLetters: number }`
 
 ### GET /api/relay/stream
+
+> **Deprecated** — Use `GET /api/events` (event names: `relay_connected`, `relay_message`, `relay_backpressure`, `relay_signal`).
 
 SSE event stream for real-time relay activity. Supports server-side subject filtering.
 
@@ -1183,6 +1210,8 @@ Requests to `/mcp` pass through this middleware chain in order:
 
 All DorkOS tools are registered on the external MCP server: core tools (ping, server info, session count, agent identity), Pulse scheduling tools, Relay messaging tools, adapter management tools, binding tools, trace/metrics tools, Mesh discovery tools, UI control tools (`controlUI` — opens/updates/closes the canvas panel), and extension management tools. Feature-guarded tools return descriptive errors when their service is disabled rather than being omitted from the tool list.
 
+The `open_canvas` UI command accepts an optional `content` field. When `content` is omitted, the canvas opens with a splash screen. When provided, `content` is a `UiCanvasContent` object (markdown, code, etc.) displayed immediately. `preferredWidth` (20-80, percentage) is also optional.
+
 ### Extension MCP Tools
 
 Six tools enable agents to autonomously build and manage extensions:
@@ -1240,11 +1269,16 @@ Compiles the extension and activates it against a server-side mock API. Reports 
 
 **Endpoint**: `GET /api/extensions/events`
 
+> **Deprecated** — Use `GET /api/events` (event name: `extension_reloaded`).
+
 **Event**: `extension_reloaded`
 
 ```json
-{ "extensions": ["ext-id"], "timestamp": "2026-03-26T14:30:00.000Z" }
+{ "type": "extension_reloaded", "extensionIds": ["ext-id"], "timestamp": 1711461000000 }
 ```
+
+- `extensionIds` — array of extension IDs that were reloaded
+- `timestamp` — numeric epoch milliseconds (`Date.now()`)
 
 Sent when extensions are recompiled via `reload_extensions` or `create_extension`. The client uses this to trigger a live reload of the extension bundle.
 

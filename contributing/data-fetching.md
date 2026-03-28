@@ -12,6 +12,7 @@ This guide covers data fetching patterns in DorkOS. The client uses TanStack Que
 | HttpTransport        | `apps/client/src/layers/shared/lib/transport/http-transport.ts`  |
 | DirectTransport      | `apps/client/src/layers/shared/lib/direct-transport.ts`          |
 | TransportContext     | `apps/client/src/layers/shared/model/TransportContext.tsx`       |
+| EventStreamProvider  | `apps/client/src/layers/shared/model/event-stream-context.tsx`   |
 | Session entity hooks | `apps/client/src/layers/entities/session/`                       |
 | Command entity hooks | `apps/client/src/layers/entities/command/`                       |
 | Agent entity hooks   | `apps/client/src/layers/entities/agent/`                         |
@@ -25,13 +26,14 @@ This guide covers data fetching patterns in DorkOS. The client uses TanStack Que
 
 ## When to Use What
 
-| Scenario                               | Approach                               | Why                                              |
-| -------------------------------------- | -------------------------------------- | ------------------------------------------------ |
-| List/read server data (sessions, etc.) | TanStack Query + Transport method      | Caching, deduplication, background refetch       |
-| Send a chat message (streaming)        | `useChatSession` hook + SSE            | Real-time streaming, handles all event types     |
-| Mutate server data (create session)    | `useMutation` + Transport method       | Automatic cache invalidation, optimistic updates |
-| Subscribe to real-time updates         | SSE via `GET /api/sessions/:id/stream` | Multi-client sync, file-watcher backed           |
-| Static config/health check             | Transport method (no TanStack Query)   | One-shot, no caching needed                      |
+| Scenario                                               | Approach                                     | Why                                                                |
+| ------------------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------ |
+| List/read server data (sessions, etc.)                 | TanStack Query + Transport method            | Caching, deduplication, background refetch                         |
+| Send a chat message (streaming)                        | `useChatSession` hook + SSE                  | Real-time streaming, handles all event types                       |
+| Mutate server data (create session)                    | `useMutation` + Transport method             | Automatic cache invalidation, optimistic updates                   |
+| Subscribe to real-time updates                         | SSE via `GET /api/sessions/:id/stream`       | Multi-client sync, file-watcher backed                             |
+| Subscribe to system events (tunnel, relay, extensions) | `useEventSubscription` via `GET /api/events` | Single multiplexed connection, replaces per-resource SSE endpoints |
+| Static config/health check                             | Transport method (no TanStack Query)         | One-shot, no caching needed                                        |
 
 ## Core Patterns
 
@@ -160,6 +162,70 @@ Clients subscribe to real-time changes via a persistent SSE connection:
 const response = await transport.getMessages(sessionId);
 // Server returns 304 if no changes (ETag match)
 ```
+
+### Real-Time System Events (Unified SSE Stream)
+
+System-wide events (tunnel status changes, extension reloads, relay activity) are delivered through a single multiplexed SSE connection rather than per-resource streams.
+
+**Endpoint**: `GET /api/events` — one SSE connection carries all system event types. The server multiplexes tunnel, extensions, and relay events onto this single stream.
+
+**Provider**: `EventStreamProvider` (in `layers/shared/model/event-stream-context.tsx`) manages a module-level `SSEConnection` singleton. It is mounted once in `main.tsx`. The singleton survives React StrictMode double-mounts and Vite HMR cycles.
+
+**Consumer hook**: `useEventSubscription(eventName, handler)` — subscribes to a named event for the lifetime of the calling component. The handler is ref-stabilized, so its identity can change between renders without causing re-subscriptions.
+
+**Available events**:
+
+| Event                | Payload            | Source           |
+| -------------------- | ------------------ | ---------------- |
+| `tunnel_status`      | `TunnelStatus`     | Tunnel service   |
+| `extension_reloaded` | Extension metadata | Extension loader |
+| `relay_connected`    | Connection info    | Relay service    |
+| `relay_message`      | Message envelope   | Relay service    |
+| `relay_backpressure` | Backpressure data  | Relay service    |
+| `relay_signal`       | Signal data        | Relay service    |
+
+**Example** — invalidating TanStack Query cache on tunnel status changes:
+
+```typescript
+// apps/client/src/layers/entities/tunnel/model/use-tunnel-sync.ts
+import { useQueryClient } from '@tanstack/react-query';
+import { useEventSubscription } from '@/layers/shared/model';
+import type { TunnelStatus } from '@dorkos/shared/types';
+
+export function useTunnelSync(): void {
+  const queryClient = useQueryClient();
+
+  useEventSubscription('tunnel_status', (data) => {
+    queryClient.setQueryData(['tunnel-status'], data as TunnelStatus);
+    queryClient.invalidateQueries({ queryKey: ['config'] });
+  });
+}
+```
+
+**Example** — relay event stream with conditional invalidation:
+
+```typescript
+// apps/client/src/layers/entities/relay/model/use-relay-event-stream.ts
+import { useEventSubscription } from '@/layers/shared/model';
+
+export function useRelayEventStream(enabled: boolean) {
+  const queryClient = useQueryClient();
+
+  useEventSubscription('relay_message', () => {
+    if (enabled) {
+      queryClient.invalidateQueries({ queryKey: ['relay', 'conversations'] });
+    }
+  });
+
+  useEventSubscription('relay_signal', () => {
+    if (enabled) {
+      queryClient.invalidateQueries({ queryKey: ['relay', 'conversations'] });
+    }
+  });
+}
+```
+
+> **Migration note**: The unified stream replaces raw `new EventSource('/api/tunnel/stream')` and `useSSEConnection('/api/relay/stream')` patterns that each opened a dedicated HTTP connection. Use `useEventSubscription('event_name', handler)` instead for all system-wide events. `useSSEConnection` still exists for per-session SSE (e.g., `GET /api/sessions/:id/stream` for session sync) but should **not** be used for system-wide events.
 
 ### ETag Caching on Messages
 
@@ -332,7 +398,9 @@ useQuery({ queryKey: ['sessions'], ... }); // Duplicate, easy to drift
 ### SSE connection drops silently
 
 **Cause**: Network interruption or server restart.
-**Fix**: The `useChatSession` hook handles reconnection. If messages stop arriving, the session sync protocol (`sync_update` events) will catch up when the connection is restored.
+**Fix**: The `useChatSession` hook handles reconnection for chat streams. If messages stop arriving, the session sync protocol (`sync_update` events) will catch up when the connection is restored.
+
+For system-wide SSE events (tunnel, relay, extensions), reconnection is handled automatically by the `SSEConnection` singleton managed by `EventStreamProvider` — individual consumer hooks do not need to manage reconnection. The singleton includes exponential backoff, a heartbeat watchdog, and page visibility optimization (pauses when the tab is hidden, reconnects when it becomes visible).
 
 ### Messages endpoint returns 304 but UI is stale
 

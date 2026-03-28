@@ -1,0 +1,19 @@
+# Optional Caddy reverse proxy for verifying HTTP/2 multiplexing.
+#
+# Usage:
+#   1. Start DorkOS dev server: pnpm dev
+#   2. Start Caddy: docker compose -f docker-compose.caddy.yml up
+#   3. Open https://localhost in Chrome
+#   4. DevTools → Network → right-click column header → enable "Protocol" and "Connection ID"
+#   5. Verify SSE streams show h2 protocol and share the same Connection ID
+#
+# This is NOT part of the dev workflow — it's an on-demand verification tool.
+services:
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - '443:443'
+    volumes:
+      - ./Caddyfile.dev:/etc/caddy/Caddyfile
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'

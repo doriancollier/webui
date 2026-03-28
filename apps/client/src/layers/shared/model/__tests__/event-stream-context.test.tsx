@@ -7,7 +7,7 @@ import type { ReactNode } from 'react';
 
 // vi.hoisted() ensures these values exist before vi.mock factories run,
 // which is critical because the singleton SSEConnection is created at module scope.
-const { mocks, captured } = vi.hoisted(() => ({
+const { mocks, captured, mockInvalidateQueries } = vi.hoisted(() => ({
   mocks: {
     connect: vi.fn(),
     destroy: vi.fn(),
@@ -19,6 +19,11 @@ const { mocks, captured } = vi.hoisted(() => ({
     eventHandlers: {} as Record<string, (data: unknown) => void>,
     onStateChange: undefined as ((state: string, attempts: number) => void) | undefined,
   },
+  mockInvalidateQueries: vi.fn(),
+}));
+
+vi.mock('@/layers/shared/lib/query-client', () => ({
+  queryClient: { invalidateQueries: mockInvalidateQueries },
 }));
 
 vi.mock('@/layers/shared/lib/transport', () => ({
@@ -155,5 +160,61 @@ describe('useEventSubscription', () => {
 
     expect(handler1).toHaveBeenCalledWith({ connected: true });
     expect(handler2).toHaveBeenCalledWith({ connected: true });
+  });
+});
+
+describe('refetch-on-reconnect', () => {
+  it('invalidates queries on reconnecting → connected transition', async () => {
+    renderHook(() => useEventStream(), { wrapper: Wrapper });
+
+    // Transition to reconnecting first
+    act(() => {
+      captured.onStateChange?.('reconnecting', 1);
+    });
+
+    // Then recover to connected — should trigger cache invalidation
+    act(() => {
+      captured.onStateChange?.('connected', 0);
+    });
+
+    // Dynamic import is async — flush the microtask queue
+    await vi.waitFor(() => {
+      expect(mockInvalidateQueries).toHaveBeenCalledOnce();
+    });
+  });
+
+  it('does not invalidate on initial connecting → connected', async () => {
+    renderHook(() => useEventStream(), { wrapper: Wrapper });
+
+    // First connection: connecting → connected (not a reconnection)
+    act(() => {
+      captured.onStateChange?.('connected', 0);
+    });
+
+    // Flush microtasks to ensure any pending dynamic import resolves
+    await vi.waitFor(() => {
+      expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    });
+  });
+
+  it('does not invalidate on connected → connected', async () => {
+    renderHook(() => useEventStream(), { wrapper: Wrapper });
+
+    // Move to connected state first
+    act(() => {
+      captured.onStateChange?.('connected', 0);
+    });
+
+    mockInvalidateQueries.mockClear();
+
+    // Same state again — should be a no-op
+    act(() => {
+      captured.onStateChange?.('connected', 0);
+    });
+
+    // Flush microtasks
+    await vi.waitFor(() => {
+      expect(mockInvalidateQueries).not.toHaveBeenCalled();
+    });
   });
 });

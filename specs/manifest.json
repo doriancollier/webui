@@ -7,7 +7,7 @@
       "slug": "sse-connection-optimization-02-fetch-transport",
       "title": "SSE Connection Optimization Phase 2 \u2014 Fetch-Based SSE Transport",
       "created": "2026-03-27",
-      "status": "brief",
+      "status": "implemented",
       "project": "sse-connection-optimization"
     },
     {
