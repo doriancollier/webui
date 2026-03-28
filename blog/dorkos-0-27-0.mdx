@@ -1,0 +1,42 @@
+---
+title: DorkOS 0.27.0
+description: Canvas as a first-class surface — persistent, toggleable, and mobile-ready
+date: 2026-03-28
+author: DorkOS Team
+category: release
+tags: [release, canvas, persistence, mobile, ux]
+---
+
+DorkOS 0.27.0 makes the canvas a first-class surface. It persists across page refreshes, toggles with a button or keyboard shortcut, and works properly on mobile.
+
+## Highlights
+
+**Canvas Toggle** — An always-visible toggle button in the session header lets you open and close the canvas anytime. A dot indicator shows when content is available but the panel is closed. Also available via `Cmd+.` and the command palette.
+
+**Per-Session Persistence** — Canvas state (open/closed, content, panel width) now persists per session in localStorage. Refresh the page, switch tabs, come back tomorrow — your canvas is exactly where you left it. Each session maintains its own canvas independently.
+
+**Mobile Canvas** — The canvas renders as a full-width Sheet on mobile instead of an unusable side panel. Mirrors the sidebar's mobile pattern for consistency.
+
+## All Changes
+
+### Added
+
+- Add canvas toggle button in session header with `Cmd+.` keyboard shortcut and command palette action
+- Persist canvas state (open/closed, content, panel width) per session in localStorage — survives page refreshes and session switches
+- Show dot indicator on canvas toggle when content is available but panel is closed
+
+### Changed
+
+- Remove "New Session" and "Schedule" buttons from dashboard header to reduce clutter
+
+### Fixed
+
+- Match canvas background to sidebar color (`bg-sidebar`) for visual consistency
+- Replace chunky 6px resize handle with a subtle 1px line and 8px hit target
+- Render canvas as a full-width Sheet on mobile instead of an unusable side panel
+
+## Install / Update
+
+```
+npm install -g dorkos@0.27.0
+```

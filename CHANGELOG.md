@@ -9,14 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add per-session persistence and toggle button
-
 ### Changed
 
 ### Fixed
 
-- Update background/separator styling and add mobile Sheet
-- Update client tests for fetch-based SSE and QueryClient mock
+---
+
+## [0.27.0] - 2026-03-28
+
+> Canvas as a first-class surface — persistent, toggleable, and mobile-ready.
+
+### Added
+
+- Add canvas toggle button in session header with `Cmd+.` keyboard shortcut and command palette action
+- Persist canvas state (open/closed, content, panel width) per session in localStorage — survives page refreshes and session switches
+- Show dot indicator on canvas toggle when content is available but panel is closed
+
+### Changed
+
+- Remove "New Session" and "Schedule" buttons from dashboard header to reduce clutter
+
+### Fixed
+
+- Match canvas background to sidebar color (`bg-sidebar`) for visual consistency
+- Replace chunky 6px resize handle with a subtle 1px line and 8px hit target
+- Render canvas as a full-width Sheet on mobile instead of an unusable side panel
+
 ---
 
 ## [0.26.0] - 2026-03-28
