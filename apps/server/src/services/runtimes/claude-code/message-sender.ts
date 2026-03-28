@@ -168,7 +168,7 @@ export async function* executeSdkQuery(
     cwd: effectiveCwd,
     includePartialMessages: true,
     promptSuggestions: true,
-    settingSources: ['project', 'user'],
+    settingSources: ['local', 'project', 'user'],
     systemPrompt: {
       type: 'preset',
       preset: 'claude_code',

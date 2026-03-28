@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Load local settings so project-level plugin MCP servers are discovered
 ---
 
 ## [0.27.0] - 2026-03-28
