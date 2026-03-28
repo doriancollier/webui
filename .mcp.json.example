@@ -11,6 +11,14 @@
     "shadcn": {
       "command": "npx",
       "args": ["shadcn@latest", "mcp"]
+    },
+    "linear": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["-y", "@anthropic-ai/linear-mcp-server"],
+      "env": {
+        "LINEAR_API_KEY": ""
+      }
     }
   }
 }
