@@ -130,9 +130,10 @@ export function usePaletteActions(closePalette: () => void): PaletteActions {
         useAgentCreationStore.getState().open();
         return;
       }
-      // openCanvas opens the canvas without content — shows the splash screen.
-      if (action === 'openCanvas') {
-        setCanvasOpen(true);
+      // toggleCanvas flips the canvas open/closed. We read from getState() because
+      // this is an event handler — we need the current value at dispatch time.
+      if (action === 'toggleCanvas') {
+        setCanvasOpen(!useAppStore.getState().canvasOpen);
         return;
       }
       // toggleTheme requires the current theme value to compute the next state.

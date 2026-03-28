@@ -25,6 +25,7 @@ import {
 import { CommandPaletteDialog } from '@/layers/features/command-palette';
 import { CreateAgentDialog } from '@/layers/features/agent-creation';
 import { ShortcutsPanel, useShortcutsPanel } from '@/layers/features/shortcuts';
+import { useCanvasShortcut } from '@/layers/features/canvas';
 
 // ── Private slot types ────────────────────────────────────────
 
@@ -148,6 +149,7 @@ export function AppShell() {
   });
 
   useShortcutsPanel();
+  useCanvasShortcut();
 
   const setOnboardingStep = useAppStore((s) => s.setOnboardingStep);
 

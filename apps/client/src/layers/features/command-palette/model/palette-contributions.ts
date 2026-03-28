@@ -88,9 +88,9 @@ export const PALETTE_QUICK_ACTIONS: CommandPaletteContribution[] = [
   },
   {
     id: 'canvas',
-    label: 'Open Canvas',
+    label: 'Toggle Canvas',
     icon: 'PanelRight',
-    action: 'openCanvas',
+    action: 'toggleCanvas',
     category: 'quick-action',
     priority: 7,
   },

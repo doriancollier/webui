@@ -3,6 +3,8 @@
  *
  * @module shared/model/app-store-helpers
  */
+import type { UiCanvasContent } from '@dorkos/shared/types';
+import { STORAGE_KEYS, MAX_CANVAS_SESSIONS } from '@/layers/shared/lib';
 
 /** Read a boolean from localStorage with try/catch safety. */
 export function readBool(key: string, defaultValue: boolean): boolean {
@@ -82,3 +84,47 @@ export const BOOL_DEFAULTS: Record<keyof typeof BOOL_KEYS, boolean> = {
   enableMessagePolling: false,
   promoEnabled: true,
 };
+
+// ---------------------------------------------------------------------------
+// Canvas session persistence (per-session localStorage map)
+// ---------------------------------------------------------------------------
+
+/** Persisted canvas state for a single session. */
+export interface CanvasSessionEntry {
+  open: boolean;
+  content: UiCanvasContent | null;
+  accessedAt: number;
+}
+
+type CanvasSessionMap = Record<string, CanvasSessionEntry>;
+
+/** Read a single session's canvas state from the persisted map. */
+export function readCanvasSession(sessionId: string): CanvasSessionEntry | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CANVAS_SESSIONS);
+    if (!raw) return null;
+    const map: CanvasSessionMap = JSON.parse(raw);
+    return map[sessionId] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Write a session's canvas state to the persisted map, enforcing LRU eviction. */
+export function writeCanvasSession(sessionId: string, entry: CanvasSessionEntry): void {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CANVAS_SESSIONS);
+    const map: CanvasSessionMap = raw ? JSON.parse(raw) : {};
+    map[sessionId] = { ...entry, accessedAt: Date.now() };
+
+    // LRU eviction: keep only the newest MAX_CANVAS_SESSIONS entries
+    const entries = Object.entries(map);
+    if (entries.length > MAX_CANVAS_SESSIONS) {
+      entries.sort((a, b) => b[1].accessedAt - a[1].accessedAt);
+      const trimmed = Object.fromEntries(entries.slice(0, MAX_CANVAS_SESSIONS));
+      localStorage.setItem(STORAGE_KEYS.CANVAS_SESSIONS, JSON.stringify(trimmed));
+    } else {
+      localStorage.setItem(STORAGE_KEYS.CANVAS_SESSIONS, JSON.stringify(map));
+    }
+  } catch {}
+}

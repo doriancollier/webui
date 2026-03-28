@@ -6,15 +6,33 @@ import { TooltipProvider } from '@/layers/shared/ui';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import type { AgentVisual } from '@/layers/entities/agent';
 
-// Mock app store (used by AgentIdentityChip and CommandPaletteTrigger)
+// Mock app store (used by AgentIdentityChip, CommandPaletteTrigger, and CanvasToggle)
 vi.mock('@/layers/shared/model', () => ({
   useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
       openGlobalPaletteWithSearch: vi.fn(),
       setGlobalPaletteOpen: vi.fn(),
+      canvasOpen: false,
+      canvasContent: null,
+      setCanvasOpen: vi.fn(),
     };
     return selector ? selector(state) : state;
   },
+}));
+
+// Mock motion/react — CanvasToggle uses motion.button, AgentIdentityChip uses AnimatePresence
+function PassThrough({ children, ...rest }: Record<string, unknown>) {
+  return (
+    <div {...(rest as React.HTMLAttributes<HTMLDivElement>)}>{children as React.ReactNode}</div>
+  );
+}
+
+vi.mock('motion/react', () => ({
+  motion: new Proxy({} as Record<string, typeof PassThrough>, {
+    get: () => PassThrough,
+  }),
+  AnimatePresence: PassThrough,
+  useReducedMotion: () => true,
 }));
 
 beforeAll(() => {
@@ -72,5 +90,11 @@ describe('SessionHeader', () => {
   it('shows "No agent" when agent is null', () => {
     renderWithTooltip(<SessionHeader agent={null} visual={mockVisual} isStreaming={false} />);
     expect(screen.getByText('No agent')).toBeInTheDocument();
+  });
+
+  it('renders CanvasToggle button', () => {
+    renderWithTooltip(<SessionHeader agent={mockAgent} visual={mockVisual} isStreaming={false} />);
+    const toggles = screen.getAllByLabelText('Open canvas');
+    expect(toggles.length).toBeGreaterThanOrEqual(1);
   });
 });

@@ -57,6 +57,7 @@ vi.mock('@/layers/features/canvas', () => ({
         </div>
       </>
     ) : null,
+  useCanvasPersistence: () => {},
 }));
 
 vi.mock('@/layers/entities/session', () => ({

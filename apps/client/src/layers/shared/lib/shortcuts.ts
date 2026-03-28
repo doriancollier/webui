@@ -43,6 +43,12 @@ export const SHORTCUTS = {
     label: 'Toggle sidebar',
     group: 'navigation',
   },
+  TOGGLE_CANVAS: {
+    id: 'toggle-canvas',
+    key: 'mod+.',
+    label: 'Toggle canvas',
+    group: 'navigation',
+  },
   SHORTCUTS_PANEL: {
     id: 'shortcuts-panel',
     key: '?',

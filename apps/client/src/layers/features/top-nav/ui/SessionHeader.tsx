@@ -1,5 +1,6 @@
 import { AgentIdentityChip } from './AgentIdentityChip';
 import { CommandPaletteTrigger } from './CommandPaletteTrigger';
+import { CanvasToggle } from '@/layers/features/canvas';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import type { AgentVisual } from '@/layers/entities/agent';
 
@@ -12,12 +13,13 @@ interface SessionHeaderProps {
   isStreaming: boolean;
 }
 
-/** Session route header — agent identity chip + command palette trigger. */
+/** Session route header — agent identity chip, canvas toggle, and command palette trigger. */
 export function SessionHeader({ agent, visual, isStreaming }: SessionHeaderProps) {
   return (
     <>
       <AgentIdentityChip agent={agent} visual={visual} isStreaming={isStreaming} />
       <div className="flex-1" />
+      <CanvasToggle />
       <CommandPaletteTrigger />
     </>
   );

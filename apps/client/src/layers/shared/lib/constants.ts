@@ -6,7 +6,11 @@ export const STORAGE_KEYS = {
   RECENT_CWDS: 'dorkos-recent-cwds',
   PICKER_VIEW: 'dorkos-picker-view',
   GESTURE_HINT_COUNT: 'dorkos-gesture-hint-count',
+  CANVAS_SESSIONS: 'dorkos-canvas-sessions',
 } as const;
+
+/** Maximum number of per-session canvas entries stored in localStorage. */
+export const MAX_CANVAS_SESSIONS = 50;
 
 export const FONT_SCALE_MAP: Record<'small' | 'medium' | 'large', string> = {
   small: '0.9',

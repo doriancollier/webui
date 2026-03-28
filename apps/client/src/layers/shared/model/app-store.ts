@@ -21,6 +21,8 @@ import {
   BOOL_DEFAULTS,
   type ContextFile,
   type RecentCwd,
+  readCanvasSession,
+  writeCanvasSession,
 } from './app-store-helpers';
 
 export type { ContextFile, RecentCwd } from './app-store-helpers';
@@ -147,13 +149,15 @@ interface AppState {
   removeContextFile: (id: string) => void;
   clearContextFiles: () => void;
 
-  // Canvas state (transient — not persisted)
+  // Canvas state (persisted per-session via localStorage)
   canvasOpen: boolean;
   setCanvasOpen: (open: boolean) => void;
   canvasContent: UiCanvasContent | null;
   setCanvasContent: (content: UiCanvasContent | null) => void;
   canvasPreferredWidth: number | null;
   setCanvasPreferredWidth: (width: number | null) => void;
+  canvasSessionId: string | null;
+  loadCanvasForSession: (sessionId: string) => void;
 }
 
 export const useAppStore = create<AppState>()(
@@ -461,6 +465,7 @@ export const useAppStore = create<AppState>()(
           localStorage.removeItem(STORAGE_KEYS.FONT_FAMILY);
           localStorage.removeItem('dorkos-sidebar-active-tab');
           localStorage.removeItem('dorkos-dismissed-promo-ids');
+          localStorage.removeItem(STORAGE_KEYS.CANVAS_SESSIONS);
         } catch {}
         document.documentElement.style.setProperty('--user-font-scale', '1');
         const defaultConfig = getFontConfig(DEFAULT_FONT);
@@ -500,13 +505,42 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ contextFiles: s.contextFiles.filter((f) => f.id !== id) })),
       clearContextFiles: () => set({ contextFiles: [] }),
 
-      // Canvas state (transient — not persisted)
+      // Canvas state (persisted per-session via localStorage)
       canvasOpen: false,
-      setCanvasOpen: (open) => set({ canvasOpen: open }),
+      setCanvasOpen: (open) =>
+        set((s) => {
+          if (s.canvasSessionId) {
+            writeCanvasSession(s.canvasSessionId, {
+              open,
+              content: s.canvasContent,
+              accessedAt: Date.now(),
+            });
+          }
+          return { canvasOpen: open };
+        }),
       canvasContent: null,
-      setCanvasContent: (content) => set({ canvasContent: content }),
+      setCanvasContent: (content) =>
+        set((s) => {
+          if (s.canvasSessionId) {
+            writeCanvasSession(s.canvasSessionId, {
+              open: s.canvasOpen,
+              content,
+              accessedAt: Date.now(),
+            });
+          }
+          return { canvasContent: content };
+        }),
       canvasPreferredWidth: null,
       setCanvasPreferredWidth: (width) => set({ canvasPreferredWidth: width }),
+      canvasSessionId: null,
+      loadCanvasForSession: (sessionId) => {
+        const entry = readCanvasSession(sessionId);
+        if (entry) {
+          set({ canvasOpen: entry.open, canvasContent: entry.content, canvasSessionId: sessionId });
+        } else {
+          set({ canvasOpen: false, canvasContent: null, canvasSessionId: sessionId });
+        }
+      },
     }),
     { name: 'app-store' }
   )
