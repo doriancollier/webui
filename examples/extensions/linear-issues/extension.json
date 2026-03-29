@@ -6,8 +6,7 @@
   "author": "DorkOS",
   "minHostVersion": "0.1.0",
   "contributions": {
-    "dashboard.sections": true,
-    "settings.tabs": true
+    "dashboard.sections": true
   },
   "serverCapabilities": {
     "serverEntry": "./server.ts",

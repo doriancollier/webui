@@ -550,16 +550,16 @@ The `examples/extensions/linear-issues/` directory contains a complete, producti
 examples/extensions/linear-issues/
 ├── extension.json   # Manifest with serverCapabilities and secret declaration
 ├── server.ts        # Data provider: on-demand endpoint, cached endpoint, 60s polling
-└── index.ts         # Client: dashboard section, settings tab for API key
+└── index.ts         # Client: dashboard section only (settings tab auto-generated)
 ```
 
 ### What It Demonstrates
 
 **Manifest** (`extension.json`):
 
-- `serverCapabilities.secrets` declaring a `linear_api_key` with label and description
+- `serverCapabilities.secrets` declaring a `linear_api_key` with label and description — the host auto-generates a settings tab from this (no settings code needed in `index.ts`)
 - `serverCapabilities.serverEntry` pointing to `./server.ts`
-- `contributions` for both `dashboard.sections` and `settings.tabs`
+- `contributions` for `dashboard.sections`
 
 **Server** (`server.ts`):
 
@@ -572,8 +572,8 @@ examples/extensions/linear-issues/
 **Client** (`index.ts`):
 
 - Dashboard section fetching from the `/cached` server route
-- Settings tab with write-only API key management via the secrets REST API
 - Host theme integration via CSS custom properties
+- No settings code — the API key settings tab is auto-generated from the manifest's secret declarations
 
 To install: copy the directory to `~/.dork/extensions/linear-issues/`, enable it in Settings > Extensions, then set your Linear API key in the extension's settings tab.
 
