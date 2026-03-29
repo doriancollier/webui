@@ -54,7 +54,9 @@ export function PromoSlot({ placement, maxUnits }: PromoSlotProps) {
             initial="initial"
             animate="animate"
             className={
-              placement === 'dashboard-main' ? 'grid grid-cols-1 gap-3 sm:grid-cols-2' : 'space-y-2'
+              placement === 'dashboard-main'
+                ? 'grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3'
+                : 'space-y-2'
             }
           >
             {promos.map((promo) => (

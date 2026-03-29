@@ -36,7 +36,7 @@ export function SubsystemCard({
   return (
     <button
       type="button"
-      className="bg-card shadow-soft card-interactive w-full cursor-pointer rounded-xl border p-4 text-left"
+      className="bg-card shadow-soft card-interactive h-full w-full cursor-pointer rounded-xl border p-4 text-left"
       onClick={onClick}
     >
       <p

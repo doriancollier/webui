@@ -59,9 +59,9 @@ export function activate(api: ExtensionAPI): () => void {
 // The JSX transform handles createElement calls automatically.
 function HelloSection() {
   return (
-    <div style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '12px' }}>
-      <h3 style={{ margin: 0, fontSize: '14px', fontWeight: 600 }}>Hello World Extension</h3>
-      <p style={{ margin: '8px 0 0', fontSize: '13px', color: 'var(--muted-foreground)' }}>
+    <div style={{ padding: '16px', border: '1px solid var(--border)', borderRadius: '16px' }}>
+      <h3 style={{ margin: '0 0 12px', fontSize: '12px', fontWeight: 500, textTransform: 'uppercase' as const, letterSpacing: '0.1em', color: 'var(--muted-foreground)' }}>Hello World Extension</h3>
+      <p style={{ margin: 0, fontSize: '13px', color: 'var(--muted-foreground)' }}>
         This section was added by the hello-world sample extension.
       </p>
     </div>

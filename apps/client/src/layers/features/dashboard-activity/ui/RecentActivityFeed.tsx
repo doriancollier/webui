@@ -30,7 +30,7 @@ export function RecentActivityFeed() {
         <h2 className="text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase">
           Recent Activity
         </h2>
-        <div className="bg-card/50 flex items-center justify-center rounded-xl border border-dashed py-12">
+        <div className="bg-card/50 flex items-center justify-center rounded-xl border border-dashed py-8">
           <p className="text-muted-foreground text-sm">
             No activity yet. Your agent history will appear here.
           </p>
@@ -63,6 +63,7 @@ export function RecentActivityFeed() {
               group={group}
               lastVisitedAt={lastVisitedAt}
               showSeparator={idx === 0}
+              isFirst={idx === 0}
             />
           </motion.div>
         ))}

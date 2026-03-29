@@ -28,11 +28,13 @@ export function NeedsAttentionSection() {
           <h2 className="mb-3 text-xs font-medium tracking-widest text-amber-600 uppercase dark:text-amber-500">
             Needs Attention
           </h2>
-          <motion.div variants={staggerContainer} initial="initial" animate="animate">
-            {items.slice(0, 8).map((item) => (
-              <AttentionItemRow key={item.id} item={item} />
-            ))}
-          </motion.div>
+          <div className="rounded-xl border border-amber-500/15 bg-amber-500/[0.03] p-2 dark:bg-amber-900/[0.07]">
+            <motion.div variants={staggerContainer} initial="initial" animate="animate">
+              {items.slice(0, 8).map((item) => (
+                <AttentionItemRow key={item.id} item={item} />
+              ))}
+            </motion.div>
+          </div>
         </motion.section>
       )}
     </AnimatePresence>

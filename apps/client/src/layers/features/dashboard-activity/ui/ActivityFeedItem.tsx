@@ -51,7 +51,7 @@ export function ActivityFeedItem({ event, isNew }: ActivityFeedItemProps) {
       <span className="text-muted-foreground w-16 shrink-0 text-xs tabular-nums">{time}</span>
       <span className={cn('size-2 shrink-0 rounded-full', TYPE_DOT_COLORS[event.type])} />
       <span className="text-muted-foreground w-14 shrink-0 text-xs">{TYPE_LABELS[event.type]}</span>
-      <span className="text-foreground/80 flex-1 truncate text-sm">{event.title}</span>
+      <span className="text-foreground flex-1 truncate text-sm">{event.title}</span>
       {event.link && (
         <Button
           variant="ghost"

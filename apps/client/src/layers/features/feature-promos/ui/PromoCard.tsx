@@ -76,7 +76,7 @@ export function PromoCard({ promo, placement }: PromoCardProps) {
         tabIndex={0}
         data-slot="promo-card"
         className={cn(
-          'group border-border bg-card hover:bg-accent relative w-full cursor-pointer rounded-xl border p-6 text-left transition-colors'
+          'group border-border bg-card shadow-soft card-interactive hover:bg-accent relative w-full cursor-pointer rounded-xl border p-4 text-left transition-colors'
         )}
         onClick={handleClick}
         onKeyDown={(e) => {
@@ -99,14 +99,14 @@ export function PromoCard({ promo, placement }: PromoCardProps) {
           <X className="size-3.5" />
         </button>
 
-        <div className="from-muted to-muted/50 flex size-9 items-center justify-center rounded-md bg-gradient-to-br">
-          <Icon className="text-muted-foreground size-5" />
+        <div className="bg-muted flex size-8 items-center justify-center rounded-md">
+          <Icon className="text-muted-foreground size-4" />
         </div>
-        <p className="mt-3 text-sm font-medium">{promo.content.title}</p>
-        <p className="text-muted-foreground mt-1 line-clamp-2 text-sm">
+        <p className="mt-2 text-sm font-medium">{promo.content.title}</p>
+        <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs">
           {promo.content.shortDescription}
         </p>
-        <span className="text-muted-foreground mt-3 inline-flex items-center gap-1 text-xs font-medium">
+        <span className="text-muted-foreground mt-2 inline-flex items-center gap-1 text-xs font-medium">
           {promo.content.ctaLabel}
           <ArrowRight className="size-3" />
         </span>

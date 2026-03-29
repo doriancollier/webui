@@ -1,3 +1,4 @@
+import { cn } from '@/layers/shared/lib';
 import type { ActivityGroup } from '../model/use-activity-feed';
 import { ActivityFeedItem } from './ActivityFeedItem';
 
@@ -35,17 +36,29 @@ interface ActivityFeedGroupProps {
   lastVisitedAt: string | null;
   /** When true, renders "since your last visit" separator between new and old events. */
   showSeparator?: boolean;
+  /** Suppresses top margin on the first group in the feed. */
+  isFirst?: boolean;
 }
 
 /** Time-grouped list of activity events with an optional "since your last visit" divider. */
-export function ActivityFeedGroup({ group, lastVisitedAt, showSeparator }: ActivityFeedGroupProps) {
+export function ActivityFeedGroup({
+  group,
+  lastVisitedAt,
+  showSeparator,
+  isFirst,
+}: ActivityFeedGroupProps) {
   const separatorIndex = lastVisitedAt
     ? group.events.findIndex((e) => new Date(e.timestamp) <= new Date(lastVisitedAt))
     : -1;
 
   return (
     <div>
-      <h3 className="text-muted-foreground mt-4 mb-2 text-xs font-medium tracking-wider uppercase">
+      <h3
+        className={cn(
+          'text-muted-foreground/70 mb-1.5 text-[11px] font-medium',
+          !isFirst && 'mt-4'
+        )}
+      >
         {group.label}
       </h3>
       <div className="space-y-0.5">

@@ -35,6 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Unify dashboard section styling for visual consistency
 - Address code review findings
 - Add padding to collapsible settings groups and vertical layout for wide controls
 - Expose React globally for extension runtime and fix Linear example import

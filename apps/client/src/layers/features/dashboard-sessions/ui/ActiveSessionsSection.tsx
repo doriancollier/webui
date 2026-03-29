@@ -41,7 +41,7 @@ export function ActiveSessionsSection() {
       </div>
 
       {sessions.length === 0 ? (
-        <div className="bg-card/50 flex flex-col items-center justify-center rounded-xl border border-dashed py-12">
+        <div className="bg-card/50 flex flex-col items-center justify-center rounded-xl border border-dashed py-8">
           <p className="text-muted-foreground text-sm">No active sessions</p>
           <Button
             variant="ghost"

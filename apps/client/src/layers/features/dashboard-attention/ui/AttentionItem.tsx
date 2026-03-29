@@ -19,19 +19,28 @@ export function AttentionItemRow({ item }: AttentionItemProps) {
   const relativeTime = formatRelativeTime(item.timestamp);
 
   return (
-    <motion.div variants={staggerItem} className="flex items-center gap-3 py-1.5">
-      <Icon
+    <motion.div
+      variants={staggerItem}
+      className="hover:bg-accent/50 flex min-w-0 items-center gap-2.5 rounded-md px-2 py-1 transition-colors"
+    >
+      <span
         className={cn(
-          'size-[--size-icon-sm] shrink-0',
-          item.severity === 'error' ? 'text-red-500' : 'text-amber-500'
+          'size-1.5 shrink-0 rounded-full',
+          item.severity === 'error' ? 'bg-red-500' : 'bg-amber-500'
         )}
       />
-      <span className="text-foreground flex-1 truncate text-sm">{item.description}</span>
+      <Icon
+        className={cn(
+          'size-3.5 shrink-0',
+          item.severity === 'error' ? 'text-red-500/70' : 'text-amber-500/70'
+        )}
+      />
+      <span className="text-foreground/90 min-w-0 flex-1 truncate text-xs">{item.description}</span>
       <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{relativeTime}</span>
       <Button
         variant="ghost"
         size="sm"
-        className="h-6 shrink-0 text-xs"
+        className="h-6 shrink-0 px-2 text-xs"
         onClick={item.action.onClick}
       >
         {item.action.label}

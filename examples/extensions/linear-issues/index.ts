@@ -314,11 +314,15 @@ function IssueRow({ issue, compact }: { issue: LinearIssue; compact?: boolean })
 
 const s: Record<string, React.CSSProperties> = {
   card: {
-    padding: 16, borderRadius: 8,
+    padding: 16, borderRadius: 16,
     border: '1px solid var(--border)', marginBottom: 12,
   },
   sidebar: { padding: 12, fontSize: 13 },
-  heading: { margin: '0 0 10px', fontSize: 14, fontWeight: 600 },
+  heading: {
+    margin: '0 0 12px', fontSize: 12, fontWeight: 500,
+    textTransform: 'uppercase' as const, letterSpacing: '0.1em',
+    color: 'var(--muted-foreground)',
+  },
   badges: { display: 'flex', flexWrap: 'wrap', gap: 6 },
   badge: {
     display: 'inline-flex', alignItems: 'center', gap: 4,

@@ -96,7 +96,7 @@ export function SystemStatusRow() {
         <motion.div variants={staggerItem}>
           <button
             type="button"
-            className="bg-card shadow-soft card-interactive w-full cursor-pointer rounded-xl border p-4 text-left"
+            className="bg-card shadow-soft card-interactive h-full w-full cursor-pointer rounded-xl border p-4 text-left"
             onClick={() => {}}
             aria-label="Session activity this week"
           >
