@@ -1,4 +1,5 @@
-import React from 'react';
+// React is provided by the host — do not import it directly.
+// Use React.createElement() and React.useState() etc. from the global.
 import type { ExtensionAPI } from '@dorkos/extension-api';
 
 // ---------------------------------------------------------------------------

@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Expose React globally for extension runtime and fix Linear example import
 - Clean up lint warnings and fix site build frontmatter
 - Fork UX feedback, tests, and tooltip accessibility
 - Address code review findings

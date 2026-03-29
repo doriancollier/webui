@@ -1,5 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+
+// Expose React globally for extensions — they run as ESM modules
+// with `react` externalized, so they reference `React.createElement` etc.
+// from the global scope (Obsidian plugin model).
+(globalThis as unknown as Record<string, unknown>).React = React;
 import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { createAppRouter } from './router';
