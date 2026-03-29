@@ -5,10 +5,16 @@
  *
  * @module @dorkos/extension-api
  */
-export { ExtensionManifestSchema } from './manifest-schema.js';
+export {
+  ExtensionManifestSchema,
+  SettingOptionSchema,
+  SettingDeclarationSchema,
+} from './manifest-schema.js';
 export type {
   ExtensionManifest,
   SecretDeclaration,
+  SettingOption,
+  SettingDeclaration,
   DataProxyConfig,
   ServerCapabilities,
 } from './manifest-schema.js';
@@ -21,6 +27,7 @@ export type {
 } from './types.js';
 export type {
   SecretStore,
+  SettingsStore,
   DataProviderContext,
   ServerExtensionRegister,
 } from './server-extension-api.js';

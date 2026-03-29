@@ -8,8 +8,44 @@ const SecretDeclarationSchema = z.object({
   label: z.string().min(1),
   /** Help text shown in the settings UI. */
   description: z.string().optional(),
+  /** Custom placeholder hint for the password input (e.g., 'lin_api_xxxx'). */
+  placeholder: z.string().optional(),
   /** Whether the extension cannot function without this secret. */
   required: z.boolean().default(false),
+  /** Group name for collapsible section organization. */
+  group: z.string().optional(),
+});
+
+/** Option for select-type settings. */
+export const SettingOptionSchema = z.object({
+  label: z.string().min(1),
+  value: z.union([z.string(), z.number()]),
+});
+
+/** Non-secret configuration field declared in the manifest. */
+export const SettingDeclarationSchema = z.object({
+  /** Field type: text, number, boolean, or select. */
+  type: z.enum(['text', 'number', 'boolean', 'select']),
+  /** Setting key name (lowercase snake_case). */
+  key: z.string().regex(/^[a-z][a-z0-9_]*$/),
+  /** Human-readable label for the settings UI. */
+  label: z.string().min(1),
+  /** Help text shown in the settings UI. */
+  description: z.string().optional(),
+  /** Placeholder text for text and number inputs. */
+  placeholder: z.string().optional(),
+  /** Default value used when no user override is stored. */
+  default: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  /** Whether the extension cannot function without this setting. */
+  required: z.boolean().default(false),
+  /** Group name for collapsible section organization. */
+  group: z.string().optional(),
+  /** Options for select-type fields. */
+  options: z.array(SettingOptionSchema).optional(),
+  /** Minimum value for number-type fields. */
+  min: z.number().optional(),
+  /** Maximum value for number-type fields. */
+  max: z.number().optional(),
 });
 
 /** Declarative proxy configuration for zero-code API passthrough (Tier 1). */
@@ -34,6 +70,8 @@ const ServerCapabilitiesSchema = z.object({
   externalHosts: z.array(z.string().url()).optional(),
   /** Secrets this extension requires (drives auto-generated settings UI). */
   secrets: z.array(SecretDeclarationSchema).optional(),
+  /** Non-secret configuration fields (drives auto-generated settings UI). */
+  settings: z.array(SettingDeclarationSchema).optional(),
 });
 
 /** Zod schema for `extension.json` manifest files. */
@@ -65,5 +103,7 @@ export const ExtensionManifestSchema = z.object({
 
 export type ExtensionManifest = z.infer<typeof ExtensionManifestSchema>;
 export type SecretDeclaration = z.infer<typeof SecretDeclarationSchema>;
+export type SettingOption = z.infer<typeof SettingOptionSchema>;
+export type SettingDeclaration = z.infer<typeof SettingDeclarationSchema>;
 export type DataProxyConfig = z.infer<typeof DataProxySchema>;
 export type ServerCapabilities = z.infer<typeof ServerCapabilitiesSchema>;

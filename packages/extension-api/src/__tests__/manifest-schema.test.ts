@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { ExtensionManifestSchema } from '../manifest-schema.js';
+import {
+  ExtensionManifestSchema,
+  SettingDeclarationSchema,
+  SettingOptionSchema,
+} from '../manifest-schema.js';
 
 describe('ExtensionManifestSchema', () => {
   // --- Valid manifests ---
@@ -441,6 +445,233 @@ describe('ExtensionManifestSchema', () => {
     if (result.success) {
       expect(result.data.serverCapabilities).toBeDefined();
       expect(result.data.dataProxy).toBeDefined();
+    }
+  });
+});
+
+describe('SettingDeclarationSchema', () => {
+  it('accepts a text setting with all fields', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'text',
+      key: 'label_prefix',
+      label: 'Label Prefix',
+      description: 'Prefix for labels',
+      placeholder: 'gh:',
+      default: 'gh:',
+      group: 'GitHub',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a number setting with min/max', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'number',
+      key: 'refresh_interval',
+      label: 'Refresh',
+      default: 60,
+      min: 10,
+      max: 3600,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a boolean setting with default', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'boolean',
+      key: 'show_archived',
+      label: 'Show Archived',
+      default: false,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a select setting with options', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'select',
+      key: 'theme',
+      label: 'Theme',
+      options: [
+        { label: 'Dark', value: 'dark' },
+        { label: 'Light', value: 'light' },
+      ],
+      default: 'dark',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts a minimal text setting (only required fields)', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'text',
+      key: 'prefix',
+      label: 'Prefix',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('defaults required to false', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'text',
+      key: 'prefix',
+      label: 'Prefix',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.required).toBe(false);
+    }
+  });
+
+  it('rejects invalid key format (uppercase)', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'text',
+      key: 'InvalidKey',
+      label: 'X',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects key starting with a number', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'text',
+      key: '9key',
+      label: 'X',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects invalid type', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'password',
+      key: 'foo',
+      label: 'X',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('rejects empty label', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'text',
+      key: 'foo',
+      label: '',
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('accepts select options with numeric values', () => {
+    const result = SettingDeclarationSchema.safeParse({
+      type: 'select',
+      key: 'priority',
+      label: 'Priority',
+      options: [
+        { label: 'Low', value: 1 },
+        { label: 'High', value: 2 },
+      ],
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('SecretDeclarationSchema — placeholder and group', () => {
+  it('accepts placeholder and group', () => {
+    const result = ExtensionManifestSchema.safeParse({
+      id: 'test-ext',
+      name: 'Test',
+      version: '1.0.0',
+      serverCapabilities: {
+        secrets: [
+          {
+            key: 'api_key',
+            label: 'API Key',
+            placeholder: 'sk_xxxx',
+            group: 'Service',
+          },
+        ],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const secret = result.data.serverCapabilities!.secrets![0];
+      expect(secret.placeholder).toBe('sk_xxxx');
+      expect(secret.group).toBe('Service');
+    }
+  });
+
+  it('still works without placeholder and group (backward compat)', () => {
+    const result = ExtensionManifestSchema.safeParse({
+      id: 'test-ext',
+      name: 'Test',
+      version: '1.0.0',
+      serverCapabilities: {
+        secrets: [{ key: 'api_key', label: 'API Key', required: true }],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      const secret = result.data.serverCapabilities!.secrets![0];
+      expect(secret.placeholder).toBeUndefined();
+      expect(secret.group).toBeUndefined();
+    }
+  });
+});
+
+describe('ServerCapabilitiesSchema — settings', () => {
+  it('accepts settings alongside secrets', () => {
+    const result = ExtensionManifestSchema.safeParse({
+      id: 'combined-ext',
+      name: 'Combined',
+      version: '1.0.0',
+      serverCapabilities: {
+        secrets: [{ key: 'token', label: 'Token' }],
+        settings: [{ type: 'boolean', key: 'enabled', label: 'Enabled' }],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.serverCapabilities!.secrets).toHaveLength(1);
+      expect(result.data.serverCapabilities!.settings).toHaveLength(1);
+    }
+  });
+
+  it('accepts settings without secrets', () => {
+    const result = ExtensionManifestSchema.safeParse({
+      id: 'settings-only',
+      name: 'Settings Only',
+      version: '1.0.0',
+      serverCapabilities: {
+        settings: [{ type: 'text', key: 'prefix', label: 'Prefix' }],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.serverCapabilities!.secrets).toBeUndefined();
+      expect(result.data.serverCapabilities!.settings).toHaveLength(1);
+    }
+  });
+
+  it('rejects settings with invalid field type', () => {
+    const result = ExtensionManifestSchema.safeParse({
+      id: 'bad-settings',
+      name: 'Bad',
+      version: '1.0.0',
+      serverCapabilities: {
+        settings: [{ type: 'password', key: 'bad', label: 'Bad' }],
+      },
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it('existing manifests without settings still parse correctly', () => {
+    const result = ExtensionManifestSchema.safeParse({
+      id: 'legacy',
+      name: 'Legacy',
+      version: '1.0.0',
+      serverCapabilities: {
+        serverEntry: './server.ts',
+        secrets: [{ key: 'key', label: 'Key' }],
+      },
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.serverCapabilities!.settings).toBeUndefined();
     }
   });
 });

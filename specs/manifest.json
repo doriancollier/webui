@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "nextNumber": 209,
+  "nextNumber": 210,
   "specs": [
+    {
+      "number": 209,
+      "slug": "extension-manifest-settings",
+      "title": "Extension Manifest Settings",
+      "created": "2026-03-29",
+      "status": "implemented"
+    },
     {
       "number": 207,
       "slug": "tool-progress-streaming",

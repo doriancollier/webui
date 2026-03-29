@@ -521,3 +521,165 @@ describe('ExtensionLoader server lifecycle coordination', () => {
     errorSpy.mockRestore();
   });
 });
+
+describe('ExtensionLoader auto-register config tab', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  it('auto-registers config tab when extension has settings but no secrets', async () => {
+    const deps = makeDeps();
+    const rec = makeRecord({
+      id: 'settings-only',
+      manifest: {
+        id: 'settings-only',
+        name: 'Settings Only Extension',
+        version: '1.0.0',
+        serverCapabilities: {
+          serverEntry: './server.ts',
+          settings: [{ type: 'boolean', key: 'enabled', label: 'Enabled', required: false }],
+        },
+      },
+    });
+
+    // Seed the loader's loaded map to bypass dynamic import
+    const loader = new ExtensionLoader(deps);
+    const cleanups: Array<() => void> = [];
+
+    // Access the private method to test directly
+    const autoRegister = (
+      loader as unknown as {
+        autoRegisterConfigTab: (rec: ExtensionRecordPublic, cleanups: Array<() => void>) => void;
+      }
+    ).autoRegisterConfigTab.bind(loader);
+
+    autoRegister(rec, cleanups);
+
+    // Verify registry.register was called with 'settings.tabs'
+    expect(deps.registry.register).toHaveBeenCalledWith(
+      'settings.tabs',
+      expect.objectContaining({
+        id: 'settings-only:settings',
+        label: 'Settings Only Extension',
+      })
+    );
+  });
+
+  it('auto-registers unified config tab when extension has both secrets and settings', async () => {
+    const deps = makeDeps();
+    const rec = makeRecord({
+      id: 'combined-ext',
+      manifest: {
+        id: 'combined-ext',
+        name: 'Combined Extension',
+        version: '1.0.0',
+        serverCapabilities: {
+          serverEntry: './server.ts',
+          secrets: [{ key: 'api_key', label: 'API Key', required: false }],
+          settings: [{ type: 'number', key: 'interval', label: 'Interval', required: false }],
+        },
+      },
+    });
+
+    const loader = new ExtensionLoader(deps);
+    const cleanups: Array<() => void> = [];
+    const autoRegister = (
+      loader as unknown as {
+        autoRegisterConfigTab: (rec: ExtensionRecordPublic, cleanups: Array<() => void>) => void;
+      }
+    ).autoRegisterConfigTab.bind(loader);
+
+    autoRegister(rec, cleanups);
+
+    // Should register exactly ONE tab (unified), not two
+    expect(deps.registry.register).toHaveBeenCalledTimes(1);
+    expect(deps.registry.register).toHaveBeenCalledWith(
+      'settings.tabs',
+      expect.objectContaining({
+        id: 'combined-ext:settings',
+        label: 'Combined Extension',
+      })
+    );
+  });
+
+  it('does not auto-register config tab when extension has no secrets or settings', () => {
+    const deps = makeDeps();
+    const rec = makeRecord({
+      manifest: {
+        id: 'ui-only',
+        name: 'UI Only Extension',
+        version: '1.0.0',
+      },
+    });
+
+    const loader = new ExtensionLoader(deps);
+    const cleanups: Array<() => void> = [];
+    const autoRegister = (
+      loader as unknown as {
+        autoRegisterConfigTab: (rec: ExtensionRecordPublic, cleanups: Array<() => void>) => void;
+      }
+    ).autoRegisterConfigTab.bind(loader);
+
+    autoRegister(rec, cleanups);
+
+    expect(deps.registry.register).not.toHaveBeenCalled();
+  });
+
+  it('does not auto-register when secrets and settings are empty arrays', () => {
+    const deps = makeDeps();
+    const rec = makeRecord({
+      manifest: {
+        id: 'empty-ext',
+        name: 'Empty Extension',
+        version: '1.0.0',
+        serverCapabilities: {
+          serverEntry: './server.ts',
+          secrets: [],
+          settings: [],
+        },
+      },
+    });
+
+    const loader = new ExtensionLoader(deps);
+    const cleanups: Array<() => void> = [];
+    const autoRegister = (
+      loader as unknown as {
+        autoRegisterConfigTab: (rec: ExtensionRecordPublic, cleanups: Array<() => void>) => void;
+      }
+    ).autoRegisterConfigTab.bind(loader);
+
+    autoRegister(rec, cleanups);
+
+    expect(deps.registry.register).not.toHaveBeenCalled();
+  });
+
+  it('cleanup function from register is tracked in cleanups array', () => {
+    const unsubFn = vi.fn();
+    const deps = makeDeps({ registry: { register: vi.fn().mockReturnValue(unsubFn) } });
+    const rec = makeRecord({
+      manifest: {
+        id: 'tracked',
+        name: 'Tracked',
+        version: '1.0.0',
+        serverCapabilities: {
+          serverEntry: './server.ts',
+          secrets: [{ key: 'key', label: 'Key', required: false }],
+        },
+      },
+    });
+
+    const loader = new ExtensionLoader(deps);
+    const cleanups: Array<() => void> = [];
+    const autoRegister = (
+      loader as unknown as {
+        autoRegisterConfigTab: (rec: ExtensionRecordPublic, cleanups: Array<() => void>) => void;
+      }
+    ).autoRegisterConfigTab.bind(loader);
+
+    autoRegister(rec, cleanups);
+
+    expect(cleanups).toHaveLength(1);
+    expect(cleanups[0]).toBe(unsubFn);
+  });
+});

@@ -42,18 +42,18 @@ my-extension/
 }
 ```
 
-| Field                | Required | Description                                                                              |
-| -------------------- | -------- | ---------------------------------------------------------------------------------------- |
-| `id`                 | Yes      | Unique kebab-case identifier. Must match the directory name.                             |
-| `name`               | Yes      | Display name shown in Settings.                                                          |
-| `version`            | Yes      | Semver string (e.g. `1.0.0`).                                                            |
-| `description`        | No       | Short description for the settings UI.                                                   |
-| `author`             | No       | Author name or identifier.                                                               |
-| `minHostVersion`     | No       | Minimum DorkOS version. Extension won't load on older hosts.                             |
-| `contributions`      | No       | Declares which UI slots the extension contributes to (informational).                    |
-| `permissions`        | No       | Reserved for future use.                                                                 |
-| `serverCapabilities` | No       | Server-side declarations: entry point, external hosts, secrets. See [Secrets](#secrets). |
-| `dataProxy`          | No       | Declarative API proxy config. See [Declarative Proxy](#declarative-proxy).               |
+| Field                | Required | Description                                                                                                                                          |
+| -------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`                 | Yes      | Unique kebab-case identifier. Must match the directory name.                                                                                         |
+| `name`               | Yes      | Display name shown in Settings.                                                                                                                      |
+| `version`            | Yes      | Semver string (e.g. `1.0.0`).                                                                                                                        |
+| `description`        | No       | Short description for the settings UI.                                                                                                               |
+| `author`             | No       | Author name or identifier.                                                                                                                           |
+| `minHostVersion`     | No       | Minimum DorkOS version. Extension won't load on older hosts.                                                                                         |
+| `contributions`      | No       | Declares which UI slots the extension contributes to (informational).                                                                                |
+| `permissions`        | No       | Reserved for future use.                                                                                                                             |
+| `serverCapabilities` | No       | Server-side declarations: entry point, external hosts, secrets, settings. See [Secrets](#secrets) and [Settings Declaration](#settings-declaration). |
+| `dataProxy`          | No       | Declarative API proxy config. See [Declarative Proxy](#declarative-proxy).                                                                           |
 
 ## Entry Point (`activate`)
 
@@ -253,7 +253,7 @@ export default register;
 The `register` function receives two arguments:
 
 - **`router`** — A scoped Express `Router` mounted at `/api/ext/{id}/`. A route registered as `router.get('/data', ...)` is reachable at `GET /api/ext/my-extension/data`.
-- **`ctx`** — A `DataProviderContext` with secrets, storage, scheduling, and event emission (see below).
+- **`ctx`** — A `DataProviderContext` with secrets, settings, storage, scheduling, and event emission (see below).
 
 Server-side code is compiled to CommonJS (Node.js target) by the host using esbuild. TypeScript is supported out of the box.
 
@@ -277,6 +277,24 @@ await ctx.secrets.delete('api_key');
 
 // Check if set without decrypting
 const exists = await ctx.secrets.has('api_key');
+```
+
+#### `ctx.settings`
+
+Read/write access to non-secret extension configuration. Settings are stored as plaintext JSON at `{dorkHome}/extension-data/{id}/settings.json`.
+
+```typescript
+// Read a setting value (returns null if not set)
+const interval = await ctx.settings.get<number>('refresh_interval');
+
+// Store a setting value (string, number, or boolean)
+await ctx.settings.set('refresh_interval', 120);
+
+// Delete a setting (reverts to manifest default)
+await ctx.settings.delete('refresh_interval');
+
+// Read all stored settings as a key-value record
+const all = await ctx.settings.getAll();
 ```
 
 #### `ctx.storage`
@@ -367,7 +385,9 @@ Add a `serverCapabilities` block to `extension.json`:
         "key": "api_key",
         "label": "API Key",
         "description": "Get your key at https://example.com/settings",
-        "required": true
+        "placeholder": "sk_live_xxxxxxxxxxxx",
+        "required": true,
+        "group": "Authentication"
       }
     ]
   }
@@ -379,7 +399,9 @@ Add a `serverCapabilities` block to `extension.json`:
 | `key`         | Yes      | Lowercase alphanumeric with underscores. Must match `^[a-z][a-z0-9_]*$`.        |
 | `label`       | Yes      | Human-readable name for the settings UI.                                        |
 | `description` | No       | Help text shown below the input field.                                          |
+| `placeholder` | No       | Custom placeholder hint for the password input (e.g., `lin_api_xxxx`).          |
 | `required`    | No       | Whether the extension cannot function without this secret. Defaults to `false`. |
+| `group`       | No       | Group name for collapsible section organization in the settings UI.             |
 
 ### Security Properties
 
@@ -409,6 +431,134 @@ Body: { "value": "sk-..." }
 
 // Delete a secret
 DELETE /api/extensions/{id}/secrets/{key}
+```
+
+---
+
+## Settings Declaration
+
+Declare non-secret configuration fields in `serverCapabilities.settings`. The host auto-generates a settings form — no UI code required.
+
+> **Secrets vs Settings**: Use `secrets` for credentials, API keys, and tokens — these are encrypted at rest and never sent to the browser. Use `settings` for everything else: refresh intervals, display toggles, filter selections, label prefixes. Settings are stored as plaintext JSON.
+
+### Setting Types
+
+| Type      | Input Component | Save Behavior          | Extra Properties            |
+| --------- | --------------- | ---------------------- | --------------------------- |
+| `text`    | Text input      | Explicit save button   | `placeholder`               |
+| `number`  | Number input    | Explicit save button   | `placeholder`, `min`, `max` |
+| `boolean` | Toggle switch   | Immediate on toggle    | —                           |
+| `select`  | Dropdown        | Immediate on selection | `options` (required)        |
+
+### Setting Fields
+
+| Field         | Type                  | Required   | Description                                   |
+| ------------- | --------------------- | ---------- | --------------------------------------------- |
+| `type`        | string                | Yes        | One of: `text`, `number`, `boolean`, `select` |
+| `key`         | string                | Yes        | Setting key (lowercase snake_case)            |
+| `label`       | string                | Yes        | Human-readable label for the settings UI      |
+| `description` | string                | No         | Help text shown below the input               |
+| `placeholder` | string                | No         | Placeholder text for text/number inputs       |
+| `default`     | string/number/boolean | No         | Default value used when no override is stored |
+| `required`    | boolean               | No         | Whether the extension requires this setting   |
+| `group`       | string                | No         | Group name for collapsible section            |
+| `options`     | `{label, value}[]`    | For select | Options for select-type fields                |
+| `min`         | number                | No         | Minimum value (number fields only)            |
+| `max`         | number                | No         | Maximum value (number fields only)            |
+
+### Grouping
+
+When secrets and settings share the same `group` value, they render together in a collapsible section. Ungrouped items appear at the top. Within each group, secrets render before settings.
+
+### Complete Example Manifest
+
+A manifest declaring both secrets (with placeholder and group) and settings:
+
+```json
+{
+  "id": "github-sync",
+  "name": "GitHub Sync",
+  "version": "1.0.0",
+  "serverCapabilities": {
+    "serverEntry": "./server.ts",
+    "secrets": [
+      {
+        "key": "github_token",
+        "label": "GitHub Token",
+        "description": "Personal access token with repo scope",
+        "placeholder": "ghp_xxxxxxxxxxxx",
+        "group": "GitHub",
+        "required": true
+      },
+      {
+        "key": "linear_api_key",
+        "label": "Linear API Key",
+        "placeholder": "lin_api_xxxx",
+        "group": "Linear"
+      }
+    ],
+    "settings": [
+      {
+        "type": "number",
+        "key": "refresh_interval",
+        "label": "Refresh Interval",
+        "description": "How often to poll for updates (seconds)",
+        "default": 60,
+        "min": 10,
+        "max": 3600
+      },
+      {
+        "type": "boolean",
+        "key": "show_archived",
+        "label": "Show Archived Issues",
+        "default": false,
+        "group": "GitHub"
+      },
+      {
+        "type": "select",
+        "key": "sort_order",
+        "label": "Sort Order",
+        "options": [
+          { "label": "Newest first", "value": "desc" },
+          { "label": "Oldest first", "value": "asc" }
+        ],
+        "default": "desc"
+      },
+      {
+        "type": "text",
+        "key": "label_prefix",
+        "label": "Label Prefix",
+        "description": "Prefix added to synced issue labels",
+        "placeholder": "sync:",
+        "group": "GitHub"
+      }
+    ]
+  },
+  "contributions": {
+    "dashboard.sections": true
+  }
+}
+```
+
+### Accessing Settings in `server.ts`
+
+Read and write settings values via `ctx.settings`:
+
+```typescript
+const register: ServerExtensionRegister = (router, ctx) => {
+  router.get('/config', async (_req, res) => {
+    const interval = await ctx.settings.get<number>('refresh_interval');
+    const all = await ctx.settings.getAll();
+    res.json({ interval: interval ?? 60, all });
+  });
+
+  ctx.schedule(60, async () => {
+    const showArchived = await ctx.settings.get<boolean>('show_archived');
+    // Fetch data with the user's configured preferences...
+  });
+};
+
+export default register;
 ```
 
 ---

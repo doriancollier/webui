@@ -2,11 +2,12 @@ import type {
   ExtensionRecordPublic,
   ExtensionModule,
   SecretDeclaration,
+  SettingDeclaration,
 } from '@dorkos/extension-api';
 import { createExtensionAPI } from './extension-api-factory';
 import type { ExtensionAPIDeps, LoadedExtension } from './types';
 import { createElement } from 'react';
-import { ManifestSecretsPanel, ManifestSecretsIcon } from '../ui/ManifestSecretsPanel';
+import { ManifestSettingsPanel, ManifestSettingsIcon } from '../ui/ManifestSettingsPanel';
 
 /**
  * Fetch the extension list from the server.
@@ -140,7 +141,7 @@ export class ExtensionLoader {
         // Auto-register a secrets settings tab from the manifest if the
         // extension didn't register one itself. This gives extension authors
         // a polished settings UI for free — zero code required.
-        this.autoRegisterSecretsTab(rec, cleanups);
+        this.autoRegisterConfigTab(rec, cleanups);
 
         const loaded: LoadedExtension = {
           id: rec.id,
@@ -258,7 +259,7 @@ export class ExtensionLoader {
         const { api, cleanups } = createExtensionAPI(id, this.deps);
         const deactivateFn = module.activate(api);
 
-        this.autoRegisterSecretsTab(rec, cleanups);
+        this.autoRegisterConfigTab(rec, cleanups);
 
         this.loaded.set(id, {
           id,
@@ -288,28 +289,31 @@ export class ExtensionLoader {
 
   /**
    * Auto-register a host-generated settings tab for extensions that declare
-   * secrets in their manifest. This gives extension authors a polished UI
-   * using the design system — zero settings code required.
+   * secrets or settings in their manifest. This gives extension authors a
+   * polished UI using the design system — zero settings code required.
    *
    * Called after `module.activate(api)` so the extension can override by
    * registering its own tab with the same ID (idempotent registry replaces).
    */
-  private autoRegisterSecretsTab(rec: ExtensionRecordPublic, cleanups: Array<() => void>): void {
+  private autoRegisterConfigTab(rec: ExtensionRecordPublic, cleanups: Array<() => void>): void {
     const secrets = rec.manifest.serverCapabilities?.secrets;
-    if (!secrets?.length) return;
+    const settings = rec.manifest.serverCapabilities?.settings;
+    if (!secrets?.length && !settings?.length) return;
 
     const extensionId = rec.id;
     const tabId = `${extensionId}:settings`;
-    const frozenSecrets: SecretDeclaration[] = secrets;
+    const frozenSecrets: SecretDeclaration[] = secrets ?? [];
+    const frozenSettings: SettingDeclaration[] = settings ?? [];
 
     const unsub = this.deps.registry.register('settings.tabs', {
       id: tabId,
       label: rec.manifest.name,
-      icon: ManifestSecretsIcon,
-      component: function AutoSecretsTab() {
-        return createElement(ManifestSecretsPanel, {
+      icon: ManifestSettingsIcon,
+      component: function AutoConfigTab() {
+        return createElement(ManifestSettingsPanel, {
           extensionId,
           secrets: frozenSecrets,
+          settings: frozenSettings,
         });
       },
       priority: 90,

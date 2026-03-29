@@ -16,6 +16,7 @@
         "key": "linear_api_key",
         "label": "Linear API Key",
         "description": "Settings \u2192 API \u2192 Personal API keys at linear.app",
+        "placeholder": "lin_api_xxxxxxxxxxxx",
         "required": true
       }
     ]

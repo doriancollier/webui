@@ -8,6 +8,7 @@
  */
 import type { DataProviderContext } from '@dorkos/extension-api/server';
 import { ExtensionSecretStore } from '@dorkos/shared/extension-secrets';
+import { ExtensionSettingsStore } from '@dorkos/shared/extension-settings';
 import { eventFanOut } from '../core/event-fan-out.js';
 import fs from 'fs/promises';
 import path from 'path';
@@ -43,6 +44,7 @@ export function createDataProviderContext(deps: CreateContextDeps): {
   const { extensionId, extensionDir, dorkHome } = deps;
 
   const secrets = new ExtensionSecretStore(extensionId, dorkHome);
+  const settings = new ExtensionSettingsStore(dorkHome, extensionId);
 
   const dataPath = path.join(dorkHome, 'extension-data', extensionId, 'data.json');
 
@@ -81,6 +83,7 @@ export function createDataProviderContext(deps: CreateContextDeps): {
 
   const ctx: DataProviderContext = {
     secrets,
+    settings,
     storage,
     schedule,
     emit,

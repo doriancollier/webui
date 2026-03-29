@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add manifest-driven settings forms, placeholder hints, and grouped sections
 - Show available subagents via supportedAgents()
 - Auto-generate settings UI from manifest and fix StrictMode double-activation
 - Add spec manifest management system
@@ -19,11 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix prompt suggestions, add api_retry events, and effort level controls
 - Add commands for product management and issue handling
 - Add 5-level error handling hierarchy with Dev Playground showcase
+- Display context usage meter with category breakdown tooltip for token visibility
 - Decouple chat state from React lifecycle into session-keyed Zustand store
 
 ### Changed
 
-- Extract SessionStore, RuntimeCache, and constants from ClaudeCodeRuntime
 - Extract SessionStore, RuntimeCache, and constants from ClaudeCodeRuntime
 - Update docs and templates for auto-generated settings tabs
 - Extract extension-manager into focused collaborators
@@ -36,6 +37,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Address code review findings
 - Spread process.env in SDK env option to prevent code 127
 - Load local settings so project-level plugin MCP servers are discovered
+
 ---
 
 ## [0.27.0] - 2026-03-28

@@ -1,13 +1,22 @@
 {
   "version": 1,
-  "nextNumber": 216,
+  "nextNumber": 217,
   "decisions": [
+    {
+      "number": 216,
+      "slug": "plaintext-settings-alongside-encrypted-secrets",
+      "title": "Plaintext Settings Alongside Encrypted Secrets",
+      "created": "2026-03-29",
+      "status": "proposed",
+      "extractedFrom": "extension-manifest-settings",
+      "specSlug": "extension-manifest-settings"
+    },
     {
       "number": 215,
       "slug": "unified-sse-for-extension-events",
       "title": "Unified SSE Stream for Extension Events",
       "created": "2026-03-29",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "linear-issue-status-extension",
       "specSlug": "linear-issue-status-extension"
     },
@@ -16,7 +25,7 @@
       "slug": "aes-256-gcm-per-extension-secret-storage",
       "title": "AES-256-GCM Encrypted Per-Extension Secret Storage",
       "created": "2026-03-29",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "linear-issue-status-extension",
       "specSlug": "linear-issue-status-extension"
     },
@@ -25,7 +34,7 @@
       "slug": "directus-style-server-extension-registration",
       "title": "Directus-Style register(router, ctx) for Server-Side Extensions",
       "created": "2026-03-29",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "linear-issue-status-extension",
       "specSlug": "linear-issue-status-extension"
     },
@@ -34,7 +43,7 @@
       "slug": "inline-styles-for-crash-fallback",
       "title": "Inline Styles Only for Catastrophic Crash Fallback",
       "created": "2026-03-28",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "client-error-handling",
       "specSlug": "client-error-handling"
     },
@@ -43,7 +52,7 @@
       "slug": "react-error-boundary-over-native-class",
       "title": "Use react-error-boundary Over Native Class Components",
       "created": "2026-03-28",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "client-error-handling",
       "specSlug": "client-error-handling"
     },
@@ -52,7 +61,7 @@
       "slug": "five-level-error-boundary-hierarchy",
       "title": "Five-Level Error Boundary Hierarchy for Client App",
       "created": "2026-03-28",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "client-error-handling",
       "specSlug": "client-error-handling"
     },
@@ -61,7 +70,7 @@
       "slug": "stream-manager-singleton",
       "title": "Module-Level StreamManager Singleton for Decoupled Stream Lifecycle",
       "created": "2026-03-28",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "session-state-manager",
       "specSlug": "session-state-manager"
     },
@@ -70,7 +79,7 @@
       "slug": "session-keyed-zustand-store",
       "title": "Session-Keyed Zustand Store for Chat State",
       "created": "2026-03-28",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "session-state-manager",
       "specSlug": "session-state-manager"
     },
@@ -79,7 +88,7 @@
       "slug": "refetch-on-reconnect-cache-invalidation",
       "title": "Invalidate TanStack Query Caches on SSE Reconnect",
       "created": "2026-03-27",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "sse-connection-optimization-02-fetch-transport",
       "specSlug": "sse-connection-optimization-02-fetch-transport"
     },
@@ -88,25 +97,16 @@
       "slug": "fetch-based-sse-transport",
       "title": "Use fetch() Instead of EventSource for SSE Connections",
       "created": "2026-03-27",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "sse-connection-optimization-02-fetch-transport",
       "specSlug": "sse-connection-optimization-02-fetch-transport"
-    },
-    {
-      "number": 205,
-      "slug": "sse-event-routing-via-event-field",
-      "title": "Use SSE event Field for Multiplexed Stream Routing",
-      "created": "2026-03-27",
-      "status": "draft",
-      "extractedFrom": "sse-connection-optimization-01-consolidate",
-      "specSlug": "sse-connection-optimization-01-consolidate"
     },
     {
       "number": 204,
       "slug": "consolidate-sse-connections-into-unified-stream",
       "title": "Consolidate SSE Connections into Unified Event Stream",
       "created": "2026-03-27",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "sse-connection-optimization-01-consolidate",
       "specSlug": "sse-connection-optimization-01-consolidate"
     },
@@ -115,7 +115,7 @@
       "slug": "extension-api-includes-ui-control-for-phase-4",
       "title": "Include UI Control Methods in v1 ExtensionAPI for Phase 4 Readiness",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-03-extension-system",
       "specSlug": "ext-platform-03-extension-system"
     },
@@ -124,7 +124,7 @@
       "slug": "esbuild-content-hash-compilation-cache",
       "title": "Content-Hash-Based esbuild Compilation Cache for Extensions",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-03-extension-system",
       "specSlug": "ext-platform-03-extension-system"
     },
@@ -133,7 +133,7 @@
       "slug": "extension-storage-separate-from-code",
       "title": "Separate Extension Data Storage from Extension Code Directories",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-03-extension-system",
       "specSlug": "ext-platform-03-extension-system"
     },
@@ -142,7 +142,7 @@
       "slug": "app-layer-synchronous-extension-initialization",
       "title": "App-Layer Synchronous Extension Initialization",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-02-extension-registry",
       "specSlug": "ext-platform-02-extension-registry"
     },
@@ -151,7 +151,7 @@
       "slug": "generic-register-api-with-slot-contribution-map",
       "title": "Generic register<K>() API with SlotContributionMap Interface",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-02-extension-registry",
       "specSlug": "ext-platform-02-extension-registry"
     },
@@ -160,7 +160,7 @@
       "slug": "dual-mechanism-agent-ui-state-awareness",
       "title": "Dual-Mechanism Agent UI State Awareness \u2014 Context Injection + Tool Query",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-01-agent-ui-control",
       "specSlug": "ext-platform-01-agent-ui-control"
     },
@@ -169,7 +169,7 @@
       "slug": "ui-action-dispatcher-plain-function",
       "title": "UiActionDispatcher as Plain Function Outside React Component Tree",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-01-agent-ui-control",
       "specSlug": "ext-platform-01-agent-ui-control"
     },
@@ -178,7 +178,7 @@
       "slug": "single-control-ui-tool-discriminated-union",
       "title": "Single control_ui Tool with Discriminated Union Action Schema",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-01-agent-ui-control",
       "specSlug": "ext-platform-01-agent-ui-control"
     },
@@ -187,18 +187,9 @@
       "slug": "hybrid-agent-ui-control-pattern",
       "title": "Hybrid Agent UI Control \u2014 Explicit Tool + Minimal Implicit Side-Effects",
       "created": "2026-03-26",
-      "status": "draft",
+      "status": "proposed",
       "extractedFrom": "ext-platform-01-agent-ui-control",
       "specSlug": "ext-platform-01-agent-ui-control"
-    },
-    {
-      "number": 194,
-      "slug": "version-display-in-sidebar-not-status-bar",
-      "title": "Display Version in Sidebar Footer, Not Status Bar",
-      "created": "2026-03-24",
-      "status": "draft",
-      "extractedFrom": "sidebar-upgrade-notification",
-      "specSlug": "sidebar-upgrade-notification"
     },
     {
       "number": 193,
@@ -212,7 +203,7 @@
       "number": 192,
       "slug": "relay-notify-user-convenience-tool",
       "title": "High-Level relay_notify_user MCP Tool for Agent-Initiated Messaging",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-24",
       "extractedFrom": "relay-outbound-awareness",
       "specSlug": "relay-outbound-awareness"
@@ -221,7 +212,7 @@
       "number": 191,
       "slug": "dynamic-relay-connections-context-block",
       "title": "Dynamic <relay_connections> Context Block for Agent Outbound Awareness",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-24",
       "extractedFrom": "relay-outbound-awareness",
       "specSlug": "relay-outbound-awareness"
@@ -230,7 +221,7 @@
       "number": 190,
       "slug": "sse-page-visibility-optimization",
       "title": "Close SSE Connections on Tab Background with Grace Period",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-24",
       "extractedFrom": "sse-resilience-connection-health",
       "specSlug": "sse-resilience-connection-health"
@@ -239,7 +230,7 @@
       "number": 189,
       "slug": "shared-sse-resilience-primitive",
       "title": "Shared SSE Resilience Primitive (Class + Hook)",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-24",
       "extractedFrom": "sse-resilience-connection-health",
       "specSlug": "sse-resilience-connection-health"
@@ -248,7 +239,7 @@
       "number": 188,
       "slug": "speculative-uuid-session-creation",
       "title": "Use Speculative UUIDs for New Session Creation",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-23",
       "extractedFrom": "improved-new-session-creation",
       "specSlug": "improved-new-session-creation"
@@ -257,7 +248,7 @@
       "number": 187,
       "slug": "typed-adapter-icon-identifiers",
       "title": "Typed Adapter Icon Identifiers Replace Emoji Icons",
-      "status": "draft",
+      "status": "proposed",
       "created": "2026-03-23",
       "extractedFrom": "real-brand-adapter-logos",
       "specSlug": "real-brand-adapter-logos"

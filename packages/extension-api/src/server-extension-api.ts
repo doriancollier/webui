@@ -19,10 +19,26 @@ export interface SecretStore {
   has(key: string): Promise<boolean>;
 }
 
+/** Read/write access to non-secret extension configuration (plaintext JSON). */
+export interface SettingsStore {
+  /** Get a setting value by key. Returns null if not set. */
+  get<T extends string | number | boolean = string | number | boolean>(
+    key: string
+  ): Promise<T | null>;
+  /** Set a setting value. Writes through to disk immediately. */
+  set(key: string, value: string | number | boolean): Promise<void>;
+  /** Delete a setting value. Writes through to disk immediately. */
+  delete(key: string): Promise<void>;
+  /** Get all stored settings as a key-value record. */
+  getAll(): Promise<Record<string, string | number | boolean>>;
+}
+
 /** Context injected into server-side extension code. */
 export interface DataProviderContext {
   /** Encrypted per-extension secret store. */
   readonly secrets: SecretStore;
+  /** Non-secret extension configuration store (plaintext JSON). */
+  readonly settings: SettingsStore;
   /** Scoped persistent storage for extension data. */
   readonly storage: {
     loadData<T = unknown>(): Promise<T | null>;

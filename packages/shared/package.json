@@ -71,6 +71,10 @@
     "./extension-secrets": {
       "types": "./src/extension-secrets.ts",
       "default": "./dist/extension-secrets.js"
+    },
+    "./extension-settings": {
+      "types": "./src/extension-settings.ts",
+      "default": "./dist/extension-settings.js"
     }
   },
   "scripts": {

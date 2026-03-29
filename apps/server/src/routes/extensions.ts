@@ -12,6 +12,7 @@ import type { ExtensionManager } from '../services/extensions/extension-manager.
 import { logger } from '../lib/logger.js';
 import { eventFanOut } from '../services/core/event-fan-out.js';
 import { ExtensionSecretStore } from '@dorkos/shared/extension-secrets';
+import { ExtensionSettingsStore } from '@dorkos/shared/extension-settings';
 
 /** Connected SSE clients for extension lifecycle events. */
 const sseClients = new Set<Response>();
@@ -53,6 +54,10 @@ const CwdChangedBodySchema = z.object({
 
 const SetSecretBodySchema = z.object({
   value: z.string().min(1),
+});
+
+const SetSettingBodySchema = z.object({
+  value: z.union([z.string(), z.number(), z.boolean()]),
 });
 
 /** Validates extension IDs match the manifest schema pattern (kebab-case alphanumeric). */
@@ -338,6 +343,100 @@ export function createExtensionsRouter(
     } catch (err) {
       logger.error(`[Extensions] Failed to delete secret for ${req.params.id}`, err);
       res.status(500).json({ error: 'Failed to delete secret' });
+    }
+  });
+
+  // GET /api/extensions/:id/settings -- List declared settings with current values
+  router.get('/:id/settings', async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+
+      const record = extensionManager.get(id);
+      if (!record) {
+        return res.status(404).json({ error: `Extension '${id}' not found` });
+      }
+
+      const declared = record.manifest.serverCapabilities?.settings ?? [];
+      const store = new ExtensionSettingsStore(dorkHome, id);
+      const stored = await store.getAll();
+
+      const result = declared.map((s) => {
+        const hasStored = s.key in stored;
+        return {
+          key: s.key,
+          type: s.type,
+          label: s.label,
+          description: s.description,
+          placeholder: s.placeholder,
+          group: s.group,
+          value: hasStored ? stored[s.key] : (s.default ?? null),
+          isDefault: !hasStored,
+          ...(s.options && { options: s.options }),
+          ...(s.min !== undefined && { min: s.min }),
+          ...(s.max !== undefined && { max: s.max }),
+        };
+      });
+
+      res.json(result);
+    } catch (err) {
+      logger.error(`[Extensions] Failed to list settings for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to list settings' });
+    }
+  });
+
+  // PUT /api/extensions/:id/settings/:key -- Store a setting value
+  router.put('/:id/settings/:key', async (req, res) => {
+    try {
+      const { id, key } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+
+      const parsed = SetSettingBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: 'Validation failed', details: parsed.error.flatten() });
+      }
+
+      const record = extensionManager.get(id);
+      if (!record) {
+        return res.status(404).json({ error: `Extension '${id}' not found` });
+      }
+
+      // Validate key is declared in manifest
+      const declared = record.manifest.serverCapabilities?.settings ?? [];
+      if (!declared.some((s) => s.key === key)) {
+        return res
+          .status(400)
+          .json({ error: `Setting '${key}' not declared in extension manifest` });
+      }
+
+      const store = new ExtensionSettingsStore(dorkHome, id);
+      await store.set(key, parsed.data.value);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error(`[Extensions] Failed to set setting for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to set setting' });
+    }
+  });
+
+  // DELETE /api/extensions/:id/settings/:key -- Reset setting to default
+  router.delete('/:id/settings/:key', async (req, res) => {
+    try {
+      const { id, key } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+
+      const record = extensionManager.get(id);
+      if (!record) {
+        return res.status(404).json({ error: `Extension '${id}' not found` });
+      }
+
+      const store = new ExtensionSettingsStore(dorkHome, id);
+      await store.delete(key);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error(`[Extensions] Failed to delete setting for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to delete setting' });
     }
   });
 
