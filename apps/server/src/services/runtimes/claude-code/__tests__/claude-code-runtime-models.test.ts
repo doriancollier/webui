@@ -89,8 +89,9 @@ describe('ClaudeCodeRuntime.getSupportedModels', () => {
       { value: 'custom-model', displayName: 'Custom', description: 'A custom model' },
     ];
 
-    // Populate the cache directly via bracket notation
-    (manager as Record<string, unknown>)['cachedModels'] = customModels;
+    // Populate the cache directly via bracket notation (cachedModels lives on the RuntimeCache collaborator)
+    const cache = (manager as Record<string, unknown>)['cache'] as Record<string, unknown>;
+    cache['cachedModels'] = customModels;
 
     const models = await manager.getSupportedModels();
     expect(models).toEqual(customModels);

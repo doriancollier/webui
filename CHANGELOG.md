@@ -23,6 +23,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Extract SessionStore, RuntimeCache, and constants from ClaudeCodeRuntime
+- Extract SessionStore, RuntimeCache, and constants from ClaudeCodeRuntime
 - Update docs and templates for auto-generated settings tabs
 - Extract extension-manager into focused collaborators
 
