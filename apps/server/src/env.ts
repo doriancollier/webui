@@ -26,6 +26,8 @@ const serverEnvSchema = z.object({
   DORKOS_A2A_ENABLED: boolFlag,
   DORKOS_PULSE_ENABLED: boolFlag,
   DORKOS_RELAY_ENABLED: boolFlag,
+  // Activity feed — retention period for pruning (defaults to 30 days in service)
+  DORKOS_ACTIVITY_RETENTION_DAYS: z.coerce.number().int().min(1).optional(),
   // Test mode — TestModeRuntime is registered instead of ClaudeCodeRuntime
   DORKOS_TEST_RUNTIME: z
     .string()

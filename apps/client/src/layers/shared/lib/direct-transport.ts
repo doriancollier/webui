@@ -27,6 +27,7 @@ import {
   bindingStubs,
   meshStubs,
   serverOnlyStubs,
+  activityStubs,
 } from './embedded-mode-stubs';
 
 export interface DirectTransportServices {
@@ -503,6 +504,8 @@ export class DirectTransport implements Transport {
   createBinding = bindingStubs.createBinding;
   deleteBinding = bindingStubs.deleteBinding;
   updateBinding = bindingStubs.updateBinding;
+
+  listActivityEvents = activityStubs.listActivityEvents;
 
   listMeshAgentPaths = meshStubs.listMeshAgentPaths;
   discoverMeshAgents = meshStubs.discoverMeshAgents;

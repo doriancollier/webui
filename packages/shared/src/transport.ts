@@ -59,6 +59,7 @@ import type {
 import type { RuntimeCapabilities } from './agent-runtime.js';
 import type { TemplateEntry } from './template-catalog.js';
 import type { UiState } from './types.js';
+import type { ListActivityQuery, ListActivityResponse } from './activity-schemas.js';
 
 /** A single entry in the adapter list — config plus live status. */
 export interface AdapterListItem {
@@ -481,6 +482,11 @@ export interface Transport {
   resetAllData(confirm: string): Promise<{ message: string }>;
   /** Initiate a graceful server restart. */
   restartServer(): Promise<{ message: string }>;
+
+  // --- Activity Feed ---
+
+  /** List activity events with optional filters and cursor-based pagination. */
+  listActivityEvents(query?: Partial<ListActivityQuery>): Promise<ListActivityResponse>;
 
   // --- Templates ---
 

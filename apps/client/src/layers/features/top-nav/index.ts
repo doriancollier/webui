@@ -8,6 +8,7 @@ export { CommandPaletteTrigger } from './ui/CommandPaletteTrigger';
 export { SessionHeader } from './ui/SessionHeader';
 export { DashboardHeader } from './ui/DashboardHeader';
 export { AgentsHeader } from './ui/AgentsHeader';
+export { ActivityHeader } from './ui/ActivityHeader';
 export { SystemHealthDot } from './ui/SystemHealthDot';
 export { useSystemHealth } from './model/use-system-health';
 export type { SystemHealthState } from './model/use-system-health';

@@ -4,8 +4,10 @@ import type { MeshCore } from '@dorkos/mesh';
 import type { PulseSchedule, PulseRun, PermissionMode, StreamEvent } from '@dorkos/shared/types';
 import type { PulseDispatchPayload } from '@dorkos/shared/relay-schemas';
 import type { PulseStore } from './pulse-store.js';
+import type { ActivityService } from '../activity/activity-service.js';
 import { isRelayEnabled } from '../relay/relay-state.js';
 import { createTaggedLogger } from '../../lib/logger.js';
+import { formatDuration } from '../../lib/format-duration.js';
 
 const logger = createTaggedLogger('Pulse');
 
@@ -38,6 +40,8 @@ export interface SchedulerDeps {
   relay?: RelayCore | null;
   /** Optional MeshCore instance for resolving agent CWDs from agent IDs. */
   meshCore?: MeshCore | null;
+  /** Optional ActivityService for emitting activity events on run completion. */
+  activityService?: ActivityService | null;
 }
 
 /**
@@ -76,6 +80,7 @@ export class SchedulerService {
   private config: SchedulerConfig;
   private relay: RelayCore | null;
   private meshCore: MeshCore | null;
+  private activityService: ActivityService | null;
 
   constructor(
     store: PulseStore,
@@ -99,6 +104,7 @@ export class SchedulerService {
       this.config = storeOrDeps.config;
       this.relay = storeOrDeps.relay ?? null;
       this.meshCore = storeOrDeps.meshCore ?? null;
+      this.activityService = storeOrDeps.activityService ?? null;
     } else {
       // Positional args form (backwards-compatible)
       this.store = storeOrDeps as PulseStore;
@@ -106,6 +112,7 @@ export class SchedulerService {
       this.config = config!;
       this.relay = relay ?? null;
       this.meshCore = meshCore ?? null;
+      this.activityService = null;
     }
   }
 
@@ -283,6 +290,7 @@ export class SchedulerService {
         error: (err as Error).message,
       });
       logger.error(`run ${run.id} failed: ${(err as Error).message}`);
+      this.emitRunEvent(schedule, run, 'failed', 0, (err as Error).message);
       return;
     }
 
@@ -317,6 +325,7 @@ export class SchedulerService {
         error: 'No receiver for pulse dispatch',
       });
       logger.warn(`no receiver for relay dispatch of run ${run.id}`);
+      this.emitRunEvent(schedule, run, 'failed', 0, 'No receiver for pulse dispatch');
     } else {
       this.store.updateRun(run.id, {
         status: 'running',
@@ -340,6 +349,7 @@ export class SchedulerService {
         error: (err as Error).message,
       });
       logger.error(`run ${run.id} failed: ${(err as Error).message}`);
+      this.emitRunEvent(schedule, run, 'failed', 0, (err as Error).message);
       return;
     }
 
@@ -396,6 +406,7 @@ export class SchedulerService {
           error: 'Run cancelled',
           sessionId,
         });
+        this.emitRunEvent(schedule, run, 'cancelled', durationMs);
       } else {
         this.store.updateRun(run.id, {
           status: 'completed',
@@ -404,6 +415,7 @@ export class SchedulerService {
           outputSummary: outputSummary.slice(0, 500),
           sessionId,
         });
+        this.emitRunEvent(schedule, run, 'completed', durationMs);
       }
     } catch (err) {
       const durationMs = Date.now() - startTime;
@@ -416,8 +428,52 @@ export class SchedulerService {
         error: errorMsg,
       });
       logger.error(`run ${run.id} failed:`, err);
+      this.emitRunEvent(schedule, run, 'failed', durationMs, errorMsg);
     } finally {
       this.activeRuns.delete(run.id);
     }
+  }
+
+  /** Emit an activity event for a completed, failed, or cancelled run. */
+  private emitRunEvent(
+    schedule: PulseSchedule,
+    run: PulseRun,
+    status: 'completed' | 'failed' | 'cancelled',
+    durationMs: number,
+    error?: string
+  ): void {
+    if (!this.activityService) return;
+
+    const eventType =
+      status === 'completed'
+        ? 'pulse.ran_success'
+        : status === 'cancelled'
+          ? 'pulse.ran_cancelled'
+          : 'pulse.ran_failed';
+
+    const actorType = run.trigger === 'scheduled' ? 'pulse' : 'user';
+    const actorLabel = run.trigger === 'scheduled' ? 'Pulse' : 'You';
+
+    const verb =
+      status === 'completed'
+        ? 'ran successfully'
+        : status === 'cancelled'
+          ? 'was cancelled'
+          : 'failed';
+    const duration = durationMs ? ` (${formatDuration(durationMs)})` : '';
+
+    this.activityService.emit({
+      actorType,
+      actorId: run.trigger === 'scheduled' ? run.scheduleId : null,
+      actorLabel,
+      category: 'pulse',
+      eventType,
+      resourceType: 'schedule',
+      resourceId: run.scheduleId,
+      resourceLabel: schedule.name,
+      summary: `${schedule.name} ${verb}${duration}`,
+      linkPath: '/',
+      metadata: error ? { error } : null,
+    });
   }
 }

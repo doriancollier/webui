@@ -1,6 +1,6 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
 import { useQuery } from '@tanstack/react-query';
-import { LayoutDashboard, Search, Star, Users } from 'lucide-react';
+import { Activity, LayoutDashboard, Search, Star, Users } from 'lucide-react';
 import {
   SidebarHeader,
   SidebarContent,
@@ -59,6 +59,16 @@ export function DashboardSidebar() {
             >
               <LayoutDashboard className="size-(--size-icon-sm)" />
               Dashboard
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              isActive={pathname === '/activity'}
+              onClick={() => navigate({ to: '/activity' })}
+              className="flex w-full items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium"
+            >
+              <Activity className="size-(--size-icon-sm)" />
+              Activity
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>

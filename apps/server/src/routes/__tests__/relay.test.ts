@@ -478,6 +478,7 @@ function createMockAdapterManager(): AdapterManager & { _mockWebhookAdapter: Web
     removeAdapter: vi.fn().mockResolvedValue(undefined),
     updateConfig: vi.fn().mockResolvedValue(undefined),
     testConnection: vi.fn().mockResolvedValue({ ok: true }),
+    resolveAdapterName: vi.fn((id: string) => id),
     getBindingStore: vi.fn().mockReturnValue(undefined),
     getBindingRouter: vi.fn().mockReturnValue(undefined),
     getMeshCore: vi.fn().mockReturnValue(undefined),

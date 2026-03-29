@@ -50,6 +50,22 @@ export interface AdapterEventRecorder {
   insertAdapterEvent(adapterId: string, eventType: string, message: string): void;
 }
 
+/** Minimal ActivityService interface for fire-and-forget event emission. */
+export interface ActivityEmitter {
+  emit(event: {
+    actorType: 'user' | 'agent' | 'system' | 'pulse';
+    actorLabel: string;
+    category: 'relay';
+    eventType: string;
+    resourceType?: string | null;
+    resourceId?: string | null;
+    resourceLabel?: string | null;
+    summary: string;
+    linkPath?: string | null;
+    metadata?: Record<string, unknown> | null;
+  }): Promise<void>;
+}
+
 /** Dependencies for constructing runtime adapters. */
 export interface AdapterManagerDeps {
   agentManager: ClaudeCodeAgentRuntimeLike;
@@ -61,6 +77,8 @@ export interface AdapterManagerDeps {
   meshCore?: AdapterMeshCoreLike;
   /** Optional recorder for adapter lifecycle events */
   eventRecorder?: AdapterEventRecorder;
+  /** Optional activity service for feed instrumentation */
+  activityService?: ActivityEmitter;
 }
 
 /** Server-side adapter lifecycle manager. */
@@ -130,6 +148,8 @@ export class AdapterManager {
   /** Reload config from disk and reconcile adapter state. */
   async reload(): Promise<void> {
     const oldConfigIds = new Set(this.configs.map((c) => c.id));
+    // Capture names before reloading config (entries may be removed)
+    const oldNames = new Map([...oldConfigIds].map((id) => [id, this.resolveAdapterName(id)]));
     this.configs = await loadAdapterConfig(this.configPath);
 
     // Stop adapters that are no longer in config or are now disabled
@@ -143,6 +163,7 @@ export class AdapterManager {
             'adapter.disconnected',
             'Disconnected from relay'
           );
+          await this.emitAdapterLifecycle(id, 'disconnected', oldNames.get(id));
         } catch (err) {
           logger.warn(`[AdapterManager] Failed to unregister adapter '${id}':`, err);
         }
@@ -166,6 +187,7 @@ export class AdapterManager {
       try {
         await this.registry.register(adapter);
         this.deps.eventRecorder?.insertAdapterEvent(id, 'adapter.connected', 'Connected to relay');
+        await this.emitAdapterLifecycle(id, 'connected');
       } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
         this.deps.eventRecorder?.insertAdapterEvent(id, 'adapter.error', message);
@@ -187,6 +209,7 @@ export class AdapterManager {
       'adapter.disconnected',
       'Disconnected from relay'
     );
+    await this.emitAdapterLifecycle(id, 'disconnected');
   }
 
   /**
@@ -345,6 +368,7 @@ export class AdapterManager {
             'adapter.connected',
             'Connected to relay'
           );
+          await this.emitAdapterLifecycle(id, 'connected');
           logger.info('[AdapterManager] adapter registered', { id });
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -392,12 +416,16 @@ export class AdapterManager {
       );
     }
 
+    // Capture name before config removal for the disconnected event
+    const adapterName = this.resolveAdapterName(id);
+
     try {
       await this.registry.unregister(id);
     } catch {
       /* not running -- ignore */
     }
 
+    await this.emitAdapterLifecycle(id, 'disconnected', adapterName);
     this.configs.splice(index, 1);
     await saveAdapterConfig(this.configPath, this.configs);
 
@@ -482,6 +510,7 @@ export class AdapterManager {
             'adapter.connected',
             'Connected to relay'
           );
+          await this.emitAdapterLifecycle(config.id, 'connected');
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
           this.deps.eventRecorder?.insertAdapterEvent(config.id, 'adapter.error', message);
@@ -489,6 +518,33 @@ export class AdapterManager {
         }
       }
     }
+  }
+
+  /**
+   * Emit an adapter lifecycle activity event (connected or disconnected).
+   *
+   * Fire-and-forget — never throws. Uses the optional `nameOverride` when
+   * the adapter config may already be removed (e.g. during reload).
+   */
+  private async emitAdapterLifecycle(
+    id: string,
+    state: 'connected' | 'disconnected',
+    nameOverride?: string
+  ): Promise<void> {
+    const activity = this.deps.activityService;
+    if (!activity) return;
+    const name = nameOverride ?? this.resolveAdapterName(id);
+    await activity.emit({
+      actorType: 'system',
+      actorLabel: 'System',
+      category: 'relay',
+      eventType: `relay.adapter_${state}`,
+      resourceType: 'adapter',
+      resourceId: id,
+      resourceLabel: name,
+      summary: `${name} adapter ${state}`,
+      linkPath: '/',
+    });
   }
 
   /** Delegate adapter instantiation to the factory module. */
@@ -532,6 +588,14 @@ export class AdapterManager {
   /** Register a plugin-discovered manifest for a given adapter type. */
   registerPluginManifest(type: string, manifest: AdapterManifest): void {
     this.manifests.set(type, manifest);
+  }
+
+  /** Resolve a human-readable display name for an adapter by ID. */
+  resolveAdapterName(id: string): string {
+    const config = this.configs.find((c) => c.id === id);
+    if (!config) return id;
+    const manifest = this.manifests.get(config.type);
+    return config.label ?? manifest?.displayName ?? config.type;
   }
 
   /** Populate the manifests map with built-in adapter manifests. */

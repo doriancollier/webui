@@ -64,6 +64,13 @@
       "when": 1774235539322,
       "tag": "0008_rich_blindfold",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1774812405973,
+      "tag": "0009_known_tigra",
+      "breakpoints": true
     }
   ]
 }

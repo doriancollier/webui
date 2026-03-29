@@ -1,0 +1,71 @@
+import { cn } from '@/layers/shared/lib';
+import type { ActorType } from '../model/activity-types';
+import { ACTOR_CONFIG } from '../model/activity-types';
+
+export interface ActorBadgeProps {
+  /** The actor type determines the visual treatment. */
+  actorType: ActorType;
+  /** Human-readable actor label ("You", agent name, "System", "Pulse"). */
+  actorLabel: string;
+  /**
+   * CSS color string for agent actors (e.g., a hex or `oklch(...)` value).
+   * Only used when `actorType === 'agent'`.
+   */
+  agentColor?: string;
+  className?: string;
+}
+
+/**
+ * Actor pill rendered on each activity row.
+ *
+ * - `user` → neutral ghost pill "You"
+ * - `agent` → colored dot + name (dot uses `agentColor`)
+ * - `system` → Settings icon, muted neutral
+ * - `pulse` → Clock icon, purple
+ */
+export function ActorBadge({ actorType, actorLabel, agentColor, className }: ActorBadgeProps) {
+  const config = ACTOR_CONFIG[actorType];
+  const Icon = config.icon;
+
+  if (actorType === 'user') {
+    return (
+      <span
+        data-slot="actor-badge"
+        className={cn(
+          'inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-medium',
+          'border-border text-muted-foreground',
+          className
+        )}
+      >
+        {actorLabel}
+      </span>
+    );
+  }
+
+  if (actorType === 'agent') {
+    return (
+      <span
+        data-slot="actor-badge"
+        className={cn('inline-flex items-center gap-1.5 text-xs font-medium', config.text, className)}
+      >
+        <span
+          className="size-2 shrink-0 rounded-full"
+          style={agentColor ? { backgroundColor: agentColor } : undefined}
+          aria-hidden
+        />
+        <span className="truncate">{actorLabel}</span>
+      </span>
+    );
+  }
+
+  // system | pulse — icon + label
+  return (
+    <span
+      data-slot="actor-badge"
+      className={cn('inline-flex items-center gap-1 text-xs font-medium', config.text, className)}
+    >
+      {Icon && <Icon className="size-3 shrink-0" aria-hidden />}
+      <span>{actorLabel}</span>
+    </span>
+  );
+}

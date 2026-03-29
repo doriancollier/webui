@@ -37,6 +37,7 @@ import type {
   UploadFile,
   McpConfigResponse,
 } from '@dorkos/shared/transport';
+import type { ListActivityQuery, ListActivityResponse } from '@dorkos/shared/activity-schemas';
 import type { TemplateEntry } from '@dorkos/shared/template-catalog';
 import type { RuntimeCapabilities } from '@dorkos/shared/agent-runtime';
 import type {
@@ -557,6 +558,21 @@ export class HttpTransport implements Transport {
     for await (const event of parseSSEStream<TransportScanEvent['data']>(reader)) {
       onEvent({ type: event.type, data: event.data } as TransportScanEvent);
     }
+  }
+
+  // --- Activity Feed ---
+
+  /** List activity events with optional filters and cursor-based pagination. */
+  async listActivityEvents(query?: Partial<ListActivityQuery>): Promise<ListActivityResponse> {
+    const qs = buildQueryString({
+      limit: query?.limit,
+      before: query?.before,
+      categories: query?.categories,
+      actorType: query?.actorType,
+      actorId: query?.actorId,
+      since: query?.since,
+    });
+    return fetchJSON<ListActivityResponse>(this.baseUrl, `/activity${qs}`);
   }
 
   // --- File Uploads ---

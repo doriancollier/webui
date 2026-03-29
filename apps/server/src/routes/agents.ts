@@ -31,6 +31,7 @@ import { renderTraits, DEFAULT_TRAITS } from '@dorkos/shared/trait-renderer';
 import { validateBoundary, BoundaryError } from '../lib/boundary.js';
 import { createAgentWorkspace, AgentCreationError } from '../services/core/agent-creator.js';
 import { logger } from '../lib/logger.js';
+import type { ActivityService } from '../services/activity/activity-service.js';
 
 /** Minimal MeshCore interface for sync-on-write. */
 interface MeshCoreLike {
@@ -154,6 +155,22 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
         /* non-fatal */
       }
 
+      // Fire-and-forget activity event for agent registration
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'agent',
+          eventType: 'agent.registered',
+          resourceType: 'agent',
+          resourceId: manifest.id,
+          resourceLabel: manifest.name,
+          summary: `Registered agent ${manifest.name}`,
+          linkPath: '/agents',
+        });
+      }
+
       return res.status(201).json(manifest);
     } catch (err) {
       if (err instanceof BoundaryError) {
@@ -169,6 +186,23 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
   router.post('/create', async (req, res) => {
     try {
       const result = await createAgentWorkspace(req.body, meshCore);
+
+      // Fire-and-forget activity event for agent registration
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'agent',
+          eventType: 'agent.registered',
+          resourceType: 'agent',
+          resourceId: result.manifest.id,
+          resourceLabel: result.manifest.name,
+          summary: `Registered agent ${result.manifest.name}`,
+          linkPath: '/agents',
+        });
+      }
+
       return res.status(201).json({
         ...result.manifest,
         ...(result.meta ? { _meta: result.meta } : {}),

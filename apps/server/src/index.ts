@@ -31,6 +31,8 @@ import { createTemplateRouter } from './routes/templates.js';
 import { createAdminRouter } from './routes/admin.js';
 import { ExtensionManager } from './services/extensions/extension-manager.js';
 import { createExtensionsRouter } from './routes/extensions.js';
+import { ActivityService } from './services/activity/activity-service.js';
+import { createActivityRouter } from './routes/activity.js';
 import { createExtensionRoutesMiddleware } from './middleware/extension-routes.js';
 import { createExternalMcpServer } from './services/core/mcp-server.js';
 import { createMcpRouter } from './routes/mcp.js';
@@ -86,6 +88,18 @@ async function start() {
   const db = createDb(dbPath);
   runMigrations(db);
   logger.info(`[DB] Consolidated database ready at ${dbPath}`);
+
+  // Initialize Activity Service and prune stale events
+  const activityService = new ActivityService(db);
+  const retentionDays = env.DORKOS_ACTIVITY_RETENTION_DAYS ?? 30;
+  try {
+    const pruned = await activityService.prune(retentionDays);
+    if (pruned > 0) {
+      logger.info(`[Activity] Pruned ${pruned} events older than ${retentionDays} days`);
+    }
+  } catch (err) {
+    logger.warn('[Activity] Startup prune failed', logError(err));
+  }
 
   // Initialize directory boundary (must happen before app creation)
   const boundaryConfig = env.DORKOS_BOUNDARY;
@@ -223,6 +237,7 @@ async function start() {
         relayCore,
         meshCore, // meshCore is now available
         eventRecorder: traceStore,
+        activityService,
       });
       await adapterManager.initialize();
       relayCore.setAdapterContextBuilder(adapterManager.buildContext.bind(adapterManager));
@@ -285,18 +300,22 @@ async function start() {
 
   // Mount Pulse routes if enabled — Pulse requires ClaudeCodeRuntime as SchedulerAgentManager.
   if (pulseEnabled && pulseStore && claudeRuntime) {
-    schedulerService = new SchedulerService(
-      pulseStore,
-      claudeRuntime,
-      {
+    schedulerService = new SchedulerService({
+      store: pulseStore,
+      agentManager: claudeRuntime,
+      config: {
         maxConcurrentRuns: schedulerConfig.maxConcurrentRuns,
         retentionCount: schedulerConfig.retentionCount,
         timezone: schedulerConfig.timezone,
       },
-      relayCore,
-      meshCore
+      relay: relayCore,
+      meshCore,
+      activityService,
+    });
+    app.use(
+      '/api/pulse',
+      createPulseRouter(pulseStore, schedulerService, dorkHome, meshCore, activityService)
     );
-    app.use('/api/pulse', createPulseRouter(pulseStore, schedulerService, dorkHome, meshCore));
     setPulseEnabled(true);
     logger.info('[Pulse] Routes mounted and scheduler configured');
 
@@ -352,6 +371,11 @@ async function start() {
 
   // Template catalog — always available, merges built-in + user templates.
   app.use('/api/templates', createTemplateRouter(dorkHome));
+
+  // Activity feed — always available, not behind a feature flag.
+  app.use('/api/activity', createActivityRouter(activityService));
+  app.locals.activityService = activityService;
+  logger.info('[Activity] Routes mounted');
 
   // Mount Extensions routes if extension system initialized successfully.
   if (extensionManager) {
@@ -420,6 +444,16 @@ async function start() {
   const host = env.DORKOS_HOST;
   app.listen(PORT, host, () => {
     logger.info(`DorkOS server running on http://${host}:${PORT}`);
+
+    // Fire-and-forget: record startup in the activity feed so the dashboard
+    // shows when the server was last (re)started.
+    activityService.emit({
+      actorType: 'system',
+      actorLabel: 'System',
+      category: 'system',
+      eventType: 'system.started',
+      summary: 'DorkOS started',
+    });
   });
 
   // Start Pulse scheduler after server is listening

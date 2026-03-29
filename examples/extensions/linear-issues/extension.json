@@ -1,12 +1,13 @@
 {
   "id": "linear-issues",
-  "name": "Linear Issues",
-  "version": "1.0.0",
-  "description": "Show Linear issue status on the DorkOS dashboard",
+  "name": "Linear Loop",
+  "version": "2.0.0",
+  "description": "Loop-aware dashboard showing Linear issue status categorized by Loop stage",
   "author": "DorkOS",
   "minHostVersion": "0.1.0",
   "contributions": {
-    "dashboard.sections": true
+    "dashboard.sections": true,
+    "sidebar.tabs": true
   },
   "serverCapabilities": {
     "serverEntry": "./server.ts",
@@ -17,7 +18,76 @@
         "label": "Linear API Key",
         "description": "Settings \u2192 API \u2192 Personal API keys at linear.app",
         "placeholder": "lin_api_xxxxxxxxxxxx",
-        "required": true
+        "required": true,
+        "group": "Connection"
+      }
+    ],
+    "settings": [
+      {
+        "type": "text",
+        "key": "team_key",
+        "label": "Team Key",
+        "description": "Linear team key for filtering issues",
+        "placeholder": "DOR",
+        "default": "DOR",
+        "group": "Connection"
+      },
+      {
+        "type": "number",
+        "key": "refresh_interval",
+        "label": "Refresh Interval",
+        "description": "How often to poll Linear (seconds)",
+        "default": 60,
+        "min": 10,
+        "max": 3600,
+        "group": "Connection"
+      },
+      {
+        "type": "number",
+        "key": "max_issues",
+        "label": "Max Issues Per Section",
+        "description": "Maximum issues to display in each category",
+        "default": 25,
+        "min": 5,
+        "max": 100,
+        "group": "Display"
+      },
+      {
+        "type": "boolean",
+        "key": "show_completed",
+        "label": "Show Completed",
+        "description": "Include recently completed issues",
+        "default": false,
+        "group": "Display"
+      },
+      {
+        "type": "select",
+        "key": "view_mode",
+        "label": "View Mode",
+        "description": "How to organize issues on the dashboard",
+        "default": "loop",
+        "group": "Display",
+        "options": [
+          { "label": "Loop Status", "value": "loop" },
+          { "label": "By Project", "value": "project" },
+          { "label": "All Active", "value": "all" }
+        ]
+      },
+      {
+        "type": "boolean",
+        "key": "show_dashboard",
+        "label": "Show Dashboard Section",
+        "description": "Display Loop status on the main dashboard",
+        "default": true,
+        "group": "Display"
+      },
+      {
+        "type": "boolean",
+        "key": "show_sidebar",
+        "label": "Show Sidebar Tab",
+        "description": "Display Loop status in the sidebar",
+        "default": true,
+        "group": "Display"
       }
     ]
   }

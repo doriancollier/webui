@@ -16,6 +16,7 @@ import { initSSEStream } from '../services/core/stream-adapter.js';
 import { DEFAULT_CWD } from '../lib/resolve-root.js';
 import type { AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
+import type { ActivityService } from '../services/activity/activity-service.js';
 import { resolveSubjectLabels, type SubjectLabel } from '../services/relay/subject-resolver.js';
 import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { readManifest } from '@dorkos/shared/manifest';
@@ -184,6 +185,50 @@ export function createRelayRouter(
         replyTo: result.data.replyTo,
         budget: result.data.budget,
       });
+
+      // Emit message delivery/failure activity events when an adapter was involved
+      if (publishResult.adapterResult && adapterManager) {
+        const activityService = req.app.locals.activityService as ActivityService | undefined;
+        if (activityService) {
+          const from = result.data.from;
+          const isAgent = from?.startsWith('relay.agent.');
+          const actorType = isAgent ? ('agent' as const) : ('system' as const);
+          const actorLabel = isAgent ? (from.split('.')[2] ?? 'Agent') : 'System';
+
+          // Resolve adapter from the subject
+          const matchedAdapter = adapterManager.getRegistry().getBySubject(result.data.subject);
+          const adapterId = matchedAdapter?.id ?? 'unknown';
+          const adapterName = adapterManager.resolveAdapterName(adapterId);
+
+          if (publishResult.adapterResult.success) {
+            await activityService.emit({
+              actorType,
+              actorLabel,
+              category: 'relay',
+              eventType: 'relay.message_delivered',
+              resourceType: 'adapter',
+              resourceId: adapterId,
+              resourceLabel: adapterName,
+              summary: `Delivered message via ${adapterName}`,
+              linkPath: '/',
+            });
+          } else {
+            await activityService.emit({
+              actorType,
+              actorLabel,
+              category: 'relay',
+              eventType: 'relay.message_failed',
+              resourceType: 'adapter',
+              resourceId: adapterId,
+              resourceLabel: adapterName,
+              summary: `Failed to deliver via ${adapterName}: ${publishResult.adapterResult.error ?? 'unknown error'}`,
+              linkPath: '/',
+              metadata: { error: publishResult.adapterResult.error ?? 'unknown error' },
+            });
+          }
+        }
+      }
+
       return res.json(publishResult);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Publish failed';

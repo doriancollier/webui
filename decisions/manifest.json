@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 217,
+  "nextNumber": 220,
   "decisions": [
+    {
+      "number": 219,
+      "slug": "cursor-based-activity-pagination",
+      "title": "Cursor-Based Pagination for Activity Feed",
+      "created": "2026-03-29",
+      "status": "draft",
+      "extractedFrom": "activity-feed",
+      "specSlug": "activity-feed"
+    },
+    {
+      "number": 218,
+      "slug": "fire-and-forget-activity-emission",
+      "title": "Fire-and-Forget Activity Event Emission",
+      "created": "2026-03-29",
+      "status": "draft",
+      "extractedFrom": "activity-feed",
+      "specSlug": "activity-feed"
+    },
+    {
+      "number": 217,
+      "slug": "single-table-activity-log",
+      "title": "Single-Table Activity Log Over Hybrid Derivation",
+      "created": "2026-03-29",
+      "status": "draft",
+      "extractedFrom": "activity-feed",
+      "specSlug": "activity-feed"
+    },
     {
       "number": 216,
       "slug": "plaintext-settings-alongside-encrypted-secrets",

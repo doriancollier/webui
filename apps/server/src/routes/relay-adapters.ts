@@ -21,6 +21,7 @@ import {
 import { PermissionModeSchema } from '@dorkos/shared/schemas';
 import { AdapterError, type AdapterManager } from '../services/relay/adapter-manager.js';
 import type { TraceStore } from '../services/relay/trace-store.js';
+import type { ActivityService } from '../services/activity/activity-service.js';
 
 /** Map adapter error codes to HTTP status codes. */
 const ADAPTER_ERROR_STATUS: Record<string, number> = {
@@ -40,6 +41,12 @@ const ADAPTER_ERROR_STATUS: Record<string, number> = {
 function sendAdapterError(res: express.Response, err: AdapterError): void {
   const status = ADAPTER_ERROR_STATUS[err.code] ?? 500;
   res.status(status).json({ error: err.message, code: err.code });
+}
+
+/** Resolve a human-readable name for an adapter, falling back to its ID. */
+function resolveAdapterName(adapterManager: AdapterManager, adapterId: string): string {
+  const info = adapterManager.getAdapter(adapterId);
+  return info?.config.label || info?.config.id || adapterId;
 }
 
 /**
@@ -110,6 +117,23 @@ export function createAdapterRouter(
     const label = topLabel ?? (typeof config.label === 'string' ? config.label : undefined);
     try {
       await adapterManager.addAdapter(type, id, config, enabled, label);
+
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        const adapterName = adapterManager.resolveAdapterName(id);
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'relay',
+          eventType: 'relay.adapter_added',
+          resourceType: 'adapter',
+          resourceId: id,
+          resourceLabel: adapterName,
+          summary: `Added ${adapterName} adapter`,
+          linkPath: '/',
+        });
+      }
+
       return res.status(201).json({ ok: true, id });
     } catch (err) {
       if (err instanceof AdapterError) return sendAdapterError(res, err);
@@ -120,7 +144,24 @@ export function createAdapterRouter(
 
   router.delete('/adapters/:id', async (req, res) => {
     try {
+      // Capture name before removal since the config will be deleted
+      const adapterName = adapterManager.resolveAdapterName(req.params.id);
       await adapterManager.removeAdapter(req.params.id);
+
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'relay',
+          eventType: 'relay.adapter_removed',
+          resourceType: 'adapter',
+          resourceId: req.params.id,
+          resourceLabel: adapterName,
+          summary: `Removed ${adapterName} adapter`,
+        });
+      }
+
       return res.json({ ok: true });
     } catch (err) {
       if (err instanceof AdapterError) return sendAdapterError(res, err);
@@ -226,6 +267,24 @@ export function createAdapterRouter(
 
     try {
       const binding = await bindingStore.create(result.data);
+
+      // Fire-and-forget activity event for binding creation
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        const adapterName = resolveAdapterName(adapterManager, binding.adapterId);
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'config',
+          eventType: 'config.binding_created',
+          resourceType: 'binding',
+          resourceId: binding.id,
+          resourceLabel: `${binding.agentId} \u2192 ${binding.adapterId}`,
+          summary: `Created binding: ${binding.agentId} \u2192 ${adapterName}`,
+          linkPath: '/',
+        });
+      }
+
       return res.status(201).json({ binding });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Create failed';
@@ -267,12 +326,34 @@ export function createAdapterRouter(
     if (!updated) {
       return res.status(404).json({ error: 'Binding not found' });
     }
+
+    // Fire-and-forget activity event for binding update
+    const activityService = req.app.locals.activityService as ActivityService | undefined;
+    if (activityService) {
+      const adapterName = resolveAdapterName(adapterManager, updated.adapterId);
+      await activityService.emit({
+        actorType: 'user',
+        actorLabel: 'You',
+        category: 'config',
+        eventType: 'config.binding_updated',
+        resourceType: 'binding',
+        resourceId: updated.id,
+        resourceLabel: `${updated.agentId} \u2192 ${updated.adapterId}`,
+        summary: `Updated binding: ${updated.agentId} \u2192 ${adapterName}`,
+        linkPath: '/',
+      });
+    }
+
     return res.json({ binding: updated });
   });
 
   router.delete('/bindings/:id', async (req, res) => {
     const bindingStore = adapterManager.getBindingStore();
     if (!bindingStore) return res.status(503).json({ error: 'Binding subsystem not available' });
+
+    // Capture binding metadata before deletion for the activity event
+    const binding = bindingStore.getById(req.params.id);
+
     const deleted = await bindingStore.delete(req.params.id);
     if (!deleted) return res.status(404).json({ error: 'Binding not found' });
     const bindingRouter = adapterManager.getBindingRouter();
@@ -280,6 +361,22 @@ export function createAdapterRouter(
       const activeBindingIds = new Set(bindingStore.getAll().map((b) => b.id));
       await bindingRouter.cleanupOrphanedSessions(activeBindingIds);
     }
+
+    // Fire-and-forget activity event for binding deletion
+    const activityService = req.app.locals.activityService as ActivityService | undefined;
+    if (activityService && binding) {
+      const adapterName = resolveAdapterName(adapterManager, binding.adapterId);
+      await activityService.emit({
+        actorType: 'user',
+        actorLabel: 'You',
+        category: 'config',
+        eventType: 'config.binding_deleted',
+        resourceType: 'binding',
+        resourceId: req.params.id,
+        summary: `Deleted binding: ${binding.agentId} \u2192 ${adapterName}`,
+      });
+    }
+
     return res.json({ ok: true });
   });
 

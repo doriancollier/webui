@@ -50,7 +50,7 @@ export function RecentActivityFeed() {
             variant="ghost"
             size="sm"
             className="h-6 text-xs"
-            onClick={() => navigate({ to: '/session' })}
+            onClick={() => navigate({ to: '/activity' })}
           >
             View all →
           </Button>

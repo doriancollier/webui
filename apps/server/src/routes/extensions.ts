@@ -9,6 +9,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { z } from 'zod';
 import type { ExtensionManager } from '../services/extensions/extension-manager.js';
+import type { ActivityService } from '../services/activity/activity-service.js';
 import { logger } from '../lib/logger.js';
 import { eventFanOut } from '../services/core/event-fan-out.js';
 import { ExtensionSecretStore } from '@dorkos/shared/extension-secrets';
@@ -118,6 +119,21 @@ export function createExtensionsRouter(
       if (!result) {
         return res.status(404).json({ error: `Extension '${id}' not found or cannot be enabled` });
       }
+
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'config',
+          eventType: 'config.extension_installed',
+          resourceType: 'extension',
+          resourceId: id,
+          resourceLabel: result.extension.manifest.name,
+          summary: `Installed extension ${result.extension.manifest.name}`,
+        });
+      }
+
       res.json(result);
     } catch (err) {
       logger.error(`[Extensions] Failed to enable ${req.params.id}`, err);
@@ -134,6 +150,21 @@ export function createExtensionsRouter(
       if (!result) {
         return res.status(404).json({ error: `Extension '${id}' not found` });
       }
+
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'config',
+          eventType: 'config.extension_removed',
+          resourceType: 'extension',
+          resourceId: id,
+          resourceLabel: result.extension.manifest.name,
+          summary: `Removed extension ${result.extension.manifest.name}`,
+        });
+      }
+
       res.json(result);
     } catch (err) {
       logger.error(`[Extensions] Failed to disable ${req.params.id}`, err);
@@ -319,6 +350,21 @@ export function createExtensionsRouter(
 
       const store = new ExtensionSecretStore(id, dorkHome);
       await store.set(key, parsed.data.value);
+
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'config',
+          eventType: 'config.extension_updated',
+          resourceType: 'extension',
+          resourceId: id,
+          resourceLabel: record.manifest.name,
+          summary: `Updated secret "${key}" for extension ${record.manifest.name}`,
+        });
+      }
+
       res.json({ ok: true });
     } catch (err) {
       logger.error(`[Extensions] Failed to set secret for ${req.params.id}`, err);
@@ -413,6 +459,21 @@ export function createExtensionsRouter(
 
       const store = new ExtensionSettingsStore(dorkHome, id);
       await store.set(key, parsed.data.value);
+
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'config',
+          eventType: 'config.extension_updated',
+          resourceType: 'extension',
+          resourceId: id,
+          resourceLabel: record.manifest.name,
+          summary: `Updated setting "${key}" for extension ${record.manifest.name}`,
+        });
+      }
+
       res.json({ ok: true });
     } catch (err) {
       logger.error(`[Extensions] Failed to set setting for ${req.params.id}`, err);

@@ -690,42 +690,48 @@ export default register;
 
 ---
 
-## Reference Extension: Linear Issues
+## Reference Extension: Linear Loop
 
-The `examples/extensions/linear-issues/` directory contains a complete, production-quality extension demonstrating all three server-side tiers. It shows the authenticated user's active Linear issues on the DorkOS dashboard.
+The `examples/extensions/linear-issues/` directory contains a production-quality extension demonstrating the full extension API surface: server-side data providers, manifest-driven settings, dashboard sections, sidebar tabs, and command palette integration. It shows Loop-categorized Linear issues on the DorkOS dashboard and sidebar.
 
 ### Files
 
 ```
 examples/extensions/linear-issues/
-├── extension.json   # Manifest with serverCapabilities and secret declaration
-├── server.ts        # Data provider: on-demand endpoint, cached endpoint, 60s polling
-└── index.ts         # Client: dashboard section only (settings tab auto-generated)
+├── extension.json   # Manifest with secrets, settings (grouped), and multi-slot contributions
+├── server.ts        # Data provider: Loop-aware queries, categorization, dynamic polling
+└── index.ts         # Client: dashboard section, sidebar tab, command palette item
 ```
 
 ### What It Demonstrates
 
 **Manifest** (`extension.json`):
 
-- `serverCapabilities.secrets` declaring a `linear_api_key` with label and description — the host auto-generates a settings tab from this (no settings code needed in `index.ts`)
-- `serverCapabilities.serverEntry` pointing to `./server.ts`
-- `contributions` for `dashboard.sections`
+- `serverCapabilities.secrets` with `group` and `placeholder` fields — the host auto-generates a grouped settings tab
+- `serverCapabilities.settings` declaring 7 typed settings (text, number, boolean, select) across two groups (Connection, Display)
+- `contributions` for both `dashboard.sections` and `sidebar.tabs`
+- Settings for toggling dashboard/sidebar visibility (`show_dashboard`, `show_sidebar`)
 
 **Server** (`server.ts`):
 
-- On-demand route (`GET /issues`) that fetches live data from the Linear GraphQL API
-- Cached route (`GET /cached`) that returns the last polled result from storage
-- Background polling via `ctx.schedule(60, ...)` with the poll-compare-store-emit pattern
-- Secret retrieval via `ctx.secrets.get('linear_api_key')`
-- SSE emission via `ctx.emit('issues.updated', data)` on change detection
+- Loop-aware GraphQL query fetching active + recently completed issues with label data
+- Server-side categorization by Loop stage (triage, ready, in-progress, monitoring, needs-input, completed)
+- Loop health summary (counts per category) with change detection
+- Dynamic poll interval from `ctx.settings.get('refresh_interval')`
+- Team key from `ctx.settings.get('team_key')` for multi-team support
+- Legacy endpoints (`/issues`, `/cached`) preserved alongside new `/loop` endpoint
+- SSE emission via `ctx.emit('loop.updated', data)` on change detection
 
 **Client** (`index.ts`):
 
-- Dashboard section fetching from the `/cached` server route
-- Host theme integration via CSS custom properties
-- No settings code — the API key settings tab is auto-generated from the manifest's secret declarations
+- Dashboard section with Loop health badges and categorized issue sections
+- Three view modes: Loop Status (default), By Project, All Active
+- Sidebar tab with compact health grid and top "Needs Attention" items
+- Command palette item ("Quick Idea to Linear")
+- Settings-driven visibility: `show_dashboard` and `show_sidebar` toggles
+- Shared `useLoopData` hook for both dashboard and sidebar data fetching
 
-To install: copy the directory to `~/.dork/extensions/linear-issues/`, enable it in Settings > Extensions, then set your Linear API key in the extension's settings tab.
+To install: copy the directory to `~/.dork/extensions/linear-issues/`, enable it in Settings > Extensions, then configure your Linear API key and team key in the extension's settings tab.
 
 ---
 

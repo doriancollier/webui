@@ -17,6 +17,7 @@ import {
   UpdateAccessRuleRequestSchema,
 } from '@dorkos/shared/mesh-schemas';
 import { validateBoundary } from '../lib/boundary.js';
+import type { ActivityService } from '../services/activity/activity-service.js';
 
 /** Optional cross-subsystem dependencies for topology enrichment. */
 export interface MeshRouterDeps {
@@ -240,6 +241,23 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
         { ...overrides, name, runtime },
         approver
       );
+
+      // Fire-and-forget activity event for agent registration
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'user',
+          actorLabel: 'You',
+          category: 'agent',
+          eventType: 'agent.registered',
+          resourceType: 'agent',
+          resourceId: manifest.id,
+          resourceLabel: manifest.name,
+          summary: `Registered agent ${manifest.name}`,
+          linkPath: '/agents',
+        });
+      }
+
       return res.status(201).json(manifest);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Registration failed';
@@ -317,12 +335,34 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
   });
 
   // POST /agents/:id/heartbeat — Record a heartbeat for an agent
-  router.post('/agents/:id/heartbeat', (req, res) => {
+  router.post('/agents/:id/heartbeat', async (req, res) => {
     const parsed = HeartbeatRequestSchema.safeParse(req.body ?? {});
     const event = parsed.success ? (parsed.data.event ?? 'heartbeat') : 'heartbeat';
-    const health = meshCore.getAgentHealth(req.params.id);
-    if (!health) return res.status(404).json({ error: 'Agent not found' });
+    const healthBefore = meshCore.getAgentHealth(req.params.id);
+    if (!healthBefore) return res.status(404).json({ error: 'Agent not found' });
+
+    const previousStatus = healthBefore.status;
     meshCore.updateLastSeen(req.params.id, event);
+
+    // Emit activity event only when health status actually transitions
+    const healthAfter = meshCore.getAgentHealth(req.params.id);
+    if (healthAfter && healthAfter.status !== previousStatus) {
+      const activityService = req.app.locals.activityService as ActivityService | undefined;
+      if (activityService) {
+        await activityService.emit({
+          actorType: 'system',
+          actorLabel: 'System',
+          category: 'agent',
+          eventType: 'agent.status_changed',
+          resourceType: 'agent',
+          resourceId: req.params.id,
+          resourceLabel: healthAfter.name,
+          summary: `${healthAfter.name} is now ${healthAfter.status}`,
+          linkPath: '/agents',
+        });
+      }
+    }
+
     return res.json({ success: true });
   });
 
@@ -361,6 +401,22 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
       return res.status(404).json({ error: 'Agent not found' });
     }
     await meshCore.unregister(req.params.id);
+
+    // Fire-and-forget activity event for agent removal
+    const activityService = req.app.locals.activityService as ActivityService | undefined;
+    if (activityService) {
+      await activityService.emit({
+        actorType: 'user',
+        actorLabel: 'You',
+        category: 'agent',
+        eventType: 'agent.removed',
+        resourceType: 'agent',
+        resourceId: req.params.id,
+        resourceLabel: agent.name,
+        summary: `Removed agent ${agent.name}`,
+      });
+    }
+
     return res.json({ success: true });
   });
 

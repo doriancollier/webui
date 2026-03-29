@@ -75,6 +75,10 @@
     "./extension-settings": {
       "types": "./src/extension-settings.ts",
       "default": "./dist/extension-settings.js"
+    },
+    "./activity-schemas": {
+      "types": "./src/activity-schemas.ts",
+      "default": "./dist/activity-schemas.js"
     }
   },
   "scripts": {

@@ -327,6 +327,17 @@ export const meshStubs = {
 };
 
 // ---------------------------------------------------------------------------
+// Activity feed stubs
+// ---------------------------------------------------------------------------
+
+/** @internal */
+export const activityStubs = {
+  async listActivityEvents(): Promise<{ items: never[]; nextCursor: null }> {
+    return { items: [], nextCursor: null };
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Miscellaneous server-only stubs
 // ---------------------------------------------------------------------------
 

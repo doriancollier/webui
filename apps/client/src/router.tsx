@@ -12,6 +12,7 @@ import { AppShell } from './AppShell';
 import { DashboardPage } from '@/layers/widgets/dashboard';
 import { SessionPage } from '@/layers/widgets/session';
 import { AgentsPage } from '@/layers/widgets/agents';
+import { ActivityPage } from '@/layers/widgets/activity';
 import { agentFilterSchema } from '@/layers/features/agents-list';
 import { RouteErrorFallback, NotFoundFallback } from '@/layers/shared/ui';
 import type { Session } from '@dorkos/shared/types';
@@ -139,9 +140,27 @@ const agentsRoute = createRoute({
   component: AgentsPage,
 });
 
+// ── Activity feed at /activity ───────────────────────────────
+const activitySearchSchema = z.object({
+  categories: z.string().optional(),
+  actorType: z.string().optional(),
+  actorId: z.string().optional(),
+  since: z.string().optional(),
+});
+
+/** Search params available on the `/activity` route. */
+export type ActivitySearch = z.infer<typeof activitySearchSchema>;
+
+const activityRoute = createRoute({
+  getParentRoute: () => appShellRoute,
+  path: '/activity',
+  validateSearch: zodValidator(activitySearchSchema),
+  component: ActivityPage,
+});
+
 // ── Route tree ──────────────────────────────────────────────
 const routeTree = rootRoute.addChildren([
-  appShellRoute.addChildren([indexRoute, sessionRoute, agentsRoute]),
+  appShellRoute.addChildren([indexRoute, sessionRoute, agentsRoute, activityRoute]),
 ]);
 
 /**
