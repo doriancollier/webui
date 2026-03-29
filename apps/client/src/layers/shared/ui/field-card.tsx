@@ -81,7 +81,7 @@ function CollapsibleFieldCard({
           />
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="divide-border divide-y border-t">{children}</div>
+          <FieldCardContent className="border-t">{children}</FieldCardContent>
         </CollapsibleContent>
       </div>
     </Collapsible>

@@ -68,13 +68,13 @@ export function TextSettingRow({
   };
 
   return (
-    <SettingRow label={status.label} description={status.description ?? ''}>
+    <SettingRow label={status.label} description={status.description ?? ''} orientation="vertical">
       <div className="flex items-center gap-2">
         <Input
           value={value}
           onChange={(e) => setValue(e.target.value)}
           placeholder={status.placeholder ?? status.key}
-          className="h-8 w-48 text-sm"
+          className="h-8 min-w-0 flex-1 text-sm"
           onKeyDown={(e) => {
             if (e.key === 'Enter') void handleSave();
           }}
@@ -122,7 +122,7 @@ export function NumberSettingRow({
   };
 
   return (
-    <SettingRow label={status.label} description={status.description ?? ''}>
+    <SettingRow label={status.label} description={status.description ?? ''} orientation="vertical">
       <div className="flex items-center gap-2">
         <Input
           type="number"
@@ -131,7 +131,7 @@ export function NumberSettingRow({
           placeholder={status.placeholder ?? status.key}
           min={status.min}
           max={status.max}
-          className="h-8 w-32 text-sm"
+          className="h-8 min-w-0 flex-1 text-sm"
           onKeyDown={(e) => {
             if (e.key === 'Enter') void handleSave();
           }}
@@ -225,9 +225,9 @@ export function SelectSettingRow({
   };
 
   return (
-    <SettingRow label={status.label} description={status.description ?? ''}>
+    <SettingRow label={status.label} description={status.description ?? ''} orientation="vertical">
       <Select value={String(status.value ?? '')} onValueChange={handleChange} disabled={saving}>
-        <SelectTrigger className="h-8 w-48 text-sm">
+        <SelectTrigger className="h-8 text-sm">
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
