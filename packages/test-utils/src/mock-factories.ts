@@ -113,6 +113,13 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
     getCommands: vi.fn(),
     health: vi.fn(),
     updateSession: vi.fn(),
+    forkSession: vi.fn().mockResolvedValue({
+      id: 'forked-id',
+      title: 'Fork',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      permissionMode: 'default',
+    }),
     browseDirectory: vi.fn().mockResolvedValue({ path: '/test', entries: [], parent: null }),
     getDefaultCwd: vi.fn().mockResolvedValue({ path: '/test/cwd' }),
     listFiles: vi.fn().mockResolvedValue({ files: [], truncated: false, total: 0 }),

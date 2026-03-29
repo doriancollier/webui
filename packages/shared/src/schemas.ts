@@ -60,6 +60,7 @@ export const StreamEventTypeSchema = z
     'presence_update',
     'ui_command',
     'session_state_changed',
+    'context_usage',
   ])
   .openapi('StreamEventType');
 
@@ -127,6 +128,17 @@ export const UpdateSessionRequestSchema = z
   .openapi('UpdateSessionRequest');
 
 export type UpdateSessionRequest = z.infer<typeof UpdateSessionRequestSchema>;
+
+export const ForkSessionRequestSchema = z
+  .object({
+    /** Slice transcript up to this message UUID (inclusive). If omitted, full copy. */
+    upToMessageId: z.string().uuid().optional(),
+    /** Custom title for the fork. If omitted, SDK derives from original title. */
+    title: z.string().optional(),
+  })
+  .openapi('ForkSessionRequest');
+
+export type ForkSessionRequest = z.infer<typeof ForkSessionRequestSchema>;
 
 export const SendMessageRequestSchema = z
   .object({
@@ -294,6 +306,28 @@ export const SessionStatusEventSchema = z
   .openapi('SessionStatusEvent');
 
 export type SessionStatusEvent = z.infer<typeof SessionStatusEventSchema>;
+
+// === Context Usage Types ===
+
+export const ContextUsageCategorySchema = z.object({
+  name: z.string(),
+  tokens: z.number().int(),
+  color: z.string(),
+});
+
+export type ContextUsageCategory = z.infer<typeof ContextUsageCategorySchema>;
+
+export const ContextUsageSchema = z
+  .object({
+    totalTokens: z.number().int(),
+    maxTokens: z.number().int(),
+    percentage: z.number(),
+    model: z.string(),
+    categories: z.array(ContextUsageCategorySchema),
+  })
+  .openapi('ContextUsage');
+
+export type ContextUsage = z.infer<typeof ContextUsageSchema>;
 
 export const TaskItemSchema = z
   .object({
@@ -540,6 +574,7 @@ export const StreamEventSchema = z
       HookResponseEventSchema,
       PresenceUpdateEventSchema,
       SessionStateChangedEventSchema,
+      ContextUsageSchema,
     ]),
   })
   .openapi('StreamEvent');

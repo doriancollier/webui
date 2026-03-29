@@ -94,6 +94,14 @@ export class DirectTransport implements Transport {
     return this.getSession(id, cwd);
   }
 
+  async forkSession(
+    _id: string,
+    _opts?: { upToMessageId?: string; title?: string },
+    _cwd?: string
+  ): Promise<Session> {
+    throw new Error('Session forking is not supported in DirectTransport');
+  }
+
   async getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }> {
     const messages = await this.services.transcriptReader.readTranscript(
       cwd || this.services.vaultRoot,

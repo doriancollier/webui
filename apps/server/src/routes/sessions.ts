@@ -3,6 +3,7 @@ import { runtimeRegistry } from '../services/core/runtime-registry.js';
 import { initSSEStream, sendSSEEvent, endSSEStream } from '../services/core/stream-adapter.js';
 import {
   UpdateSessionRequestSchema,
+  ForkSessionRequestSchema,
   SendMessageRequestSchema,
   ApprovalRequestSchema,
   SubmitAnswersRequestSchema,
@@ -138,6 +139,26 @@ router.patch('/:id', async (req, res) => {
     if (effort) session.effort = effort;
   }
   res.json(session ?? { id: sessionId, permissionMode, model, effort });
+});
+
+// POST /api/sessions/:id/fork - Fork a session
+router.post('/:id/fork', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
+  const parsed = ForkSessionRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
+  }
+
+  const cwd = (req.query.cwd as string) || vaultRoot;
+  if (!(await assertBoundary(cwd, res))) return;
+
+  const runtime = runtimeRegistry.getDefault();
+  const internalSessionId = runtime.getInternalSessionId(sessionId) ?? sessionId;
+  const forked = await runtime.forkSession(cwd, internalSessionId, parsed.data);
+  if (!forked) return sendError(res, 404, 'Session not found or fork failed', 'FORK_FAILED');
+  res.status(201).json(forked);
 });
 
 // POST /api/sessions/:id/messages - Send message (SSE stream)

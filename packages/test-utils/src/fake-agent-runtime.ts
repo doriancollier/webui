@@ -69,6 +69,15 @@ export class FakeAgentRuntime implements AgentRuntime {
   updateSession = vi.fn<
     (sessionId: string, opts: { permissionMode?: PermissionMode; model?: string }) => boolean
   >(() => true);
+  forkSession = vi
+    .fn<
+      (
+        projectDir: string,
+        sessionId: string,
+        opts?: { upToMessageId?: string; title?: string }
+      ) => Promise<Session | null>
+    >()
+    .mockResolvedValue(null);
   listSessions = vi.fn<(projectDir: string) => Promise<Session[]>>().mockResolvedValue([]);
   getSession = vi
     .fn<(projectDir: string, sessionId: string) => Promise<Session | null>>()

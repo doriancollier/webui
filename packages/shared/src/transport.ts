@@ -133,6 +133,12 @@ export interface Transport {
   getSession(id: string, cwd?: string): Promise<Session>;
   /** Update session settings (permission mode, model). */
   updateSession(id: string, opts: UpdateSessionRequest, cwd?: string): Promise<Session>;
+  /** Fork a session, creating a new independent copy. */
+  forkSession(
+    id: string,
+    opts?: { upToMessageId?: string; title?: string },
+    cwd?: string
+  ): Promise<Session>;
   /** Fetch message history for a session. */
   getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }>;
   /**

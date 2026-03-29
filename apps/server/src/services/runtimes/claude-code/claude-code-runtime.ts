@@ -7,6 +7,7 @@
  *
  * @module services/runtimes/claude-code/claude-code-runtime
  */
+import { forkSession as sdkForkSession } from '@anthropic-ai/claude-agent-sdk';
 import type { McpServerConfig } from '@anthropic-ai/claude-agent-sdk';
 import type { McpServerEntry } from '@dorkos/shared/transport';
 import type {
@@ -230,6 +231,34 @@ export class ClaudeCodeRuntime implements AgentRuntime {
       });
       // Initial reverse index entry (sdkSessionId === sessionId at creation)
       this.sdkSessionIndex.set(sessionId, sessionId);
+    }
+  }
+
+  /** Fork a session, creating a new independent copy of the conversation. */
+  async forkSession(
+    projectDir: string,
+    sessionId: string,
+    opts?: { upToMessageId?: string; title?: string }
+  ): Promise<Session | null> {
+    const internalId = this.getInternalSessionId(sessionId) ?? sessionId;
+    try {
+      const result = await sdkForkSession(internalId, {
+        dir: projectDir,
+        upToMessageId: opts?.upToMessageId,
+        title: opts?.title,
+      });
+      logger.info('[forkSession] session forked', {
+        source: sessionId,
+        newSessionId: result.sessionId,
+      });
+      // Read the new session from disk to return full metadata
+      return this.transcriptReader.getSession(projectDir, result.sessionId);
+    } catch (err) {
+      logger.error('[forkSession] fork failed', {
+        sessionId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+      return null;
     }
   }
 

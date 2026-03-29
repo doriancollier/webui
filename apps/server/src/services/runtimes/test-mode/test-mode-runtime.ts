@@ -39,6 +39,10 @@ export class TestModeRuntime implements AgentRuntime {
     return this._sessions.has(sessionId);
   }
 
+  async forkSession(): Promise<Session | null> {
+    return null;
+  }
+
   updateSession(
     sessionId: string,
     opts: { permissionMode?: PermissionMode; model?: string }

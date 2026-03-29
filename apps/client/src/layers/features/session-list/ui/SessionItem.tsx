@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronDown, Copy, Check, ShieldOff } from 'lucide-react';
+import { ChevronDown, Copy, Check, ShieldOff, GitFork } from 'lucide-react';
 import type { Session } from '@dorkos/shared/types';
 import { cn, formatRelativeTime, TIMING } from '@/layers/shared/lib';
 import { useSessionChatStore } from '@/layers/entities/session';
@@ -9,6 +9,7 @@ interface SessionItemProps {
   session: Session;
   isActive: boolean;
   onClick: () => void;
+  onFork?: (sessionId: string) => void;
   isNew?: boolean;
 }
 
@@ -135,7 +136,13 @@ function CopyButton({ text, label }: { text: string; label: string }) {
 }
 
 /** Sidebar row representing a single session with expandable details. */
-export function SessionItem({ session, isActive, onClick, isNew = false }: SessionItemProps) {
+export function SessionItem({
+  session,
+  isActive,
+  onClick,
+  onFork,
+  isNew = false,
+}: SessionItemProps) {
   const [expanded, setExpanded] = useState(false);
   const isSkipMode = session.permissionMode === 'bypassPermissions';
 
@@ -234,6 +241,19 @@ export function SessionItem({ session, isActive, onClick, isNew = false }: Sessi
               <DetailRow label="Created" value={formatTimestamp(session.createdAt)} />
               <DetailRow label="Updated" value={formatTimestamp(session.updatedAt)} />
               <DetailRow label="Permissions" value={isSkipMode ? 'Skip (unsafe)' : 'Default'} />
+              {onFork && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onFork(session.id);
+                  }}
+                  className="hover:bg-secondary/80 text-muted-foreground/60 hover:text-muted-foreground mt-1 inline-flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors duration-100"
+                  aria-label="Fork session"
+                >
+                  <GitFork className="size-(--size-icon-xs)" />
+                  <span>Fork</span>
+                </button>
+              )}
             </div>
           </motion.div>
         )}

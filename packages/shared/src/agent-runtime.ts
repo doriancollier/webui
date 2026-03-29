@@ -106,6 +106,20 @@ export interface AgentRuntime {
   /** Return true if the session is currently tracked in memory. */
   hasSession(sessionId: string): boolean;
 
+  /**
+   * Fork a session, creating a new independent copy of the conversation.
+   *
+   * @param projectDir - Project directory for transcript lookup
+   * @param sessionId - Session to fork
+   * @param opts - Optional fork parameters (upToMessageId, title)
+   * @returns The new forked session, or null if the source session was not found
+   */
+  forkSession(
+    projectDir: string,
+    sessionId: string,
+    opts?: { upToMessageId?: string; title?: string }
+  ): Promise<Session | null>;
+
   /** Update mutable session fields. Returns false if the session does not exist. */
   updateSession(
     sessionId: string,

@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
-import { useAppStore } from '@/layers/shared/model';
+import { useMemo, useCallback } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useAppStore, useTransport } from '@/layers/shared/model';
 import { cn, groupSessionsByTime } from '@/layers/shared/lib';
 import { SidebarContent } from '@/layers/shared/ui';
 import { useActiveRunCount } from '@/layers/entities/pulse';
@@ -31,6 +32,21 @@ export function SessionSidebar() {
   usePulseNotifications();
   const { visibleTabs, sidebarActiveTab, setSidebarActiveTab } = useSidebarTabs();
   const { handleNewSession, handleSessionClick, handleDashboard } = useSidebarNavigation();
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+
+  const handleForkSession = useCallback(
+    async (sessionId: string) => {
+      try {
+        const forked = await transport.forkSession(sessionId, undefined, selectedCwd ?? undefined);
+        await queryClient.invalidateQueries({ queryKey: ['sessions'] });
+        handleSessionClick(forked.id);
+      } catch (err) {
+        console.error('[SessionSidebar] fork failed', err);
+      }
+    },
+    [transport, selectedCwd, queryClient, handleSessionClick]
+  );
 
   const groupedSessions = useMemo(() => groupSessionsByTime(sessions), [sessions]);
   const recentSessions = useMemo(
@@ -75,6 +91,7 @@ export function SessionSidebar() {
             activeSessionId={activeSessionId}
             groupedSessions={groupedSessions}
             onSessionClick={handleSessionClick}
+            onForkSession={handleForkSession}
           />
         </div>
 

@@ -238,6 +238,18 @@ export class HttpTransport implements Transport {
     });
   }
 
+  forkSession(
+    id: string,
+    opts?: { upToMessageId?: string; title?: string },
+    cwd?: string
+  ): Promise<Session> {
+    const qs = buildQueryString({ cwd });
+    return fetchJSON<Session>(this.baseUrl, `/sessions/${id}/fork${qs}`, {
+      method: 'POST',
+      body: JSON.stringify(opts ?? {}),
+    });
+  }
+
   // --- Message History (ETag caching) ---
 
   async getMessages(sessionId: string, cwd?: string): Promise<{ messages: HistoryMessage[] }> {
