@@ -58,6 +58,7 @@ export const StreamEventTypeSchema = z
     'hook_response',
     'presence_update',
     'ui_command',
+    'session_state_changed',
   ])
   .openapi('StreamEventType');
 
@@ -112,10 +113,14 @@ export const CreateSessionRequestSchema = z
 
 export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
 
+export const EffortLevelSchema = z.enum(['low', 'medium', 'high', 'max']).openapi('EffortLevel');
+export type EffortLevel = z.infer<typeof EffortLevelSchema>;
+
 export const UpdateSessionRequestSchema = z
   .object({
     permissionMode: PermissionModeSchema.optional(),
     model: z.string().optional(),
+    effort: EffortLevelSchema.optional(),
   })
   .openapi('UpdateSessionRequest');
 
@@ -381,6 +386,7 @@ export const BackgroundTaskProgressEventSchema = z
     toolUses: z.number().int().optional(),
     lastToolName: z.string().optional(),
     durationMs: z.number().int(),
+    summary: z.string().optional(),
   })
   .openapi('BackgroundTaskProgressEvent');
 
@@ -477,6 +483,18 @@ export const PresenceUpdateEventSchema = z
 
 export type PresenceUpdateEvent = z.infer<typeof PresenceUpdateEventSchema>;
 
+/** Authoritative SDK session state change (idle/running/requires_action). */
+export const SdkSessionStateSchema = z.enum(['idle', 'running', 'requires_action']);
+export type SdkSessionState = z.infer<typeof SdkSessionStateSchema>;
+
+export const SessionStateChangedEventSchema = z
+  .object({
+    state: SdkSessionStateSchema,
+  })
+  .openapi('SessionStateChangedEvent');
+
+export type SessionStateChangedEvent = z.infer<typeof SessionStateChangedEventSchema>;
+
 export const StreamEventSchema = z
   .object({
     type: StreamEventTypeSchema,
@@ -507,6 +525,7 @@ export const StreamEventSchema = z
       HookProgressEventSchema,
       HookResponseEventSchema,
       PresenceUpdateEventSchema,
+      SessionStateChangedEventSchema,
     ]),
   })
   .openapi('StreamEvent');

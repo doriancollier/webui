@@ -19,9 +19,9 @@ A **harness** is the underlying infrastructure that runs an AI coding agent. It 
 
 | Component    | Count | Location                                                                   |
 | ------------ | ----- | -------------------------------------------------------------------------- |
-| Commands     | 48    | `.claude/commands/`                                                        |
+| Commands     | 52    | `.claude/commands/`                                                        |
 | Agents       | 6     | `.claude/agents/`                                                          |
-| Skills       | 17    | `.claude/skills/`                                                          |
+| Skills       | 18    | `.claude/skills/`                                                          |
 | Rules        | 10    | `.claude/rules/`                                                           |
 | Claude Hooks | 13    | `.claude/hooks/`, configured in `.claude/settings.json`                    |
 | Git Hooks    | 1     | `.claude/git-hooks/`, installed via `.claude/scripts/install-git-hooks.sh` |
@@ -52,7 +52,8 @@ Slash commands are triggered explicitly by typing `/command`. They're expanded p
 | `changelog/`   | backfill                                                              | Changelog backfill from git commits                                                     |
 | `research/`    | curate                                                                | Research file curation and status management                                            |
 | `chat/`        | self-test                                                             | Chat UI self-testing in live browser session                                            |
-| root           | ideate, ideate-to-spec, review-recent-work                            | Feature development                                                                     |
+| `linear/`      | idea, done                                                            | Linear Loop — idea capture and completion reporting                                     |
+| root           | ideate, ideate-to-spec, review-recent-work, pm                        | Feature development, product management loop                                            |
 
 ### Agents (Tool-Invoked)
 
@@ -87,25 +88,26 @@ Agents run in isolated context windows via the Task tool. Use for complex, multi
 
 Skills provide reusable expertise that Claude applies automatically when relevant. They teach "how to think" about problems.
 
-| Skill                            | Expertise                                             | When Applied                                                       |
-| -------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
-| `clarifying-requirements`        | Identifying gaps, asking clarifying questions         | Vague requests, ambiguous scope, hidden complexity                 |
-| `debugging-systematically`       | Debugging methodology, troubleshooting patterns       | Investigating bugs, tracing issues                                 |
-| `designing-frontend`             | Calm Tech design language, UI decisions               | Planning UI, reviewing designs, hierarchy decisions                |
-| `styling-with-tailwind-shadcn`   | Tailwind CSS v4, Shadcn UI implementation             | Writing styles, building components, theming                       |
-| `writing-developer-guides`       | Developer guide structure for AI agents               | Creating/updating files in contributing/                           |
-| `orchestrating-parallel-work`    | Parallel agent execution, batch scheduling            | Coordinating multiple concurrent tasks, optimizing task ordering   |
-| `writing-changelogs`             | Human-friendly changelog entries, release notes       | Populating changelog, preparing releases                           |
-| `organizing-fsd-architecture`    | Feature-Sliced Design layer placement, imports        | Structuring client code, creating features, reviewing architecture |
-| `executing-specs`                | Parallel spec implementation, incremental persistence | Orchestrating `/spec:execute` with batch result tracking           |
-| `writing-adrs`                   | Architecture Decision Records, decision signals       | Creating ADRs, extracting decisions from specs, ADR quality        |
-| `browser-testing`                | Browser test methodology, Playwright patterns         | Writing and maintaining DorkOS browser tests                       |
-| `reading-session-transcripts`    | DorkOS session URL → JSONL file resolution            | User shares session URLs, asks to read transcripts/chats           |
-| `test-driven-development`        | TDD methodology, red-green-refactor cycle             | Implementing features, bug fixes, before writing code              |
-| `verification-before-completion` | Evidence-based completion claims                      | Before claiming work is complete, committing, or creating PRs      |
-| `receiving-code-review`          | Technical evaluation of review feedback               | Receiving code review, before implementing suggestions             |
-| `requesting-code-review`         | Dispatching code-reviewer subagent                    | After major tasks, features, or before merge                       |
-| `visual-companion`               | Browser-based visual mockups and diagrams             | When user would understand better by seeing than reading           |
+| Skill                            | Expertise                                              | When Applied                                                       |
+| -------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------ |
+| `clarifying-requirements`        | Identifying gaps, asking clarifying questions          | Vague requests, ambiguous scope, hidden complexity                 |
+| `debugging-systematically`       | Debugging methodology, troubleshooting patterns        | Investigating bugs, tracing issues                                 |
+| `designing-frontend`             | Calm Tech design language, UI decisions                | Planning UI, reviewing designs, hierarchy decisions                |
+| `styling-with-tailwind-shadcn`   | Tailwind CSS v4, Shadcn UI implementation              | Writing styles, building components, theming                       |
+| `writing-developer-guides`       | Developer guide structure for AI agents                | Creating/updating files in contributing/                           |
+| `orchestrating-parallel-work`    | Parallel agent execution, batch scheduling             | Coordinating multiple concurrent tasks, optimizing task ordering   |
+| `writing-changelogs`             | Human-friendly changelog entries, release notes        | Populating changelog, preparing releases                           |
+| `organizing-fsd-architecture`    | Feature-Sliced Design layer placement, imports         | Structuring client code, creating features, reviewing architecture |
+| `executing-specs`                | Parallel spec implementation, incremental persistence  | Orchestrating `/spec:execute` with batch result tracking           |
+| `writing-adrs`                   | Architecture Decision Records, decision signals        | Creating ADRs, extracting decisions from specs, ADR quality        |
+| `browser-testing`                | Browser test methodology, Playwright patterns          | Writing and maintaining DorkOS browser tests                       |
+| `reading-session-transcripts`    | DorkOS session URL → JSONL file resolution             | User shares session URLs, asks to read transcripts/chats           |
+| `test-driven-development`        | TDD methodology, red-green-refactor cycle              | Implementing features, bug fixes, before writing code              |
+| `verification-before-completion` | Evidence-based completion claims                       | Before claiming work is complete, committing, or creating PRs      |
+| `receiving-code-review`          | Technical evaluation of review feedback                | Receiving code review, before implementing suggestions             |
+| `requesting-code-review`         | Dispatching code-reviewer subagent                     | After major tasks, features, or before merge                       |
+| `visual-companion`               | Browser-based visual mockups and diagrams              | When user would understand better by seeing than reading           |
+| `linear-loop`                    | Loop methodology, Linear integration, template routing | Working with Linear issues, running `/pm`, product loop            |
 
 ### Rules (Path-Triggered)
 

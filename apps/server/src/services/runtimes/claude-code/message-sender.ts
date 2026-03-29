@@ -168,11 +168,19 @@ export async function* executeSdkQuery(
     cwd: effectiveCwd,
     includePartialMessages: true,
     promptSuggestions: true,
+    agentProgressSummaries: true,
     settingSources: ['local', 'project', 'user'],
     systemPrompt: {
       type: 'preset',
       preset: 'claude_code',
       append: systemPromptAppend,
+    },
+    toolConfig: {
+      askUserQuestion: { previewFormat: 'html' },
+    },
+    env: {
+      ...process.env,
+      CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS: '1',
     },
     ...(opts.claudeCliPath ? { pathToClaudeCodeExecutable: opts.claudeCliPath } : {}),
   };
@@ -214,6 +222,9 @@ export async function* executeSdkQuery(
 
   if (session.model) {
     sdkOptions.model = session.model;
+  }
+  if (session.effort) {
+    sdkOptions.effort = session.effort;
   }
 
   // Inject MCP tool servers -- create fresh instances per query to avoid

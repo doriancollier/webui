@@ -12,6 +12,7 @@ import type {
   DoneEvent,
   ErrorEvent,
   SessionStatusEvent,
+  SessionStateChangedEvent,
   TaskUpdateEvent,
   MessagePart,
   SystemStatusEvent,
@@ -240,6 +241,11 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       case 'prompt_suggestion': {
         const { suggestions } = data as PromptSuggestionEvent;
         setPromptSuggestions(suggestions);
+        break;
+      }
+      case 'session_state_changed': {
+        const { state } = data as SessionStateChangedEvent;
+        useSessionChatStore.getState().updateSession(sessionId, { sdkState: state });
         break;
       }
       case 'ui_command': {

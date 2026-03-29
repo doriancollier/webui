@@ -32,6 +32,15 @@ interface ActiveStream {
   pendingUserId: string | null;
   /** Auto-retry counter for transient POST failures. */
   retryCount: number;
+  /**
+   * Tracks the current store key for this stream. Starts as the original
+   * sessionId passed to `start()`, then updated by `remapSession()` when
+   * the SDK assigns a different session ID (create-on-first-message).
+   *
+   * All store writes during and after streaming should use this value
+   * instead of the captured `sessionId` from `start()`.
+   */
+  currentSessionId: string;
 }
 
 /** Timer handles for a single session. */
@@ -123,6 +132,7 @@ export class StreamManager {
     // Reset streaming state in the store
     useSessionChatStore.getState().updateSession(sessionId, {
       status: 'idle',
+      sdkState: null,
       isTextStreaming: false,
       streamStartTime: null,
       estimatedTokens: 0,
@@ -135,6 +145,31 @@ export class StreamManager {
   abortAll(): void {
     for (const sessionId of this.streams.keys()) {
       this.abort(sessionId);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session remap
+  // ---------------------------------------------------------------------------
+
+  /**
+   * Update the internal session ID mapping when the SDK assigns a new ID
+   * (create-on-first-message remap). Moves the ActiveStream and timer
+   * entries to the new key so subsequent store writes target the correct
+   * session.
+   */
+  remapSession(oldId: string, newId: string): void {
+    const stream = this.streams.get(oldId);
+    if (stream) {
+      stream.currentSessionId = newId;
+      this.streams.delete(oldId);
+      this.streams.set(newId, stream);
+    }
+
+    const timers = this.timers.get(oldId);
+    if (timers) {
+      this.timers.delete(oldId);
+      this.timers.set(newId, timers);
     }
   }
 
@@ -186,6 +221,7 @@ export class StreamManager {
       assistantCreated: false,
       pendingUserId,
       retryCount: 0,
+      currentSessionId: sessionId,
     };
     this.streams.set(sessionId, activeStream);
 
@@ -214,7 +250,9 @@ export class StreamManager {
           // Phase 1 shim: forward to caller's event handler (useChatSession local state)
           // before running StreamManager's own dispatch. Removed in Phase 2.
           if (onEvent) onEvent(event.type, event.data, assistantId);
-          this.dispatchEvent(sessionId, event.type, event.data);
+          // Use currentSessionId (not the captured sessionId) so dispatchEvent
+          // finds the stream entry after a session ID remap.
+          this.dispatchEvent(activeStream.currentSessionId, event.type, event.data);
         },
         abortController.signal,
         cwd ?? undefined,
@@ -227,28 +265,35 @@ export class StreamManager {
       // Stream completed successfully — mark unseen activity so the sidebar
       // indicator lights up if this was a background (non-active) session.
       // The active session's useChatSession will clear this flag via useEffect.
-      this.streams.delete(sessionId);
-      store.updateSession(sessionId, {
+      // Use currentSessionId (not the original sessionId) in case the SDK
+      // remapped the session ID during streaming (create-on-first-message).
+      const finalId = activeStream.currentSessionId;
+      this.streams.delete(finalId);
+      store.updateSession(finalId, {
         status: 'idle',
+        sdkState: null,
         pendingUserId: null,
         hasUnseenActivity: true,
       });
     } catch (err) {
+      // Use the (potentially remapped) session ID for all store writes in error paths.
+      const errorSessionId = activeStream.currentSessionId;
+
       // AbortError is not an error — user cancelled intentionally.
       // Re-throw so callers can distinguish abort from real errors.
       if ((err as Error).name === 'AbortError') {
-        this.cleanupStream(sessionId);
-        useSessionChatStore.getState().updateSession(sessionId, { status: 'idle' });
+        this.cleanupStream(errorSessionId);
+        useSessionChatStore.getState().updateSession(errorSessionId, { status: 'idle' });
         throw err;
       }
 
       const errorInfo = classifyTransportError(err);
-      const stream = this.streams.get(sessionId);
+      const stream = this.streams.get(errorSessionId) ?? this.streams.get(sessionId);
 
       // Session locked — restore input and show auto-dismissing banner.
       // Re-throw the original error so callers can inspect code === 'SESSION_LOCKED'.
       if ((err as { code?: string }).code === 'SESSION_LOCKED') {
-        this.handleSessionLocked(sessionId, errorInfo, pendingUserId);
+        this.handleSessionLocked(errorSessionId, errorInfo, pendingUserId);
         throw err;
       }
 
@@ -271,7 +316,7 @@ export class StreamManager {
 
       // Non-retryable or mid-stream failure — write to store, then re-throw so
       // callers (e.g. useChatSession) can update their own local state.
-      this.handleStreamError(sessionId, errorInfo, hasPartialResponse, pendingUserId);
+      this.handleStreamError(errorSessionId, errorInfo, hasPartialResponse, pendingUserId);
       throw err;
     }
   }
@@ -290,10 +335,13 @@ export class StreamManager {
     const stream = this.streams.get(sessionId);
     if (!stream) return;
 
+    // Use the (potentially remapped) session ID for all store writes
+    const storeKey = stream.currentSessionId;
+
     // Mark assistant as created on first content event
     if (!stream.assistantCreated && (type === 'text_delta' || type === 'thinking_delta')) {
       stream.assistantCreated = true;
-      useSessionChatStore.getState().updateSession(sessionId, {
+      useSessionChatStore.getState().updateSession(storeKey, {
         assistantCreated: true,
       });
     }
@@ -346,6 +394,7 @@ export class StreamManager {
       isTextStreaming: false,
       isRateLimited: false,
       rateLimitRetryAfter: null,
+      sdkState: null,
     });
   }
 
@@ -388,9 +437,11 @@ export class StreamManager {
     activeStream: ActiveStream
   ): Promise<boolean> {
     const { transport, sessionId, content, cwd, transformContent } = options;
+    // Use the (potentially remapped) session ID for store writes
+    const storeId = activeStream.currentSessionId;
 
     activeStream.retryCount += 1;
-    useSessionChatStore.getState().updateSession(sessionId, {
+    useSessionChatStore.getState().updateSession(storeId, {
       error: {
         heading: 'Connection interrupted',
         message: 'Retrying\u2026',
@@ -407,7 +458,7 @@ export class StreamManager {
       await transport.sendMessage(
         sessionId,
         retryContent,
-        (event) => this.dispatchEvent(sessionId, event.type, event.data),
+        (event) => this.dispatchEvent(activeStream.currentSessionId, event.type, event.data),
         abortController.signal,
         cwd ?? undefined,
         {
@@ -417,32 +468,32 @@ export class StreamManager {
       );
 
       // Retry succeeded
-      this.streams.delete(sessionId);
-      useSessionChatStore.getState().updateSession(sessionId, {
+      this.streams.delete(storeId);
+      useSessionChatStore.getState().updateSession(storeId, {
         status: 'idle',
         error: null,
         pendingUserId: null,
         retryCount: 0,
       });
-      this.cleanupStream(sessionId);
+      this.cleanupStream(storeId);
       return true;
     } catch (retryErr) {
       if ((retryErr as Error).name === 'AbortError') {
-        this.cleanupStream(sessionId);
-        useSessionChatStore.getState().updateSession(sessionId, { status: 'idle' });
+        this.cleanupStream(storeId);
+        useSessionChatStore.getState().updateSession(storeId, { status: 'idle' });
         return true; // Abort is handled, no further error display needed
       }
 
       // Retry failed — remove optimistic message and surface error
       const store = useSessionChatStore.getState();
-      const session = store.getSession(sessionId);
-      store.updateSession(sessionId, {
+      const session = store.getSession(storeId);
+      store.updateSession(storeId, {
         messages: session.messages.filter((m) => m.id !== pendingUserId),
         error: classifyTransportError(retryErr),
         status: 'error',
         pendingUserId: null,
       });
-      this.cleanupStream(sessionId);
+      this.cleanupStream(storeId);
       return false;
     }
   }

@@ -89,6 +89,7 @@ export async function* mapSdkMessage(
           toolUses: usage.tool_uses,
           lastToolName: msg.last_tool_name as string | undefined,
           durationMs: usage.duration_ms,
+          summary: msg.summary as string | undefined,
         },
       };
       return;
@@ -128,6 +129,17 @@ export async function* mapSdkMessage(
       yield {
         type: 'compact_boundary',
         data: {},
+      };
+      return;
+    }
+
+    // Handle SDK session state changes (idle/running/requires_action)
+    if (message.subtype === 'session_state_changed') {
+      const msg = message as Record<string, unknown>;
+      const state = msg.state as 'idle' | 'running' | 'requires_action';
+      yield {
+        type: 'session_state_changed' as const,
+        data: { state },
       };
       return;
     }
@@ -212,7 +224,7 @@ export async function* mapSdkMessage(
 
   // Handle stream events (content blocks)
   if (message.type === 'stream_event') {
-    const event = (message as { event: Record<string, unknown> }).event;
+    const event = (message as unknown as { event: Record<string, unknown> }).event;
     const eventType = event.type as string;
 
     if (eventType === 'content_block_start') {
@@ -387,7 +399,7 @@ export async function* mapSdkMessage(
 
   // Handle tool progress (intermediate output from long-running tools)
   if (message.type === 'tool_progress') {
-    const progress = message as { tool_use_id: string; content: string };
+    const progress = message as unknown as { tool_use_id: string; content: string };
     yield {
       type: 'tool_progress',
       data: {

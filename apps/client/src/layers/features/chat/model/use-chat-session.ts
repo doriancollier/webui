@@ -88,11 +88,14 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
       if (!sid || !isAliveRef.current) return;
       const store = useSessionChatStore.getState();
       // Guard against stale closures from a previous component instance that
-      // mounted for the same session ID. initSession increments mountGeneration
-      // each time a fresh session entry is created, so a callback captured before
-      // that reset will see a mismatched generation and drop the write.
-      const currentGen = store.getSession(sid).mountGeneration;
-      if (mountGenerationRef.current !== -1 && currentGen !== mountGenerationRef.current) return;
+      // mounted for the same session ID. Uses a per-session Map so that
+      // background session callbacks (from before a session switch) still hold
+      // the correct generation for THEIR session and are not rejected.
+      const expectedGen = mountGenerationMapRef.current.get(sid);
+      if (expectedGen !== undefined) {
+        const currentGen = store.getSession(sid).mountGeneration;
+        if (currentGen !== expectedGen) return;
+      }
       const next = typeof update === 'function' ? update(store.getSession(sid).messages) : update;
       store.updateSession(sid, { messages: next });
     },
@@ -232,17 +235,19 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   // with no observable side effects on the component tree.
   if (sid) useSessionChatStore.getState().initSession(sid);
 
-  // mountGenerationRef captures the mountGeneration counter at the time THIS
-  // component instance first rendered. Every initSession call for a new (or
-  // re-initialized) session claims the next global integer, so any setMessages
-  // closure from a previous component instance for the same session ID will hold
-  // a stale generation value and will be dropped — matching React's own setState
-  // no-op behavior for unmounted components, but without relying on the async
-  // effect-cleanup flush order (which can be delayed into a sibling component's
-  // act() block in tests).
-  const mountGenerationRef = useRef<number>(
-    sid ? useSessionChatStore.getState().getSession(sid).mountGeneration : -1
-  );
+  // Per-session mount generation Map. Each entry records the mountGeneration at
+  // the time initSession was called for that session ID.  Using a Map instead of
+  // a single scalar ref means that when the user switches from session A to B,
+  // background streaming callbacks for session A still hold A's generation and
+  // pass the guard — while truly stale closures from a destroyed-and-recreated
+  // session see a mismatch and are dropped.
+  const mountGenerationMapRef = useRef<Map<string, number>>(new Map());
+  if (sid) {
+    const gen = useSessionChatStore.getState().getSession(sid).mountGeneration;
+    if (!mountGenerationMapRef.current.has(sid)) {
+      mountGenerationMapRef.current.set(sid, gen);
+    }
+  }
 
   // isAliveRef provides a secondary unmount guard for in-flight callbacks that
   // resolve after this component instance cleanly unmounts (e.g. network requests
@@ -284,7 +289,9 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   // Called synchronously in the done handler when the server remaps the session.
   // Lets StreamManager move its ActiveStream + timer entries to the new key
   // before React re-renders with the new session ID.
-  const onRemapRef = useRef<((oldId: string, newId: string) => void) | undefined>(undefined);
+  const onRemapRef = useRef<((oldId: string, newId: string) => void) | undefined>(
+    (oldId: string, newId: string) => streamManager.remapSession(oldId, newId)
+  );
 
   // Refs for ui_command dispatch — kept stable so the stream handler never stales.
   const themeRef = useRef<(theme: 'light' | 'dark') => void>(() => {});
@@ -436,9 +443,10 @@ export function useChatSession(sessionId: string | null, options: ChatSessionOpt
   useEffect(() => {
     if (sessionId) {
       useSessionChatStore.getState().initSession(sessionId);
-      mountGenerationRef.current = useSessionChatStore
-        .getState()
-        .getSession(sessionId).mountGeneration;
+      mountGenerationMapRef.current.set(
+        sessionId,
+        useSessionChatStore.getState().getSession(sessionId).mountGeneration
+      );
     }
   }, [sessionId]);
 

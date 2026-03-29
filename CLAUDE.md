@@ -180,6 +180,31 @@ Published to npm as `dorkos`. Config precedence: CLI flags > env vars > `~/.dork
 
 `docs/` contains external user-facing MDX docs rendered by `apps/site` (Next.js 16, Fumadocs, Vercel).
 
+## Linear Workflow
+
+We use Linear as the orchestration layer for all product work, following the Loop methodology. See [meta/linear-loop-litepaper.md](meta/linear-loop-litepaper.md) for the full vision.
+
+### Three Commands
+
+- **`/pm`** — The primary command. Reviews the loop, recommends the next action, executes on approval. Run `/pm auto` to let the agent take multiple actions autonomously (except at approval gates).
+- **`/linear:idea`** — Quick idea capture during development.
+- **`/linear:done`** — Report completion and close the loop on an issue.
+
+### Issue Types
+
+Issues are categorized by `type/*` labels: idea, research, hypothesis, task, monitor, signal, meta.
+
+### The Loop
+
+Everything is an issue. The loop runs continuously: Idea → Triage → Research → Hypothesis → Plan → Execute → Monitor → Signal → Loop continues. Complex work routes through the spec workflow (`/ideate` → `/spec:execute`). Simple work stays in Linear. `/pm` orchestrates all of this — you don't need to remember the steps.
+
+### Labels
+
+- `type/*` — Issue type (mutually exclusive)
+- `agent/*` — Agent lifecycle state (ready, claimed, completed)
+- `origin/*` — How the issue was created (human, from-agent, from-signal)
+- `confidence/*` — Hypothesis confidence level (high, medium, low)
+
 ## Hard Rules
 
 These are non-negotiable constraints enforced by ESLint, CI, or convention:

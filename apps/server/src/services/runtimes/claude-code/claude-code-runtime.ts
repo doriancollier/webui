@@ -235,7 +235,11 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   /** Update mutable session fields. Returns false if the session does not exist. */
   updateSession(
     sessionId: string,
-    opts: { permissionMode?: PermissionMode; model?: string }
+    opts: {
+      permissionMode?: PermissionMode;
+      model?: string;
+      effort?: 'low' | 'medium' | 'high' | 'max';
+    }
   ): boolean {
     let session = this.findSession(sessionId);
     if (!session) {
@@ -264,6 +268,9 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     }
     if (opts.model) {
       session.model = opts.model;
+    }
+    if (opts.effort) {
+      session.effort = opts.effort;
     }
     return true;
   }

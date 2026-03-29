@@ -16,6 +16,7 @@ import type {
   MessagePart,
   PresenceUpdateEvent,
   HookPart,
+  SdkSessionState,
 } from '@dorkos/shared/types';
 import type {
   ChatMessage,
@@ -83,6 +84,10 @@ export interface SessionState {
    */
   mountGeneration: number;
 
+  // --- SDK state ---
+  /** Authoritative SDK session state (supplements inferred `status` field). */
+  sdkState: SdkSessionState | null;
+
   // --- Background activity ---
   hasUnseenActivity: boolean;
 }
@@ -113,6 +118,7 @@ export const DEFAULT_SESSION_STATE: SessionState = {
   historySeeded: false,
   retryCount: 0,
   isRemapping: false,
+  sdkState: null,
   hasUnseenActivity: false,
   mountGeneration: 0,
 };

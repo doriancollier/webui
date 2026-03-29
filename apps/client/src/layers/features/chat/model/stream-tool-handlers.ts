@@ -218,6 +218,7 @@ export function handleSubagentProgress(
     taskPart.toolUses = progress.toolUses;
     taskPart.lastToolName = progress.lastToolName;
     taskPart.durationMs = progress.durationMs;
+    if (progress.summary) taskPart.summary = progress.summary;
   } else {
     console.warn('[stream] background_task_progress: unknown taskId', progress.taskId);
   }

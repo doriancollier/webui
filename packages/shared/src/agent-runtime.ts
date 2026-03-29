@@ -112,6 +112,7 @@ export interface AgentRuntime {
     opts: {
       permissionMode?: PermissionMode;
       model?: string;
+      effort?: 'low' | 'medium' | 'high' | 'max';
     }
   ): boolean;
 

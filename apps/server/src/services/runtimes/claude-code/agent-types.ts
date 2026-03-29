@@ -8,6 +8,7 @@ export interface AgentSession {
   lastActivity: number;
   permissionMode: PermissionMode;
   model?: string;
+  effort?: 'low' | 'medium' | 'high' | 'max';
   cwd?: string;
   /** True once the first SDK query has been sent (JSONL file exists) */
   hasStarted: boolean;

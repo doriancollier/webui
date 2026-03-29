@@ -32,15 +32,21 @@ function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) 
   const status = useSessionChatStore(
     useCallback((s) => s.sessions[sessionId]?.status ?? 'idle', [sessionId])
   );
+  const sdkRunning = useSessionChatStore(
+    useCallback((s) => s.sessions[sessionId]?.sdkState === 'running', [sessionId])
+  );
   const hasUnseenActivity = useSessionChatStore(
     useCallback((s) => s.sessions[sessionId]?.hasUnseenActivity ?? false, [sessionId])
   );
   const hasPendingApproval = useSessionChatStore(
     useCallback(
       (s) =>
-        s.sessions[sessionId]?.messages.some((m) =>
+        // SDK authoritative signal takes priority over tool-call-based detection
+        s.sessions[sessionId]?.sdkState === 'requires_action' ||
+        (s.sessions[sessionId]?.messages.some((m) =>
           m.toolCalls?.some((tc) => tc.interactiveType && tc.status === 'pending')
-        ) ?? false,
+        ) ??
+          false),
       [sessionId]
     )
   );
@@ -54,17 +60,23 @@ function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) 
     );
   }
 
-  if (status !== 'idle') {
-    const dotClasses = STATUS_DOT_CLASSES[status];
-    if (dotClasses) {
-      const label = status === 'streaming' ? 'Streaming' : 'Error';
-      return (
-        <span
-          className={cn('size-1.5 flex-shrink-0 rounded-full', dotClasses)}
-          aria-label={label}
-        />
-      );
-    }
+  // SDK 'running' is authoritative; fall back to inferred streaming status
+  const isRunning = sdkRunning || status === 'streaming';
+  const isError = status === 'error';
+
+  if (isRunning) {
+    return (
+      <span
+        className="size-1.5 flex-shrink-0 animate-pulse rounded-full bg-green-500"
+        aria-label="Streaming"
+      />
+    );
+  }
+
+  if (isError) {
+    return (
+      <span className="bg-destructive size-1.5 flex-shrink-0 rounded-full" aria-label="Error" />
+    );
   }
 
   if (hasUnseenActivity) {
