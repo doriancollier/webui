@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Make scheduling optional — tasks can now be on-demand
 - Evolve linear-issues into Loop-aware dashboard
 - Add session rename via SDK renameSession()
 - Add manifest-driven settings forms, placeholder hints, and grouped sections
