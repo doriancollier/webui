@@ -11,7 +11,14 @@ import {
   TooltipContent,
 } from '@/layers/shared/ui';
 import { useModels } from '@/layers/entities/session';
-import type { ModelOption } from '@dorkos/shared/types';
+import type { ModelOption, EffortLevel } from '@dorkos/shared/types';
+
+const EFFORT_LABELS: Record<EffortLevel, { label: string; description: string }> = {
+  low: { label: 'Low', description: 'Fastest responses' },
+  medium: { label: 'Medium', description: 'Moderate thinking' },
+  high: { label: 'High', description: 'Deep reasoning' },
+  max: { label: 'Max', description: 'Maximum thinking' },
+};
 
 function getModelLabel(model: string, models: ModelOption[]): string {
   const option = models.find((o) => o.value === model);
@@ -23,13 +30,26 @@ function getModelLabel(model: string, models: ModelOption[]): string {
 interface ModelItemProps {
   model: string;
   onChangeModel: (model: string) => void;
+  /** Current effort level, or null for SDK default. */
+  effort: EffortLevel | null;
+  /** Called when the user selects an effort level (null = default). */
+  onChangeEffort: (effort: EffortLevel | null) => void;
   /** When true, the selector is disabled and shows a tooltip explaining why. */
   disabled?: boolean;
 }
 
-/** Status bar item with a dropdown to view and change the active model. */
-export function ModelItem({ model, onChangeModel, disabled }: ModelItemProps) {
+/** Status bar item with a dropdown to view and change the active model and effort level. */
+export function ModelItem({
+  model,
+  onChangeModel,
+  effort,
+  onChangeEffort,
+  disabled,
+}: ModelItemProps) {
   const { data: models = [] } = useModels();
+  const selectedModel = models.find((m) => m.value === model);
+  const effortLevels = selectedModel?.supportedEffortLevels;
+  const showEffort = selectedModel?.supportsEffort && effortLevels && effortLevels.length > 0;
 
   const trigger = (
     <button
@@ -69,6 +89,33 @@ export function ModelItem({ model, onChangeModel, disabled }: ModelItemProps) {
             </ResponsiveDropdownMenuRadioItem>
           ))}
         </ResponsiveDropdownMenuRadioGroup>
+        {showEffort && (
+          <>
+            <div className="bg-border my-1 h-px" />
+            <ResponsiveDropdownMenuLabel>Effort</ResponsiveDropdownMenuLabel>
+            <ResponsiveDropdownMenuRadioGroup
+              value={effort ?? 'default'}
+              onValueChange={(v) => onChangeEffort(v === 'default' ? null : (v as EffortLevel))}
+            >
+              <ResponsiveDropdownMenuRadioItem value="default">
+                <div>
+                  <div>Default</div>
+                  <div className="text-muted-foreground text-[10px] leading-tight">SDK decides</div>
+                </div>
+              </ResponsiveDropdownMenuRadioItem>
+              {effortLevels.map((level) => (
+                <ResponsiveDropdownMenuRadioItem key={level} value={level}>
+                  <div>
+                    <div>{EFFORT_LABELS[level].label}</div>
+                    <div className="text-muted-foreground text-[10px] leading-tight">
+                      {EFFORT_LABELS[level].description}
+                    </div>
+                  </div>
+                </ResponsiveDropdownMenuRadioItem>
+              ))}
+            </ResponsiveDropdownMenuRadioGroup>
+          </>
+        )}
       </ResponsiveDropdownMenuContent>
     </ResponsiveDropdownMenu>
   );

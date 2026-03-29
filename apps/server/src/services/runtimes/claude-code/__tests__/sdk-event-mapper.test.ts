@@ -5,6 +5,8 @@ import type { AgentSession, ToolState } from '../agent-types.js';
 import type {
   StreamEvent,
   ErrorEvent,
+  ApiRetryEvent,
+  PromptSuggestionEvent,
   HookStartedEvent,
   HookProgressEvent,
   HookResponseEvent,
@@ -299,6 +301,100 @@ describe('sdk-event-mapper result messages', () => {
 
     const err = events[1].data as ErrorEvent;
     expect(err.category).toBe('execution_error');
+  });
+});
+
+describe('sdk-event-mapper prompt suggestion messages', () => {
+  const session = makeSession();
+  const sessionId = 'test-session';
+  const toolState = makeToolState();
+
+  it('maps singular suggestion field to suggestions array', async () => {
+    const msg = {
+      type: 'prompt_suggestion',
+      suggestion: 'What files were changed?',
+      uuid: 'uuid-suggestion-1',
+      session_id: 'test-session',
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('prompt_suggestion');
+    const data = events[0].data as PromptSuggestionEvent;
+    expect(data.suggestions).toEqual(['What files were changed?']);
+  });
+
+  it('yields nothing for empty suggestion', async () => {
+    const msg = {
+      type: 'prompt_suggestion',
+      suggestion: '',
+      uuid: 'uuid-suggestion-2',
+      session_id: 'test-session',
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(0);
+  });
+
+  it('yields nothing when suggestion field is missing', async () => {
+    const msg = {
+      type: 'prompt_suggestion',
+      uuid: 'uuid-suggestion-3',
+      session_id: 'test-session',
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(0);
+  });
+});
+
+describe('sdk-event-mapper api_retry messages', () => {
+  const session = makeSession();
+  const sessionId = 'test-session';
+  const toolState = makeToolState();
+
+  it('maps api_retry system subtype to api_retry event', async () => {
+    const msg = {
+      type: 'system',
+      subtype: 'api_retry',
+      attempt: 2,
+      max_retries: 5,
+      retry_delay_ms: 3000,
+      error_status: 429,
+      error: { type: 'overloaded_error', message: 'Overloaded' },
+      uuid: 'uuid-retry-1',
+      session_id: 'test-session',
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('api_retry');
+    const data = events[0].data as ApiRetryEvent;
+    expect(data).toEqual({
+      attempt: 2,
+      maxRetries: 5,
+      retryDelayMs: 3000,
+      errorStatus: 429,
+    });
+  });
+
+  it('maps null error_status correctly', async () => {
+    const msg = {
+      type: 'system',
+      subtype: 'api_retry',
+      attempt: 1,
+      max_retries: 3,
+      retry_delay_ms: 1000,
+      error_status: null,
+      error: { type: 'api_error', message: 'Connection failed' },
+      uuid: 'uuid-retry-2',
+      session_id: 'test-session',
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    const data = events[0].data as ApiRetryEvent;
+    expect(data.errorStatus).toBeNull();
   });
 });
 

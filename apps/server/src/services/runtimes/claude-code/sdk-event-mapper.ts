@@ -144,6 +144,21 @@ export async function* mapSdkMessage(
       return;
     }
 
+    // Handle API retry events (SDK 0.2.77+)
+    if (message.subtype === 'api_retry') {
+      const msg = message as Record<string, unknown>;
+      yield {
+        type: 'api_retry',
+        data: {
+          attempt: msg.attempt as number,
+          maxRetries: msg.max_retries as number,
+          retryDelayMs: msg.retry_delay_ms as number,
+          errorStatus: (msg.error_status as number) ?? null,
+        },
+      };
+      return;
+    }
+
     // Handle hook lifecycle events
     if (message.subtype === 'hook_started') {
       const msg = message as Record<string, unknown>;
@@ -410,13 +425,13 @@ export async function* mapSdkMessage(
     return;
   }
 
-  // Handle prompt suggestion messages
+  // Handle prompt suggestion messages (SDK 0.2.86: singular `suggestion` field)
   if (message.type === 'prompt_suggestion') {
-    const suggestions = (message as Record<string, unknown>).suggestions as string[];
-    if (Array.isArray(suggestions) && suggestions.length > 0) {
+    const suggestion = (message as Record<string, unknown>).suggestion as string;
+    if (suggestion) {
       yield {
         type: 'prompt_suggestion',
-        data: { suggestions },
+        data: { suggestions: [suggestion] },
       };
     }
     return;

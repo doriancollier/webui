@@ -254,6 +254,8 @@ export function ChatStatusSection({
                 <ModelItem
                   model={status.model}
                   onChangeModel={(model) => status.updateSession({ model })}
+                  effort={status.effort}
+                  onChangeEffort={(effort) => status.updateSession({ effort: effort ?? undefined })}
                   disabled={!sessionId}
                 />
               </ItemContextMenu>

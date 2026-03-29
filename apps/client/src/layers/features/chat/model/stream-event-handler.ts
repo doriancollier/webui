@@ -11,6 +11,7 @@ import type {
   ThinkingDelta,
   DoneEvent,
   ErrorEvent,
+  ApiRetryEvent,
   SessionStatusEvent,
   SessionStateChangedEvent,
   TaskUpdateEvent,
@@ -193,6 +194,14 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
         const { retryAfter } = data as { retryAfter?: number };
         setRateLimitRetryAfter(retryAfter ?? null);
         setIsRateLimited(true);
+        break;
+      }
+      case 'api_retry': {
+        const { attempt, maxRetries, retryDelayMs } = data as ApiRetryEvent;
+        const delaySec = Math.round(retryDelayMs / 1000);
+        setSystemStatus(
+          `Retrying API request (attempt ${attempt}/${maxRetries}, waiting ${delaySec}s…)`
+        );
         break;
       }
       case 'session_status': {

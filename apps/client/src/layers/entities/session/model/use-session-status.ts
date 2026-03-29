@@ -5,6 +5,7 @@ import type {
   Session,
   SessionStatusEvent,
   PermissionMode,
+  EffortLevel,
   UpdateSessionRequest,
 } from '@dorkos/shared/types';
 
@@ -30,6 +31,7 @@ function getContextWindowForModel(model: string): number | null {
 export interface SessionStatusData {
   permissionMode: PermissionMode;
   model: string;
+  effort: EffortLevel | null;
   costUsd: number | null;
   contextPercent: number | null; // 0-100
   isStreaming: boolean;
@@ -57,6 +59,7 @@ export function useSessionStatus(
   // Optimistic local overrides (applied immediately on user action)
   const [localModel, setLocalModel] = useState<string | null>(null);
   const [localPermissionMode, setLocalPermissionMode] = useState<PermissionMode | null>(null);
+  const [localEffort, setLocalEffort] = useState<EffortLevel | null>(null);
 
   const { data: session } = useQuery({
     queryKey: ['session', sessionId, selectedCwd],
@@ -76,9 +79,12 @@ export function useSessionStatus(
   const contextTokens = streamingStatus?.contextTokens ?? session?.contextTokens ?? null;
   const contextMaxTokens = streamingStatus?.contextMaxTokens ?? getContextWindowForModel(model);
 
+  const effort = localEffort ?? session?.effort ?? null;
+
   const statusData: SessionStatusData = {
     permissionMode: localPermissionMode ?? session?.permissionMode ?? 'default',
     model,
+    effort,
     costUsd: streamingStatus?.costUsd ?? null,
     contextPercent:
       contextTokens && contextMaxTokens
@@ -96,6 +102,7 @@ export function useSessionStatus(
       // Apply optimistic update immediately
       if (opts.model) setLocalModel(opts.model);
       if (opts.permissionMode) setLocalPermissionMode(opts.permissionMode);
+      if (opts.effort) setLocalEffort(opts.effort);
 
       try {
         const updated = await transport.updateSession(sessionId, opts, selectedCwd ?? undefined);
@@ -111,6 +118,7 @@ export function useSessionStatus(
         console.error('[useSessionStatus] updateSession failed for session', sessionId, err);
         if (opts.model) setLocalModel(null);
         if (opts.permissionMode) setLocalPermissionMode(null);
+        if (opts.effort) setLocalEffort(null);
       }
     },
     [transport, sessionId, selectedCwd, queryClient]
@@ -126,7 +134,17 @@ export function useSessionStatus(
     if (localPermissionMode !== null && session?.permissionMode === localPermissionMode) {
       setLocalPermissionMode(null);
     }
-  }, [session?.model, session?.permissionMode, localModel, localPermissionMode]);
+    if (localEffort !== null && session?.effort === localEffort) {
+      setLocalEffort(null);
+    }
+  }, [
+    session?.model,
+    session?.permissionMode,
+    session?.effort,
+    localModel,
+    localPermissionMode,
+    localEffort,
+  ]);
 
   return { ...statusData, updateSession };
 }

@@ -135,8 +135,9 @@ router.patch('/:id', async (req, res) => {
   if (session) {
     session.permissionMode = permissionMode ?? session.permissionMode;
     session.model = model ?? session.model;
+    if (effort) session.effort = effort;
   }
-  res.json(session ?? { id: sessionId, permissionMode, model });
+  res.json(session ?? { id: sessionId, permissionMode, model, effort });
 });
 
 // POST /api/sessions/:id/messages - Send message (SSE stream)

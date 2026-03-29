@@ -57,16 +57,22 @@ describe('ClaudeCodeRuntime.getSupportedModels', () => {
       value: 'claude-sonnet-4-5-20250929',
       displayName: 'Sonnet 4.5',
       description: 'Fast, intelligent model for everyday tasks',
+      supportsEffort: true,
+      supportedEffortLevels: ['low', 'medium', 'high'],
     });
     expect(models[1]).toEqual({
       value: 'claude-haiku-4-5-20251001',
       displayName: 'Haiku 4.5',
       description: 'Fastest, most compact model',
+      supportsEffort: true,
+      supportedEffortLevels: ['low', 'medium', 'high'],
     });
     expect(models[2]).toEqual({
       value: 'claude-opus-4-6',
       displayName: 'Opus 4.6',
       description: 'Most capable model for complex tasks',
+      supportsEffort: true,
+      supportedEffortLevels: ['low', 'medium', 'high', 'max'],
     });
 
     // Each model has the required fields

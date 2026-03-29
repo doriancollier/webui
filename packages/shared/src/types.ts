@@ -75,6 +75,7 @@ export type {
   BackgroundTaskStatus,
   ThinkingDelta,
   ThinkingPart,
+  ApiRetryEvent,
   SystemStatusEvent,
   CompactBoundaryEvent,
   PromptSuggestionEvent,

@@ -38,6 +38,7 @@ export const StreamEventTypeSchema = z
     'question_prompt',
     'error',
     'rate_limit',
+    'api_retry',
     'done',
     'session_status',
     'task_update',
@@ -88,6 +89,9 @@ export type QuestionItem = z.infer<typeof QuestionItemSchema>;
 
 // === Session Types ===
 
+export const EffortLevelSchema = z.enum(['low', 'medium', 'high', 'max']).openapi('EffortLevel');
+export type EffortLevel = z.infer<typeof EffortLevelSchema>;
+
 export const SessionSchema = z
   .object({
     id: z.string().uuid(),
@@ -97,6 +101,7 @@ export const SessionSchema = z
     lastMessagePreview: z.string().optional(),
     permissionMode: PermissionModeSchema,
     model: z.string().optional(),
+    effort: EffortLevelSchema.optional(),
     contextTokens: z.number().int().optional(),
     cwd: z.string().optional(),
   })
@@ -112,9 +117,6 @@ export const CreateSessionRequestSchema = z
   .openapi('CreateSessionRequest');
 
 export type CreateSessionRequest = z.infer<typeof CreateSessionRequestSchema>;
-
-export const EffortLevelSchema = z.enum(['low', 'medium', 'high', 'max']).openapi('EffortLevel');
-export type EffortLevel = z.infer<typeof EffortLevelSchema>;
 
 export const UpdateSessionRequestSchema = z
   .object({
@@ -259,6 +261,17 @@ export const RateLimitEventSchema = z
   .openapi('RateLimitEvent');
 
 export type RateLimitEvent = z.infer<typeof RateLimitEventSchema>;
+
+export const ApiRetryEventSchema = z
+  .object({
+    attempt: z.number(),
+    maxRetries: z.number(),
+    retryDelayMs: z.number(),
+    errorStatus: z.number().nullable(),
+  })
+  .openapi('ApiRetryEvent');
+
+export type ApiRetryEvent = z.infer<typeof ApiRetryEventSchema>;
 
 export const DoneEventSchema = z
   .object({
@@ -507,6 +520,7 @@ export const StreamEventSchema = z
       QuestionPromptEventSchema,
       ErrorEventSchema,
       RateLimitEventSchema,
+      ApiRetryEventSchema,
       DoneEventSchema,
       SessionStatusEventSchema,
       TaskUpdateEventSchema,
@@ -900,6 +914,14 @@ export const ModelOptionSchema = z
     value: z.string().openapi({ description: 'Model identifier (e.g. claude-opus-4-6)' }),
     displayName: z.string().openapi({ description: 'Human-readable model name' }),
     description: z.string().openapi({ description: 'Short model description' }),
+    supportsEffort: z
+      .boolean()
+      .optional()
+      .openapi({ description: 'Whether this model supports effort levels' }),
+    supportedEffortLevels: z
+      .array(EffortLevelSchema)
+      .optional()
+      .openapi({ description: 'Available effort levels for this model' }),
   })
   .openapi('ModelOption');
 

@@ -51,7 +51,13 @@ export interface MessageSenderOpts {
   adapterManager?: AdapterManager;
   mcpServerFactory?: ((session: AgentSession) => Record<string, McpServerConfig>) | null;
   onModelsReceived?: (
-    models: Array<{ value: string; displayName: string; description: string }>
+    models: Array<{
+      value: string;
+      displayName: string;
+      description: string;
+      supportsEffort?: boolean;
+      supportedEffortLevels?: ('low' | 'medium' | 'high' | 'max')[];
+    }>
   ) => void;
   onMcpStatusReceived?: (servers: McpServerEntry[]) => void;
   onCommandsReceived?: (commands: SdkCommandEntry[]) => void;
@@ -254,6 +260,8 @@ export async function* executeSdkQuery(
             value: m.value,
             displayName: m.displayName,
             description: m.description,
+            supportsEffort: m.supportsEffort,
+            supportedEffortLevels: m.supportedEffortLevels,
           }))
         );
       })
