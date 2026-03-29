@@ -28,6 +28,7 @@ describe('Database Migrations', () => {
 
     expect(tableNames).toEqual([
       'a2a_tasks',
+      'activity_events',
       'agent_denials',
       'agents',
       'pulse_runs',

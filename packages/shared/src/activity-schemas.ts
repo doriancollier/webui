@@ -61,12 +61,14 @@ export type ActivityItem = z.infer<typeof ActivityItemSchema>;
 export const ListActivityQuerySchema = z
   .object({
     limit: z.coerce.number().int().min(1).max(100).optional().default(50),
-    before: z.string().optional(),
+    /** ISO 8601 timestamp cursor — fetch events older than this. */
+    before: z.string().datetime({ offset: true }).optional(),
     /** Comma-separated category names for filtering. */
     categories: z.string().optional(),
     actorType: ActorTypeSchema.optional(),
     actorId: z.string().optional(),
-    since: z.string().optional(),
+    /** ISO 8601 timestamp lower bound — only events after this time. */
+    since: z.string().datetime({ offset: true }).optional(),
   })
   .openapi('ListActivityQuery');
 

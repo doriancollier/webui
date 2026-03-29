@@ -20,8 +20,12 @@ export function createActivityRouter(activityService: ActivityService): Router {
     const query = parseBody(ListActivityQuerySchema, req.query, res);
     if (!query) return;
 
-    const result = await activityService.list(query);
-    return res.json(result);
+    try {
+      const result = await activityService.list(query);
+      return res.json(result);
+    } catch (_err) {
+      return res.status(500).json({ error: 'Failed to fetch activity events' });
+    }
   });
 
   return router;
