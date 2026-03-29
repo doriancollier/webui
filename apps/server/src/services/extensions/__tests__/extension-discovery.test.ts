@@ -204,6 +204,158 @@ describe('ExtensionDiscovery', () => {
     expect(results).toEqual([]);
   });
 
+  describe('server entry detection', () => {
+    it('sets hasServerEntry false when no server file exists', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'client-only');
+      await writeManifest(extDir, {
+        id: 'client-only',
+        name: 'Client Only',
+        version: '1.0.0',
+      });
+      await fs.writeFile(path.join(extDir, 'index.ts'), 'export default {}');
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'client-only',
+        hasServerEntry: false,
+        hasDataProxy: false,
+      });
+      expect(results[0].serverEntryPath).toBeUndefined();
+    });
+
+    it('detects server.ts and sets hasServerEntry true with serverEntryPath', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'with-server');
+      await writeManifest(extDir, {
+        id: 'with-server',
+        name: 'With Server',
+        version: '1.0.0',
+      });
+      await fs.writeFile(path.join(extDir, 'server.ts'), 'export default () => {}');
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'with-server',
+        hasServerEntry: true,
+      });
+      expect(results[0].serverEntryPath).toBe(path.join(extDir, 'server.ts'));
+    });
+
+    it('detects server.js as fallback when server.ts is absent', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'precompiled');
+      await writeManifest(extDir, {
+        id: 'precompiled',
+        name: 'Precompiled',
+        version: '1.0.0',
+      });
+      await fs.writeFile(path.join(extDir, 'server.js'), 'module.exports = {}');
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'precompiled',
+        hasServerEntry: true,
+      });
+      expect(results[0].serverEntryPath).toBe(path.join(extDir, 'server.js'));
+    });
+
+    it('resolves custom serverCapabilities.serverEntry path', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'custom-entry');
+      await writeManifest(extDir, {
+        id: 'custom-entry',
+        name: 'Custom Entry',
+        version: '1.0.0',
+        serverCapabilities: {
+          serverEntry: './src/server.ts',
+        },
+      });
+      await fs.mkdir(path.join(extDir, 'src'), { recursive: true });
+      await fs.writeFile(path.join(extDir, 'src', 'server.ts'), 'export default () => {}');
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'custom-entry',
+        hasServerEntry: true,
+      });
+      expect(results[0].serverEntryPath).toBe(path.join(extDir, 'src', 'server.ts'));
+    });
+
+    it('sets hasDataProxy true when manifest contains dataProxy', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'proxy-ext');
+      await writeManifest(extDir, {
+        id: 'proxy-ext',
+        name: 'Proxy Extension',
+        version: '1.0.0',
+        dataProxy: {
+          baseUrl: 'https://api.example.com',
+          authSecret: 'api_key',
+        },
+      });
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'proxy-ext',
+        hasServerEntry: false,
+        hasDataProxy: true,
+      });
+    });
+
+    it('detects both server entry and dataProxy when both present', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'full-ext');
+      await writeManifest(extDir, {
+        id: 'full-ext',
+        name: 'Full Extension',
+        version: '1.0.0',
+        serverCapabilities: {
+          serverEntry: './server.ts',
+        },
+        dataProxy: {
+          baseUrl: 'https://api.example.com',
+          authSecret: 'api_key',
+        },
+      });
+      await fs.writeFile(path.join(extDir, 'server.ts'), 'export default () => {}');
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'full-ext',
+        hasServerEntry: true,
+        hasDataProxy: true,
+      });
+      expect(results[0].serverEntryPath).toBe(path.join(extDir, 'server.ts'));
+    });
+
+    it('sets hasServerEntry false for extensions without serverCapabilities', async () => {
+      const extDir = path.join(dorkHome, 'extensions', 'legacy-ext');
+      await writeManifest(extDir, {
+        id: 'legacy-ext',
+        name: 'Legacy Extension',
+        version: '1.0.0',
+        description: 'No server fields',
+      });
+
+      const results = await discovery.discover(null, []);
+
+      expect(results).toHaveLength(1);
+      expect(results[0]).toMatchObject({
+        id: 'legacy-ext',
+        hasServerEntry: false,
+        hasDataProxy: false,
+      });
+      expect(results[0].serverEntryPath).toBeUndefined();
+    });
+  });
+
   it('skips non-directory entries in the extensions folder', async () => {
     // Create a regular file (not a directory) in the extensions folder
     await fs.writeFile(path.join(dorkHome, 'extensions', 'readme.txt'), 'not a directory');

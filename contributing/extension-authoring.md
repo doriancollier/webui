@@ -11,12 +11,13 @@ Extensions add UI components, commands, and behavior to DorkOS. This guide cover
 
 ## Directory Structure
 
-An extension is a directory with two files:
+An extension is a directory with at least two files:
 
 ```
 my-extension/
 ├── extension.json   # Required — manifest
-└── index.ts         # Required — entry point (or index.js for pre-compiled)
+├── index.ts         # Required — client entry point (or index.js for pre-compiled)
+└── server.ts        # Optional — server-side data provider (see Server-Side Data Providers)
 ```
 
 **Global extensions** live in `~/.dork/extensions/{id}/`. **Local extensions** (project-scoped) live in `{projectDir}/.dork/extensions/{id}/`. Local overrides global when IDs match.
@@ -39,16 +40,18 @@ my-extension/
 }
 ```
 
-| Field            | Required | Description                                                           |
-| ---------------- | -------- | --------------------------------------------------------------------- |
-| `id`             | Yes      | Unique kebab-case identifier. Must match the directory name.          |
-| `name`           | Yes      | Display name shown in Settings.                                       |
-| `version`        | Yes      | Semver string (e.g. `1.0.0`).                                         |
-| `description`    | No       | Short description for the settings UI.                                |
-| `author`         | No       | Author name or identifier.                                            |
-| `minHostVersion` | No       | Minimum DorkOS version. Extension won't load on older hosts.          |
-| `contributions`  | No       | Declares which UI slots the extension contributes to (informational). |
-| `permissions`    | No       | Reserved for future use.                                              |
+| Field                | Required | Description                                                                              |
+| -------------------- | -------- | ---------------------------------------------------------------------------------------- |
+| `id`                 | Yes      | Unique kebab-case identifier. Must match the directory name.                             |
+| `name`               | Yes      | Display name shown in Settings.                                                          |
+| `version`            | Yes      | Semver string (e.g. `1.0.0`).                                                            |
+| `description`        | No       | Short description for the settings UI.                                                   |
+| `author`             | No       | Author name or identifier.                                                               |
+| `minHostVersion`     | No       | Minimum DorkOS version. Extension won't load on older hosts.                             |
+| `contributions`      | No       | Declares which UI slots the extension contributes to (informational).                    |
+| `permissions`        | No       | Reserved for future use.                                                                 |
+| `serverCapabilities` | No       | Server-side declarations: entry point, external hosts, secrets. See [Secrets](#secrets). |
+| `dataProxy`          | No       | Declarative API proxy config. See [Declarative Proxy](#declarative-proxy).               |
 
 ## Entry Point (`activate`)
 
@@ -190,10 +193,373 @@ Use CSS custom properties (`var(--border)`, `var(--muted-foreground)`) from the 
 
 ## Limitations (v1)
 
-- No sandboxing: extensions run in the host process with full DOM access.
-- No access to the Transport layer or server APIs.
+- No sandboxing: client-side extensions run in the browser with full DOM access; server-side extensions run in the Node.js host process.
 - No extension marketplace or auto-update mechanism.
 - Storage is local-only (no sync across machines).
+
+---
+
+## Server-Side Data Providers
+
+Extensions can run code on the DorkOS server. A **data provider** extension adds a `server.ts` file alongside `index.ts`, giving it Express routes, encrypted secrets, persistent storage, background scheduling, and SSE event emission — all scoped and isolated per extension.
+
+The three tiers of server-side capability, from simplest to most powerful:
+
+| Tier                  | What it does                                            | Requires code?                        |
+| --------------------- | ------------------------------------------------------- | ------------------------------------- |
+| **Declarative proxy** | Forward requests to an upstream API with auth injection | No (`dataProxy` in manifest only)     |
+| **Data provider**     | Custom Express routes with full `DataProviderContext`   | Yes (`server.ts`)                     |
+| **Background tasks**  | Scheduled polling with storage and SSE events           | Yes (`ctx.schedule()` in `server.ts`) |
+
+### Creating `server.ts`
+
+Create a `server.ts` file in your extension directory that default-exports a `register` function:
+
+```typescript
+import type { ServerExtensionRegister } from '@dorkos/extension-api/server';
+
+const register: ServerExtensionRegister = (router, ctx) => {
+  // Register routes on the scoped Express router
+  router.get('/data', async (_req, res) => {
+    const items = await ctx.storage.loadData();
+    res.json({ data: items ?? [] });
+  });
+
+  // Optionally return a cleanup function
+  return () => {
+    // Called when the extension is disabled or reloaded
+  };
+};
+
+export default register;
+```
+
+The `register` function receives two arguments:
+
+- **`router`** — A scoped Express `Router` mounted at `/api/ext/{id}/`. A route registered as `router.get('/data', ...)` is reachable at `GET /api/ext/my-extension/data`.
+- **`ctx`** — A `DataProviderContext` with secrets, storage, scheduling, and event emission (see below).
+
+Server-side code is compiled to CommonJS (Node.js target) by the host using esbuild. TypeScript is supported out of the box.
+
+### `DataProviderContext` API Reference
+
+The `ctx` object passed to `register` provides isolated, per-extension capabilities:
+
+#### `ctx.secrets`
+
+Encrypted per-extension secret store. Secrets are encrypted with AES-256-GCM and stored at `{dorkHome}/extension-secrets/{id}.json`.
+
+```typescript
+// Read a secret (returns null if not set)
+const apiKey = await ctx.secrets.get('api_key');
+
+// Store a secret (encrypted, written to disk immediately)
+await ctx.secrets.set('api_key', 'sk-...');
+
+// Delete a secret
+await ctx.secrets.delete('api_key');
+
+// Check if set without decrypting
+const exists = await ctx.secrets.has('api_key');
+```
+
+#### `ctx.storage`
+
+Persistent JSON storage scoped to this extension. Data is stored at `{dorkHome}/extension-data/{id}/data.json` with atomic writes (tmp file + rename).
+
+```typescript
+// Load previously saved data (returns null if nothing stored)
+const data = await ctx.storage.loadData<MyData>();
+
+// Save data (overwrites previous)
+await ctx.storage.saveData({ items, updatedAt: Date.now() });
+```
+
+Storage is shared between server-side `ctx.storage` and client-side `api.loadData()`/`api.saveData()` — they read and write the same file.
+
+#### `ctx.schedule(intervalSeconds, fn)`
+
+Schedule a recurring background function. Returns a cancel function.
+
+```typescript
+const cancel = ctx.schedule(60, async () => {
+  const data = await fetchExternalApi();
+  await ctx.storage.saveData(data);
+  ctx.emit('data-updated', data);
+});
+
+// To stop the scheduled task:
+cancel();
+```
+
+- **Minimum interval**: 5 seconds. Values below 5 are clamped to 5.
+- **Error handling**: Errors thrown by `fn` are caught and logged, never propagated. The schedule continues running.
+- **Cleanup**: All scheduled tasks are automatically cancelled when the extension is disabled or reloaded.
+
+#### `ctx.emit(event, data)`
+
+Broadcast an SSE event to all connected clients. Events are namespaced as `ext:{id}:{event}` on the unified SSE stream.
+
+```typescript
+ctx.emit('issues.updated', { count: 42 });
+// Client receives event type: "ext:my-extension:issues.updated"
+```
+
+#### `ctx.extensionId` / `ctx.extensionDir`
+
+```typescript
+ctx.extensionId; // "my-extension" — from the manifest
+ctx.extensionDir; // "/Users/kai/.dork/extensions/my-extension" — absolute path
+```
+
+### Route Conventions
+
+Routes registered on the `router` are mounted at `/api/ext/{id}/`:
+
+```typescript
+router.get('/status', handler); // GET  /api/ext/my-ext/status
+router.post('/action', handler); // POST /api/ext/my-ext/action
+router.get('/deep/path', handler); // GET  /api/ext/my-ext/deep/path
+```
+
+From the client-side `index.ts`, call your server routes via `fetch`:
+
+```typescript
+const res = await fetch('/api/ext/my-extension/status');
+const data = await res.json();
+```
+
+---
+
+## Secrets
+
+Extensions that contact external APIs need credentials. DorkOS provides an encrypted per-extension secret store with automatic settings UI generation.
+
+### Declaring Secrets
+
+Add a `serverCapabilities` block to `extension.json`:
+
+```json
+{
+  "id": "my-extension",
+  "name": "My Extension",
+  "version": "1.0.0",
+  "serverCapabilities": {
+    "serverEntry": "./server.ts",
+    "secrets": [
+      {
+        "key": "api_key",
+        "label": "API Key",
+        "description": "Get your key at https://example.com/settings",
+        "required": true
+      }
+    ]
+  }
+}
+```
+
+| Secret field  | Required | Description                                                                     |
+| ------------- | -------- | ------------------------------------------------------------------------------- |
+| `key`         | Yes      | Lowercase alphanumeric with underscores. Must match `^[a-z][a-z0-9_]*$`.        |
+| `label`       | Yes      | Human-readable name for the settings UI.                                        |
+| `description` | No       | Help text shown below the input field.                                          |
+| `required`    | No       | Whether the extension cannot function without this secret. Defaults to `false`. |
+
+### Security Properties
+
+- **Encrypted at rest**: AES-256-GCM with a per-host derived key (scrypt). Stored at `{dorkHome}/extension-secrets/{id}.json`.
+- **Per-extension isolation**: Each extension has its own encrypted file. Extensions cannot read other extensions' secrets.
+- **Write-only settings UI**: The settings panel shows a masked placeholder when a secret is set. Secret values are never sent to the browser.
+- **Server-only access**: Secrets are only accessible via `ctx.secrets` in `server.ts`. Client-side `index.ts` cannot read secrets.
+
+### Settings UI Auto-Generation
+
+When an extension declares secrets in `serverCapabilities.secrets`, DorkOS automatically generates a settings tab. Each secret gets:
+
+- A label and optional description from the manifest
+- A password input field (never displays the stored value)
+- A masked indicator when a secret is set
+- A clear button to remove the secret
+
+You can also build a custom settings tab using `api.registerSettingsTab` in `index.ts` and manage secrets via the REST API:
+
+```typescript
+// List secrets (returns isSet status, never values)
+GET /api/extensions/{id}/secrets
+
+// Set a secret
+PUT /api/extensions/{id}/secrets/{key}
+Body: { "value": "sk-..." }
+
+// Delete a secret
+DELETE /api/extensions/{id}/secrets/{key}
+```
+
+---
+
+## Declarative Proxy
+
+For extensions that only need to forward requests to an external API with authentication, the **declarative proxy** avoids writing any server code. Add a `dataProxy` field to `extension.json`:
+
+```json
+{
+  "id": "github-proxy",
+  "name": "GitHub API Proxy",
+  "version": "1.0.0",
+  "serverCapabilities": {
+    "secrets": [
+      {
+        "key": "github_token",
+        "label": "GitHub Token",
+        "required": true
+      }
+    ]
+  },
+  "dataProxy": {
+    "baseUrl": "https://api.github.com",
+    "authHeader": "Authorization",
+    "authType": "Bearer",
+    "authSecret": "github_token"
+  }
+}
+```
+
+### Configuration
+
+| Field         | Required | Default         | Description                                                           |
+| ------------- | -------- | --------------- | --------------------------------------------------------------------- |
+| `baseUrl`     | Yes      | —               | Upstream API base URL.                                                |
+| `authHeader`  | No       | `Authorization` | HTTP header name for the credential.                                  |
+| `authType`    | No       | `Bearer`        | How the secret is formatted: `Bearer`, `Basic`, `Token`, or `Custom`. |
+| `authSecret`  | Yes      | —               | Key name in the extension's secret store.                             |
+| `pathRewrite` | No       | —               | Object mapping regex patterns to replacements.                        |
+
+**Auth type formatting:**
+
+| `authType` | Header value           |
+| ---------- | ---------------------- |
+| `Bearer`   | `Bearer {secret}`      |
+| `Basic`    | `Basic {secret}`       |
+| `Token`    | `Token {secret}`       |
+| `Custom`   | `{secret}` (raw value) |
+
+### How It Works
+
+Proxy routes are auto-mounted at `/api/ext/{id}/proxy/*`. The proxy:
+
+1. Strips hop-by-hop headers from the incoming request
+2. Retrieves the auth secret from the encrypted store
+3. Injects the formatted auth header
+4. Forwards the request to `{baseUrl}/{remaining-path}`
+5. Applies `pathRewrite` rules if configured
+6. Returns the upstream response with its status code and content type
+
+From the client:
+
+```typescript
+// This becomes GET https://api.github.com/user/repos
+const res = await fetch('/api/ext/github-proxy/proxy/user/repos');
+```
+
+### Error Responses
+
+| Status | Condition                                                                                      |
+| ------ | ---------------------------------------------------------------------------------------------- |
+| `503`  | Required secret is not configured. Response includes a `hint` with the PUT endpoint to set it. |
+| `502`  | Upstream network failure.                                                                      |
+
+### When to Use Proxy vs Data Provider
+
+Use **declarative proxy** when:
+
+- You need simple API passthrough with auth injection
+- No server-side data transformation is needed
+- No caching, polling, or background tasks are needed
+
+Use **data provider** (`server.ts`) when:
+
+- You need to transform, aggregate, or cache API responses
+- You need background polling with `ctx.schedule()`
+- You need to emit SSE events to connected clients
+- You need custom business logic beyond request forwarding
+
+Both can coexist in the same extension — use the proxy for simple endpoints and `server.ts` routes for complex ones.
+
+---
+
+## Background Tasks
+
+Background tasks use `ctx.schedule()` to poll external APIs, detect changes, and notify clients. The canonical pattern is **poll, compare, store, emit**:
+
+```typescript
+const register: ServerExtensionRegister = (router, ctx) => {
+  ctx.schedule(60, async () => {
+    // 1. Poll — fetch fresh data from the external API
+    const apiKey = await ctx.secrets.get('api_key');
+    if (!apiKey) return; // Skip if not configured
+    const fresh = await fetchExternalData(apiKey);
+
+    // 2. Compare — check if anything changed
+    const prev = await ctx.storage.loadData<{ hash?: string }>();
+    const hash = JSON.stringify(fresh);
+    if (hash === prev?.hash) return; // No change
+
+    // 3. Store — persist the new data
+    await ctx.storage.saveData({ data: fresh, hash, updatedAt: Date.now() });
+
+    // 4. Emit — notify connected clients
+    ctx.emit('data-updated', fresh);
+  });
+};
+
+export default register;
+```
+
+### Lifecycle
+
+- **Startup**: Scheduled tasks begin running when the extension's server side is initialized (triggered by `POST /api/extensions/{id}/init-server` during client-side activation).
+- **Error isolation**: If `fn` throws, the error is logged and the schedule continues. One bad tick does not stop future ticks.
+- **Cleanup**: All scheduled intervals are cleared automatically when the extension is disabled, reloaded, or the server shuts down. You can also cancel manually via the returned function.
+- **No overlap protection**: If a tick takes longer than the interval, the next tick fires independently. Use a flag or mutex if your task is expensive.
+
+---
+
+## Reference Extension: Linear Issues
+
+The `examples/extensions/linear-issues/` directory contains a complete, production-quality extension demonstrating all three server-side tiers. It shows the authenticated user's active Linear issues on the DorkOS dashboard.
+
+### Files
+
+```
+examples/extensions/linear-issues/
+├── extension.json   # Manifest with serverCapabilities and secret declaration
+├── server.ts        # Data provider: on-demand endpoint, cached endpoint, 60s polling
+└── index.ts         # Client: dashboard section, settings tab for API key
+```
+
+### What It Demonstrates
+
+**Manifest** (`extension.json`):
+
+- `serverCapabilities.secrets` declaring a `linear_api_key` with label and description
+- `serverCapabilities.serverEntry` pointing to `./server.ts`
+- `contributions` for both `dashboard.sections` and `settings.tabs`
+
+**Server** (`server.ts`):
+
+- On-demand route (`GET /issues`) that fetches live data from the Linear GraphQL API
+- Cached route (`GET /cached`) that returns the last polled result from storage
+- Background polling via `ctx.schedule(60, ...)` with the poll-compare-store-emit pattern
+- Secret retrieval via `ctx.secrets.get('linear_api_key')`
+- SSE emission via `ctx.emit('issues.updated', data)` on change detection
+
+**Client** (`index.ts`):
+
+- Dashboard section fetching from the `/cached` server route
+- Settings tab with write-only API key management via the secrets REST API
+- Host theme integration via CSS custom properties
+
+To install: copy the directory to `~/.dork/extensions/linear-issues/`, enable it in Settings > Extensions, then set your Linear API key in the extension's settings tab.
 
 ---
 
@@ -239,7 +605,9 @@ The `create_extension` tool accepts a `template` parameter:
 
 **`settings-panel`** — Registers a tab in the settings dialog. The starter template includes a settings panel skeleton with `loadData`/`saveData` hooks for persistence. Use for extensions that need user configuration.
 
-All templates include an inline API Quick Reference comment at the top of `index.ts` listing the most common methods and all available slot names. Templates compile and activate out of the box — the agent can modify from a known-working baseline.
+**`data-provider`** — Full-stack extension with both `index.ts` (dashboard card + settings tab) and `server.ts` (Express routes + background polling). The manifest includes `serverCapabilities` with a sample secret declaration. Use for extensions that fetch from external APIs. See [Server-Side Data Providers](#server-side-data-providers) for details.
+
+All templates include an inline API Quick Reference comment at the top of their entry files listing the most common methods and all available slot names. Templates compile and activate out of the box — the agent can modify from a known-working baseline.
 
 ### Scope: Global vs Local
 

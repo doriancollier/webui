@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add server-side extension hooks with encrypted secrets and Linear reference extension
 - Add session forking via SDK forkSession()
 - Fix prompt suggestions, add api_retry events, and effort level controls
 - Add commands for product management and issue handling

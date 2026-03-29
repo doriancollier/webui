@@ -48,6 +48,8 @@ function makeRecord(overrides: Partial<ExtensionRecordPublic> = {}): ExtensionRe
     status: 'compiled',
     scope: 'global',
     bundleReady: true,
+    hasServerEntry: false,
+    hasDataProxy: false,
     ...overrides,
   };
 }

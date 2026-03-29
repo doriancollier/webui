@@ -37,7 +37,7 @@ export class ExtensionCompiler {
   }
 
   /**
-   * Compile an extension (or return cached bundle).
+   * Compile a client-side extension (or return cached bundle).
    *
    * @param record - Extension record with path to source directory
    * @returns Object with `code` (compiled JS string) on success, or `error` on failure.
@@ -65,6 +65,37 @@ export class ExtensionCompiler {
   }
 
   /**
+   * Compile a server-side extension entry point for Node.js.
+   *
+   * Uses CJS format for dynamic `require()` loading. Externals include express
+   * and extension-api packages (provided by the host process).
+   *
+   * @param record - Extension record with serverEntryPath
+   * @returns Compiled code and hash on success, or error on failure
+   */
+  async compileServer(
+    record: ExtensionRecord
+  ): Promise<
+    { code: string; sourceHash: string } | { error: CompilationError; sourceHash: string }
+  > {
+    if (!record.serverEntryPath) {
+      return {
+        error: {
+          code: 'compilation_failed',
+          message: 'No server entry point found',
+          errors: [{ text: 'Extension has no serverEntryPath' }],
+        },
+        sourceHash: '',
+      };
+    }
+
+    const source = await fs.readFile(record.serverEntryPath, 'utf-8');
+    const sourceHash = this.computeSourceHash(source);
+
+    return this.handleServerCompilation(record.id, record.serverEntryPath, sourceHash);
+  }
+
+  /**
    * Read a cached bundle by extension ID and source hash.
    * Used by the bundle serving endpoint.
    *
@@ -85,7 +116,7 @@ export class ExtensionCompiler {
 
   /**
    * Clean stale cache entries not accessed in 7+ days.
-   * Called on server startup.
+   * Called on server startup. Cleans both client and server cache directories.
    *
    * @returns Number of entries cleaned
    */
@@ -93,23 +124,25 @@ export class ExtensionCompiler {
     const now = Date.now();
     let cleaned = 0;
 
-    try {
-      await fs.access(this.cacheDir);
-    } catch {
-      return 0;
-    }
-
-    const entries = await fs.readdir(this.cacheDir);
-    for (const entry of entries) {
-      const filePath = path.join(this.cacheDir, entry);
+    for (const subDir of [this.cacheDir, path.join(this.cacheDir, 'server')]) {
       try {
-        const stat = await fs.stat(filePath);
-        if (now - stat.atimeMs > STALE_THRESHOLD_MS) {
-          await fs.unlink(filePath);
-          cleaned++;
-        }
+        await fs.access(subDir);
       } catch {
-        // Skip files we can't stat
+        continue;
+      }
+
+      const entries = await fs.readdir(subDir);
+      for (const entry of entries) {
+        const filePath = path.join(subDir, entry);
+        try {
+          const stat = await fs.stat(filePath);
+          if (stat.isFile() && now - stat.atimeMs > STALE_THRESHOLD_MS) {
+            await fs.unlink(filePath);
+            cleaned++;
+          }
+        } catch {
+          // Skip files we can't stat
+        }
       }
     }
 
@@ -170,7 +203,7 @@ export class ExtensionCompiler {
     }
   }
 
-  /** Handle TypeScript compilation with cache hit/miss logic. */
+  /** Handle client-side TypeScript compilation with cache hit/miss logic. */
   private async handleCompilation(
     extId: string,
     entryPath: string,
@@ -207,7 +240,46 @@ export class ExtensionCompiler {
     return this.runEsbuild(extId, entryPath, sourceHash, cachedJsPath, cachedErrorPath);
   }
 
-  /** Run esbuild compilation and cache the result. */
+  /** Handle server-side TypeScript compilation with cache hit/miss logic. */
+  private async handleServerCompilation(
+    extId: string,
+    entryPath: string,
+    sourceHash: string
+  ): Promise<
+    { code: string; sourceHash: string } | { error: CompilationError; sourceHash: string }
+  > {
+    const serverCacheDir = path.join(this.cacheDir, 'server');
+    await fs.mkdir(serverCacheDir, { recursive: true });
+
+    const cachedJsPath = path.join(serverCacheDir, `${extId}.${sourceHash}.js`);
+    const cachedErrorPath = path.join(serverCacheDir, `${extId}.${sourceHash}.error.json`);
+
+    // Cache hit: compiled JS
+    try {
+      await fs.access(cachedJsPath);
+      const cached = await fs.readFile(cachedJsPath, 'utf-8');
+      logger.debug(`[Extensions] Server cache hit for ${extId} (${sourceHash})`);
+      return { code: cached, sourceHash };
+    } catch {
+      // Cache miss
+    }
+
+    // Cache hit: previous compilation error
+    try {
+      await fs.access(cachedErrorPath);
+      const cachedError = JSON.parse(
+        await fs.readFile(cachedErrorPath, 'utf-8')
+      ) as CompilationError;
+      logger.debug(`[Extensions] Server cached error for ${extId} (${sourceHash})`);
+      return { error: cachedError, sourceHash };
+    } catch {
+      // Cache miss — compile
+    }
+
+    return this.runServerEsbuild(extId, entryPath, sourceHash, cachedJsPath, cachedErrorPath);
+  }
+
+  /** Run esbuild compilation for client-side extensions and cache the result. */
   private async runEsbuild(
     extId: string,
     entryPath: string,
@@ -254,32 +326,99 @@ export class ExtensionCompiler {
       logger.info(`[Extensions] Compiled ${extId} (${sizeKb.toFixed(1)}KB)`);
       return { code, sourceHash };
     } catch (err) {
-      const esbuildErr = err as {
-        errors?: Array<{
-          text: string;
-          location?: { file: string; line: number; column: number };
-        }>;
-      };
-
-      const compilationError: CompilationError = {
-        code: 'compilation_failed',
-        message: `Compilation failed for ${extId}`,
-        errors: esbuildErr.errors?.map((e) => ({
-          text: e.text,
-          location: e.location
-            ? { file: e.location.file, line: e.location.line, column: e.location.column }
-            : undefined,
-        })) ?? [{ text: err instanceof Error ? err.message : 'Unknown compilation error' }],
-      };
-
-      // Write error to cache
-      await fs.writeFile(cachedErrorPath, JSON.stringify(compilationError, null, 2), 'utf-8');
-
-      logger.error(
-        `[Extensions] Compilation failed for ${extId}: ${compilationError.errors[0]?.text}`
-      );
-      return { error: compilationError, sourceHash };
+      return this.handleEsbuildError(extId, err, cachedErrorPath, sourceHash);
     }
+  }
+
+  /** Run esbuild compilation for server-side extensions and cache the result. */
+  private async runServerEsbuild(
+    extId: string,
+    entryPath: string,
+    sourceHash: string,
+    cachedJsPath: string,
+    cachedErrorPath: string
+  ): Promise<
+    { code: string; sourceHash: string } | { error: CompilationError; sourceHash: string }
+  > {
+    try {
+      const result = await build({
+        entryPoints: [entryPath],
+        bundle: true,
+        format: 'cjs',
+        platform: 'node',
+        target: 'node20',
+        external: ['express', '@dorkos/extension-api', '@dorkos/extension-api/server'],
+        write: false,
+        minify: false,
+        sourcemap: 'inline',
+        logLevel: 'silent',
+        loader: { '.ts': 'tsx' },
+      });
+
+      const code = result.outputFiles?.[0]?.text ?? '';
+
+      const sizeKb = Buffer.byteLength(code, 'utf-8') / 1024;
+      if (sizeKb > BUNDLE_SIZE_WARNING_KB) {
+        logger.warn(
+          `[Extensions] Server bundle for ${extId} is ${sizeKb.toFixed(0)}KB (exceeds ${BUNDLE_SIZE_WARNING_KB}KB guideline)`
+        );
+      }
+
+      await fs.writeFile(cachedJsPath, code, 'utf-8');
+      try {
+        await fs.unlink(cachedErrorPath);
+      } catch {
+        /* no stale error */
+      }
+
+      logger.info(`[Extensions] Compiled server bundle for ${extId} (${sizeKb.toFixed(1)}KB)`);
+      return { code, sourceHash };
+    } catch (err) {
+      return this.handleEsbuildError(extId, err, cachedErrorPath, sourceHash, 'Server ');
+    }
+  }
+
+  /**
+   * Handle an esbuild compilation error by writing it to cache and returning
+   * a structured error result.
+   *
+   * @param extId - Extension identifier
+   * @param err - Error thrown by esbuild
+   * @param cachedErrorPath - Path to write the cached error JSON
+   * @param sourceHash - Content hash of the source file
+   * @param prefix - Optional prefix for log messages (e.g. 'Server ')
+   */
+  private async handleEsbuildError(
+    extId: string,
+    err: unknown,
+    cachedErrorPath: string,
+    sourceHash: string,
+    prefix = ''
+  ): Promise<{ error: CompilationError; sourceHash: string }> {
+    const esbuildErr = err as {
+      errors?: Array<{
+        text: string;
+        location?: { file: string; line: number; column: number };
+      }>;
+    };
+
+    const compilationError: CompilationError = {
+      code: 'compilation_failed',
+      message: `${prefix}Compilation failed for ${extId}`,
+      errors: esbuildErr.errors?.map((e) => ({
+        text: e.text,
+        location: e.location
+          ? { file: e.location.file, line: e.location.line, column: e.location.column }
+          : undefined,
+      })) ?? [{ text: err instanceof Error ? err.message : 'Unknown compilation error' }],
+    };
+
+    await fs.writeFile(cachedErrorPath, JSON.stringify(compilationError, null, 2), 'utf-8');
+
+    logger.error(
+      `[Extensions] ${prefix}Compilation failed for ${extId}: ${compilationError.errors[0]?.text}`
+    );
+    return { error: compilationError, sourceHash };
   }
 
   /** Compute SHA-256 content hash (first 16 hex chars). */
@@ -287,7 +426,7 @@ export class ExtensionCompiler {
     return createHash('sha256').update(source).digest('hex').slice(0, 16);
   }
 
-  /** Ensure the cache directory exists. */
+  /** Ensure the client-side cache directory exists. */
   private async ensureCacheDir(): Promise<void> {
     await fs.mkdir(this.cacheDir, { recursive: true });
   }

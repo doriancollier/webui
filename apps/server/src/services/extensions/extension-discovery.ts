@@ -70,7 +70,16 @@ export class ExtensionDiscovery {
     }
 
     logger.info(
-      `[Extensions] Discovered ${results.length} extension(s): ${results.map((r) => `${r.id} (${r.status})`).join(', ') || 'none'}`
+      `[Extensions] Discovered ${results.length} extension(s): ${
+        results
+          .map((r) => {
+            const flags: string[] = [r.status];
+            if (r.hasServerEntry) flags.push('server');
+            if (r.hasDataProxy) flags.push('proxy');
+            return `${r.id} (${flags.join(', ')})`;
+          })
+          .join(', ') || 'none'
+      }`
     );
     return results;
   }
@@ -135,16 +144,25 @@ export class ExtensionDiscovery {
             details: result.error.message,
           },
           bundleReady: false,
+          hasServerEntry: false,
+          hasDataProxy: false,
         };
       }
 
+      const manifest = result.data;
+      const { hasServerEntry, resolvedPath } = await this.detectServerEntry(extDir, manifest);
+      const hasDataProxy = !!manifest.dataProxy;
+
       return {
-        id: result.data.id,
-        manifest: result.data,
+        id: manifest.id,
+        manifest,
         status: 'discovered',
         scope,
         path: extDir,
         bundleReady: false,
+        hasServerEntry,
+        hasDataProxy,
+        serverEntryPath: hasServerEntry ? resolvedPath : undefined,
       };
     } catch (err) {
       return {
@@ -158,8 +176,49 @@ export class ExtensionDiscovery {
           message: err instanceof Error ? err.message : 'Failed to read extension.json',
         },
         bundleReady: false,
+        hasServerEntry: false,
+        hasDataProxy: false,
       };
     }
+  }
+
+  /**
+   * Detect whether a server entry point exists in the extension directory.
+   *
+   * Resolves the entry path from `serverCapabilities.serverEntry` (defaulting
+   * to `./server.ts`), then checks for `.ts` and `.js` variants on disk.
+   *
+   * @param extDir - Absolute path to the extension directory
+   * @param manifest - Parsed extension manifest
+   * @returns Whether a server entry was found and its resolved absolute path
+   */
+  private async detectServerEntry(
+    extDir: string,
+    manifest: ExtensionManifest
+  ): Promise<{ hasServerEntry: boolean; resolvedPath: string }> {
+    const serverEntryRel = manifest.serverCapabilities?.serverEntry ?? './server.ts';
+    const resolvedPath = path.join(extDir, serverEntryRel);
+
+    // Check the declared path first (typically .ts)
+    try {
+      await fs.access(resolvedPath);
+      return { hasServerEntry: true, resolvedPath };
+    } catch {
+      // Not found — try .js variant if the declared path ends in .ts
+    }
+
+    // Fall back to .js variant for pre-compiled extensions
+    if (resolvedPath.endsWith('.ts')) {
+      const jsPath = resolvedPath.replace(/\.ts$/, '.js');
+      try {
+        await fs.access(jsPath);
+        return { hasServerEntry: true, resolvedPath: jsPath };
+      } catch {
+        // No server entry point
+      }
+    }
+
+    return { hasServerEntry: false, resolvedPath };
   }
 
   /**

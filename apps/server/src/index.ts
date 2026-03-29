@@ -31,6 +31,7 @@ import { createTemplateRouter } from './routes/templates.js';
 import { createAdminRouter } from './routes/admin.js';
 import { ExtensionManager } from './services/extensions/extension-manager.js';
 import { createExtensionsRouter } from './routes/extensions.js';
+import { createExtensionRoutesMiddleware } from './middleware/extension-routes.js';
 import { createExternalMcpServer } from './services/core/mcp-server.js';
 import { createMcpRouter } from './routes/mcp.js';
 import { mcpApiKeyAuth } from './middleware/mcp-auth.js';
@@ -358,6 +359,10 @@ async function start() {
       '/api/extensions',
       createExtensionsRouter(extensionManager, dorkHome, () => env.DORKOS_DEFAULT_CWD ?? null)
     );
+
+    // Delegate /api/ext/:id/* to extension-registered Express routers
+    app.use('/api/ext/:id', createExtensionRoutesMiddleware(extensionManager));
+
     logger.info('[Extensions] Routes mounted');
   }
 

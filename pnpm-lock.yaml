@@ -818,6 +818,9 @@ importers:
       '@dorkos/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
+      '@types/express':
+        specifier: ^5.0.0
+        version: 5.0.6
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.13

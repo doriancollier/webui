@@ -7,6 +7,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./dist/index.js"
+    },
+    "./server": {
+      "types": "./src/server-extension-api.ts",
+      "default": "./dist/server-extension-api.js"
     }
   },
   "scripts": {
@@ -22,6 +26,7 @@
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
     "@dorkos/typescript-config": "workspace:*",
+    "@types/express": "^5.0.0",
     "@types/react": "^19.0.0",
     "vitest": "^4.0.18"
   }

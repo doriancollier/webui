@@ -24,6 +24,17 @@ function makeRecord(id: string, extDir: string): ExtensionRecord {
     status: 'enabled',
     scope: 'global',
     bundleReady: false,
+    hasServerEntry: false,
+    hasDataProxy: false,
+  };
+}
+
+/** Create an ExtensionRecord with a server entry point. */
+function makeServerRecord(id: string, extDir: string, serverEntryPath: string): ExtensionRecord {
+  return {
+    ...makeRecord(id, extDir),
+    hasServerEntry: true,
+    serverEntryPath,
   };
 }
 
@@ -299,5 +310,211 @@ describe('ExtensionCompiler', () => {
   it('returns null for a non-existent bundle', async () => {
     const bundle = await compiler.readBundle('nonexistent', 'deadbeef12345678');
     expect(bundle).toBeNull();
+  });
+
+  // === compileServer ===
+
+  describe('compileServer', () => {
+    it('compiles a valid server.ts to CJS', async () => {
+      const extDir = path.join(tmpDir, 'server-ext');
+      await fs.mkdir(extDir, { recursive: true });
+      const source =
+        'export default function register(router: any) { router.get("/test", () => {}); }';
+      const serverPath = path.join(extDir, 'server.ts');
+      await fs.writeFile(serverPath, source);
+
+      const record = makeServerRecord('server-ext', extDir, serverPath);
+      const result = await compiler.compileServer(record);
+
+      expect('code' in result).toBe(true);
+      if ('code' in result) {
+        expect(result.code).toContain('register');
+        // CJS format uses module.exports or exports
+        expect(result.code).toContain('module.exports');
+        expect(result.sourceHash).toHaveLength(16);
+        expect(result.sourceHash).toBe(contentHash(source));
+      }
+    });
+
+    it('returns error when serverEntryPath is undefined', async () => {
+      const extDir = path.join(tmpDir, 'no-server-ext');
+      await fs.mkdir(extDir, { recursive: true });
+
+      const record = makeRecord('no-server-ext', extDir);
+      const result = await compiler.compileServer(record);
+
+      expect('error' in result).toBe(true);
+      if ('error' in result) {
+        expect(result.error.code).toBe('compilation_failed');
+        expect(result.error.message).toContain('No server entry point');
+        expect(result.sourceHash).toBe('');
+      }
+    });
+
+    it('returns structured error for invalid server TypeScript', async () => {
+      const extDir = path.join(tmpDir, 'bad-server-ext');
+      await fs.mkdir(extDir, { recursive: true });
+      const serverPath = path.join(extDir, 'server.ts');
+      await fs.writeFile(
+        serverPath,
+        'import { nonExistent } from "./missing.js";\nexport default function register() { nonExistent(); }'
+      );
+
+      const record = makeServerRecord('bad-server-ext', extDir, serverPath);
+      const result = await compiler.compileServer(record);
+
+      expect('error' in result).toBe(true);
+      if ('error' in result) {
+        expect(result.error.code).toBe('compilation_failed');
+        expect(result.error.errors.length).toBeGreaterThan(0);
+        expect(result.sourceHash).toHaveLength(16);
+      }
+    });
+
+    it('returns cached result on second compilation of same source', async () => {
+      const extDir = path.join(tmpDir, 'server-cache-ext');
+      await fs.mkdir(extDir, { recursive: true });
+      const source = 'export default function register() { return 1; }';
+      const serverPath = path.join(extDir, 'server.ts');
+      await fs.writeFile(serverPath, source);
+
+      const record = makeServerRecord('server-cache-ext', extDir, serverPath);
+      const first = await compiler.compileServer(record);
+      expect('code' in first).toBe(true);
+
+      const second = await compiler.compileServer(record);
+      expect('code' in second).toBe(true);
+
+      if ('code' in first && 'code' in second) {
+        expect(second.code).toBe(first.code);
+        expect(second.sourceHash).toBe(first.sourceHash);
+      }
+    });
+
+    it('recompiles when server source content changes', async () => {
+      const extDir = path.join(tmpDir, 'server-invalidate-ext');
+      await fs.mkdir(extDir, { recursive: true });
+      const serverPath = path.join(extDir, 'server.ts');
+
+      await fs.writeFile(serverPath, 'export default function register() { return "v1"; }');
+      const record = makeServerRecord('server-invalidate-ext', extDir, serverPath);
+      const first = await compiler.compileServer(record);
+      expect('code' in first).toBe(true);
+
+      await fs.writeFile(serverPath, 'export default function register() { return "v2"; }');
+      const second = await compiler.compileServer(record);
+      expect('code' in second).toBe(true);
+
+      if ('code' in first && 'code' in second) {
+        expect(second.sourceHash).not.toBe(first.sourceHash);
+        expect(second.code).toContain('v2');
+      }
+    });
+
+    it('caches server bundles in server/ subdirectory, isolated from client', async () => {
+      const extDir = path.join(tmpDir, 'isolation-ext');
+      await fs.mkdir(extDir, { recursive: true });
+
+      // Create client entry
+      const clientSource = 'export function activate() { return "client"; }';
+      await fs.writeFile(path.join(extDir, 'index.ts'), clientSource);
+
+      // Create server entry
+      const serverSource = 'export default function register() { return "server"; }';
+      const serverPath = path.join(extDir, 'server.ts');
+      await fs.writeFile(serverPath, serverSource);
+
+      // Compile both
+      const clientResult = await compiler.compile(makeRecord('isolation-ext', extDir));
+      const serverRecord = makeServerRecord('isolation-ext', extDir, serverPath);
+      const serverResult = await compiler.compileServer(serverRecord);
+
+      expect('code' in clientResult).toBe(true);
+      expect('code' in serverResult).toBe(true);
+
+      // Verify server cache lives in server/ subdirectory
+      const serverCacheDir = path.join(tmpDir, 'cache', 'extensions', 'server');
+      const serverEntries = await fs.readdir(serverCacheDir);
+      expect(serverEntries.some((e) => e.startsWith('isolation-ext.'))).toBe(true);
+
+      // Verify client cache lives in root cache dir (not server/)
+      const clientCacheDir = path.join(tmpDir, 'cache', 'extensions');
+      const clientEntries = (await fs.readdir(clientCacheDir)).filter(
+        (e) => !e.startsWith('.') && e !== 'server'
+      );
+      expect(clientEntries.some((e) => e.startsWith('isolation-ext.'))).toBe(true);
+    });
+
+    it('does not include browser polyfills in server output', async () => {
+      const extDir = path.join(tmpDir, 'node-target-ext');
+      await fs.mkdir(extDir, { recursive: true });
+      // Use a Node.js-only API to verify the platform target is node
+      const source =
+        'import path from "path";\nexport default function register() { return path.join("a", "b"); }';
+      const serverPath = path.join(extDir, 'server.ts');
+      await fs.writeFile(serverPath, source);
+
+      const record = makeServerRecord('node-target-ext', extDir, serverPath);
+      const result = await compiler.compileServer(record);
+
+      expect('code' in result).toBe(true);
+      if ('code' in result) {
+        // Node platform should use require("path"), not bundle a polyfill
+        expect(result.code).toContain('require("path")');
+      }
+    });
+
+    it('externalizes express and extension-api packages', async () => {
+      const extDir = path.join(tmpDir, 'server-external-ext');
+      await fs.mkdir(extDir, { recursive: true });
+      // Use value imports (not type-only) so esbuild preserves them
+      const source = [
+        'import express from "express";',
+        'import api from "@dorkos/extension-api";',
+        'import serverApi from "@dorkos/extension-api/server";',
+        'export default function register() { return [express, api, serverApi]; }',
+      ].join('\n');
+      const serverPath = path.join(extDir, 'server.ts');
+      await fs.writeFile(serverPath, source);
+
+      const record = makeServerRecord('server-external-ext', extDir, serverPath);
+      const result = await compiler.compileServer(record);
+
+      expect('code' in result).toBe(true);
+      if ('code' in result) {
+        // Externalized packages should appear as require() calls, not inlined
+        expect(result.code).toContain('require("express")');
+        expect(result.code).toContain('require("@dorkos/extension-api")');
+        expect(result.code).toContain('require("@dorkos/extension-api/server")');
+      }
+    });
+  });
+
+  // === cleanStaleCache with server/ subdirectory ===
+
+  it('cleans stale entries in both client and server cache directories', async () => {
+    const cacheDir = path.join(tmpDir, 'cache', 'extensions');
+    const serverCacheDir = path.join(cacheDir, 'server');
+    await fs.mkdir(serverCacheDir, { recursive: true });
+
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000);
+
+    // Create stale files in both directories
+    const staleClient = path.join(cacheDir, 'stale-client.abc123.js');
+    const staleServer = path.join(serverCacheDir, 'stale-server.abc123.js');
+    const freshServer = path.join(serverCacheDir, 'fresh-server.def456.js');
+    await fs.writeFile(staleClient, 'stale client');
+    await fs.writeFile(staleServer, 'stale server');
+    await fs.writeFile(freshServer, 'fresh server');
+
+    await fs.utimes(staleClient, eightDaysAgo, eightDaysAgo);
+    await fs.utimes(staleServer, eightDaysAgo, eightDaysAgo);
+
+    const cleaned = await compiler.cleanStaleCache();
+
+    expect(cleaned).toBe(2);
+    await expect(fs.access(staleClient)).rejects.toThrow();
+    await expect(fs.access(staleServer)).rejects.toThrow();
+    await expect(fs.access(freshServer)).resolves.toBeUndefined();
   });
 });

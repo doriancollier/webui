@@ -1,5 +1,7 @@
 import fs from 'fs/promises';
+import { createRequire } from 'node:module';
 import path from 'path';
+import { Router } from 'express';
 import type {
   ExtensionRecord,
   ExtensionRecordPublic,
@@ -9,9 +11,26 @@ import type {
 } from '@dorkos/extension-api';
 import { ExtensionDiscovery } from './extension-discovery.js';
 import { ExtensionCompiler } from './extension-compiler.js';
+import { createProxyRouter } from './extension-proxy.js';
+import { createDataProviderContext } from './extension-server-api-factory.js';
 import { configManager } from '../core/config-manager.js';
-import { generateManifest, generateTemplate } from './extension-templates.js';
+import {
+  generateManifest,
+  generateTemplate,
+  generateServerTemplate,
+} from './extension-templates.js';
+import type { ExtensionTemplate } from './extension-templates.js';
 import { logger } from '../../lib/logger.js';
+
+const require = createRequire(import.meta.url);
+
+/** Tracks an active server-side extension instance. */
+interface ActiveServerExtension {
+  extensionId: string;
+  router: Router;
+  cleanup: (() => void) | null;
+  scheduledCleanups: Array<() => void>;
+}
 
 /** Result of creating a new extension. */
 export interface CreateExtensionResult {
@@ -165,6 +184,8 @@ function toPublic(record: ExtensionRecord): ExtensionRecordPublic {
     scope: record.scope,
     error: record.error,
     bundleReady: record.bundleReady,
+    hasServerEntry: record.hasServerEntry,
+    hasDataProxy: record.hasDataProxy,
   };
 }
 
@@ -180,6 +201,7 @@ export class ExtensionManager {
   private discovery: ExtensionDiscovery;
   private compiler: ExtensionCompiler;
   private extensions: Map<string, ExtensionRecord> = new Map();
+  private serverExtensions: Map<string, ActiveServerExtension> = new Map();
   private currentCwd: string | null = null;
 
   constructor(dorkHome: string) {
@@ -201,6 +223,19 @@ export class ExtensionManager {
 
     // Discover all extensions and compile enabled ones
     await this.reload();
+
+    // Initialize server-side extensions (server entry or proxy-only) for compiled extensions
+    for (const record of this.extensions.values()) {
+      const needsServer =
+        (record.hasServerEntry || record.hasDataProxy) &&
+        ['compiled', 'active'].includes(record.status);
+      if (needsServer) {
+        const result = await this.initializeServer(record.id);
+        if (!result.ok) {
+          logger.warn(`[Extensions] Server init skipped for ${record.id}: ${result.error}`);
+        }
+      }
+    }
   }
 
   /**
@@ -267,6 +302,15 @@ export class ExtensionManager {
     record.sourceHash = compileResult.sourceHash;
     record.bundleReady = true;
     record.error = undefined;
+
+    // Re-initialize server-side extension if it has a server entry or data proxy
+    if (record.hasServerEntry || record.hasDataProxy) {
+      await this.shutdownServer(id);
+      const serverResult = await this.initializeServer(id);
+      if (!serverResult.ok) {
+        logger.warn(`[Extensions] Server reload failed for ${id}: ${serverResult.error}`);
+      }
+    }
 
     return {
       id,
@@ -357,6 +401,31 @@ export class ExtensionManager {
   }
 
   /**
+   * Test server-side compilation for an extension without loading it.
+   *
+   * Compiles the server.ts entry point and reports success or failure.
+   * Used by the MCP test_extension tool to verify server-side code.
+   *
+   * @param id - Extension identifier
+   * @returns Status string describing the result, or null if no server entry
+   */
+  async testServerCompilation(id: string): Promise<string | null> {
+    const record = this.extensions.get(id);
+    if (!record || !record.hasServerEntry) return null;
+
+    try {
+      const result = await this.compiler.compileServer(record);
+      if ('error' in result) {
+        return `Server compilation failed: ${result.error.message}`;
+      }
+      return 'Server compilation successful';
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      return `Server compilation failed: ${message}`;
+    }
+  }
+
+  /**
    * Scaffold a new extension directory with manifest and starter code.
    *
    * @param options - Creation parameters
@@ -365,7 +434,7 @@ export class ExtensionManager {
   async createExtension(options: {
     name: string;
     description?: string;
-    template: 'dashboard-card' | 'command' | 'settings-panel';
+    template: ExtensionTemplate;
     scope: 'global' | 'local';
   }): Promise<CreateExtensionResult> {
     const { name, description, template, scope } = options;
@@ -405,13 +474,21 @@ export class ExtensionManager {
     const indexContent = generateTemplate(name, description ?? '', template);
     await fs.writeFile(path.join(targetDir, 'index.ts'), indexContent, 'utf-8');
 
-    // 6. Reload to discover the new extension
+    // 6. Write server.ts for data-provider template
+    const files = ['extension.json', 'index.ts'];
+    if (template === 'data-provider') {
+      const serverContent = generateServerTemplate(name, description ?? '');
+      await fs.writeFile(path.join(targetDir, 'server.ts'), serverContent, 'utf-8');
+      files.push('server.ts');
+    }
+
+    // 7. Reload to discover the new extension
     await this.reload();
 
-    // 7. Enable (compile + add to config)
+    // 8. Enable (compile + add to config)
     await this.enable(name);
 
-    // 8. Build result
+    // 9. Build result
     const record = this.extensions.get(name);
     const result: CreateExtensionResult = {
       id: name,
@@ -420,7 +497,7 @@ export class ExtensionManager {
       template,
       status: record?.status ?? 'compile_error',
       bundleReady: record?.bundleReady ?? false,
-      files: ['extension.json', 'index.ts'],
+      files,
     };
 
     if (record?.error) {
@@ -494,6 +571,14 @@ export class ExtensionManager {
           enabled: [...config.enabled, id],
         });
       }
+
+      // Initialize server-side extension if it has a server entry or data proxy
+      if (record.hasServerEntry || record.hasDataProxy) {
+        const serverResult = await this.initializeServer(id);
+        if (!serverResult.ok) {
+          logger.warn(`[Extensions] Server init failed for ${id}: ${serverResult.error}`);
+        }
+      }
     }
 
     return { extension: toPublic(record), reloadRequired: true };
@@ -511,6 +596,9 @@ export class ExtensionManager {
     const record = this.extensions.get(id);
     if (!record) return null;
 
+    // Shut down server-side extension before disabling
+    await this.shutdownServer(id);
+
     // Remove from enabled list in config
     const config = configManager.get('extensions');
     configManager.set('extensions', {
@@ -522,6 +610,135 @@ export class ExtensionManager {
     record.error = undefined;
 
     return { extension: toPublic(record), reloadRequired: true };
+  }
+
+  /**
+   * Initialize server-side extension code: compile, load, and register routes.
+   *
+   * @param id - Extension identifier
+   * @returns Result with ok flag and optional error message
+   */
+  async initializeServer(id: string): Promise<{ ok: boolean; error?: string }> {
+    const record = this.extensions.get(id);
+    if (!record) return { ok: false, error: 'Extension not found' };
+
+    const hasServerCapability = record.hasServerEntry || record.hasDataProxy;
+    if (!hasServerCapability || !['enabled', 'compiled', 'active'].includes(record.status)) {
+      return { ok: false, error: 'Extension has no server entry or is not enabled' };
+    }
+
+    // Shut down existing server instance if reloading
+    await this.shutdownServer(id);
+
+    // Proxy-only extensions (dataProxy without server.ts) — no compilation needed
+    if (record.hasDataProxy && !record.hasServerEntry) {
+      const proxyRouter = createProxyRouter(id, record.manifest.dataProxy!, this.dorkHome);
+      this.serverExtensions.set(id, {
+        extensionId: id,
+        router: proxyRouter,
+        cleanup: null,
+        scheduledCleanups: [],
+      });
+      logger.info(`[Extensions] Proxy router mounted for ${id}`);
+      return { ok: true };
+    }
+
+    // Compile server bundle
+    const compiled = await this.compiler.compileServer(record);
+    if ('error' in compiled) {
+      return { ok: false, error: compiled.error.message };
+    }
+
+    // Write temp file for require()
+    const tempDir = path.join(this.dorkHome, 'cache', 'extensions', 'server', '_run');
+    await fs.mkdir(tempDir, { recursive: true });
+    const tempFile = path.join(tempDir, `${id}.js`);
+    await fs.writeFile(tempFile, compiled.code, 'utf-8');
+
+    try {
+      // Clear require cache for hot-reload
+      delete require.cache[require.resolve(tempFile)];
+    } catch {
+      // Not in cache yet
+    }
+
+    try {
+      const mod = require(tempFile);
+      const registerFn = mod.default ?? mod;
+      if (typeof registerFn !== 'function') {
+        return { ok: false, error: 'Server entry does not export a register function' };
+      }
+
+      const router = Router();
+      const { ctx, getScheduledCleanups } = createDataProviderContext({
+        extensionId: id,
+        extensionDir: record.path,
+        dorkHome: this.dorkHome,
+      });
+
+      const result = await registerFn(router, ctx);
+      const cleanup = typeof result === 'function' ? result : null;
+
+      // If extension also has dataProxy, mount proxy routes alongside custom routes
+      if (record.hasDataProxy && record.manifest.dataProxy) {
+        const proxyRouter = createProxyRouter(id, record.manifest.dataProxy, this.dorkHome);
+        router.use(proxyRouter);
+      }
+
+      this.serverExtensions.set(id, {
+        extensionId: id,
+        router,
+        cleanup,
+        scheduledCleanups: getScheduledCleanups(),
+      });
+
+      logger.info(`[Extensions] Server initialized for ${id}`);
+      return { ok: true };
+    } catch (err) {
+      logger.error(`[Extensions] Server init failed for ${id}:`, err);
+      return { ok: false, error: err instanceof Error ? err.message : String(err) };
+    }
+  }
+
+  /**
+   * Shut down a server-side extension: cancel scheduled tasks, call cleanup, remove router.
+   *
+   * @param id - Extension identifier
+   */
+  async shutdownServer(id: string): Promise<void> {
+    const active = this.serverExtensions.get(id);
+    if (!active) return;
+
+    // Cancel all scheduled tasks
+    for (const cancel of active.scheduledCleanups) {
+      try {
+        cancel();
+      } catch {
+        /* swallow cancellation errors */
+      }
+    }
+
+    // Call extension's cleanup function
+    if (active.cleanup) {
+      try {
+        active.cleanup();
+      } catch (err) {
+        logger.warn(`[Extensions] Cleanup error for ${id}:`, err);
+      }
+    }
+
+    this.serverExtensions.delete(id);
+    logger.info(`[Extensions] Server shutdown for ${id}`);
+  }
+
+  /**
+   * Get the Express router for a server-side extension (used by route delegation).
+   *
+   * @param id - Extension identifier
+   * @returns The extension's router, or null if no server extension is active
+   */
+  getServerRouter(id: string): Router | null {
+    return this.serverExtensions.get(id)?.router ?? null;
   }
 
   /**

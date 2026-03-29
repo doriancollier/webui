@@ -67,6 +67,10 @@
     "./dorkbot-templates": {
       "types": "./src/dorkbot-templates.ts",
       "default": "./dist/dorkbot-templates.js"
+    },
+    "./extension-secrets": {
+      "types": "./src/extension-secrets.ts",
+      "default": "./dist/extension-secrets.js"
     }
   },
   "scripts": {

@@ -24,6 +24,8 @@ function makePublicRecord(
     status: 'disabled',
     scope: 'global',
     bundleReady: false,
+    hasServerEntry: false,
+    hasDataProxy: false,
     ...overrides,
   };
 }
@@ -62,6 +64,8 @@ function createMockManager(overrides: Partial<ExtensionManager> = {}): Extension
       },
       message: 'Extension activated successfully. Registered 1 contribution(s).',
     })),
+    getServerRouter: vi.fn(() => null),
+    testServerCompilation: vi.fn(async () => null),
     ...overrides,
   } as unknown as ExtensionManager;
 }
@@ -167,6 +171,43 @@ describe('list_extensions handler', () => {
 
     const data = parseResponse(result);
     expect(data.extensions[0]).not.toHaveProperty('description');
+  });
+
+  it('includes hasServerEntry and hasDataProxy flags for each extension', async () => {
+    const manager = createMockManager({
+      listPublic: vi.fn(() => [
+        makePublicRecord('client-only', { hasServerEntry: false, hasDataProxy: false }),
+        makePublicRecord('server-ext', { hasServerEntry: true, hasDataProxy: false }),
+        makePublicRecord('proxy-ext', { hasServerEntry: false, hasDataProxy: true }),
+        makePublicRecord('full-ext', { hasServerEntry: true, hasDataProxy: true }),
+      ]),
+    });
+    const handler = createListExtensionsHandler(createDeps(manager));
+
+    const result = await handler();
+
+    const data = parseResponse(result);
+    expect(data.extensions[0]).toMatchObject({ hasServerEntry: false, hasDataProxy: false });
+    expect(data.extensions[1]).toMatchObject({ hasServerEntry: true, hasDataProxy: false });
+    expect(data.extensions[2]).toMatchObject({ hasServerEntry: false, hasDataProxy: true });
+    expect(data.extensions[3]).toMatchObject({ hasServerEntry: true, hasDataProxy: true });
+  });
+
+  it('reports serverStatus as active when server router exists', async () => {
+    const manager = createMockManager({
+      listPublic: vi.fn(() => [
+        makePublicRecord('active-server', { hasServerEntry: true }),
+        makePublicRecord('inactive-server', { hasServerEntry: true }),
+      ]),
+      getServerRouter: vi.fn((id: string) => (id === 'active-server' ? ({} as never) : null)),
+    });
+    const handler = createListExtensionsHandler(createDeps(manager));
+
+    const result = await handler();
+
+    const data = parseResponse(result);
+    expect(data.extensions[0].serverStatus).toBe('active');
+    expect(data.extensions[1].serverStatus).toBe('inactive');
   });
 });
 
@@ -482,6 +523,45 @@ describe('test_extension handler', () => {
     expect(result.isError).toBe(true);
     const data = parseResponse(result);
     expect(data.error).toBe('Extension system is not available');
+  });
+
+  it('includes serverCompileStatus when extension has server entry', async () => {
+    const manager = createMockManager({
+      testServerCompilation: vi.fn(async () => 'Server compilation successful'),
+    });
+    const handler = createTestExtensionHandler(createDeps(manager));
+
+    const result = await handler({ id: 'test-ext' });
+
+    const data = parseResponse(result);
+    expect(data.status).toBe('ok');
+    expect(data.serverCompileStatus).toBe('Server compilation successful');
+  });
+
+  it('includes serverCompileStatus with error when server compilation fails', async () => {
+    const manager = createMockManager({
+      testServerCompilation: vi.fn(async () => 'Server compilation failed: Syntax error'),
+    });
+    const handler = createTestExtensionHandler(createDeps(manager));
+
+    const result = await handler({ id: 'test-ext' });
+
+    const data = parseResponse(result);
+    expect(data.status).toBe('ok');
+    expect(data.serverCompileStatus).toContain('Server compilation failed');
+  });
+
+  it('omits serverCompileStatus when extension has no server entry', async () => {
+    const manager = createMockManager({
+      testServerCompilation: vi.fn(async () => null),
+    });
+    const handler = createTestExtensionHandler(createDeps(manager));
+
+    const result = await handler({ id: 'test-ext' });
+
+    const data = parseResponse(result);
+    expect(data.status).toBe('ok');
+    expect(data).not.toHaveProperty('serverCompileStatus');
   });
 });
 

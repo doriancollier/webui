@@ -12,7 +12,7 @@ import { broadcastExtensionReloaded } from '../../../../routes/extensions.js';
  */
 const EXTENSION_API_REFERENCE = `# DorkOS Extension API Reference
 
-## ExtensionModule Interface
+## Client-Side: ExtensionModule Interface
 
 Your extension must export an \`activate\` function:
 
@@ -111,6 +111,73 @@ export function activate(api: ExtensionAPI) {
 const data = await api.loadData<{ count: number }>();
 await api.saveData({ count: (data?.count ?? 0) + 1 });
 \`\`\`
+
+## Server-Side: DataProviderContext
+
+Extensions with server-side capabilities export a \`register\` function from \`server.ts\`:
+
+\`\`\`typescript
+import type { ServerExtensionRegister } from '@dorkos/extension-api/server';
+
+const register: ServerExtensionRegister = (router, ctx) => {
+  router.get('/data', async (req, res) => {
+    const apiKey = await ctx.secrets.get('my_api_key');
+    res.json({ data: 'from server' });
+  });
+};
+
+export default register;
+\`\`\`
+
+### DataProviderContext Interface
+
+\`\`\`typescript
+interface DataProviderContext {
+  readonly secrets: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<void>;
+    delete(key: string): Promise<void>;
+    has(key: string): Promise<boolean>;
+  };
+  readonly storage: {
+    loadData<T>(): Promise<T | null>;
+    saveData<T>(data: T): Promise<void>;
+  };
+  schedule(intervalSeconds: number, fn: () => Promise<void>): () => void;
+  emit(event: string, data: unknown): void;
+  readonly extensionId: string;
+  readonly extensionDir: string;
+}
+\`\`\`
+
+### Manifest: serverCapabilities
+
+\`\`\`json
+{
+  "serverCapabilities": {
+    "serverEntry": "./server.ts",
+    "externalHosts": ["https://api.example.com"],
+    "secrets": [
+      { "key": "api_key", "label": "API Key", "required": true }
+    ]
+  }
+}
+\`\`\`
+
+### Manifest: dataProxy (zero-code proxy)
+
+\`\`\`json
+{
+  "dataProxy": {
+    "baseUrl": "https://api.example.com",
+    "authHeader": "Authorization",
+    "authType": "Bearer",
+    "authSecret": "api_key"
+  }
+}
+\`\`\`
+
+Proxy routes are auto-mounted at \`/api/ext/{id}/proxy/*\`.
 `;
 
 /**
@@ -144,6 +211,9 @@ export function createListExtensionsHandler(deps: McpToolDeps) {
       status: ext.status,
       scope: ext.scope,
       bundleReady: ext.bundleReady,
+      hasServerEntry: ext.hasServerEntry,
+      hasDataProxy: ext.hasDataProxy,
+      serverStatus: manager.getServerRouter(ext.id) ? ('active' as const) : ('inactive' as const),
       ...(ext.manifest.description && { description: ext.manifest.description }),
       ...(ext.error && { error: ext.error }),
     }));
@@ -264,7 +334,8 @@ export function createCreateExtensionHandler(deps: McpToolDeps) {
     const template = (args.template ?? 'dashboard-card') as
       | 'dashboard-card'
       | 'command'
-      | 'settings-panel';
+      | 'settings-panel'
+      | 'data-provider';
     const scope = (args.scope ?? 'global') as 'global' | 'local';
 
     try {
@@ -300,7 +371,16 @@ export function createTestExtensionHandler(deps: McpToolDeps) {
 
     try {
       const result = await manager.testExtension(args.id);
-      return jsonContent(result, result.status === 'error');
+
+      // Test server-side compilation if the extension has a server entry
+      const serverCompileStatus = await manager.testServerCompilation(args.id);
+
+      const enriched = {
+        ...result,
+        ...(serverCompileStatus != null && { serverCompileStatus }),
+      };
+
+      return jsonContent(enriched, result.status === 'error');
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Test failed';
       return jsonContent({ error: message, code: 'TEST_FAILED' }, true);
@@ -316,7 +396,7 @@ export function getExtensionTools(deps: McpToolDeps) {
     return [
       tool(
         'get_extension_api',
-        'Get the full ExtensionAPI type definitions and usage examples. Call this when writing or debugging an extension to understand the available API surface. Returns TypeScript interface definitions for ExtensionAPI, ExtensionPointId, ExtensionReadableState, and ExtensionModule.',
+        'Get the full ExtensionAPI type definitions and usage examples for both client-side and server-side extension development. Returns TypeScript interface definitions for ExtensionAPI, ExtensionPointId, ExtensionReadableState, DataProviderContext, and ServerExtensionRegister.',
         {},
         createGetExtensionApiHandler(deps)
       ),
@@ -326,13 +406,13 @@ export function getExtensionTools(deps: McpToolDeps) {
   return [
     tool(
       'get_extension_api',
-      'Get the full ExtensionAPI type definitions and usage examples. Call this when writing or debugging an extension to understand the available API surface. Returns TypeScript interface definitions for ExtensionAPI, ExtensionPointId, ExtensionReadableState, and ExtensionModule.',
+      'Get the full ExtensionAPI type definitions and usage examples for both client-side and server-side extension development. Returns TypeScript interface definitions for ExtensionAPI, ExtensionPointId, ExtensionReadableState, DataProviderContext, and ServerExtensionRegister.',
       {},
       createGetExtensionApiHandler(deps)
     ),
     tool(
       'list_extensions',
-      'List all discovered DorkOS extensions with their status, scope, and errors. Returns both global (~/.dork/extensions/) and local (.dork/extensions/ in active CWD) extensions.',
+      'List all discovered DorkOS extensions with their status, scope, server capabilities, and errors. Returns both global (~/.dork/extensions/) and local (.dork/extensions/ in active CWD) extensions. Includes hasServerEntry, hasDataProxy, and serverStatus fields.',
       {},
       createListExtensionsHandler(deps)
     ),
@@ -349,9 +429,11 @@ export function getExtensionTools(deps: McpToolDeps) {
         name: z.string().describe('Extension name (kebab-case, e.g. my-dashboard-widget)'),
         description: z.string().optional().describe('Short description shown in settings UI'),
         template: z
-          .enum(['dashboard-card', 'command', 'settings-panel'])
+          .enum(['dashboard-card', 'command', 'settings-panel', 'data-provider'])
           .optional()
-          .describe('Starter template (default: dashboard-card)'),
+          .describe(
+            'Starter template (default: dashboard-card). Use data-provider for extensions with server-side API integration.'
+          ),
         scope: z
           .enum(['global', 'local'])
           .optional()
@@ -371,7 +453,7 @@ export function getExtensionTools(deps: McpToolDeps) {
     ),
     tool(
       'test_extension',
-      'Compile an extension and activate it against a mock API to verify it loads without errors. Returns contribution counts per UI slot on success, or detailed error information (phase, messages, stack trace) on failure. Use after editing extension source to validate before enabling.',
+      'Compile an extension and activate it against a mock API to verify it loads without errors. Returns contribution counts per UI slot on success, or detailed error information (phase, messages, stack trace) on failure. Also tests server-side compilation when the extension has a server entry. Use after editing extension source to validate before enabling.',
       {
         id: z.string().describe('Extension ID to test'),
       },

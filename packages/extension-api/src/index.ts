@@ -6,7 +6,12 @@
  * @module @dorkos/extension-api
  */
 export { ExtensionManifestSchema } from './manifest-schema.js';
-export type { ExtensionManifest } from './manifest-schema.js';
+export type {
+  ExtensionManifest,
+  SecretDeclaration,
+  DataProxyConfig,
+  ServerCapabilities,
+} from './manifest-schema.js';
 export type { ExtensionAPI, ExtensionPointId, ExtensionReadableState } from './extension-api.js';
 export type {
   ExtensionStatus,
@@ -14,3 +19,8 @@ export type {
   ExtensionRecordPublic,
   ExtensionModule,
 } from './types.js';
+export type {
+  SecretStore,
+  DataProviderContext,
+  ServerExtensionRegister,
+} from './server-extension-api.js';

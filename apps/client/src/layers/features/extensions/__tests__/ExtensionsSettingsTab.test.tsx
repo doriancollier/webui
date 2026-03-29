@@ -65,6 +65,8 @@ function makeExtension(overrides: Partial<ExtensionRecordPublic> = {}): Extensio
     status: 'active',
     scope: 'global',
     bundleReady: true,
+    hasServerEntry: false,
+    hasDataProxy: false,
     ...overrides,
   };
 }

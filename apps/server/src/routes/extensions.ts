@@ -11,6 +11,7 @@ import { z } from 'zod';
 import type { ExtensionManager } from '../services/extensions/extension-manager.js';
 import { logger } from '../lib/logger.js';
 import { eventFanOut } from '../services/core/event-fan-out.js';
+import { ExtensionSecretStore } from '@dorkos/shared/extension-secrets';
 
 /** Connected SSE clients for extension lifecycle events. */
 const sseClients = new Set<Response>();
@@ -48,6 +49,10 @@ export function broadcastExtensionReloaded(extensionIds: string[]): void {
 
 const CwdChangedBodySchema = z.object({
   cwd: z.string().nullable(),
+});
+
+const SetSecretBodySchema = z.object({
+  value: z.string().min(1),
 });
 
 /** Validates extension IDs match the manifest schema pattern (kebab-case alphanumeric). */
@@ -128,6 +133,22 @@ export function createExtensionsRouter(
     } catch (err) {
       logger.error(`[Extensions] Failed to disable ${req.params.id}`, err);
       res.status(500).json({ error: 'Failed to disable extension' });
+    }
+  });
+
+  // POST /api/extensions/:id/init-server -- Initialize server-side extension
+  router.post('/:id/init-server', async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+      const result = await extensionManager.initializeServer(id);
+      if (!result.ok) {
+        return res.status(400).json({ error: result.error });
+      }
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error(`[Extensions] Failed to init server for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to initialize server extension' });
     }
   });
 
@@ -232,6 +253,91 @@ export function createExtensionsRouter(
     } catch (err) {
       logger.error(`[Extensions] Failed to write data for ${req.params.id}`, err);
       res.status(500).json({ error: 'Failed to write extension data' });
+    }
+  });
+
+  // GET /api/extensions/:id/secrets -- List declared secrets with isSet status (never returns values)
+  router.get('/:id/secrets', async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+
+      const record = extensionManager.get(id);
+      if (!record) {
+        return res.status(404).json({ error: `Extension '${id}' not found` });
+      }
+
+      const declared = record.manifest.serverCapabilities?.secrets ?? [];
+      const store = new ExtensionSecretStore(id, dorkHome);
+      const result = await Promise.all(
+        declared.map(async (s) => ({
+          key: s.key,
+          label: s.label,
+          description: s.description,
+          required: s.required ?? false,
+          isSet: await store.has(s.key),
+        }))
+      );
+
+      res.json(result);
+    } catch (err) {
+      logger.error(`[Extensions] Failed to list secrets for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to list secrets' });
+    }
+  });
+
+  // PUT /api/extensions/:id/secrets/:key -- Set a secret value (write-only)
+  router.put('/:id/secrets/:key', async (req, res) => {
+    try {
+      const { id, key } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+
+      const parsed = SetSecretBodySchema.safeParse(req.body);
+      if (!parsed.success) {
+        return res
+          .status(400)
+          .json({ error: 'Validation failed', details: parsed.error.flatten() });
+      }
+
+      const record = extensionManager.get(id);
+      if (!record) {
+        return res.status(404).json({ error: `Extension '${id}' not found` });
+      }
+
+      // Validate key is declared in manifest
+      const declared = record.manifest.serverCapabilities?.secrets ?? [];
+      if (!declared.some((s) => s.key === key)) {
+        return res
+          .status(400)
+          .json({ error: `Secret '${key}' not declared in extension manifest` });
+      }
+
+      const store = new ExtensionSecretStore(id, dorkHome);
+      await store.set(key, parsed.data.value);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error(`[Extensions] Failed to set secret for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to set secret' });
+    }
+  });
+
+  // DELETE /api/extensions/:id/secrets/:key -- Remove a secret
+  router.delete('/:id/secrets/:key', async (req, res) => {
+    try {
+      const { id, key } = req.params;
+      if (!SAFE_EXT_ID.test(id)) return res.status(400).json({ error: 'Invalid extension ID' });
+
+      const record = extensionManager.get(id);
+      if (!record) {
+        return res.status(404).json({ error: `Extension '${id}' not found` });
+      }
+
+      const store = new ExtensionSecretStore(id, dorkHome);
+      await store.delete(key);
+      res.json({ ok: true });
+    } catch (err) {
+      logger.error(`[Extensions] Failed to delete secret for ${req.params.id}`, err);
+      res.status(500).json({ error: 'Failed to delete secret' });
     }
   });
 

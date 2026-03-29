@@ -39,6 +39,8 @@ function createMockManager(overrides: Partial<ExtensionManager> = {}): Extension
       },
       message: 'Extension activated successfully. Registered 1 contribution(s).',
     })),
+    getServerRouter: vi.fn(() => null),
+    testServerCompilation: vi.fn(async () => null),
     ...overrides,
   } as unknown as ExtensionManager;
 }
@@ -62,14 +64,15 @@ function parseResponse(result: {
 // --- Phase 2 supplementary tests ---
 
 describe('get_extension_api handler (Phase 2 constraints)', () => {
-  it('response is under 4KB to stay within MCP response limits', async () => {
+  it('response is under 8KB to stay within MCP response limits', async () => {
     const handler = createGetExtensionApiHandler(createDeps(undefined));
 
     const result = await handler();
 
     const text = result.content[0].text;
     const sizeBytes = new TextEncoder().encode(text).byteLength;
-    expect(sizeBytes).toBeLessThan(4096);
+    // Increased from 4KB to 8KB to accommodate server-side API documentation
+    expect(sizeBytes).toBeLessThan(8192);
   });
 
   it('contains all ExtensionPointId slot names', async () => {
@@ -114,6 +117,44 @@ describe('get_extension_api handler (Phase 2 constraints)', () => {
     expect(text).toContain('Storage');
     expect(text).toContain('api.loadData');
     expect(text).toContain('api.saveData');
+  });
+
+  it('documents the server-side DataProviderContext', async () => {
+    const handler = createGetExtensionApiHandler(createDeps(undefined));
+
+    const result = await handler();
+    const text = result.content[0].text;
+
+    expect(text).toContain('DataProviderContext');
+    expect(text).toContain('ServerExtensionRegister');
+    expect(text).toContain('ctx.secrets');
+    expect(text).toContain('schedule');
+    expect(text).toContain('emit');
+  });
+
+  it('documents serverCapabilities manifest field', async () => {
+    const handler = createGetExtensionApiHandler(createDeps(undefined));
+
+    const result = await handler();
+    const text = result.content[0].text;
+
+    expect(text).toContain('serverCapabilities');
+    expect(text).toContain('serverEntry');
+    expect(text).toContain('externalHosts');
+    expect(text).toContain('secrets');
+  });
+
+  it('documents dataProxy manifest field', async () => {
+    const handler = createGetExtensionApiHandler(createDeps(undefined));
+
+    const result = await handler();
+    const text = result.content[0].text;
+
+    expect(text).toContain('dataProxy');
+    expect(text).toContain('baseUrl');
+    expect(text).toContain('authHeader');
+    expect(text).toContain('authSecret');
+    expect(text).toContain('/api/ext/{id}/proxy/*');
   });
 });
 

@@ -51,6 +51,8 @@ function makeRecord(id: string, overrides: Partial<ExtensionRecord> = {}): Exten
     scope: 'global',
     path: `/fake/extensions/${id}`,
     bundleReady: false,
+    hasServerEntry: false,
+    hasDataProxy: false,
     ...overrides,
   };
 }

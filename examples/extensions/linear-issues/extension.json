@@ -1,0 +1,24 @@
+{
+  "id": "linear-issues",
+  "name": "Linear Issues",
+  "version": "1.0.0",
+  "description": "Show Linear issue status on the DorkOS dashboard",
+  "author": "DorkOS",
+  "minHostVersion": "0.1.0",
+  "contributions": {
+    "dashboard.sections": true,
+    "settings.tabs": true
+  },
+  "serverCapabilities": {
+    "serverEntry": "./server.ts",
+    "externalHosts": ["https://api.linear.app"],
+    "secrets": [
+      {
+        "key": "linear_api_key",
+        "label": "Linear API Key",
+        "description": "Settings \u2192 API \u2192 Personal API keys at linear.app",
+        "required": true
+      }
+    ]
+  }
+}

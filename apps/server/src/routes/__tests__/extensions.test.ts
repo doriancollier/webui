@@ -69,6 +69,8 @@ function stubPublicRecord(overrides: Partial<ExtensionRecordPublic> = {}): Exten
     status: 'compiled',
     scope: 'global',
     bundleReady: true,
+    hasServerEntry: false,
+    hasDataProxy: false,
     ...overrides,
   };
 }
@@ -88,6 +90,8 @@ function stubRecord(overrides: Partial<ExtensionRecord> = {}): ExtensionRecord {
     scope: 'global',
     path: '/tmp/extensions/test-ext',
     bundleReady: true,
+    hasServerEntry: false,
+    hasDataProxy: false,
     ...overrides,
   };
 }

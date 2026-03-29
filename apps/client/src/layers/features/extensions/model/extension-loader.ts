@@ -31,6 +31,31 @@ async function importBundle(id: string): Promise<ExtensionModule | null> {
   }
 }
 
+/**
+ * Signal the server to initialize the server-side component of an extension.
+ *
+ * This is a fire-and-forget coordination signal for dynamic enable/reload
+ * scenarios. Failures are logged but never block client-side activation.
+ */
+async function initServerExtension(rec: ExtensionRecordPublic): Promise<void> {
+  if (!rec.hasServerEntry && !rec.hasDataProxy) return;
+
+  try {
+    const res = await fetch(`/api/extensions/${rec.id}/init-server`, {
+      method: 'POST',
+    });
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({ error: 'Unknown error' }));
+      console.warn(
+        `[extensions] Server init failed for ${rec.id}:`,
+        (body as { error?: string }).error ?? res.statusText
+      );
+    }
+  } catch (err) {
+    console.error(`[extensions] Server init error for ${rec.id}:`, err);
+  }
+}
+
 /** Result of a single bundle load attempt. */
 interface BundleResult {
   rec: ExtensionRecordPublic;
@@ -85,6 +110,8 @@ export class ExtensionLoader {
 
     const activated: string[] = [];
 
+    const serverInits: Promise<void>[] = [];
+
     for (const { rec, module } of bundleResults) {
       if (!module) {
         // importBundle already logged the error; nothing more to do here.
@@ -106,10 +133,16 @@ export class ExtensionLoader {
 
         this.loaded.set(rec.id, loaded);
         activated.push(`${rec.manifest.name} v${rec.manifest.version}`);
+
+        // After client-side activation succeeds, signal the server to
+        // initialize its side. Non-blocking — failures are logged only.
+        serverInits.push(initServerExtension(rec));
       } catch (err) {
         console.error(`[extensions] Failed to activate ${rec.id}:`, err);
       }
     }
+
+    await Promise.all(serverInits);
 
     if (activated.length > 0) {
       console.log(`[extensions] Activated: ${activated.join(', ')}`);
@@ -211,6 +244,9 @@ export class ExtensionLoader {
           cleanups,
           deactivate: typeof deactivateFn === 'function' ? deactivateFn : undefined,
         });
+
+        // Signal server init after successful client-side reactivation.
+        await initServerExtension(rec);
 
         console.log(`[extensions] Hot-reloaded: ${rec.manifest.name} v${rec.manifest.version}`);
       } catch (err) {

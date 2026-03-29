@@ -26,6 +26,12 @@ export interface ExtensionRecord {
   sourceHash?: string;
   /** Whether the compiled bundle is available on the server. */
   bundleReady: boolean;
+  /** Whether the extension has a server.ts entry point on disk. */
+  hasServerEntry: boolean;
+  /** Whether the extension has a dataProxy manifest declaration. */
+  hasDataProxy: boolean;
+  /** Absolute path to the resolved server entry point (if hasServerEntry is true). */
+  serverEntryPath?: string;
 }
 
 /** The subset of ExtensionRecord sent to the client (excludes server-internal fields). */
@@ -36,6 +42,8 @@ export interface ExtensionRecordPublic {
   scope: 'global' | 'local';
   error?: { code: string; message: string; details?: string };
   bundleReady: boolean;
+  hasServerEntry: boolean;
+  hasDataProxy: boolean;
 }
 
 /** The interface an extension module must export. */

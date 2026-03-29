@@ -148,6 +148,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const result = await compiler.compile(record);
@@ -173,6 +175,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const first = await compiler.compile(record);
@@ -198,6 +202,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const compileResult = await compiler.compile(record);
@@ -242,6 +248,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const compileResult = await compiler.compile(record);
@@ -299,6 +307,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     // Compile original
@@ -341,6 +351,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const result = await compiler.compile(record);
@@ -362,6 +374,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const first = await compiler.compile(record);
@@ -383,6 +397,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     // Confirm it is currently broken
@@ -514,6 +530,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'local',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const result = await compiler.compile(record);
@@ -543,6 +561,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const result = await compiler.compile(record);
@@ -573,6 +593,8 @@ describe('Extension Lifecycle Integration', () => {
       scope: 'global',
       path: extDir,
       bundleReady: false,
+      hasServerEntry: false,
+      hasDataProxy: false,
     };
 
     const result = await compiler.compile(record);
