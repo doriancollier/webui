@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 210,
+  "nextNumber": 213,
   "decisions": [
+    {
+      "number": 212,
+      "slug": "inline-styles-for-crash-fallback",
+      "title": "Inline Styles Only for Catastrophic Crash Fallback",
+      "created": "2026-03-28",
+      "status": "draft",
+      "extractedFrom": "client-error-handling",
+      "specSlug": "client-error-handling"
+    },
+    {
+      "number": 211,
+      "slug": "react-error-boundary-over-native-class",
+      "title": "Use react-error-boundary Over Native Class Components",
+      "created": "2026-03-28",
+      "status": "draft",
+      "extractedFrom": "client-error-handling",
+      "specSlug": "client-error-handling"
+    },
+    {
+      "number": 210,
+      "slug": "five-level-error-boundary-hierarchy",
+      "title": "Five-Level Error Boundary Hierarchy for Client App",
+      "created": "2026-03-28",
+      "status": "draft",
+      "extractedFrom": "client-error-handling",
+      "specSlug": "client-error-handling"
+    },
     {
       "number": 209,
       "slug": "stream-manager-singleton",

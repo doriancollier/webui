@@ -219,3 +219,6 @@ export {
   SidebarContext,
 } from './sidebar';
 export { FilterBar } from './filter-bar';
+export { RouteErrorFallback } from './route-error-fallback';
+export { NotFoundFallback } from './not-found-fallback';
+export { AppCrashFallback } from './app-crash-fallback';

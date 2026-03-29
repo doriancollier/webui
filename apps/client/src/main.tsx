@@ -14,6 +14,8 @@ import { PasscodeGateWrapper } from '@/layers/features/tunnel-gate';
 import { ExtensionProvider } from '@/layers/features/extensions';
 import type { ExtensionAPIDeps } from '@/layers/features/extensions';
 import { initializeExtensions } from './app/init-extensions';
+import { ErrorBoundary } from 'react-error-boundary';
+import { AppCrashFallback } from '@/layers/shared/ui/app-crash-fallback';
 import './index.css';
 
 // Dev playground — lazy-loaded, tree-shaken from production builds
@@ -128,8 +130,19 @@ const extensionDeps: ExtensionAPIDeps = {
 // Register all built-in features into the extension registry
 initializeExtensions();
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+ReactDOM.createRoot(document.getElementById('root')!, {
+  onCaughtError: (error, errorInfo) => {
+    // Fires when an ErrorBoundary catches — fallback UI is already showing
+    console.error('[dorkos:caught]', error, errorInfo.componentStack);
+  },
+  onUncaughtError: (error, errorInfo) => {
+    // Fires when no ErrorBoundary caught it — full app crash
+    console.error('[dorkos:uncaught]', error, errorInfo.componentStack);
+  },
+}).render(
   <React.StrictMode>
-    <Root />
+    <ErrorBoundary FallbackComponent={AppCrashFallback}>
+      <Root />
+    </ErrorBoundary>
   </React.StrictMode>
 );

@@ -1,7 +1,14 @@
 {
   "version": 1,
-  "nextNumber": 191,
+  "nextNumber": 192,
   "specs": [
+    {
+      "number": 191,
+      "slug": "client-error-handling",
+      "title": "Client Error Handling Improvements",
+      "created": "2026-03-28",
+      "status": "implemented"
+    },
     {
       "number": 190,
       "slug": "session-state-manager",

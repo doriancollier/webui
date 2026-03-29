@@ -9,6 +9,7 @@ import {
   Terminal,
   Network,
   Filter,
+  AlertTriangle,
 } from 'lucide-react';
 import type { PlaygroundSection } from './playground-registry';
 import {
@@ -22,6 +23,7 @@ import {
   SIMULATOR_SECTIONS,
   TOPOLOGY_SECTIONS,
   FILTER_BAR_SECTIONS,
+  ERROR_STATES_SECTIONS,
 } from './playground-registry';
 
 /** Navigation group a page belongs to in the sidebar. */
@@ -149,6 +151,15 @@ export const PAGE_CONFIGS: PageConfig[] = [
     group: 'features',
     sections: FILTER_BAR_SECTIONS,
     path: 'filter-bar',
+  },
+  {
+    id: 'error-states',
+    label: 'Error States',
+    description: 'Error boundaries, 404 pages, crash fallbacks, and toast notifications.',
+    icon: AlertTriangle,
+    group: 'features',
+    sections: ERROR_STATES_SECTIONS,
+    path: 'error-states',
   },
 ];
 

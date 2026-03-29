@@ -36,6 +36,7 @@ import { PromosPage } from './pages/PromosPage';
 import { CommandPalettePage } from './pages/CommandPalettePage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { TopologyPage } from './pages/TopologyPage';
+import { ErrorStatesPage } from './pages/ErrorStatesPage';
 import { PlaygroundSearch } from './PlaygroundSearch';
 import { DESIGN_SYSTEM_NAV, FEATURES_NAV, getPageFromPath } from './playground-config';
 import type { Page, PlaygroundSection } from './playground-registry';
@@ -78,6 +79,7 @@ const PAGE_COMPONENTS: Record<string, React.ComponentType<PlaygroundPageProps>> 
   promos: PromosPage,
   'command-palette': CommandPalettePage,
   simulator: SimulatorPage,
+  'error-states': ErrorStatesPage,
 };
 
 /**

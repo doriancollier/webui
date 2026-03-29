@@ -13,6 +13,7 @@ import { DashboardPage } from '@/layers/widgets/dashboard';
 import { SessionPage } from '@/layers/widgets/session';
 import { AgentsPage } from '@/layers/widgets/agents';
 import { agentFilterSchema } from '@/layers/features/agents-list';
+import { RouteErrorFallback, NotFoundFallback } from '@/layers/shared/ui';
 import type { Session } from '@dorkos/shared/types';
 
 // ── Router context ──────────────────────────────────────────
@@ -23,7 +24,7 @@ interface RouterContext {
 // ── Root route (minimal — just Outlet) ──────────────────────
 const rootRoute = createRootRouteWithContext<RouterContext>()({
   component: () => <Outlet />,
-  notFoundComponent: () => <div>404 — Page not found</div>,
+  notFoundComponent: NotFoundFallback,
 });
 
 // ── Pathless layout route (app shell) ───────────────────────
@@ -153,6 +154,8 @@ export function createAppRouter(queryClient: QueryClient) {
     routeTree,
     context: { queryClient },
     defaultPreload: 'intent',
+    defaultErrorComponent: RouteErrorFallback,
+    defaultNotFoundComponent: NotFoundFallback,
   });
 }
 
