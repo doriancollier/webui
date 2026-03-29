@@ -1,7 +1,7 @@
 ---
 number: 202
 title: Content-Hash-Based esbuild Compilation Cache for Extensions
-status: draft
+status: proposed
 created: 2026-03-26
 spec: ext-platform-03-extension-system
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: ext-platform-03-extension-system)
+Proposed
 
 ## Context
 

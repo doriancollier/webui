@@ -1,7 +1,7 @@
 ---
 number: 209
 title: Module-Level StreamManager Singleton for Decoupled Stream Lifecycle
-status: draft
+status: proposed
 created: 2026-03-28
 spec: session-state-manager
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: session-state-manager)
+Proposed
 
 ## Context
 

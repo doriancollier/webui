@@ -1,7 +1,7 @@
 ---
 number: 190
 title: Close SSE Connections on Tab Background with Grace Period
-status: draft
+status: proposed
 created: 2026-03-24
 spec: sse-resilience-connection-health
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: sse-resilience-connection-health)
+Proposed
 
 ## Context
 

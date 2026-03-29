@@ -1,7 +1,7 @@
 ---
 number: 199
 title: Generic register<K>() API with SlotContributionMap Interface
-status: draft
+status: proposed
 created: 2026-03-26
 spec: ext-platform-02-extension-registry
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: ext-platform-02-extension-registry)
+Proposed
 
 ## Context
 

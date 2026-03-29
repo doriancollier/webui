@@ -1,7 +1,7 @@
 ---
 number: 188
 title: Use Speculative UUIDs for New Session Creation
-status: draft
+status: proposed
 created: 2026-03-23
 spec: improved-new-session-creation
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: improved-new-session-creation)
+Proposed
 
 ## Context
 

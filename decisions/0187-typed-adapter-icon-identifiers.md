@@ -1,7 +1,7 @@
 ---
 number: 187
 title: Typed Adapter Icon Identifiers Replace Emoji Icons
-status: draft
+status: proposed
 created: 2026-03-23
 spec: real-brand-adapter-logos
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: real-brand-adapter-logos)
+Proposed
 
 ## Context
 

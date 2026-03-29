@@ -1,7 +1,7 @@
 ---
 number: 195
 title: Hybrid Agent UI Control — Explicit Tool + Minimal Implicit Side-Effects
-status: draft
+status: proposed
 created: 2026-03-26
 spec: ext-platform-01-agent-ui-control
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: ext-platform-01-agent-ui-control)
+Proposed
 
 ## Context
 

@@ -1,7 +1,7 @@
 ---
 number: 204
 title: Consolidate SSE Connections into Unified Event Stream
-status: draft
+status: proposed
 created: 2026-03-27
 spec: sse-connection-optimization-01-consolidate
 superseded-by: null
@@ -11,7 +11,7 @@ superseded-by: null
 
 ## Status
 
-Draft (auto-extracted from spec: sse-connection-optimization-01-consolidate)
+Proposed
 
 ## Context
 
