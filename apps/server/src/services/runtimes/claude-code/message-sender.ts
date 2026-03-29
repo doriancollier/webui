@@ -18,7 +18,7 @@ import type { MessageOpts, AgentRegistryPort } from '@dorkos/shared/agent-runtim
 import type { McpServerEntry } from '@dorkos/shared/transport';
 import type { AgentSession } from './agent-types.js';
 import { createToolState } from './agent-types.js';
-import { createCanUseTool } from './interactive-handlers.js';
+import { createCanUseTool, handleElicitation } from './interactive-handlers.js';
 import { mapSdkMessage } from './sdk-event-mapper.js';
 import { makeUserPrompt } from './sdk-utils.js';
 import { buildSystemPromptAppend, type RelayContextDeps } from './context-builder.js';
@@ -246,6 +246,14 @@ export async function* executeSdkQuery(
   }
 
   sdkOptions.canUseTool = createCanUseTool(session, logger.debug.bind(logger));
+  sdkOptions.onElicitation = (request, { signal }) => {
+    logger.debug('[sendMessage] elicitation request', {
+      session: sessionId,
+      serverName: request.serverName,
+      mode: request.mode,
+    });
+    return handleElicitation(session, request, signal);
+  };
 
   const agentQuery = query({ prompt: makeUserPrompt(content), options: sdkOptions });
   session.activeQuery = agentQuery;

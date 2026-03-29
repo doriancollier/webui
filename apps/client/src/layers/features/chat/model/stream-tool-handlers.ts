@@ -19,6 +19,7 @@ import type {
   HookProgressEvent,
   HookResponseEvent,
   HookPart,
+  ElicitationPromptEvent,
 } from '@dorkos/shared/types';
 import type { StreamHandlerHelpers } from './stream-event-types';
 
@@ -181,6 +182,27 @@ export function handleQuestionPrompt(
       questions: question.questions,
     });
   }
+  helpers.updateAssistantMessage(assistantId);
+}
+
+/** Handle an MCP elicitation prompt — creates an ElicitationPart. */
+export function handleElicitationPrompt(
+  helpers: StreamHandlerHelpers,
+  data: unknown,
+  assistantId: string
+) {
+  const elicitation = data as ElicitationPromptEvent;
+  helpers.currentPartsRef.current.push({
+    type: 'elicitation',
+    interactionId: elicitation.interactionId,
+    serverName: elicitation.serverName,
+    message: elicitation.message,
+    mode: elicitation.mode,
+    url: elicitation.url,
+    elicitationId: elicitation.elicitationId,
+    requestedSchema: elicitation.requestedSchema,
+    status: 'pending',
+  });
   helpers.updateAssistantMessage(assistantId);
 }
 

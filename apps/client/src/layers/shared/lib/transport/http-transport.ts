@@ -372,6 +372,19 @@ export class HttpTransport implements Transport {
     });
   }
 
+  submitElicitation(
+    sessionId: string,
+    interactionId: string,
+    action: 'accept' | 'decline' | 'cancel',
+    content?: Record<string, unknown>
+  ): Promise<{ ok: boolean }> {
+    return fetchJSON<{ ok: boolean }>(this.baseUrl, `/sessions/${sessionId}/submit-elicitation`, {
+      method: 'POST',
+      body: JSON.stringify({ interactionId, action, content }),
+      timeout: HttpTransport.INTERACTION_TIMEOUT_MS,
+    });
+  }
+
   /** Stop a running background task. */
   stopTask(sessionId: string, taskId: string): Promise<{ success: boolean; taskId: string }> {
     return fetchJSON<{ success: boolean; taskId: string }>(

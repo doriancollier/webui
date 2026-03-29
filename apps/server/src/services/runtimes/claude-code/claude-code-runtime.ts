@@ -432,6 +432,20 @@ export class ClaudeCodeRuntime implements AgentRuntime {
     return true;
   }
 
+  /** Submit a response to an MCP elicitation prompt. */
+  submitElicitation(
+    sessionId: string,
+    interactionId: string,
+    action: 'accept' | 'decline' | 'cancel',
+    content?: Record<string, unknown>
+  ): boolean {
+    const session = this.findSession(sessionId);
+    const pending = session?.pendingInteractions.get(interactionId);
+    if (!pending || pending.type !== 'elicitation') return false;
+    pending.resolve({ action, content });
+    return true;
+  }
+
   /** Stop a running background task (agent or bash command). */
   async stopTask(sessionId: string, taskId: string): Promise<boolean> {
     const session = this.findSession(sessionId);

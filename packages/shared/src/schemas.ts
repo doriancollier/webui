@@ -61,6 +61,8 @@ export const StreamEventTypeSchema = z
     'ui_command',
     'session_state_changed',
     'context_usage',
+    'elicitation_prompt',
+    'elicitation_complete',
   ])
   .openapi('StreamEventType');
 
@@ -182,6 +184,24 @@ export const SubmitAnswersRequestSchema = z
   .openapi('SubmitAnswersRequest');
 
 export type SubmitAnswersRequest = z.infer<typeof SubmitAnswersRequestSchema>;
+
+export const ElicitationModeSchema = z.enum(['form', 'url']).openapi('ElicitationMode');
+export type ElicitationMode = z.infer<typeof ElicitationModeSchema>;
+
+export const ElicitationActionSchema = z
+  .enum(['accept', 'decline', 'cancel'])
+  .openapi('ElicitationAction');
+export type ElicitationAction = z.infer<typeof ElicitationActionSchema>;
+
+export const SubmitElicitationRequestSchema = z
+  .object({
+    interactionId: z.string(),
+    action: ElicitationActionSchema,
+    content: z.record(z.string(), z.unknown()).optional(),
+  })
+  .openapi('SubmitElicitationRequest');
+
+export type SubmitElicitationRequest = z.infer<typeof SubmitElicitationRequestSchema>;
 
 export const ListSessionsQuerySchema = z
   .object({
@@ -555,6 +575,30 @@ export const SessionStateChangedEventSchema = z
 
 export type SessionStateChangedEvent = z.infer<typeof SessionStateChangedEventSchema>;
 
+export const ElicitationPromptEventSchema = z
+  .object({
+    interactionId: z.string(),
+    serverName: z.string(),
+    message: z.string(),
+    mode: ElicitationModeSchema.optional(),
+    url: z.string().optional(),
+    elicitationId: z.string().optional(),
+    requestedSchema: z.record(z.string(), z.unknown()).optional(),
+    timeoutMs: z.number().describe('Server-side elicitation timeout in milliseconds'),
+  })
+  .openapi('ElicitationPromptEvent');
+
+export type ElicitationPromptEvent = z.infer<typeof ElicitationPromptEventSchema>;
+
+export const ElicitationCompleteEventSchema = z
+  .object({
+    serverName: z.string(),
+    elicitationId: z.string(),
+  })
+  .openapi('ElicitationCompleteEvent');
+
+export type ElicitationCompleteEvent = z.infer<typeof ElicitationCompleteEventSchema>;
+
 export const StreamEventSchema = z
   .object({
     type: StreamEventTypeSchema,
@@ -588,6 +632,8 @@ export const StreamEventSchema = z
       PresenceUpdateEventSchema,
       SessionStateChangedEventSchema,
       ContextUsageSchema,
+      ElicitationPromptEventSchema,
+      ElicitationCompleteEventSchema,
     ]),
   })
   .openapi('StreamEvent');
@@ -687,12 +733,31 @@ export const ErrorPartSchema = z
 
 export type ErrorPart = z.infer<typeof ErrorPartSchema>;
 
+export const ElicitationPartSchema = z
+  .object({
+    type: z.literal('elicitation'),
+    interactionId: z.string(),
+    serverName: z.string(),
+    message: z.string(),
+    mode: ElicitationModeSchema.optional(),
+    url: z.string().optional(),
+    elicitationId: z.string().optional(),
+    requestedSchema: z.record(z.string(), z.unknown()).optional(),
+    status: z.enum(['pending', 'submitted', 'complete']),
+    action: ElicitationActionSchema.optional(),
+    content: z.record(z.string(), z.unknown()).optional(),
+  })
+  .openapi('ElicitationPart');
+
+export type ElicitationPart = z.infer<typeof ElicitationPartSchema>;
+
 export const MessagePartSchema = z.discriminatedUnion('type', [
   TextPartSchema,
   ToolCallPartSchema,
   BackgroundTaskPartSchema,
   ThinkingPartSchema,
   ErrorPartSchema,
+  ElicitationPartSchema,
 ]);
 
 export type MessagePart = z.infer<typeof MessagePartSchema>;

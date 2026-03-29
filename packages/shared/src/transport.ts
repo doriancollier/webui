@@ -169,6 +169,13 @@ export interface Transport {
     toolCallId: string,
     answers: Record<string, string>
   ): Promise<{ ok: boolean }>;
+  /** Submit a response to an MCP elicitation prompt. */
+  submitElicitation(
+    sessionId: string,
+    interactionId: string,
+    action: 'accept' | 'decline' | 'cancel',
+    content?: Record<string, unknown>
+  ): Promise<{ ok: boolean }>;
   /**
    * Stop a running background task.
    *

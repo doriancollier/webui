@@ -192,6 +192,25 @@ describe('sdk-event-mapper background task lifecycle', () => {
     expect(events[0].type).toBe('compact_boundary');
     expect(events[0].data).toEqual({});
   });
+
+  it('yields elicitation_complete event', async () => {
+    const msg = {
+      type: 'system',
+      subtype: 'elicitation_complete',
+      mcp_server_name: 'github-oauth',
+      elicitation_id: 'elicit-456',
+      session_id: 'test',
+      uuid: '00000000-0000-4000-8000-000000000001',
+    } as unknown as Parameters<typeof mapSdkMessage>[0];
+    const events = await collectEvents(msg, session, sessionId, toolState);
+
+    expect(events).toHaveLength(1);
+    expect(events[0].type).toBe('elicitation_complete');
+    expect(events[0].data).toEqual({
+      serverName: 'github-oauth',
+      elicitationId: 'elicit-456',
+    });
+  });
 });
 
 describe('sdk-event-mapper result messages', () => {

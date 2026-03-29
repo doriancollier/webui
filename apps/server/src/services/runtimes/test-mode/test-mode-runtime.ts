@@ -177,6 +177,15 @@ export class TestModeRuntime implements AgentRuntime {
     return false;
   }
 
+  submitElicitation(
+    _id: string,
+    _interactionId: string,
+    _action: 'accept' | 'decline' | 'cancel',
+    _content?: Record<string, unknown>
+  ): boolean {
+    return false;
+  }
+
   async stopTask(_sessionId: string, _taskId: string): Promise<boolean> {
     return false;
   }

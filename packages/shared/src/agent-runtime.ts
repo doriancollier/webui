@@ -165,6 +165,22 @@ export interface AgentRuntime {
   submitAnswers(sessionId: string, toolCallId: string, answers: Record<string, string>): boolean;
 
   /**
+   * Submit a response to an MCP elicitation prompt.
+   *
+   * @param sessionId - Target session
+   * @param interactionId - The elicitation interaction to respond to
+   * @param action - Accept, decline, or cancel the elicitation
+   * @param content - Form field values (form mode only)
+   * @returns false if the session or interaction was not found
+   */
+  submitElicitation(
+    sessionId: string,
+    interactionId: string,
+    action: 'accept' | 'decline' | 'cancel',
+    content?: Record<string, unknown>
+  ): boolean;
+
+  /**
    * Stop a running background task (agent or bash command).
    *
    * @param sessionId - Target session

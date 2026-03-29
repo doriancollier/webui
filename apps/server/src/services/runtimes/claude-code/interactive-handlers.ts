@@ -1,9 +1,14 @@
-import type { PermissionResult } from '@anthropic-ai/claude-agent-sdk';
+import type {
+  PermissionResult,
+  ElicitationRequest,
+  ElicitationResult,
+} from '@anthropic-ai/claude-agent-sdk';
 import type { StreamEvent } from '@dorkos/shared/types';
 import { SESSIONS } from '../../../config/constants.js';
+import { randomUUID } from 'node:crypto';
 
 export interface PendingInteraction {
-  type: 'question' | 'approval';
+  type: 'question' | 'approval' | 'elicitation';
   toolCallId: string;
   resolve: (result: unknown) => void;
   reject: (reason: unknown) => void;
@@ -53,6 +58,72 @@ export function handleAskUserQuestion(
         clearTimeout(timeout);
         session.pendingInteractions.delete(toolUseId);
         resolve({ behavior: 'deny', message: 'Interaction cancelled' });
+      },
+      timeout,
+    });
+  });
+}
+
+/**
+ * Handle an MCP elicitation request — pause, collect user input, return result.
+ *
+ * The `onElicitation` SDK callback receives the request from an MCP server
+ * and must return an ElicitationResult. We push an SSE event to the client,
+ * wait for the user's response, and resolve the Promise.
+ */
+export function handleElicitation(
+  session: InteractiveSession,
+  request: ElicitationRequest,
+  signal: AbortSignal
+): Promise<ElicitationResult> {
+  const interactionId = request.elicitationId ?? randomUUID();
+
+  session.eventQueue.push({
+    type: 'elicitation_prompt',
+    data: {
+      interactionId,
+      serverName: request.serverName,
+      message: request.message,
+      mode: request.mode,
+      url: request.url,
+      elicitationId: request.elicitationId,
+      requestedSchema: request.requestedSchema,
+      timeoutMs: SESSIONS.INTERACTION_TIMEOUT_MS,
+    },
+  });
+  session.eventQueueNotify?.();
+
+  return new Promise<ElicitationResult>((resolve) => {
+    const decline = () => resolve({ action: 'decline' } as ElicitationResult);
+
+    // Auto-decline if the SDK query is aborted
+    const onAbort = () => {
+      clearTimeout(timeout);
+      session.pendingInteractions.delete(interactionId);
+      decline();
+    };
+    signal.addEventListener('abort', onAbort, { once: true });
+
+    const timeout = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      session.pendingInteractions.delete(interactionId);
+      decline();
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
+
+    session.pendingInteractions.set(interactionId, {
+      type: 'elicitation',
+      toolCallId: interactionId,
+      resolve: (result) => {
+        clearTimeout(timeout);
+        signal.removeEventListener('abort', onAbort);
+        session.pendingInteractions.delete(interactionId);
+        resolve(result as ElicitationResult);
+      },
+      reject: () => {
+        clearTimeout(timeout);
+        signal.removeEventListener('abort', onAbort);
+        session.pendingInteractions.delete(interactionId);
+        decline();
       },
       timeout,
     });

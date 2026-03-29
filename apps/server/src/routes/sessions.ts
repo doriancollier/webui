@@ -7,6 +7,7 @@ import {
   SendMessageRequestSchema,
   ApprovalRequestSchema,
   SubmitAnswersRequestSchema,
+  SubmitElicitationRequestSchema,
   ListSessionsQuerySchema,
 } from '@dorkos/shared/schemas';
 import { assertBoundary, parseSessionId, sendError } from '../lib/route-utils.js';
@@ -344,6 +345,27 @@ router.post('/:id/submit-answers', async (req, res) => {
       return sendError(res, 409, 'Interaction already resolved', 'INTERACTION_ALREADY_RESOLVED');
     }
     return sendError(res, 404, 'No pending question', 'NO_PENDING_QUESTION');
+  }
+  res.json({ ok: true });
+});
+
+// POST /api/sessions/:id/submit-elicitation - Submit response to MCP elicitation
+router.post('/:id/submit-elicitation', async (req, res) => {
+  const sessionId = parseSessionId(req.params.id);
+  if (!sessionId) return sendError(res, 400, 'Invalid session ID', 'INVALID_SESSION_ID');
+
+  const parsed = SubmitElicitationRequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return sendError(res, 400, 'Invalid request', 'VALIDATION_ERROR');
+  }
+  const { interactionId, action, content } = parsed.data;
+  const runtime = runtimeRegistry.getDefault();
+  const ok = runtime.submitElicitation(sessionId, interactionId, action, content);
+  if (!ok) {
+    if (runtime.hasSession(sessionId)) {
+      return sendError(res, 409, 'Interaction already resolved', 'INTERACTION_ALREADY_RESOLVED');
+    }
+    return sendError(res, 404, 'No pending elicitation', 'NO_PENDING_ELICITATION');
   }
   res.json({ ok: true });
 });

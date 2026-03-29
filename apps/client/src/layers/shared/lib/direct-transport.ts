@@ -152,6 +152,28 @@ export class DirectTransport implements Transport {
     return { ok };
   }
 
+  async submitElicitation(
+    sessionId: string,
+    interactionId: string,
+    action: 'accept' | 'decline' | 'cancel',
+    _content?: Record<string, unknown>
+  ): Promise<{ ok: boolean }> {
+    // DirectTransport runtime interface predates elicitation — use structural check
+    const runtime = this.services.runtime as {
+      submitElicitation?: (
+        s: string,
+        i: string,
+        a: 'accept' | 'decline' | 'cancel',
+        c?: Record<string, unknown>
+      ) => boolean;
+    };
+    if (typeof runtime.submitElicitation !== 'function') {
+      return { ok: false };
+    }
+    const ok = runtime.submitElicitation(sessionId, interactionId, action, _content);
+    return { ok };
+  }
+
   /** Stop a running background task. DirectTransport delegates to the in-process runtime if supported. */
   async stopTask(sessionId: string, taskId: string): Promise<{ success: boolean; taskId: string }> {
     try {

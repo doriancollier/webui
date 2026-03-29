@@ -9,6 +9,7 @@ import { ToolApproval } from '../ToolApproval';
 import type { ToolApprovalHandle } from '../ToolApproval';
 import { QuestionPrompt } from '../QuestionPrompt';
 import type { QuestionPromptHandle } from '../QuestionPrompt';
+import { ElicitationPrompt } from '../ElicitationPrompt';
 import { useMessageContext } from './MessageContext';
 import { SubagentBlock } from '../SubagentBlock';
 import { ThinkingBlock } from '../ThinkingBlock';
@@ -180,6 +181,22 @@ export function AssistantMessageContent({ message }: { message: ChatMessage }) {
               text={part.text}
               isStreaming={part.isStreaming ?? false}
               elapsedMs={part.elapsedMs}
+            />
+          );
+        }
+        if (part.type === 'elicitation') {
+          return (
+            <ElicitationPrompt
+              key={`elicitation-${part.interactionId}`}
+              sessionId={sessionId}
+              interactionId={part.interactionId}
+              serverName={part.serverName}
+              message={part.message}
+              mode={part.mode}
+              url={part.url}
+              requestedSchema={part.requestedSchema}
+              status={part.status}
+              action={part.action}
             />
           );
         }

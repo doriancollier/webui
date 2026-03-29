@@ -144,6 +144,19 @@ export async function* mapSdkMessage(
       return;
     }
 
+    // Handle MCP elicitation completion (URL-mode auth confirmed by MCP server)
+    if (message.subtype === 'elicitation_complete') {
+      const msg = message as Record<string, unknown>;
+      yield {
+        type: 'elicitation_complete',
+        data: {
+          serverName: msg.mcp_server_name as string,
+          elicitationId: msg.elicitation_id as string,
+        },
+      };
+      return;
+    }
+
     // Handle API retry events (SDK 0.2.77+)
     if (message.subtype === 'api_retry') {
       const msg = message as Record<string, unknown>;
