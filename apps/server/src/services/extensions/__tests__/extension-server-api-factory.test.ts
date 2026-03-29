@@ -19,9 +19,7 @@ vi.mock('../../core/event-fan-out.js', () => ({
   },
 }));
 
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let mockBroadcast: ReturnType<typeof vi.fn>;
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 let mockLoggerError: ReturnType<typeof vi.fn>;
 
 describe('createDataProviderContext', () => {
