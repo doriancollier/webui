@@ -78,19 +78,6 @@ describe('Magic transition: onboarding to chat', () => {
     cleanup();
   });
 
-  // ── MeetDorkBotStep layoutId ──
-
-  it('preview bubble in MeetDorkBotStep has layoutId="dorkbot-first-message"', () => {
-    render(<MeetDorkBotStep onStepComplete={vi.fn()} />);
-
-    const preview = screen.getByTestId('personality-preview');
-    // In the test environment, motion.div is rendered as a plain div.
-    // The layoutId prop is stripped by the global motion mock in test-setup.ts.
-    // We verify the element exists and is the container for the preview text.
-    expect(preview).toBeInTheDocument();
-    expect(preview.textContent).toContain('Balanced');
-  });
-
   // ── generateFirstMessage integration ──
 
   it('stores first message via setDorkbotFirstMessage on update success', () => {

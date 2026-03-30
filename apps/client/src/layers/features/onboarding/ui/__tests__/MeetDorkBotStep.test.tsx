@@ -65,7 +65,7 @@ describe('MeetDorkBotStep', () => {
     render(<MeetDorkBotStep onStepComplete={onStepComplete} />);
 
     expect(screen.getByText('Meet DorkBot')).toBeInTheDocument();
-    expect(screen.getByText(/DorkBot is your guide to DorkOS/)).toBeInTheDocument();
+    expect(screen.getByText(/Your system agent/)).toBeInTheDocument();
     expect(
       screen.getByText(/Shape DorkBot\u2019s personality to match your style/)
     ).toBeInTheDocument();
@@ -94,14 +94,6 @@ describe('MeetDorkBotStep', () => {
     expect(screen.getByText('Thorough')).toBeInTheDocument();
     expect(screen.getByText('By the book')).toBeInTheDocument();
     expect(screen.getByText('Inventive')).toBeInTheDocument();
-  });
-
-  it('displays preview text', () => {
-    render(<MeetDorkBotStep onStepComplete={onStepComplete} />);
-
-    const preview = screen.getByTestId('personality-preview');
-    // Default traits at level 3 should produce preview containing 'Balanced'
-    expect(preview.textContent).toContain('Balanced');
   });
 
   it('avatar has breathe animation class', () => {

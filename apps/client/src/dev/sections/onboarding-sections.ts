@@ -54,6 +54,13 @@ export const ONBOARDING_SECTIONS: PlaygroundSection[] = [
     keywords: ['complete', 'done', 'confetti', 'summary', 'finish'],
   },
   {
+    id: 'onboardingnavbar',
+    title: 'OnboardingNavBar',
+    page: 'onboarding',
+    category: 'Supporting',
+    keywords: ['nav', 'bar', 'steps', 'back', 'skip', 'indicator', 'dots'],
+  },
+  {
     id: 'progresscard',
     title: 'ProgressCard',
     page: 'onboarding',

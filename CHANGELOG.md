@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Polish onboarding flow UI and extract OnboardingNavBar
+
 ### Fixed
 
 - Improve dev playground overview card layout

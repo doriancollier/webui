@@ -1,10 +1,8 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Check } from 'lucide-react';
-import { Button } from '@/layers/shared/ui';
 import { useIsMobile } from '@/layers/shared/model';
-import { cn } from '@/layers/shared/lib';
+import { OnboardingNavBar } from './OnboardingNavBar';
 import { useMeshAgentPaths } from '@/layers/entities/mesh';
 import { useOnboarding } from '../model/use-onboarding';
 import { WelcomeStep } from './WelcomeStep';
@@ -154,46 +152,13 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
 
   return (
     <div className="bg-background flex h-full w-full flex-col">
-      {/* Unified navigation bar — Back, step dots, Skip/Skip all */}
-      <div className="flex items-center justify-between px-4 py-3 sm:px-6">
-        <Button variant="ghost" size="sm" onClick={goBack} className="min-w-16">
-          Back
-        </Button>
-
-        <div className="flex items-center gap-2">
-          {STEPS.map((_, i) => (
-            <div key={i} className="relative flex items-center justify-center">
-              {i === currentStep ? (
-                <motion.div
-                  layoutId="step-indicator"
-                  className="bg-primary flex h-2 w-6 items-center justify-center rounded-full"
-                  transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                />
-              ) : i < currentStep ? (
-                <div className="bg-primary/60 flex size-2 items-center justify-center rounded-full">
-                  <Check className="text-primary-foreground size-1.5" />
-                </div>
-              ) : (
-                <div className={cn('ring-muted-foreground/30 size-2 rounded-full ring-1')} />
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="flex min-w-16 items-center justify-end gap-1">
-          <Button variant="ghost" size="sm" onClick={handleSkip}>
-            Skip
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleSkipAll}
-            className="text-muted-foreground"
-          >
-            Skip all
-          </Button>
-        </div>
-      </div>
+      <OnboardingNavBar
+        totalSteps={STEPS.length}
+        currentStep={currentStep}
+        onBack={goBack}
+        onSkip={handleSkip}
+        onSkipAll={handleSkipAll}
+      />
 
       {/* Step content with slide transitions */}
       <div className="relative flex-1 overflow-hidden">

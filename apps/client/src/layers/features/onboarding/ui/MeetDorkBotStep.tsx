@@ -1,13 +1,6 @@
-import { useState, useCallback, useMemo, useDeferredValue } from 'react';
+import { useState, useCallback } from 'react';
 import { Bot } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
-import {
-  TRAIT_ORDER,
-  DEFAULT_TRAITS,
-  getPreviewText,
-  hashPreviewText,
-  type TraitName,
-} from '@dorkos/shared/trait-renderer';
+import { TRAIT_ORDER, DEFAULT_TRAITS, type TraitName } from '@dorkos/shared/trait-renderer';
 import type { Traits } from '@dorkos/shared/mesh-schemas';
 import { generateFirstMessage } from '@dorkos/shared/dorkbot-templates';
 import { playSliderTick, playCelebration, cn } from '@/layers/shared/lib';
@@ -30,8 +23,8 @@ interface MeetDorkBotStepProps {
 }
 
 /**
- * Meet DorkBot onboarding step — personality trait sliders with live preview
- * and avatar breathing animation. Updates the existing DorkBot agent's traits.
+ * Meet DorkBot onboarding step — personality trait sliders with avatar
+ * breathing animation. Updates the existing DorkBot agent's traits.
  */
 export function MeetDorkBotStep({ onStepComplete }: MeetDorkBotStepProps) {
   const [traits, setTraits] = useState<Traits>({ ...DEFAULT_TRAITS });
@@ -41,10 +34,6 @@ export function MeetDorkBotStep({ onStepComplete }: MeetDorkBotStepProps) {
   const updateAgent = useUpdateAgent();
   const { config } = useOnboarding();
   const setDorkbotFirstMessage = useAppStore((s) => s.setDorkbotFirstMessage);
-
-  // Preview text with deferred updates for smooth slider scrubbing
-  const previewText = useDeferredValue(getPreviewText(traits));
-  const previewKey = useMemo(() => hashPreviewText(previewText), [previewText]);
 
   const handleTraitChange = useCallback((traitName: TraitName, value: number) => {
     playSliderTick();
@@ -96,33 +85,12 @@ export function MeetDorkBotStep({ onStepComplete }: MeetDorkBotStepProps) {
       <div className="space-y-1 text-center">
         <h2 className="text-2xl font-semibold tracking-tight">Meet DorkBot</h2>
         <p className="text-muted-foreground max-w-sm text-sm">
-          DorkBot is your guide to DorkOS. It helps you learn the platform and handles background
-          jobs like scheduled tasks and summaries.
+          Your system agent. Runs tasks, writes summaries, sets up and manages other agents, etc.
         </p>
-        <p className="text-muted-foreground max-w-sm text-sm">
+        <p className="text-foreground max-w-sm text-sm font-medium">
           Shape DorkBot&rsquo;s personality to match your style.
         </p>
       </div>
-
-      {/* Live preview — layoutId enables morph animation into ChatPanel's first message */}
-      <motion.div
-        layoutId="dorkbot-first-message"
-        className="bg-muted/50 w-full max-w-md rounded-lg border p-4"
-        data-testid="personality-preview"
-      >
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={previewKey}
-            initial={{ opacity: 0, y: 4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.2 }}
-            className="text-muted-foreground text-sm"
-          >
-            {previewText}
-          </motion.p>
-        </AnimatePresence>
-      </motion.div>
 
       {/* Trait sliders */}
       <div className="w-full max-w-md space-y-5" data-testid="personality-sliders">
@@ -132,10 +100,10 @@ export function MeetDorkBotStep({ onStepComplete }: MeetDorkBotStepProps) {
 
           return (
             <div key={traitName} className="space-y-2">
-              <div className="flex justify-between text-sm">
+              <div className="grid grid-cols-3 text-sm">
                 <span className="text-muted-foreground">{labels.left}</span>
-                <span className="font-medium capitalize">{traitName}</span>
-                <span className="text-muted-foreground">{labels.right}</span>
+                <span className="text-center font-medium capitalize">{traitName}</span>
+                <span className="text-muted-foreground text-right">{labels.right}</span>
               </div>
               <Slider
                 min={1}

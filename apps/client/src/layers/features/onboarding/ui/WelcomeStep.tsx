@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react';
-import { Search, Clock, Radio } from 'lucide-react';
+import { Plus, Clock, Radio } from 'lucide-react';
 import { DorkLogo } from '@dorkos/icons/logos';
 import { HoverBorderGradient } from '@/layers/shared/ui';
 
@@ -11,7 +11,7 @@ interface WelcomeStepProps {
 const HEADING_WORDS = ['Welcome', 'to', 'DorkOS'];
 
 const PREVIEW_ITEMS = [
-  { icon: Search, label: 'Discover agents' },
+  { icon: Plus, label: 'Create agents' },
   { icon: Clock, label: 'Schedule tasks' },
   { icon: Radio, label: 'Connect channels' },
 ] as const;

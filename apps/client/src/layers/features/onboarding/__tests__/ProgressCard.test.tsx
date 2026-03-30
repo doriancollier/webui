@@ -53,7 +53,7 @@ describe('ProgressCard', () => {
   it('shows both step names', () => {
     render(<ProgressCard onStepClick={vi.fn()} onDismiss={vi.fn()} />);
 
-    expect(screen.getByText('Discover agents')).toBeTruthy();
+    expect(screen.getByText('Create agents')).toBeTruthy();
     expect(screen.getByText('Set up Tasks schedules')).toBeTruthy();
   });
 
@@ -77,7 +77,7 @@ describe('ProgressCard', () => {
 
     render(<ProgressCard onStepClick={vi.fn()} onDismiss={vi.fn()} />);
 
-    const completedItem = screen.getByText('Discover agents');
+    const completedItem = screen.getByText('Create agents');
     expect(completedItem.className).not.toContain('line-through');
   });
 
@@ -107,7 +107,7 @@ describe('ProgressCard', () => {
 
     render(<ProgressCard onStepClick={onStepClick} onDismiss={vi.fn()} />);
 
-    fireEvent.click(screen.getByText('Discover agents'));
+    fireEvent.click(screen.getByText('Create agents'));
 
     expect(onStepClick).toHaveBeenCalledWith(0);
   });
@@ -148,7 +148,7 @@ describe('ProgressCard', () => {
     render(<ProgressCard onStepClick={vi.fn()} onDismiss={vi.fn()} />);
 
     // The completed step text is a span, not a button
-    const completedText = screen.getByText('Discover agents');
+    const completedText = screen.getByText('Create agents');
     expect(completedText.tagName).toBe('SPAN');
   });
 });

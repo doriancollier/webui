@@ -6,7 +6,7 @@ import type { OnboardingStep } from '@dorkos/shared/config-schema';
 
 const STEP_LABELS: Record<OnboardingStep, string> = {
   'meet-dorkbot': 'Meet DorkBot',
-  discovery: 'Discover agents',
+  discovery: 'Create agents',
   tasks: 'Set up Tasks schedules',
   adapters: 'Connect adapters',
 };

@@ -11,6 +11,7 @@ import {
   TaskTemplatesStep,
   AdapterSetupStep,
   OnboardingComplete,
+  OnboardingNavBar,
   ProgressCard,
   NoAgentsFound,
   DiscoveryCelebration,
@@ -83,6 +84,7 @@ export function OnboardingFlowShowcases() {
       <TaskTemplatesStepShowcase />
       <AdapterSetupStepShowcase />
       <OnboardingCompleteShowcase />
+      <OnboardingNavBarShowcase />
       <ProgressCardShowcase />
       <NoAgentsFoundShowcase />
       <DiscoveryCelebrationShowcase />
@@ -236,6 +238,39 @@ function OnboardingCompleteInner() {
 }
 
 // ── Supporting components ────────────────────────────────────
+
+function OnboardingNavBarShowcase() {
+  const [step, setStep] = useState(1);
+
+  return (
+    <PlaygroundSection
+      title="OnboardingNavBar"
+      description="Step navigation bar with Back, animated step indicator dots, and Skip / Skip all controls. Click Back/Skip to cycle through steps."
+    >
+      <ShowcaseLabel>{`3 steps, current: ${step}`}</ShowcaseLabel>
+      <ShowcaseDemo>
+        <OnboardingNavBar
+          totalSteps={3}
+          currentStep={step}
+          onBack={() => setStep((s) => Math.max(0, s - 1))}
+          onSkip={() => setStep((s) => Math.min(2, s + 1))}
+          onSkipAll={noop}
+        />
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>5 steps, current: 0</ShowcaseLabel>
+      <ShowcaseDemo>
+        <OnboardingNavBar
+          totalSteps={5}
+          currentStep={0}
+          onBack={noop}
+          onSkip={noop}
+          onSkipAll={noop}
+        />
+      </ShowcaseDemo>
+    </PlaygroundSection>
+  );
+}
 
 function ProgressCardShowcase() {
   return (
