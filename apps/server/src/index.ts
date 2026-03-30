@@ -450,7 +450,7 @@ async function start() {
   }
 
   const host = env.DORKOS_HOST;
-  app.listen(PORT, host, () => {
+  const server = app.listen(PORT, host, () => {
     logger.info(`DorkOS server running on http://${host}:${PORT}`);
 
     // Fire-and-forget: record startup in the activity feed so the dashboard
@@ -462,6 +462,18 @@ async function start() {
       eventType: 'system.started',
       summary: 'DorkOS started',
     });
+  });
+
+  // Surface port conflicts with an actionable message instead of a raw EADDRINUSE stack trace
+  server.on('error', (err: NodeJS.ErrnoException) => {
+    if (err.code === 'EADDRINUSE') {
+      logger.error(
+        `Port ${PORT} is already in use. ` +
+          `Run \`lsof -i :${PORT}\` to find the process, or start with \`--port ${PORT + 1}\`.`
+      );
+      process.exit(1);
+    }
+    throw err;
   });
 
   // Start Tasks scheduler after server is listening

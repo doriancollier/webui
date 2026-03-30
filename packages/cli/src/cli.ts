@@ -9,6 +9,14 @@ import { link } from './terminal-link.js';
 import { DEFAULT_PORT } from '@dorkos/shared/constants';
 import { LOG_LEVEL_MAP } from '@dorkos/shared/config-schema';
 import { env } from './env.js';
+import { checkNodeVersion, diagnoseStartupError, formatDiagnostic } from './startup-diagnostics.js';
+
+// Early Node.js version guard — before any imports that could fail on older runtimes
+const nodeVersionIssue = checkNodeVersion();
+if (nodeVersionIssue) {
+  console.error(formatDiagnostic(nodeVersionIssue));
+  process.exit(1);
+}
 
 // Injected at build time by esbuild define
 declare const __CLI_VERSION__: string;
@@ -256,8 +264,14 @@ if (fs.existsSync(envPath)) {
   dotenv.config({ path: envPath, override: false });
 }
 
-// Start the server
-await import('../server/index.js');
+// Start the server — wrap import to catch dependency and startup errors
+try {
+  await import('../server/index.js');
+} catch (err) {
+  const diag = diagnoseStartupError(err);
+  console.error(formatDiagnostic(diag));
+  process.exit(1);
+}
 
 // Print startup banner
 const port = process.env.DORKOS_PORT || String(DEFAULT_PORT);

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Expand tilde paths in boundary validation and add startup diagnostics
 - Cast spawn proc through EventEmitter to fix CI type resolution
 - Remove unnecessary ChildProcess cast that fails in CI Node 20
 ---

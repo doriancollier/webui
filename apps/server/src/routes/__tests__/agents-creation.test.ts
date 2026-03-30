@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 vi.mock('../../lib/boundary.js', () => ({
   validateBoundary: vi.fn(async (p: string) => p),
+  expandTilde: vi.fn((p: string) => p),
   getBoundary: vi.fn(() => '/mock/home'),
   initBoundary: vi.fn().mockResolvedValue('/mock/home'),
   isWithinBoundary: vi.fn().mockResolvedValue(true),

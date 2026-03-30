@@ -18,7 +18,7 @@ import { defaultSoulTemplate, defaultNopeTemplate } from '@dorkos/shared/convent
 import { writeConventionFile } from '@dorkos/shared/convention-files-io';
 import { renderTraits } from '@dorkos/shared/trait-renderer';
 import { dorkbotClaudeMdTemplate } from '@dorkos/shared/dorkbot-templates';
-import { validateBoundary, BoundaryError } from '../../lib/boundary.js';
+import { validateBoundary, expandTilde, BoundaryError } from '../../lib/boundary.js';
 import { configManager } from './config-manager.js';
 import { logger } from '../../lib/logger.js';
 import { env } from '../../env.js';
@@ -84,7 +84,7 @@ async function maybeSetDefaultAgent(agentName: string): Promise<void> {
     const agentsConfig = configManager.get('agents');
     const currentDefault = agentsConfig.defaultAgent;
     const defaultAgentDir = path.resolve(
-      agentsConfig.defaultDirectory.replace(/^~/, env.HOME || ''),
+      expandTilde(agentsConfig.defaultDirectory),
       currentDefault
     );
     // If the current default agent directory doesn't exist, adopt the new agent
@@ -129,7 +129,7 @@ export async function createAgentWorkspace(
   const agentsConfig = configManager.get('agents');
   const resolvedPath = opts.directory
     ? path.resolve(opts.directory)
-    : path.resolve(agentsConfig.defaultDirectory.replace(/^~/, env.HOME || ''), opts.name);
+    : path.resolve(expandTilde(agentsConfig.defaultDirectory), opts.name);
 
   // Boundary validation
   try {

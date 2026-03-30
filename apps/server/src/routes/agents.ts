@@ -51,11 +51,11 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
   // Returns the agent manifest for the given directory, or 404
   router.get('/current', async (req, res) => {
     try {
-      const agentPath = req.query.path as string;
-      if (!agentPath) {
+      const rawPath = req.query.path as string;
+      if (!rawPath) {
         return res.status(400).json({ error: 'path query parameter required' });
       }
-      await validateBoundary(agentPath);
+      const agentPath = await validateBoundary(rawPath);
       const manifest = await readManifest(agentPath);
       if (!manifest) {
         return res.status(404).json({ error: 'No agent registered at this path' });
@@ -89,8 +89,8 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
       await Promise.all(
         result.data.paths.map(async (p) => {
           try {
-            await validateBoundary(p);
-            agents[p] = await readManifest(p);
+            const resolvedP = await validateBoundary(p);
+            agents[p] = await readManifest(resolvedP);
           } catch {
             agents[p] = null;
           }
@@ -113,8 +113,8 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
           .status(400)
           .json({ error: 'Validation failed', details: result.error.flatten() });
       }
-      const { path: agentPath, name, description, runtime } = result.data;
-      await validateBoundary(agentPath);
+      const { path: rawAgentPath, name, description, runtime } = result.data;
+      const agentPath = await validateBoundary(rawAgentPath);
 
       // Check if agent already exists
       const existing = await readManifest(agentPath);
@@ -227,11 +227,11 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
   // Update agent fields by path
   router.patch('/current', async (req, res) => {
     try {
-      const agentPath = req.query.path as string;
-      if (!agentPath) {
+      const rawPath = req.query.path as string;
+      if (!rawPath) {
         return res.status(400).json({ error: 'path query parameter required' });
       }
-      await validateBoundary(agentPath);
+      const agentPath = await validateBoundary(rawPath);
 
       const result = UpdateAgentRequestSchema.safeParse(req.body);
       if (!result.success) {
@@ -292,11 +292,11 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
   // Migrates legacy persona field to SOUL.md convention file
   router.post('/current/migrate-persona', async (req, res) => {
     try {
-      const agentPath = req.query.path as string;
-      if (!agentPath) {
+      const rawPath = req.query.path as string;
+      if (!rawPath) {
         return res.status(400).json({ error: 'path query parameter required' });
       }
-      await validateBoundary(agentPath);
+      const agentPath = await validateBoundary(rawPath);
 
       const manifest = await readManifest(agentPath);
       if (!manifest) {

@@ -443,14 +443,15 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
       return res.status(400).json({ error: 'Validation failed', details: result.error.flatten() });
     }
 
+    let resolvedPath: string;
     try {
-      await validateBoundary(result.data.path);
+      resolvedPath = await validateBoundary(result.data.path);
     } catch {
       return res.status(403).json({ error: `Path outside boundary: ${result.data.path}` });
     }
 
     try {
-      await meshCore.deny(result.data.path, result.data.reason, result.data.denier);
+      await meshCore.deny(resolvedPath, result.data.reason, result.data.denier);
       return res.status(201).json({ success: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Denial failed';
@@ -472,13 +473,14 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
       return res.status(400).json({ error: 'Invalid path' });
     }
 
+    let resolvedPath: string;
     try {
-      await validateBoundary(filePath);
+      resolvedPath = await validateBoundary(filePath);
     } catch {
       return res.status(403).json({ error: `Path outside boundary: ${filePath}` });
     }
 
-    await meshCore.undeny(filePath);
+    await meshCore.undeny(resolvedPath);
     return res.json({ success: true });
   });
 

@@ -212,6 +212,74 @@ describe('boundary module', () => {
   });
 
   // ---------------------------------------------------------------------------
+  // expandTilde
+  // ---------------------------------------------------------------------------
+  describe('expandTilde', () => {
+    const home = os.homedir();
+
+    it('expands bare ~ to home directory', () => {
+      expect(boundary.expandTilde('~')).toBe(home);
+    });
+
+    it('expands ~/ prefix to home directory', () => {
+      expect(boundary.expandTilde('~/.dork/agents')).toBe(`${home}/.dork/agents`);
+    });
+
+    it('expands ~/nested/path correctly', () => {
+      expect(boundary.expandTilde('~/a/b/c')).toBe(`${home}/a/b/c`);
+    });
+
+    it('leaves absolute paths unchanged', () => {
+      expect(boundary.expandTilde('/usr/local/bin')).toBe('/usr/local/bin');
+    });
+
+    it('leaves relative paths without tilde unchanged', () => {
+      expect(boundary.expandTilde('relative/path')).toBe('relative/path');
+    });
+
+    it('does not expand tilde in the middle of a path', () => {
+      expect(boundary.expandTilde('/some/~/path')).toBe('/some/~/path');
+    });
+
+    it('does not expand ~user syntax (only bare ~ and ~/)', () => {
+      expect(boundary.expandTilde('~otheruser/dir')).toBe('~otheruser/dir');
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // validateBoundary — tilde expansion
+  // ---------------------------------------------------------------------------
+  describe('validateBoundary — tilde expansion', () => {
+    const home = os.homedir();
+
+    beforeEach(async () => {
+      vi.mocked(fs.realpath).mockResolvedValueOnce(home);
+      await boundary.initBoundary(home);
+    });
+
+    it('resolves tilde-prefixed path to home directory before validation', async () => {
+      const expandedPath = `${home}/.dork/agents/dorkbot`;
+      vi.mocked(fs.realpath).mockResolvedValueOnce(expandedPath);
+
+      const result = await boundary.validateBoundary('~/.dork/agents/dorkbot');
+
+      expect(result).toBe(expandedPath);
+      // Should call realpath with the expanded path, not the raw tilde
+      expect(vi.mocked(fs.realpath)).toHaveBeenLastCalledWith(expandedPath);
+    });
+
+    it('resolves tilde path that does not exist yet (ENOENT fallback)', async () => {
+      const enoent = Object.assign(new Error('no such file'), { code: 'ENOENT' });
+      vi.mocked(fs.realpath).mockRejectedValueOnce(enoent);
+
+      const result = await boundary.validateBoundary('~/.dork/agents/newbot');
+
+      // path.resolve on the expanded path should keep it within boundary
+      expect(result).toBe(`${home}/.dork/agents/newbot`);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
   // isWithinBoundary
   // ---------------------------------------------------------------------------
   describe('isWithinBoundary', () => {

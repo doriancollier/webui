@@ -52,13 +52,29 @@ export function getBoundary(): string {
 }
 
 /**
+ * Expand a leading `~` or `~/` in a user-supplied path to the home directory.
+ *
+ * Node.js filesystem APIs don't expand tilde — this normalizes user-supplied
+ * paths (e.g., from config values like `~/.dork/agents`) before resolution.
+ *
+ * @param userPath - Path that may start with `~`
+ * @returns Path with tilde expanded to `os.homedir()`
+ */
+export function expandTilde(userPath: string): string {
+  if (userPath === '~') return os.homedir();
+  if (userPath.startsWith('~/')) return path.join(os.homedir(), userPath.slice(2));
+  return userPath;
+}
+
+/**
  * Validate that a path is within the directory boundary.
  *
- * Resolves symlinks before checking containment to prevent symlink-based
- * boundary escapes. For non-existent paths (ENOENT), falls back to
- * `path.resolve()` so session creation for new directories still validates.
+ * Expands leading `~` to the home directory, then resolves symlinks before
+ * checking containment to prevent symlink-based boundary escapes. For
+ * non-existent paths (ENOENT), falls back to `path.resolve()` so session
+ * creation for new directories still validates.
  *
- * @param userPath - User-supplied absolute path to validate
+ * @param userPath - User-supplied path to validate (absolute or tilde-prefixed)
  * @param boundary - Optional boundary override (defaults to initialized boundary)
  * @returns Resolved canonical path
  * @throws BoundaryError if path is outside boundary, contains null bytes, or permission is denied
@@ -71,15 +87,18 @@ export async function validateBoundary(userPath: string, boundary?: string): Pro
     throw new BoundaryError('Invalid path: null bytes not allowed', 'NULL_BYTE');
   }
 
+  // Expand leading tilde before any filesystem resolution
+  const expanded = expandTilde(userPath);
+
   // Resolve symlinks to their real target
   let resolved: string;
   try {
-    resolved = await fs.realpath(userPath);
+    resolved = await fs.realpath(expanded);
   } catch (err: unknown) {
     const code = (err as NodeJS.ErrnoException).code;
     if (code === 'ENOENT') {
       // Path doesn't exist yet (e.g., new session directory) — resolve without symlink follow
-      resolved = path.resolve(userPath);
+      resolved = path.resolve(expanded);
     } else if (code === 'EACCES') {
       throw new BoundaryError('Permission denied', 'PERMISSION_DENIED');
     } else {
