@@ -1,9 +1,8 @@
 import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/layers/shared/ui';
 import { motion } from 'motion/react';
-import { useActivityFeed } from '../model/use-activity-feed';
-import { useLastVisited } from '../model/use-last-visited';
-import { ActivityFeedGroup } from './ActivityFeedGroup';
+import { ActivityRow } from '@/layers/features/activity-feed-page';
+import { useDashboardActivity } from '../model/use-activity-feed';
 
 const staggerContainer = {
   animate: { transition: { staggerChildren: 0.03 } },
@@ -15,16 +14,15 @@ const staggerItem = {
 } as const;
 
 /**
- * Recent activity feed section — time-grouped list of session and Tasks run events.
- * Capped at 20 items. Tracks last visit via localStorage to highlight new events.
- * Shows a "View all →" link when more than 20 events exist.
+ * Recent activity feed section for the dashboard.
+ * Fetches data from the server activity API (same source as the /activity page)
+ * and renders a compact preview with time-grouped items.
  */
 export function RecentActivityFeed() {
   const navigate = useNavigate();
-  const { groups, totalCount } = useActivityFeed();
-  const lastVisitedAt = useLastVisited();
+  const { groups, isLoading } = useDashboardActivity();
 
-  if (groups.length === 0) {
+  if (!isLoading && groups.length === 0) {
     return (
       <section>
         <h2 className="text-muted-foreground mb-3 text-xs font-medium tracking-widest uppercase">
@@ -45,26 +43,29 @@ export function RecentActivityFeed() {
         <h2 className="text-muted-foreground text-xs font-medium tracking-widest uppercase">
           Recent Activity
         </h2>
-        {totalCount > 20 && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 text-xs"
-            onClick={() => navigate({ to: '/activity' })}
-          >
-            View all →
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 text-xs"
+          onClick={() => navigate({ to: '/activity' })}
+        >
+          View all →
+        </Button>
       </div>
       <motion.div variants={staggerContainer} initial="initial" animate="animate">
         {groups.map((group, idx) => (
           <motion.div key={group.label} variants={staggerItem}>
-            <ActivityFeedGroup
-              group={group}
-              lastVisitedAt={lastVisitedAt}
-              showSeparator={idx === 0}
-              isFirst={idx === 0}
-            />
+            <h3
+              className="text-muted-foreground/70 mb-1.5 text-[11px] font-medium"
+              style={idx > 0 ? { marginTop: '1rem' } : undefined}
+            >
+              {group.label}
+            </h3>
+            <div className="space-y-0.5">
+              {group.items.map((item) => (
+                <ActivityRow key={item.id} item={item} />
+              ))}
+            </div>
           </motion.div>
         ))}
       </motion.div>

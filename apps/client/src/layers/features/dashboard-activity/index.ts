@@ -1,10 +1,9 @@
 /**
- * Dashboard activity feature — time-grouped event feed with last-visit tracking.
- * Aggregates session and Tasks events into Today/Yesterday/Last 7 days groups.
+ * Dashboard activity feature — recent activity feed backed by the server API.
+ * Renders a compact preview of the full activity feed at /activity.
  *
  * @module features/dashboard-activity
  */
 export { RecentActivityFeed } from './ui/RecentActivityFeed';
-export { useActivityFeed } from './model/use-activity-feed';
-export { useLastVisited } from './model/use-last-visited';
-export type { ActivityEvent, ActivityGroup } from './model/use-activity-feed';
+export { useDashboardActivity } from './model/use-activity-feed';
+export type { DashboardActivityGroup } from './model/use-activity-feed';
