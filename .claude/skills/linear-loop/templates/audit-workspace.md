@@ -10,9 +10,11 @@ Run all checks, collect findings, present a report, then offer to fix issues.
 
 Query everything in the team:
 
-- `list_projects(team: "dorkos", includeMembers: true)` — all projects with status and lead
-- `list_issues(team: "dorkos", limit: 250)` — all issues
+- `list_projects(team: "dorkos")` — all active projects (do NOT use `includeMembers: true`, causes query complexity errors)
+- `list_issues(team: "dorkos", limit: 250, includeArchived: false)` — all active issues (exclude archived)
 - `list_issue_labels(team: "dorkos")` — all labels for validation
+
+**Important:** Always pass `includeArchived: false` when querying issues. The Linear API defaults to `includeArchived: true`, which pulls in archived issues from deleted projects — these are noise and should never appear in audit results.
 
 ### 2. Label Audit
 

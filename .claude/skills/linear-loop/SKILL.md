@@ -29,6 +29,12 @@ Read `config.json` in this skill directory for repo-specific settings:
 - `pm.autoLimit` — max actions in `/pm auto` mode
 - `pm.approvalGates` — actions requiring human approval even in auto mode
 
+## Linear Query Conventions
+
+**Always exclude archived issues.** Pass `includeArchived: false` on every `list_issues` call. The Linear API defaults to `includeArchived: true`, which pulls in archived issues from deleted projects — these are noise.
+
+**Don't use `includeMembers: true` on `list_projects`.** It causes GraphQL query complexity errors. Fetch member details separately if needed.
+
 ## Label Taxonomy
 
 Labels are team-wide. Read `conventions/labels.md` for the full reference.

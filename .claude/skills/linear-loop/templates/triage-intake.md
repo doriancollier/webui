@@ -43,7 +43,7 @@ For single-issue classifications:
 
 When the input references an existing issue:
 
-1. Search for the issue: `list_issues(team: "dorkos", query: "<key terms or DOR-NNN>")`
+1. Search for the issue: `list_issues(team: "dorkos", query: "<key terms or DOR-NNN>", includeArchived: false)`
 2. If found:
    - Add a comment to the existing issue with the feedback
    - If the feedback suggests new work, create a related `type/meta` issue

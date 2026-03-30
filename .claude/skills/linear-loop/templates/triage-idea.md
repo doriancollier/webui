@@ -23,7 +23,7 @@ This template is loaded when `/pm` needs to triage an issue in Triage state with
 
 ### 3. Duplication Check
 
-- Search existing issues: `list_issues(team: "dorkos", query: "<key terms from idea>")`
+- Search existing issues: `list_issues(team: "dorkos", query: "<key terms from idea>", includeArchived: false)`
 - If a duplicate or very similar issue exists: link as related, note in triage comment
 
 ## Decision

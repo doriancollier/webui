@@ -57,7 +57,7 @@ Read `config.json` for the ownership filter setting (`filter.ownership`).
 
 **Discover projects dynamically:**
 
-1. Call `list_projects(team: "dorkos", includeMembers: true)`
+1. Call `list_projects(team: "dorkos")` — do NOT use `includeMembers: true` (causes query complexity errors)
 2. Exclude projects in Completed or Cancelled status (they're done)
 3. Apply ownership filter:
    - `"unassigned"`: keep projects where lead is null/unassigned
@@ -82,7 +82,7 @@ Apply the same ownership filter to issues (matching on assignee):
 
 **Always check for `needs-input` responses (regardless of ownership filter):**
 
-- Call `list_issues(team: "dorkos", label: "needs-input")`
+- Call `list_issues(team: "dorkos", label: "needs-input", includeArchived: false)`
 - For each: call `list_comments` to check for human responses
 - If a comment exists after the agent's last question: queue for processing (remove `needs-input` label, set assignee to null, act on the answer)
 - If no response yet: add to "Awaiting Your Input" dashboard section
