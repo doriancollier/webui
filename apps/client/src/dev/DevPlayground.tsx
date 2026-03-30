@@ -24,7 +24,7 @@ import {
   Separator,
 } from '@/layers/shared/ui';
 import { TransportProvider, useTheme } from '@/layers/shared/model';
-import { LayoutDashboard, Sun, Monitor, Moon, Search } from 'lucide-react';
+import { ChevronLeft, LayoutDashboard, Sun, Monitor, Moon, Search } from 'lucide-react';
 import { createPlaygroundTransport } from './playground-transport';
 import { ChatPage } from './pages/ChatPage';
 import { FeaturesPage } from './pages/FeaturesPage';
@@ -37,6 +37,8 @@ import { CommandPalettePage } from './pages/CommandPalettePage';
 import { SimulatorPage } from './pages/SimulatorPage';
 import { TopologyPage } from './pages/TopologyPage';
 import { ErrorStatesPage } from './pages/ErrorStatesPage';
+import { FilterBarPage } from './pages/FilterBarPage';
+import { OnboardingPage } from './pages/OnboardingPage';
 import { PlaygroundSearch } from './PlaygroundSearch';
 import { DESIGN_SYSTEM_NAV, FEATURES_NAV, getPageFromPath } from './playground-config';
 import type { Page, PlaygroundSection } from './playground-registry';
@@ -79,7 +81,9 @@ const PAGE_COMPONENTS: Record<string, React.ComponentType<PlaygroundPageProps>> 
   promos: PromosPage,
   'command-palette': CommandPalettePage,
   simulator: SimulatorPage,
+  'filter-bar': FilterBarPage,
   'error-states': ErrorStatesPage,
+  onboarding: OnboardingPage,
 };
 
 /**
@@ -189,8 +193,23 @@ function DevPlaygroundShell() {
       <div className="bg-background text-foreground h-dvh">
         <SidebarProvider defaultOpen className="h-full min-h-0">
           <Sidebar variant="inset">
-            <SidebarHeader>
-              <h2 className="px-2 text-sm font-semibold">DorkOS Dev</h2>
+            <SidebarHeader className="border-b p-3">
+              <div className="flex items-center gap-2 py-1">
+                <SidebarMenuButton
+                  data-slot="app-link"
+                  type="button"
+                  size="sm"
+                  tooltip="Back to app"
+                  aria-label="Back to app"
+                  onClick={() => {
+                    window.location.href = '/';
+                  }}
+                  className="text-muted-foreground hover:bg-accent hover:text-foreground h-7! w-7! shrink-0 justify-center p-0 transition-all duration-100 active:scale-[0.98]"
+                >
+                  <ChevronLeft className="size-(--size-icon-sm)" />
+                </SidebarMenuButton>
+                <h2 className="text-sm font-semibold">DorkOS Dev</h2>
+              </div>
             </SidebarHeader>
             <SidebarContent>
               <SidebarGroup>

@@ -1,6 +1,7 @@
 import { Copy, Check } from 'lucide-react';
 import { slugify } from './lib/slugify';
 import { useCopy } from './lib/use-copy';
+import { ShowcaseErrorBoundary } from './ShowcaseErrorBoundary';
 
 interface PlaygroundSectionProps {
   title: string;
@@ -34,7 +35,9 @@ export function PlaygroundSection({ title, description, children }: PlaygroundSe
         </button>
       </h2>
       {description && <p className="text-muted-foreground mb-4 text-sm">{description}</p>}
-      <div className="space-y-6">{children}</div>
+      <ShowcaseErrorBoundary name={title}>
+        <div className="space-y-6">{children}</div>
+      </ShowcaseErrorBoundary>
     </section>
   );
 }

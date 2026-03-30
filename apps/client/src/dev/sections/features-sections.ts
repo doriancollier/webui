@@ -3,7 +3,7 @@ import type { PlaygroundSection } from '../playground-registry';
 /**
  * Feature component sections from FeaturesPage.
  *
- * Sources: AgentIdentityShowcases, RelayShowcases, MeshShowcases, TasksShowcases, OnboardingShowcases, PromoShowcases.
+ * Sources: AgentIdentityShowcases, RelayShowcases, MeshShowcases, TasksShowcases.
  */
 export const FEATURES_SECTIONS: PlaygroundSection[] = [
   // AgentIdentityShowcases
@@ -129,20 +129,5 @@ export const FEATURES_SECTIONS: PlaygroundSection[] = [
     page: 'features',
     category: 'Tasks',
     keywords: ['preset', 'card', 'schedule', 'toggle', 'selectable', 'cron', 'tasks'],
-  },
-  // OnboardingShowcases
-  {
-    id: 'welcomestep',
-    title: 'WelcomeStep',
-    page: 'features',
-    category: 'Onboarding',
-    keywords: ['welcome', 'step', 'onboarding', 'get started', 'skip', 'animation'],
-  },
-  {
-    id: 'discoverycelebration',
-    title: 'DiscoveryCelebration',
-    page: 'features',
-    category: 'Onboarding',
-    keywords: ['discovery', 'celebration', 'candidate', 'animation', 'beat', 'onboarding'],
   },
 ];

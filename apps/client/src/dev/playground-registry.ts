@@ -11,7 +11,8 @@ export type Page =
   | 'simulator'
   | 'topology'
   | 'filter-bar'
-  | 'error-states';
+  | 'error-states'
+  | 'onboarding';
 
 /** A single searchable/navigable section in the playground. */
 export interface PlaygroundSection {
@@ -38,6 +39,7 @@ export { SIMULATOR_SECTIONS } from './sections/simulator-sections';
 export { TOPOLOGY_SECTIONS } from './sections/topology-sections';
 export { FILTER_BAR_SECTIONS } from './sections/filter-bar-sections';
 export { ERROR_STATES_SECTIONS } from './sections/error-states-sections';
+export { ONBOARDING_SECTIONS } from './sections/onboarding-sections';
 
 // Imported under aliases to compose the full registry without circular re-export issues.
 import { TOKENS_SECTIONS as tokens } from './sections/tokens-sections';
@@ -51,6 +53,7 @@ import { SIMULATOR_SECTIONS as simulator } from './sections/simulator-sections';
 import { TOPOLOGY_SECTIONS as topology } from './sections/topology-sections';
 import { FILTER_BAR_SECTIONS as filterBar } from './sections/filter-bar-sections';
 import { ERROR_STATES_SECTIONS as errorStates } from './sections/error-states-sections';
+import { ONBOARDING_SECTIONS as onboarding } from './sections/onboarding-sections';
 
 /**
  * Full playground registry combining all page-level section arrays.
@@ -69,4 +72,5 @@ export const PLAYGROUND_REGISTRY: PlaygroundSection[] = [
   ...topology,
   ...filterBar,
   ...errorStates,
+  ...onboarding,
 ];

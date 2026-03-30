@@ -10,6 +10,7 @@ import {
   Network,
   Filter,
   AlertTriangle,
+  Sparkles,
 } from 'lucide-react';
 import type { PlaygroundSection } from './playground-registry';
 import {
@@ -24,6 +25,7 @@ import {
   TOPOLOGY_SECTIONS,
   FILTER_BAR_SECTIONS,
   ERROR_STATES_SECTIONS,
+  ONBOARDING_SECTIONS,
 } from './playground-registry';
 
 /** Navigation group a page belongs to in the sidebar. */
@@ -99,7 +101,7 @@ export const PAGE_CONFIGS: PageConfig[] = [
   {
     id: 'features',
     label: 'Features',
-    description: 'Domain-specific components from Relay, Mesh, Tasks, and Onboarding features.',
+    description: 'Domain-specific components from Relay, Mesh, and Tasks features.',
     icon: Blocks,
     group: 'features',
     sections: FEATURES_SECTIONS,
@@ -160,6 +162,16 @@ export const PAGE_CONFIGS: PageConfig[] = [
     group: 'features',
     sections: ERROR_STATES_SECTIONS,
     path: 'error-states',
+  },
+  {
+    id: 'onboarding',
+    label: 'Onboarding',
+    description:
+      'Full interactive onboarding flow, individual step previews, and supporting components.',
+    icon: Sparkles,
+    group: 'features',
+    sections: ONBOARDING_SECTIONS,
+    path: 'onboarding',
   },
 ];
 

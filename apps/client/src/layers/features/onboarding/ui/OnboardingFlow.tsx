@@ -114,7 +114,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
   // Show the completion screen
   if (showComplete) {
     return (
-      <div className="bg-background fixed inset-0 z-50 flex items-center justify-center">
+      <div className="bg-background flex h-full w-full items-center justify-center">
         <OnboardingComplete onComplete={navigateToDefaultAgent} />
       </div>
     );
@@ -123,7 +123,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
   // Welcome screen (step -1)
   if (currentStep === -1) {
     return (
-      <div className="bg-background fixed inset-0 z-50 flex items-center justify-center">
+      <div className="bg-background flex h-full w-full items-center justify-center">
         <WelcomeStep onGetStarted={handleWelcomeStart} onSkip={handleSkipAll} />
       </div>
     );
@@ -153,7 +153,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
       };
 
   return (
-    <div className="bg-background fixed inset-0 z-50 flex flex-col">
+    <div className="bg-background flex h-full w-full flex-col">
       {/* Unified navigation bar — Back, step dots, Skip/Skip all */}
       <div className="flex items-center justify-between px-4 py-3 sm:px-6">
         <Button variant="ghost" size="sm" onClick={goBack} className="min-w-16">
