@@ -124,6 +124,8 @@ Sessions derive entirely from SDK JSONL files (`~/.claude/projects/{slug}/*.json
 
 `.dork/agent.json` on disk (source of truth) + SQLite `agents` table (derived cache). **File-first write-through** — write disk, then update DB. Reconciler syncs file to DB every 5 minutes.
 
+**DorkBot** is the system agent — auto-created at `~/.dork/agents/dorkbot/` on server startup via `ensureDorkBot()` (`services/mesh/ensure-dorkbot.ts`). It serves as the user's guide to DorkOS and handles background jobs (Tasks, summaries). System agents (`isSystem: true`) cannot be renamed, deleted, or unregistered. This is enforced at HTTP routes, MCP tools, and the client UI.
+
 ### Client (`apps/client/src/`)
 
 React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, neutral gray). Uses **Feature-Sliced Design (FSD)** with strict unidirectional layer imports.
