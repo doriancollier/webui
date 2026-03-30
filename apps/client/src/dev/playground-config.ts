@@ -29,7 +29,7 @@ import {
 } from './playground-registry';
 
 /** Navigation group a page belongs to in the sidebar. */
-export type PageGroup = 'design-system' | 'features';
+export type PageGroup = 'design-system' | 'session' | 'agents' | 'app-shell';
 
 /** Centralized metadata for a single playground page. */
 export interface PageConfig {
@@ -87,23 +87,33 @@ export const PAGE_CONFIGS: PageConfig[] = [
     sections: COMPONENTS_SECTIONS,
     path: 'components',
   },
-  // ── Features ──
+  // ── Session ──
   {
     id: 'chat',
-    label: 'Chat',
+    label: 'Chat Components',
     description:
       'Visual testing gallery for chat UI — messages, tool calls, input, status indicators, and misc.',
     icon: MessageSquare,
-    group: 'features',
+    group: 'session',
     sections: CHAT_SECTIONS,
     path: 'chat',
   },
   {
+    id: 'simulator',
+    label: 'Simulator',
+    description: 'Chat message streaming simulator with scripted playback scenarios.',
+    icon: Play,
+    group: 'session',
+    sections: SIMULATOR_SECTIONS,
+    path: 'simulator',
+  },
+  // ── Agents ──
+  {
     id: 'features',
-    label: 'Features',
+    label: 'Subsystems',
     description: 'Domain-specific components from Relay, Mesh, and Tasks features.',
     icon: Blocks,
-    group: 'features',
+    group: 'agents',
     sections: FEATURES_SECTIONS,
     path: 'features',
   },
@@ -113,36 +123,19 @@ export const PAGE_CONFIGS: PageConfig[] = [
     description:
       'React Flow custom nodes, edges, and chrome used in the agent mesh topology graph.',
     icon: Network,
-    group: 'features',
+    group: 'agents',
     sections: TOPOLOGY_SECTIONS,
     path: 'topology',
   },
-  {
-    id: 'promos',
-    label: 'Feature Promos',
-    description: 'Promo registry, slot previews, override controls, and dialog previews.',
-    icon: Megaphone,
-    group: 'features',
-    sections: PROMOS_SECTIONS,
-    path: 'promos',
-  },
+  // ── App Shell ──
   {
     id: 'command-palette',
     label: 'Command Palette',
     description: 'Agent items, search highlighting, sub-menus, keyboard hints, and edge cases.',
     icon: Terminal,
-    group: 'features',
+    group: 'app-shell',
     sections: COMMAND_PALETTE_SECTIONS,
     path: 'command-palette',
-  },
-  {
-    id: 'simulator',
-    label: 'Simulator',
-    description: 'Chat message streaming simulator with scripted playback scenarios.',
-    icon: Play,
-    group: 'features',
-    sections: SIMULATOR_SECTIONS,
-    path: 'simulator',
   },
   {
     id: 'filter-bar',
@@ -150,18 +143,9 @@ export const PAGE_CONFIGS: PageConfig[] = [
     description:
       'Composable filter system with text search, enum, date range, sort, and responsive active filters.',
     icon: Filter,
-    group: 'features',
+    group: 'app-shell',
     sections: FILTER_BAR_SECTIONS,
     path: 'filter-bar',
-  },
-  {
-    id: 'error-states',
-    label: 'Error States',
-    description: 'Error boundaries, 404 pages, crash fallbacks, and toast notifications.',
-    icon: AlertTriangle,
-    group: 'features',
-    sections: ERROR_STATES_SECTIONS,
-    path: 'error-states',
   },
   {
     id: 'onboarding',
@@ -169,9 +153,27 @@ export const PAGE_CONFIGS: PageConfig[] = [
     description:
       'Full interactive onboarding flow, individual step previews, and supporting components.',
     icon: Sparkles,
-    group: 'features',
+    group: 'app-shell',
     sections: ONBOARDING_SECTIONS,
     path: 'onboarding',
+  },
+  {
+    id: 'error-states',
+    label: 'Error States',
+    description: 'Error boundaries, 404 pages, crash fallbacks, and toast notifications.',
+    icon: AlertTriangle,
+    group: 'app-shell',
+    sections: ERROR_STATES_SECTIONS,
+    path: 'error-states',
+  },
+  {
+    id: 'promos',
+    label: 'Feature Promos',
+    description: 'Promo registry, slot previews, override controls, and dialog previews.',
+    icon: Megaphone,
+    group: 'app-shell',
+    sections: PROMOS_SECTIONS,
+    path: 'promos',
   },
 ];
 
@@ -188,8 +190,14 @@ export const PAGE_ORDER: string[] = PAGE_CONFIGS.map((c) => c.id);
 /** Pages in the "Design System" sidebar group. */
 export const DESIGN_SYSTEM_NAV = PAGE_CONFIGS.filter((c) => c.group === 'design-system');
 
-/** Pages in the "Features" sidebar group. */
-export const FEATURES_NAV = PAGE_CONFIGS.filter((c) => c.group === 'features');
+/** Pages in the "Session" sidebar group. */
+export const SESSION_NAV = PAGE_CONFIGS.filter((c) => c.group === 'session');
+
+/** Pages in the "Agents" sidebar group. */
+export const AGENTS_NAV = PAGE_CONFIGS.filter((c) => c.group === 'agents');
+
+/** Pages in the "App Shell" sidebar group. */
+export const APP_SHELL_NAV = PAGE_CONFIGS.filter((c) => c.group === 'app-shell');
 
 /**
  * Resolve the current page from the URL pathname.

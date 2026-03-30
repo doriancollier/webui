@@ -40,7 +40,13 @@ import { ErrorStatesPage } from './pages/ErrorStatesPage';
 import { FilterBarPage } from './pages/FilterBarPage';
 import { OnboardingPage } from './pages/OnboardingPage';
 import { PlaygroundSearch } from './PlaygroundSearch';
-import { DESIGN_SYSTEM_NAV, FEATURES_NAV, getPageFromPath } from './playground-config';
+import {
+  DESIGN_SYSTEM_NAV,
+  SESSION_NAV,
+  AGENTS_NAV,
+  APP_SHELL_NAV,
+  getPageFromPath,
+} from './playground-config';
 import type { Page, PlaygroundSection } from './playground-registry';
 
 const queryClient = new QueryClient({
@@ -242,9 +248,41 @@ function DevPlaygroundShell() {
                 </SidebarMenu>
               </SidebarGroup>
               <SidebarGroup>
-                <SidebarGroupLabel>Features</SidebarGroupLabel>
+                <SidebarGroupLabel>Session</SidebarGroupLabel>
                 <SidebarMenu>
-                  {FEATURES_NAV.map((item) => (
+                  {SESSION_NAV.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        isActive={page === item.id}
+                        onClick={() => navigateTo(item.id as Page)}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+              <SidebarGroup>
+                <SidebarGroupLabel>Agents</SidebarGroupLabel>
+                <SidebarMenu>
+                  {AGENTS_NAV.map((item) => (
+                    <SidebarMenuItem key={item.id}>
+                      <SidebarMenuButton
+                        isActive={page === item.id}
+                        onClick={() => navigateTo(item.id as Page)}
+                      >
+                        <item.icon className="size-4" />
+                        {item.label}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+              <SidebarGroup>
+                <SidebarGroupLabel>App Shell</SidebarGroupLabel>
+                <SidebarMenu>
+                  {APP_SHELL_NAV.map((item) => (
                     <SidebarMenuItem key={item.id}>
                       <SidebarMenuButton
                         isActive={page === item.id}

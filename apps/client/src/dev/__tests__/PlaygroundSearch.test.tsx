@@ -70,7 +70,7 @@ describe('PlaygroundSearch', () => {
     renderSearch();
     expect(screen.getByText('Design Tokens')).toBeInTheDocument();
     expect(screen.getByText('Components')).toBeInTheDocument();
-    expect(screen.getByText('Chat')).toBeInTheDocument();
+    expect(screen.getByText('Chat Components')).toBeInTheDocument();
   });
 
   it('renders sections from the tokens page', () => {
