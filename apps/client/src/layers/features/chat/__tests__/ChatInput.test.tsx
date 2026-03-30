@@ -33,7 +33,7 @@ describe('ChatInput', () => {
 
   it('renders textarea with placeholder', () => {
     render(<ChatInput {...defaultProps} />);
-    expect(screen.getByPlaceholderText(/Message Claude/)).toBeDefined();
+    expect(screen.getByPlaceholderText(/Send a message/)).toBeDefined();
   });
 
   it('renders custom placeholder when provided', () => {
@@ -43,7 +43,7 @@ describe('ChatInput', () => {
 
   it('uses default placeholder when not provided', () => {
     render(<ChatInput {...defaultProps} />);
-    expect(screen.getByPlaceholderText('Message Claude...')).toBeDefined();
+    expect(screen.getByPlaceholderText('Send a message...')).toBeDefined();
   });
 
   it('calls onChange when typing', () => {

@@ -15,7 +15,7 @@ export class ChatPage {
   constructor(page: Page) {
     this.page = page;
     this.basePage = new BasePage(page);
-    this.input = page.getByRole('combobox', { name: /message claude/i });
+    this.input = page.getByRole('combobox', { name: /^(message |send a message)/i });
     this.sendButton = page.getByRole('button', { name: /send message/i });
     this.messageList = page.locator('[data-testid="message-list"]');
     this.panel = page.locator('[data-testid="chat-panel"]');

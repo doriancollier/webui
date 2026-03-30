@@ -129,15 +129,17 @@ export function ChatInputContainer({
   const mode = activeInteraction ? 'interactive' : 'normal';
   const isStreaming = status === 'streaming';
   const isIdle = !isStreaming && editingIndex === null;
-  const rotatingPlaceholder = useRotatingPlaceholder({
-    defaultText: 'Message Claude...',
-    hints: placeholderHints,
-    enabled: isIdle && input === '',
-  });
   const isTextStreaming = useAppStore((s) => s.isTextStreaming);
   const [selectedCwd] = useDirectoryState();
   const { data: currentAgent } = useCurrentAgent(selectedCwd);
   const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
+  const agentName = currentAgent?.name;
+  const defaultPlaceholder = agentName ? `Message ${agentName}...` : 'Send a message...';
+  const rotatingPlaceholder = useRotatingPlaceholder({
+    defaultText: defaultPlaceholder,
+    hints: placeholderHints,
+    enabled: isIdle && input === '',
+  });
 
   // Preserve draft text when switching to interactive mode
   const interactiveDraftRef = useRef('');
@@ -328,7 +330,7 @@ export function ChatInputContainer({
                 if (isStreaming && queue.length > 0)
                   return `Compose another \u2014 ${queue.length} queued`;
                 if (isStreaming) return 'Compose next \u2014 will send when ready';
-                return 'Message Claude...';
+                return defaultPlaceholder;
               })()}
               placeholderOverlay={
                 isIdle ? (

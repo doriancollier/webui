@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Use dynamic agent name in chat input placeholder
 - Improve dev playground overview card layout
 - Expand tilde paths in boundary validation and add startup diagnostics
 - Cast spawn proc through EventEmitter to fix CI type resolution
