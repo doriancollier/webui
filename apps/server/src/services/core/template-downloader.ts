@@ -8,6 +8,7 @@
  * @module services/core/template-downloader
  */
 import { spawn, execSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { rm } from 'node:fs/promises';
 import path from 'node:path';
 import { logger } from '../../lib/logger.js';
@@ -192,9 +193,12 @@ export async function execGitClone(
       }
     });
 
-    proc.on('error', (err: Error) => reject(err));
+    // Cast needed: multiple @types/node versions in the monorepo cause
+    // ChildProcessByStdio to lose .on() overloads under pnpm strict hoisting
+    const procEvents = proc as unknown as EventEmitter;
+    procEvents.on('error', (err: Error) => reject(err));
 
-    proc.on('close', async (code: number | null) => {
+    procEvents.on('close', async (code: number | null) => {
       if (code !== 0) {
         reject(new Error(`git clone exited with code ${code}: ${redactAuthTokens(stderr)}`));
         return;
