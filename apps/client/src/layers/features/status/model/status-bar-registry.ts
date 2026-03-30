@@ -9,7 +9,6 @@ import {
   Volume2,
   RefreshCw,
   ArrowUpDown,
-  Globe,
 } from 'lucide-react';
 import { useAppStore } from '@/layers/shared/model';
 
@@ -23,11 +22,10 @@ export type StatusBarItemKey =
   | 'permission'
   | 'sound'
   | 'sync'
-  | 'polling'
-  | 'tunnel';
+  | 'polling';
 
 /** Grouping categories for the configure popover section headers. */
-export type StatusBarItemGroup = 'session' | 'controls' | 'system';
+export type StatusBarItemGroup = 'session' | 'controls';
 
 export interface StatusBarItemConfig {
   /** Unique key matching the Zustand store property suffix (e.g., 'cwd' -> showStatusBarCwd). */
@@ -48,7 +46,6 @@ export interface StatusBarItemConfig {
 export const GROUP_LABELS: Record<StatusBarItemGroup, string> = {
   session: 'Session Info',
   controls: 'Controls',
-  system: 'System',
 };
 
 /**
@@ -128,14 +125,6 @@ export const STATUS_BAR_REGISTRY: readonly StatusBarItemConfig[] = [
     icon: RefreshCw,
     defaultVisible: true,
   },
-  {
-    key: 'tunnel',
-    label: 'Remote',
-    description: 'Remote control indicator',
-    group: 'system',
-    icon: Globe,
-    defaultVisible: true,
-  },
 ] as const;
 
 /**
@@ -180,7 +169,7 @@ export function getGroupedRegistryItems(): {
   label: string;
   items: StatusBarItemConfig[];
 }[] {
-  const groups: StatusBarItemGroup[] = ['session', 'controls', 'system'];
+  const groups: StatusBarItemGroup[] = ['session', 'controls'];
   return groups
     .map((group) => ({
       group,

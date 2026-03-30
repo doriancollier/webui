@@ -38,7 +38,6 @@ beforeEach(() => {
     showStatusBarSound: true,
     showStatusBarSync: true,
     showStatusBarPolling: true,
-    showStatusBarTunnel: true,
     showTimestamps: false,
   });
 });

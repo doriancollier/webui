@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { AnimatePresence } from 'motion/react';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor, Globe } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { DorkLogo } from '@dorkos/icons/logos';
 import {
@@ -10,7 +10,9 @@ import {
   useTransport,
   type Theme,
 } from '@/layers/shared/model';
-import { cn } from '@/layers/shared/lib';
+import { cn, getPlatform } from '@/layers/shared/lib';
+import { useTunnelStatus } from '@/layers/entities/tunnel';
+import { TunnelDialog } from '@/layers/features/settings';
 import { isNewer, isFeatureUpdate } from '@/layers/features/status';
 import { SidebarUpgradeCard } from './SidebarUpgradeCard';
 
@@ -34,6 +36,8 @@ export function SidebarFooterBar() {
   const ThemeIcon = THEME_ICONS[theme];
   const transport = useTransport();
   const queryClient = useQueryClient();
+  const [tunnelDialogOpen, setTunnelDialogOpen] = useState(false);
+  const { data: liveStatus } = useTunnelStatus();
 
   const footerButtons = useSlotContributions('sidebar.footer');
   const filteredButtons = useMemo(
@@ -102,6 +106,31 @@ export function SidebarFooterBar() {
           <DorkLogo variant="current" size={60} />
         </a>
         <div className="ml-auto flex items-center gap-0.5">
+          {serverConfig?.tunnel && !getPlatform().isEmbedded && (
+            <>
+              <button
+                onClick={() => setTunnelDialogOpen(true)}
+                className={cn(
+                  'relative rounded-md p-1 transition-colors duration-150',
+                  'text-muted-foreground/50 hover:text-muted-foreground'
+                )}
+                aria-label={
+                  (liveStatus ?? serverConfig.tunnel).connected
+                    ? `Remote connected: ${new URL((liveStatus ?? serverConfig.tunnel).url!).hostname}`
+                    : 'Remote disconnected'
+                }
+              >
+                <Globe className="size-(--size-icon-sm)" />
+                <span
+                  className={cn(
+                    'absolute top-0.5 right-0.5 size-1.5 rounded-full transition-colors duration-300',
+                    (liveStatus ?? serverConfig.tunnel).connected ? 'bg-green-500' : 'bg-gray-400'
+                  )}
+                />
+              </button>
+              <TunnelDialog open={tunnelDialogOpen} onOpenChange={setTunnelDialogOpen} />
+            </>
+          )}
           {filteredButtons.map((button) => {
             // Theme button needs dynamic icon based on current theme
             const Icon = button.id === 'theme' ? ThemeIcon : button.icon;

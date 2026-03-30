@@ -57,8 +57,6 @@ export interface PreferencesSlice {
   setEnableTasksNotifications: (v: boolean) => void;
   showStatusBarSound: boolean;
   setShowStatusBarSound: (v: boolean) => void;
-  showStatusBarTunnel: boolean;
-  setShowStatusBarTunnel: (v: boolean) => void;
   showStatusBarSync: boolean;
   setShowStatusBarSync: (v: boolean) => void;
   showStatusBarPolling: boolean;
@@ -174,11 +172,6 @@ export const createPreferencesSlice: StateCreator<
   setShowStatusBarSound: (v) => {
     writeBool(BOOL_KEYS.showStatusBarSound, v);
     set({ showStatusBarSound: v });
-  },
-  showStatusBarTunnel: readBool(BOOL_KEYS.showStatusBarTunnel, BOOL_DEFAULTS.showStatusBarTunnel),
-  setShowStatusBarTunnel: (v) => {
-    writeBool(BOOL_KEYS.showStatusBarTunnel, v);
-    set({ showStatusBarTunnel: v });
   },
   showStatusBarSync: readBool(BOOL_KEYS.showStatusBarSync, BOOL_DEFAULTS.showStatusBarSync),
   setShowStatusBarSync: (v) => {

@@ -13,7 +13,6 @@ export { ContextItem } from './ui/ContextItem';
 export { NotificationSoundItem } from './ui/NotificationSoundItem';
 export { SyncItem } from './ui/SyncItem';
 export { PollingItem } from './ui/PollingItem';
-export { TunnelItem } from './ui/TunnelItem';
 export { ClientsItem } from './ui/ClientsItem';
 export { ConnectionItem } from './ui/ConnectionItem';
 export { SubagentsItem } from './ui/SubagentsItem';

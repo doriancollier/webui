@@ -49,7 +49,6 @@ const mockSetters: Record<string, ReturnType<typeof vi.fn>> = {
   setShowStatusBarSound: vi.fn(),
   setShowStatusBarSync: vi.fn(),
   setShowStatusBarPolling: vi.fn(),
-  setShowStatusBarTunnel: vi.fn(),
 };
 
 vi.mock('@/layers/shared/model/app-store', () => ({
@@ -65,7 +64,6 @@ vi.mock('@/layers/shared/model/app-store', () => ({
       showStatusBarSound: true,
       showStatusBarSync: true,
       showStatusBarPolling: true,
-      showStatusBarTunnel: false,
       enableNotificationSound: false,
       setEnableNotificationSound: vi.fn(),
       enableCrossClientSync: false,
@@ -154,7 +152,6 @@ vi.mock('@/layers/features/status', async (importOriginal) => {
     NotificationSoundItem: () => <span data-testid="sound-item">sound</span>,
     SyncItem: () => <span data-testid="sync-item">sync</span>,
     PollingItem: () => <span data-testid="polling-item">polling</span>,
-    TunnelItem: () => <span data-testid="tunnel-item">tunnel</span>,
     ConnectionItem: () => <span data-testid="connection-item">connection</span>,
     ClientsItem: () => <span data-testid="clients-item">clients</span>,
     StatusBarConfigurePopover: ({

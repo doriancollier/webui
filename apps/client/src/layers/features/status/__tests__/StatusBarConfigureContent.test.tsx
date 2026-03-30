@@ -66,7 +66,6 @@ beforeEach(() => {
     showStatusBarSound: true,
     showStatusBarSync: true,
     showStatusBarPolling: true,
-    showStatusBarTunnel: true,
   });
 });
 
@@ -76,14 +75,14 @@ afterEach(() => {
 });
 
 describe('StatusBarConfigureContent', () => {
-  it('renders all 11 registry item labels', () => {
+  it('renders all registry item labels', () => {
     render(<StatusBarConfigureContent />);
     for (const item of STATUS_BAR_REGISTRY) {
       expect(screen.getByText(item.label)).toBeInTheDocument();
     }
   });
 
-  it('renders all 11 item descriptions', () => {
+  it('renders all item descriptions', () => {
     render(<StatusBarConfigureContent />);
     for (const item of STATUS_BAR_REGISTRY) {
       expect(screen.getByText(item.description)).toBeInTheDocument();
@@ -96,18 +95,10 @@ describe('StatusBarConfigureContent', () => {
     expect(switches).toHaveLength(STATUS_BAR_REGISTRY.length);
   });
 
-  it('renders the three group headers: Session Info, Controls, System', () => {
+  it('renders the two group headers: Session Info, Controls', () => {
     render(<StatusBarConfigureContent />);
     expect(screen.getByText('Session Info')).toBeInTheDocument();
     expect(screen.getByText('Controls')).toBeInTheDocument();
-    expect(screen.getByText('System')).toBeInTheDocument();
-  });
-
-  it('renders group section headers', () => {
-    render(<StatusBarConfigureContent />);
-    expect(screen.getByText('Session Info')).toBeInTheDocument();
-    expect(screen.getByText('Controls')).toBeInTheDocument();
-    expect(screen.getByText('System')).toBeInTheDocument();
   });
 
   it('renders a "Reset to defaults" button', () => {

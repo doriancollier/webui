@@ -142,8 +142,6 @@ vi.mock('@/layers/shared/model/app-store', () => ({
       setShowStatusBarSync: vi.fn(),
       showStatusBarPolling: false,
       setShowStatusBarPolling: vi.fn(),
-      showStatusBarTunnel: false,
-      setShowStatusBarTunnel: vi.fn(),
       enableNotificationSound: false,
       setEnableNotificationSound: vi.fn(),
       enableCrossClientSync: false,
@@ -186,7 +184,6 @@ vi.mock('@/layers/features/status', () => ({
   NotificationSoundItem: vi.fn(() => null),
   SyncItem: vi.fn(() => null),
   PollingItem: vi.fn(() => null),
-  TunnelItem: vi.fn(() => null),
   ConnectionItem: vi.fn(() => null),
   ClientsItem: vi.fn(() => null),
   StatusBarConfigurePopover: vi.fn(({ children }: { children: React.ReactNode }) => (

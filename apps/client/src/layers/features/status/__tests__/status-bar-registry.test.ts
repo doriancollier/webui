@@ -38,7 +38,6 @@ beforeEach(() => {
     showStatusBarSound: true,
     showStatusBarSync: true,
     showStatusBarPolling: true,
-    showStatusBarTunnel: true,
     showTimestamps: false,
   });
 });
@@ -48,8 +47,8 @@ afterEach(() => {
 });
 
 describe('STATUS_BAR_REGISTRY', () => {
-  it('contains exactly 10 items', () => {
-    expect(STATUS_BAR_REGISTRY).toHaveLength(10);
+  it('contains exactly 9 items', () => {
+    expect(STATUS_BAR_REGISTRY).toHaveLength(9);
   });
 
   it('has unique keys', () => {
@@ -70,7 +69,6 @@ describe('STATUS_BAR_REGISTRY', () => {
       'sound',
       'sync',
       'polling',
-      'tunnel',
     ]);
   });
 
@@ -78,7 +76,7 @@ describe('STATUS_BAR_REGISTRY', () => {
     for (const item of STATUS_BAR_REGISTRY) {
       expect(item.label).toBeTruthy();
       expect(item.description).toBeTruthy();
-      expect(['session', 'controls', 'system']).toContain(item.group);
+      expect(['session', 'controls']).toContain(item.group);
       expect(item.icon).toBeDefined();
       expect(typeof item.defaultVisible).toBe('boolean');
     }
@@ -104,16 +102,15 @@ describe('STATUS_BAR_REGISTRY', () => {
 });
 
 describe('getGroupedRegistryItems', () => {
-  it('returns exactly 3 groups', () => {
+  it('returns exactly 2 groups', () => {
     const groups = getGroupedRegistryItems();
-    expect(groups).toHaveLength(3);
+    expect(groups).toHaveLength(2);
   });
 
-  it('returns groups in order: session, controls, system', () => {
+  it('returns groups in order: session, controls', () => {
     const groups = getGroupedRegistryItems();
     expect(groups[0].group).toBe('session');
     expect(groups[1].group).toBe('controls');
-    expect(groups[2].group).toBe('system');
   });
 
   it('session group has 5 items', () => {
@@ -128,17 +125,10 @@ describe('getGroupedRegistryItems', () => {
     expect(controlsGroup?.items).toHaveLength(4);
   });
 
-  it('system group has 2 items', () => {
-    const groups = getGroupedRegistryItems();
-    const systemGroup = groups.find((g) => g.group === 'system');
-    expect(systemGroup?.items).toHaveLength(1);
-  });
-
   it('includes correct group labels', () => {
     const groups = getGroupedRegistryItems();
     expect(groups[0].label).toBe('Session Info');
     expect(groups[1].label).toBe('Controls');
-    expect(groups[2].label).toBe('System');
   });
 });
 
@@ -153,11 +143,10 @@ describe('resetStatusBarPreferences', () => {
     expect(useAppStore.getState().showStatusBarCwd).toBe(true);
   });
 
-  it('resets all 11 status bar booleans to their defaultVisible values', () => {
+  it('resets all status bar booleans to their defaultVisible values', () => {
     // Turn off several items
     useAppStore.getState().setShowStatusBarGit(false);
     useAppStore.getState().setShowStatusBarModel(false);
-    useAppStore.getState().setShowStatusBarTunnel(false);
 
     resetStatusBarPreferences();
 
