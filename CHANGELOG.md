@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Remove unnecessary ChildProcess cast that fails in CI Node 20
 ---
 
 ## [0.28.0] - 2026-03-30
