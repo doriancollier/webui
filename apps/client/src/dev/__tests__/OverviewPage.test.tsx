@@ -31,15 +31,10 @@ describe('OverviewPage', () => {
     }
   });
 
-  it('displays the correct section count for each page', () => {
+  it('renders the correct number of cards', () => {
     render(<OverviewPage onNavigate={onNavigate} />);
     const cards = screen.getAllByRole('button');
     expect(cards).toHaveLength(PAGE_CONFIGS.length);
-    for (let i = 0; i < PAGE_CONFIGS.length; i++) {
-      expect(
-        within(cards[i]).getByText(`${PAGE_CONFIGS[i].sections.length} sections`)
-      ).toBeInTheDocument();
-    }
   });
 
   it('calls onNavigate with the correct page ID when a card is clicked', () => {

@@ -17,8 +17,8 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
         </p>
       </header>
 
-      <main className="mx-auto max-w-4xl p-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <main className="p-6">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {PAGE_CONFIGS.map((config) => {
             const Icon = config.icon;
             return (
@@ -26,23 +26,17 @@ export function OverviewPage({ onNavigate }: OverviewPageProps) {
                 key={config.id}
                 type="button"
                 onClick={() => onNavigate(config.id as Page)}
-                className="bg-card border-border hover:bg-accent focus-visible:ring-ring group flex flex-col gap-4 rounded-xl border p-6 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="bg-card border-border hover:bg-accent focus-visible:ring-ring group flex items-start gap-3 rounded-xl border p-4 text-left transition-colors focus-visible:ring-2 focus-visible:outline-none"
               >
-                <div className="bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex size-10 items-center justify-center rounded-lg transition-colors">
-                  <Icon className="size-5" />
+                <div className="bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary flex size-9 shrink-0 items-center justify-center rounded-lg transition-colors">
+                  <Icon className="size-4" />
                 </div>
 
-                <div className="space-y-1">
-                  <h2 className="text-foreground text-base font-semibold">{config.label}</h2>
-                  <p className="text-muted-foreground text-sm leading-relaxed">
+                <div className="min-w-0 space-y-0.5">
+                  <h2 className="text-foreground text-sm font-semibold">{config.label}</h2>
+                  <p className="text-muted-foreground text-xs leading-relaxed">
                     {config.description}
                   </p>
-                </div>
-
-                <div className="mt-auto">
-                  <span className="text-muted-foreground font-mono text-xs">
-                    {config.sections.length} sections
-                  </span>
                 </div>
               </button>
             );
