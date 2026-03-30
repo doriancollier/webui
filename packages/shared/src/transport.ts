@@ -22,12 +22,12 @@ import type {
   FileListResponse,
   GitStatusResponse,
   GitStatusError,
-  PulseSchedule,
-  PulseRun,
-  CreateScheduleInput,
-  UpdateScheduleRequest,
-  ListRunsQuery,
-  PulsePreset,
+  Task,
+  TaskRun,
+  CreateTaskInput,
+  UpdateTaskRequest,
+  ListTaskRunsQuery,
+  TaskTemplate,
   UploadResult,
   UploadProgress,
 } from './types.js';
@@ -234,26 +234,26 @@ export interface Transport {
    */
   setTunnelPasscode(opts: { passcode?: string; enabled: boolean }): Promise<{ ok: boolean }>;
 
-  // --- Pulse Scheduler ---
+  // --- Tasks ---
 
-  /** List all Pulse schedules. */
-  listSchedules(): Promise<PulseSchedule[]>;
-  /** Create a new Pulse schedule. */
-  createSchedule(opts: CreateScheduleInput): Promise<PulseSchedule>;
-  /** Update an existing Pulse schedule. */
-  updateSchedule(id: string, opts: UpdateScheduleRequest): Promise<PulseSchedule>;
-  /** Delete a Pulse schedule. */
-  deleteSchedule(id: string): Promise<{ success: boolean }>;
-  /** Trigger a manual run of a schedule. */
-  triggerSchedule(id: string): Promise<{ runId: string }>;
-  /** List Pulse runs with optional filters. */
-  listRuns(opts?: Partial<ListRunsQuery>): Promise<PulseRun[]>;
-  /** Get a specific Pulse run. */
-  getRun(id: string): Promise<PulseRun>;
-  /** Cancel a running Pulse job. */
-  cancelRun(id: string): Promise<{ success: boolean }>;
-  /** Fetch available Pulse schedule presets for onboarding. */
-  getPulsePresets(): Promise<PulsePreset[]>;
+  /** List all Tasks. */
+  listTasks(): Promise<Task[]>;
+  /** Create a new Task. */
+  createTask(opts: CreateTaskInput): Promise<Task>;
+  /** Update an existing Task. */
+  updateTask(id: string, opts: UpdateTaskRequest): Promise<Task>;
+  /** Delete a Task. */
+  deleteTask(id: string): Promise<{ success: boolean }>;
+  /** Trigger a manual run of a Task. */
+  triggerTask(id: string): Promise<{ runId: string }>;
+  /** List Task runs with optional filters. */
+  listTaskRuns(opts?: Partial<ListTaskRunsQuery>): Promise<TaskRun[]>;
+  /** Get a specific Task run. */
+  getTaskRun(id: string): Promise<TaskRun>;
+  /** Cancel a running Task. */
+  cancelTaskRun(id: string): Promise<{ success: boolean }>;
+  /** Fetch available Task templates for onboarding. */
+  getTaskTemplates(): Promise<TaskTemplate[]>;
 
   // --- Relay Message Bus ---
 

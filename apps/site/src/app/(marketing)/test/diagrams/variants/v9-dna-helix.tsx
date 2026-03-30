@@ -50,12 +50,12 @@ const RUNG_COLOR = 'rgba(139,90,43,0.22)';
 // ─── Module layout ─────────────────────────────────────────────────────────────
 //
 // Left strand  (orange) — user-facing: Console, Engine, Wing  (top → bottom)
-// Right strand (blue)   — autonomous:  Pulse,   Mesh, Relay (top → bottom)
+// Right strand (blue)   — autonomous:  Tasks,   Mesh, Relay (top → bottom)
 //
 // Each triplet: [moduleId, rungIndex]
 
 const LEFT_IDS = ['console', 'engine', 'wing'] as const;
-const RIGHT_IDS = ['pulse', 'mesh', 'relay'] as const;
+const RIGHT_IDS = ['tasks', 'mesh', 'relay'] as const;
 
 // ─── SVG path builders ─────────────────────────────────────────────────────────
 
@@ -318,7 +318,7 @@ function NucleotideParticle({
  *
  * Renders DorkOS modules as base pairs on a double helix structure.
  * Left strand (orange) = user-facing layer: Console, Engine, Wing.
- * Right strand (blue) = autonomous layer: Pulse, Mesh, Relay.
+ * Right strand (blue) = autonomous layer: Tasks, Mesh, Relay.
  * Paired modules are connected by horizontal rungs.
  */
 export function DiagramV9({ modules }: { modules: SystemModule[] }) {
@@ -350,7 +350,7 @@ export function DiagramV9({ modules }: { modules: SystemModule[] }) {
           0%, 100% { stroke-opacity: 0.75; }
           50%       { stroke-opacity: 0.45; }
         }
-        @keyframes rung-pulse {
+        @keyframes rung-tasks {
           0%, 100% { stroke-opacity: 0.22; }
           50%       { stroke-opacity: 0.42; }
         }
@@ -367,7 +367,7 @@ export function DiagramV9({ modules }: { modules: SystemModule[] }) {
           animation-delay: 2.1s;
         }
         .helix-rung {
-          animation: rung-pulse 3.5s ease-in-out infinite;
+          animation: rung-tasks 3.5s ease-in-out infinite;
         }
         @media (prefers-reduced-motion: reduce) {
           .helix-group, .strand-orange, .strand-blue, .helix-rung {

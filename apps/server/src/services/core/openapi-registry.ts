@@ -23,11 +23,11 @@ import {
   ErrorResponseSchema,
   HistoryMessageSchema,
   TaskItemSchema,
-  PulseScheduleSchema,
-  PulseRunSchema,
-  CreateScheduleRequestSchema,
-  UpdateScheduleRequestSchema,
-  ListRunsQuerySchema,
+  TaskSchema,
+  TaskRunSchema,
+  CreateTaskRequestSchema,
+  UpdateTaskRequestSchema,
+  ListTaskRunsQuerySchema,
   ModelOptionSchema,
 } from '@dorkos/shared/schemas';
 import {
@@ -429,35 +429,35 @@ registry.registerPath({
   },
 });
 
-// --- Pulse Scheduler ---
+// --- Tasks Scheduler ---
 
 registry.registerPath({
   method: 'get',
-  path: '/api/pulse/schedules',
-  tags: ['Pulse'],
+  path: '/api/tasks',
+  tags: ['Tasks'],
   summary: 'List all schedules',
   responses: {
     200: {
       description: 'Array of schedules with nextRun',
-      content: { 'application/json': { schema: z.array(PulseScheduleSchema) } },
+      content: { 'application/json': { schema: z.array(TaskSchema) } },
     },
   },
 });
 
 registry.registerPath({
   method: 'post',
-  path: '/api/pulse/schedules',
-  tags: ['Pulse'],
+  path: '/api/tasks',
+  tags: ['Tasks'],
   summary: 'Create a schedule',
   request: {
     body: {
-      content: { 'application/json': { schema: CreateScheduleRequestSchema } },
+      content: { 'application/json': { schema: CreateTaskRequestSchema } },
     },
   },
   responses: {
     201: {
       description: 'Created schedule',
-      content: { 'application/json': { schema: PulseScheduleSchema } },
+      content: { 'application/json': { schema: TaskSchema } },
     },
     400: {
       description: 'Validation error',
@@ -472,19 +472,19 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'patch',
-  path: '/api/pulse/schedules/{id}',
-  tags: ['Pulse'],
+  path: '/api/tasks/{id}',
+  tags: ['Tasks'],
   summary: 'Update a schedule',
   request: {
     params: z.object({ id: z.string() }),
     body: {
-      content: { 'application/json': { schema: UpdateScheduleRequestSchema } },
+      content: { 'application/json': { schema: UpdateTaskRequestSchema } },
     },
   },
   responses: {
     200: {
       description: 'Updated schedule',
-      content: { 'application/json': { schema: PulseScheduleSchema } },
+      content: { 'application/json': { schema: TaskSchema } },
     },
     404: {
       description: 'Schedule not found',
@@ -495,8 +495,8 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'delete',
-  path: '/api/pulse/schedules/{id}',
-  tags: ['Pulse'],
+  path: '/api/tasks/{id}',
+  tags: ['Tasks'],
   summary: 'Delete a schedule',
   request: {
     params: z.object({ id: z.string() }),
@@ -515,8 +515,8 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/pulse/schedules/{id}/trigger',
-  tags: ['Pulse'],
+  path: '/api/tasks/{id}/trigger',
+  tags: ['Tasks'],
   summary: 'Manually trigger a schedule run',
   request: {
     params: z.object({ id: z.string() }),
@@ -535,24 +535,24 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'get',
-  path: '/api/pulse/runs',
-  tags: ['Pulse'],
+  path: '/api/tasks/runs',
+  tags: ['Tasks'],
   summary: 'List runs',
   request: {
-    query: ListRunsQuerySchema,
+    query: ListTaskRunsQuerySchema,
   },
   responses: {
     200: {
       description: 'Array of runs',
-      content: { 'application/json': { schema: z.array(PulseRunSchema) } },
+      content: { 'application/json': { schema: z.array(TaskRunSchema) } },
     },
   },
 });
 
 registry.registerPath({
   method: 'get',
-  path: '/api/pulse/runs/{id}',
-  tags: ['Pulse'],
+  path: '/api/tasks/runs/{id}',
+  tags: ['Tasks'],
   summary: 'Get a specific run',
   request: {
     params: z.object({ id: z.string() }),
@@ -560,7 +560,7 @@ registry.registerPath({
   responses: {
     200: {
       description: 'Run details',
-      content: { 'application/json': { schema: PulseRunSchema } },
+      content: { 'application/json': { schema: TaskRunSchema } },
     },
     404: {
       description: 'Run not found',
@@ -571,8 +571,8 @@ registry.registerPath({
 
 registry.registerPath({
   method: 'post',
-  path: '/api/pulse/runs/{id}/cancel',
-  tags: ['Pulse'],
+  path: '/api/tasks/runs/{id}/cancel',
+  tags: ['Tasks'],
   summary: 'Cancel a running job',
   request: {
     params: z.object({ id: z.string() }),

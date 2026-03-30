@@ -10,7 +10,7 @@ import {
   ScrollArea,
   Skeleton,
 } from '@/layers/shared/ui';
-import { useRun, useCancelRun } from '@/layers/entities/pulse';
+import { useTaskRun, useCancelTaskRun } from '@/layers/entities/tasks';
 import { useNavigate } from '@tanstack/react-router';
 import { formatRelativeTime } from '../lib/format-relative-time';
 
@@ -33,12 +33,12 @@ function formatDuration(ms: number): string {
 }
 
 /**
- * Detail sheet for a failed Pulse run, showing status, trigger, timeline,
+ * Detail sheet for a failed Tasks run, showing status, trigger, timeline,
  * error message, output summary, and available actions.
  */
 export function FailedRunDetailSheet({ open, itemId, onClose }: FailedRunDetailSheetProps) {
-  const { data: run, isLoading, isError } = useRun(open ? (itemId ?? null) : null);
-  const cancelMutation = useCancelRun();
+  const { data: run, isLoading, isError } = useTaskRun(open ? (itemId ?? null) : null);
+  const cancelMutation = useCancelTaskRun();
   const navigate = useNavigate();
 
   const handleViewSession = () => {

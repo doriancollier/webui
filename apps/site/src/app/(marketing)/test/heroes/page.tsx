@@ -95,7 +95,7 @@ const variants = [
     id: 9,
     title: 'Agent Activity Feed — Live Dashboard',
     description:
-      'A simulated real-time feed showing agents working: "Agent committed 3 files", "Pulse executed roadmap step 4", etc. Creates FOMO — your AI could be doing this right now.',
+      'A simulated real-time feed showing agents working: "Agent committed 3 files", "Tasks executed roadmap step 4", etc. Creates FOMO — your AI could be doing this right now.',
     Component: lazyHero(() => import('./variants/h9-activity-feed'), 'HeroV9'),
   },
   {
@@ -109,7 +109,7 @@ const variants = [
 
 function HeroFallback() {
   return (
-    <div className="text-warm-gray flex h-[60vh] animate-pulse items-center justify-center font-mono text-sm">
+    <div className="text-warm-gray animate-tasks flex h-[60vh] items-center justify-center font-mono text-sm">
       Loading hero...
     </div>
   );

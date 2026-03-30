@@ -40,10 +40,10 @@ describe('dorkbot-templates', () => {
       expect(msg).toContain('How can I help?');
     });
 
-    it('mentions Pulse, Relay, and Mesh in all variants', () => {
+    it('mentions Tasks, Relay, and Mesh in all variants', () => {
       for (const tone of [1, 3, 5]) {
         const msg = generateFirstMessage(makeTraits({ tone }));
-        expect(msg).toContain('Pulse');
+        expect(msg).toContain('Tasks');
         expect(msg).toContain('Relay');
         expect(msg).toContain('Mesh');
       }

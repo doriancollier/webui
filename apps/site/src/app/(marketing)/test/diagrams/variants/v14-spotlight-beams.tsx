@@ -17,7 +17,7 @@ const CARD_BORDER_HOVER = 'rgba(232, 93, 4, 0.35)';
 // ─── Grid layout: 3x2, module order matching the brief ────────────────────────
 
 /** Display order: row-major, 3 columns. */
-const GRID_ORDER = ['console', 'engine', 'wing', 'pulse', 'mesh', 'relay'];
+const GRID_ORDER = ['console', 'engine', 'wing', 'tasks', 'mesh', 'relay'];
 
 /** Card grid positions (col 0-2, row 0-1) for connection line math. */
 const CARD_COLS = 3;
@@ -34,10 +34,10 @@ const GRID_PAD = 32; // container padding
 const CONNECTIONS: Array<[string, string]> = [
   ['console', 'engine'],
   ['engine', 'wing'],
-  ['engine', 'pulse'],
+  ['engine', 'tasks'],
   ['engine', 'mesh'],
   ['mesh', 'relay'],
-  ['mesh', 'pulse'],
+  ['mesh', 'tasks'],
 ];
 
 // ─── Background beams configuration ──────────────────────────────────────────
@@ -473,7 +473,7 @@ export function DiagramV14({ modules }: { modules: SystemModule[] }) {
           0%   { stroke-dashoffset:  1560; }
           100% { stroke-dashoffset: -160; }
         }
-        @keyframes v14-dot-pulse {
+        @keyframes v14-dot-tasks {
           0%, 100% { opacity: 0.8; box-shadow: 0 0 6px rgba(74, 222, 128, 0.6); }
           50%       { opacity: 0.4; box-shadow: 0 0 2px rgba(74, 222, 128, 0.2); }
         }
@@ -484,7 +484,7 @@ export function DiagramV14({ modules }: { modules: SystemModule[] }) {
           animation-fill-mode: both;
         }
         .v14-status-dot {
-          animation: v14-dot-pulse 2.6s ease-in-out infinite;
+          animation: v14-dot-tasks 2.6s ease-in-out infinite;
         }
         @media (prefers-reduced-motion: reduce) {
           .v14-beam         { animation: none !important; }

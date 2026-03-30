@@ -1,10 +1,10 @@
 import { Loader2, Circle, CheckCircle2 } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { cn } from '@/layers/shared/lib';
-import type { TaskItem, TaskStatus } from '@dorkos/shared/types';
+import type { TaskItem, SessionTaskStatus } from '@dorkos/shared/types';
 import { TaskDetail } from './TaskDetail';
 
-const STATUS_ICON: Record<TaskStatus, React.ReactNode> = {
+const STATUS_ICON: Record<SessionTaskStatus, React.ReactNode> = {
   in_progress: <Loader2 className="size-(--size-icon-xs) shrink-0 animate-spin text-blue-400" />,
   pending: <Circle className="text-muted-foreground size-(--size-icon-xs) shrink-0" />,
   completed: <CheckCircle2 className="size-(--size-icon-xs) shrink-0 text-green-500" />,

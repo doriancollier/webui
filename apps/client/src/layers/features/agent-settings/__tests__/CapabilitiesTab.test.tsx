@@ -6,19 +6,19 @@ import '@testing-library/jest-dom/vitest';
 vi.mock('@/layers/entities/relay', () => ({
   useRelayEnabled: vi.fn(() => true),
 }));
-vi.mock('@/layers/entities/pulse', () => ({
-  usePulseEnabled: vi.fn(() => true),
+vi.mock('@/layers/entities/tasks', () => ({
+  useTasksEnabled: vi.fn(() => true),
 }));
 vi.mock('../model/use-agent-context-config', () => ({
   useAgentContextConfig: vi.fn(() => ({
-    config: { relayTools: true, meshTools: true, adapterTools: true, pulseTools: true },
+    config: { relayTools: true, meshTools: true, adapterTools: true, tasksTools: true },
     updateConfig: vi.fn(),
   })),
 }));
 
 import { CapabilitiesTab } from '../ui/CapabilitiesTab';
 import { useRelayEnabled } from '@/layers/entities/relay';
-import { usePulseEnabled } from '@/layers/entities/pulse';
+import { useTasksEnabled } from '@/layers/entities/tasks';
 import { useAgentContextConfig } from '../model/use-agent-context-config';
 import { TooltipProvider } from '@/layers/shared/ui';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
@@ -59,9 +59,9 @@ describe('CapabilitiesTab', () => {
     onUpdate = vi.fn();
     // Re-establish default mock return values after clearAllMocks
     vi.mocked(useRelayEnabled).mockReturnValue(true);
-    vi.mocked(usePulseEnabled).mockReturnValue(true);
+    vi.mocked(useTasksEnabled).mockReturnValue(true);
     vi.mocked(useAgentContextConfig).mockReturnValue({
-      config: { relayTools: true, meshTools: true, adapterTools: true, pulseTools: true },
+      config: { relayTools: true, meshTools: true, adapterTools: true, tasksTools: true },
       updateConfig: vi.fn(),
     });
   });
@@ -169,7 +169,7 @@ describe('CapabilitiesTab', () => {
   describe('Tool Groups section', () => {
     it('renders all four tool group toggles', () => {
       const view = renderTab(baseAgent, onUpdate);
-      expect(view.getByText('Pulse (Scheduling)')).toBeInTheDocument();
+      expect(view.getByText('Tasks (Scheduling)')).toBeInTheDocument();
       expect(view.getByText('Relay (Messaging)')).toBeInTheDocument();
       expect(view.getByText('Mesh (Discovery)')).toBeInTheDocument();
       expect(view.getByText('Relay Adapters')).toBeInTheDocument();
@@ -187,8 +187,8 @@ describe('CapabilitiesTab', () => {
       expect(inherited.length).toBe(4);
     });
 
-    it('shows Overridden: Off label when agent explicitly disables pulse', () => {
-      const view = renderTab({ ...baseAgent, enabledToolGroups: { pulse: false } }, onUpdate);
+    it('shows Overridden: Off label when agent explicitly disables tasks', () => {
+      const view = renderTab({ ...baseAgent, enabledToolGroups: { tasks: false } }, onUpdate);
       expect(view.getByText('Overridden: Off')).toBeInTheDocument();
     });
 
@@ -201,7 +201,7 @@ describe('CapabilitiesTab', () => {
       const view = renderTab(baseAgent, onUpdate);
       // The 4 tool group switches come after 2 budget spinbuttons; get all switches
       const switches = view.getAllByRole('switch');
-      // Click the first tool group switch (Pulse)
+      // Click the first tool group switch (Tasks)
       fireEvent.click(switches[0]);
       expect(onUpdate).toHaveBeenCalledWith(
         expect.objectContaining({ enabledToolGroups: expect.any(Object) })
@@ -209,8 +209,8 @@ describe('CapabilitiesTab', () => {
     });
 
     it('Reset button clears the per-agent override', () => {
-      const view = renderTab({ ...baseAgent, enabledToolGroups: { pulse: false } }, onUpdate);
-      const resetBtn = view.getByLabelText('Reset Pulse (Scheduling) to default');
+      const view = renderTab({ ...baseAgent, enabledToolGroups: { tasks: false } }, onUpdate);
+      const resetBtn = view.getByLabelText('Reset Tasks (Scheduling) to default');
       fireEvent.click(resetBtn);
       expect(onUpdate).toHaveBeenCalledWith(expect.objectContaining({ enabledToolGroups: {} }));
     });
@@ -224,11 +224,11 @@ describe('CapabilitiesTab', () => {
       expect(switchInRow).toBeDisabled();
     });
 
-    it('shows disabled switch when server has pulse off', () => {
-      vi.mocked(usePulseEnabled).mockReturnValue(false);
+    it('shows disabled switch when server has tasks off', () => {
+      vi.mocked(useTasksEnabled).mockReturnValue(false);
       const view = renderTab(baseAgent, onUpdate);
-      const pulseRow = view.getByText('Pulse (Scheduling)').closest('div')!.parentElement!;
-      const switchInRow = within(pulseRow).getByRole('switch');
+      const tasksRow = view.getByText('Tasks (Scheduling)').closest('div')!.parentElement!;
+      const switchInRow = within(tasksRow).getByRole('switch');
       expect(switchInRow).toBeDisabled();
     });
   });

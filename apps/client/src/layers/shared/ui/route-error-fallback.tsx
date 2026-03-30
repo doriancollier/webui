@@ -1,6 +1,7 @@
 import { useRouter } from '@tanstack/react-router';
 import type { ErrorComponentProps } from '@tanstack/react-router';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Check, Copy } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from './button';
 
 /**
@@ -12,6 +13,14 @@ import { Button } from './button';
  */
 export function RouteErrorFallback({ error }: ErrorComponentProps) {
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
+
+  async function copyStack() {
+    if (!error.stack) return;
+    await navigator.clipboard.writeText(error.stack);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   return (
     <div className="flex h-full flex-col items-center justify-center gap-6 p-8">
@@ -26,9 +35,19 @@ export function RouteErrorFallback({ error }: ErrorComponentProps) {
           <summary className="text-muted-foreground cursor-pointer text-xs">
             Stack trace (dev only)
           </summary>
-          <pre className="text-muted-foreground mt-2 overflow-x-auto text-xs whitespace-pre-wrap">
-            {error.stack}
-          </pre>
+          <div className="relative mt-2">
+            <button
+              onClick={copyStack}
+              title="Copy stack trace"
+              className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-0 right-0 flex items-center gap-1 rounded px-2 py-1 text-xs transition-all"
+            >
+              {copied ? <Check className="size-3 text-green-500" /> : <Copy className="size-3" />}
+              <span className={copied ? 'text-green-500' : ''}>{copied ? 'Copied!' : 'Copy'}</span>
+            </button>
+            <pre className="text-muted-foreground overflow-x-auto pr-16 text-xs whitespace-pre-wrap">
+              {error.stack}
+            </pre>
+          </div>
         </details>
       )}
 

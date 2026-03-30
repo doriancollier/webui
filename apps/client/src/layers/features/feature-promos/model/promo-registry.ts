@@ -47,7 +47,7 @@ export const PROMO_REGISTRY: PromoDefinition[] = [
     id: 'schedules',
     placements: ['dashboard-main', 'agent-sidebar', 'dashboard-sidebar'],
     priority: 70,
-    shouldShow: (ctx) => ctx.isPulseEnabled && ctx.sessionCount > 0,
+    shouldShow: (ctx) => ctx.isTasksEnabled && ctx.sessionCount > 0,
     content: {
       icon: Moon,
       title: 'Run agents while you sleep',

@@ -184,10 +184,10 @@ Published to npm as `dorkos`. Config precedence: CLI flags > env vars > `~/.dork
 
 We use Linear as the orchestration layer for all product work, following the Loop methodology. See [meta/linear-loop-litepaper.md](meta/linear-loop-litepaper.md) for the full vision.
 
-### Three Commands
+### Commands
 
-- **`/pm`** — The primary command. Reviews the loop, recommends the next action, executes on approval. Run `/pm auto` to let the agent take multiple actions autonomously (except at approval gates).
-- **`/linear:idea`** — Quick idea capture during development.
+- **`/pm`** — The primary command. Reviews the loop, recommends the next action, executes on approval. Pass freeform text (`/pm <text>`) to classify and create issues. Pass an issue ID (`/pm DOR-47`) to work on it directly. Run `/pm auto` for autonomous execution (except at approval gates).
+- **`/linear:idea`** — Quick idea capture (shortcut for `/pm <idea text>`).
 - **`/linear:done`** — Report completion and close the loop on an issue.
 
 ### Issue Types
@@ -201,9 +201,13 @@ Everything is an issue. The loop runs continuously: Idea → Triage → Research
 ### Labels
 
 - `type/*` — Issue type (mutually exclusive)
-- `agent/*` — Agent lifecycle state (ready, claimed, completed)
+- `agent/*` — Agent lifecycle state (ready, claimed, completed, needs-input)
 - `origin/*` — How the issue was created (human, from-agent, from-signal)
 - `confidence/*` — Hypothesis confidence level (high, medium, low)
+
+### Ownership Filtering
+
+`/pm` discovers active projects dynamically based on `filter.ownership` in the linear-loop config. Default is `"unassigned"` — assign a project lead in Linear to exclude it from `/pm` scope. No config updates needed when projects are created or archived.
 
 ## Hard Rules
 

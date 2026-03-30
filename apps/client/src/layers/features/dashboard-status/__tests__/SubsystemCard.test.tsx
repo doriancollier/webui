@@ -17,16 +17,16 @@ describe('SubsystemCard', () => {
   });
 
   it('renders title and primary metric', () => {
-    render(<SubsystemCard title="Pulse" primaryMetric="3 schedules" onClick={mockOnClick} />);
+    render(<SubsystemCard title="Tasks" primaryMetric="3 schedules" onClick={mockOnClick} />);
 
-    expect(screen.getByText('Pulse')).toBeInTheDocument();
+    expect(screen.getByText('Tasks')).toBeInTheDocument();
     expect(screen.getByText('3 schedules')).toBeInTheDocument();
   });
 
   it('renders secondary info when provided', () => {
     render(
       <SubsystemCard
-        title="Pulse"
+        title="Tasks"
         primaryMetric="3 schedules"
         secondaryInfo="Next: 47m"
         onClick={mockOnClick}
@@ -39,7 +39,7 @@ describe('SubsystemCard', () => {
   it('does not render exception text when count is 0', () => {
     render(
       <SubsystemCard
-        title="Pulse"
+        title="Tasks"
         primaryMetric="3 schedules"
         exception={{ count: 0, label: 'failed today', severity: 'error' }}
         onClick={mockOnClick}
@@ -64,7 +64,7 @@ describe('SubsystemCard', () => {
 
   it('shows "Disabled" label and muted title when disabled prop is true', () => {
     render(
-      <SubsystemCard title="Pulse" primaryMetric="3 schedules" disabled onClick={mockOnClick} />
+      <SubsystemCard title="Tasks" primaryMetric="3 schedules" disabled onClick={mockOnClick} />
     );
 
     expect(screen.getByText('Disabled')).toBeInTheDocument();
@@ -74,7 +74,7 @@ describe('SubsystemCard', () => {
 
   it('calls onClick when clicked', () => {
     const { container } = render(
-      <SubsystemCard title="Pulse" primaryMetric="0 schedules" onClick={mockOnClick} />
+      <SubsystemCard title="Tasks" primaryMetric="0 schedules" onClick={mockOnClick} />
     );
 
     const button = container.querySelector('button')!;
@@ -84,7 +84,7 @@ describe('SubsystemCard', () => {
 
   it('calls onClick even when disabled', () => {
     const { container } = render(
-      <SubsystemCard title="Pulse" primaryMetric="0 schedules" disabled onClick={mockOnClick} />
+      <SubsystemCard title="Tasks" primaryMetric="0 schedules" disabled onClick={mockOnClick} />
     );
 
     const button = container.querySelector('button')!;

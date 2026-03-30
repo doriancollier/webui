@@ -26,7 +26,7 @@ const { contextBuilderFactory, toolFilterFactory } = vi.hoisted(() => ({
   toolFilterFactory: () => ({
     resolveToolConfig: vi
       .fn()
-      .mockReturnValue({ pulse: true, relay: true, mesh: true, adapter: true }),
+      .mockReturnValue({ tasks: true, relay: true, mesh: true, adapter: true }),
     buildAllowedTools: vi.fn().mockReturnValue(undefined),
   }),
 }));
@@ -38,13 +38,13 @@ vi.mock('@dorkos/shared/manifest', async () => ({
 vi.mock('../../../relay/relay-state.js', () => ({
   isRelayEnabled: vi.fn().mockReturnValue(false),
 }));
-vi.mock('../../../pulse/pulse-state.js', () => ({
-  isPulseEnabled: vi.fn().mockReturnValue(false),
+vi.mock('../../../tasks/task-state.js', () => ({
+  isTasksEnabled: vi.fn().mockReturnValue(false),
 }));
 vi.mock('../../../core/config-manager.js', () => ({
   configManager: {
     get: vi.fn().mockReturnValue({
-      pulseTools: true,
+      tasksTools: true,
       relayTools: true,
       meshTools: true,
       adapterTools: true,

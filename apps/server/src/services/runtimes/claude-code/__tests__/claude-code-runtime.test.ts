@@ -11,7 +11,7 @@ const {
   toolFilterFactory,
 } = vi.hoisted(() => {
   const bspa = vi.fn().mockResolvedValue('<env>\nWorking directory: /mock\n</env>');
-  const rtc = vi.fn().mockReturnValue({ pulse: true, relay: true, mesh: true, adapter: true });
+  const rtc = vi.fn().mockReturnValue({ tasks: true, relay: true, mesh: true, adapter: true });
   const bat = vi.fn().mockReturnValue(undefined);
   return {
     _mockBuildSystemPromptAppend: bspa,
@@ -47,13 +47,13 @@ vi.mock('@dorkos/shared/manifest', () => ({
 vi.mock('../../../relay/relay-state.js', () => ({
   isRelayEnabled: vi.fn().mockReturnValue(false),
 }));
-vi.mock('../../../pulse/pulse-state.js', () => ({
-  isPulseEnabled: vi.fn().mockReturnValue(false),
+vi.mock('../../../tasks/task-state.js', () => ({
+  isTasksEnabled: vi.fn().mockReturnValue(false),
 }));
 vi.mock('../../../core/config-manager.js', () => ({
   configManager: {
     get: vi.fn().mockReturnValue({
-      pulseTools: true,
+      tasksTools: true,
       relayTools: true,
       meshTools: true,
       adapterTools: true,
@@ -618,7 +618,7 @@ describe('ClaudeCodeRuntime', () => {
       (readManifest as ReturnType<typeof vi.fn>).mockResolvedValue({
         id: 'test-id',
         name: 'test',
-        enabledToolGroups: { pulse: false },
+        enabledToolGroups: { tasks: false },
       });
 
       agentManager.ensureSession('tf-1', { permissionMode: 'default' });
@@ -628,12 +628,12 @@ describe('ClaudeCodeRuntime', () => {
       }
 
       expect(resolveToolConfig).toHaveBeenCalledWith(
-        { pulse: false },
+        { tasks: false },
         expect.objectContaining({
-          pulseEnabled: expect.any(Boolean),
+          tasksEnabled: expect.any(Boolean),
           relayEnabled: expect.any(Boolean),
           globalConfig: expect.objectContaining({
-            pulseTools: true,
+            tasksTools: true,
             relayTools: true,
           }),
         })
@@ -659,7 +659,7 @@ describe('ClaudeCodeRuntime', () => {
       // callArgs[1] is meshCore (null when not set)
       expect(callArgs[2]).toEqual(
         expect.objectContaining({
-          pulse: expect.any(Boolean),
+          tasks: expect.any(Boolean),
           relay: expect.any(Boolean),
           mesh: expect.any(Boolean),
           adapter: expect.any(Boolean),

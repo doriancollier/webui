@@ -9,7 +9,7 @@ interface HowItBuiltSectionProps {
   slideId?: string;
 }
 
-/** 4-step evolution timeline: LifeOS -> DorkOS -> Pulse -> Mesh. */
+/** 4-step evolution timeline: LifeOS -> DorkOS -> Tasks -> Mesh. */
 export function HowItBuiltSection({ slideId = 'timeline' }: HowItBuiltSectionProps) {
   const { isPresent, subStep } = usePresentationContext();
 

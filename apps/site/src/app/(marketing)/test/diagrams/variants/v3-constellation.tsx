@@ -20,12 +20,12 @@ const ORANGE_DIM = 'rgba(232, 93, 4, 0.35)';
 // Layout inspired loosely by the Scorpius constellation — Engine is the bright
 // alpha star at center-left, arms sweep outward in an asymmetric arc.
 //
-// Module order: core, console, pulse, wing, channels, mesh
+// Module order: core, console, tasks, wing, channels, mesh
 
 const STAR_POSITIONS: Record<string, { x: number; y: number }> = {
   core: { x: 370, y: 240 }, // dominant center — brightest star
   console: { x: 175, y: 155 }, // upper-left — close companion
-  pulse: { x: 580, y: 145 }, // upper-right
+  tasks: { x: 580, y: 145 }, // upper-right
   wing: { x: 640, y: 330 }, // right midfield
   mesh: { x: 195, y: 355 }, // lower-left
   channels: { x: 490, y: 420 }, // lower-right sweep
@@ -38,7 +38,7 @@ const LABEL_OFFSETS: Record<
 > = {
   core: { dx: 0, dy: -34, anchor: 'middle' },
   console: { dx: -22, dy: -22, anchor: 'end' },
-  pulse: { dx: 22, dy: -22, anchor: 'start' },
+  tasks: { dx: 22, dy: -22, anchor: 'start' },
   wing: { dx: 28, dy: 4, anchor: 'start' },
   mesh: { dx: -28, dy: 4, anchor: 'end' },
   channels: { dx: 0, dy: 30, anchor: 'middle' },
@@ -47,13 +47,13 @@ const LABEL_OFFSETS: Record<
 /** Constellation edges — Engine connects to all; a few lateral links. */
 const EDGES: Array<[string, string]> = [
   ['engine', 'console'],
-  ['engine', 'pulse'],
+  ['engine', 'tasks'],
   ['engine', 'wing'],
   ['engine', 'mesh'],
   ['engine', 'relay'],
-  ['console', 'pulse'],
+  ['console', 'tasks'],
   ['mesh', 'relay'],
-  ['pulse', 'wing'],
+  ['tasks', 'wing'],
 ];
 
 // ─── Seeded Background Stars ──────────────────────────────────────────────────
@@ -91,7 +91,7 @@ const BG_STARS = buildBackgroundStars(32);
 
 // ─── Motion Variants ─────────────────────────────────────────────────────────
 
-/** Star entrance — scale pulse from 0 → 1.2 → 1.0 with glow fade in. */
+/** Star entrance — scale tasks from 0 → 1.2 → 1.0 with glow fade in. */
 const STAR_APPEAR = {
   hidden: { opacity: 0, scale: 0 },
   visible: {
@@ -321,7 +321,7 @@ export function DiagramV3({ modules }: { modules: SystemModule[] }) {
           {/* Glow gradients for each module */}
           <StarGlowDef id="star-glow-core" color={ORANGE} />
           <StarGlowDef id="star-glow-console" color={ORANGE} />
-          <StarGlowDef id="star-glow-pulse" color={ORANGE} />
+          <StarGlowDef id="star-glow-tasks" color={ORANGE} />
           <StarGlowDef id="star-glow-wing" color={ORANGE} />
           <StarGlowDef id="star-glow-channels" color={ORANGE} />
           <StarGlowDef id="star-glow-mesh" color={ORANGE} />

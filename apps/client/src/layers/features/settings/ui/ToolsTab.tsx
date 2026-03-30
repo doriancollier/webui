@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
 import { useRelayEnabled } from '@/layers/entities/relay';
-import { usePulseEnabled } from '@/layers/entities/pulse';
+import { useTasksEnabled } from '@/layers/entities/tasks';
 import { Badge, FieldCard, FieldCardContent, SettingRow, Switch } from '@/layers/shared/ui';
 import { useAgentContextConfig } from '@/layers/features/agent-settings/model/use-agent-context-config';
 
-const PULSE_PREVIEW = `DorkOS Pulse lets you create and manage scheduled agent runs.
+const TASKS_PREVIEW = `DorkOS Tasks lets you create and manage scheduled agent runs.
 
 Available tools:
   list_schedules() -- list all configured schedules
@@ -21,7 +21,7 @@ Subject hierarchy:
   relay.agent.{sessionId}          — address a specific agent session
   relay.human.console.{clientId}   — reach a human in the DorkOS UI
   relay.system.console             — system broadcast channel
-  relay.system.pulse.{scheduleId}  — Pulse scheduler events
+  relay.system.tasks.{scheduleId}  — Tasks scheduler events
 
 Workflows:
 - Register a reply address first: relay_register_endpoint(subject="relay.agent.{your-sessionId}")
@@ -118,17 +118,17 @@ function ToolBlockSection({
 /**
  * Tools tab for the Settings dialog.
  *
- * Displays global toggle switches for each tool context block (pulse, relay, mesh, adapter)
+ * Displays global toggle switches for each tool context block (tasks, relay, mesh, adapter)
  * with read-only previews of the content injected into agent system prompts.
  * These are global defaults; per-agent overrides are set in the Agent dialog Capabilities tab.
  */
 export function ToolsTab() {
   const relayEnabled = useRelayEnabled();
-  const pulseEnabled = usePulseEnabled();
+  const tasksEnabled = useTasksEnabled();
   const { config, updateConfig } = useAgentContextConfig();
 
   const handleToggle = useCallback(
-    (key: 'pulseTools' | 'relayTools' | 'meshTools' | 'adapterTools', value: boolean) => {
+    (key: 'tasksTools' | 'relayTools' | 'meshTools' | 'adapterTools', value: boolean) => {
       updateConfig({ [key]: value });
     },
     [updateConfig]
@@ -144,13 +144,13 @@ export function ToolsTab() {
       <FieldCard>
         <FieldCardContent>
           <ToolBlockSection
-            label="Pulse Tools"
+            label="Tasks Tools"
             description="Scheduling tools for creating and managing scheduled agent runs."
-            enabled={config.pulseTools}
-            available={pulseEnabled}
-            unavailableReason="Pulse is disabled"
-            onToggle={(v) => handleToggle('pulseTools', v)}
-            preview={PULSE_PREVIEW}
+            enabled={config.tasksTools}
+            available={tasksEnabled}
+            unavailableReason="Tasks is disabled"
+            onToggle={(v) => handleToggle('tasksTools', v)}
+            preview={TASKS_PREVIEW}
           />
 
           <ToolBlockSection

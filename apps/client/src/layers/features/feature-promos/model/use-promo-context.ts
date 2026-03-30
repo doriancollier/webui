@@ -1,5 +1,5 @@
 import { useCallback } from 'react';
-import { usePulseEnabled } from '@/layers/entities/pulse';
+import { useTasksEnabled } from '@/layers/entities/tasks';
 import { useRelayAdapters, useRelayEnabled } from '@/layers/entities/relay';
 import { useSessions } from '@/layers/entities/session';
 import { useRegisteredAgents } from '@/layers/entities/mesh';
@@ -14,7 +14,7 @@ import type { PromoContext } from './promo-types';
  * and first-use date into a single stable object.
  */
 export function usePromoContext(): PromoContext {
-  const isPulseEnabled = usePulseEnabled();
+  const isTasksEnabled = useTasksEnabled();
   const isMeshEnabled = useMeshEnabled();
   const isRelayEnabled = useRelayEnabled();
   const { sessions } = useSessions();
@@ -38,7 +38,7 @@ export function usePromoContext(): PromoContext {
 
   return {
     hasAdapter,
-    isPulseEnabled,
+    isTasksEnabled,
     isMeshEnabled,
     isRelayEnabled,
     sessionCount: sessions.length,

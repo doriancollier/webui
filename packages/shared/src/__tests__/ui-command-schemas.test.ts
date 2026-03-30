@@ -10,8 +10,8 @@ import {
 
 describe('UiCommandSchema', () => {
   it('parses open_panel command', () => {
-    const result = UiCommandSchema.parse({ action: 'open_panel', panel: 'pulse' });
-    expect(result).toEqual({ action: 'open_panel', panel: 'pulse' });
+    const result = UiCommandSchema.parse({ action: 'open_panel', panel: 'tasks' });
+    expect(result).toEqual({ action: 'open_panel', panel: 'tasks' });
   });
 
   it('parses close_panel command', () => {
@@ -172,7 +172,7 @@ describe('UiStateSchema', () => {
   it('parses a complete UI state', () => {
     const state = {
       canvas: { open: false, contentType: null },
-      panels: { settings: false, pulse: false, relay: false, mesh: false },
+      panels: { settings: false, tasks: false, relay: false, mesh: false },
       sidebar: { open: true, activeTab: 'sessions' },
       agent: { id: null, cwd: '/home/user/project' },
     };
@@ -188,7 +188,7 @@ describe('UiCommandEventSchema', () => {
   it('parses a ui_command event', () => {
     const event = {
       type: 'ui_command',
-      command: { action: 'open_panel', panel: 'pulse' },
+      command: { action: 'open_panel', panel: 'tasks' },
     };
     expect(UiCommandEventSchema.parse(event)).toEqual(event);
   });
@@ -196,7 +196,7 @@ describe('UiCommandEventSchema', () => {
 
 describe('UiPanelIdSchema', () => {
   it('accepts all valid panel ids', () => {
-    for (const panel of ['settings', 'pulse', 'relay', 'mesh', 'picker'] as const) {
+    for (const panel of ['settings', 'tasks', 'relay', 'mesh', 'picker'] as const) {
       expect(UiPanelIdSchema.parse(panel)).toBe(panel);
     }
   });

@@ -328,9 +328,9 @@ export function DiagramV1({ modules }: DiagramV1Props) {
         </motion.g>
       ))}
 
-      {/* ── Layer 7: Engine node (largest, pulses gently) ── */}
+      {/* ── Layer 7: Engine node (largest, taskss gently) ── */}
       <motion.g variants={SCALE_IN}>
-        {/* Pulse rings — CSS animation handled by Framer Motion animate prop
+        {/* Tasks rings — CSS animation handled by Framer Motion animate prop
             after entrance is done; use two concentric rings */}
         <motion.circle
           cx={CX}

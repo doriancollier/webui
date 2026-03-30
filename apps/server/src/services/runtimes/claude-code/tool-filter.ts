@@ -20,9 +20,9 @@ import type { EnabledToolGroups } from '@dorkos/shared/mesh-schemas';
 
 export interface ToolFilterDeps {
   relayEnabled: boolean;
-  pulseEnabled: boolean;
+  tasksEnabled: boolean;
   globalConfig: {
-    pulseTools: boolean;
+    tasksTools: boolean;
     relayTools: boolean;
     meshTools: boolean;
     adapterTools: boolean;
@@ -30,7 +30,7 @@ export interface ToolFilterDeps {
 }
 
 export interface ResolvedToolConfig {
-  pulse: boolean;
+  tasks: boolean;
   relay: boolean;
   mesh: boolean;
   adapter: boolean;
@@ -48,12 +48,12 @@ const CORE_TOOLS = [
   'mcp__dorkos__get_ui_state',
 ] as const;
 
-const PULSE_TOOLS = [
-  'mcp__dorkos__pulse_list_schedules',
-  'mcp__dorkos__pulse_create_schedule',
-  'mcp__dorkos__pulse_update_schedule',
-  'mcp__dorkos__pulse_delete_schedule',
-  'mcp__dorkos__pulse_get_run_history',
+const TASKS_TOOLS = [
+  'mcp__dorkos__tasks_list',
+  'mcp__dorkos__tasks_create',
+  'mcp__dorkos__tasks_update',
+  'mcp__dorkos__tasks_delete',
+  'mcp__dorkos__tasks_get_run_history',
 ] as const;
 
 const RELAY_TOOLS = [
@@ -117,7 +117,7 @@ export function resolveToolConfig(
 ): ResolvedToolConfig {
   const agent = agentConfig ?? {};
   return {
-    pulse: (agent.pulse ?? deps.globalConfig.pulseTools) && deps.pulseEnabled,
+    tasks: (agent.tasks ?? deps.globalConfig.tasksTools) && deps.tasksEnabled,
     relay: (agent.relay ?? deps.globalConfig.relayTools) && deps.relayEnabled,
     // mesh has no server feature flag — always-on subsystem
     mesh: agent.mesh ?? deps.globalConfig.meshTools,
@@ -140,14 +140,14 @@ export function resolveToolConfig(
  * @param config - The resolved tool configuration produced by `resolveToolConfig`.
  */
 export function buildAllowedTools(config: ResolvedToolConfig): string[] | undefined {
-  if (config.pulse && config.relay && config.mesh && config.adapter) {
+  if (config.tasks && config.relay && config.mesh && config.adapter) {
     // All domains enabled — no filtering needed; return undefined to skip allowedTools
     return undefined;
   }
 
   const allowed: string[] = [...CORE_TOOLS];
 
-  if (config.pulse) allowed.push(...PULSE_TOOLS);
+  if (config.tasks) allowed.push(...TASKS_TOOLS);
 
   if (config.relay) {
     allowed.push(...RELAY_TOOLS);

@@ -27,8 +27,8 @@ vi.mock('@/layers/entities/session', () => ({
   useSessions: () => mockUseSessions(),
 }));
 
-vi.mock('@/layers/entities/pulse', () => ({
-  useActiveRunCount: () => mockUseActiveRunCount(),
+vi.mock('@/layers/entities/tasks', () => ({
+  useActiveTaskRunCount: () => mockUseActiveRunCount(),
 }));
 
 vi.mock('@/layers/shared/model', () => ({
@@ -39,10 +39,10 @@ vi.mock('@/layers/shared/model', () => ({
   useNow: () => Date.now(),
   useSlotContributions: () => [
     {
-      id: 'pulse',
-      label: 'Pulse Scheduler',
+      id: 'tasks',
+      label: 'Tasks Scheduler',
       icon: 'Clock',
-      action: 'openPulse',
+      action: 'openTasks',
       category: 'feature',
       priority: 1,
     },
@@ -176,7 +176,7 @@ describe('usePaletteItems', () => {
     const { result } = renderHook(() => usePaletteItems(null));
     expect(result.current.features).toHaveLength(4);
     const ids = result.current.features.map((f) => f.id);
-    expect(ids).toContain('pulse');
+    expect(ids).toContain('tasks');
     expect(ids).toContain('relay');
     expect(ids).toContain('mesh');
     expect(ids).toContain('settings');
@@ -452,20 +452,20 @@ describe('usePaletteItems', () => {
     expect(result.current.suggestions.find((s) => s.id === 'suggestion-continue')).toBeUndefined();
   });
 
-  it('suggests active Pulse runs when activeRunCount > 0', () => {
+  it('suggests active Tasks runs when activeRunCount > 0', () => {
     mockUseActiveRunCount.mockReturnValue({ data: 3 });
     const { result } = renderHook(() => usePaletteItems(null));
-    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-pulse');
+    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-tasks');
     expect(suggestion).toBeDefined();
-    expect(suggestion?.label).toBe('3 active Pulse runs');
-    expect(suggestion?.action).toBe('openPulse');
+    expect(suggestion?.label).toBe('3 active Tasks runs');
+    expect(suggestion?.action).toBe('openTasks');
   });
 
   it('uses singular "run" when activeRunCount is 1', () => {
     mockUseActiveRunCount.mockReturnValue({ data: 1 });
     const { result } = renderHook(() => usePaletteItems(null));
-    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-pulse');
-    expect(suggestion?.label).toBe('1 active Pulse run');
+    const suggestion = result.current.suggestions.find((s) => s.id === 'suggestion-tasks');
+    expect(suggestion?.label).toBe('1 active Tasks run');
   });
 
   it('suggests switch back to previous agent when previousCwd is set', () => {

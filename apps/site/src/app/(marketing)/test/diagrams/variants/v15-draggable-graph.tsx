@@ -23,7 +23,7 @@ const DEFAULT_POSITIONS: Record<string, { x: number; y: number }> = {
   core: { x: 450, y: 195 },
   console: { x: 175, y: 80 },
   wing: { x: 725, y: 80 },
-  pulse: { x: 175, y: 330 },
+  tasks: { x: 175, y: 330 },
   mesh: { x: 450, y: 345 },
   channels: { x: 725, y: 330 },
 };
@@ -39,10 +39,10 @@ interface ConnectionDef {
 const CONNECTIONS: ConnectionDef[] = [
   { id: 'engine-console', from: 'engine', to: 'console' },
   { id: 'engine-wing', from: 'engine', to: 'wing' },
-  { id: 'engine-pulse', from: 'engine', to: 'pulse' },
+  { id: 'engine-tasks', from: 'engine', to: 'tasks' },
   { id: 'engine-mesh', from: 'engine', to: 'mesh', spine: true },
   { id: 'mesh-relay', from: 'mesh', to: 'relay' },
-  { id: 'mesh-pulse', from: 'mesh', to: 'pulse' },
+  { id: 'mesh-tasks', from: 'mesh', to: 'tasks' },
 ];
 
 /** Spring config for release animation — slight overshoot for bounce. */
@@ -774,7 +774,7 @@ export function DiagramV15({ modules }: { modules: SystemModule[] }) {
     core: 0,
     console: 1,
     wing: 2,
-    pulse: 3,
+    tasks: 3,
     mesh: 4,
     channels: 5,
   };

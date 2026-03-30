@@ -12,7 +12,7 @@ import {
 import { timelineEntries } from '../lib/timeline-entries';
 import { REVEAL, STAGGER, VIEWPORT } from '../lib/motion-variants';
 
-const MODULE_NAMES = ['PULSE', 'RELAY', 'MESH', 'CONSOLE', 'WING', 'LOOP', 'ENGINE'];
+const MODULE_NAMES = ['TASKS', 'RELAY', 'MESH', 'CONSOLE', 'WING', 'LOOP', 'ENGINE'];
 
 /**
  * Scroll progress range where the beam travels from top to bottom.
@@ -103,7 +103,7 @@ export function TimelineSection() {
         background: 'linear-gradient(to bottom, #FAF7F0 0%, #FFFEFB 100%)',
       }}
     >
-      {/* Subtle star field — tiny dots that pulse like distant stars, fading at dawn (bottom) */}
+      {/* Subtle star field — tiny dots that tasks like distant stars, fading at dawn (bottom) */}
       <div
         className="pointer-events-none absolute inset-0 hidden md:block"
         aria-hidden="true"

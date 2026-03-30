@@ -2,7 +2,7 @@
  * Shared type definitions for the Claude Code adapter sub-modules.
  *
  * Contains dependency interfaces and configuration types used across
- * the agent handler, pulse handler, and queue modules. Extracted to
+ * the agent handler, tasks handler, and queue modules. Extracted to
  * avoid circular imports between the facade and sub-modules.
  *
  * @module relay/adapters/claude-code-types
@@ -68,8 +68,8 @@ export interface AgentSessionStoreLike {
   set(agentId: string, sdkSessionId: string): void;
 }
 
-/** Minimal PulseStore interface for Pulse run lifecycle updates. */
-export interface PulseStoreLike {
+/** Minimal TasksStore interface for Tasks run lifecycle updates. */
+export interface TasksStoreLike {
   updateRun(runId: string, update: Record<string, unknown>): void;
 }
 
@@ -87,7 +87,7 @@ export interface ClaudeCodeAdapterConfig {
 export interface ClaudeCodeAdapterDeps {
   agentManager: AgentRuntimeLike;
   traceStore: import('../../types.js').TraceStoreLike;
-  pulseStore?: PulseStoreLike;
+  taskStore?: TasksStoreLike;
   /**
    * Persistent store for mapping agent identifiers to SDK session UUIDs.
    *

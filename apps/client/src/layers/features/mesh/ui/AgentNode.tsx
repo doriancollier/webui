@@ -24,7 +24,7 @@ export interface AgentNodeData extends Record<string, unknown> {
   description?: string;
   relayAdapters?: string[];
   relaySubject?: string | null;
-  pulseScheduleCount?: number;
+  taskCount?: number;
   lastSeenAt?: string | null;
   lastSeenEvent?: string | null;
   budget?: { maxHopsPerMessage: number; maxCallsPerHour: number };
@@ -123,7 +123,7 @@ function CompactPill({ d, selected }: { d: AgentNodeData; selected?: boolean }) 
 function DefaultCard({ d, selected }: { d: AgentNodeData; selected?: boolean }) {
   const borderColor = resolveBorderColor(d);
   const hasRelay = d.relayAdapters && d.relayAdapters.length > 0;
-  const hasPulse = d.pulseScheduleCount != null && d.pulseScheduleCount > 0;
+  const hasTasks = d.taskCount != null && d.taskCount > 0;
 
   return (
     <div
@@ -138,13 +138,13 @@ function DefaultCard({ d, selected }: { d: AgentNodeData; selected?: boolean }) 
       <CardHeader d={d} />
 
       {/* Bottom indicator row */}
-      {(hasRelay || hasPulse) && (
+      {(hasRelay || hasTasks) && (
         <div className="text-muted-foreground mt-1.5 flex items-center gap-2">
           {hasRelay && <Zap className="size-3" />}
-          {hasPulse && (
+          {hasTasks && (
             <span className="flex items-center gap-0.5">
               <Clock className="size-3" />
-              <span className="text-[10px]">{d.pulseScheduleCount}</span>
+              <span className="text-[10px]">{d.taskCount}</span>
             </span>
           )}
         </div>
@@ -159,7 +159,7 @@ function DefaultCard({ d, selected }: { d: AgentNodeData; selected?: boolean }) 
 function ExpandedCard({ d, selected }: { d: AgentNodeData; selected?: boolean }) {
   const borderColor = resolveBorderColor(d);
   const hasRelay = d.relayAdapters && d.relayAdapters.length > 0;
-  const hasPulse = d.pulseScheduleCount != null && d.pulseScheduleCount > 0;
+  const hasTasks = d.taskCount != null && d.taskCount > 0;
 
   return (
     <div
@@ -178,8 +178,8 @@ function ExpandedCard({ d, selected }: { d: AgentNodeData; selected?: boolean })
         <p className="text-muted-foreground mt-1.5 line-clamp-2 text-xs">{d.description}</p>
       )}
 
-      {/* Relay adapters + Pulse schedule count */}
-      {(hasRelay || hasPulse) && (
+      {/* Relay adapters + Tasks schedule count */}
+      {(hasRelay || hasTasks) && (
         <div className="text-muted-foreground mt-1.5 flex flex-wrap items-center gap-2">
           {hasRelay &&
             d.relayAdapters!.map((adapter) => (
@@ -188,10 +188,10 @@ function ExpandedCard({ d, selected }: { d: AgentNodeData; selected?: boolean })
                 <span className="text-[10px]">{adapter}</span>
               </span>
             ))}
-          {hasPulse && (
+          {hasTasks && (
             <span className="flex items-center gap-0.5">
               <Clock className="size-3" />
-              <span className="text-[10px]">{d.pulseScheduleCount}</span>
+              <span className="text-[10px]">{d.taskCount}</span>
             </span>
           )}
         </div>

@@ -176,23 +176,23 @@ export const EndpointRegistrationSchema = z
 
 export type EndpointRegistration = z.infer<typeof EndpointRegistrationSchema>;
 
-// === Pulse Dispatch ===
+// === Task Dispatch ===
 
-export const PulseDispatchPayloadSchema = z
+export const TaskDispatchPayloadSchema = z
   .object({
-    type: z.literal('pulse_dispatch'),
-    scheduleId: z.string(),
+    type: z.literal('task_dispatch'),
+    taskId: z.string(),
     runId: z.string(),
     prompt: z.string(),
     cwd: z.string().nullable(),
     permissionMode: z.string(),
-    scheduleName: z.string(),
-    cron: z.string(),
+    taskName: z.string(),
+    cron: z.string().nullable(),
     trigger: z.string(),
   })
-  .openapi('PulseDispatchPayload');
+  .openapi('TaskDispatchPayload');
 
-export type PulseDispatchPayload = z.infer<typeof PulseDispatchPayloadSchema>;
+export type TaskDispatchPayload = z.infer<typeof TaskDispatchPayloadSchema>;
 
 // === Console Relay Receipt ===
 

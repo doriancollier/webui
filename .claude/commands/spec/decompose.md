@@ -9,6 +9,20 @@ argument-hint: '<path-to-spec-file>'
 
 Decompose the specification at: $ARGUMENTS
 
+## Linear Integration (Optional — Spec-Linear Bridge)
+
+After decomposition completes, check the spec's frontmatter for a `linear-issue:` field. If present and Linear MCP tools are available, post a breadcrumb comment to the linked issue:
+
+```
+**Spec Progress** — [date]
+**Phase:** Decomposed into [N] tasks
+**Spec:** `specs/{slug}/`
+**Document:** `specs/{slug}/03-tasks.json`
+**Next:** Run `/spec:execute specs/{slug}/02-specification.md` to begin implementation
+```
+
+If no `linear-issue:` field exists or Linear tools are unavailable, skip silently.
+
 ## Architecture
 
 Background agents **cannot** use TaskCreate/TaskUpdate/TaskList. This command splits work accordingly:

@@ -76,7 +76,7 @@ export const FORMS_SECTIONS: PlaygroundSection[] = [
     title: 'TimezoneCombobox',
     page: 'forms',
     category: 'Composed',
-    keywords: ['timezone', 'combobox', 'iana', 'select', 'search', 'pulse', 'schedule'],
+    keywords: ['timezone', 'combobox', 'iana', 'select', 'search', 'tasks', 'schedule'],
   },
   {
     id: 'scanrootinput',

@@ -81,10 +81,10 @@ export function AdapterCard({
     'size-2 shrink-0 rounded-full',
     instance.status.state === 'error' && 'bg-red-500',
     instance.status.state === 'connected' && effectiveHasBindings && 'bg-green-500',
-    instance.status.state === 'connected' && !effectiveHasBindings && 'animate-pulse bg-amber-500',
+    instance.status.state === 'connected' && !effectiveHasBindings && 'animate-tasks bg-amber-500',
     instance.status.state === 'disconnected' && 'bg-gray-400',
-    instance.status.state === 'starting' && 'animate-pulse bg-blue-400',
-    instance.status.state === 'stopping' && 'animate-pulse bg-gray-400',
+    instance.status.state === 'starting' && 'animate-tasks bg-blue-400',
+    instance.status.state === 'stopping' && 'animate-tasks bg-gray-400',
     !['error', 'connected', 'disconnected', 'starting', 'stopping'].includes(
       instance.status.state
     ) && 'bg-gray-400'

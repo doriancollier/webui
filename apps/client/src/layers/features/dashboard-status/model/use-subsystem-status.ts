@@ -1,4 +1,4 @@
-import { usePulseEnabled, useSchedules, useRuns } from '@/layers/entities/pulse';
+import { useTasksEnabled, useTasks, useTaskRuns } from '@/layers/entities/tasks';
 import {
   useRelayEnabled,
   useRelayAdapters,
@@ -7,8 +7,8 @@ import {
 import { useMeshStatus } from '@/layers/entities/mesh';
 import { useNow } from '@/layers/shared/model';
 
-/** Derived health data for the Pulse scheduler subsystem. */
-interface PulseStatus {
+/** Derived health data for the Tasks scheduler subsystem. */
+interface TasksStatus {
   enabled: boolean;
   scheduleCount: number;
   /** Relative time until next scheduled run, e.g. "47m" or "2h". Null if no schedules. */
@@ -35,7 +35,7 @@ interface MeshStatusDerived {
 
 /** Aggregated subsystem health derived from entity hooks. */
 export interface SubsystemStatus {
-  pulse: PulseStatus;
+  tasks: TasksStatus;
   relay: RelayStatus;
   mesh: MeshStatusDerived;
 }
@@ -56,18 +56,18 @@ function formatNextRunIn(nextRun: string, now: number): string | null {
 
 /**
  * Derive subsystem health from existing entity hooks.
- * Returns disabled state for Pulse/Relay when their feature flag is off.
+ * Returns disabled state for Tasks/Relay when their feature flag is off.
  */
 export function useSubsystemStatus(): SubsystemStatus {
-  const pulseEnabled = usePulseEnabled();
-  const { data: schedules } = useSchedules(pulseEnabled);
-  const { data: failedRuns } = useRuns({ status: 'failed' }, pulseEnabled);
+  const tasksEnabled = useTasksEnabled();
+  const { data: schedules } = useTasks(tasksEnabled);
+  const { data: failedRuns } = useTaskRuns({ status: 'failed' }, tasksEnabled);
   const relayEnabled = useRelayEnabled();
   const { data: adapters } = useRelayAdapters(relayEnabled);
   const { data: deadLetters } = useAggregatedDeadLetters(relayEnabled);
   const { data: meshStatus } = useMeshStatus();
 
-  // Pulse: find earliest next run across all enabled schedules
+  // Tasks: find earliest next run across all enabled schedules
   const now = useNow();
   const twentyFourHoursAgo = now - MS_PER_DAY;
 
@@ -96,8 +96,8 @@ export function useSubsystemStatus(): SubsystemStatus {
     : 0;
 
   return {
-    pulse: {
-      enabled: pulseEnabled,
+    tasks: {
+      enabled: tasksEnabled,
       scheduleCount: schedules?.length ?? 0,
       nextRunIn,
       failedRunCount,

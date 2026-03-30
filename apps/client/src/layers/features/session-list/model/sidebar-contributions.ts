@@ -18,7 +18,7 @@ import { useAppStore } from '@/layers/shared/model';
 // to be self-contained, fetching their own data from hooks instead of props.
 import { OverviewTabPanel } from '../ui/OverviewTabPanel';
 import { SessionsView } from '../ui/SessionsView';
-import { SchedulesView } from '../ui/SchedulesView';
+import { TasksView } from '../ui/TasksView';
 import { ConnectionsView } from '../ui/ConnectionsView';
 
 /**
@@ -91,9 +91,9 @@ export const SIDEBAR_TAB_CONTRIBUTIONS: SidebarTabContribution[] = [
     id: 'schedules',
     icon: Clock,
     label: 'Schedules',
-    component: SchedulesView as unknown as ComponentType,
-    // visibleWhen will be wired to actual pulse tool status during phase 3 migration.
-    // Currently returns true because pulseToolEnabled is derived locally in SessionSidebar,
+    component: TasksView as unknown as ComponentType,
+    // visibleWhen will be wired to actual tasks tool status during phase 3 migration.
+    // Currently returns true because tasksToolEnabled is derived locally in SessionSidebar,
     // not stored in the app store.
     visibleWhen: () => true,
     shortcut: '\u23183',

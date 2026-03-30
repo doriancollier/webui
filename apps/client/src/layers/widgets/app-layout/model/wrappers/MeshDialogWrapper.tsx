@@ -1,5 +1,6 @@
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
@@ -17,7 +18,7 @@ interface DialogWrapperProps {
 export function MeshDialogWrapper({ open, onOpenChange }: DialogWrapperProps) {
   return (
     <ResponsiveDialog open={open} onOpenChange={onOpenChange}>
-      <ResponsiveDialogContent className="h-[85vh] max-w-2xl gap-0 p-0">
+      <ResponsiveDialogContent className="max-h-[85vh] max-w-2xl gap-0 p-0">
         <ResponsiveDialogFullscreenToggle />
         <ResponsiveDialogHeader className="border-b px-4 py-3">
           <ResponsiveDialogTitle className="text-sm font-medium">Mesh</ResponsiveDialogTitle>
@@ -25,9 +26,9 @@ export function MeshDialogWrapper({ open, onOpenChange }: DialogWrapperProps) {
             Agent discovery and registry
           </ResponsiveDialogDescription>
         </ResponsiveDialogHeader>
-        <div className="flex min-h-0 flex-1 flex-col">
+        <ResponsiveDialogBody className="px-0">
           <MeshPanel />
-        </div>
+        </ResponsiveDialogBody>
       </ResponsiveDialogContent>
     </ResponsiveDialog>
   );

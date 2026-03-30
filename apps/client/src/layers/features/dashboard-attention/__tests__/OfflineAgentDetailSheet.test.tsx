@@ -105,7 +105,7 @@ function makeAgent(
     healthStatus: overrides.healthStatus ?? ('unreachable' as const),
     relayAdapters: [],
     relaySubject: null,
-    pulseScheduleCount: 0,
+    taskCount: 0,
     lastSeenAt: overrides.lastSeenAt ?? null,
     lastSeenEvent: null,
   };

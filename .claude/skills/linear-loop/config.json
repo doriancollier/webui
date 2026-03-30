@@ -5,14 +5,9 @@
     "id": "a171dbd5-3ccc-40ab-b58b-1fae7644fba8",
     "key": "DOR"
   },
-  "defaultProject": null,
-  "activeProjects": [
-    "Linear Loop System",
-    "SDK Upgrade 0.2.86",
-    "Immer Streaming Performance Benchmark",
-    "Obsidian DirectTransport Compatibility Verification",
-    "TanStack Pacer Timer Management"
-  ],
+  "filter": {
+    "ownership": "unassigned"
+  },
   "pm": {
     "autoLimit": 5,
     "approvalGates": ["hypothesis-review", "pivot-decision", "project-creation"]

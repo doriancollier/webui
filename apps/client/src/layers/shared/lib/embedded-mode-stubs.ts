@@ -1,7 +1,7 @@
 /**
  * Embedded mode stub methods for subsystems not supported in the Obsidian plugin.
  *
- * Pulse, Relay, Mesh observability, and related features are server-only.
+ * Tasks, Relay, Mesh observability, and related features are server-only.
  * These stubs return empty arrays for list operations and throw descriptive
  * errors for write/mutation operations.
  *
@@ -29,53 +29,53 @@ import type {
   TransportScanEvent,
 } from '@dorkos/shared/mesh-schemas';
 import type {
-  PulseSchedule,
-  PulseRun,
-  CreateScheduleInput,
-  UpdateScheduleRequest,
-  ListRunsQuery,
-  PulsePreset,
+  Task,
+  TaskRun,
+  CreateTaskInput,
+  UpdateTaskRequest,
+  ListTaskRunsQuery,
+  TaskTemplate,
 } from '@dorkos/shared/types';
 
 // ---------------------------------------------------------------------------
-// Pulse scheduler stubs
+// Tasks scheduler stubs
 // ---------------------------------------------------------------------------
 
 /** @internal */
-export const pulseStubs = {
-  async listSchedules(): Promise<PulseSchedule[]> {
+export const tasksStubs = {
+  async listTasks(): Promise<Task[]> {
     return [];
   },
 
-  async createSchedule(_opts: CreateScheduleInput): Promise<PulseSchedule> {
-    throw new Error('Pulse scheduler is not supported in embedded mode');
+  async createTask(_opts: CreateTaskInput): Promise<Task> {
+    throw new Error('Tasks scheduler is not supported in embedded mode');
   },
 
-  async updateSchedule(_id: string, _opts: UpdateScheduleRequest): Promise<PulseSchedule> {
-    throw new Error('Pulse scheduler is not supported in embedded mode');
+  async updateTask(_id: string, _opts: UpdateTaskRequest): Promise<Task> {
+    throw new Error('Tasks scheduler is not supported in embedded mode');
   },
 
-  async deleteSchedule(_id: string): Promise<{ success: boolean }> {
-    throw new Error('Pulse scheduler is not supported in embedded mode');
+  async deleteTask(_id: string): Promise<{ success: boolean }> {
+    throw new Error('Tasks scheduler is not supported in embedded mode');
   },
 
-  async triggerSchedule(_id: string): Promise<{ runId: string }> {
-    throw new Error('Pulse scheduler is not supported in embedded mode');
+  async triggerTask(_id: string): Promise<{ runId: string }> {
+    throw new Error('Tasks scheduler is not supported in embedded mode');
   },
 
-  async listRuns(_opts?: Partial<ListRunsQuery>): Promise<PulseRun[]> {
+  async listTaskRuns(_opts?: Partial<ListTaskRunsQuery>): Promise<TaskRun[]> {
     return [];
   },
 
-  async getRun(_id: string): Promise<PulseRun> {
-    throw new Error('Pulse scheduler is not supported in embedded mode');
+  async getTaskRun(_id: string): Promise<TaskRun> {
+    throw new Error('Tasks scheduler is not supported in embedded mode');
   },
 
-  async cancelRun(_id: string): Promise<{ success: boolean }> {
-    throw new Error('Pulse scheduler is not supported in embedded mode');
+  async cancelTaskRun(_id: string): Promise<{ success: boolean }> {
+    throw new Error('Tasks scheduler is not supported in embedded mode');
   },
 
-  async getPulsePresets(): Promise<PulsePreset[]> {
+  async getTaskTemplates(): Promise<TaskTemplate[]> {
     return [];
   },
 };

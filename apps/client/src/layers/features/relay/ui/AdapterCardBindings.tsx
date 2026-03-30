@@ -59,7 +59,7 @@ export function AdapterCardBindings({
       {isBuiltinClaude ? (
         <p className="text-muted-foreground text-sm">
           Serving {totalAgentCount} {totalAgentCount === 1 ? 'agent' : 'agents'} &middot; Chat +
-          Pulse
+          Tasks
         </p>
       ) : hasBindings ? (
         <>

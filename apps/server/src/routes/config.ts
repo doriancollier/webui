@@ -5,7 +5,7 @@ import { configManager } from '../services/core/config-manager.js';
 import { env } from '../env.js';
 import { UserConfigSchema, SENSITIVE_CONFIG_KEYS } from '@dorkos/shared/config-schema';
 import { getLatestVersion } from '../services/core/update-checker.js';
-import { isPulseEnabled, getPulseInitError } from '../services/pulse/pulse-state.js';
+import { isTasksEnabled, getTasksInitError } from '../services/tasks/task-state.js';
 import { isRelayEnabled, getRelayInitError } from '../services/relay/relay-state.js';
 import { getMeshInitError } from '../services/mesh/mesh-state.js';
 import { getBoundary } from '../lib/boundary.js';
@@ -101,9 +101,9 @@ router.get('/', async (_req, res) => {
       tokenConfigured:
         tunnel.tokenConfigured || !!(env.NGROK_AUTHTOKEN || configManager.get('tunnel')?.authtoken),
     },
-    pulse: {
-      enabled: isPulseEnabled(),
-      ...(getPulseInitError() && { initError: getPulseInitError() }),
+    tasks: {
+      enabled: isTasksEnabled(),
+      ...(getTasksInitError() && { initError: getTasksInitError() }),
     },
     relay: {
       enabled: isRelayEnabled(),

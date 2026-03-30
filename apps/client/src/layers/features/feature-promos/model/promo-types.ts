@@ -25,7 +25,7 @@ export interface PromoContent {
 /** Condition context injected into shouldShow */
 export interface PromoContext {
   hasAdapter: (name: string) => boolean;
-  isPulseEnabled: boolean;
+  isTasksEnabled: boolean;
   isMeshEnabled: boolean;
   isRelayEnabled: boolean;
   sessionCount: number;

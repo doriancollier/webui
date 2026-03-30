@@ -22,18 +22,18 @@ const staggerItem = {
 
 /**
  * System Status section composing 4 subsystem cards in a responsive grid.
- * Shows Pulse, Relay, Mesh health, and a 7-day session activity sparkline.
+ * Shows Tasks, Relay, Mesh health, and a 7-day session activity sparkline.
  */
 export function SystemStatusRow() {
   const status = useSubsystemStatus();
   const activityData = useSessionActivity();
-  const setPulseOpen = useAppStore((s) => s.setPulseOpen);
+  const setTasksOpen = useAppStore((s) => s.setTasksOpen);
   const setRelayOpen = useAppStore((s) => s.setRelayOpen);
   const setMeshOpen = useAppStore((s) => s.setMeshOpen);
 
   const total = activityData.reduce((sum, d) => sum + d, 0);
 
-  const pulseSecondary = status.pulse.nextRunIn ? `Next: ${status.pulse.nextRunIn}` : undefined;
+  const tasksSecondary = status.tasks.nextRunIn ? `Next: ${status.tasks.nextRunIn}` : undefined;
   const relaySecondary =
     status.relay.connectedNames.length > 0 ? status.relay.connectedNames.join(' · ') : undefined;
 
@@ -50,16 +50,16 @@ export function SystemStatusRow() {
       >
         <motion.div variants={staggerItem}>
           <SubsystemCard
-            title="Pulse"
-            primaryMetric={`${status.pulse.scheduleCount} schedule${status.pulse.scheduleCount !== 1 ? 's' : ''}`}
-            secondaryInfo={pulseSecondary}
+            title="Tasks"
+            primaryMetric={`${status.tasks.scheduleCount} schedule${status.tasks.scheduleCount !== 1 ? 's' : ''}`}
+            secondaryInfo={tasksSecondary}
             exception={
-              status.pulse.failedRunCount > 0
-                ? { count: status.pulse.failedRunCount, label: 'failed today', severity: 'error' }
+              status.tasks.failedRunCount > 0
+                ? { count: status.tasks.failedRunCount, label: 'failed today', severity: 'error' }
                 : undefined
             }
-            disabled={!status.pulse.enabled}
-            onClick={() => setPulseOpen(true)}
+            disabled={!status.tasks.enabled}
+            onClick={() => setTasksOpen(true)}
           />
         </motion.div>
         <motion.div variants={staggerItem}>

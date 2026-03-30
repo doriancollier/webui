@@ -123,8 +123,8 @@ const BLOCK_CONFIGS: BlockConfig[] = [
   { id: 'console', col: 0, row: 1, blockHeight: 60, order: 1 },
   // Wing — medium, right of core
   { id: 'wing', col: 4, row: 1, blockHeight: 60, order: 2 },
-  // Pulse — shorter, forward-left
-  { id: 'pulse', col: 0, row: 3, blockHeight: 38, order: 3 },
+  // Tasks — shorter, forward-left
+  { id: 'tasks', col: 0, row: 3, blockHeight: 38, order: 3 },
   // Mesh — shorter, forward-center
   { id: 'mesh', col: 2, row: 3, blockHeight: 38, order: 4 },
   // Relay — shorter, forward-right
@@ -167,8 +167,8 @@ const PIPE_DEFINITIONS = [
   { from: 'console', to: 'engine' },
   // Engine ↔ Wing (top row)
   { from: 'engine', to: 'wing' },
-  // Console ↔ Pulse (front column)
-  { from: 'console', to: 'pulse' },
+  // Console ↔ Tasks (front column)
+  { from: 'console', to: 'tasks' },
   // Engine ↔ Mesh (front column)
   { from: 'engine', to: 'mesh' },
   // Wing ↔ Relay (front column)

@@ -73,12 +73,12 @@ export function generateCircleFavicon(hslColor: string): string {
 }
 
 /**
- * Pre-render a sequence of favicon frames that smoothly pulse from full
+ * Pre-render a sequence of favicon frames that smoothly tasks from full
  * opacity down to `minOpacity` and back using a sine-eased curve.
  * Cycling through the returned array at a fixed interval produces a
  * gentle breathing animation in the browser tab.
  */
-export function generatePulseFrames(
+export function generateTasksFrames(
   solidDataUrl: string,
   frameCount = 20,
   minOpacity = 0.3

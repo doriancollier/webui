@@ -104,14 +104,14 @@ describe('ActiveSessionCard', () => {
     const { container } = renderCard({ status: 'active' });
     const dot = container.querySelector('.bg-blue-500');
     expect(dot).toBeInTheDocument();
-    expect(dot).toHaveClass('animate-pulse');
+    expect(dot).toHaveClass('animate-tasks');
   });
 
   it('shows gray dot for idle status', () => {
     const { container } = renderCard({ status: 'idle' });
     const dot = container.querySelector('.bg-muted-foreground\\/30');
     expect(dot).toBeInTheDocument();
-    expect(dot).not.toHaveClass('animate-pulse');
+    expect(dot).not.toHaveClass('animate-tasks');
   });
 
   it('activity text has truncate class', () => {

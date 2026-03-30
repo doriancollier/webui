@@ -99,7 +99,7 @@ function sharedEdge(
 const RING_ANGLES_DEG = [270, 330, 30, 90, 150, 210] as const;
 
 /** Module IDs assigned to each ring position (index 5 = empty/decorative). */
-const RING_MODULE_IDS = ['console', 'wing', 'relay', 'mesh', 'pulse', null] as const;
+const RING_MODULE_IDS = ['console', 'wing', 'relay', 'mesh', 'tasks', null] as const;
 
 interface HexCell {
   id: string | null;

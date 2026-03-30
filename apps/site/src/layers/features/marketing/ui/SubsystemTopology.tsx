@@ -5,7 +5,7 @@ import '@xyflow/react/dist/style.css';
 
 /** Module colors matching the brand palette. */
 const MODULE_COLORS: Record<string, string> = {
-  pulse: '#CF722B',
+  tasks: '#CF722B',
   relay: '#8B7BA4',
   mesh: '#4A90A4',
   console: '#E85D04',
@@ -23,9 +23,9 @@ const NODES: Node[] = [
     targetPosition: Position.Top,
   },
   {
-    id: 'pulse',
+    id: 'tasks',
     position: { x: 80, y: 80 },
-    data: { label: 'Pulse' },
+    data: { label: 'Tasks' },
     sourcePosition: Position.Right,
     targetPosition: Position.Left,
   },
@@ -77,14 +77,14 @@ const NODES: Node[] = [
 
 /** Edges showing data flow between modules. */
 const EDGES: Edge[] = [
-  { id: 'pulse-console', source: 'pulse', target: 'console', animated: true },
+  { id: 'tasks-console', source: 'tasks', target: 'console', animated: true },
   { id: 'relay-console', source: 'relay', target: 'console', animated: true },
-  { id: 'pulse-mesh', source: 'pulse', target: 'mesh' },
+  { id: 'tasks-mesh', source: 'tasks', target: 'mesh' },
   { id: 'mesh-relay', source: 'mesh', target: 'relay' },
-  { id: 'loop-pulse', source: 'loop', target: 'pulse', animated: true },
+  { id: 'loop-tasks', source: 'loop', target: 'tasks', animated: true },
   { id: 'wing-mesh', source: 'wing', target: 'mesh' },
   { id: 'wing-loop', source: 'wing', target: 'loop' },
-  { id: 'console-pulse', source: 'console', target: 'pulse' },
+  { id: 'console-tasks', source: 'console', target: 'tasks' },
 ].map((edge) => ({
   ...edge,
   style: {

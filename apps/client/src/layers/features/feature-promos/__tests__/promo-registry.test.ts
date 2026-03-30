@@ -98,7 +98,7 @@ describe('promo-registry', () => {
   it('all shouldShow functions are callable with a mock context', () => {
     const mockCtx = {
       hasAdapter: () => false,
-      isPulseEnabled: false,
+      isTasksEnabled: false,
       isMeshEnabled: false,
       isRelayEnabled: false,
       sessionCount: 0,

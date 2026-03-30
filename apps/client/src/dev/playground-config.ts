@@ -99,7 +99,7 @@ export const PAGE_CONFIGS: PageConfig[] = [
   {
     id: 'features',
     label: 'Features',
-    description: 'Domain-specific components from Relay, Mesh, Pulse, and Onboarding features.',
+    description: 'Domain-specific components from Relay, Mesh, Tasks, and Onboarding features.',
     icon: Blocks,
     group: 'features',
     sections: FEATURES_SECTIONS,

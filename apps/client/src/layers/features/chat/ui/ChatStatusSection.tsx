@@ -51,7 +51,7 @@ interface ChatStatusSectionProps {
   isStreaming: boolean;
   onChipClick: (trigger: string) => void;
   presenceInfo: PresenceUpdateEvent | null;
-  presencePulse: boolean;
+  presenceTasks: boolean;
   /** SSE sync connection state for the ConnectionItem indicator. */
   syncConnectionState: ConnectionState;
   /** Number of failed reconnection attempts. */
@@ -107,7 +107,7 @@ export function ChatStatusSection({
   isStreaming,
   onChipClick,
   presenceInfo,
-  presencePulse,
+  presenceTasks,
   syncConnectionState,
   syncFailedAttempts,
 }: ChatStatusSectionProps) {
@@ -359,7 +359,7 @@ export function ChatStatusSection({
                   clientCount={presenceInfo.clientCount}
                   clients={presenceInfo.clients}
                   lockInfo={presenceInfo.lockInfo}
-                  pulse={presencePulse}
+                  tasks={presenceTasks}
                 />
               )}
             </StatusLine.Item>

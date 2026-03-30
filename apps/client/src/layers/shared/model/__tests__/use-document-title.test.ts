@@ -5,7 +5,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import { useDocumentTitle } from '../use-document-title';
 
-const defaults = { isStreaming: false, isWaitingForUser: false, pulseBadgeCount: 0 };
+const defaults = { isStreaming: false, isWaitingForUser: false, tasksBadgeCount: 0 };
 
 describe('useDocumentTitle', () => {
   beforeEach(() => {
@@ -205,7 +205,7 @@ describe('status prefixes', () => {
   });
 });
 
-describe('pulse badge count', () => {
+describe('tasks badge count', () => {
   beforeEach(() => {
     document.title = '';
   });
@@ -222,7 +222,7 @@ describe('pulse badge count', () => {
         activeForm: null,
         isStreaming: false,
         isWaitingForUser: false,
-        pulseBadgeCount: 3,
+        tasksBadgeCount: 3,
       })
     );
     expect(document.title).toMatch(/^\(3\) /);
@@ -236,7 +236,7 @@ describe('pulse badge count', () => {
         activeForm: null,
         isStreaming: false,
         isWaitingForUser: false,
-        pulseBadgeCount: 3,
+        tasksBadgeCount: 3,
       })
     );
     expect(document.title).not.toMatch(/^\(\d+\)/);
@@ -250,7 +250,7 @@ describe('pulse badge count', () => {
         activeForm: null,
         isStreaming: false,
         isWaitingForUser: false,
-        pulseBadgeCount: 0,
+        tasksBadgeCount: 0,
       })
     );
     expect(document.title).not.toMatch(/^\(\d+\)/);
@@ -264,7 +264,7 @@ describe('pulse badge count', () => {
         activeForm: null,
         isStreaming: false,
         isWaitingForUser: true,
-        pulseBadgeCount: 5,
+        tasksBadgeCount: 5,
       })
     );
     expect(document.title).toMatch(/^\(5\) 🔔 /);
@@ -279,7 +279,7 @@ describe('pulse badge count', () => {
           activeForm: null,
           isStreaming,
           isWaitingForUser: false,
-          pulseBadgeCount: 2,
+          tasksBadgeCount: 2,
         }),
       { initialProps: { isStreaming: true } }
     );
@@ -300,7 +300,7 @@ describe('pulse badge count', () => {
         activeForm: null,
         isStreaming: false,
         isWaitingForUser: false,
-        pulseBadgeCount: 4,
+        tasksBadgeCount: 4,
       })
     );
     expect(document.title).toMatch(/^\(4\) /);

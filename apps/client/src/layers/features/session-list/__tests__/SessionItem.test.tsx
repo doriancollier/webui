@@ -271,7 +271,7 @@ describe('SessionActivityIndicator', () => {
     const dot = container.querySelector('[aria-label="Streaming"]');
     expect(dot).not.toBeNull();
     expect(dot!.className).toContain('bg-green-500');
-    expect(dot!.className).toContain('animate-pulse');
+    expect(dot!.className).toContain('animate-tasks');
   });
 
   it('shows red dot when session has an error', () => {
@@ -328,7 +328,7 @@ describe('SessionActivityIndicator', () => {
     const dot = container.querySelector('[aria-label="Waiting for approval"]');
     expect(dot).not.toBeNull();
     expect(dot!.className).toContain('bg-amber-500');
-    expect(dot!.className).toContain('animate-pulse');
+    expect(dot!.className).toContain('animate-tasks');
   });
 
   it('pending approval dot takes priority over streaming dot', () => {

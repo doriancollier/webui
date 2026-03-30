@@ -1306,11 +1306,11 @@ describe('buildConversations', () => {
     expect(conversations[0].from.label).toBe('Unknown');
   });
 
-  it('infers from subject for system pulse messages', () => {
+  it('infers from subject for system tasks messages', () => {
     const messages = [
       {
         id: 'msg-1',
-        subject: 'relay.system.pulse.sched-1',
+        subject: 'relay.system.tasks.sched-1',
         status: 'delivered',
         createdAt: '2026-01-01T00:00:00Z',
       },

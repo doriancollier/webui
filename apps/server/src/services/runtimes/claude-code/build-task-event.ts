@@ -1,4 +1,4 @@
-import type { TaskItem, TaskUpdateEvent, TaskStatus } from '@dorkos/shared/types';
+import type { TaskItem, TaskUpdateEvent, SessionTaskStatus } from '@dorkos/shared/types';
 
 export const TASK_TOOL_NAMES = new Set([
   'TaskCreate',
@@ -34,7 +34,7 @@ export function buildTaskEvent(
       const task: TaskUpdateEvent['task'] = {
         id: (input.taskId as string) ?? '',
         subject: (input.subject as string) ?? '',
-        status: (input.status as TaskStatus) ?? ('' as TaskStatus),
+        status: (input.status as SessionTaskStatus) ?? ('' as SessionTaskStatus),
       };
       if (input.activeForm) task.activeForm = input.activeForm as string;
       if (input.description) task.description = input.description as string;
@@ -64,7 +64,7 @@ export function buildTodoWriteEvent(input: Record<string, unknown>): TaskUpdateE
   const tasks: TaskItem[] = todos.map((todo: Record<string, unknown>, index: number) => ({
     id: String(index + 1),
     subject: (todo.content as string) ?? '',
-    status: ((todo.status as string) ?? 'pending') as TaskStatus,
+    status: ((todo.status as string) ?? 'pending') as SessionTaskStatus,
     activeForm: (todo.activeForm as string) ?? undefined,
   }));
 

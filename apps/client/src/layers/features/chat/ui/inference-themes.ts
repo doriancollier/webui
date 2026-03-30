@@ -12,7 +12,7 @@ export interface IndicatorTheme {
 export const DEFAULT_THEME: IndicatorTheme = {
   name: 'default',
   icon: '✨',
-  iconAnimation: 'shimmer-pulse',
+  iconAnimation: 'shimmer-tasks',
   verbs: DEFAULT_INFERENCE_VERBS,
   verbInterval: 3500,
 };

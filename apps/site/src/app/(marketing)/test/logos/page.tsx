@@ -141,7 +141,7 @@ const variants = [
 
 function LogoFallback() {
   return (
-    <div className="text-warm-gray flex h-32 animate-pulse items-center justify-center font-mono text-sm">
+    <div className="text-warm-gray animate-tasks flex h-32 items-center justify-center font-mono text-sm">
       Loading logo...
     </div>
   );

@@ -93,7 +93,7 @@ describe('AdapterEventLog', () => {
     it('shows skeleton rows while fetching', () => {
       mockUseAdapterEvents.mockReturnValue({ data: undefined, isLoading: true });
       const { container } = render(<AdapterEventLog adapterId="telegram-1" />);
-      // Skeleton elements render pulse-animated divs
+      // Skeleton elements render tasks-animated divs
       const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
       expect(skeletons.length).toBe(4);
     });

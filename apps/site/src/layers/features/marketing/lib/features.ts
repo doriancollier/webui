@@ -5,12 +5,12 @@ export type FeatureStatus = 'ga' | 'beta' | 'coming-soon';
  * DorkOS product subsystem — maps 1:1 to architecture subsystems.
  * Used for tab filtering on /features.
  */
-export type FeatureProduct = 'console' | 'pulse' | 'relay' | 'mesh' | 'core';
+export type FeatureProduct = 'console' | 'tasks' | 'relay' | 'mesh' | 'core';
 
 /** Display labels for each product tab on /features. */
 export const PRODUCT_LABELS: Record<FeatureProduct, string> = {
   console: 'Console',
-  pulse: 'Pulse',
+  tasks: 'Tasks',
   relay: 'Relay',
   mesh: 'Mesh',
   core: 'Core',
@@ -51,7 +51,7 @@ export const CATEGORY_LABELS: Record<FeatureCategory, string> = {
 export interface Feature {
   /** URL key — immutable, lowercase-kebab. Used in /features/[slug] route. */
   slug: string;
-  /** Display name, e.g. "Pulse Scheduler". */
+  /** Display name, e.g. "Tasks Scheduler". */
   name: string;
   /** DorkOS product subsystem — used for tab filtering on catalog index. */
   product: FeatureProduct;
@@ -81,7 +81,7 @@ export interface Feature {
   benefits: string[];
   /** Optional media assets. */
   media?: {
-    /** Path relative to /public, e.g. '/features/pulse-scheduler.png'. */
+    /** Path relative to /public, e.g. '/features/task-scheduler.png'. */
     screenshot?: string;
     /** YouTube embed ID or full URL. */
     demoUrl?: string;
@@ -95,7 +95,7 @@ export interface Feature {
    */
   mdxSlug?: string;
   /**
-   * Explicit link to documentation, e.g. '/docs/pulse'.
+   * Explicit link to documentation, e.g. '/docs/tasks'.
    * Not derived — must be set manually to ensure it stays valid.
    */
   docsUrl?: string;
@@ -186,15 +186,15 @@ export const features: Feature[] = [
     sortOrder: 4,
   },
 
-  // === PULSE ===
+  // === TASKS ===
   {
-    slug: 'pulse-scheduler',
-    name: 'Pulse Scheduler',
-    product: 'pulse',
+    slug: 'task-scheduler',
+    name: 'Tasks Scheduler',
+    product: 'tasks',
     category: 'scheduling',
     tagline: "Schedule agents to run on any cron — they work while you don't",
     description:
-      'Stop manually triggering agent runs. Pulse lets you schedule any agent on any cron expression, with a visual builder, preset gallery, and full run history.',
+      'Stop manually triggering agent runs. Tasks lets you schedule any agent on any cron expression, with a visual builder, preset gallery, and full run history.',
     status: 'ga',
     featured: true,
     benefits: [
@@ -204,10 +204,10 @@ export const features: Feature[] = [
       'Timezone-aware scheduling',
       'Per-schedule working directory configuration',
     ],
-    docsUrl: '/docs/pulse',
+    docsUrl: '/docs/tasks',
     media: {
-      screenshot: '/features/pulse-scheduler.png',
-      alt: 'Pulse Scheduler — visual cron builder with run history panel',
+      screenshot: '/features/task-scheduler.png',
+      alt: 'Tasks Scheduler — visual cron builder with run history panel',
     },
     relatedFeatures: ['relay-message-bus', 'mesh-agent-discovery'],
     sortOrder: 1,
@@ -340,12 +340,12 @@ export const features: Feature[] = [
     benefits: [
       'Stateless Streamable HTTP transport — no persistent connections',
       'Optional API key authentication',
-      'Full Pulse, Relay, and Mesh tool surface',
+      'Full Tasks, Relay, and Mesh tool surface',
       'Works with Claude Code, Cursor, Windsurf, and any MCP client',
       'Auto-documented via OpenAPI at /api/docs',
     ],
     docsUrl: '/docs/mcp',
-    relatedFeatures: ['pulse-scheduler', 'relay-message-bus', 'mesh-agent-discovery'],
+    relatedFeatures: ['task-scheduler', 'relay-message-bus', 'mesh-agent-discovery'],
     sortOrder: 1,
   },
   {

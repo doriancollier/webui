@@ -20,9 +20,9 @@ export interface Subsystem {
 
 export const subsystems: Subsystem[] = [
   {
-    id: 'pulse',
+    id: 'tasks',
     benefit: 'Makes agents work autonomously',
-    name: 'Pulse',
+    name: 'Tasks',
     description: "Tell your agents what to do and when to do it, and they'll handle the rest.",
     status: 'available',
   },

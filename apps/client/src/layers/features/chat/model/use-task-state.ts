@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTransport, useAppStore, useTabVisibility } from '@/layers/shared/model';
 import { QUERY_TIMING } from '@/layers/shared/lib';
-import type { TaskItem, TaskUpdateEvent, TaskStatus } from '@dorkos/shared/types';
+import type { TaskItem, TaskUpdateEvent, SessionTaskStatus } from '@dorkos/shared/types';
 
 /** Check if a task is blocked by any incomplete dependency. */
 function isTaskBlocked(task: TaskItem, taskMap: Map<string, TaskItem>): boolean {
@@ -56,12 +56,12 @@ export interface TaskState {
   isCollapsed: boolean;
   toggleCollapse: () => void;
   handleTaskEvent: (event: TaskUpdateEvent) => void;
-  statusTimestamps: Map<string, { status: TaskStatus; since: number }>;
+  statusTimestamps: Map<string, { status: SessionTaskStatus; since: number }>;
 }
 
 const MAX_VISIBLE = 10;
 
-type StatusTimestampMap = Map<string, { status: TaskStatus; since: number }>;
+type StatusTimestampMap = Map<string, { status: SessionTaskStatus; since: number }>;
 
 /** Combined state for tasks and their status timestamps, kept in sync atomically. */
 interface TaskInternalState {

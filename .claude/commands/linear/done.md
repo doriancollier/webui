@@ -36,4 +36,21 @@ Report completion on a Linear issue. This is an intentional act — "I'm satisfi
    - For `type/hypothesis` issues: create a `type/monitor` issue with the validation criteria from the hypothesis description. Label it `from-agent` origin.
    - If the completed issue was blocking other issues, note that they're now unblocked.
 
-6. **Report** what was done and any follow-up issues created.
+6. **Read Completion Routing** (from the issue description):
+   Check the issue description for an `## On Completion` section. If present, use it as the primary signal for what to recommend next. This is the most specific guidance — it was defined when the issue was created and reflects the intended next step.
+
+   If the `## On Completion` section is missing, fall back to the Phase Transitions table below.
+
+7. **Project Pulse Check** (Loop Continuity — see SKILL.md "Loop Continuity" section):
+   After closing the issue, assess the project state to recommend the next Loop phase:
+   - Query remaining issues in the same project (skip if the issue has no project)
+   - Group by type (`type/*` labels) and status
+   - Apply the Phase Transitions table from SKILL.md:
+     - **All research Done, no hypothesis/spec?** → Recommend `/ideate` (complex) or creating `type/task` sub-issues (simple). Use the Sizing Criteria from SKILL.md.
+     - **All tasks under a hypothesis Done?** → Recommend `/linear:done` on the parent hypothesis.
+     - **All monitors cleared?** → Recommend moving project to Completed.
+     - **Zero remaining active issues?** → Check `specs/manifest.json` for active specs linked to this project (per Spec-Linear Bridge). If active spec exists, do NOT recommend closing. If no spec, recommend moving to Completed.
+   - Present the recommendation clearly: what the project state is, what the next action is, and offer to execute it.
+   - If no transition is detected (other work still in progress), just report the project status briefly.
+
+8. **Report** what was done, any follow-up issues created, and the project pulse check recommendation.

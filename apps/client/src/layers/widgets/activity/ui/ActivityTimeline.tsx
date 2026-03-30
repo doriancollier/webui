@@ -123,6 +123,7 @@ export function ActivityTimeline({
   }
 
   return (
+    // eslint-disable-next-line jsx-a11y/no-static-element-interactions -- roving-tabindex container: arrow keys delegate focus to [data-activity-row] items, not a standard interactive widget
     <div
       ref={containerRef}
       onKeyDown={handleKeyDown}

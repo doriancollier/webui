@@ -83,10 +83,10 @@ describe('TopologyLegend', () => {
       expect(screen.getByText('Stale')).toBeInTheDocument();
     });
 
-    it('renders Relay and Pulse indicator entries', () => {
+    it('renders Relay and Tasks indicator entries', () => {
       render(<TopologyLegend namespaces={SINGLE_NAMESPACE} />);
       expect(screen.getByText('Relay-enabled')).toBeInTheDocument();
-      expect(screen.getByText('Pulse schedules')).toBeInTheDocument();
+      expect(screen.getByText('Tasks schedules')).toBeInTheDocument();
     });
 
     it('renders zoom hint text', () => {

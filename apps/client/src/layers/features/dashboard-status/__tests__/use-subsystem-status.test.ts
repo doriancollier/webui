@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { PulseSchedule, PulseRun } from '@dorkos/shared/types';
+import type { Task, TaskRun } from '@dorkos/shared/types';
 import type { AdapterListItem, AggregatedDeadLetter } from '@dorkos/shared/transport';
 import type { MeshStatus } from '@dorkos/shared/types';
 import { useSubsystemStatus } from '../model/use-subsystem-status';
 
 // Mock all entity hooks
-vi.mock('@/layers/entities/pulse', () => ({
-  usePulseEnabled: vi.fn().mockReturnValue(true),
-  useSchedules: vi.fn().mockReturnValue({ data: undefined }),
-  useRuns: vi.fn().mockReturnValue({ data: undefined }),
+vi.mock('@/layers/entities/tasks', () => ({
+  useTasksEnabled: vi.fn().mockReturnValue(true),
+  useTasks: vi.fn().mockReturnValue({ data: undefined }),
+  useTaskRuns: vi.fn().mockReturnValue({ data: undefined }),
 }));
 
 vi.mock('@/layers/entities/relay', () => ({
@@ -22,7 +22,7 @@ vi.mock('@/layers/entities/mesh', () => ({
   useMeshStatus: vi.fn().mockReturnValue({ data: undefined }),
 }));
 
-import { usePulseEnabled, useSchedules, useRuns } from '@/layers/entities/pulse';
+import { useTasksEnabled, useTasks, useTaskRuns } from '@/layers/entities/tasks';
 import {
   useRelayEnabled,
   useRelayAdapters,
@@ -30,8 +30,8 @@ import {
 } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
 
-/** Minimal PulseSchedule stub for tests — only fields the hook reads. */
-function makeSchedule(overrides: Partial<PulseSchedule>): PulseSchedule {
+/** Minimal Task stub for tests — only fields the hook reads. */
+function makeSchedule(overrides: Partial<Task>): Task {
   return {
     id: 's1',
     name: 'Test',
@@ -44,6 +44,8 @@ function makeSchedule(overrides: Partial<PulseSchedule>): PulseSchedule {
     maxRuntime: null,
     permissionMode: 'default',
     status: 'active',
+    filePath: '/tmp/tasks/test.md',
+    tags: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
     nextRun: null,
@@ -51,8 +53,8 @@ function makeSchedule(overrides: Partial<PulseSchedule>): PulseSchedule {
   };
 }
 
-/** Minimal PulseRun stub for tests — only fields the hook reads. */
-function makeRun(overrides: Partial<PulseRun>): PulseRun {
+/** Minimal TaskRun stub for tests — only fields the hook reads. */
+function makeRun(overrides: Partial<TaskRun>): TaskRun {
   return {
     id: 'r1',
     scheduleId: 's1',
@@ -105,9 +107,9 @@ function makeMeshStatus(totalAgents: number, unreachableCount: number): MeshStat
 describe('useSubsystemStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePulseEnabled).mockReturnValue(true);
-    vi.mocked(useSchedules).mockReturnValue({ data: undefined } as ReturnType<typeof useSchedules>);
-    vi.mocked(useRuns).mockReturnValue({ data: undefined } as ReturnType<typeof useRuns>);
+    vi.mocked(useTasksEnabled).mockReturnValue(true);
+    vi.mocked(useTasks).mockReturnValue({ data: undefined } as ReturnType<typeof useTasks>);
+    vi.mocked(useTaskRuns).mockReturnValue({ data: undefined } as ReturnType<typeof useTaskRuns>);
     vi.mocked(useRelayEnabled).mockReturnValue(true);
     vi.mocked(useRelayAdapters).mockReturnValue({ data: undefined } as ReturnType<
       typeof useRelayAdapters
@@ -120,53 +122,53 @@ describe('useSubsystemStatus', () => {
     >);
   });
 
-  it('returns schedule count from Pulse', () => {
-    vi.mocked(useSchedules).mockReturnValue({
+  it('returns schedule count from Tasks', () => {
+    vi.mocked(useTasks).mockReturnValue({
       data: [makeSchedule({ id: 's1', name: 'Daily' }), makeSchedule({ id: 's2', name: 'Hourly' })],
-    } as ReturnType<typeof useSchedules>);
+    } as ReturnType<typeof useTasks>);
 
     const { result } = renderHook(() => useSubsystemStatus());
 
-    expect(result.current.pulse.scheduleCount).toBe(2);
+    expect(result.current.tasks.scheduleCount).toBe(2);
   });
 
   it('computes nextRunIn from the earliest future schedule nextRun', () => {
     // Use 90 minutes to avoid off-by-one from test execution time (floor rounds down)
     const futureDate = new Date(Date.now() + 90 * 60 * 1000).toISOString();
-    vi.mocked(useSchedules).mockReturnValue({
+    vi.mocked(useTasks).mockReturnValue({
       data: [makeSchedule({ nextRun: futureDate })],
-    } as ReturnType<typeof useSchedules>);
+    } as ReturnType<typeof useTasks>);
 
     const { result } = renderHook(() => useSubsystemStatus());
 
-    expect(result.current.pulse.nextRunIn).toBe('1h');
+    expect(result.current.tasks.nextRunIn).toBe('1h');
   });
 
   it('returns null nextRunIn when no schedules have future runs', () => {
-    vi.mocked(useSchedules).mockReturnValue({
+    vi.mocked(useTasks).mockReturnValue({
       data: [makeSchedule({ nextRun: null })],
-    } as ReturnType<typeof useSchedules>);
+    } as ReturnType<typeof useTasks>);
 
     const { result } = renderHook(() => useSubsystemStatus());
 
-    expect(result.current.pulse.nextRunIn).toBeNull();
+    expect(result.current.tasks.nextRunIn).toBeNull();
   });
 
   it('counts failed runs from the last 24 hours', () => {
     const recentFailed = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // 1h ago
     const oldFailed = new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(); // 25h ago
 
-    vi.mocked(useRuns).mockReturnValue({
+    vi.mocked(useTaskRuns).mockReturnValue({
       data: [
         makeRun({ id: 'r1', createdAt: recentFailed }),
         makeRun({ id: 'r2', createdAt: oldFailed }),
       ],
-    } as ReturnType<typeof useRuns>);
+    } as ReturnType<typeof useTaskRuns>);
 
     const { result } = renderHook(() => useSubsystemStatus());
 
     // Only the recent failure should be counted
-    expect(result.current.pulse.failedRunCount).toBe(1);
+    expect(result.current.tasks.failedRunCount).toBe(1);
   });
 
   it('returns connected adapter names from Relay', () => {
@@ -201,12 +203,12 @@ describe('useSubsystemStatus', () => {
     expect(result.current.mesh.offlineCount).toBe(2);
   });
 
-  it('returns disabled state when Pulse feature flag is off', () => {
-    vi.mocked(usePulseEnabled).mockReturnValue(false);
+  it('returns disabled state when Tasks feature flag is off', () => {
+    vi.mocked(useTasksEnabled).mockReturnValue(false);
 
     const { result } = renderHook(() => useSubsystemStatus());
 
-    expect(result.current.pulse.enabled).toBe(false);
+    expect(result.current.tasks.enabled).toBe(false);
   });
 
   it('returns disabled state when Relay feature flag is off', () => {
@@ -220,8 +222,8 @@ describe('useSubsystemStatus', () => {
   it('returns zero defaults when all data is undefined', () => {
     const { result } = renderHook(() => useSubsystemStatus());
 
-    expect(result.current.pulse.scheduleCount).toBe(0);
-    expect(result.current.pulse.failedRunCount).toBe(0);
+    expect(result.current.tasks.scheduleCount).toBe(0);
+    expect(result.current.tasks.failedRunCount).toBe(0);
     expect(result.current.relay.adapterCount).toBe(0);
     expect(result.current.relay.deadLetterCount).toBe(0);
     expect(result.current.relay.connectedNames).toEqual([]);

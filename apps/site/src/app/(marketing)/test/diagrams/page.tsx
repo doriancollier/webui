@@ -38,7 +38,7 @@ const variants = [
     id: 2,
     title: 'Circuit Board',
     description:
-      'PCB-trace aesthetic with right-angle connections, solder joints at nodes, and signal-pulse animations along traces.',
+      'PCB-trace aesthetic with right-angle connections, solder joints at nodes, and signal-tasks animations along traces.',
     Component: lazyVariant(() => import('./variants/v2-circuit-board'), 'DiagramV2'),
   },
   {
@@ -59,7 +59,7 @@ const variants = [
     id: 5,
     title: 'Neural Network',
     description:
-      'Brain-inspired visualization with dendrite-like branching connections and synaptic pulse animations.',
+      'Brain-inspired visualization with dendrite-like branching connections and synaptic tasks animations.',
     Component: lazyVariant(() => import('./variants/v5-neural-network'), 'DiagramV5'),
   },
   {
@@ -108,7 +108,7 @@ const variants = [
     id: 12,
     title: 'Glowing Border Network',
     description:
-      'Cards with animated gradient borders that trace around their perimeter. Connections are glowing beams with traveling light pulses. Dark theme, neon aesthetic.',
+      'Cards with animated gradient borders that trace around their perimeter. Connections are glowing beams with traveling light taskss. Dark theme, neon aesthetic.',
     Component: lazyVariant(() => import('./variants/v12-glowing-network'), 'DiagramV12'),
   },
   {
@@ -136,7 +136,7 @@ const variants = [
 
 function DiagramFallback() {
   return (
-    <div className="text-warm-gray flex h-64 animate-pulse items-center justify-center font-mono text-sm">
+    <div className="text-warm-gray animate-tasks flex h-64 items-center justify-center font-mono text-sm">
       Loading diagram...
     </div>
   );

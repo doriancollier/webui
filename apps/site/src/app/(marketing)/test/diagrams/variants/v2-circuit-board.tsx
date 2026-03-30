@@ -28,7 +28,7 @@ const POS = {
   core: { x: VB_W / 2, y: 185 },
   console: { x: 155, y: 185 },
   wing: { x: VB_W - 155, y: 185 },
-  pulse: { x: 185, y: 395 },
+  tasks: { x: 185, y: 395 },
   mesh: { x: VB_W / 2, y: 395 },
   channels: { x: VB_W - 185, y: 395 },
 } as const;
@@ -59,9 +59,9 @@ function vhPath(x1: number, y1: number, x2: number, y2: number): string {
 /**
  * PCB trace routes. Each trace has:
  * - d: SVG path (right-angle only)
- * - animDelay: CSS animation-delay for the traveling pulse dot
- * - animDur: CSS animation-duration for the traveling pulse dot
- * - pulseLen: approximate total path length (for animateMotion timing)
+ * - animDelay: CSS animation-delay for the traveling tasks dot
+ * - animDur: CSS animation-duration for the traveling tasks dot
+ * - tasksLen: approximate total path length (for animateMotion timing)
  */
 const TRACES = [
   // Console ─── horizontal ──► Engine (left pin of Engine to right pin of Console)
@@ -85,10 +85,10 @@ const TRACES = [
     delay: 0.4,
     dur: 2.0,
   },
-  // Engine ──► Pulse (down then left — elbow routing)
+  // Engine ──► Tasks (down then left — elbow routing)
   {
-    id: 'engine-pulse',
-    d: hvPath(POS.core.x, POS.core.y + CORE_H / 2 + 20, POS.pulse.x, POS.pulse.y - BUS_H / 2),
+    id: 'engine-tasks',
+    d: hvPath(POS.core.x, POS.core.y + CORE_H / 2 + 20, POS.tasks.x, POS.tasks.y - BUS_H / 2),
     delay: 0.6,
     dur: 2.8,
   },
@@ -283,9 +283,9 @@ const SOLDER_JOINTS = [
   // Engine–Mesh vertical trace: bottom of Engine, top of Mesh
   { cx: POS.core.x, cy: POS.core.y + CORE_H / 2 },
   { cx: POS.mesh.x, cy: POS.mesh.y - BUS_H / 2 },
-  // Engine–Pulse elbow: elbow corner and Pulse top
+  // Engine–Tasks elbow: elbow corner and Tasks top
   { cx: POS.core.x, cy: POS.core.y + CORE_H / 2 + 20 },
-  { cx: POS.pulse.x, cy: POS.pulse.y - BUS_H / 2 },
+  { cx: POS.tasks.x, cy: POS.tasks.y - BUS_H / 2 },
   // Engine–Relay elbow: elbow corner and Relay top
   { cx: POS.channels.x, cy: POS.core.y + CORE_H / 2 + 20 },
   { cx: POS.channels.x, cy: POS.channels.y - BUS_H / 2 },
@@ -295,7 +295,7 @@ const SOLDER_JOINTS = [
 
 /**
  * Circuit board architecture diagram — PCB aesthetic with right-angle traces,
- * IC chip modules, solder joints, and animated signal pulses.
+ * IC chip modules, solder joints, and animated signal taskss.
  *
  * @param modules - The six DorkOS system modules to render as IC chips.
  */
@@ -306,28 +306,28 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
 
   return (
     <>
-      {/* Inline keyframes for the repeating signal pulse CSS animation */}
+      {/* Inline keyframes for the repeating signal tasks CSS animation */}
       <style>{`
-        @keyframes pcb-pulse-travel {
+        @keyframes pcb-tasks-travel {
           0%   { offset-distance: 0%;   opacity: 0; }
           5%   { opacity: 1; }
           90%  { opacity: 1; }
           100% { offset-distance: 100%; opacity: 0; }
         }
 
-        .pcb-pulse {
+        .pcb-tasks {
           width: 6px;
           height: 6px;
           border-radius: 50%;
           background: var(--color-brand-orange);
           box-shadow: 0 0 6px 2px var(--color-brand-orange);
           position: absolute;
-          animation: pcb-pulse-travel 3s ease-in-out infinite;
+          animation: pcb-tasks-travel 3s ease-in-out infinite;
           animation-fill-mode: both;
         }
 
         @media (prefers-reduced-motion: reduce) {
-          .pcb-pulse { animation: none; opacity: 0; }
+          .pcb-tasks { animation: none; opacity: 0; }
         }
       `}</style>
 
@@ -371,8 +371,8 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
             </feMerge>
           </filter>
 
-          {/* Pulse dot glow filter */}
-          <filter id="pulse-glow" x="-100%" y="-100%" width="300%" height="300%">
+          {/* Tasks dot glow filter */}
+          <filter id="tasks-glow" x="-100%" y="-100%" width="300%" height="300%">
             <feGaussianBlur stdDeviation="3" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
@@ -380,12 +380,12 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
             </feMerge>
           </filter>
 
-          {/* Signal pulse marker for animateMotion */}
+          {/* Signal tasks marker for animateMotion */}
           <circle
             id="signal-dot"
             r="3.5"
             fill="var(--color-brand-orange)"
-            filter="url(#pulse-glow)"
+            filter="url(#tasks-glow)"
           />
         </defs>
 
@@ -432,7 +432,7 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
 
         {/* ── Horizontal bus rail (bottom row connection backbone) ── */}
         <motion.line
-          x1={POS.pulse.x}
+          x1={POS.tasks.x}
           y1={POS.mesh.y - BUS_H / 2 - 20}
           x2={POS.channels.x}
           y2={POS.mesh.y - BUS_H / 2 - 20}
@@ -468,9 +468,9 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
               }}
             />
 
-            {/* Traveling signal pulse using SMIL animateMotion */}
+            {/* Traveling signal tasks using SMIL animateMotion */}
             {drawn && (
-              <circle r="3.5" fill="var(--color-brand-orange)" filter="url(#pulse-glow)">
+              <circle r="3.5" fill="var(--color-brand-orange)" filter="url(#tasks-glow)">
                 <animateMotion
                   path={trace.d}
                   dur={`${trace.dur}s`}
@@ -537,16 +537,16 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
           status={byId['wing']?.status ?? 'coming-soon'}
         />
 
-        {/* Lower bus — Pulse, Mesh, Relay */}
+        {/* Lower bus — Tasks, Mesh, Relay */}
         <Chip
-          id="pulse"
-          cx={POS.pulse.x}
-          cy={POS.pulse.y}
+          id="tasks"
+          cx={POS.tasks.x}
+          cy={POS.tasks.y}
           w={BUS_W}
           h={BUS_H}
-          name={byId['pulse']?.name ?? 'Pulse'}
-          label={byId['pulse']?.label ?? 'Heartbeat'}
-          status={byId['pulse']?.status ?? 'coming-soon'}
+          name={byId['tasks']?.name ?? 'Tasks'}
+          label={byId['tasks']?.label ?? 'Heartbeat'}
+          status={byId['tasks']?.status ?? 'coming-soon'}
         />
         <Chip
           id="mesh"
@@ -576,7 +576,7 @@ export function DiagramV2({ modules }: { modules: SystemModule[] }) {
             { label: 'U1', cx: POS.core.x, cy: POS.core.y + CORE_H / 2 + 12 },
             { label: 'U2', cx: POS.console.x, cy: POS.console.y + SIDE_H / 2 + 12 },
             { label: 'U3', cx: POS.wing.x, cy: POS.wing.y + SIDE_H / 2 + 12 },
-            { label: 'U4', cx: POS.pulse.x, cy: POS.pulse.y + BUS_H / 2 + 11 },
+            { label: 'U4', cx: POS.tasks.x, cy: POS.tasks.y + BUS_H / 2 + 11 },
             { label: 'U5', cx: POS.mesh.x, cy: POS.mesh.y + BUS_H / 2 + 11 },
             { label: 'U6', cx: POS.channels.x, cy: POS.channels.y + BUS_H / 2 + 11 },
           ] as const

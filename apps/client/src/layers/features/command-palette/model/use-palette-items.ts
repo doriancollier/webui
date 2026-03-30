@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useMeshAgentPaths } from '@/layers/entities/mesh';
 import { useCommands } from '@/layers/entities/command';
 import { useSessions } from '@/layers/entities/session';
-import { useActiveRunCount } from '@/layers/entities/pulse';
+import { useActiveTaskRunCount } from '@/layers/entities/tasks';
 import { useAppStore, useNow, useSlotContributions } from '@/layers/shared/model';
 import { shortenHomePath } from '@/layers/shared/lib';
 import { useAgentFrecency } from './use-agent-frecency';
@@ -69,7 +69,7 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
   const { data: commandsData } = useCommands();
   const { getSortedAgentIds } = useAgentFrecency();
   const { sessions } = useSessions();
-  const { data: activeRunCount } = useActiveRunCount();
+  const { data: activeRunCount } = useActiveTaskRunCount();
   const previousCwd = useAppStore((s) => s.previousCwd);
   const now = useNow();
 
@@ -173,14 +173,14 @@ export function usePaletteItems(activeCwd: string | null): PaletteItems {
       }
     }
 
-    // Rule 2: 'N active Pulse runs' if activeRunCount > 0
+    // Rule 2: 'N active Tasks runs' if activeRunCount > 0
     if (activeRunCount && activeRunCount > 0) {
       items.push({
-        id: 'suggestion-pulse',
-        label: `${activeRunCount} active Pulse run${activeRunCount > 1 ? 's' : ''}`,
+        id: 'suggestion-tasks',
+        label: `${activeRunCount} active Tasks run${activeRunCount > 1 ? 's' : ''}`,
         description: 'View running schedules',
         icon: 'Clock',
-        action: 'openPulse',
+        action: 'openTasks',
       });
     }
 

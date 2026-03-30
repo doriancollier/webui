@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
-import type { PulseRun } from '@dorkos/shared/types';
+import type { TaskRun } from '@dorkos/shared/types';
 import type { AggregatedDeadLetter, AdapterListItem } from '@dorkos/shared/transport';
 import type { MeshStatus } from '@dorkos/shared/types';
 
@@ -8,8 +8,8 @@ import type { MeshStatus } from '@dorkos/shared/types';
 // Mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@/layers/entities/pulse', () => ({
-  useRuns: vi.fn().mockReturnValue({ data: undefined }),
+vi.mock('@/layers/entities/tasks', () => ({
+  useTaskRuns: vi.fn().mockReturnValue({ data: undefined }),
 }));
 
 vi.mock('@/layers/entities/relay', () => ({
@@ -25,7 +25,7 @@ vi.mock('@/layers/shared/model', () => ({
   useNow: vi.fn().mockReturnValue(Date.now()),
 }));
 
-import { useRuns } from '@/layers/entities/pulse';
+import { useTaskRuns } from '@/layers/entities/tasks';
 import { useAggregatedDeadLetters, useRelayAdapters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
 import { useSystemHealth } from '../model/use-system-health';
@@ -34,7 +34,7 @@ import { useSystemHealth } from '../model/use-system-health';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeRun(createdAt: string): PulseRun {
+function makeRun(createdAt: string): TaskRun {
   return {
     id: 'run-1',
     scheduleId: 'sched-1',
@@ -98,7 +98,7 @@ function makeAdapter(state: 'connected' | 'disconnected' | 'error'): AdapterList
 describe('useSystemHealth', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(useRuns).mockReturnValue({ data: undefined } as ReturnType<typeof useRuns>);
+    vi.mocked(useTaskRuns).mockReturnValue({ data: undefined } as ReturnType<typeof useTaskRuns>);
     vi.mocked(useAggregatedDeadLetters).mockReturnValue({ data: undefined } as ReturnType<
       typeof useAggregatedDeadLetters
     >);
@@ -115,18 +115,18 @@ describe('useSystemHealth', () => {
     expect(result.current).toBe('healthy');
   });
 
-  it('returns error when failed Pulse runs exist in last 24h', () => {
+  it('returns error when failed Tasks runs exist in last 24h', () => {
     const recentRun = makeRun(new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString());
-    vi.mocked(useRuns).mockReturnValue({ data: [recentRun] } as ReturnType<typeof useRuns>);
+    vi.mocked(useTaskRuns).mockReturnValue({ data: [recentRun] } as ReturnType<typeof useTaskRuns>);
 
     const { result } = renderHook(() => useSystemHealth());
 
     expect(result.current).toBe('error');
   });
 
-  it('returns healthy when failed Pulse runs are older than 24h', () => {
+  it('returns healthy when failed Tasks runs are older than 24h', () => {
     const oldRun = makeRun(new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString());
-    vi.mocked(useRuns).mockReturnValue({ data: [oldRun] } as ReturnType<typeof useRuns>);
+    vi.mocked(useTaskRuns).mockReturnValue({ data: [oldRun] } as ReturnType<typeof useTaskRuns>);
 
     const { result } = renderHook(() => useSystemHealth());
 
@@ -205,7 +205,7 @@ describe('useSystemHealth', () => {
 
   it('prioritizes error over degraded', () => {
     const recentRun = makeRun(new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString());
-    vi.mocked(useRuns).mockReturnValue({ data: [recentRun] } as ReturnType<typeof useRuns>);
+    vi.mocked(useTaskRuns).mockReturnValue({ data: [recentRun] } as ReturnType<typeof useTaskRuns>);
     vi.mocked(useRelayAdapters).mockReturnValue({
       data: [makeAdapter('disconnected')],
     } as ReturnType<typeof useRelayAdapters>);

@@ -25,7 +25,7 @@ export function ActiveSessionCard({ session }: ActiveSessionCardProps) {
           <span
             className={cn(
               'size-2 rounded-full',
-              session.status === 'active' ? 'animate-pulse bg-blue-500' : 'bg-muted-foreground/30'
+              session.status === 'active' ? 'animate-tasks bg-blue-500' : 'bg-muted-foreground/30'
             )}
           />
           <span className="text-muted-foreground text-xs tabular-nums">{session.elapsedTime}</span>

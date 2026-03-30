@@ -16,7 +16,7 @@ const staggerContainer = {
 /**
  * Conditional attention section that renders zero DOM when empty.
  * Animates in when attention items appear, animates out when resolved.
- * Items are sourced from stalled sessions, failed Pulse runs, dead letters, and offline agents.
+ * Items are sourced from stalled sessions, failed Tasks runs, dead letters, and offline agents.
  */
 export function NeedsAttentionSection() {
   const items = useAttentionItems();

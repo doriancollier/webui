@@ -25,7 +25,7 @@ try {
       tunnel: { type: 'boolean', short: 't', default: false },
       dir: { type: 'string', short: 'd' },
       boundary: { type: 'string', short: 'b' },
-      pulse: { type: 'boolean' },
+      tasks: { type: 'boolean' },
       'log-level': { type: 'string', short: 'l' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -72,8 +72,8 @@ Options:
   -t, --tunnel           Enable ngrok tunnel
   -d, --dir <path>       Working directory (default: current directory)
   -b, --boundary <path>  Directory boundary (default: home directory)
-      --pulse              Enable Pulse scheduler
-      --no-pulse           Disable Pulse scheduler
+      --tasks              Enable Tasks scheduler
+      --no-tasks           Disable Tasks scheduler
   -l, --log-level <level>  Log level (fatal|error|warn|info|debug|trace)
       --post-install-check  Verify installation and exit
   -h, --help             Show this help message
@@ -185,11 +185,11 @@ if (tunnelDomain && !process.env.TUNNEL_DOMAIN) {
   process.env.TUNNEL_DOMAIN = tunnelDomain;
 }
 
-// Pulse scheduler: CLI flag > env var > config
-if (values.pulse !== undefined) {
-  process.env.DORKOS_PULSE_ENABLED = values.pulse ? 'true' : 'false';
-} else if (!process.env.DORKOS_PULSE_ENABLED && cfgMgr.getDot('scheduler.enabled')) {
-  process.env.DORKOS_PULSE_ENABLED = 'true';
+// Tasks scheduler: CLI flag > env var > config
+if (values.tasks !== undefined) {
+  process.env.DORKOS_TASKS_ENABLED = values.tasks ? 'true' : 'false';
+} else if (!process.env.DORKOS_TASKS_ENABLED && cfgMgr.getDot('scheduler.enabled')) {
+  process.env.DORKOS_TASKS_ENABLED = 'true';
 }
 
 // Relay: env var > config (no CLI flag for relay)

@@ -10,13 +10,13 @@ import { useOnboarding } from '../model/use-onboarding';
 import { WelcomeStep } from './WelcomeStep';
 import { MeetDorkBotStep } from './MeetDorkBotStep';
 import { AgentDiscoveryStep } from './AgentDiscoveryStep';
-import { PulsePresetsStep } from './PulsePresetsStep';
+import { TaskTemplatesStep } from './TaskTemplatesStep';
 import { OnboardingComplete } from './OnboardingComplete';
 
-const STEPS = ['meet-dorkbot', 'discovery', 'pulse'] as const;
+const STEPS = ['meet-dorkbot', 'discovery', 'tasks'] as const;
 
-/** Index of the Pulse step within STEPS — used for auto-skip logic. */
-const PULSE_STEP_INDEX = STEPS.indexOf('pulse');
+/** Index of the Tasks step within STEPS — used for auto-skip logic. */
+const TASKS_STEP_INDEX = STEPS.indexOf('tasks');
 
 interface OnboardingFlowProps {
   onComplete: () => void;
@@ -27,7 +27,7 @@ interface OnboardingFlowProps {
  * Full-screen onboarding container managing step navigation, skip controls,
  * and animated transitions between onboarding steps.
  *
- * Flow: Welcome -> Meet DorkBot -> Discovery -> Pulse -> Complete
+ * Flow: Welcome -> Meet DorkBot -> Discovery -> Tasks -> Complete
  *
  * @param onComplete - Called when onboarding finishes (last step or skip all)
  * @param initialStep - Zero-based index of the starting step (default: -1 for welcome)
@@ -99,14 +99,14 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
     onComplete();
   }, [config, navigate, onComplete]);
 
-  // Auto-skip Pulse step when no agents are registered
+  // Auto-skip Tasks step when no agents are registered
   useEffect(() => {
     if (
-      currentStep === PULSE_STEP_INDEX &&
+      currentStep === TASKS_STEP_INDEX &&
       !agentPaths.isLoading &&
       agentPaths.data?.agents.length === 0
     ) {
-      completeStep('pulse');
+      completeStep('tasks');
       goNext();
     }
   }, [currentStep, agentPaths.isLoading, agentPaths.data, completeStep, goNext]);
@@ -217,7 +217,7 @@ export function OnboardingFlow({ onComplete, initialStep = -1 }: OnboardingFlowP
               {currentStep === 0 && <MeetDorkBotStep onStepComplete={handleStepComplete} />}
               {currentStep === 1 && <AgentDiscoveryStep onStepComplete={handleStepComplete} />}
               {currentStep === 2 && (
-                <PulsePresetsStep
+                <TaskTemplatesStep
                   onStepComplete={handleStepComplete}
                   agents={agentPaths.data?.agents ?? []}
                 />

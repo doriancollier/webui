@@ -103,7 +103,7 @@ describe('AgentNode reduced motion', () => {
   // agents; the browser respects the prefers-reduced-motion media query.
 
   describe('default card (zoom 0.6-1.2)', () => {
-    it('renders animate-ping health pulse for active agents', () => {
+    it('renders animate-ping health tasks for active agents', () => {
       const { container } = render(<AgentNode {...makeMockProps({ healthStatus: 'active' })} />);
       const pingElement = container.querySelector('.animate-ping');
       expect(pingElement).toBeInTheDocument();

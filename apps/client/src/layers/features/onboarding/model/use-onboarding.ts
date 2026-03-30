@@ -5,7 +5,7 @@ import { useTransport } from '@/layers/shared/model';
 import type { OnboardingState, OnboardingStep } from '@dorkos/shared/config-schema';
 
 const CONFIG_KEY = ['config'] as const;
-const ALL_STEPS: OnboardingStep[] = ['meet-dorkbot', 'discovery', 'pulse', 'adapters'];
+const ALL_STEPS: OnboardingStep[] = ['meet-dorkbot', 'discovery', 'tasks', 'adapters'];
 
 /**
  * Manage first-time user onboarding state stored server-side in `~/.dork/config.json`.

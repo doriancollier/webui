@@ -14,8 +14,8 @@ const baseItem = {
   actorType: 'user' as const,
   actorId: null,
   actorLabel: 'You',
-  category: 'pulse' as const,
-  eventType: 'pulse.ran_success',
+  category: 'tasks' as const,
+  eventType: 'tasks.run_success',
   resourceType: 'schedule',
   resourceId: 'sched-001',
   resourceLabel: 'daily-digest',
@@ -26,7 +26,7 @@ const baseItem = {
 
 describe('ActivityCategorySchema', () => {
   it('accepts all valid categories', () => {
-    for (const cat of ['pulse', 'relay', 'agent', 'config', 'system']) {
+    for (const cat of ['tasks', 'relay', 'agent', 'config', 'system']) {
       expect(ActivityCategorySchema.parse(cat)).toBe(cat);
     }
   });
@@ -38,7 +38,7 @@ describe('ActivityCategorySchema', () => {
 
 describe('ActorTypeSchema', () => {
   it('accepts all valid actor types', () => {
-    for (const actor of ['user', 'agent', 'system', 'pulse']) {
+    for (const actor of ['user', 'agent', 'system', 'tasks']) {
       expect(ActorTypeSchema.parse(actor)).toBe(actor);
     }
   });
@@ -116,7 +116,7 @@ describe('ListActivityQuerySchema', () => {
     const result = ListActivityQuerySchema.parse({
       limit: '10',
       before: '2026-03-29T09:00:00.000Z',
-      categories: 'pulse,relay',
+      categories: 'tasks,relay',
       actorType: 'agent',
       actorId: 'agent-001',
       since: '2026-03-28T00:00:00.000Z',
@@ -124,7 +124,7 @@ describe('ListActivityQuerySchema', () => {
     expect(result).toEqual({
       limit: 10,
       before: '2026-03-29T09:00:00.000Z',
-      categories: 'pulse,relay',
+      categories: 'tasks,relay',
       actorType: 'agent',
       actorId: 'agent-001',
       since: '2026-03-28T00:00:00.000Z',

@@ -27,7 +27,7 @@ import {
 import type {
   ClaudeCodeAgentRuntimeLike,
   TraceStoreLike,
-  PulseStoreLike,
+  TasksStoreLike,
   AgentSessionStoreLike,
 } from '@dorkos/relay';
 import type { AdapterManifest } from '@dorkos/shared/relay-schemas';
@@ -37,7 +37,7 @@ import { logger, createTaggedLogger } from '../../lib/logger.js';
 export interface AdapterFactoryDeps {
   agentManager: ClaudeCodeAgentRuntimeLike;
   traceStore: TraceStoreLike;
-  pulseStore?: PulseStoreLike;
+  taskStore?: TasksStoreLike;
   /** Optional persistent store for agent key → SDK session UUID mappings. */
   agentSessionStore?: AgentSessionStoreLike;
 }
@@ -86,7 +86,7 @@ export async function createAdapter(
       return new ClaudeCodeAdapter(config.id, config.config as Record<string, unknown>, {
         agentManager: deps.agentManager,
         traceStore: deps.traceStore,
-        pulseStore: deps.pulseStore,
+        taskStore: deps.taskStore,
         agentSessionStore: deps.agentSessionStore,
         logger,
       });

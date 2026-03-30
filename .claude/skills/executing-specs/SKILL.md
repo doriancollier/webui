@@ -138,7 +138,11 @@ Estimated: <N> parallel batches
 ═══════════════════════════════════════════════════
 ```
 
-### 3.2 Ask User to Proceed
+### 3.2 Proceed (Default: Auto-Execute)
+
+By default, proceed immediately to full execution — **do not ask**. Only pause if the user explicitly passed `--pause`, `--step`, or `--review` in the arguments.
+
+If a pause flag was passed:
 
 ```
 AskUserQuestion:
@@ -147,6 +151,12 @@ AskUserQuestion:
   - "Execute all batches" (Recommended) - Run all tasks to completion
   - "Execute one batch" - Run only the first batch, then pause
   - "Review tasks first" - Show detailed task list before executing
+```
+
+Otherwise, display:
+
+```
+Executing all <Z> tasks across <N> batches...
 ```
 
 ### 3.3 Execute Each Batch

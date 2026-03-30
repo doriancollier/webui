@@ -9,7 +9,7 @@ Subject hierarchy:
   relay.agent.{sessionId}          — address a specific agent session
   relay.human.console.{clientId}   — reach a human in the DorkOS UI
   relay.system.console             — system broadcast channel
-  relay.system.pulse.{scheduleId}  — Pulse scheduler events
+  relay.system.tasks.{scheduleId}  — Tasks scheduler events
 
 Workflows:
 - Register a reply address first: relay_register_endpoint(subject="relay.agent.{your-sessionId}")

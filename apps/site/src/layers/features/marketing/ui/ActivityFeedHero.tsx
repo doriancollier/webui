@@ -15,7 +15,7 @@ interface ActivityFeedHeroProps {
   githubHref?: string;
 }
 
-type ModuleId = 'engine' | 'pulse' | 'wing' | 'mesh' | 'relay' | 'agent' | 'loop';
+type ModuleId = 'engine' | 'tasks' | 'wing' | 'mesh' | 'relay' | 'agent' | 'loop';
 
 interface FeedEntry {
   /** Unique key — never reused. */
@@ -37,7 +37,7 @@ const FEED_INTERVAL_MS = 5500;
 /** Module dot colors matching brand palette. */
 const MODULE_COLORS: Record<ModuleId, string> = {
   engine: '#E85D04',
-  pulse: '#CF722B',
+  tasks: '#CF722B',
   wing: '#228B22',
   mesh: '#4A90A4',
   relay: '#8B7BA4',
@@ -48,7 +48,7 @@ const MODULE_COLORS: Record<ModuleId, string> = {
 /** Module label for the badge. */
 const MODULE_LABELS: Record<ModuleId, string> = {
   engine: 'Engine',
-  pulse: 'Pulse',
+  tasks: 'Tasks',
   wing: 'Wing',
   mesh: 'Mesh',
   relay: 'Relay',
@@ -60,7 +60,7 @@ const MODULE_LABELS: Record<ModuleId, string> = {
 const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
   // Coding & DevOps
   { module: 'agent', text: 'Agent committed 3 files to feature/auth-flow' },
-  { module: 'pulse', text: 'Pulse finished task 4 of 12 on your to-do list' },
+  { module: 'tasks', text: 'Tasks finished task 4 of 12 on your to-do list' },
   { module: 'agent', text: 'Agent reviewed code change #47 \u2014 approved with suggestions' },
   { module: 'wing', text: 'Wing saved your latest project notes for next time' },
   { module: 'agent', text: 'Agent deployed v2.1.3 to staging' },
@@ -71,14 +71,14 @@ const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
     module: 'agent',
     text: 'Agent cleaned up the login code \u2014 removed 340 lines of dead code',
   },
-  { module: 'pulse', text: 'Pulse sorted through 12 GitHub issues while you were asleep' },
+  { module: 'tasks', text: 'Tasks sorted through 12 GitHub issues while you were asleep' },
   // Business & money
   { module: 'relay', text: 'Sent you a Telegram: \u201CDeploy finished, all good.\u201D' },
   { module: 'agent', text: 'Agent drafted Q2 investor update \u2014 ready for review' },
   { module: 'relay', text: 'Received a webhook from GitHub \u2014 routed to the right agent' },
   { module: 'agent', text: 'Agent found $2,400/yr in unused AWS resources \u2014 cleanup ready' },
   { module: 'wing', text: 'Wing pulled together a competitive analysis from 14 sources' },
-  { module: 'pulse', text: 'Pulse generated your monthly revenue report \u2014 MRR up 23%' },
+  { module: 'tasks', text: 'Tasks generated your monthly revenue report \u2014 MRR up 23%' },
   // Life automation
   { module: 'relay', text: 'Sent your support team a reply via Telegram' },
   { module: 'agent', text: 'Agent booked dentist appointment for Thursday 2pm' },
@@ -88,16 +88,16 @@ const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
     module: 'agent',
     text: 'Agent meal-prepped grocery list for the week \u2014 ordered via Instacart',
   },
-  { module: 'pulse', text: 'Pulse filed your quarterly taxes 3 days before the deadline' },
+  { module: 'tasks', text: 'Tasks filed your quarterly taxes 3 days before the deadline' },
   // Coordination & connectivity
   { module: 'mesh', text: 'Mesh assembled 7 agents for Operation Birthday Surprise' },
-  { module: 'pulse', text: 'Pulse kicked off the next round of tasks' },
+  { module: 'tasks', text: 'Tasks kicked off the next round of tasks' },
   { module: 'relay', text: 'Telegram adapter connected \u2014 listening for messages' },
   { module: 'wing', text: 'Wing has your full context \u2014 ask me anything' },
   // Improvement loop
   { module: 'loop', text: 'Loop spotted 8 things worth checking \u2014 3 look promising' },
   { module: 'loop', text: 'Loop tested a fix \u2014 conversion up 2.1%' },
-  { module: 'loop', text: 'Loop queued the next priority task for Pulse' },
+  { module: 'loop', text: 'Loop queued the next priority task for Tasks' },
 ];
 
 /** Seconds-ago values used for the initial snapshot display. */

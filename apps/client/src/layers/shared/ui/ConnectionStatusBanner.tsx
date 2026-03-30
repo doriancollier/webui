@@ -35,7 +35,7 @@ export function ConnectionStatusBanner({
       {isDisconnected ? (
         <WifiOff className="size-3.5" />
       ) : (
-        <Wifi className="size-3.5 animate-pulse" />
+        <Wifi className="animate-tasks size-3.5" />
       )}
       <span>
         {isDisconnected ? 'Connection lost. Check your network.' : `Reconnecting...${attemptText}`}

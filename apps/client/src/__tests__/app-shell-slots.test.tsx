@@ -82,7 +82,7 @@ vi.mock('@/layers/shared/model/app-store', () => ({
       isStreaming: false,
       activeForm: null,
       isWaitingForUser: false,
-      pulseBadgeCount: 0,
+      tasksBadgeCount: 0,
       setOnboardingStep: vi.fn(),
     };
     return selector ? selector(state) : state;

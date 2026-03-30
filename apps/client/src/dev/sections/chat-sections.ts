@@ -82,7 +82,7 @@ export const CHAT_SECTIONS: PlaygroundSection[] = [
     title: 'TaskDotSection',
     page: 'chat',
     category: 'Tools',
-    keywords: ['task', 'dot', 'bash', 'pulse', 'animation', 'background', 'running'],
+    keywords: ['task', 'dot', 'bash', 'tasks', 'animation', 'background', 'running'],
   },
   {
     id: 'taskdetailpanel',

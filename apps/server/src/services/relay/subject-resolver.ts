@@ -32,8 +32,8 @@ export async function resolveSubjectLabel(
   if (subject === 'relay.system.console') {
     return { label: 'System Console', raw };
   }
-  if (subject.startsWith('relay.system.pulse.')) {
-    return { label: 'Pulse Scheduler', raw };
+  if (subject.startsWith('relay.system.tasks.')) {
+    return { label: 'Tasks Scheduler', raw };
   }
   if (subject.startsWith('relay.human.console.')) {
     return { label: 'You', raw };

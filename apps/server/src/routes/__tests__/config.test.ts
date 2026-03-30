@@ -199,7 +199,7 @@ describe('GET /api/config', () => {
     expect(res.body).toHaveProperty('workingDirectory');
     expect(res.body).toHaveProperty('boundary');
     expect(res.body).toHaveProperty('tunnel');
-    expect(res.body).toHaveProperty('pulse');
+    expect(res.body).toHaveProperty('tasks');
     expect(res.body).toHaveProperty('relay');
     expect(res.body).toHaveProperty('mesh');
   });

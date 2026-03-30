@@ -37,7 +37,7 @@ const MODULE_LAYOUT: ModuleLayout[] = [
   // Engine is always at center, not on any ring
   { id: 'console', ring: 0, angleDeg: -60 },
   { id: 'wing', ring: 1, angleDeg: 210 },
-  { id: 'pulse', ring: 1, angleDeg: 30 },
+  { id: 'tasks', ring: 1, angleDeg: 30 },
   { id: 'mesh', ring: 2, angleDeg: -120 },
   { id: 'relay', ring: 2, angleDeg: 70 },
 ];
@@ -442,7 +442,7 @@ export function DiagramV8({ modules }: { modules: SystemModule[] }) {
 
         {/* ── Engine node (always at center) ── */}
         <motion.g variants={SCALE_IN}>
-          {/* Pulse ring — breathes after entrance */}
+          {/* Tasks ring — breathes after entrance */}
           <motion.circle
             cx={CX}
             cy={CY}

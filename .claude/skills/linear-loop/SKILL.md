@@ -23,7 +23,9 @@ Idea → Research → Hypothesis → Plan → Execute → Monitor → Signal →
 Read `config.json` in this skill directory for repo-specific settings:
 
 - `team` — which Linear team this repo maps to
-- `activeProjects` — which projects `/pm` shows in its status view
+- `filter.ownership` — how `/pm` scopes projects and issues:
+  - `"unassigned"` (default) — projects with no lead, issues with no assignee
+  - `"all"` — everything in the team, no filtering
 - `pm.autoLimit` — max actions in `/pm auto` mode
 - `pm.approvalGates` — actions requiring human approval even in auto mode
 
@@ -33,7 +35,7 @@ Labels are team-wide. Read `conventions/labels.md` for the full reference.
 
 **Issue types** (group: `type`): idea, research, hypothesis, task, monitor, signal, meta
 
-**Agent state** (group: `agent`): ready, claimed, completed
+**Agent state** (group: `agent`): ready, claimed, completed, needs-input
 
 **Origin** (group: `origin`): human, from-agent, from-signal
 
@@ -48,7 +50,34 @@ Labels are team-wide. Read `conventions/labels.md` for the full reference.
 - What the issue is about
 - Why it matters (link to parent hypothesis or project goal)
 - Acceptance criteria (how to know it's done)
+- **Completion routing** (what should happen next when this is done — see below)
 - For hypotheses: validation criteria and confidence level
+
+**Completion routing**: Every issue must define what happens next when it completes. This is how the Loop keeps spinning. Without it, completed issues become dead ends. The routing depends on the issue type:
+
+| Issue type        | Default completion routing                                                                           |
+| ----------------- | ---------------------------------------------------------------------------------------------------- |
+| `type/research`   | "When done → create hypothesis or run `/ideate` if complex, create `type/task` sub-issues if simple" |
+| `type/hypothesis` | "When validated → create `type/monitor` to track outcomes"                                           |
+| `type/task`       | "When done → check if parent hypothesis/spec has all tasks complete"                                 |
+| `type/monitor`    | "When criteria met → create `type/signal` or close the loop"                                         |
+| `type/idea`       | "When triaged → route to research, hypothesis, or task"                                              |
+
+When creating or triaging an issue, add a `## On Completion` section to the description:
+
+```markdown
+## On Completion
+
+- [ ] Create spec via `/ideate` (complex: 3+ files, cross-cutting)
+- [ ] Link spec to DOR-NNN in frontmatter
+- [ ] Or: create `type/task` sub-issues (simple: single-session scope)
+```
+
+This serves three purposes:
+
+1. **Prevention**: The person creating the issue thinks about what comes next
+2. **Guidance**: `/linear:done` reads this section to recommend the right action
+3. **Self-healing**: If `/linear:done` misses it, `/pm` can read it during ASSESS
 
 **Single-session scope**: Every `type/task` issue should be completable in one agent session. If it can't be, it needs decomposition.
 
@@ -59,28 +88,72 @@ Labels are team-wide. Read `conventions/labels.md` for the full reference.
 - **Simple** (single-session, clear scope) → Linear sub-issues with `type/task` labels
 - **Complex** (multi-session, needs design) → `/ideate` with Linear issue as context → spec workflow
 
-The spec's `01-ideation.md` frontmatter gets a `linear-issue: DOR-NNN` field for traceability. `/linear:done` reads this to close the loop.
+The spec's `01-ideation.md` frontmatter gets a `linear-issue: DOR-NNN` field for traceability. `/linear:done` reads this to close the loop. When a spec is routed through `plan-complex.md`, also add a `linearIssue` field to `specs/manifest.json` for that spec entry — this enables reverse lookups ("which specs are linked to this project?") and cross-reference auditing.
 
 The existing spec commands (`/ideate`, `/spec:create`, `/spec:decompose`, `/spec:execute`, `/spec:feedback`) remain unchanged. They don't know about Linear. The Linear Loop commands wrap around them.
+
+## Sizing Criteria
+
+When a `type/hypothesis` reaches the Plan phase, size it to determine the template:
+
+- **Simple** (→ `plan-simple.md`): Single file change, clearly-scoped component, < 200 LOC estimated, no new architectural patterns, no cross-cutting concerns
+- **Complex** (→ `plan-complex.md`): 3+ files across layers, introduces new patterns, architectural decisions needed, cross-cutting concerns, multi-session scope
+
+When in doubt, prefer complex — it's better to over-plan than under-plan.
 
 ## Template Routing
 
 `/pm` loads the appropriate template based on what action the loop needs:
 
-| Action               | Template                          | When                                              |
-| -------------------- | --------------------------------- | ------------------------------------------------- |
-| Triage an idea       | `templates/triage-idea.md`        | Issue in Triage with `type/idea` label            |
-| Triage a signal      | `templates/triage-signal.md`      | Issue in Triage with `type/signal` label          |
-| Research (market)    | `templates/research-market.md`    | `type/research` issue about market/competitors    |
-| Research (technical) | `templates/research-technical.md` | `type/research` issue about feasibility/tradeoffs |
-| Plan (simple)        | `templates/plan-simple.md`        | Hypothesis that's single-session scope            |
-| Plan (complex)       | `templates/plan-complex.md`       | Hypothesis that needs the spec workflow           |
-| Dispatch             | `templates/dispatch-priority.md`  | Selecting the next task to work on                |
-| Monitor              | `templates/monitor-outcome.md`    | Checking validation criteria for shipped work     |
+| Action                | Template                          | When                                              |
+| --------------------- | --------------------------------- | ------------------------------------------------- |
+| Intake classification | `templates/triage-intake.md`      | Freeform input to `/pm` (not `auto` or `DOR-` ID) |
+| Triage an idea        | `templates/triage-idea.md`        | Issue in Triage with `type/idea` label            |
+| Triage a signal       | `templates/triage-signal.md`      | Issue in Triage with `type/signal` label          |
+| Research (market)     | `templates/research-market.md`    | `type/research` issue about market/competitors    |
+| Research (technical)  | `templates/research-technical.md` | `type/research` issue about feasibility/tradeoffs |
+| Plan (simple)         | `templates/plan-simple.md`        | Hypothesis that's single-session scope            |
+| Plan (complex)        | `templates/plan-complex.md`       | Hypothesis that needs the spec workflow           |
+| Dispatch              | `templates/dispatch-priority.md`  | Selecting the next task to work on                |
+| Monitor               | `templates/monitor-outcome.md`    | Checking validation criteria for shipped work     |
+| Audit                 | `templates/audit-workspace.md`    | `/pm audit` — workspace health check              |
 
 Read templates **on demand** — only load the template needed for the current action. Do not preload all templates.
 
-**Phase 2 note**: Templates are created in Phase 2. Until then, `/pm` operates without templates — use your own judgment for triage, dispatch, and other actions based on the conventions in this SKILL.md and `conventions/labels.md`.
+Templates that don't yet exist (triage-signal, research-market, research-technical, dispatch-priority, monitor-outcome) are Phase 2 deliverables. For those actions, use your own judgment based on the conventions in this SKILL.md and `conventions/labels.md`.
+
+## Next-Steps Comments
+
+After `/pm` takes any action on an issue, add a structured comment:
+
+```
+**Agent Action** — [YYYY-MM-DD]
+**Action:** [what was done — e.g., "Triaged idea, moved to Backlog"]
+**Reasoning:** [brief — e.g., "Aligns with SDK Upgrade project goals"]
+**Next steps:** [what should happen next — e.g., "Research phase to validate feasibility"]
+```
+
+This makes issues self-documenting. Anyone (human or agent) can read the last comment to understand current state without re-running `/pm`.
+
+## Async Human Questions (needs-input)
+
+When `/pm auto` hits ambiguity it cannot resolve:
+
+1. Post a structured comment with the question:
+   - Frame as multiple choice when possible (A/B/C options)
+   - Include context: why this decision matters, what the agent considered
+   - End with: "Reply to this comment with your choice, then run `/pm` to continue."
+2. Add `needs-input` label to the issue
+3. Assign the issue to the authenticated user (via `get_authenticated_user`) — this sends a Linear notification
+4. Skip this issue and continue to next action
+
+**SYNC phase handling:**
+
+- Always query issues with `needs-input` label regardless of ownership filter
+- Read comments on those issues via `list_comments`
+- If user posted a comment after the agent's question: remove `needs-input` label, set assignee to null, process the answer
+- If no response yet: show in dashboard under "Awaiting Your Input" section
+- The agent reads `needs-input` issues but ONLY takes action based on the human's actual responses — never assume or guess an answer
 
 ## Linear Status Transitions
 
@@ -96,6 +169,149 @@ Only `/pm` and `/linear:done` change Linear issue status:
 
 The spec workflow runs entirely within the "In Progress" state — Linear doesn't see spec phases.
 
+## Project Status Transitions
+
+Projects have their own lifecycle, separate from issues:
+
+| Status      | Meaning                                |
+| ----------- | -------------------------------------- |
+| Backlog     | Project exists but no work planned yet |
+| Planned     | Work is scoped but hasn't started      |
+| In Progress | Active work underway                   |
+| Completed   | All work finished, goals met           |
+| Cancelled   | Project abandoned                      |
+
+**`/pm` manages project status automatically:**
+
+| Transition              | When                                                        |
+| ----------------------- | ----------------------------------------------------------- |
+| Backlog → Planned       | First issue is triaged into the project                     |
+| Planned → In Progress   | First issue in the project moves to "In Progress"           |
+| In Progress → Completed | All issues in the project are Done and monitors are cleared |
+
+**SYNC phase filtering:** Exclude projects in Completed or Cancelled states — they're done, don't show them in the dashboard. If a Completed project gets a new issue (e.g., a regression signal), move it back to In Progress automatically.
+
+**Approval note:** Moving a project to Completed does NOT require the `project-creation` approval gate. It's a natural conclusion, not a commitment decision.
+
+## Loop Continuity
+
+**Closing an issue is not the end — it's a transition to the next Loop phase.** When `/linear:done` or `/pm` closes an issue, the system must assess what the project needs next and recommend (or execute) the next action.
+
+### Phase Transitions
+
+After closing an issue, check what type it was and what the project state looks like:
+
+| Closed issue type | Project state after close                   | Next action                                                                                                                                           |
+| ----------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `type/research`   | All research in project is Done             | Recommend creating a hypothesis or spec. If complex (3+ files, cross-cutting): suggest `/ideate`. If simple: suggest creating `type/task` sub-issues. |
+| `type/research`   | Other research still open                   | Note the unblocked issues. No project-level action needed.                                                                                            |
+| `type/hypothesis` | Hypothesis validated                        | Create `type/monitor` issue (existing behavior).                                                                                                      |
+| `type/task`       | Other tasks still open in parent hypothesis | Note progress. No project-level action needed.                                                                                                        |
+| `type/task`       | All tasks under parent hypothesis are Done  | Recommend closing the hypothesis via `/linear:done`.                                                                                                  |
+| `type/monitor`    | All monitors in project cleared             | Recommend moving project to Completed.                                                                                                                |
+| Any type          | Project has zero remaining active issues    | Recommend moving project to Completed.                                                                                                                |
+
+### Implementation in `/linear:done`
+
+After closing the issue (step 4), `/linear:done` performs a **Project Pulse Check**:
+
+1. Query remaining issues in the same project (if the issue has a project)
+2. Group by type and status
+3. Detect the relevant transition from the table above
+4. Present the recommendation: _"All research in Tasks System Redesign is complete. This is complex work — recommend running `/ideate` to create a spec. Want to proceed?"_
+
+This keeps the Loop spinning without the user needing to remember what comes next.
+
+## Spec-Linear Bridge
+
+The spec workflow (`/ideate` → `/spec:create` → `/spec:decompose` → `/spec:execute`) runs independently from Linear. This bridge protocol connects them so `/pm` can track spec progress, detect interrupted work, and keep the Loop spinning.
+
+**Linear integration is always optional.** If no `linear-issue:` field exists in the spec frontmatter, the spec workflow works exactly as before.
+
+### Frontmatter Convention
+
+When a spec is linked to Linear, the `01-ideation.md` frontmatter includes:
+
+```yaml
+---
+slug: tasks-system-redesign
+number: 211
+linear-issue: DOR-63
+created: 2026-03-29
+status: ideation
+---
+```
+
+The `linear-issue` field is also added to the spec's entry in `specs/manifest.json` as `linearIssue`.
+
+### Breadcrumb Comments
+
+Each spec phase transition posts a structured comment to the linked Linear issue:
+
+```
+**Spec Progress** — [YYYY-MM-DD]
+**Phase:** [phase name]
+**Spec:** `specs/{slug}/`
+**Document:** `[latest document path]`
+**Next:** [what to run next, or "Implementation complete — run `/linear:done DOR-NNN`"]
+```
+
+Phase names: `Ideation Started`, `Specification Created`, `Decomposed into N tasks`, `Execution Started`, `Implementation Complete`.
+
+### Spec Commands: Linear Integration Steps
+
+Each spec command checks for `linear-issue:` in the spec frontmatter. If present and Linear MCP tools are available, it posts a breadcrumb comment. If not present or tools unavailable, it silently skips.
+
+| Command           | When to post                        | Phase name                |
+| ----------------- | ----------------------------------- | ------------------------- |
+| `/ideate`         | After writing `01-ideation.md`      | `Ideation Started`        |
+| `/ideate-to-spec` | After writing `02-specification.md` | `Specification Created`   |
+| `/spec:create`    | After writing `02-specification.md` | `Specification Created`   |
+| `/spec:decompose` | After writing `03-tasks.json`       | `Decomposed into N tasks` |
+| `/spec:execute`   | At start of execution               | `Execution Started`       |
+| `/spec:execute`   | After all tasks complete            | `Implementation Complete` |
+
+### `/spec:execute` Completion Bridge
+
+When `/spec:execute` finishes all tasks and a `linear-issue:` field exists:
+
+1. Post the `Implementation Complete` breadcrumb comment
+2. Update spec manifest status to `implemented`
+3. Display: _"Spec complete. Linked to DOR-NNN. Run `/linear:done DOR-NNN` to close the loop."_
+
+This is the bridge that returns control from the spec workflow back to Linear.
+
+### `/pm` Spec Awareness
+
+During the ASSESS phase, `/pm` reads `specs/manifest.json` to detect active spec work:
+
+1. **Find linked specs**: For each In Progress project, check if any spec in the manifest has a `linearIssue` field matching an issue in that project.
+2. **Check spec status**: If the spec is not `implemented` or `superseded`, the project has active work — do NOT recommend closing the project.
+3. **Detect interrupted specs** and recommend the right resume command:
+
+| Spec status   | Has `02-specification.md`? | Has `03-tasks.json`? | Recommendation                                         |
+| ------------- | -------------------------- | -------------------- | ------------------------------------------------------ |
+| `ideation`    | No                         | No                   | Run `/ideate-to-spec specs/{slug}/01-ideation.md`      |
+| `specified`   | Yes                        | No                   | Run `/spec:decompose specs/{slug}/02-specification.md` |
+| `specified`   | Yes                        | Yes                  | Run `/spec:execute specs/{slug}/02-specification.md`   |
+| `implemented` | Yes                        | Yes                  | Run `/linear:done DOR-NNN` to close the loop           |
+
+4. **Dashboard display**: Show active specs in the project status section:
+
+```
+**Tasks System Redesign** [In Progress]: spec-211 in execution (12/18 tasks complete)
+```
+
+### Self-Correcting Properties
+
+The system corrects itself through redundant detection:
+
+- **At transition time**: `/linear:done` catches phase transitions via Loop Continuity
+- **At review time**: `/pm` catches interrupted specs, falsely complete projects, and missing bridges
+- **At spec completion**: `/spec:execute` explicitly prompts for `/linear:done`
+
+If any one of these is missed, the next review cycle catches it. The Loop never silently stops.
+
 ## Blocker Verification
 
 Issue descriptions often claim prerequisites ("spec-190 must land first", "blocked by DOR-38"). **Never report an issue as blocked without verifying the blocker's current status.** Stale blocker claims in descriptions are common — the blocker may have shipped since the issue was written.
@@ -110,4 +326,12 @@ Report verified status in the dashboard: "DOR-35 references spec-190 as prerequi
 
 ## Multiple Projects
 
-DorkOS is a team in Linear, not a single project. `/pm` assesses across all active projects (configured in `config.json`) and recommends the highest-priority action globally. Triage assigns ideas to the appropriate project. Each project has its own goals.
+DorkOS is a team in Linear, not a single project. `/pm` discovers active projects dynamically using the ownership filter in `config.json`. With `"unassigned"` ownership (default), `/pm` shows projects that have no lead assigned — assign a lead in the Linear UI to exclude a project from `/pm` scope. Triage assigns ideas to the appropriate project. Each project has its own goals.
+
+## Empty Project Detection
+
+During ASSESS, check for projects with zero active issues (nothing in Triage, Backlog, Todo, or In Progress). Distinguish by project status:
+
+- **Backlog/Planned with no issues** → Recommend populating with ideas/tasks, or assigning a lead to exclude it
+- **In Progress with no active issues** → All work may be done — recommend moving to Completed if all issues are Done
+- **In Progress with only Done issues** → Move to Completed automatically (no approval needed)

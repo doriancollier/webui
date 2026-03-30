@@ -16,13 +16,13 @@ extendZodWithOpenApi(z);
 
 /** Event category for filtering activity events by subsystem. */
 export const ActivityCategorySchema = z
-  .enum(['pulse', 'relay', 'agent', 'config', 'system'])
+  .enum(['tasks', 'relay', 'agent', 'config', 'system'])
   .openapi('ActivityCategory');
 
 export type ActivityCategory = z.infer<typeof ActivityCategorySchema>;
 
 /** Actor type: who triggered the event. */
-export const ActorTypeSchema = z.enum(['user', 'agent', 'system', 'pulse']).openapi('ActorType');
+export const ActorTypeSchema = z.enum(['user', 'agent', 'system', 'tasks']).openapi('ActorType');
 
 export type ActorType = z.infer<typeof ActorTypeSchema>;
 

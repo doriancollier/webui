@@ -210,7 +210,7 @@ describe('matchesPattern', () => {
 
     it('system service subscription', () => {
       const pattern = 'relay.system.>';
-      expect(matchesPattern('relay.system.pulse.scheduler', pattern)).toBe(true);
+      expect(matchesPattern('relay.system.tasks.scheduler', pattern)).toBe(true);
       expect(matchesPattern('relay.system.health.checker', pattern)).toBe(true);
       expect(matchesPattern('relay.agent.myproject.backend', pattern)).toBe(false);
     });

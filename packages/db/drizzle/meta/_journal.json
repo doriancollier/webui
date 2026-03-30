@@ -71,6 +71,20 @@
       "when": 1774812405973,
       "tag": "0009_known_tigra",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1774822091322,
+      "tag": "0010_rare_rhodey",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1774831911107,
+      "tag": "0011_tasks_system_redesign",
+      "breakpoints": true
     }
   ]
 }

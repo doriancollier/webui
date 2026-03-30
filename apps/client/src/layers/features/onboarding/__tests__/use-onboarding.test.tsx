@@ -61,7 +61,7 @@ describe('useOnboarding', () => {
     const transport = createMockTransport();
     vi.mocked(transport.getConfig).mockResolvedValue({
       onboarding: {
-        completedSteps: ['meet-dorkbot', 'discovery', 'pulse', 'adapters'],
+        completedSteps: ['meet-dorkbot', 'discovery', 'tasks', 'adapters'],
         skippedSteps: [],
         startedAt: null,
         dismissedAt: null,
@@ -151,12 +151,12 @@ describe('useOnboarding', () => {
     });
 
     act(() => {
-      result.current.skipStep('pulse');
+      result.current.skipStep('tasks');
     });
 
     await waitFor(() => {
       expect(transport.updateConfig).toHaveBeenCalledWith({
-        onboarding: { skippedSteps: ['pulse'] },
+        onboarding: { skippedSteps: ['tasks'] },
       });
     });
   });
@@ -268,7 +268,7 @@ describe('useOnboarding', () => {
 
     act(() => {
       result.current.completeStep('discovery');
-      result.current.completeStep('pulse');
+      result.current.completeStep('tasks');
       result.current.completeStep('adapters');
     });
 
@@ -280,11 +280,11 @@ describe('useOnboarding', () => {
       onboarding: { completedSteps: ['discovery'] },
     });
     expect(transport.updateConfig).toHaveBeenNthCalledWith(2, {
-      onboarding: { completedSteps: expect.arrayContaining(['discovery', 'pulse']) },
+      onboarding: { completedSteps: expect.arrayContaining(['discovery', 'tasks']) },
     });
     expect(transport.updateConfig).toHaveBeenNthCalledWith(3, {
       onboarding: {
-        completedSteps: expect.arrayContaining(['discovery', 'pulse', 'adapters']),
+        completedSteps: expect.arrayContaining(['discovery', 'tasks', 'adapters']),
       },
     });
   });
@@ -341,7 +341,7 @@ describe('useOnboarding', () => {
     });
 
     act(() => {
-      result.current.skipStep('pulse');
+      result.current.skipStep('tasks');
       result.current.skipStep('adapters');
     });
 
@@ -350,10 +350,10 @@ describe('useOnboarding', () => {
     });
 
     expect(transport.updateConfig).toHaveBeenNthCalledWith(1, {
-      onboarding: { skippedSteps: ['pulse'] },
+      onboarding: { skippedSteps: ['tasks'] },
     });
     expect(transport.updateConfig).toHaveBeenNthCalledWith(2, {
-      onboarding: { skippedSteps: expect.arrayContaining(['pulse', 'adapters']) },
+      onboarding: { skippedSteps: expect.arrayContaining(['tasks', 'adapters']) },
     });
   });
 });

@@ -33,7 +33,7 @@ export function OnboardingComplete({ onComplete }: OnboardingCompleteProps) {
 
   const meetDorkbotDone = state.completedSteps.includes('meet-dorkbot');
   const discoveryDone = state.completedSteps.includes('discovery');
-  const pulseDone = state.completedSteps.includes('pulse');
+  const tasksDone = state.completedSteps.includes('tasks');
 
   const summaryItems = [
     {
@@ -48,8 +48,8 @@ export function OnboardingComplete({ onComplete }: OnboardingCompleteProps) {
     },
     {
       icon: Clock,
-      label: pulseDone ? 'Schedules created' : 'Schedules skipped',
-      done: pulseDone,
+      label: tasksDone ? 'Schedules created' : 'Schedules skipped',
+      done: tasksDone,
     },
     {
       icon: Radio,

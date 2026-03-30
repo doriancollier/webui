@@ -312,7 +312,7 @@ export function StatusShowcases() {
               { type: 'web', connectedAt: ts.fiveMinAgo },
             ]}
             lockInfo={null}
-            pulse={false}
+            tasks={false}
           />
         </ShowcaseDemo>
 
@@ -326,7 +326,7 @@ export function StatusShowcases() {
               { type: 'mcp', connectedAt: ts.fortyFiveMinAgo },
             ]}
             lockInfo={null}
-            pulse={false}
+            tasks={false}
           />
         </ShowcaseDemo>
 
@@ -342,11 +342,11 @@ export function StatusShowcases() {
               clientId: 'obsidian-abc123',
               acquiredAt: ts.tenSecAgo,
             }}
-            pulse={false}
+            tasks={false}
           />
         </ShowcaseDemo>
 
-        <ShowcaseLabel>Pulse animation (sync event from another client)</ShowcaseLabel>
+        <ShowcaseLabel>Tasks animation (sync event from another client)</ShowcaseLabel>
         <ShowcaseDemo>
           <ClientsItem
             clientCount={2}
@@ -355,7 +355,7 @@ export function StatusShowcases() {
               { type: 'web', connectedAt: ts.twoMinAgo },
             ]}
             lockInfo={null}
-            pulse={true}
+            tasks={true}
           />
         </ShowcaseDemo>
       </PlaygroundSection>

@@ -377,7 +377,7 @@ function BrowserWindow() {
               style={{ background: '#F5F0E6', border: '1px solid rgba(139,90,43,0.12)' }}
             >
               <span
-                className="h-1.5 w-1.5 animate-pulse rounded-full"
+                className="animate-tasks h-1.5 w-1.5 rounded-full"
                 style={{ background: '#228B22' }}
               />
               <span className="font-mono text-[9px]" style={{ color: '#7A756A' }}>
@@ -528,7 +528,7 @@ export function HeroV2({ headline, subhead, ctaText, ctaHref }: HeroProps) {
               {/* Placeholder shimmer while waiting */}
               {!browserVisible && (
                 <div
-                  className="animate-pulse rounded-lg border"
+                  className="animate-tasks rounded-lg border"
                   style={{
                     height: '380px',
                     background: '#EDE6D6',

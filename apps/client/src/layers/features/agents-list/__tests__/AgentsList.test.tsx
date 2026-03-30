@@ -119,7 +119,7 @@ const makeAgent = (overrides: Partial<TopologyAgent> & { id: string }): Topology
     healthStatus: overrides.healthStatus ?? 'active',
     relayAdapters: [],
     relaySubject: null,
-    pulseScheduleCount: 0,
+    taskCount: 0,
     lastSeenAt: null,
     lastSeenEvent: null,
   };
@@ -151,7 +151,7 @@ describe('AgentsList', () => {
       wrapper: createWrapper(),
     });
 
-    const skeletons = container.querySelectorAll('.animate-pulse');
+    const skeletons = container.querySelectorAll('.animate-tasks');
     expect(skeletons.length).toBeGreaterThanOrEqual(1);
   });
 

@@ -119,8 +119,8 @@ describe('NamespaceGroupNode', () => {
     });
   });
 
-  describe('pulse dot', () => {
-    it('shows pulse dot when activeCount > 0', () => {
+  describe('tasks dot', () => {
+    it('shows tasks dot when activeCount > 0', () => {
       const { container } = render(
         <NamespaceGroupNode {...makeMockProps({ activeCount: 2, color: '#22c55e' })} />
       );
@@ -129,27 +129,27 @@ describe('NamespaceGroupNode', () => {
       expect(dots.length).toBe(1);
     });
 
-    it('does not show pulse dot when activeCount is 0', () => {
+    it('does not show tasks dot when activeCount is 0', () => {
       const { container } = render(<NamespaceGroupNode {...makeMockProps({ activeCount: 0 })} />);
       const dots = container.querySelectorAll('.h-1\\.5.w-1\\.5.rounded-full');
       expect(dots.length).toBe(0);
     });
 
-    it('applies animate-pulse class when reduced motion is not preferred', () => {
+    it('applies animate-tasks class when reduced motion is not preferred', () => {
       mockUsePrefersReducedMotion.mockReturnValue(false);
       const { container } = render(<NamespaceGroupNode {...makeMockProps({ activeCount: 1 })} />);
       const dot = container.querySelector('.h-1\\.5.w-1\\.5.rounded-full');
-      expect(dot?.className).toContain('animate-pulse');
+      expect(dot?.className).toContain('animate-tasks');
     });
 
-    it('does not apply animate-pulse class when reduced motion is preferred', () => {
+    it('does not apply animate-tasks class when reduced motion is preferred', () => {
       mockUsePrefersReducedMotion.mockReturnValue(true);
       const { container } = render(<NamespaceGroupNode {...makeMockProps({ activeCount: 1 })} />);
       const dot = container.querySelector('.h-1\\.5.w-1\\.5.rounded-full');
-      expect(dot?.className).not.toContain('animate-pulse');
+      expect(dot?.className).not.toContain('animate-tasks');
     });
 
-    it('uses namespace color for the pulse dot background', () => {
+    it('uses namespace color for the tasks dot background', () => {
       const { container } = render(
         <NamespaceGroupNode {...makeMockProps({ activeCount: 1, color: '#f59e0b' })} />
       );

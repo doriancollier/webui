@@ -15,7 +15,7 @@ const staggerItem = {
 } as const;
 
 /**
- * Recent activity feed section — time-grouped list of session and Pulse run events.
+ * Recent activity feed section — time-grouped list of session and Tasks run events.
  * Capped at 20 items. Tracks last visit via localStorage to highlight new events.
  * Shows a "View all →" link when more than 20 events exist.
  */

@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  ExtensionManifestSchema,
-  SettingDeclarationSchema,
-  SettingOptionSchema,
-} from '../manifest-schema.js';
+import { ExtensionManifestSchema, SettingDeclarationSchema } from '../manifest-schema.js';
 
 describe('ExtensionManifestSchema', () => {
   // --- Valid manifests ---

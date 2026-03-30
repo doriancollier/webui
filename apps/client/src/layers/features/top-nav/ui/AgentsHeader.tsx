@@ -4,7 +4,9 @@ import { useNavigate } from '@tanstack/react-router';
 import { Button } from '@/layers/shared/ui/button';
 import {
   ResponsiveDialog,
+  ResponsiveDialogBody,
   ResponsiveDialogContent,
+  ResponsiveDialogDescription,
   ResponsiveDialogHeader,
   ResponsiveDialogTitle,
 } from '@/layers/shared/ui/responsive-dialog';
@@ -80,11 +82,16 @@ export function AgentsHeader({ viewMode }: AgentsHeaderProps) {
         <CommandPaletteTrigger />
       </div>
       <ResponsiveDialog open={discoveryOpen} onOpenChange={setDiscoveryOpen}>
-        <ResponsiveDialogContent className="max-w-2xl">
-          <ResponsiveDialogHeader>
+        <ResponsiveDialogContent className="max-h-[85vh] max-w-2xl gap-0 p-0">
+          <ResponsiveDialogHeader className="px-6 pt-6 pb-4">
             <ResponsiveDialogTitle>Discover Agents</ResponsiveDialogTitle>
+            <ResponsiveDialogDescription className="sr-only">
+              Scan directories to find agents on your computer
+            </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
-          <DiscoveryView />
+          <ResponsiveDialogBody className="px-6 pb-6">
+            <DiscoveryView />
+          </ResponsiveDialogBody>
         </ResponsiveDialogContent>
       </ResponsiveDialog>
     </>

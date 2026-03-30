@@ -25,7 +25,7 @@ const baseAgent = {
   enabledToolGroups: {},
   relayAdapters: [],
   relaySubject: null,
-  pulseScheduleCount: 0,
+  taskCount: 0,
   lastSeenAt: null,
   lastSeenEvent: null,
 };

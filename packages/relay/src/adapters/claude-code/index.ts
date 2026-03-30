@@ -9,6 +9,6 @@ export type {
   ClaudeCodeAdapterDeps,
   AgentRuntimeLike,
   AgentSessionStoreLike,
-  PulseStoreLike,
+  TasksStoreLike,
 } from './types.js';
 export type { TraceStoreLike } from '../../types.js';

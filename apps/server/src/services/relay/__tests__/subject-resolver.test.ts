@@ -12,9 +12,9 @@ describe('resolveSubjectLabel', () => {
     expect(result).toEqual({ label: 'System Console', raw: 'relay.system.console' });
   });
 
-  it('resolves relay.system.pulse.* to "Pulse Scheduler"', async () => {
-    const result = await resolveSubjectLabel('relay.system.pulse.sched-1', {});
-    expect(result).toEqual({ label: 'Pulse Scheduler', raw: 'relay.system.pulse.sched-1' });
+  it('resolves relay.system.tasks.* to "Tasks Scheduler"', async () => {
+    const result = await resolveSubjectLabel('relay.system.tasks.sched-1', {});
+    expect(result).toEqual({ label: 'Tasks Scheduler', raw: 'relay.system.tasks.sched-1' });
   });
 
   it('resolves relay.agent.{sessionId} to agent name when available', async () => {

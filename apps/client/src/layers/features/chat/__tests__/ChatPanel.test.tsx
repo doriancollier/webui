@@ -37,7 +37,7 @@ vi.mock('../model/use-chat-session', () => ({
     systemStatus: null,
     promptSuggestions: [],
     presenceInfo: null,
-    presencePulse: false,
+    presenceTasks: false,
     syncConnectionState: 'connected',
     syncFailedAttempts: 0,
   }),

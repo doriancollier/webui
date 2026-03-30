@@ -42,7 +42,7 @@ export function App({ transformContent }: AppProps) {
   const isStreaming = useAppStore((s) => s.isStreaming);
   const activeForm = useAppStore((s) => s.activeForm);
   const isWaitingForUser = useAppStore((s) => s.isWaitingForUser);
-  const pulseBadgeCount = useAppStore((s) => s.pulseBadgeCount);
+  const tasksBadgeCount = useAppStore((s) => s.tasksBadgeCount);
   const { data: currentAgent } = useCurrentAgent(null);
   const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
   useFavicon({ cwd: null, isStreaming, color: currentAgent ? agentVisual.color : undefined });
@@ -53,7 +53,7 @@ export function App({ transformContent }: AppProps) {
     isWaitingForUser,
     agentName: currentAgent?.name,
     agentEmoji: currentAgent ? agentVisual.emoji : undefined,
-    pulseBadgeCount,
+    tasksBadgeCount,
   });
 
   useShortcutsPanel();

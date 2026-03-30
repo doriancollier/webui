@@ -33,7 +33,7 @@ export function RelayEmptyState({ onAddAdapter }: RelayEmptyStateProps) {
               </div>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">relay.system.pulse.audit</span>
+                  <span className="text-sm font-medium">relay.system.tasks.audit</span>
                   <span className="text-muted-foreground text-xs">15m ago</span>
                 </div>
                 <p className="text-muted-foreground text-xs">Scheduled audit run delivered</p>

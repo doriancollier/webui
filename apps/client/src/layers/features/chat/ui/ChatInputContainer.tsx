@@ -70,8 +70,8 @@ interface ChatInputContainerProps {
   onQueueNavigateDown: () => void;
   /** Current presence info from SSE. */
   presenceInfo: PresenceUpdateEvent | null;
-  /** Whether the presence badge should pulse. */
-  presencePulse: boolean;
+  /** Whether the presence badge should tasks. */
+  presenceTasks: boolean;
   /** The currently active interactive tool awaiting user input, or null. */
   activeInteraction: ToolCallState | null;
   /** Index of the currently keyboard-focused option (question prompts). */
@@ -116,7 +116,7 @@ export function ChatInputContainer({
   onQueueNavigateUp,
   onQueueNavigateDown,
   presenceInfo,
-  presencePulse,
+  presenceTasks,
   activeInteraction,
   focusedOptionIndex,
   onToolRef,
@@ -346,7 +346,7 @@ export function ChatInputContainer({
               isStreaming={status === 'streaming'}
               onChipClick={autocomplete.handleChipClick}
               presenceInfo={presenceInfo}
-              presencePulse={presencePulse}
+              presenceTasks={presenceTasks}
               syncConnectionState={syncConnectionState}
               syncFailedAttempts={syncFailedAttempts}
             />

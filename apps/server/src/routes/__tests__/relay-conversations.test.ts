@@ -107,7 +107,7 @@ describe('buildConversations', () => {
   });
 
   it('sessionId is undefined for relay.system.* subject', () => {
-    const msg = makeMsg({ subject: 'relay.system.pulse.sched-1' });
+    const msg = makeMsg({ subject: 'relay.system.tasks.sched-1' });
     const result = buildConversations([msg], [], new Map());
     expect(result[0].sessionId).toBeUndefined();
   });

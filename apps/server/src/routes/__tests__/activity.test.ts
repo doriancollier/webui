@@ -40,9 +40,9 @@ describe('Activity routes', () => {
       await activityService.emit({
         actorType: 'user',
         actorLabel: 'You',
-        category: 'pulse',
-        eventType: 'pulse.ran_success',
-        summary: 'Pulse ran',
+        category: 'tasks',
+        eventType: 'tasks.run_success',
+        summary: 'Tasks ran',
       });
       await activityService.emit({
         actorType: 'agent',
@@ -60,11 +60,11 @@ describe('Activity routes', () => {
       });
 
       // Filter by categories
-      const catRes = await request(app).get('/api/activity?categories=pulse,relay');
+      const catRes = await request(app).get('/api/activity?categories=tasks,relay');
       expect(catRes.status).toBe(200);
       expect(catRes.body.items).toHaveLength(2);
       const categories = catRes.body.items.map((i: { category: string }) => i.category);
-      expect(categories).toContain('pulse');
+      expect(categories).toContain('tasks');
       expect(categories).toContain('relay');
 
       // Filter by actorType

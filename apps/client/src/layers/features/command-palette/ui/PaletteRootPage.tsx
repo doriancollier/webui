@@ -69,8 +69,8 @@ export function PaletteRootPage({
                 <CommandItem
                   value={s.id}
                   onSelect={() => {
-                    if (s.action === 'openPulse') {
-                      onFeatureAction('openPulse');
+                    if (s.action === 'openTasks') {
+                      onFeatureAction('openTasks');
                     } else if (s.action.startsWith('switchAgent:')) {
                       const agentId = s.action.split(':')[1];
                       const agent = allAgents.find((a) => a.id === agentId);

@@ -25,23 +25,23 @@ describe('serverEnv', () => {
   });
 
   it('feature flags default to false', async () => {
-    vi.stubEnv('DORKOS_PULSE_ENABLED', undefined as unknown as string);
+    vi.stubEnv('DORKOS_TASKS_ENABLED', undefined as unknown as string);
     vi.stubEnv('DORKOS_RELAY_ENABLED', undefined as unknown as string);
     const { env } = await import('../env.js');
-    expect(env.DORKOS_PULSE_ENABLED).toBe(false);
+    expect(env.DORKOS_TASKS_ENABLED).toBe(false);
     expect(env.DORKOS_RELAY_ENABLED).toBe(false);
   });
 
   it('feature flag "true" string becomes boolean true', async () => {
-    vi.stubEnv('DORKOS_PULSE_ENABLED', 'true');
+    vi.stubEnv('DORKOS_TASKS_ENABLED', 'true');
     const { env } = await import('../env.js');
-    expect(env.DORKOS_PULSE_ENABLED).toBe(true);
+    expect(env.DORKOS_TASKS_ENABLED).toBe(true);
   });
 
   it('feature flag "false" string becomes boolean false', async () => {
-    vi.stubEnv('DORKOS_PULSE_ENABLED', 'false');
+    vi.stubEnv('DORKOS_TASKS_ENABLED', 'false');
     const { env } = await import('../env.js');
-    expect(env.DORKOS_PULSE_ENABLED).toBe(false);
+    expect(env.DORKOS_TASKS_ENABLED).toBe(false);
   });
 
   it('rejects an out-of-range port', async () => {

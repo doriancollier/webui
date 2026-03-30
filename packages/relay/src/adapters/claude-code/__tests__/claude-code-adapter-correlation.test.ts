@@ -162,22 +162,22 @@ describe('ClaudeCodeAdapter correlation ID', () => {
     expect(payload.correlationId).toBe('preserve-corr');
   });
 
-  it('does not include correlationId in dispatch (Pulse) flows', async () => {
-    // Pulse dispatch uses handleDispatchMessage which does not pass correlationId
-    const pulseEvents: StreamEvent[] = [
-      { type: 'text_delta', data: { text: 'pulse output' } },
+  it('does not include correlationId in dispatch (Tasks) flows', async () => {
+    // Tasks dispatch uses handleDispatchMessage which does not pass correlationId
+    const tasksEvents: StreamEvent[] = [
+      { type: 'text_delta', data: { text: 'tasks output' } },
       { type: 'done', data: {} },
     ];
-    agentManager = createMockAgentManager(pulseEvents);
-    deps = { agentManager, traceStore, pulseStore: { updateRun: vi.fn() } };
+    agentManager = createMockAgentManager(tasksEvents);
+    deps = { agentManager, traceStore, taskStore: { updateRun: vi.fn() } };
     adapter = new ClaudeCodeAdapter('claude-code', { defaultCwd: '/default/cwd' }, deps);
 
     await adapter.start(relay);
 
-    const pulseEnvelope: RelayEnvelope = {
-      id: 'pulse-msg-001',
-      subject: 'relay.system.pulse.sched-1',
-      from: 'system:pulse',
+    const tasksEnvelope: RelayEnvelope = {
+      id: 'tasks-msg-001',
+      subject: 'relay.system.tasks.sched-1',
+      from: 'system:tasks',
       replyTo: 'relay.human.console.client-1',
       budget: {
         hopCount: 0,
@@ -188,7 +188,7 @@ describe('ClaudeCodeAdapter correlation ID', () => {
       },
       createdAt: new Date().toISOString(),
       payload: {
-        type: 'pulse_dispatch',
+        type: 'task_dispatch',
         scheduleId: 'sched-1',
         runId: 'run-1',
         prompt: 'Check budget',
@@ -200,9 +200,9 @@ describe('ClaudeCodeAdapter correlation ID', () => {
       },
     };
 
-    await adapter.deliver('relay.system.pulse.sched-1', pulseEnvelope);
+    await adapter.deliver('relay.system.tasks.sched-1', tasksEnvelope);
 
-    // Pulse dispatch publishes progress events, not raw streaming events.
+    // Tasks dispatch publishes progress events, not raw streaming events.
     // Any published payloads should NOT have correlationId since dispatch
     // flows don't use the correlation pipeline.
     const publishCalls = vi.mocked(relay.publish).mock.calls;

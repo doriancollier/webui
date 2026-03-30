@@ -4,15 +4,15 @@
  * @module features/onboarding
  */
 export { useOnboarding } from './model/use-onboarding';
-export { usePulsePresets } from '@/layers/entities/pulse';
-export type { PulsePreset } from '@/layers/entities/pulse';
-export { PresetCard } from '@/layers/features/pulse';
+export { useTaskTemplates } from '@/layers/entities/tasks';
+export type { TaskTemplate } from '@/layers/entities/tasks';
+export { TaskTemplateCard } from '@/layers/features/tasks';
 export { OnboardingFlow } from './ui/OnboardingFlow';
 export { WelcomeStep } from './ui/WelcomeStep';
 export { MeetDorkBotStep } from './ui/MeetDorkBotStep';
 export { AgentDiscoveryStep } from './ui/AgentDiscoveryStep';
 export { NoAgentsFound } from './ui/NoAgentsFound';
-export { PulsePresetsStep } from './ui/PulsePresetsStep';
+export { TaskTemplatesStep } from './ui/TaskTemplatesStep';
 export { AdapterSetupStep } from './ui/AdapterSetupStep';
 export { OnboardingComplete } from './ui/OnboardingComplete';
 export { DiscoveryCelebration } from './ui/DiscoveryCelebration';

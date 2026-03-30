@@ -18,7 +18,7 @@ vi.mock('../model/promo-registry', () => ({
 // Mock the promo context
 let mockContext: PromoContext = {
   hasAdapter: () => false,
-  isPulseEnabled: false,
+  isTasksEnabled: false,
   isMeshEnabled: false,
   isRelayEnabled: false,
   sessionCount: 0,
@@ -65,7 +65,7 @@ describe('usePromoSlot', () => {
     mockPromoEnabled = true;
     mockContext = {
       hasAdapter: () => false,
-      isPulseEnabled: false,
+      isTasksEnabled: false,
       isMeshEnabled: false,
       isRelayEnabled: false,
       sessionCount: 0,
@@ -93,10 +93,10 @@ describe('usePromoSlot', () => {
 
   it('evaluates shouldShow with context', () => {
     mockRegistry.push(
-      makePromo({ id: 'a', shouldShow: (ctx) => ctx.isPulseEnabled }),
+      makePromo({ id: 'a', shouldShow: (ctx) => ctx.isTasksEnabled }),
       makePromo({ id: 'b', shouldShow: () => true })
     );
-    mockContext.isPulseEnabled = false;
+    mockContext.isTasksEnabled = false;
     const { result } = renderHook(() => usePromoSlot('dashboard-main', 10));
     expect(result.current.map((p) => p.id)).toEqual(['b']);
   });

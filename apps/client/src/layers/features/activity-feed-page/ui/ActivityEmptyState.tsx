@@ -91,8 +91,8 @@ function FilteredEmptyState({ categories, onClear, className }: FilteredEmptySta
 /**
  * Build a human-readable label from a comma-separated category string.
  *
- * "pulse" → "Pulse"
- * "pulse,relay" → "Pulse or Relay"
+ * "tasks" → "Tasks"
+ * "tasks,relay" → "Tasks or Relay"
  * undefined → "matching"
  */
 function buildCategoryLabel(categories: string | undefined): string {

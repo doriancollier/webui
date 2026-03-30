@@ -3,7 +3,7 @@ import { ChatPage } from '../pages/ChatPage';
 import { SessionSidebarPage } from '../pages/SessionSidebarPage';
 import { SettingsPage } from '../pages/SettingsPage';
 import { BasePage } from '../pages/BasePage';
-import { PulsePage } from '../pages/PulsePage';
+import { TasksPage } from '../pages/TasksPage';
 import { MeshPage } from '../pages/MeshPage';
 import { RelayPage } from '../pages/RelayPage';
 
@@ -12,7 +12,7 @@ type DorkOSFixtures = {
   chatPage: ChatPage;
   sessionSidebar: SessionSidebarPage;
   settingsPage: SettingsPage;
-  pulsePage: PulsePage;
+  tasksPage: TasksPage;
   meshPage: MeshPage;
   relayPage: RelayPage;
 };
@@ -32,8 +32,8 @@ export const test = base.extend<DorkOSFixtures>({
   settingsPage: async ({ page }, use) => {
     await use(new SettingsPage(page));
   },
-  pulsePage: async ({ page }, use) => {
-    await use(new PulsePage(page));
+  tasksPage: async ({ page }, use) => {
+    await use(new TasksPage(page));
   },
   meshPage: async ({ page }, use) => {
     await use(new MeshPage(page));

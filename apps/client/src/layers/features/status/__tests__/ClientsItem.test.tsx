@@ -41,7 +41,7 @@ const baseProps = {
   clientCount: 2,
   clients: [webClient, obsidianClient],
   lockInfo: null,
-  pulse: false,
+  tasks: false,
 };
 
 describe('ClientsItem', () => {

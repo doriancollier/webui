@@ -1,4 +1,4 @@
-import { usePulseEnabled, useSchedules } from '@/layers/entities/pulse';
+import { useTasksEnabled, useTasks } from '@/layers/entities/tasks';
 import { useRelayEnabled } from '@/layers/entities/relay';
 import { useMeshAgentHealth } from '@/layers/entities/mesh';
 import { useBindings } from '@/layers/entities/binding';
@@ -11,16 +11,16 @@ interface ConnectionsTabProps {
 }
 
 /**
- * Agent-Settings connections tab showing Pulse, Relay, and Mesh subsystem status
+ * Agent-Settings connections tab showing Tasks, Relay, and Mesh subsystem status
  * with real data and deep-link navigation to each subsystem panel.
  */
 export function ConnectionsTab({ agent }: ConnectionsTabProps) {
-  const pulseEnabled = usePulseEnabled();
+  const tasksEnabled = useTasksEnabled();
   const relayEnabled = useRelayEnabled();
   const { data: health } = useMeshAgentHealth(agent.id);
-  const { data: schedules = [] } = useSchedules(pulseEnabled);
+  const { data: schedules = [] } = useTasks(tasksEnabled);
   const { data: bindings = [] } = useBindings();
-  const { setAgentDialogOpen, setRelayOpen, openPulseForAgent } = useAppStore();
+  const { setAgentDialogOpen, setRelayOpen, openTasksForAgent } = useAppStore();
 
   const agentScheduleCount = schedules.filter((s) => s.agentId === agent.id).length;
   const agentBindingCount = bindings.filter((b) => b.agentId === agent.id).length;
@@ -34,22 +34,22 @@ export function ConnectionsTab({ agent }: ConnectionsTabProps) {
 
   return (
     <div className="space-y-6">
-      {/* Pulse */}
+      {/* Tasks */}
       <SubsystemRow
-        label="Pulse Schedules"
-        enabled={pulseEnabled}
+        label="Tasks Schedules"
+        enabled={tasksEnabled}
         summary={
-          pulseEnabled
+          tasksEnabled
             ? agentScheduleCount > 0
               ? `${agentScheduleCount} ${agentScheduleCount === 1 ? 'schedule' : 'schedules'}`
               : 'No schedules'
             : undefined
         }
         action={
-          pulseEnabled
+          tasksEnabled
             ? {
-                label: 'View in Pulse',
-                onClick: () => navigateTo(() => openPulseForAgent(agent.id)),
+                label: 'View in Tasks',
+                onClick: () => navigateTo(() => openTasksForAgent(agent.id)),
               }
             : undefined
         }

@@ -31,14 +31,14 @@ export interface CategoryConfig {
 
 /**
  * Per-category color tokens consistent with the dashboard activity feed.
- * Matches the spec: pulse=purple-500, relay=teal-500, agent=indigo-500,
+ * Matches the spec: tasks=purple-500, relay=teal-500, agent=indigo-500,
  * config=amber-500, system=neutral-500.
  */
 export const CATEGORY_CONFIG: Record<
-  'pulse' | 'relay' | 'agent' | 'config' | 'system',
+  'tasks' | 'relay' | 'agent' | 'config' | 'system',
   CategoryConfig
 > = {
-  pulse: { text: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Pulse' },
+  tasks: { text: 'text-purple-500', bg: 'bg-purple-500/10', label: 'Tasks' },
   relay: { text: 'text-teal-500', bg: 'bg-teal-500/10', label: 'Relay' },
   agent: { text: 'text-indigo-500', bg: 'bg-indigo-500/10', label: 'Agent' },
   config: { text: 'text-amber-500', bg: 'bg-amber-500/10', label: 'Config' },
@@ -52,7 +52,7 @@ export const CATEGORY_CONFIG: Record<
 /** Display configuration for an actor type. */
 export interface ActorConfig {
   /**
-   * Lucide icon to render. Only present for `system` and `pulse` actors.
+   * Lucide icon to render. Only present for `system` and `tasks` actors.
    * For `agent` actors, a colored dot is used instead; for `user`, a ghost pill.
    */
   icon?: LucideIcon;
@@ -65,11 +65,11 @@ export interface ActorConfig {
  * - `user` → neutral ghost pill (no icon, muted text)
  * - `agent` → colored dot + name (color supplied by caller from registry)
  * - `system` → Settings icon, muted neutral text
- * - `pulse` → Clock icon, purple text
+ * - `tasks` → Clock icon, purple text
  */
-export const ACTOR_CONFIG: Record<'user' | 'agent' | 'system' | 'pulse', ActorConfig> = {
+export const ACTOR_CONFIG: Record<'user' | 'agent' | 'system' | 'tasks', ActorConfig> = {
   user: { text: 'text-muted-foreground' },
   agent: { text: 'text-foreground' },
   system: { icon: Settings, text: 'text-neutral-500' },
-  pulse: { icon: Clock, text: 'text-purple-500' },
+  tasks: { icon: Clock, text: 'text-purple-500' },
 };

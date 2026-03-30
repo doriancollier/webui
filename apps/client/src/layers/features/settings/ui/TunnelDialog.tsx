@@ -290,7 +290,7 @@ export function TunnelDialog({ open, onOpenChange }: TunnelDialogProps) {
               className={cn(
                 'inline-block size-2 rounded-full',
                 dotColor,
-                isTransitioning && 'animate-pulse'
+                isTransitioning && 'animate-tasks'
               )}
             />
             Remote Access

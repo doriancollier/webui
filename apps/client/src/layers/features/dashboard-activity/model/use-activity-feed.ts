@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useSessions } from '@/layers/entities/session';
-import { useRuns } from '@/layers/entities/pulse';
+import { useTaskRuns } from '@/layers/entities/tasks';
 import { useNow } from '@/layers/shared/model';
 
 /** Maximum number of events to show in the feed before capping. */
@@ -11,7 +11,7 @@ const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export interface ActivityEvent {
   id: string;
-  type: 'session' | 'pulse' | 'relay' | 'mesh' | 'system';
+  type: 'session' | 'tasks' | 'relay' | 'mesh' | 'system';
   timestamp: string;
   title: string;
   link?: { to: string; params?: Record<string, string> };
@@ -37,14 +37,14 @@ export function formatDuration(ms: number): string {
 }
 
 /**
- * Aggregate recent events from sessions and Pulse runs into a time-grouped feed.
- * Sources: sessions (last 7 days), Pulse runs (last 7 days).
+ * Aggregate recent events from sessions and Tasks runs into a time-grouped feed.
+ * Sources: sessions (last 7 days), Tasks runs (last 7 days).
  * Sorted reverse-chronologically and grouped into Today / Yesterday / Last 7 days.
  * Capped at 20 items.
  */
 export function useActivityFeed(): { groups: ActivityGroup[]; totalCount: number } {
   const { sessions } = useSessions();
-  const { data: runs } = useRuns();
+  const { data: runs } = useTaskRuns();
   const nowMs = useNow();
 
   return useMemo(() => {
@@ -72,15 +72,15 @@ export function useActivityFeed(): { groups: ActivityGroup[]; totalCount: number
       }
     }
 
-    // Pulse run events from last 7 days
+    // Tasks run events from last 7 days
     if (runs) {
       for (const run of runs) {
         const runTime = new Date(run.createdAt).getTime();
         if (runTime > sevenDaysAgo) {
           const status = run.status === 'failed' ? 'failed' : 'ran successfully';
           events.push({
-            id: `pulse-${run.id}`,
-            type: 'pulse',
+            id: `tasks-${run.id}`,
+            type: 'tasks',
             timestamp: run.createdAt,
             title: `Schedule ${run.scheduleId.slice(0, 8)} ${status}`,
           });

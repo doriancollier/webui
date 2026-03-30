@@ -2,7 +2,7 @@
  * Claude Code adapter for the Relay message bus.
  *
  * Routes messages between the Relay bus and Claude Agent SDK sessions.
- * Delegates agent message handling, pulse execution, and queue management
+ * Delegates agent message handling, tasks execution, and queue management
  * to focused sub-modules.
  *
  * @module relay/adapters/claude-code-adapter
@@ -33,7 +33,7 @@ import type {
   DeliveryResult,
 } from '../../types.js';
 import { handleAgentMessage } from './agent-handler.js';
-import { handlePulseMessage } from './pulse-handler.js';
+import { handleTasksMessage } from './task-handler.js';
 import { AgentQueue } from './queue.js';
 import { subscribeApprovalHandler } from './approval-handler.js';
 import type { ClaudeCodeAdapterConfig, ClaudeCodeAdapterDeps, ResolvedConfig } from './types.js';
@@ -44,7 +44,7 @@ export type {
   ClaudeCodeAdapterDeps,
   AgentRuntimeLike,
   AgentSessionStoreLike,
-  PulseStoreLike,
+  TasksStoreLike,
 } from './types.js';
 
 // Re-export TraceStoreLike for backward compatibility
@@ -86,21 +86,21 @@ export const CLAUDE_CODE_MANIFEST: AdapterManifest = {
 /** Subject prefix for agent-bound messages. */
 const AGENT_SUBJECT_PREFIX = 'relay.agent.';
 
-/** Subject prefix for Pulse dispatch messages. */
-const PULSE_SUBJECT_PREFIX = 'relay.system.pulse.';
+/** Subject prefix for Tasks dispatch messages. */
+const TASKS_SUBJECT_PREFIX = 'relay.system.tasks.';
 
 // === ClaudeCodeAdapter ===
 
 /**
  * Runtime adapter that bridges Relay messages to Claude Code Agent SDK sessions.
  *
- * Handles agent-directed messages (`relay.agent.>`) and Pulse scheduler
- * dispatch (`relay.system.pulse.>`). Enforces a concurrency semaphore,
+ * Handles agent-directed messages (`relay.agent.>`) and Tasks scheduler
+ * dispatch (`relay.system.tasks.>`). Enforces a concurrency semaphore,
  * TTL budget timeouts, and records trace spans through the delivery lifecycle.
  */
 export class ClaudeCodeAdapter implements RelayAdapter {
   readonly id: string;
-  readonly subjectPrefix = [AGENT_SUBJECT_PREFIX, PULSE_SUBJECT_PREFIX] as const;
+  readonly subjectPrefix = [AGENT_SUBJECT_PREFIX, TASKS_SUBJECT_PREFIX] as const;
   readonly displayName = 'Claude Code';
 
   private readonly config: ResolvedConfig;
@@ -121,7 +121,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
    *
    * @param id - Unique adapter identifier (e.g., 'claude-code')
    * @param config - Adapter configuration (concurrency, timeout, default cwd)
-   * @param deps - Injected dependencies (agentManager, traceStore, pulseStore)
+   * @param deps - Injected dependencies (agentManager, traceStore, taskStore)
    */
   constructor(id: string, config: ClaudeCodeAdapterConfig, deps: ClaudeCodeAdapterDeps) {
     this.id = id;
@@ -173,9 +173,9 @@ export class ClaudeCodeAdapter implements RelayAdapter {
   }
 
   /**
-   * Deliver a Relay message to an agent session or Pulse runner.
+   * Deliver a Relay message to an agent session or Tasks runner.
    *
-   * Routes to handleAgentMessage or handlePulseMessage based on subject prefix.
+   * Routes to handleAgentMessage or handleTasksMessage based on subject prefix.
    * Enforces the concurrency semaphore before dispatching.
    *
    * @param subject - The target subject
@@ -208,8 +208,8 @@ export class ClaudeCodeAdapter implements RelayAdapter {
     this.activeCount++;
 
     try {
-      if (subject.startsWith(PULSE_SUBJECT_PREFIX)) {
-        return await handlePulseMessage(
+      if (subject.startsWith(TASKS_SUBJECT_PREFIX)) {
+        return await handleTasksMessage(
           subject,
           envelope,
           context,
@@ -218,7 +218,7 @@ export class ClaudeCodeAdapter implements RelayAdapter {
           {
             agentManager: this.deps.agentManager,
             traceStore: this.deps.traceStore,
-            pulseStore: this.deps.pulseStore,
+            taskStore: this.deps.taskStore,
             logger: this.deps.logger,
           },
           this.relay

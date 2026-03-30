@@ -19,11 +19,11 @@ interface HealthStub {
   lastSeenAt: string | null;
 }
 
-const mockUsePulseEnabled = vi.fn<() => boolean>(() => true);
+const mockUseTasksEnabled = vi.fn<() => boolean>(() => true);
 const mockUseSchedules = vi.fn<() => { data: ScheduleStub[] }>(() => ({ data: [] }));
-vi.mock('@/layers/entities/pulse', () => ({
-  usePulseEnabled: () => mockUsePulseEnabled(),
-  useSchedules: () => mockUseSchedules(),
+vi.mock('@/layers/entities/tasks', () => ({
+  useTasksEnabled: () => mockUseTasksEnabled(),
+  useTasks: () => mockUseSchedules(),
 }));
 
 const mockUseRelayEnabled = vi.fn<() => boolean>(() => true);
@@ -45,13 +45,13 @@ vi.mock('@/layers/entities/binding', () => ({
 
 const mockSetAgentDialogOpen = vi.fn();
 const mockSetRelayOpen = vi.fn();
-const mockOpenPulseForAgent = vi.fn();
+const mockOpenTasksForAgent = vi.fn();
 vi.mock('@/layers/shared/model', () => ({
   useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
       setAgentDialogOpen: mockSetAgentDialogOpen,
       setRelayOpen: mockSetRelayOpen,
-      openPulseForAgent: mockOpenPulseForAgent,
+      openTasksForAgent: mockOpenTasksForAgent,
     };
     return selector ? selector(state) : state;
   },
@@ -92,7 +92,7 @@ function renderTab(agent: AgentManifest = baseAgent) {
 describe('ConnectionsTab', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockUsePulseEnabled.mockReturnValue(true);
+    mockUseTasksEnabled.mockReturnValue(true);
     mockUseRelayEnabled.mockReturnValue(true);
     mockUseSchedules.mockReturnValue({ data: [] });
     mockUseBindings.mockReturnValue({ data: [] });
@@ -101,26 +101,26 @@ describe('ConnectionsTab', () => {
 
   it('renders three subsystem rows', () => {
     const view = renderTab();
-    expect(view.getByText('Pulse Schedules')).toBeInTheDocument();
+    expect(view.getByText('Tasks Schedules')).toBeInTheDocument();
     expect(view.getByText('Relay Bindings')).toBeInTheDocument();
     expect(view.getByText('Mesh Health')).toBeInTheDocument();
   });
 
-  describe('Pulse row', () => {
-    it('shows "Enabled" badge when Pulse is enabled', () => {
+  describe('Tasks row', () => {
+    it('shows "Enabled" badge when Tasks is enabled', () => {
       const view = renderTab();
-      const section = view.getByText('Pulse Schedules').closest('section')!;
+      const section = view.getByText('Tasks Schedules').closest('section')!;
       expect(within(section).getByText('Enabled')).toBeInTheDocument();
     });
 
-    it('shows "Disabled" badge when Pulse is disabled', () => {
-      mockUsePulseEnabled.mockReturnValue(false);
+    it('shows "Disabled" badge when Tasks is disabled', () => {
+      mockUseTasksEnabled.mockReturnValue(false);
       const view = renderTab();
-      const section = view.getByText('Pulse Schedules').closest('section')!;
+      const section = view.getByText('Tasks Schedules').closest('section')!;
       expect(within(section).getByText('Disabled')).toBeInTheDocument();
     });
 
-    it('shows "No schedules" when Pulse is enabled but agent has none', () => {
+    it('shows "No schedules" when Tasks is enabled but agent has none', () => {
       mockUseSchedules.mockReturnValue({ data: [] });
       const view = renderTab();
       expect(view.getByText('No schedules')).toBeInTheDocument();
@@ -156,18 +156,18 @@ describe('ConnectionsTab', () => {
       expect(view.getByText('1 schedule')).toBeInTheDocument();
     });
 
-    it('shows "View in Pulse" action when enabled', () => {
+    it('shows "View in Tasks" action when enabled', () => {
       const view = renderTab();
-      expect(view.getByText('View in Pulse')).toBeInTheDocument();
+      expect(view.getByText('View in Tasks')).toBeInTheDocument();
     });
 
-    it('does not show action when Pulse is disabled', () => {
-      mockUsePulseEnabled.mockReturnValue(false);
+    it('does not show action when Tasks is disabled', () => {
+      mockUseTasksEnabled.mockReturnValue(false);
       const view = renderTab();
-      expect(view.queryByText('View in Pulse')).not.toBeInTheDocument();
+      expect(view.queryByText('View in Tasks')).not.toBeInTheDocument();
     });
 
-    it('navigates to Pulse on action click', () => {
+    it('navigates to Tasks on action click', () => {
       // Mock requestAnimationFrame to execute immediately
       const rafSpy = vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
         cb(0);
@@ -175,10 +175,10 @@ describe('ConnectionsTab', () => {
       });
 
       const view = renderTab();
-      fireEvent.click(view.getByText('View in Pulse'));
+      fireEvent.click(view.getByText('View in Tasks'));
 
       expect(mockSetAgentDialogOpen).toHaveBeenCalledWith(false);
-      expect(mockOpenPulseForAgent).toHaveBeenCalledWith(baseAgent.id);
+      expect(mockOpenTasksForAgent).toHaveBeenCalledWith(baseAgent.id);
 
       rafSpy.mockRestore();
     });
@@ -315,10 +315,10 @@ describe('ConnectionsTab', () => {
       });
 
       const view = renderTab();
-      fireEvent.click(view.getByText('View in Pulse'));
+      fireEvent.click(view.getByText('View in Tasks'));
 
       expect(mockSetAgentDialogOpen).toHaveBeenCalledTimes(1);
-      expect(mockOpenPulseForAgent).toHaveBeenCalledTimes(1);
+      expect(mockOpenTasksForAgent).toHaveBeenCalledTimes(1);
 
       rafSpy.mockRestore();
     });

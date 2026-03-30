@@ -18,7 +18,7 @@ interface AgentIdentityChipProps {
  * Clickable agent identity chip for the top navigation bar.
  *
  * Shows the active agent's color dot + name, or a muted "No agent" fallback.
- * Clicking opens the agent settings dialog. The color dot pulses during streaming.
+ * Clicking opens the agent settings dialog. The color dot taskss during streaming.
  * Agent name transitions with a slide animation when switching agents.
  */
 export function AgentIdentityChip({ agent, visual, isStreaming }: AgentIdentityChipProps) {

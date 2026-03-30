@@ -20,9 +20,9 @@ const mockItems: SearchableItem[] = [
   },
   {
     id: 'feature-1',
-    name: 'Pulse Scheduler',
+    name: 'Tasks Scheduler',
     type: 'feature',
-    data: { id: 'pulse', label: 'Pulse Scheduler', icon: 'Clock', action: 'openPulse' } as any,
+    data: { id: 'tasks', label: 'Tasks Scheduler', icon: 'Clock', action: 'openTasks' } as any,
   },
   {
     id: 'cmd-1',

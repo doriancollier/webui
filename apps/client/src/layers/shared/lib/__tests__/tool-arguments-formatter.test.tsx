@@ -85,7 +85,7 @@ describe('ToolArgumentsDisplay', () => {
 });
 
 describe('ToolArgumentsDisplay streaming mode', () => {
-  it('shows raw text with pulse indicator during streaming', () => {
+  it('shows raw text with tasks indicator during streaming', () => {
     const partialJson = '{"command": "echo hel';
     const { container } = render(
       <ToolArgumentsDisplay toolName="Bash" input={partialJson} isStreaming />
@@ -93,9 +93,9 @@ describe('ToolArgumentsDisplay streaming mode', () => {
     const pre = container.querySelector('pre');
     expect(pre).not.toBeNull();
     expect(pre!.textContent).toContain(partialJson);
-    // Pulse dot is rendered as a sibling span inside the pre
-    const pulse = pre!.querySelector('.animate-pulse');
-    expect(pulse).not.toBeNull();
+    // Tasks dot is rendered as a sibling span inside the pre
+    const tasks = pre!.querySelector('.animate-tasks');
+    expect(tasks).not.toBeNull();
   });
 
   it('shows formatted key-value grid after completion', () => {
@@ -119,7 +119,7 @@ describe('ToolArgumentsDisplay streaming mode', () => {
     );
     const pre = container.querySelector('pre');
     expect(pre).not.toBeNull();
-    // textContent includes the pulse span (zero-width), so check startsWith
+    // textContent includes the tasks span (zero-width), so check startsWith
     expect(pre!.textContent!.startsWith('x'.repeat(5120))).toBe(true);
     expect(pre!.textContent!.includes('\u2026')).toBe(true);
   });

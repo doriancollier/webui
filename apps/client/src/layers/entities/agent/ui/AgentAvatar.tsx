@@ -43,7 +43,7 @@ export interface AgentAvatarProps extends VariantProps<typeof avatarVariants> {
   color: string;
   /** Single emoji character rendered inside the circle. */
   emoji: string;
-  /** Optional health status — adds a colored ring and pulse for active agents. */
+  /** Optional health status — adds a colored ring and tasks for active agents. */
   healthStatus?: AgentHealthStatus;
   className?: string;
 }

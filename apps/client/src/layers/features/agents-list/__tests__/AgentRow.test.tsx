@@ -344,7 +344,7 @@ describe('AgentRow', () => {
     expect(screen.getByText('Never')).toBeInTheDocument();
   });
 
-  it('shows active pulse indicator inside AgentAvatar when healthStatus is active', () => {
+  it('shows active tasks indicator inside AgentAvatar when healthStatus is active', () => {
     const { container } = render(
       <AgentRow
         agent={agentFixture}
@@ -358,11 +358,11 @@ describe('AgentRow', () => {
 
     const avatar = container.querySelector('[data-slot="agent-avatar"]');
     // AgentAvatar renders a pulsing dot for active status
-    const pulseDot = avatar?.querySelector('.bg-emerald-500');
-    expect(pulseDot).toBeInTheDocument();
+    const tasksDot = avatar?.querySelector('.bg-emerald-500');
+    expect(tasksDot).toBeInTheDocument();
   });
 
-  it('does not show active pulse indicator when healthStatus is inactive', () => {
+  it('does not show active tasks indicator when healthStatus is inactive', () => {
     const { container } = render(
       <AgentRow
         agent={agentFixture}
@@ -375,8 +375,8 @@ describe('AgentRow', () => {
     );
 
     const avatar = container.querySelector('[data-slot="agent-avatar"]');
-    const pulseDot = avatar?.querySelector('.bg-emerald-500');
-    expect(pulseDot).not.toBeInTheDocument();
+    const tasksDot = avatar?.querySelector('.bg-emerald-500');
+    expect(tasksDot).not.toBeInTheDocument();
   });
 
   it('shows "Default" badge when agent is the default', async () => {

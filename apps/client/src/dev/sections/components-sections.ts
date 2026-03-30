@@ -52,7 +52,7 @@ export const COMPONENTS_SECTIONS: PlaygroundSection[] = [
     title: 'Skeleton',
     page: 'components',
     category: 'Feedback',
-    keywords: ['loading', 'placeholder', 'pulse', 'shimmer', 'spinner'],
+    keywords: ['loading', 'placeholder', 'tasks', 'shimmer', 'spinner'],
   },
   {
     id: 'separator',

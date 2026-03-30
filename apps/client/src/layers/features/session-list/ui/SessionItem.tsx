@@ -14,12 +14,6 @@ interface SessionItemProps {
   isNew?: boolean;
 }
 
-/** Tailwind classes for each non-idle session status dot. */
-const STATUS_DOT_CLASSES: Record<string, string> = {
-  streaming: 'bg-green-500 animate-pulse',
-  error: 'bg-destructive',
-};
-
 interface SessionActivityIndicatorProps {
   sessionId: string;
 }
@@ -56,7 +50,7 @@ function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) 
   if (hasPendingApproval) {
     return (
       <span
-        className="size-1.5 flex-shrink-0 animate-pulse rounded-full bg-amber-500"
+        className="animate-tasks size-1.5 flex-shrink-0 rounded-full bg-amber-500"
         aria-label="Waiting for approval"
       />
     );
@@ -69,7 +63,7 @@ function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) 
   if (isRunning) {
     return (
       <span
-        className="size-1.5 flex-shrink-0 animate-pulse rounded-full bg-green-500"
+        className="animate-tasks size-1.5 flex-shrink-0 rounded-full bg-green-500"
         aria-label="Streaming"
       />
     );
@@ -155,14 +149,10 @@ export function SessionItem({
     if (isRenaming) renameInputRef.current?.focus();
   }, [isRenaming]);
 
-  const startRename = useCallback(
-    (e: React.MouseEvent) => {
-      e.stopPropagation();
-      setRenameValue(session.title);
-      setIsRenaming(true);
-    },
-    [session.title]
-  );
+  const startRename = useCallback(() => {
+    setRenameValue(session.title);
+    setIsRenaming(true);
+  }, [session.title]);
 
   const commitRename = useCallback(() => {
     const trimmed = renameValue.trim();
@@ -262,13 +252,24 @@ export function SessionItem({
             onClick={(e) => e.stopPropagation()}
             className="bg-background text-foreground mt-0.5 w-full rounded border px-1 text-xs outline-none"
           />
-        ) : (
+        ) : onRename ? (
           <div
             className="text-muted-foreground/70 mt-0.5 truncate text-xs"
-            onDoubleClick={onRename ? startRename : undefined}
+            role="button"
+            tabIndex={-1}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              startRename();
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'F2') startRename();
+            }}
+            title="Double-click or F2 to rename"
           >
             {session.title}
           </div>
+        ) : (
+          <div className="text-muted-foreground/70 mt-0.5 truncate text-xs">{session.title}</div>
         )}
       </motion.div>
 

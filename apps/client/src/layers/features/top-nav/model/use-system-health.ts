@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useRuns } from '@/layers/entities/pulse';
+import { useTaskRuns } from '@/layers/entities/tasks';
 import { useAggregatedDeadLetters, useRelayAdapters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
 import { useNow } from '@/layers/shared/model';
@@ -13,11 +13,11 @@ export type SystemHealthState = 'healthy' | 'degraded' | 'error';
  * Derive system health state from entity hook data.
  *
  * Priority: `error` > `degraded` > `healthy`.
- * Error conditions: failed Pulse runs in last 24h, dead letters, unreachable mesh agents.
+ * Error conditions: failed Tasks runs in last 24h, dead letters, unreachable mesh agents.
  * Degraded condition: any relay adapter disconnected but no error conditions.
  */
 export function useSystemHealth(): SystemHealthState {
-  const { data: failedRuns } = useRuns({ status: 'failed' });
+  const { data: failedRuns } = useTaskRuns({ status: 'failed' });
   const { data: deadLetters } = useAggregatedDeadLetters();
   const { data: meshStatus } = useMeshStatus();
   const { data: adapters } = useRelayAdapters();

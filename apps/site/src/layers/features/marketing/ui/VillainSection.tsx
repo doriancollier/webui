@@ -97,7 +97,7 @@ function GoldfishArt() {
   );
 }
 
-/** Bars randomly pulse opacity, one orange bar pulses urgently. */
+/** Bars randomly tasks opacity, one orange bar taskss urgently. */
 function TabGraveyardArt() {
   return (
     <div className="mb-4 flex gap-1.5 select-none" aria-hidden="true">
@@ -110,8 +110,8 @@ function TabGraveyardArt() {
             background: i === 2 ? 'rgba(232, 93, 4, 0.45)' : 'rgba(122, 117, 106, 0.22)',
             animation:
               i === 2
-                ? 'tab-pulse-urgent 1.2s ease-in-out infinite'
-                : `tab-pulse-idle ${2 + i * 0.7}s ease-in-out infinite`,
+                ? 'tab-tasks-urgent 1.2s ease-in-out infinite'
+                : `tab-tasks-idle ${2 + i * 0.7}s ease-in-out infinite`,
           }}
         />
       ))}

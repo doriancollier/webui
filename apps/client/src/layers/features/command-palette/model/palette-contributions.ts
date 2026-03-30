@@ -3,10 +3,10 @@ import type { CommandPaletteContribution } from '@/layers/shared/model';
 /** Built-in feature palette items (priority 1-4 for core features). */
 export const PALETTE_FEATURES: CommandPaletteContribution[] = [
   {
-    id: 'pulse',
-    label: 'Pulse Scheduler',
+    id: 'tasks',
+    label: 'Tasks Scheduler',
     icon: 'Clock',
-    action: 'openPulse',
+    action: 'openTasks',
     category: 'feature',
     priority: 1,
   },

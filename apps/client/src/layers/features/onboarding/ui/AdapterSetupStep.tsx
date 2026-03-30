@@ -73,7 +73,7 @@ export function AdapterSetupStep({ onStepComplete }: AdapterSetupStepProps) {
       {isLoading ? (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-muted/30 h-28 animate-pulse rounded-lg border" />
+            <div key={i} className="bg-muted/30 animate-tasks h-28 rounded-lg border" />
           ))}
         </div>
       ) : (

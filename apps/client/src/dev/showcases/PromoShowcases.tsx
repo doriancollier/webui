@@ -14,7 +14,7 @@ import { PromoDialog } from '@/layers/features/feature-promos/ui/PromoDialog';
 
 const MOCK_CTX = {
   hasAdapter: () => false,
-  isPulseEnabled: true,
+  isTasksEnabled: true,
   isMeshEnabled: true,
   isRelayEnabled: true,
   sessionCount: 5,

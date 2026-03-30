@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import {
   hashToHslColor,
   generateCircleFavicon,
-  generatePulseFrames,
+  generateTasksFrames,
   setFavicon,
 } from '@/layers/shared/lib';
 
@@ -16,7 +16,7 @@ interface UseFaviconOptions {
 /** ms per frame — 20 frames × 100ms = 2s per full breathing cycle */
 const FRAME_INTERVAL = 100;
 
-/** Generate a CWD-based colored favicon and pulse-animate it while streaming. */
+/** Generate a CWD-based colored favicon and tasks-animate it while streaming. */
 export function useFavicon({ cwd, isStreaming, color: colorOverride }: UseFaviconOptions) {
   const solidRef = useRef<string>('');
   const framesRef = useRef<string[]>([]);
@@ -63,9 +63,9 @@ export function useFavicon({ cwd, isStreaming, color: colorOverride }: UseFavico
     framesRef.current = [];
     setFavicon(solid);
 
-    // Pre-generate pulse frames; if streaming is active when they resolve, start pulsing
+    // Pre-generate tasks frames; if streaming is active when they resolve, start pulsing
     let cancelled = false;
-    generatePulseFrames(solid)
+    generateTasksFrames(solid)
       .then((frames) => {
         if (cancelled) return;
         framesRef.current = frames;

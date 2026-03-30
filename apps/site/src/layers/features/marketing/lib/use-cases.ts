@@ -8,7 +8,7 @@ export const useCases: UseCase[] = [
   {
     id: 'ship-while-you-sleep',
     title: 'Ship around the clock',
-    description: 'Pulse executes your roadmap autonomously. Wake up to PRs, not TODO lists.',
+    description: 'Tasks executes your roadmap autonomously. Wake up to PRs, not TODO lists.',
   },
   {
     id: 'agents-that-talk',

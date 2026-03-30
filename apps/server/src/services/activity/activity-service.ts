@@ -134,7 +134,7 @@ export class ActivityService {
 
   /**
    * Prune events older than the retention period.
-   * Called at server startup and optionally by a Pulse schedule.
+   * Called at server startup and optionally by a Tasks schedule.
    *
    * @param retentionDays - Days to retain events (default 30)
    * @returns Number of deleted rows

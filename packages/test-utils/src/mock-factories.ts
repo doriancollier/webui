@@ -1,12 +1,6 @@
 import crypto from 'node:crypto';
 import { vi } from 'vitest';
-import type {
-  Session,
-  StreamEvent,
-  CommandEntry,
-  PulseSchedule,
-  PulseRun,
-} from '@dorkos/shared/types';
+import type { Session, StreamEvent, CommandEntry, Task, TaskRun } from '@dorkos/shared/types';
 import type { Transport } from '@dorkos/shared/transport';
 import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 import type { RelayAdapter, AdapterStatus } from '@dorkos/relay';
@@ -44,8 +38,8 @@ export function createMockCommandEntry(overrides: Partial<CommandEntry> = {}): C
   };
 }
 
-/** Create a mock PulseSchedule with sensible defaults. */
-export function createMockSchedule(overrides: Partial<PulseSchedule> = {}): PulseSchedule {
+/** Create a mock Task with sensible defaults. */
+export function createMockSchedule(overrides: Partial<Task> = {}): Task {
   return {
     id: 'sched-1',
     name: 'Daily review',
@@ -58,6 +52,8 @@ export function createMockSchedule(overrides: Partial<PulseSchedule> = {}): Puls
     timezone: null,
     maxRuntime: null,
     permissionMode: 'acceptEdits',
+    filePath: '/tmp/tasks/daily-review.md',
+    tags: [],
     nextRun: new Date(Date.now() + 86400000).toISOString(),
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
@@ -65,8 +61,8 @@ export function createMockSchedule(overrides: Partial<PulseSchedule> = {}): Puls
   };
 }
 
-/** Create a mock PulseRun with sensible defaults. */
-export function createMockRun(overrides: Partial<PulseRun> = {}): PulseRun {
+/** Create a mock TaskRun with sensible defaults. */
+export function createMockRun(overrides: Partial<TaskRun> = {}): TaskRun {
   return {
     id: 'run-1',
     scheduleId: 'sched-1',
@@ -95,6 +91,7 @@ const mockAgent: AgentManifest = {
   registeredAt: '2025-01-01T00:00:00.000Z',
   registeredBy: 'test',
   personaEnabled: true,
+  isSystem: false,
   enabledToolGroups: {},
 };
 
@@ -143,7 +140,7 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
         authEnabled: false,
         tokenConfigured: false,
       },
-      pulse: {
+      tasks: {
         enabled: true,
       },
     }),
@@ -175,16 +172,16 @@ export function createMockTransport(overrides: Partial<Transport> = {}): Transpo
       .fn()
       .mockResolvedValue({ authenticated: false, passcodeRequired: false }),
     setTunnelPasscode: vi.fn().mockResolvedValue({ ok: true }),
-    // Pulse
-    listSchedules: vi.fn().mockResolvedValue([]),
-    createSchedule: vi.fn(),
-    updateSchedule: vi.fn(),
-    deleteSchedule: vi.fn().mockResolvedValue({ success: true }),
-    triggerSchedule: vi.fn().mockResolvedValue({ runId: 'run-1' }),
-    listRuns: vi.fn().mockResolvedValue([]),
-    getRun: vi.fn(),
-    cancelRun: vi.fn().mockResolvedValue({ success: true }),
-    getPulsePresets: vi.fn().mockResolvedValue([]),
+    // Tasks
+    listTasks: vi.fn().mockResolvedValue([]),
+    createTask: vi.fn(),
+    updateTask: vi.fn(),
+    deleteTask: vi.fn().mockResolvedValue({ success: true }),
+    triggerTask: vi.fn().mockResolvedValue({ runId: 'run-1' }),
+    listTaskRuns: vi.fn().mockResolvedValue([]),
+    getTaskRun: vi.fn(),
+    cancelTaskRun: vi.fn().mockResolvedValue({ success: true }),
+    getTaskTemplates: vi.fn().mockResolvedValue([]),
     // Relay
     listRelayMessages: vi.fn().mockResolvedValue({ messages: [] }),
     getRelayMessage: vi.fn(),

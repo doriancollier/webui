@@ -135,6 +135,7 @@ export function createAgentsRouter(meshCore?: MeshCoreLike): Router {
         registeredAt: new Date().toISOString(),
         registeredBy: 'dorkos-ui',
         personaEnabled: true,
+        isSystem: false,
         enabledToolGroups: {},
       };
 

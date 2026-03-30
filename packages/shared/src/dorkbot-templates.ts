@@ -30,7 +30,7 @@ export function dorkbotClaudeMdTemplate(): string {
     '## Your Role',
     '',
     'Help the user with their development workflow. You have access to DorkOS tools',
-    'for scheduling (Pulse), messaging (Relay), and agent discovery (Mesh).',
+    'for scheduling (Tasks), messaging (Relay), and agent discovery (Mesh).',
   ].join('\n');
 }
 
@@ -44,20 +44,20 @@ export function generateFirstMessage(traits: Traits): string {
   if (tone >= 4) {
     return (
       "Hey! I'm DorkBot — your personal agent running on DorkOS. " +
-      'I can help with scheduling (Pulse), messaging (Relay), and discovering other agents (Mesh). ' +
+      'I can help with scheduling (Tasks), messaging (Relay), and discovering other agents (Mesh). ' +
       'What are we building today?'
     );
   }
   if (tone <= 2) {
     return (
       "DorkBot online. I'm your default DorkOS agent. " +
-      'Tools available: Pulse (scheduling), Relay (messaging), Mesh (discovery). ' +
+      'Tools available: Tasks (scheduling), Relay (messaging), Mesh (discovery). ' +
       'Ready for instructions.'
     );
   }
   return (
     "Hi, I'm DorkBot — your default agent in DorkOS. " +
-    'I have access to Pulse for scheduling, Relay for messaging, and Mesh for agent discovery. ' +
+    'I have access to Tasks for scheduling, Relay for messaging, and Mesh for agent discovery. ' +
     'How can I help?'
   );
 }

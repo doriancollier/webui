@@ -335,7 +335,7 @@ export interface RelayAdapter {
   /** Unique identifier (e.g., 'telegram', 'webhook-github') */
   readonly id: string;
 
-  /** Subject prefix(es) this adapter handles (e.g., 'relay.human.telegram' or ['relay.agent.', 'relay.system.pulse.']) */
+  /** Subject prefix(es) this adapter handles (e.g., 'relay.human.telegram' or ['relay.agent.', 'relay.system.tasks.']) */
   readonly subjectPrefix: string | readonly string[];
 
   /** Human-readable display name */

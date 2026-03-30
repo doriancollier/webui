@@ -14,7 +14,7 @@ export { FAQSection } from './ui/FAQSection';
 export { MarketingNav } from './ui/MarketingNav';
 export { MarketingHeader } from './ui/MarketingHeader';
 export { MarketingFooter } from './ui/MarketingFooter';
-export { PulseAnimation } from './ui/PulseAnimation';
+export { TasksAnimation } from './ui/TasksAnimation';
 
 // UI components — story page
 export { PresentationShell } from './ui/PresentationShell';

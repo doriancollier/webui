@@ -8,13 +8,13 @@ import { useFavicon } from '../use-favicon';
 vi.mock('@/layers/shared/lib', () => ({
   hashToHslColor: vi.fn(() => 'hsl(180, 70%, 55%)'),
   generateCircleFavicon: vi.fn(() => 'data:image/png;base64,solid'),
-  generatePulseFrames: vi.fn(() =>
+  generateTasksFrames: vi.fn(() =>
     Promise.resolve(['data:frame0', 'data:frame1', 'data:frame2', 'data:frame3'])
   ),
   setFavicon: vi.fn(),
 }));
 
-import { generateCircleFavicon, generatePulseFrames, setFavicon } from '@/layers/shared/lib';
+import { generateCircleFavicon, generateTasksFrames, setFavicon } from '@/layers/shared/lib';
 
 describe('useFavicon', () => {
   beforeEach(() => {
@@ -42,14 +42,14 @@ describe('useFavicon', () => {
     expect(vi.mocked(setFavicon).mock.calls.length).toBeGreaterThan(initialCalls);
   });
 
-  it('cycles through pulse frames when streaming', async () => {
+  it('cycles through tasks frames when streaming', async () => {
     vi.useFakeTimers();
     const { rerender } = renderHook(
       ({ isStreaming }) => useFavicon({ cwd: '/test', isStreaming }),
       { initialProps: { isStreaming: false } }
     );
 
-    // Let the pulse frames promise resolve
+    // Let the tasks frames promise resolve
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0);
     });
@@ -73,9 +73,9 @@ describe('useFavicon', () => {
     vi.useRealTimers();
   });
 
-  it('handles generatePulseFrames rejection gracefully', async () => {
+  it('handles generateTasksFrames rejection gracefully', async () => {
     vi.useFakeTimers();
-    vi.mocked(generatePulseFrames).mockRejectedValueOnce(new Error('Canvas unavailable'));
+    vi.mocked(generateTasksFrames).mockRejectedValueOnce(new Error('Canvas unavailable'));
 
     // Should not throw — solid favicon remains as fallback
     renderHook(() => useFavicon({ cwd: '/test', isStreaming: false }));

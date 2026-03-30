@@ -7,7 +7,7 @@ import type { ActivityCategory } from '@/layers/entities/activity';
 import { useActivityFilters } from '../model/use-activity-filters';
 
 /** All category options in display order. */
-const CATEGORIES: ActivityCategory[] = ['pulse', 'relay', 'agent', 'config', 'system'];
+const CATEGORIES: ActivityCategory[] = ['tasks', 'relay', 'agent', 'config', 'system'];
 
 interface CategoryChipProps {
   category: ActivityCategory;

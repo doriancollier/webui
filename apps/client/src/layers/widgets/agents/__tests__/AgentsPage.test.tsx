@@ -99,7 +99,7 @@ const makeTopologyResult = (agentCount: number) => ({
               healthStatus: 'active',
               relayAdapters: [],
               relaySubject: null,
-              pulseScheduleCount: 0,
+              taskCount: 0,
               lastSeenAt: null,
               lastSeenEvent: null,
             })),

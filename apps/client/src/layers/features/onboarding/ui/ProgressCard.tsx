@@ -7,11 +7,11 @@ import type { OnboardingStep } from '@dorkos/shared/config-schema';
 const STEP_LABELS: Record<OnboardingStep, string> = {
   'meet-dorkbot': 'Meet DorkBot',
   discovery: 'Discover agents',
-  pulse: 'Set up Pulse schedules',
+  tasks: 'Set up Tasks schedules',
   adapters: 'Connect adapters',
 };
 
-const VISIBLE_STEPS: OnboardingStep[] = ['discovery', 'pulse'];
+const VISIBLE_STEPS: OnboardingStep[] = ['discovery', 'tasks'];
 
 interface ProgressCardProps {
   /** Called when a user clicks an incomplete step to re-enter onboarding at that index. */

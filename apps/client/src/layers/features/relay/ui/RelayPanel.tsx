@@ -26,7 +26,7 @@ export function RelayPanel() {
 
   /**
    * Switch to the activity tab, force the dead-letter section open, then scroll to it.
-   * The 100ms pulse on autoShowFailures lets the useEffect in ActivityFeed fire even
+   * The 100ms tasks on autoShowFailures lets the useEffect in ActivityFeed fire even
    * on repeated clicks (value goes true → false → true each time).
    */
   const handleFailedClick = useCallback(() => {

@@ -41,7 +41,7 @@ afterEach(cleanup);
 
 const mockSetGlobalPaletteOpen = vi.fn();
 const mockSetSettingsOpen = vi.fn();
-const mockSetPulseOpen = vi.fn();
+const mockSetTasksOpen = vi.fn();
 const mockSetRelayOpen = vi.fn();
 const mockSetMeshOpen = vi.fn();
 const mockSetPickerOpen = vi.fn();
@@ -59,7 +59,7 @@ vi.mock('@/layers/shared/model', () => ({
       setGlobalPaletteOpen: mockSetGlobalPaletteOpen,
       toggleGlobalPalette: vi.fn(),
       setSettingsOpen: mockSetSettingsOpen,
-      setPulseOpen: mockSetPulseOpen,
+      setTasksOpen: mockSetTasksOpen,
       setRelayOpen: mockSetRelayOpen,
       setMeshOpen: mockSetMeshOpen,
       setPickerOpen: mockSetPickerOpen,
@@ -98,7 +98,7 @@ let mockPaletteAllAgents: AgentPathEntry[] = mockAgents;
 vi.mock('../model/use-palette-items', () => ({
   usePaletteItems: () => {
     const features = [
-      { id: 'pulse', label: 'Pulse Scheduler', icon: 'Clock', action: 'openPulse' },
+      { id: 'tasks', label: 'Tasks Scheduler', icon: 'Clock', action: 'openTasks' },
       { id: 'relay', label: 'Relay Messaging', icon: 'Radio', action: 'openRelay' },
       { id: 'mesh', label: 'Mesh Network', icon: 'Globe', action: 'openMesh' },
       { id: 'settings', label: 'Settings', icon: 'Settings', action: 'openSettings' },
@@ -334,12 +334,12 @@ describe('Command Palette Integration', () => {
 
   // --- Feature opening ---
 
-  it('selecting Pulse Scheduler opens pulse dialog and closes palette', () => {
+  it('selecting Tasks Scheduler opens tasks dialog and closes palette', () => {
     render(<CommandPaletteDialog />);
-    const item = screen.getByText('Pulse Scheduler').closest('[data-slot="command-item"]');
+    const item = screen.getByText('Tasks Scheduler').closest('[data-slot="command-item"]');
     fireEvent.click(item as Element);
 
-    expect(mockSetPulseOpen).toHaveBeenCalledWith(true);
+    expect(mockSetTasksOpen).toHaveBeenCalledWith(true);
     expect(mockSetGlobalPaletteOpen).toHaveBeenCalledWith(false);
   });
 

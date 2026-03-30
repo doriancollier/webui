@@ -9,6 +9,6 @@
  */
 export * from './a2a.js';
 export * from './activity.js';
-export * from './pulse.js';
+export * from './tasks.js';
 export * from './relay.js';
 export * from './mesh.js';

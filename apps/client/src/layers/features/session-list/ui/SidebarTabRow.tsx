@@ -104,7 +104,7 @@ export function SidebarTabRow({
                 {tab.id === 'schedules' && schedulesBadge > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-green-500 text-[10px] font-medium text-white">
                     {schedulesBadge > 9 ? '9+' : schedulesBadge}
-                    <span className="absolute inset-0 animate-pulse rounded-full bg-green-500/30" />
+                    <span className="animate-tasks absolute inset-0 rounded-full bg-green-500/30" />
                   </span>
                 )}
 

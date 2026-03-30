@@ -46,7 +46,7 @@ vi.mock('../../lib/features', () => ({
     {
       slug: 'hidden-feature',
       name: 'Hidden Feature',
-      product: 'pulse',
+      product: 'tasks',
       category: 'scheduling',
       tagline: 'This should not appear on the homepage',
       description:
@@ -58,7 +58,7 @@ vi.mock('../../lib/features', () => ({
   ],
   PRODUCT_LABELS: {
     console: 'Console',
-    pulse: 'Pulse',
+    tasks: 'Tasks',
     relay: 'Relay',
     mesh: 'Mesh',
     core: 'Core',

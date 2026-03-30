@@ -125,7 +125,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     systemStatus,
     promptSuggestions,
     presenceInfo,
-    presencePulse,
+    presenceTasks,
     syncConnectionState,
     syncFailedAttempts,
     retryMessage,
@@ -467,7 +467,7 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         onQueueNavigateUp={handleQueueNavigateUp}
         onQueueNavigateDown={handleQueueNavigateDown}
         presenceInfo={presenceInfo}
-        presencePulse={presencePulse}
+        presenceTasks={presenceTasks}
         activeInteraction={activeInteraction}
         focusedOptionIndex={focusedOptionIndex}
         onToolRef={handleToolRef}

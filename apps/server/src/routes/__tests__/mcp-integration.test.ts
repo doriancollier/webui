@@ -172,7 +172,7 @@ describe('MCP Integration', () => {
     expect(toolNames).toContain('ping');
     expect(toolNames).toContain('get_server_info');
     expect(toolNames).toContain('get_session_count');
-    expect(toolNames).toContain('pulse_list_schedules');
+    expect(toolNames).toContain('tasks_list');
     expect(toolNames).toContain('relay_send');
     expect(toolNames).toContain('mesh_discover');
     expect(toolNames).toContain('binding_list');

@@ -9,7 +9,7 @@ export const SENSITIVE_CONFIG_KEYS = [
 ] as const;
 
 /** The guided onboarding steps a first-time user walks through. */
-export const ONBOARDING_STEPS = ['meet-dorkbot', 'discovery', 'pulse', 'adapters'] as const;
+export const ONBOARDING_STEPS = ['meet-dorkbot', 'discovery', 'tasks', 'adapters'] as const;
 
 export const OnboardingStepSchema = z.enum(ONBOARDING_STEPS);
 export type OnboardingStep = z.infer<typeof OnboardingStepSchema>;
@@ -106,9 +106,9 @@ export const UserConfigSchema = z.object({
       relayTools: z.boolean().default(true),
       meshTools: z.boolean().default(true),
       adapterTools: z.boolean().default(true),
-      pulseTools: z.boolean().default(true),
+      tasksTools: z.boolean().default(true),
     })
-    .default(() => ({ relayTools: true, meshTools: true, adapterTools: true, pulseTools: true })),
+    .default(() => ({ relayTools: true, meshTools: true, adapterTools: true, tasksTools: true })),
   uploads: z
     .object({
       maxFileSize: z

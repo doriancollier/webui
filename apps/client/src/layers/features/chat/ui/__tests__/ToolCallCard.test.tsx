@@ -150,8 +150,8 @@ describe('ToolCallCard streaming display', () => {
     const pre = document.querySelector('pre');
     expect(pre).not.toBeNull();
     expect(pre!.textContent).toContain(partialJson);
-    // Should also have the pulse dot
-    expect(pre!.querySelector('.animate-pulse')).not.toBeNull();
+    // Should also have the tasks dot
+    expect(pre!.querySelector('.animate-tasks')).not.toBeNull();
   });
 
   it('does not show "Preparing..." for completed tool calls with empty input', () => {

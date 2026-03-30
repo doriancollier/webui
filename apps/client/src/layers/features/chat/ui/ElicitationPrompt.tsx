@@ -46,6 +46,7 @@ function parseSchemaFields(
   }));
 }
 
+/** Elicitation prompt — renders form fields or URL auth button for MCP requests. */
 export function ElicitationPrompt({
   sessionId,
   interactionId,

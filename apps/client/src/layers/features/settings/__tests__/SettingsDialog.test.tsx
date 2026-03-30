@@ -339,8 +339,8 @@ describe('SettingsDialog', () => {
     expect(toggle?.getAttribute('data-state')).toBe('checked');
   });
 
-  // Verifies Feature suggestions toggle appears between Pulse run notifications and Show dev tools
-  it('positions Feature suggestions between Pulse run notifications and Show dev tools', () => {
+  // Verifies Feature suggestions toggle appears between Tasks run notifications and Show dev tools
+  it('positions Feature suggestions between Tasks run notifications and Show dev tools', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/preferences/i);
     const panel = screen
@@ -349,11 +349,11 @@ describe('SettingsDialog', () => {
     const labels = Array.from(panel.querySelectorAll('[data-slot="field-label"]')).map(
       (el) => el.textContent
     );
-    const pulseIdx = labels.indexOf('Pulse run notifications');
+    const tasksIdx = labels.indexOf('Tasks run notifications');
     const promoIdx = labels.indexOf('Feature suggestions');
     const devToolsIdx = labels.indexOf('Show dev tools');
-    expect(pulseIdx).toBeGreaterThanOrEqual(0);
-    expect(promoIdx).toBeGreaterThan(pulseIdx);
+    expect(tasksIdx).toBeGreaterThanOrEqual(0);
+    expect(promoIdx).toBeGreaterThan(tasksIdx);
     expect(devToolsIdx).toBeGreaterThan(promoIdx);
   });
 });

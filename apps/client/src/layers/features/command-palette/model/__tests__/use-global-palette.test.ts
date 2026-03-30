@@ -11,7 +11,7 @@ const mockState = {
   toggleGlobalPalette: vi.fn(),
   setGlobalPaletteOpen: vi.fn(),
   setSettingsOpen: vi.fn(),
-  setPulseOpen: vi.fn(),
+  setTasksOpen: vi.fn(),
   setRelayOpen: vi.fn(),
   setMeshOpen: vi.fn(),
 };
@@ -75,7 +75,7 @@ describe('useGlobalPalette', () => {
     fireKeydown('k', { metaKey: true });
 
     expect(mockState.setSettingsOpen).toHaveBeenCalledWith(false);
-    expect(mockState.setPulseOpen).toHaveBeenCalledWith(false);
+    expect(mockState.setTasksOpen).toHaveBeenCalledWith(false);
     expect(mockState.setRelayOpen).toHaveBeenCalledWith(false);
     expect(mockState.setMeshOpen).toHaveBeenCalledWith(false);
   });
@@ -86,7 +86,7 @@ describe('useGlobalPalette', () => {
     fireKeydown('k', { metaKey: true });
 
     expect(mockState.setSettingsOpen).not.toHaveBeenCalled();
-    expect(mockState.setPulseOpen).not.toHaveBeenCalled();
+    expect(mockState.setTasksOpen).not.toHaveBeenCalled();
     expect(mockState.setRelayOpen).not.toHaveBeenCalled();
     expect(mockState.setMeshOpen).not.toHaveBeenCalled();
     // Still toggles

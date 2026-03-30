@@ -4,23 +4,23 @@
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
-import type { PulseRun } from '@dorkos/shared/types';
+import type { TaskRun } from '@dorkos/shared/types';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be declared before any imports that depend on them
 // ---------------------------------------------------------------------------
 
 const mockUseRun = vi.fn<
-  (id: string | null) => { data: PulseRun | undefined; isLoading: boolean; isError: boolean }
+  (id: string | null) => { data: TaskRun | undefined; isLoading: boolean; isError: boolean }
 >(() => ({ data: undefined, isLoading: false, isError: false }));
 const mockUseCancelRun = vi.fn(() => ({
   mutate: vi.fn(),
   isPending: false,
 }));
 
-vi.mock('@/layers/entities/pulse', () => ({
-  useRun: (id: string | null) => mockUseRun(id),
-  useCancelRun: () => mockUseCancelRun(),
+vi.mock('@/layers/entities/tasks', () => ({
+  useTaskRun: (id: string | null) => mockUseRun(id),
+  useCancelTaskRun: () => mockUseCancelRun(),
 }));
 
 const mockNavigate = vi.fn();
@@ -92,7 +92,7 @@ beforeAll(() => {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeRun(overrides: Partial<PulseRun> = {}): PulseRun {
+function makeRun(overrides: Partial<TaskRun> = {}): TaskRun {
   return {
     id: 'run-abc123',
     scheduleId: 'sched-1',

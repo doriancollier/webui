@@ -12,7 +12,7 @@ interface SystemArchitectureProps {
 const nodes = [
   { x: 150, y: 40, label: 'Console' },
   { x: 350, y: 40, label: 'Engine' },
-  { x: 100, y: 140, label: 'Pulse' },
+  { x: 100, y: 140, label: 'Tasks' },
   { x: 300, y: 140, label: 'Mesh' },
   { x: 500, y: 140, label: 'Relay' },
   { x: 150, y: 240, label: 'Wing' },

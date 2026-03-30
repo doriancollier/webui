@@ -19,8 +19,8 @@ describe('ActivityService', () => {
       await service.emit({
         actorType: 'user',
         actorLabel: 'You',
-        category: 'pulse',
-        eventType: 'pulse.ran_success',
+        category: 'tasks',
+        eventType: 'tasks.run_success',
         resourceType: 'schedule',
         resourceId: 'sched-1',
         resourceLabel: 'daily-digest',
@@ -35,8 +35,8 @@ describe('ActivityService', () => {
       expect(row.id).toBeDefined();
       expect(row.actorType).toBe('user');
       expect(row.actorLabel).toBe('You');
-      expect(row.category).toBe('pulse');
-      expect(row.eventType).toBe('pulse.ran_success');
+      expect(row.category).toBe('tasks');
+      expect(row.eventType).toBe('tasks.run_success');
       expect(row.resourceType).toBe('schedule');
       expect(row.resourceId).toBe('sched-1');
       expect(row.resourceLabel).toBe('daily-digest');
@@ -159,9 +159,9 @@ describe('ActivityService', () => {
         occurredAt: new Date().toISOString(),
         actorType: 'system',
         actorLabel: 'System',
-        category: 'pulse',
-        eventType: 'pulse.ran_success',
-        summary: 'Pulse event',
+        category: 'tasks',
+        eventType: 'tasks.run_success',
+        summary: 'Tasks event',
       });
       await service.emit({
         occurredAt: new Date().toISOString(),
@@ -180,10 +180,10 @@ describe('ActivityService', () => {
         summary: 'Config event',
       });
 
-      const result = await service.list({ limit: 50, categories: 'pulse,relay' });
+      const result = await service.list({ limit: 50, categories: 'tasks,relay' });
       expect(result.items).toHaveLength(2);
       const categories = result.items.map((i) => i.category);
-      expect(categories).toContain('pulse');
+      expect(categories).toContain('tasks');
       expect(categories).toContain('relay');
       expect(categories).not.toContain('config');
     });

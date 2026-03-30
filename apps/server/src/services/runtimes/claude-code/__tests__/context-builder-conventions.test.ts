@@ -228,7 +228,7 @@ describe('buildAgentBlock conventions', () => {
 
     const result = await buildAgentBlock('/test');
     expect(result).toContain('Console (chat)');
-    expect(result).toContain('Pulse (scheduling)');
+    expect(result).toContain('Tasks (scheduling)');
     expect(result).toContain('Relay (messaging)');
     expect(result).toContain('Mesh (discovery)');
     expect(result).toContain('https://dorkos.ai/llms.txt');

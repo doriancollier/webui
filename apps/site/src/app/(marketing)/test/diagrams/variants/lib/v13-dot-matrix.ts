@@ -44,7 +44,7 @@ export const MODULE_POSITIONS: Record<string, { nx: number; ny: number }> = {
   mesh: { nx: 0.62, ny: 0.38 }, // center-right — network hub
   console: { nx: 0.17, ny: 0.27 }, // upper-left
   wing: { nx: 0.17, ny: 0.65 }, // lower-left
-  pulse: { nx: 0.83, ny: 0.27 }, // upper-right
+  tasks: { nx: 0.83, ny: 0.27 }, // upper-right
   channels: { nx: 0.83, ny: 0.65 }, // lower-right
 };
 
@@ -53,9 +53,9 @@ export const CONNECTIONS: Array<[string, string]> = [
   ['engine', 'console'],
   ['engine', 'wing'],
   ['engine', 'mesh'],
-  ['mesh', 'pulse'],
+  ['mesh', 'tasks'],
   ['mesh', 'relay'],
-  ['engine', 'pulse'], // secondary diagonal
+  ['engine', 'tasks'], // secondary diagonal
 ];
 
 // ─── Types ────────────────────────────────────────────────────────────────────

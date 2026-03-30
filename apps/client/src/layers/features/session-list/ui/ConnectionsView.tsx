@@ -50,7 +50,7 @@ const MCP_STATUS_COLORS: Partial<Record<string, string>> = {
 };
 
 const DORKOS_TOOLS = [
-  { key: 'pulse' as const, label: 'Pulse' },
+  { key: 'tasks' as const, label: 'Tasks' },
   { key: 'relay' as const, label: 'Relay' },
   { key: 'mesh' as const, label: 'Mesh' },
 ] as const;
@@ -239,7 +239,7 @@ export function ConnectionsView({ toolStatus, agentId, activeSessionId }: Connec
                                   'size-2 shrink-0 rounded-full',
                                   ADAPTER_STATE_COLORS[adapter.status.state] ??
                                     'bg-muted-foreground/20',
-                                  adapter.status.state === 'connected' && 'animate-pulse'
+                                  adapter.status.state === 'connected' && 'animate-tasks'
                                 )}
                               />
                               <span className="truncate">{adapter.status.displayName}</span>
@@ -430,7 +430,7 @@ export function ConnectionsView({ toolStatus, agentId, activeSessionId }: Connec
                     className={cn(
                       'size-2 shrink-0 rounded-full',
                       MCP_STATUS_COLORS[server.status ?? ''] ?? 'bg-muted-foreground/40',
-                      server.status === 'connected' && 'animate-pulse'
+                      server.status === 'connected' && 'animate-tasks'
                     )}
                   />
                   <span className="truncate">{server.name}</span>
@@ -481,7 +481,7 @@ export function ConnectionsView({ toolStatus, agentId, activeSessionId }: Connec
                           className={cn(
                             'size-2 shrink-0 rounded-full',
                             MCP_STATUS_COLORS[server.status ?? ''] ?? 'bg-muted-foreground/40',
-                            server.status === 'connected' && 'animate-pulse'
+                            server.status === 'connected' && 'animate-tasks'
                           )}
                         />
                         <span className="truncate">{server.name}</span>

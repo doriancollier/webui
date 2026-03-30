@@ -3,7 +3,7 @@ const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 
 /**
  * Convert common cron expressions into human-readable labels.
  *
- * Handles the preset patterns used in Pulse onboarding. Falls back to
+ * Handles the preset patterns used in Tasks onboarding. Falls back to
  * the raw expression for anything it doesn't recognize.
  *
  * @param expression - A standard 5-field cron expression

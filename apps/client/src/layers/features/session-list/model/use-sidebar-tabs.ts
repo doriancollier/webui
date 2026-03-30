@@ -14,7 +14,7 @@ interface SidebarTabsResult {
  * Manage sidebar tab visibility, selection, and keyboard shortcuts.
  *
  * - Queries the extension registry for tab contributions.
- * - Filters by `visibleWhen` predicates (e.g., Pulse tool status).
+ * - Filters by `visibleWhen` predicates (e.g., Tasks tool status).
  * - Falls back to 'overview' if the active tab becomes hidden.
  * - Registers Cmd/Ctrl+1/2/3/4 shortcuts when the sidebar is open.
  */

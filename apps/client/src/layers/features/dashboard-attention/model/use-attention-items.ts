@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useSessions } from '@/layers/entities/session';
-import { useRuns } from '@/layers/entities/pulse';
+import { useTaskRuns } from '@/layers/entities/tasks';
 import { useAggregatedDeadLetters } from '@/layers/entities/relay';
 import { useMeshStatus } from '@/layers/entities/mesh';
 import { useNow } from '@/layers/shared/model';
@@ -33,13 +33,13 @@ export interface AttentionItem {
 
 /**
  * Derive attention items requiring user action from multiple entity hooks.
- * Sources: stalled sessions (>30min idle), failed Pulse runs (last 24h),
+ * Sources: stalled sessions (>30min idle), failed Tasks runs (last 24h),
  * Relay dead letters, and offline Mesh agents.
  * Items are sorted by timestamp, most recent first.
  */
 export function useAttentionItems(): AttentionItem[] {
   const { sessions } = useSessions();
-  const { data: failedRuns } = useRuns({ status: 'failed' });
+  const { data: failedRuns } = useTaskRuns({ status: 'failed' });
   const { data: deadLetters } = useAggregatedDeadLetters();
   const { data: meshStatus } = useMeshStatus();
   const navigate = useNavigate();
@@ -78,7 +78,7 @@ export function useAttentionItems(): AttentionItem[] {
       }
     }
 
-    // Failed Pulse runs from last 24h
+    // Failed Tasks runs from last 24h
     if (failedRuns) {
       for (const run of failedRuns) {
         const runTime = new Date(run.createdAt).getTime();
@@ -87,8 +87,8 @@ export function useAttentionItems(): AttentionItem[] {
             id: `failed-${run.id}`,
             type: 'failed-run',
             icon: XCircle,
-            title: `Pulse run failed`,
-            description: `Pulse run ${run.id.slice(0, 8)} failed`,
+            title: `Tasks run failed`,
+            description: `Tasks run ${run.id.slice(0, 8)} failed`,
             timestamp: run.createdAt,
             action: {
               label: 'View →',

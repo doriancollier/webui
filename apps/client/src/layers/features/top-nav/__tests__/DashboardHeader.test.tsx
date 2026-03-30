@@ -19,9 +19,9 @@ vi.mock('@/layers/shared/model', () => ({
   useNow: () => Date.now(),
 }));
 
-vi.mock('@/layers/entities/pulse', () => ({
-  useRuns: () => ({ data: undefined }),
-  usePulseEnabled: () => false,
+vi.mock('@/layers/entities/tasks', () => ({
+  useTaskRuns: () => ({ data: undefined }),
+  useTasksEnabled: () => false,
 }));
 
 vi.mock('@/layers/entities/relay', () => ({

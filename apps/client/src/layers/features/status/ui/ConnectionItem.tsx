@@ -7,12 +7,12 @@ import { StatusLine } from './StatusLine';
 
 const STATE_CONFIG: Record<
   ConnectionState,
-  { color: string; label: string; icon: typeof Wifi; pulse: boolean }
+  { color: string; label: string; icon: typeof Wifi; tasks: boolean }
 > = {
-  connecting: { color: 'bg-amber-500', label: 'Sync connecting', icon: Wifi, pulse: true },
-  connected: { color: 'bg-emerald-500', label: 'Sync connected', icon: Wifi, pulse: false },
-  reconnecting: { color: 'bg-amber-500', label: 'Sync reconnecting', icon: Wifi, pulse: true },
-  disconnected: { color: 'bg-red-500', label: 'Sync offline', icon: WifiOff, pulse: false },
+  connecting: { color: 'bg-amber-500', label: 'Sync connecting', icon: Wifi, tasks: true },
+  connected: { color: 'bg-emerald-500', label: 'Sync connected', icon: Wifi, tasks: false },
+  reconnecting: { color: 'bg-amber-500', label: 'Sync reconnecting', icon: Wifi, tasks: true },
+  disconnected: { color: 'bg-red-500', label: 'Sync offline', icon: WifiOff, tasks: false },
 };
 
 interface ConnectionItemProps {
@@ -37,7 +37,7 @@ export function ConnectionItem({ connectionState, failedAttempts }: ConnectionIt
         <HoverCardTrigger asChild>
           <span className="flex cursor-default items-center gap-1.5 text-xs" role="status">
             <span
-              className={cn('size-1.5 rounded-full', config.color, config.pulse && 'animate-pulse')}
+              className={cn('size-1.5 rounded-full', config.color, config.tasks && 'animate-tasks')}
             />
             <span className="text-muted-foreground">{shortLabel}</span>
           </span>

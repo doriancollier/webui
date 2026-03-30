@@ -46,7 +46,7 @@ vi.mock('../../runtimes/claude-code/mcp-tools/core-tools.js', () => ({
   createGetAgentHandler: stubFactory,
 }));
 
-vi.mock('../../runtimes/claude-code/mcp-tools/pulse-tools.js', () => ({
+vi.mock('../../runtimes/claude-code/mcp-tools/task-tools.js', () => ({
   createListSchedulesHandler: stubFactory,
   createCreateScheduleHandler: stubFactory,
   createUpdateScheduleHandler: stubFactory,
@@ -123,7 +123,7 @@ function createMinimalDeps(): McpToolDeps {
 function createFullDeps(): McpToolDeps {
   return {
     ...createMinimalDeps(),
-    pulseStore: {} as unknown as McpToolDeps['pulseStore'],
+    taskStore: {} as unknown as McpToolDeps['taskStore'],
     relayCore: {} as unknown as McpToolDeps['relayCore'],
     adapterManager: {} as unknown as McpToolDeps['adapterManager'],
     bindingStore: {} as unknown as McpToolDeps['bindingStore'],
@@ -169,12 +169,12 @@ describe('createExternalMcpServer', () => {
     expect(toolNames).toContain('get_session_count');
     expect(toolNames).toContain('get_agent');
 
-    // Pulse tools (5)
-    expect(toolNames).toContain('pulse_list_schedules');
-    expect(toolNames).toContain('pulse_create_schedule');
-    expect(toolNames).toContain('pulse_update_schedule');
-    expect(toolNames).toContain('pulse_delete_schedule');
-    expect(toolNames).toContain('pulse_get_run_history');
+    // Tasks tools (5)
+    expect(toolNames).toContain('tasks_list');
+    expect(toolNames).toContain('tasks_create');
+    expect(toolNames).toContain('tasks_update');
+    expect(toolNames).toContain('tasks_delete');
+    expect(toolNames).toContain('tasks_get_run_history');
 
     // Relay tools (7)
     expect(toolNames).toContain('relay_send');
@@ -264,18 +264,18 @@ describe('createExternalMcpServer', () => {
 
     const coreTools = toolNames.filter(
       (n) =>
-        !n.startsWith('pulse_') &&
+        !n.startsWith('tasks_') &&
         !n.startsWith('relay_') &&
         !n.startsWith('binding_') &&
         !n.startsWith('mesh_')
     );
-    const pulseTools = toolNames.filter((n) => n.startsWith('pulse_'));
+    const taskTools = toolNames.filter((n) => n.startsWith('tasks_'));
     const relayTools = toolNames.filter((n) => n.startsWith('relay_'));
     const bindingTools = toolNames.filter((n) => n.startsWith('binding_'));
     const meshTools = toolNames.filter((n) => n.startsWith('mesh_'));
 
     expect(coreTools).toHaveLength(11); // 4 core + 1 agent (create_agent) + 6 extension (get_extension_api, list_extensions, get_extension_errors, create_extension, reload_extensions, test_extension)
-    expect(pulseTools).toHaveLength(5);
+    expect(taskTools).toHaveLength(5);
     expect(relayTools).toHaveLength(13); // 7 relay + 4 adapter + 2 trace
     expect(bindingTools).toHaveLength(3);
     expect(meshTools).toHaveLength(8);

@@ -27,13 +27,13 @@ interface ActivityFeedProps {
   autoShowFailures?: boolean;
 }
 
-type SourceFilter = 'all' | 'chat' | 'pulse' | 'system';
+type SourceFilter = 'all' | 'chat' | 'tasks' | 'system';
 type StatusFilter = 'all' | 'delivered' | 'failed' | 'pending';
 
 /** Derive a human-readable source category from the raw subject. */
-function getSourceCategory(subject: string): 'chat' | 'pulse' | 'system' {
+function getSourceCategory(subject: string): 'chat' | 'tasks' | 'system' {
   if (subject.startsWith('relay.agent.')) return 'chat';
-  if (subject.startsWith('relay.system.pulse.')) return 'pulse';
+  if (subject.startsWith('relay.system.tasks.')) return 'tasks';
   return 'system';
 }
 
@@ -142,9 +142,9 @@ export function ActivityFeed({
         {[1, 2, 3].map((i) => (
           <div key={i} className="rounded-lg border p-3">
             <div className="flex items-center gap-2">
-              <div className="bg-muted size-4 animate-pulse rounded" />
-              <div className="bg-muted h-4 w-40 animate-pulse rounded" />
-              <div className="bg-muted ml-auto h-3 w-16 animate-pulse rounded" />
+              <div className="bg-muted animate-tasks size-4 rounded" />
+              <div className="bg-muted animate-tasks h-4 w-40 rounded" />
+              <div className="bg-muted animate-tasks ml-auto h-3 w-16 rounded" />
             </div>
           </div>
         ))}
@@ -164,7 +164,7 @@ export function ActivityFeed({
             <SelectContent>
               <SelectItem value="all">All sources</SelectItem>
               <SelectItem value="chat">Chat messages</SelectItem>
-              <SelectItem value="pulse">Pulse jobs</SelectItem>
+              <SelectItem value="tasks">Tasks jobs</SelectItem>
               <SelectItem value="system">System</SelectItem>
             </SelectContent>
           </Select>

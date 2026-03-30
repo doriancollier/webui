@@ -258,18 +258,18 @@ describe('EnabledToolGroupsSchema', () => {
   });
 
   it('accepts partial overrides', () => {
-    const result = EnabledToolGroupsSchema.parse({ pulse: false });
-    expect(result).toEqual({ pulse: false });
+    const result = EnabledToolGroupsSchema.parse({ tasks: false });
+    expect(result).toEqual({ tasks: false });
   });
 
   it('accepts all fields', () => {
     const result = EnabledToolGroupsSchema.parse({
-      pulse: true,
+      tasks: true,
       relay: false,
       mesh: true,
       adapter: false,
     });
-    expect(result).toEqual({ pulse: true, relay: false, mesh: true, adapter: false });
+    expect(result).toEqual({ tasks: true, relay: false, mesh: true, adapter: false });
   });
 });
 
@@ -277,9 +277,9 @@ describe('AgentManifestSchema with enabledToolGroups', () => {
   it('includes enabledToolGroups in parsed manifest', () => {
     const manifest = AgentManifestSchema.parse({
       ...baseManifest,
-      enabledToolGroups: { pulse: false },
+      enabledToolGroups: { tasks: false },
     });
-    expect(manifest.enabledToolGroups).toEqual({ pulse: false });
+    expect(manifest.enabledToolGroups).toEqual({ tasks: false });
   });
 
   it('defaults enabledToolGroups to empty object when omitted', () => {

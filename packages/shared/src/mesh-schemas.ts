@@ -62,7 +62,7 @@ export type AgentBudget = z.infer<typeof AgentBudgetSchema>;
  */
 export const EnabledToolGroupsSchema = z
   .object({
-    pulse: z.boolean().optional(),
+    tasks: z.boolean().optional(),
     relay: z.boolean().optional(),
     mesh: z.boolean().optional(),
     adapter: z.boolean().optional(),
@@ -133,6 +133,9 @@ export const AgentManifestSchema = z
       description: 'Emoji override for visual identity',
       example: '🤖',
     }),
+    isSystem: z.boolean().default(false).optional().openapi({
+      description: 'System agents are auto-managed and cannot be deleted',
+    }),
     enabledToolGroups: EnabledToolGroupsSchema,
   })
   .openapi('AgentManifest');
@@ -199,7 +202,7 @@ export const TopologyAgentSchema = AgentManifestSchema.extend({
   healthStatus: AgentHealthStatusSchema.default('stale'),
   relayAdapters: z.array(z.string()).default([]),
   relaySubject: z.string().nullable().default(null),
-  pulseScheduleCount: z.number().int().default(0),
+  taskCount: z.number().int().default(0),
   lastSeenAt: z.string().nullable().default(null),
   lastSeenEvent: z.string().nullable().default(null),
 }).openapi('TopologyAgent');

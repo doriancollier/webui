@@ -11,6 +11,20 @@ category: workflow
 
 ---
 
+## Linear Integration (Optional — Spec-Linear Bridge)
+
+After writing `02-specification.md`, check the spec's frontmatter for a `linear-issue:` field. If present and Linear MCP tools are available, post a breadcrumb comment to the linked issue:
+
+```
+**Spec Progress** — [date]
+**Phase:** Specification Created
+**Spec:** `specs/{slug}/`
+**Document:** `specs/{slug}/02-specification.md`
+**Next:** Run `/spec:decompose specs/{slug}/02-specification.md` to break into tasks
+```
+
+If no `linear-issue:` field exists or Linear tools are unavailable, skip silently.
+
 ## Workflow Instructions
 
 This command bridges the gap between ideation and implementation by transforming an ideation document into a validated, implementation-ready specification. Follow each step sequentially.

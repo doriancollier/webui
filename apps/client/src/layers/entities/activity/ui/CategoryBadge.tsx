@@ -12,7 +12,7 @@ export interface CategoryBadgeProps {
  * Category pill rendered on activity rows and filter chips.
  *
  * Colors match the dashboard activity feed:
- * pulse=purple, relay=teal, agent=indigo, config=amber, system=neutral.
+ * tasks=purple, relay=teal, agent=indigo, config=amber, system=neutral.
  */
 export function CategoryBadge({ category, className }: CategoryBadgeProps) {
   const config = CATEGORY_CONFIG[category];

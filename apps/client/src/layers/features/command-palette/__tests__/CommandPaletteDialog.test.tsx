@@ -41,7 +41,7 @@ afterEach(cleanup);
 
 const mockSetGlobalPaletteOpen = vi.fn();
 const mockSetSettingsOpen = vi.fn();
-const mockSetPulseOpen = vi.fn();
+const mockSetTasksOpen = vi.fn();
 const mockSetRelayOpen = vi.fn();
 const mockSetMeshOpen = vi.fn();
 const mockSetPickerOpen = vi.fn();
@@ -55,7 +55,7 @@ vi.mock('@/layers/shared/model', () => ({
   useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
       setSettingsOpen: mockSetSettingsOpen,
-      setPulseOpen: mockSetPulseOpen,
+      setTasksOpen: mockSetTasksOpen,
       setRelayOpen: mockSetRelayOpen,
       setMeshOpen: mockSetMeshOpen,
       setPickerOpen: mockSetPickerOpen,
@@ -122,7 +122,7 @@ vi.mock('../model/use-palette-items', () => ({
     recentAgents: [mockAgents[2], mockAgents[0]],
     allAgents: mockAgents,
     features: [
-      { id: 'pulse', label: 'Pulse Scheduler', icon: 'Clock', action: 'openPulse' },
+      { id: 'tasks', label: 'Tasks Scheduler', icon: 'Clock', action: 'openTasks' },
       { id: 'relay', label: 'Relay Messaging', icon: 'Radio', action: 'openRelay' },
       { id: 'mesh', label: 'Mesh Network', icon: 'Globe', action: 'openMesh' },
       { id: 'settings', label: 'Settings', icon: 'Settings', action: 'openSettings' },
@@ -145,7 +145,7 @@ vi.mock('../model/use-palette-items', () => ({
         keywords: [a.projectPath],
         data: a,
       })),
-      { id: 'pulse', name: 'Pulse Scheduler', type: 'feature', data: {} },
+      { id: 'tasks', name: 'Tasks Scheduler', type: 'feature', data: {} },
       { id: 'relay', name: 'Relay Messaging', type: 'feature', data: {} },
       { id: 'mesh', name: 'Mesh Network', type: 'feature', data: {} },
       { id: 'settings', name: 'Settings', type: 'feature', data: {} },
@@ -221,7 +221,7 @@ describe('CommandPaletteDialog', () => {
   it('renders Features group with all feature items', () => {
     render(<CommandPaletteDialog />);
     expect(screen.getByText('Features')).toBeInTheDocument();
-    expect(screen.getByText('Pulse Scheduler')).toBeInTheDocument();
+    expect(screen.getByText('Tasks Scheduler')).toBeInTheDocument();
     expect(screen.getByText('Relay Messaging')).toBeInTheDocument();
     expect(screen.getByText('Mesh Network')).toBeInTheDocument();
     expect(screen.getByText('Settings')).toBeInTheDocument();
@@ -308,11 +308,11 @@ describe('CommandPaletteDialog', () => {
 
   // --- Feature action dispatching ---
 
-  it('opens Pulse dialog and closes palette when Pulse Scheduler is selected', () => {
+  it('opens Tasks dialog and closes palette when Tasks Scheduler is selected', () => {
     render(<CommandPaletteDialog />);
-    const item = screen.getByText('Pulse Scheduler').closest('[data-slot="command-item"]');
+    const item = screen.getByText('Tasks Scheduler').closest('[data-slot="command-item"]');
     if (item) fireEvent.click(item as Element);
-    expect(mockSetPulseOpen).toHaveBeenCalledWith(true);
+    expect(mockSetTasksOpen).toHaveBeenCalledWith(true);
     expect(mockSetGlobalPaletteOpen).toHaveBeenCalledWith(false);
   });
 

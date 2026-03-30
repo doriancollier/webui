@@ -13,6 +13,7 @@ import { DashboardPage } from '@/layers/widgets/dashboard';
 import { SessionPage } from '@/layers/widgets/session';
 import { AgentsPage } from '@/layers/widgets/agents';
 import { ActivityPage } from '@/layers/widgets/activity';
+import { TasksPage } from '@/layers/widgets/tasks';
 import { agentFilterSchema } from '@/layers/features/agents-list';
 import { RouteErrorFallback, NotFoundFallback } from '@/layers/shared/ui';
 import type { Session } from '@dorkos/shared/types';
@@ -140,6 +141,13 @@ const agentsRoute = createRoute({
   component: AgentsPage,
 });
 
+// ── Tasks at /tasks ──────────────────────────────────────────
+const tasksRoute = createRoute({
+  getParentRoute: () => appShellRoute,
+  path: '/tasks',
+  component: TasksPage,
+});
+
 // ── Activity feed at /activity ───────────────────────────────
 const activitySearchSchema = z.object({
   categories: z.string().optional(),
@@ -160,7 +168,7 @@ const activityRoute = createRoute({
 
 // ── Route tree ──────────────────────────────────────────────
 const routeTree = rootRoute.addChildren([
-  appShellRoute.addChildren([indexRoute, sessionRoute, agentsRoute, activityRoute]),
+  appShellRoute.addChildren([indexRoute, sessionRoute, agentsRoute, tasksRoute, activityRoute]),
 ]);
 
 /**

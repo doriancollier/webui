@@ -13,7 +13,7 @@ import { logger } from '../../../lib/logger.js';
 import { env } from '../../../env.js';
 import { SERVER_VERSION } from '../../../lib/version.js';
 import { isRelayEnabled } from '../../relay/relay-state.js';
-import { isPulseEnabled } from '../../pulse/pulse-state.js';
+import { isTasksEnabled } from '../../tasks/task-state.js';
 import { configManager } from '../../core/config-manager.js';
 import type { ResolvedToolConfig } from './tool-filter.js';
 import type { AgentRegistryPort } from '@dorkos/shared/agent-runtime';
@@ -39,7 +39,7 @@ Subject hierarchy:
   relay.inbox.{agentId}                — persistent agent reply inbox
   relay.human.console.{clientId}       — reach a human in the DorkOS UI
   relay.system.console                 — system broadcast channel
-  relay.system.pulse.{scheduleId}      — Pulse scheduler events
+  relay.system.tasks.{scheduleId}      — Tasks scheduler events
 
 Workflow: Query another agent — SHORT tasks (≤10 min, PREFERRED)
 1. mesh_list() to find available agents and their agent IDs
@@ -64,7 +64,7 @@ Workflow: Manual poll (fallback)
 2. relay_send(subject="relay.agent.{theirAgentId}", payload={task}, from={myAgentId}, replyTo="relay.inbox.{myAgentId}")
 3. relay_inbox(endpoint_subject="relay.inbox.{myAgentId}")
 
-CONSTRAINT — Subagent MCP tools: DorkOS MCP tools (relay_*, mesh_*, pulse_*) are NOT available
+CONSTRAINT — Subagent MCP tools: DorkOS MCP tools (relay_*, mesh_*, tasks_*) are NOT available
 inside Claude Code Task() subagents. This is an SDK architectural limitation (subprocesses do not
 inherit the parent MCP server). The orchestrator pattern workaround:
   WRONG:  Task("use relay_send to message agent B")   ← tools unavailable, silent failure
@@ -135,19 +135,19 @@ Bindings route adapter messages to agent projects:
 Session strategies: per-chat (default, one session per conversation), per-user (shared across chats), stateless (new session each message).
 </adapter_tools>`;
 
-const PULSE_TOOLS_CONTEXT = `<pulse_tools>
-DorkOS Pulse lets you create and manage scheduled agent runs.
+const TASKS_TOOLS_CONTEXT = `<tasks_tools>
+DorkOS Tasks lets you create and manage scheduled agent runs.
 
 Available tools:
-  pulse_list_schedules() -- list all configured schedules
-  pulse_create_schedule(name, cron, prompt, ...) -- create a new schedule (enters pending_approval)
-  pulse_update_schedule(id, ...) -- modify schedule settings
-  pulse_delete_schedule(id) -- remove a schedule
-  pulse_get_run_history(scheduleId) -- view past run results
+  tasks_list() -- list all configured schedules
+  tasks_create(name, cron, prompt, ...) -- create a new schedule (enters pending_approval)
+  tasks_update(id, ...) -- modify schedule settings
+  tasks_delete(id) -- remove a schedule
+  tasks_get_run_history(scheduleId) -- view past run results
 
 Schedules can target a specific agent (by agentId) or a directory (by cwd).
 Agent-linked schedules automatically resolve the agent's project path at run time.
-</pulse_tools>`;
+</tasks_tools>`;
 
 const UI_TOOLS_CONTEXT = `<ui_tools>
 DorkOS UI control lets you manipulate the client interface.
@@ -157,7 +157,7 @@ Available tools:
   get_ui_state() -- query current UI state (panels, sidebar, canvas, active agent)
 
 Actions:
-  open_panel / close_panel / toggle_panel: { panel: "settings"|"pulse"|"relay"|"mesh"|"picker" }
+  open_panel / close_panel / toggle_panel: { panel: "settings"|"tasks"|"relay"|"mesh"|"picker" }
   open_sidebar / close_sidebar
   switch_sidebar_tab: { tab: "overview"|"sessions"|"schedules"|"connections" }
   open_canvas: { content: { type: "url"|"markdown"|"json", ... }, preferredWidth?: 20-80 }
@@ -233,20 +233,20 @@ function buildAdapterToolsBlock(toolConfig?: ResolvedToolConfig): string {
 }
 
 /**
- * Build the `<pulse_tools>` context block.
+ * Build the `<tasks_tools>` context block.
  *
  * When `toolConfig` is provided, uses the pre-resolved config (agent-aware).
- * Otherwise falls back to Pulse feature flag + config toggle checks.
+ * Otherwise falls back to Tasks feature flag + config toggle checks.
  */
-function buildPulseToolsBlock(toolConfig?: ResolvedToolConfig): string {
+function buildTasksToolsBlock(toolConfig?: ResolvedToolConfig): string {
   if (toolConfig) {
-    if (!toolConfig.pulse) return '';
+    if (!toolConfig.tasks) return '';
   } else {
-    if (!isPulseEnabled()) return '';
+    if (!isTasksEnabled()) return '';
     const config = configManager.get('agentContext');
-    if (config?.pulseTools === false) return '';
+    if (config?.tasksTools === false) return '';
   }
-  return PULSE_TOOLS_CONTEXT;
+  return TASKS_TOOLS_CONTEXT;
 }
 
 /**
@@ -363,7 +363,7 @@ export async function buildSystemPromptAppend(
   const relayBlock = buildRelayToolsBlock(toolConfig);
   const meshBlock = buildMeshToolsBlock(toolConfig);
   const adapterBlock = buildAdapterToolsBlock(toolConfig);
-  const pulseBlock = buildPulseToolsBlock(toolConfig);
+  const tasksBlock = buildTasksToolsBlock(toolConfig);
   const relayConnectionsBlock = buildRelayConnectionsBlock(relayContext, toolConfig);
   const uiBlock = buildUiToolsBlock(uiState);
 
@@ -374,7 +374,7 @@ export async function buildSystemPromptAppend(
     relayBlock,
     meshBlock,
     adapterBlock,
-    pulseBlock,
+    tasksBlock,
     relayConnectionsBlock,
     uiBlock,
   ]
@@ -525,7 +525,7 @@ async function buildAgentBlock(cwd: string): Promise<string> {
 function buildDorkosContextBlock(): string {
   return `<dorkos_context>
 DorkOS is the operating system for autonomous AI agents.
-Subsystems: Console (chat), Pulse (scheduling), Relay (messaging), Mesh (discovery).
+Subsystems: Console (chat), Tasks (scheduling), Relay (messaging), Mesh (discovery).
 Documentation: https://dorkos.ai/llms.txt
 Full docs: https://dorkos.ai/docs
 </dorkos_context>`;
@@ -537,13 +537,13 @@ export {
   buildRelayToolsBlock as _buildRelayToolsBlock,
   buildMeshToolsBlock as _buildMeshToolsBlock,
   buildAdapterToolsBlock as _buildAdapterToolsBlock,
-  buildPulseToolsBlock as _buildPulseToolsBlock,
+  buildTasksToolsBlock as _buildTasksToolsBlock,
   buildPeerAgentsBlock as _buildPeerAgentsBlock,
   buildRelayConnectionsBlock as _buildRelayConnectionsBlock,
   buildUiToolsBlock as _buildUiToolsBlock,
   RELAY_TOOLS_CONTEXT as _RELAY_TOOLS_CONTEXT,
   MESH_TOOLS_CONTEXT as _MESH_TOOLS_CONTEXT,
   ADAPTER_TOOLS_CONTEXT as _ADAPTER_TOOLS_CONTEXT,
-  PULSE_TOOLS_CONTEXT as _PULSE_TOOLS_CONTEXT,
+  TASKS_TOOLS_CONTEXT as _TASKS_TOOLS_CONTEXT,
   UI_TOOLS_CONTEXT as _UI_TOOLS_CONTEXT,
 };

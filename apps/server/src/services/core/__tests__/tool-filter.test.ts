@@ -5,9 +5,9 @@ import type { ToolFilterDeps } from '../../runtimes/claude-code/tool-filter.js';
 // Fixture: all features enabled, all global toggles on
 const allEnabledDeps: ToolFilterDeps = {
   relayEnabled: true,
-  pulseEnabled: true,
+  tasksEnabled: true,
   globalConfig: {
-    pulseTools: true,
+    tasksTools: true,
     relayTools: true,
     meshTools: true,
     adapterTools: true,
@@ -17,9 +17,9 @@ const allEnabledDeps: ToolFilterDeps = {
 // Fixture: all features disabled
 const allDisabledDeps: ToolFilterDeps = {
   relayEnabled: false,
-  pulseEnabled: false,
+  tasksEnabled: false,
   globalConfig: {
-    pulseTools: false,
+    tasksTools: false,
     relayTools: false,
     meshTools: false,
     adapterTools: false,
@@ -29,17 +29,17 @@ const allDisabledDeps: ToolFilterDeps = {
 describe('resolveToolConfig', () => {
   it('returns global defaults when agentConfig is undefined', () => {
     const result = resolveToolConfig(undefined, allEnabledDeps);
-    expect(result).toEqual({ pulse: true, relay: true, mesh: true, adapter: true });
+    expect(result).toEqual({ tasks: true, relay: true, mesh: true, adapter: true });
   });
 
   it('returns global defaults when agentConfig is empty object', () => {
     const result = resolveToolConfig({}, allEnabledDeps);
-    expect(result).toEqual({ pulse: true, relay: true, mesh: true, adapter: true });
+    expect(result).toEqual({ tasks: true, relay: true, mesh: true, adapter: true });
   });
 
-  it('agent explicit false overrides global true for pulse', () => {
-    const result = resolveToolConfig({ pulse: false }, allEnabledDeps);
-    expect(result.pulse).toBe(false);
+  it('agent explicit false overrides global true for tasks', () => {
+    const result = resolveToolConfig({ tasks: false }, allEnabledDeps);
+    expect(result.tasks).toBe(false);
     expect(result.relay).toBe(true);
     expect(result.mesh).toBe(true);
     expect(result.adapter).toBe(true);
@@ -48,19 +48,19 @@ describe('resolveToolConfig', () => {
   it('agent explicit false overrides global true for relay', () => {
     const result = resolveToolConfig({ relay: false }, allEnabledDeps);
     expect(result.relay).toBe(false);
-    expect(result.pulse).toBe(true);
+    expect(result.tasks).toBe(true);
   });
 
   it('agent explicit false overrides global true for mesh', () => {
     const result = resolveToolConfig({ mesh: false }, allEnabledDeps);
     expect(result.mesh).toBe(false);
-    expect(result.pulse).toBe(true);
+    expect(result.tasks).toBe(true);
   });
 
   it('agent explicit false overrides global true for adapter', () => {
     const result = resolveToolConfig({ adapter: false }, allEnabledDeps);
     expect(result.adapter).toBe(false);
-    expect(result.pulse).toBe(true);
+    expect(result.tasks).toBe(true);
   });
 
   it('relay feature flag false overrides agent relay true', () => {
@@ -68,9 +68,9 @@ describe('resolveToolConfig', () => {
     expect(result.relay).toBe(false);
   });
 
-  it('pulseEnabled false overrides agent pulse true', () => {
-    const result = resolveToolConfig({ pulse: true }, { ...allEnabledDeps, pulseEnabled: false });
-    expect(result.pulse).toBe(false);
+  it('tasksEnabled false overrides agent tasks true', () => {
+    const result = resolveToolConfig({ tasks: true }, { ...allEnabledDeps, tasksEnabled: false });
+    expect(result.tasks).toBe(false);
   });
 
   it('adapter requires relayEnabled — false when relay feature flag off', () => {
@@ -78,13 +78,13 @@ describe('resolveToolConfig', () => {
     expect(result.adapter).toBe(false);
   });
 
-  it('mesh has no feature flag dependency — enabled even when relay/pulse off', () => {
+  it('mesh has no feature flag dependency — enabled even when relay/tasks off', () => {
     const result = resolveToolConfig(
       { mesh: true },
       {
         relayEnabled: false,
-        pulseEnabled: false,
-        globalConfig: { pulseTools: true, relayTools: true, meshTools: true, adapterTools: true },
+        tasksEnabled: false,
+        globalConfig: { tasksTools: true, relayTools: true, meshTools: true, adapterTools: true },
       }
     );
     expect(result.mesh).toBe(true);
@@ -93,9 +93,9 @@ describe('resolveToolConfig', () => {
   it('global config false disables when agent has no override', () => {
     const result = resolveToolConfig(undefined, {
       ...allEnabledDeps,
-      globalConfig: { ...allEnabledDeps.globalConfig, pulseTools: false },
+      globalConfig: { ...allEnabledDeps.globalConfig, tasksTools: false },
     });
-    expect(result.pulse).toBe(false);
+    expect(result.tasks).toBe(false);
   });
 
   it('agent explicit true can override global false (when feature flag on)', () => {
@@ -103,8 +103,8 @@ describe('resolveToolConfig', () => {
       { relay: true },
       {
         relayEnabled: true,
-        pulseEnabled: true,
-        globalConfig: { pulseTools: true, relayTools: false, meshTools: true, adapterTools: true },
+        tasksEnabled: true,
+        globalConfig: { tasksTools: true, relayTools: false, meshTools: true, adapterTools: true },
       }
     );
     expect(result.relay).toBe(true);
@@ -112,18 +112,18 @@ describe('resolveToolConfig', () => {
 
   it('all disabled when all global config false and no agent overrides', () => {
     const result = resolveToolConfig(undefined, allDisabledDeps);
-    expect(result).toEqual({ pulse: false, relay: false, mesh: false, adapter: false });
+    expect(result).toEqual({ tasks: false, relay: false, mesh: false, adapter: false });
   });
 });
 
 describe('buildAllowedTools', () => {
   it('returns undefined when all domains enabled', () => {
-    const result = buildAllowedTools({ pulse: true, relay: true, mesh: true, adapter: true });
+    const result = buildAllowedTools({ tasks: true, relay: true, mesh: true, adapter: true });
     expect(result).toBeUndefined();
   });
 
   it('always includes core tools when any domain is disabled', () => {
-    const result = buildAllowedTools({ pulse: false, relay: false, mesh: false, adapter: false });
+    const result = buildAllowedTools({ tasks: false, relay: false, mesh: false, adapter: false });
     expect(result).toContain('mcp__dorkos__ping');
     expect(result).toContain('mcp__dorkos__get_server_info');
     expect(result).toContain('mcp__dorkos__get_session_count');
@@ -132,23 +132,23 @@ describe('buildAllowedTools', () => {
     expect(result).toContain('mcp__dorkos__get_ui_state');
   });
 
-  it('excludes pulse tools when pulse=false', () => {
-    const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true })!;
-    expect(result).not.toContain('mcp__dorkos__pulse_list_schedules');
-    expect(result).not.toContain('mcp__dorkos__pulse_create_schedule');
-    expect(result).not.toContain('mcp__dorkos__pulse_update_schedule');
-    expect(result).not.toContain('mcp__dorkos__pulse_delete_schedule');
-    expect(result).not.toContain('mcp__dorkos__pulse_get_run_history');
+  it('excludes tasks tools when tasks=false', () => {
+    const result = buildAllowedTools({ tasks: false, relay: true, mesh: true, adapter: true })!;
+    expect(result).not.toContain('mcp__dorkos__tasks_list');
+    expect(result).not.toContain('mcp__dorkos__tasks_create');
+    expect(result).not.toContain('mcp__dorkos__tasks_update');
+    expect(result).not.toContain('mcp__dorkos__tasks_delete');
+    expect(result).not.toContain('mcp__dorkos__tasks_get_run_history');
   });
 
-  it('includes pulse tools when pulse=true (with another domain disabled)', () => {
-    const result = buildAllowedTools({ pulse: true, relay: false, mesh: false, adapter: false })!;
-    expect(result).toContain('mcp__dorkos__pulse_list_schedules');
-    expect(result).toContain('mcp__dorkos__pulse_create_schedule');
+  it('includes tasks tools when tasks=true (with another domain disabled)', () => {
+    const result = buildAllowedTools({ tasks: true, relay: false, mesh: false, adapter: false })!;
+    expect(result).toContain('mcp__dorkos__tasks_list');
+    expect(result).toContain('mcp__dorkos__tasks_create');
   });
 
   it('excludes relay tools when relay=false', () => {
-    const result = buildAllowedTools({ pulse: true, relay: false, mesh: true, adapter: true })!;
+    const result = buildAllowedTools({ tasks: true, relay: false, mesh: true, adapter: true })!;
     expect(result).not.toContain('mcp__dorkos__relay_send');
     expect(result).not.toContain('mcp__dorkos__relay_inbox');
     expect(result).not.toContain('mcp__dorkos__relay_list_endpoints');
@@ -159,13 +159,13 @@ describe('buildAllowedTools', () => {
   });
 
   it('excludes trace tools when relay=false (implicit grouping)', () => {
-    const result = buildAllowedTools({ pulse: true, relay: false, mesh: true, adapter: true })!;
+    const result = buildAllowedTools({ tasks: true, relay: false, mesh: true, adapter: true })!;
     expect(result).not.toContain('mcp__dorkos__relay_get_trace');
     expect(result).not.toContain('mcp__dorkos__relay_get_metrics');
   });
 
   it('includes relay + trace tools when relay=true (with another domain disabled)', () => {
-    const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true })!;
+    const result = buildAllowedTools({ tasks: false, relay: true, mesh: true, adapter: true })!;
     expect(result).toContain('mcp__dorkos__relay_send');
     expect(result).toContain('mcp__dorkos__relay_inbox');
     expect(result).toContain('mcp__dorkos__relay_send_and_wait');
@@ -177,20 +177,20 @@ describe('buildAllowedTools', () => {
 
   it('includes relay_send_async and relay_unregister_endpoint when relay=true', () => {
     // Purpose: ensures new relay tools follow the relay toggle exactly.
-    const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true })!;
+    const result = buildAllowedTools({ tasks: false, relay: true, mesh: true, adapter: true })!;
     expect(result).toContain('mcp__dorkos__relay_send_async');
     expect(result).toContain('mcp__dorkos__relay_unregister_endpoint');
   });
 
   it('excludes relay_send_async and relay_unregister_endpoint when relay=false', () => {
     // Purpose: verifies relay feature gate applies to new tools.
-    const result = buildAllowedTools({ pulse: true, relay: false, mesh: true, adapter: true })!;
+    const result = buildAllowedTools({ tasks: true, relay: false, mesh: true, adapter: true })!;
     expect(result).not.toContain('mcp__dorkos__relay_send_async');
     expect(result).not.toContain('mcp__dorkos__relay_unregister_endpoint');
   });
 
   it('excludes mesh tools when mesh=false', () => {
-    const result = buildAllowedTools({ pulse: true, relay: true, mesh: false, adapter: true })!;
+    const result = buildAllowedTools({ tasks: true, relay: true, mesh: false, adapter: true })!;
     expect(result).not.toContain('mcp__dorkos__mesh_discover');
     expect(result).not.toContain('mcp__dorkos__mesh_register');
     expect(result).not.toContain('mcp__dorkos__mesh_list');
@@ -198,14 +198,14 @@ describe('buildAllowedTools', () => {
   });
 
   it('excludes binding tools when adapter=false (implicit grouping)', () => {
-    const result = buildAllowedTools({ pulse: true, relay: true, mesh: true, adapter: false })!;
+    const result = buildAllowedTools({ tasks: true, relay: true, mesh: true, adapter: false })!;
     expect(result).not.toContain('mcp__dorkos__binding_list');
     expect(result).not.toContain('mcp__dorkos__binding_create');
     expect(result).not.toContain('mcp__dorkos__binding_delete');
   });
 
   it('excludes adapter tools when adapter=false', () => {
-    const result = buildAllowedTools({ pulse: true, relay: true, mesh: true, adapter: false })!;
+    const result = buildAllowedTools({ tasks: true, relay: true, mesh: true, adapter: false })!;
     expect(result).not.toContain('mcp__dorkos__relay_list_adapters');
     expect(result).not.toContain('mcp__dorkos__relay_enable_adapter');
     expect(result).not.toContain('mcp__dorkos__relay_disable_adapter');
@@ -213,7 +213,7 @@ describe('buildAllowedTools', () => {
   });
 
   it('includes adapter + binding tools when adapter=true (with another domain disabled)', () => {
-    const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true })!;
+    const result = buildAllowedTools({ tasks: false, relay: true, mesh: true, adapter: true })!;
     expect(result).toContain('mcp__dorkos__relay_list_adapters');
     expect(result).toContain('mcp__dorkos__binding_list');
     expect(result).toContain('mcp__dorkos__binding_create');
@@ -221,7 +221,7 @@ describe('buildAllowedTools', () => {
   });
 
   it('returns only core tools when all domains are disabled', () => {
-    const result = buildAllowedTools({ pulse: false, relay: false, mesh: false, adapter: false })!;
+    const result = buildAllowedTools({ tasks: false, relay: false, mesh: false, adapter: false })!;
     // Should be exactly the 6 core tools (4 original + 2 UI control)
     expect(result).toHaveLength(6);
     expect(result).toContain('mcp__dorkos__ping');
@@ -233,14 +233,14 @@ describe('buildAllowedTools', () => {
   });
 
   it('returns a non-empty array when at least one domain is disabled', () => {
-    const result = buildAllowedTools({ pulse: false, relay: true, mesh: true, adapter: true });
+    const result = buildAllowedTools({ tasks: false, relay: true, mesh: true, adapter: true });
     expect(result).toBeDefined();
     expect(Array.isArray(result)).toBe(true);
     expect(result!.length).toBeGreaterThan(0);
   });
 
   it('does not duplicate tools in the result', () => {
-    const result = buildAllowedTools({ pulse: true, relay: true, mesh: false, adapter: false })!;
+    const result = buildAllowedTools({ tasks: true, relay: true, mesh: false, adapter: false })!;
     const unique = new Set(result);
     expect(unique.size).toBe(result.length);
   });
@@ -253,11 +253,11 @@ describe('resolveToolConfig + buildAllowedTools integration', () => {
     expect(allowed).toBeUndefined();
   });
 
-  it('filters correctly via full pipeline when agent disables pulse', () => {
-    const config = resolveToolConfig({ pulse: false }, allEnabledDeps);
+  it('filters correctly via full pipeline when agent disables tasks', () => {
+    const config = resolveToolConfig({ tasks: false }, allEnabledDeps);
     const allowed = buildAllowedTools(config)!;
     expect(allowed).toBeDefined();
-    expect(allowed).not.toContain('mcp__dorkos__pulse_list_schedules');
+    expect(allowed).not.toContain('mcp__dorkos__tasks_list');
     expect(allowed).toContain('mcp__dorkos__ping');
     expect(allowed).toContain('mcp__dorkos__relay_send');
   });

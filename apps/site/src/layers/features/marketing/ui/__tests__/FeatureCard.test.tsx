@@ -23,13 +23,13 @@ vi.mock('next/link', () => ({
 }));
 
 const gaFeature: Feature = {
-  slug: 'pulse-scheduler',
-  name: 'Pulse Scheduler',
-  product: 'pulse',
+  slug: 'task-scheduler',
+  name: 'Tasks Scheduler',
+  product: 'tasks',
   category: 'scheduling',
   tagline: "Schedule agents to run on any cron — they work while you don't",
   description:
-    'Stop manually triggering agent runs. Pulse lets you schedule any agent on any cron expression, with a visual builder, preset gallery, and full run history.',
+    'Stop manually triggering agent runs. Tasks lets you schedule any agent on any cron expression, with a visual builder, preset gallery, and full run history.',
   status: 'ga',
   benefits: [
     'Visual cron builder with natural-language preview',
@@ -79,7 +79,7 @@ describe('FeatureCard', () => {
     it('renders a link to /features/[slug]', () => {
       render(<FeatureCard feature={gaFeature} />);
       const link = screen.getByRole('link');
-      expect(link.getAttribute('href')).toBe('/features/pulse-scheduler');
+      expect(link.getAttribute('href')).toBe('/features/task-scheduler');
     });
 
     it('uses the feature slug in the href', () => {
@@ -92,7 +92,7 @@ describe('FeatureCard', () => {
   describe('feature name and tagline', () => {
     it('renders the feature name', () => {
       render(<FeatureCard feature={gaFeature} />);
-      expect(screen.getByText('Pulse Scheduler')).toBeTruthy();
+      expect(screen.getByText('Tasks Scheduler')).toBeTruthy();
     });
 
     it('renders the feature tagline', () => {
@@ -104,9 +104,9 @@ describe('FeatureCard', () => {
   });
 
   describe('product badge', () => {
-    it('renders the product label for pulse', () => {
+    it('renders the product label for tasks', () => {
       render(<FeatureCard feature={gaFeature} />);
-      expect(screen.getByText('Pulse')).toBeTruthy();
+      expect(screen.getByText('Tasks')).toBeTruthy();
     });
 
     it('renders the product label for relay', () => {

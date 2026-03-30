@@ -69,9 +69,9 @@ describe('ActivityFeedItem', () => {
     expect(screen.getByText('Session')).toBeInTheDocument();
   });
 
-  it('renders type label for pulse events', () => {
-    render(<ActivityFeedItem event={makeEvent({ type: 'pulse' })} />);
-    expect(screen.getByText('Pulse')).toBeInTheDocument();
+  it('renders type label for tasks events', () => {
+    render(<ActivityFeedItem event={makeEvent({ type: 'tasks' })} />);
+    expect(screen.getByText('Tasks')).toBeInTheDocument();
   });
 
   it('shows Open button only when event has a link', () => {
@@ -104,8 +104,8 @@ describe('ActivityFeedItem', () => {
     expect(dot).toBeInTheDocument();
   });
 
-  it('renders type dot with correct color class for pulse', () => {
-    const { container } = render(<ActivityFeedItem event={makeEvent({ type: 'pulse' })} />);
+  it('renders type dot with correct color class for tasks', () => {
+    const { container } = render(<ActivityFeedItem event={makeEvent({ type: 'tasks' })} />);
     const dot = container.querySelector('.bg-purple-500');
     expect(dot).toBeInTheDocument();
   });

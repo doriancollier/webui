@@ -18,11 +18,28 @@ Labels are team-wide in the DorkOS Linear team. They use Linear's label group fe
 
 ## Agent State (group: `agent`)
 
-| Label       | Color  | Description                                 |
-| ----------- | ------ | ------------------------------------------- |
-| `ready`     | green  | Ready for automated agent pickup            |
-| `claimed`   | yellow | Agent has claimed and is working on it      |
-| `completed` | indigo | Agent completed, awaiting review/validation |
+| Label         | Color  | Description                                      |
+| ------------- | ------ | ------------------------------------------------ |
+| `ready`       | green  | Ready for automated agent pickup                 |
+| `claimed`     | yellow | Agent has claimed and is working on it           |
+| `completed`   | indigo | Agent completed, awaiting review/validation      |
+| `needs-input` | orange | Blocked on human input — agent posted a question |
+
+### `needs-input` Protocol
+
+When an agent encounters ambiguity during `/pm auto`:
+
+1. Agent posts a structured comment on the issue with the question (multiple choice when possible)
+2. Agent adds `needs-input` label
+3. Agent assigns the issue to the authenticated user (triggers Linear notification)
+4. Agent skips this issue and continues to next action
+
+On next `/pm` run, the agent checks `needs-input` issues for human responses:
+
+- If a new comment exists after the agent's question: remove label, set assignee to null, process answer
+- If no response yet: show in dashboard as "Awaiting Your Input"
+
+The agent always queries `needs-input` issues regardless of the ownership filter — these are the agent's own questions awaiting answers.
 
 ## Origin (group: `origin`)
 

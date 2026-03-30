@@ -3,7 +3,7 @@ import type { PlaygroundSection } from '../playground-registry';
 /**
  * Feature component sections from FeaturesPage.
  *
- * Sources: AgentIdentityShowcases, RelayShowcases, MeshShowcases, PulseShowcases, OnboardingShowcases, PromoShowcases.
+ * Sources: AgentIdentityShowcases, RelayShowcases, MeshShowcases, TasksShowcases, OnboardingShowcases, PromoShowcases.
  */
 export const FEATURES_SECTIONS: PlaygroundSection[] = [
   // AgentIdentityShowcases
@@ -122,13 +122,13 @@ export const FEATURES_SECTIONS: PlaygroundSection[] = [
     category: 'Mesh',
     keywords: ['mesh', 'empty', 'state', 'topology', 'preview', 'agent'],
   },
-  // PulseShowcases
+  // TasksShowcases
   {
     id: 'presetcard',
-    title: 'PresetCard',
+    title: 'TaskTemplateCard',
     page: 'features',
-    category: 'Pulse',
-    keywords: ['preset', 'card', 'schedule', 'toggle', 'selectable', 'cron', 'pulse'],
+    category: 'Tasks',
+    keywords: ['preset', 'card', 'schedule', 'toggle', 'selectable', 'cron', 'tasks'],
   },
   // OnboardingShowcases
   {

@@ -30,7 +30,7 @@ import { validateBoundary } from '../../../lib/boundary.js';
 import { logger } from '../../../lib/logger.js';
 import { readManifest } from '@dorkos/shared/manifest';
 import { isRelayEnabled } from '../../relay/relay-state.js';
-import { isPulseEnabled } from '../../pulse/pulse-state.js';
+import { isTasksEnabled } from '../../tasks/task-state.js';
 import { configManager } from '../../core/config-manager.js';
 
 /** Lightweight projection of the SDK's SlashCommand type — avoids leaking SDK types. */
@@ -139,7 +139,7 @@ export async function* executeSdkQuery(
   }
 
   const globalConfig = configManager.get('agentContext') ?? {
-    pulseTools: true,
+    tasksTools: true,
     relayTools: true,
     meshTools: true,
     adapterTools: true,
@@ -147,7 +147,7 @@ export async function* executeSdkQuery(
 
   const toolConfig = resolveToolConfig(manifest?.enabledToolGroups, {
     relayEnabled: isRelayEnabled(),
-    pulseEnabled: isPulseEnabled(),
+    tasksEnabled: isTasksEnabled(),
     globalConfig,
   });
 
@@ -168,7 +168,7 @@ export async function* executeSdkQuery(
     relayContext,
     session.uiState
   );
-  // Concatenate caller-supplied append (e.g. Pulse scheduler context) after the base
+  // Concatenate caller-supplied append (e.g. Tasks scheduler context) after the base
   const systemPromptAppend = messageOpts?.systemPromptAppend
     ? `${baseAppend}\n\n${messageOpts.systemPromptAppend}`
     : baseAppend;
@@ -188,6 +188,7 @@ export async function* executeSdkQuery(
       askUserQuestion: { previewFormat: 'html' },
     },
     env: {
+      // eslint-disable-next-line no-restricted-syntax -- full env needed for SDK subprocess inheritance
       ...process.env,
       CLAUDE_CODE_EMIT_SESSION_STATE_EVENTS: '1',
     },

@@ -20,7 +20,7 @@ import {
   CLAUDE_CODE_MANIFEST,
   TELEGRAM_CHATSDK_MANIFEST,
 } from '@dorkos/relay';
-import type { ClaudeCodeAgentRuntimeLike, TraceStoreLike, PulseStoreLike } from '@dorkos/relay';
+import type { ClaudeCodeAgentRuntimeLike, TraceStoreLike, TasksStoreLike } from '@dorkos/relay';
 import type { AdapterManifest, CatalogEntry } from '@dorkos/shared/relay-schemas';
 import type { AdapterStatus } from '@dorkos/relay';
 import { logger } from '../../lib/logger.js';
@@ -53,7 +53,7 @@ export interface AdapterEventRecorder {
 /** Minimal ActivityService interface for fire-and-forget event emission. */
 export interface ActivityEmitter {
   emit(event: {
-    actorType: 'user' | 'agent' | 'system' | 'pulse';
+    actorType: 'user' | 'agent' | 'system' | 'tasks';
     actorLabel: string;
     category: 'relay';
     eventType: string;
@@ -70,7 +70,7 @@ export interface ActivityEmitter {
 export interface AdapterManagerDeps {
   agentManager: ClaudeCodeAgentRuntimeLike;
   traceStore: TraceStoreLike;
-  pulseStore?: PulseStoreLike;
+  taskStore?: TasksStoreLike;
   /** Optional RelayCore for binding subsystem initialization */
   relayCore?: RelayCoreLike;
   /** Optional MeshCore for enriching AdapterContext with agent CWD resolution */

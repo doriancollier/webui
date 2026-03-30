@@ -6,7 +6,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { icons } from './registry';
 
-export type SubsystemId = 'pulse' | 'relay' | 'mesh' | 'console' | 'loop' | 'wing';
+export type SubsystemId = 'tasks' | 'relay' | 'mesh' | 'console' | 'loop' | 'wing';
 
 export interface SubsystemDef {
   id: SubsystemId;
@@ -16,7 +16,7 @@ export interface SubsystemDef {
 
 /** Ordered list of all DorkOS subsystems with their canonical icons. */
 export const SUBSYSTEMS: readonly SubsystemDef[] = [
-  { id: 'pulse', label: 'Pulse', icon: icons.pulse },
+  { id: 'tasks', label: 'Tasks', icon: icons.tasks },
   { id: 'relay', label: 'Relay', icon: icons.relay },
   { id: 'mesh', label: 'Mesh', icon: icons.mesh },
   { id: 'console', label: 'Console', icon: icons.console },

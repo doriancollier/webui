@@ -61,6 +61,7 @@ testControlRouter.post('/seed-agent', async (_req, res) => {
     registeredAt: new Date().toISOString(),
     registeredBy: 'dorkos-e2e',
     personaEnabled: false,
+    isSystem: false,
     enabledToolGroups: {},
   };
   await writeManifest(E2E_AGENT_DIR, manifest);

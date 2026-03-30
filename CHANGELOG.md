@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Tasks System Redesign — rename Pulse→Tasks, file-based definitions, Damon agent, UI
 - Make scheduling optional — tasks can now be on-demand
 - Evolve linear-issues into Loop-aware dashboard
 - Add session rename via SDK renameSession()

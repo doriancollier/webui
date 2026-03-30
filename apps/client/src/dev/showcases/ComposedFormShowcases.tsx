@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
-import { TimezoneCombobox } from '@/layers/features/pulse/ui/TimezoneCombobox';
+import { TimezoneCombobox } from '@/layers/features/tasks/ui/TimezoneCombobox';
 import { ScanRootInput } from '@/layers/features/mesh/ui/ScanRootInput';
 import {
   Badge,

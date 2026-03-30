@@ -253,7 +253,7 @@ describe('Mesh topology routes', () => {
   });
 });
 
-describe('Topology enrichment — Pulse path matching', () => {
+describe('Topology enrichment — Tasks path matching', () => {
   let app: express.Application;
   let meshCore: ReturnType<typeof createMockMeshCore>;
 
@@ -261,7 +261,7 @@ describe('Topology enrichment — Pulse path matching', () => {
     meshCore = createMockMeshCore();
   });
 
-  it('matches Pulse schedule count using exact projectPath', async () => {
+  it('matches Tasks schedule count using exact projectPath', async () => {
     const mockTopology = {
       namespaces: [{ namespace: 'ns-a', agents: [MOCK_MANIFEST] }],
       accessRules: [],
@@ -270,7 +270,7 @@ describe('Topology enrichment — Pulse path matching', () => {
     meshCore.getTopology.mockReturnValue(mockTopology);
     meshCore.getProjectPath.mockReturnValue('/home/user/project');
 
-    const pulseStore = {
+    const taskStore = {
       getSchedules: vi
         .fn()
         .mockReturnValue([
@@ -282,7 +282,7 @@ describe('Topology enrichment — Pulse path matching', () => {
 
     const deps: MeshRouterDeps = {
       meshCore: meshCore as unknown as MeshCore,
-      pulseStore,
+      taskStore,
     };
 
     app = express();
@@ -293,7 +293,7 @@ describe('Topology enrichment — Pulse path matching', () => {
 
     expect(res.status).toBe(200);
     const agent = res.body.namespaces[0].agents[0];
-    expect(agent.pulseScheduleCount).toBe(2);
+    expect(agent.taskCount).toBe(2);
   });
 
   it('returns 0 when projectPath does not match any schedule CWD', async () => {
@@ -305,13 +305,13 @@ describe('Topology enrichment — Pulse path matching', () => {
     meshCore.getTopology.mockReturnValue(mockTopology);
     meshCore.getProjectPath.mockReturnValue('/home/user/project');
 
-    const pulseStore = {
+    const taskStore = {
       getSchedules: vi.fn().mockReturnValue([{ cwd: '/home/user/other-project' }]),
     };
 
     const deps: MeshRouterDeps = {
       meshCore: meshCore as unknown as MeshCore,
-      pulseStore,
+      taskStore,
     };
 
     app = express();
@@ -322,7 +322,7 @@ describe('Topology enrichment — Pulse path matching', () => {
 
     expect(res.status).toBe(200);
     const agent = res.body.namespaces[0].agents[0];
-    expect(agent.pulseScheduleCount).toBe(0);
+    expect(agent.taskCount).toBe(0);
   });
 
   it('does not false-match paths with similar namespace suffixes', async () => {
@@ -337,7 +337,7 @@ describe('Topology enrichment — Pulse path matching', () => {
     meshCore.getTopology.mockReturnValue(mockTopology);
     meshCore.getProjectPath.mockReturnValue('/home/user/project');
 
-    const pulseStore = {
+    const taskStore = {
       getSchedules: vi.fn().mockReturnValue([
         // This would match the old heuristic (ends with /ns-a) but should NOT
         // match the new exact projectPath comparison
@@ -347,7 +347,7 @@ describe('Topology enrichment — Pulse path matching', () => {
 
     const deps: MeshRouterDeps = {
       meshCore: meshCore as unknown as MeshCore,
-      pulseStore,
+      taskStore,
     };
 
     app = express();
@@ -358,7 +358,7 @@ describe('Topology enrichment — Pulse path matching', () => {
 
     expect(res.status).toBe(200);
     const agent = res.body.namespaces[0].agents[0];
-    expect(agent.pulseScheduleCount).toBe(0);
+    expect(agent.taskCount).toBe(0);
   });
 
   it('handles getProjectPath returning undefined gracefully', async () => {
@@ -370,13 +370,13 @@ describe('Topology enrichment — Pulse path matching', () => {
     meshCore.getTopology.mockReturnValue(mockTopology);
     meshCore.getProjectPath.mockReturnValue(undefined);
 
-    const pulseStore = {
+    const taskStore = {
       getSchedules: vi.fn().mockReturnValue([{ cwd: '/home/user/project' }]),
     };
 
     const deps: MeshRouterDeps = {
       meshCore: meshCore as unknown as MeshCore,
-      pulseStore,
+      taskStore,
     };
 
     app = express();
@@ -387,6 +387,6 @@ describe('Topology enrichment — Pulse path matching', () => {
 
     expect(res.status).toBe(200);
     const agent = res.body.namespaces[0].agents[0];
-    expect(agent.pulseScheduleCount).toBe(0);
+    expect(agent.taskCount).toBe(0);
   });
 });

@@ -22,28 +22,28 @@ import type { ActivityService } from '../services/activity/activity-service.js';
 /** Optional cross-subsystem dependencies for topology enrichment. */
 export interface MeshRouterDeps {
   meshCore: MeshCore;
-  pulseStore?: { getSchedules(): Array<{ cwd: string | null }> };
+  taskStore?: { getSchedules(): Array<{ cwd: string | null }> };
   relayCore?: { listEndpoints(): Array<{ subject: string }> };
 }
 
 /**
- * Enrich a topology view with health, Relay, and Pulse data for each agent.
+ * Enrich a topology view with health, Relay, and Task data for each agent.
  *
  * Each enrichment step is individually wrapped in try/catch so a failure
  * in one subsystem never breaks the topology response.
  */
 function enrichTopology(topology: TopologyView, deps: MeshRouterDeps): TopologyView {
-  // Pre-compute Pulse schedule counts by CWD for O(1) lookups per agent
+  // Pre-compute Task counts by CWD for O(1) lookups per agent
   const scheduleCounts = new Map<string, number>();
-  if (deps.pulseStore) {
+  if (deps.taskStore) {
     try {
-      for (const schedule of deps.pulseStore.getSchedules()) {
+      for (const schedule of deps.taskStore.getSchedules()) {
         if (schedule.cwd) {
           scheduleCounts.set(schedule.cwd, (scheduleCounts.get(schedule.cwd) ?? 0) + 1);
         }
       }
     } catch {
-      // Pulse unavailable — scheduleCounts stays empty, all agents get 0
+      // Tasks unavailable — scheduleCounts stays empty, all agents get 0
     }
   }
 
@@ -89,7 +89,7 @@ function enrichAgent(
   lastSeenEvent: string | null;
   relayAdapters: string[];
   relaySubject: string | null;
-  pulseScheduleCount: number;
+  taskCount: number;
 } {
   // Safe defaults
   let healthStatus: AgentHealthStatus = 'stale';
@@ -97,7 +97,7 @@ function enrichAgent(
   let lastSeenEvent: string | null = null;
   let relayAdapters: string[] = [];
   let relaySubject: string | null = null;
-  let pulseScheduleCount = 0;
+  let taskCount = 0;
 
   // Health enrichment
   try {
@@ -136,15 +136,15 @@ function enrichAgent(
     }
   }
 
-  // Pulse schedule count — match against the agent's exact projectPath
+  // Task count — match against the agent's exact projectPath
   if (scheduleCounts.size > 0) {
     try {
       const projectPath = deps.meshCore.getProjectPath(agent.id);
       if (projectPath && scheduleCounts.has(projectPath)) {
-        pulseScheduleCount = scheduleCounts.get(projectPath)!;
+        taskCount = scheduleCounts.get(projectPath)!;
       }
     } catch {
-      // Pulse matching failed — defaults apply
+      // Task matching failed — defaults apply
     }
   }
 
@@ -155,7 +155,7 @@ function enrichAgent(
     lastSeenEvent,
     relayAdapters,
     relaySubject,
-    pulseScheduleCount,
+    taskCount,
   };
 }
 
@@ -267,7 +267,7 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
 
   // GET /topology — Query the mesh network topology with optional namespace filtering
   // meshCore.getTopology() returns base AgentManifest agents; enrichTopology()
-  // adds healthStatus, relayAdapters, pulseScheduleCount, etc. from other subsystems.
+  // adds healthStatus, relayAdapters, taskCount, etc. from other subsystems.
   router.get('/topology', (req, res) => {
     const namespace = (req.query.namespace as string) ?? '*';
     const topology = meshCore.getTopology(namespace);
@@ -399,6 +399,9 @@ export function createMeshRouter(deps: MeshRouterDeps | MeshCore): Router {
     const agent = meshCore.get(req.params.id);
     if (!agent) {
       return res.status(404).json({ error: 'Agent not found' });
+    }
+    if (agent.isSystem) {
+      return res.status(403).json({ error: 'System agents cannot be removed' });
     }
     await meshCore.unregister(req.params.id);
 

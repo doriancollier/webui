@@ -13,8 +13,8 @@ function makeMockStore(overrides: Partial<DispatcherStore> = {}): DispatcherStor
     setSidebarActiveTab: vi.fn(),
     settingsOpen: false,
     setSettingsOpen: vi.fn(),
-    pulseOpen: false,
-    setPulseOpen: vi.fn(),
+    tasksOpen: false,
+    setTasksOpen: vi.fn(),
     relayOpen: false,
     setRelayOpen: vi.fn(),
     meshOpen: false,
@@ -43,8 +43,8 @@ function makeMockCtx(storeOverrides: Partial<DispatcherStore> = {}): DispatcherC
 describe('executeUiCommand — panel commands', () => {
   it('open_panel calls the correct setter with true', () => {
     const ctx = makeMockCtx();
-    executeUiCommand(ctx, { action: 'open_panel', panel: 'pulse' });
-    expect(ctx.store.setPulseOpen).toHaveBeenCalledWith(true);
+    executeUiCommand(ctx, { action: 'open_panel', panel: 'tasks' });
+    expect(ctx.store.setTasksOpen).toHaveBeenCalledWith(true);
   });
 
   it('close_panel calls the correct setter with false', () => {

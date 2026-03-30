@@ -82,7 +82,7 @@ describe('ActivityFeed', () => {
       render(<ActivityFeed enabled={true} />);
 
       // The loading skeleton renders 3 animated placeholder divs
-      const skeletons = document.querySelectorAll('.animate-pulse');
+      const skeletons = document.querySelectorAll('.animate-tasks');
       expect(skeletons.length).toBeGreaterThan(0);
     });
 
@@ -206,7 +206,7 @@ describe('ActivityFeed', () => {
     it('shows all conversations when filter is "all"', () => {
       const conversations = [
         makeConversation('conv-1', 'relay.agent.session-1'),
-        makeConversation('conv-2', 'relay.system.pulse.schedule-1'),
+        makeConversation('conv-2', 'relay.system.tasks.schedule-1'),
         makeConversation('conv-3', 'relay.system.info'),
       ];
       mockUseRelayConversations.mockReturnValue({ data: { conversations }, isLoading: false });
@@ -218,7 +218,7 @@ describe('ActivityFeed', () => {
     it('filters to only chat messages when "Chat messages" is selected', () => {
       const conversations = [
         makeConversation('conv-1', 'relay.agent.session-1'),
-        makeConversation('conv-2', 'relay.system.pulse.schedule-1'),
+        makeConversation('conv-2', 'relay.system.tasks.schedule-1'),
         makeConversation('conv-3', 'relay.system.info'),
       ];
       mockUseRelayConversations.mockReturnValue({ data: { conversations }, isLoading: false });
@@ -236,10 +236,10 @@ describe('ActivityFeed', () => {
       );
     });
 
-    it('filters to only pulse jobs when "Pulse jobs" is selected', () => {
+    it('filters to only tasks jobs when "Tasks jobs" is selected', () => {
       const conversations = [
         makeConversation('conv-1', 'relay.agent.session-1'),
-        makeConversation('conv-2', 'relay.system.pulse.schedule-1'),
+        makeConversation('conv-2', 'relay.system.tasks.schedule-1'),
         makeConversation('conv-3', 'relay.system.info'),
       ];
       mockUseRelayConversations.mockReturnValue({ data: { conversations }, isLoading: false });
@@ -248,12 +248,12 @@ describe('ActivityFeed', () => {
 
       const [sourceCombobox] = screen.getAllByRole('combobox');
       fireEvent.click(sourceCombobox);
-      fireEvent.click(screen.getByRole('option', { name: 'Pulse jobs' }));
+      fireEvent.click(screen.getByRole('option', { name: 'Tasks jobs' }));
 
       expect(screen.getAllByTestId('conversation-row')).toHaveLength(1);
       expect(screen.getByTestId('conversation-row')).toHaveAttribute(
         'data-subject',
-        'relay.system.pulse.schedule-1'
+        'relay.system.tasks.schedule-1'
       );
     });
 

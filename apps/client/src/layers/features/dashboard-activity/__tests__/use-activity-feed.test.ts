@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { Session } from '@dorkos/shared/types';
-import type { PulseRun } from '@dorkos/shared/types';
+import type { TaskRun } from '@dorkos/shared/types';
 
 // ---------------------------------------------------------------------------
 // Mocks — must be before imports
@@ -17,9 +17,9 @@ vi.mock('@/layers/entities/session', () => ({
   useSessions: () => mockSessions(),
 }));
 
-const mockUseRuns = vi.fn<() => { data: PulseRun[] | undefined }>(() => ({ data: undefined }));
-vi.mock('@/layers/entities/pulse', () => ({
-  useRuns: () => mockUseRuns(),
+const mockUseRuns = vi.fn<() => { data: TaskRun[] | undefined }>(() => ({ data: undefined }));
+vi.mock('@/layers/entities/tasks', () => ({
+  useTaskRuns: () => mockUseRuns(),
 }));
 
 import { useActivityFeed, formatDuration } from '../model/use-activity-feed';
@@ -40,7 +40,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
-function makeRun(overrides: Partial<PulseRun> = {}): PulseRun {
+function makeRun(overrides: Partial<TaskRun> = {}): TaskRun {
   return {
     id: 'run-1',
     scheduleId: 'sched-abc123def',
@@ -106,7 +106,7 @@ describe('useActivityFeed', () => {
     expect(result.current.totalCount).toBe(0);
   });
 
-  it('includes Pulse run events from last 7 days', () => {
+  it('includes Tasks run events from last 7 days', () => {
     const run = makeRun({ status: 'completed' });
     mockUseRuns.mockReturnValue({ data: [run] });
 
@@ -114,11 +114,11 @@ describe('useActivityFeed', () => {
 
     expect(result.current.totalCount).toBe(1);
     const allEvents = result.current.groups.flatMap((g) => g.events);
-    expect(allEvents[0].type).toBe('pulse');
+    expect(allEvents[0].type).toBe('tasks');
     expect(allEvents[0].title).toContain('ran successfully');
   });
 
-  it('marks failed Pulse runs with "failed" in title', () => {
+  it('marks failed Tasks runs with "failed" in title', () => {
     const run = makeRun({ status: 'failed' });
     mockUseRuns.mockReturnValue({ data: [run] });
 

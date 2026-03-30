@@ -253,7 +253,7 @@ function useTypewriterSequence(headline: string) {
       lineDelay = outputDelay + INTER_STEP_DELAY;
     });
 
-    // Step 4 — CTA pulses in after everything
+    // Step 4 — CTA taskss in after everything
     schedule(() => setCtaVisible(true), lineDelay + 600);
 
     // `headline` is a static prop; `typeString` and `schedule` are stable (useCallback).
@@ -279,7 +279,7 @@ function useTypewriterSequence(headline: string) {
  * Hero variant 4 — Typewriter Command Flow.
  *
  * The headline types out dramatically, then a cream-palette terminal walks
- * through the DorkOS install → run → work sequence. The CTA pulses in as the
+ * through the DorkOS install → run → work sequence. The CTA taskss in as the
  * natural conclusion of watching the workflow unfold.
  */
 export function HeroV4({ headline, subhead, ctaText, ctaHref }: HeroProps) {

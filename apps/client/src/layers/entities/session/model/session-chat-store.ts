@@ -70,7 +70,7 @@ export interface SessionState {
 
   // --- Presence ---
   presenceInfo: PresenceUpdateEvent | null;
-  presencePulse: boolean;
+  presenceTasks: boolean;
 
   // --- Lifecycle flags ---
   historySeeded: boolean;
@@ -117,7 +117,7 @@ export const DEFAULT_SESSION_STATE: SessionState = {
   systemStatus: null,
   promptSuggestions: [],
   presenceInfo: null,
-  presencePulse: false,
+  presenceTasks: false,
   historySeeded: false,
   retryCount: 0,
   isRemapping: false,

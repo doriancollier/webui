@@ -7,7 +7,7 @@
 import { createSdkMcpServer } from '@anthropic-ai/claude-agent-sdk';
 import type { McpToolDeps } from './types.js';
 import { getCoreTools } from './core-tools.js';
-import { getPulseTools } from './pulse-tools.js';
+import { getTasksTools } from './task-tools.js';
 import { getRelayTools } from './relay-tools.js';
 import { getAdapterTools } from './adapter-tools.js';
 import { getBindingTools } from './binding-tools.js';
@@ -32,7 +32,7 @@ export {
   createUpdateScheduleHandler,
   createDeleteScheduleHandler,
   createGetRunHistoryHandler,
-} from './pulse-tools.js';
+} from './task-tools.js';
 export {
   createRelaySendHandler,
   createRelayInboxHandler,
@@ -84,7 +84,7 @@ export {
  * MCP server instance. When `session` is provided, UI tools emit real SSE
  * events and read actual state; without it, they use stubs (external MCP only).
  *
- * @param deps - Shared tool dependencies (relay, pulse, mesh, etc.)
+ * @param deps - Shared tool dependencies (relay, tasks, mesh, etc.)
  * @param session - Per-query session for UI tool event emission and state access
  */
 export function createDorkOsToolServer(
@@ -96,7 +96,7 @@ export function createDorkOsToolServer(
     version: '1.0.0',
     tools: [
       ...getCoreTools(deps),
-      ...getPulseTools(deps),
+      ...getTasksTools(deps),
       ...getRelayTools(deps),
       ...getAdapterTools(deps),
       ...getBindingTools(deps),

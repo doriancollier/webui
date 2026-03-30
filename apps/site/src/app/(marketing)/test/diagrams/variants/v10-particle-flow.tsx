@@ -25,7 +25,7 @@ const NODE_POS: Record<string, { x: number; y: number }> = {
   console: { x: 222, y: 188 }, // heavy link — pulled close, upper-left
   mesh: { x: 672, y: 192 }, // heavy link — pulled close, upper-right
   wing: { x: 248, y: 388 }, // medium link — mid-left
-  pulse: { x: 652, y: 376 }, // medium link — mid-right
+  tasks: { x: 652, y: 376 }, // medium link — mid-right
   channels: { x: 480, y: 468 }, // light link (from mesh) — lower center
 };
 
@@ -38,7 +38,7 @@ const LABEL_OFFSETS: Record<
   console: { dx: -20, dy: -44, anchor: 'end' },
   mesh: { dx: 20, dy: -44, anchor: 'start' },
   wing: { dx: -20, dy: 44, anchor: 'end' },
-  pulse: { dx: 20, dy: 44, anchor: 'start' },
+  tasks: { dx: 20, dy: 44, anchor: 'start' },
   channels: { dx: 0, dy: 42, anchor: 'middle' },
 };
 
@@ -57,9 +57,9 @@ const CONNECTIONS: ConnectionDef[] = [
   { from: 'engine', to: 'console', weight: 'heavy', bidir: true },
   { from: 'engine', to: 'mesh', weight: 'heavy', bidir: true },
   { from: 'engine', to: 'wing', weight: 'medium', bidir: true },
-  { from: 'engine', to: 'pulse', weight: 'medium', bidir: true },
+  { from: 'engine', to: 'tasks', weight: 'medium', bidir: true },
   { from: 'mesh', to: 'relay', weight: 'light', bidir: false },
-  { from: 'mesh', to: 'pulse', weight: 'light', bidir: false },
+  { from: 'mesh', to: 'tasks', weight: 'light', bidir: false },
 ];
 
 /** Per-weight stream visual config. */
@@ -412,23 +412,23 @@ function NodeBody({ module, isEngine }: NodeBodyProps) {
   );
 }
 
-interface EnginePulseProps {
+interface EngineTasksProps {
   active: boolean;
 }
 
-/** Expanding pulse rings on Engine — animated after entrance is done. */
-function EnginePulse({ active }: EnginePulseProps) {
+/** Expanding tasks rings on Engine — animated after entrance is done. */
+function EngineTasks({ active }: EngineTasksProps) {
   const { x, y } = NODE_POS.core;
   const base = nodeRadius('engine', 'available');
 
-  const pulseConfig = [
+  const tasksConfig = [
     { rBase: base + 8, rEnd: base + 32, opPeak: 0.35, delay: 0 },
     { rBase: base + 4, rEnd: base + 22, opPeak: 0.22, delay: 0.9 },
   ];
 
   return (
     <>
-      {pulseConfig.map(({ rBase, rEnd, opPeak, delay }, i) => (
+      {tasksConfig.map(({ rBase, rEnd, opPeak, delay }, i) => (
         <motion.circle
           key={i}
           cx={x}
@@ -569,8 +569,8 @@ export function DiagramV10({ modules }: { modules: SystemModule[] }) {
           />
         ))}
 
-        {/* ── Layer 4: Engine pulse rings ──────────────────────────────────── */}
-        <EnginePulse active={entranceDone} />
+        {/* ── Layer 4: Engine tasks rings ──────────────────────────────────── */}
+        <EngineTasks active={entranceDone} />
 
         {/* ── Layer 5: Module nodes (staggered entrance) ────────────────── */}
         {modules.map((m) => (

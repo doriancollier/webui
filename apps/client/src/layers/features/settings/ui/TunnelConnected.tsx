@@ -76,6 +76,7 @@ export function TunnelConnected({ url, activeSessionId, latencyMs }: TunnelConne
                 variants={latencyVariants}
                 initial="initial"
                 animate="animate"
+                transition={latencyTransition}
               >
                 {latencyMs}ms
               </motion.span>

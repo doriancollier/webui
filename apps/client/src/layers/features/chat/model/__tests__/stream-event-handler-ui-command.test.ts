@@ -14,8 +14,8 @@ import { createStreamEventHandler } from '../stream-event-handler';
 const mockStore = {
   settingsOpen: false,
   setSettingsOpen: vi.fn(),
-  pulseOpen: false,
-  setPulseOpen: vi.fn(),
+  tasksOpen: false,
+  setTasksOpen: vi.fn(),
   relayOpen: false,
   setRelayOpen: vi.fn(),
   meshOpen: false,
@@ -101,8 +101,8 @@ describe('stream-event-handler — ui_command', () => {
 
   it('dispatches open_panel command to store', () => {
     const { handler } = createDeps();
-    handler('ui_command', { command: { action: 'open_panel', panel: 'pulse' } }, 'assistant-1');
-    expect(mockStore.setPulseOpen).toHaveBeenCalledWith(true);
+    handler('ui_command', { command: { action: 'open_panel', panel: 'tasks' } }, 'assistant-1');
+    expect(mockStore.setTasksOpen).toHaveBeenCalledWith(true);
   });
 
   it('dispatches close_panel command to store', () => {

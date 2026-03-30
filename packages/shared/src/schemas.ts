@@ -20,11 +20,11 @@ export const PermissionModeSchema = z
 
 export type PermissionMode = z.infer<typeof PermissionModeSchema>;
 
-export const TaskStatusSchema = z
+export const SessionTaskStatusSchema = z
   .enum(['pending', 'in_progress', 'completed'])
-  .openapi('TaskStatus');
+  .openapi('SessionTaskStatus');
 
-export type TaskStatus = z.infer<typeof TaskStatusSchema>;
+export type SessionTaskStatus = z.infer<typeof SessionTaskStatusSchema>;
 
 export const StreamEventTypeSchema = z
   .enum([
@@ -369,7 +369,7 @@ export const TaskItemSchema = z
     subject: z.string(),
     description: z.string().optional(),
     activeForm: z.string().optional(),
-    status: TaskStatusSchema,
+    status: SessionTaskStatusSchema,
     blockedBy: z.array(z.string()).optional(),
     blocks: z.array(z.string()).optional(),
     owner: z.string().optional(),
@@ -947,12 +947,12 @@ export const ServerConfigSchema = z
     nodeVersion: z.string(),
     claudeCliPath: z.string().nullable(),
     tunnel: TunnelStatusSchema,
-    pulse: z
+    tasks: z
       .object({
-        enabled: z.boolean().openapi({ description: 'Whether the Pulse scheduler is enabled' }),
+        enabled: z.boolean().openapi({ description: 'Whether the Tasks scheduler is enabled' }),
       })
       .optional()
-      .openapi({ description: 'Pulse scheduler feature state' }),
+      .openapi({ description: 'Tasks scheduler feature state' }),
     relay: z
       .object({
         enabled: z.boolean().openapi({ description: 'Whether the Relay message bus is enabled' }),
@@ -1105,64 +1105,69 @@ export const SessionLockedErrorSchema = z
 
 export type SessionLockedError = z.infer<typeof SessionLockedErrorSchema>;
 
-// === Pulse Scheduler Types ===
+// === Tasks Scheduler Types ===
 
-export const PulseScheduleStatusSchema = z
+export const TaskStatusSchema = z
   .enum(['active', 'paused', 'pending_approval'])
-  .openapi('PulseScheduleStatus');
+  .openapi('TaskStatus');
 
-export type PulseScheduleStatus = z.infer<typeof PulseScheduleStatusSchema>;
+export type TaskStatus = z.infer<typeof TaskStatusSchema>;
 
-export const PulseRunStatusSchema = z
+export const TaskRunStatusSchema = z
   .enum(['running', 'completed', 'failed', 'cancelled'])
-  .openapi('PulseRunStatus');
+  .openapi('TaskRunStatus');
 
-export type PulseRunStatus = z.infer<typeof PulseRunStatusSchema>;
+export type TaskRunStatus = z.infer<typeof TaskRunStatusSchema>;
 
-export const PulseRunTriggerSchema = z.enum(['scheduled', 'manual']).openapi('PulseRunTrigger');
+export const TaskRunTriggerSchema = z
+  .enum(['scheduled', 'manual', 'agent'])
+  .openapi('TaskRunTrigger');
 
-export type PulseRunTrigger = z.infer<typeof PulseRunTriggerSchema>;
+export type TaskRunTrigger = z.infer<typeof TaskRunTriggerSchema>;
 
-export const PulseScheduleSchema = z
+export const TaskSchema = z
   .object({
     id: z.string(),
     name: z.string(),
+    description: z.string().nullable().optional(),
     prompt: z.string(),
-    cron: z.string(),
+    cron: z.string().nullable(),
     timezone: z.string().nullable(),
     cwd: z.string().nullable(),
     agentId: z.string().nullable().default(null),
     enabled: z.boolean(),
     maxRuntime: z.number().int().nullable(),
     permissionMode: PermissionModeSchema,
-    status: PulseScheduleStatusSchema,
+    status: TaskStatusSchema,
+    filePath: z.string(),
+    tags: z.array(z.string()).default([]),
     createdAt: z.string(),
     updatedAt: z.string(),
     nextRun: z.string().nullable().optional(),
   })
-  .openapi('PulseSchedule');
+  .openapi('Task');
 
-export type PulseSchedule = z.infer<typeof PulseScheduleSchema>;
+export type Task = z.infer<typeof TaskSchema>;
 
-export const PulseRunSchema = z
+export const TaskRunSchema = z
   .object({
     id: z.string(),
     scheduleId: z.string(),
-    status: PulseRunStatusSchema,
+    status: TaskRunStatusSchema,
     startedAt: z.string().nullable(),
     finishedAt: z.string().nullable(),
     durationMs: z.number().int().nullable(),
     outputSummary: z.string().nullable(),
     error: z.string().nullable(),
     sessionId: z.string().nullable(),
-    trigger: PulseRunTriggerSchema,
+    trigger: TaskRunTriggerSchema,
     createdAt: z.string(),
   })
-  .openapi('PulseRun');
+  .openapi('TaskRun');
 
-export type PulseRun = z.infer<typeof PulseRunSchema>;
+export type TaskRun = z.infer<typeof TaskRunSchema>;
 
-export const PulsePresetSchema = z
+export const TaskTemplateSchema = z
   .object({
     id: z.string(),
     name: z.string(),
@@ -1172,56 +1177,58 @@ export const PulsePresetSchema = z
     timezone: z.string().optional(),
     category: z.string().optional(),
   })
-  .openapi('PulsePreset');
+  .openapi('TaskTemplate');
 
-export type PulsePreset = z.infer<typeof PulsePresetSchema>;
+export type TaskTemplate = z.infer<typeof TaskTemplateSchema>;
 
-export const CreateScheduleRequestSchema = z
+export const CreateTaskRequestSchema = z
   .object({
     name: z.string().min(1),
     prompt: z.string().min(1),
-    cron: z.string().min(1),
+    cron: z.string().min(1).nullable().optional(),
     timezone: z.string().nullable().optional(),
     cwd: z.string().nullable().optional(),
     agentId: z.string().optional(),
     enabled: z.boolean().optional().default(true),
     maxRuntime: z.number().int().positive().nullable().optional(),
     permissionMode: PermissionModeSchema.optional().default('acceptEdits'),
+    tags: z.array(z.string()).optional().default([]),
   })
-  .openapi('CreateScheduleRequest');
+  .openapi('CreateTaskRequest');
 
-export type CreateScheduleRequest = z.infer<typeof CreateScheduleRequestSchema>;
+export type CreateTaskRequest = z.infer<typeof CreateTaskRequestSchema>;
 
 /** Input type for creating a schedule (before Zod defaults are applied). */
-export type CreateScheduleInput = z.input<typeof CreateScheduleRequestSchema>;
+export type CreateTaskInput = z.input<typeof CreateTaskRequestSchema>;
 
-export const UpdateScheduleRequestSchema = z
+export const UpdateTaskRequestSchema = z
   .object({
     name: z.string().min(1).optional(),
     prompt: z.string().min(1).optional(),
-    cron: z.string().min(1).optional(),
+    cron: z.string().min(1).nullable().optional(),
     timezone: z.string().nullable().optional(),
     cwd: z.string().nullable().optional(),
     agentId: z.string().nullable().optional(),
     enabled: z.boolean().optional(),
     maxRuntime: z.number().int().positive().nullable().optional(),
     permissionMode: PermissionModeSchema.optional(),
-    status: PulseScheduleStatusSchema.optional(),
+    status: TaskStatusSchema.optional(),
+    tags: z.array(z.string()).optional(),
   })
-  .openapi('UpdateScheduleRequest');
+  .openapi('UpdateTaskRequest');
 
-export type UpdateScheduleRequest = z.infer<typeof UpdateScheduleRequestSchema>;
+export type UpdateTaskRequest = z.infer<typeof UpdateTaskRequestSchema>;
 
-export const ListRunsQuerySchema = z
+export const ListTaskRunsQuerySchema = z
   .object({
     scheduleId: z.string().optional(),
-    status: PulseRunStatusSchema.optional(),
+    status: TaskRunStatusSchema.optional(),
     limit: z.coerce.number().int().min(1).max(500).optional().default(50),
     offset: z.coerce.number().int().min(0).optional().default(0),
   })
-  .openapi('ListRunsQuery');
+  .openapi('ListTaskRunsQuery');
 
-export type ListRunsQuery = z.infer<typeof ListRunsQuerySchema>;
+export type ListTaskRunsQuery = z.infer<typeof ListTaskRunsQuerySchema>;
 
 // === Config PATCH Schemas ===
 
@@ -1332,7 +1339,7 @@ export type UiCanvasContent = z.infer<typeof UiCanvasContentSchema>;
 
 /** Identifies a named panel in the DorkOS UI. */
 export const UiPanelIdSchema = z
-  .enum(['settings', 'pulse', 'relay', 'mesh', 'picker'])
+  .enum(['settings', 'tasks', 'relay', 'mesh', 'picker'])
   .openapi('UiPanelId');
 
 export type UiPanelId = z.infer<typeof UiPanelIdSchema>;
@@ -1438,7 +1445,7 @@ export const UiStateSchema = z
     }),
     panels: z.object({
       settings: z.boolean(),
-      pulse: z.boolean(),
+      tasks: z.boolean(),
       relay: z.boolean(),
       mesh: z.boolean(),
     }),

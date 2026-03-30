@@ -110,7 +110,7 @@ function DeviceMockupCell() {
           <PhoneUiRow label="SESSION" value="ACTIVE" />
           <PhoneUiRow label="AGENT" value="claude-3" />
           <PhoneUiRow label="TASKS" value="4 / 7" />
-          <PhoneUiRow label="PULSE" value="ON" />
+          <PhoneUiRow label="TASKS" value="ON" />
           <PhoneUiRow label="UPTIME" value="6h 12m" dim />
         </div>
         {/* Home bar */}

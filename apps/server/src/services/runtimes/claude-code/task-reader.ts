@@ -1,4 +1,4 @@
-import type { TaskItem, TaskStatus } from '@dorkos/shared/types';
+import type { TaskItem, SessionTaskStatus } from '@dorkos/shared/types';
 import type { TranscriptLine } from './transcript-parser.js';
 
 /** Tool names that carry task/todo data in their input. */
@@ -43,7 +43,7 @@ export function parseTasks(lines: string[]): TaskItem[] {
             tasks.set(id, {
               id,
               subject: (todo.content as string) ?? '',
-              status: ((todo.status as string) ?? 'pending') as TaskStatus,
+              status: ((todo.status as string) ?? 'pending') as SessionTaskStatus,
               activeForm: (todo.activeForm as string) ?? undefined,
             });
           }
@@ -60,7 +60,7 @@ export function parseTasks(lines: string[]): TaskItem[] {
       } else if (block.name === 'TaskUpdate' && input.taskId) {
         const existing = tasks.get(input.taskId as string);
         if (existing) {
-          if (input.status) existing.status = input.status as TaskStatus;
+          if (input.status) existing.status = input.status as SessionTaskStatus;
           if (input.subject) existing.subject = input.subject as string;
           if (input.activeForm) existing.activeForm = input.activeForm as string;
           if (input.description) existing.description = input.description as string;

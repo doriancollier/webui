@@ -54,7 +54,7 @@ describe('ProgressCard', () => {
     render(<ProgressCard onStepClick={vi.fn()} onDismiss={vi.fn()} />);
 
     expect(screen.getByText('Discover agents')).toBeTruthy();
-    expect(screen.getByText('Set up Pulse schedules')).toBeTruthy();
+    expect(screen.getByText('Set up Tasks schedules')).toBeTruthy();
   });
 
   it('shows Getting Started heading', () => {
@@ -97,7 +97,7 @@ describe('ProgressCard', () => {
     render(<ProgressCard onStepClick={onStepClick} onDismiss={vi.fn()} />);
 
     // Click the second step (index 1)
-    fireEvent.click(screen.getByText('Set up Pulse schedules'));
+    fireEvent.click(screen.getByText('Set up Tasks schedules'));
 
     expect(onStepClick).toHaveBeenCalledWith(1);
   });
@@ -119,7 +119,7 @@ describe('ProgressCard', () => {
       defaultOnboardingState({
         state: {
           completedSteps: [],
-          skippedSteps: ['pulse'],
+          skippedSteps: ['tasks'],
           startedAt: null,
           dismissedAt: null,
         },
@@ -128,7 +128,7 @@ describe('ProgressCard', () => {
 
     render(<ProgressCard onStepClick={onStepClick} onDismiss={vi.fn()} />);
 
-    fireEvent.click(screen.getByText('Set up Pulse schedules'));
+    fireEvent.click(screen.getByText('Set up Tasks schedules'));
 
     expect(onStepClick).toHaveBeenCalledWith(1);
   });

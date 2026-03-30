@@ -5,7 +5,7 @@ import type { ActivityEvent } from '../model/use-activity-feed';
 
 const TYPE_DOT_COLORS: Record<ActivityEvent['type'], string> = {
   session: 'bg-blue-500',
-  pulse: 'bg-purple-500',
+  tasks: 'bg-purple-500',
   relay: 'bg-teal-500',
   mesh: 'bg-muted-foreground/40',
   system: 'bg-muted-foreground/30',
@@ -13,7 +13,7 @@ const TYPE_DOT_COLORS: Record<ActivityEvent['type'], string> = {
 
 const TYPE_LABELS: Record<ActivityEvent['type'], string> = {
   session: 'Session',
-  pulse: 'Pulse',
+  tasks: 'Tasks',
   relay: 'Relay',
   mesh: 'Mesh',
   system: 'System',

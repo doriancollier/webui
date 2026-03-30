@@ -5,7 +5,7 @@ import { ACTOR_CONFIG } from '../model/activity-types';
 export interface ActorBadgeProps {
   /** The actor type determines the visual treatment. */
   actorType: ActorType;
-  /** Human-readable actor label ("You", agent name, "System", "Pulse"). */
+  /** Human-readable actor label ("You", agent name, "System", "Tasks"). */
   actorLabel: string;
   /**
    * CSS color string for agent actors (e.g., a hex or `oklch(...)` value).
@@ -21,7 +21,7 @@ export interface ActorBadgeProps {
  * - `user` → neutral ghost pill "You"
  * - `agent` → colored dot + name (dot uses `agentColor`)
  * - `system` → Settings icon, muted neutral
- * - `pulse` → Clock icon, purple
+ * - `tasks` → Clock icon, purple
  */
 export function ActorBadge({ actorType, actorLabel, agentColor, className }: ActorBadgeProps) {
   const config = ACTOR_CONFIG[actorType];
@@ -46,7 +46,11 @@ export function ActorBadge({ actorType, actorLabel, agentColor, className }: Act
     return (
       <span
         data-slot="actor-badge"
-        className={cn('inline-flex items-center gap-1.5 text-xs font-medium', config.text, className)}
+        className={cn(
+          'inline-flex items-center gap-1.5 text-xs font-medium',
+          config.text,
+          className
+        )}
       >
         <span
           className="size-2 shrink-0 rounded-full"
@@ -58,7 +62,7 @@ export function ActorBadge({ actorType, actorLabel, agentColor, className }: Act
     );
   }
 
-  // system | pulse — icon + label
+  // system | tasks — icon + label
   return (
     <span
       data-slot="actor-badge"

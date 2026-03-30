@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useAppStore } from '@/layers/shared/model';
 import { useTheme } from '@/layers/shared/model';
@@ -20,8 +20,8 @@ interface PaletteActions {
 /** Maps a palette feature action string to a UiCommand for the dispatcher. */
 function paletteActionToUiCommand(action: string) {
   switch (action) {
-    case 'openPulse':
-      return { action: 'open_panel', panel: 'pulse' } as const;
+    case 'openTasks':
+      return { action: 'open_panel', panel: 'tasks' } as const;
     case 'openRelay':
       return { action: 'open_panel', panel: 'relay' } as const;
     case 'openMesh':
@@ -61,8 +61,8 @@ export function usePaletteActions(closePalette: () => void): PaletteActions {
   const setSidebarActiveTab = useAppStore((s) => s.setSidebarActiveTab);
   const settingsOpen = useAppStore((s) => s.settingsOpen);
   const setSettingsOpen = useAppStore((s) => s.setSettingsOpen);
-  const pulseOpen = useAppStore((s) => s.pulseOpen);
-  const setPulseOpen = useAppStore((s) => s.setPulseOpen);
+  const tasksOpen = useAppStore((s) => s.tasksOpen);
+  const setTasksOpen = useAppStore((s) => s.setTasksOpen);
   const relayOpen = useAppStore((s) => s.relayOpen);
   const setRelayOpen = useAppStore((s) => s.setRelayOpen);
   const meshOpen = useAppStore((s) => s.meshOpen);
@@ -87,25 +87,46 @@ export function usePaletteActions(closePalette: () => void): PaletteActions {
     [recordUsage, setDir, closePalette, selectedCwd, setPreviousCwd]
   );
 
-  // Shared store snapshot for all dispatcher calls — avoids repeating 16 fields.
-  const dispatcherStore: DispatcherStore = {
-    setSidebarOpen,
-    setSidebarActiveTab,
-    settingsOpen,
-    setSettingsOpen,
-    pulseOpen,
-    setPulseOpen,
-    relayOpen,
-    setRelayOpen,
-    meshOpen,
-    setMeshOpen,
-    pickerOpen,
-    setPickerOpen,
-    setGlobalPaletteOpen,
-    setCanvasOpen,
-    setCanvasContent,
-    setCanvasPreferredWidth,
-  };
+  // Memoized store snapshot — avoids new object identity every render, keeping
+  // useCallback deps stable. Only recreates when one of the captured values changes.
+  const dispatcherStore = useMemo<DispatcherStore>(
+    () => ({
+      setSidebarOpen,
+      setSidebarActiveTab,
+      settingsOpen,
+      setSettingsOpen,
+      tasksOpen,
+      setTasksOpen,
+      relayOpen,
+      setRelayOpen,
+      meshOpen,
+      setMeshOpen,
+      pickerOpen,
+      setPickerOpen,
+      setGlobalPaletteOpen,
+      setCanvasOpen,
+      setCanvasContent,
+      setCanvasPreferredWidth,
+    }),
+    [
+      setSidebarOpen,
+      setSidebarActiveTab,
+      settingsOpen,
+      setSettingsOpen,
+      tasksOpen,
+      setTasksOpen,
+      relayOpen,
+      setRelayOpen,
+      meshOpen,
+      setMeshOpen,
+      pickerOpen,
+      setPickerOpen,
+      setGlobalPaletteOpen,
+      setCanvasOpen,
+      setCanvasContent,
+      setCanvasPreferredWidth,
+    ]
+  );
 
   const handleFeatureAction = useCallback(
     (action: string) => {
@@ -149,7 +170,7 @@ export function usePaletteActions(closePalette: () => void): PaletteActions {
         executeUiCommand({ store: dispatcherStore, setTheme }, command);
       }
     },
-    [closePalette, navigate, dispatcherStore, setTheme, theme]
+    [closePalette, navigate, dispatcherStore, setTheme, theme, setCanvasOpen]
   );
 
   return {

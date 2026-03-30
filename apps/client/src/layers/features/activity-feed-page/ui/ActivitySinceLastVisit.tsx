@@ -44,11 +44,11 @@ function countByCategory(
 }
 
 /**
- * Build the digest line: "3 Pulse runs · 1 Relay event · 2 Agent updates"
+ * Build the digest line: "3 Tasks runs · 1 Relay event · 2 Agent updates"
  */
 function buildDigestLine(counts: Partial<Record<ActivityCategory, number>>): string {
   const CATEGORY_SUFFIXES: Record<ActivityCategory, string> = {
-    pulse: 'Pulse run',
+    tasks: 'Tasks run',
     relay: 'Relay event',
     agent: 'Agent update',
     config: 'Config change',

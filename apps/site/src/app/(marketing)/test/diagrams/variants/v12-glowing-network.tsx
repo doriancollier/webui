@@ -31,7 +31,7 @@ const CARD_LAYOUT: Record<string, CardLayout> = {
   console: { top: '5%', left: '7%', width: 152, height: 118 },
   mesh: { top: '7%', left: '66%', width: 152, height: 118 },
   wing: { top: '63%', left: '5%', width: 152, height: 118 },
-  pulse: { top: '65%', left: '65%', width: 152, height: 118 },
+  tasks: { top: '65%', left: '65%', width: 152, height: 118 },
   channels: { top: '69%', left: '34%', width: 152, height: 118 },
 };
 
@@ -48,9 +48,9 @@ const BEAMS: BeamDef[] = [
   { from: 'engine', to: 'console', dur: 2.2 },
   { from: 'engine', to: 'mesh', dur: 2.5 },
   { from: 'engine', to: 'wing', dur: 2.8 },
-  { from: 'engine', to: 'pulse', dur: 2.4 },
+  { from: 'engine', to: 'tasks', dur: 2.4 },
   { from: 'engine', to: 'relay', dur: 2.0 },
-  { from: 'mesh', to: 'pulse', dur: 3.1 },
+  { from: 'mesh', to: 'tasks', dur: 3.1 },
   { from: 'console', to: 'wing', dur: 3.4 },
 ];
 
@@ -97,7 +97,7 @@ const KEYFRAMES = `
     0%, 100% { opacity: 1;    transform: scale(1);    }
     50%      { opacity: 0.3;  transform: scale(0.7);  }
   }
-  @keyframes v12-core-pulse {
+  @keyframes v12-core-tasks {
     0%   { box-shadow: 0 0 0 0   rgba(232, 93, 4, 0.45); }
     70%  { box-shadow: 0 0 0 18px rgba(232, 93, 4, 0);    }
     100% { box-shadow: 0 0 0 0   rgba(232, 93, 4, 0);    }
@@ -105,9 +105,9 @@ const KEYFRAMES = `
   .v12-spin     { animation: v12-spin     3.2s linear      infinite; }
   .v12-spin-slow{ animation: v12-spin     5.0s linear      infinite; }
   .v12-live-dot { animation: v12-live-dot 2.0s ease-in-out infinite; }
-  .v12-core-pulse { animation: v12-core-pulse 2.8s ease-out infinite; }
+  .v12-core-tasks { animation: v12-core-tasks 2.8s ease-out infinite; }
   @media (prefers-reduced-motion: reduce) {
-    .v12-spin, .v12-spin-slow, .v12-live-dot, .v12-core-pulse {
+    .v12-spin, .v12-spin-slow, .v12-live-dot, .v12-core-tasks {
       animation: none !important;
     }
   }
@@ -246,7 +246,7 @@ function GlowCard({ module, isHovered, isActive, onHover, onActivate }: GlowCard
 
       {/* Card surface */}
       <div
-        className={isEngine && isActive ? 'v12-core-pulse' : undefined}
+        className={isEngine && isActive ? 'v12-core-tasks' : undefined}
         style={{
           position: 'relative',
           width: '100%',
@@ -422,7 +422,7 @@ interface BeamLayerProps {
  *
  * Each beam has two layers:
  *   1. A static dim track line
- *   2. A traveling gradient pulse animated via `gradientTransform`
+ *   2. A traveling gradient tasks animated via `gradientTransform`
  *
  * The `gradientUnits="userSpaceOnUse"` with percentage coords lets the
  * gradients align with the percentage-positioned cards.
@@ -527,7 +527,7 @@ function BeamLayer({ hoveredId, activeIds }: BeamLayerProps) {
               strokeWidth={isLit ? 0.18 : 0.08}
               style={{ transition: 'stroke 0.35s ease, stroke-width 0.35s ease' }}
             />
-            {/* Animated traveling pulse */}
+            {/* Animated traveling tasks */}
             <line
               x1={x1}
               y1={y1}
@@ -584,7 +584,7 @@ function Spotlight({ x, y, visible }: SpotlightProps) {
  *
  * Each DorkOS module is a card with an animated moving-border (rotating
  * conic-gradient). Cards connect via SVG beams with traveling gradient
- * pulses. Dark cyberpunk aesthetic: hover to illuminate, click to activate.
+ * taskss. Dark cyberpunk aesthetic: hover to illuminate, click to activate.
  */
 export function DiagramV12({ modules }: { modules: SystemModule[] }) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);

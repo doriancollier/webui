@@ -2,7 +2,7 @@
  * Publish helpers for the Claude Code adapter.
  *
  * Shared response publishing functions used by both the agent handler
- * and pulse handler sub-modules. Extracted to keep individual handlers
+ * and tasks handler sub-modules. Extracted to keep individual handlers
  * focused on their primary routing logic.
  *
  * @module relay/adapters/claude-code-publish

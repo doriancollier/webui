@@ -163,7 +163,7 @@ export function buildTopologyElements(
           description: agent.description || undefined,
           relayAdapters: typedAgent.relayAdapters ?? [],
           relaySubject: typedAgent.relaySubject ?? null,
-          pulseScheduleCount: typedAgent.pulseScheduleCount ?? 0,
+          taskCount: typedAgent.taskCount ?? 0,
           lastSeenAt: typedAgent.lastSeenAt ?? null,
           lastSeenEvent: typedAgent.lastSeenEvent ?? null,
           budget: agent.budget

@@ -222,7 +222,7 @@ export async function unregister(deps: AgentManagementDeps, agentId: string): Pr
 
   deps.registry.remove(agentId);
 
-  // Fire unregister callbacks (e.g., cascade-disable Pulse schedules)
+  // Fire unregister callbacks (e.g., cascade-disable Tasks schedules)
   for (const cb of deps.onUnregisterCallbacks) {
     try {
       cb(agentId);

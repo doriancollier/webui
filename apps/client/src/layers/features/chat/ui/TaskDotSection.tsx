@@ -39,13 +39,13 @@ export function TaskDotSection({ bashTasks }: TaskDotSectionProps) {
             transition={{ duration: 0.25 }}
             className="relative flex size-3 items-center justify-center"
           >
-            {/* Pulse ring — only for running tasks */}
+            {/* Tasks ring — only for running tasks */}
             {task.status === 'running' && !prefersReducedMotion && (
               <span
-                className="task-dot-pulse absolute inset-0 rounded-full opacity-40"
+                className="task-dot-tasks absolute inset-0 rounded-full opacity-40"
                 style={{
                   backgroundColor: task.color,
-                  animation: 'task-dot-pulse 2s ease-in-out infinite',
+                  animation: 'task-dot-tasks 2s ease-in-out infinite',
                 }}
               />
             )}

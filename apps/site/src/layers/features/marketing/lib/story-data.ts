@@ -88,7 +88,7 @@ export const evolutionSteps: EvolutionStep[] = [
   },
   {
     step: 3,
-    product: 'Pulse',
+    product: 'Tasks',
     duration: 'A few weeks',
     description: 'Scheduled agents. Runs overnight. Morning brief before I wake up.',
     ceiling: "Agents couldn't talk to each other.",
@@ -116,7 +116,7 @@ export const futureCards: FutureCard[] = [
     id: 'autonomous',
     label: 'Autonomous',
     title: 'Agents that run',
-    description: 'Pulse. Already shipping. Your agents work while you sleep.',
+    description: 'Tasks. Already shipping. Your agents work while you sleep.',
     color: 'orange',
   },
   {

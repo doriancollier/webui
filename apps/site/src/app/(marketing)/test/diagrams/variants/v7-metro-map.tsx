@@ -15,7 +15,7 @@ const STATIONS = {
   core: { x: 450, y: 280 },
   console: { x: 150, y: 155 },
   wing: { x: 150, y: 405 },
-  pulse: { x: 750, y: 155 },
+  tasks: { x: 750, y: 155 },
   mesh: { x: 750, y: 405 },
   channels: { x: 450, y: 490 },
 } as const;
@@ -57,9 +57,9 @@ const METRO_LINES: MetroLine[] = [
     name: 'Autonomy',
     color: 'var(--color-brand-green)',
     strokeWidth: 6,
-    // Engine → H-right → V-up → H-right → Pulse → V-down → Mesh
+    // Engine → H-right → V-up → H-right → Tasks → V-down → Mesh
     path: 'M 450 280 H 620 V 155 H 750 V 405',
-    stations: ['engine', 'pulse', 'mesh'],
+    stations: ['engine', 'tasks', 'mesh'],
     trainDur: '9s',
     trainBegin: '4.2s',
   },
@@ -381,14 +381,14 @@ export function DiagramV7({ modules }: { modules: SystemModule[] }) {
         );
       })}
 
-      {/* ── Layer 4: Transfer station pulse rings (Engine + Mesh) ── */}
+      {/* ── Layer 4: Transfer station tasks rings (Engine + Mesh) ── */}
       {entranceDone &&
         Array.from(TRANSFER_IDS).map((sid) => {
           const pos = STATIONS[sid as keyof typeof STATIONS];
           const colors = stationLines[sid] ?? [];
           return (
             <motion.circle
-              key={`pulse-${sid}`}
+              key={`tasks-${sid}`}
               cx={pos.x}
               cy={pos.y}
               r={28}

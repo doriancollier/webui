@@ -193,7 +193,6 @@ describe('ExtensionSecretStore', () => {
 
       const keyPath = path.join(dorkHome, 'host.key');
       const stat = statSync(keyPath);
-      // eslint-disable-next-line no-bitwise
       const mode = stat.mode & 0o777;
       expect(mode).toBe(0o600);
     });

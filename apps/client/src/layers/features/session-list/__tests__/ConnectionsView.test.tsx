@@ -112,7 +112,7 @@ function Wrapper({ children }: { children: React.ReactNode }) {
 }
 
 const enabledToolStatus: AgentToolStatus = {
-  pulse: 'enabled',
+  tasks: 'enabled',
   relay: 'enabled',
   mesh: 'enabled',
   adapter: 'enabled',

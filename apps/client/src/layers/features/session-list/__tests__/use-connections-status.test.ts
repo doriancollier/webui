@@ -13,7 +13,7 @@ import type { AgentManifest } from '@dorkos/shared/mesh-schemas';
 // ---------------------------------------------------------------------------
 
 const mockToolStatus = vi.fn<() => AgentToolStatus>(() => ({
-  pulse: 'enabled',
+  tasks: 'enabled',
   relay: 'enabled',
   mesh: 'enabled',
   adapter: 'enabled',
@@ -74,7 +74,7 @@ describe('useConnectionsStatus', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockToolStatus.mockReturnValue({
-      pulse: 'enabled',
+      tasks: 'enabled',
       relay: 'enabled',
       mesh: 'enabled',
       adapter: 'enabled',
@@ -254,7 +254,7 @@ describe('useConnectionsStatus', () => {
 
   it('returns none when relay and mesh are disabled by server (no data fetched)', () => {
     mockToolStatus.mockReturnValue({
-      pulse: 'enabled',
+      tasks: 'enabled',
       relay: 'disabled-by-server',
       mesh: 'disabled-by-server',
       adapter: 'disabled-by-server',

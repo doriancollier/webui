@@ -7,10 +7,10 @@ import { initConfigManager, configManager } from './services/core/config-manager
 import { initBoundary } from './lib/boundary.js';
 import { initLogger, logger, logError } from './lib/logger.js';
 import { createDorkOsToolServer } from './services/runtimes/claude-code/mcp-tools/index.js';
-import { PulseStore } from './services/pulse/pulse-store.js';
-import { SchedulerService } from './services/pulse/scheduler-service.js';
-import { createPulseRouter } from './routes/pulse.js';
-import { setPulseEnabled, setPulseInitError } from './services/pulse/pulse-state.js';
+import { TaskStore } from './services/tasks/task-store.js';
+import { TaskSchedulerService } from './services/tasks/task-scheduler-service.js';
+import { createTasksRouter } from './routes/tasks.js';
+import { setTasksEnabled, setTasksInitError } from './services/tasks/task-state.js';
 import {
   RelayCore,
   AdapterRegistry,
@@ -24,6 +24,7 @@ import { TraceStore } from './services/relay/trace-store.js';
 import { MeshCore } from '@dorkos/mesh';
 import { createMeshRouter } from './routes/mesh.js';
 import { setMeshEnabled, setMeshInitError } from './services/mesh/mesh-state.js';
+import { ensureDamon } from './services/mesh/ensure-damon.js';
 import { createA2aRouter } from './routes/a2a.js';
 import { createAgentsRouter } from './routes/agents.js';
 import { createDiscoveryRouter } from './routes/discovery.js';
@@ -48,7 +49,7 @@ const PORT = env.DORKOS_PORT;
 
 // Global references for graceful shutdown
 let claudeRuntime: ClaudeCodeRuntime | null = null;
-let schedulerService: SchedulerService | null = null;
+let schedulerService: TaskSchedulerService | null = null;
 let relayCore: RelayCore | undefined;
 let adapterRegistry: AdapterRegistry | undefined;
 let adapterManager: AdapterManager | undefined;
@@ -130,23 +131,23 @@ async function start() {
     logger.info('[Runtime] ClaudeCodeRuntime registered as default');
   }
 
-  // Initialize Pulse scheduler if enabled
+  // Initialize Tasks scheduler if enabled
   const schedulerConfig = configManager.get('scheduler');
 
-  const pulseEnabled =
+  const tasksEnabled =
     // eslint-disable-next-line no-restricted-syntax -- Checking presence, not value: env.ts can't distinguish "unset" from "set to false"
-    'DORKOS_PULSE_ENABLED' in process.env ? env.DORKOS_PULSE_ENABLED : schedulerConfig.enabled;
+    'DORKOS_TASKS_ENABLED' in process.env ? env.DORKOS_TASKS_ENABLED : schedulerConfig.enabled;
 
-  let pulseStore: PulseStore | undefined;
-  if (pulseEnabled) {
+  let taskStore: TaskStore | undefined;
+  if (tasksEnabled) {
     try {
-      pulseStore = new PulseStore(db);
-      logger.info('[Pulse] PulseStore initialized');
+      taskStore = new TaskStore(db);
+      logger.info('[Tasks] TaskStore initialized');
     } catch (err) {
       const errInfo = logError(err);
-      logger.error(`[Pulse] Failed to initialize PulseStore at ${dorkHome}`, errInfo);
-      setPulseInitError(errInfo.error);
-      // Pulse failure is non-fatal: server continues without scheduler routes.
+      logger.error(`[Tasks] Failed to initialize TaskStore at ${dorkHome}`, errInfo);
+      setTasksInitError(errInfo.error);
+      // Tasks failure is non-fatal: server continues without scheduler routes.
     }
   }
 
@@ -214,6 +215,13 @@ async function start() {
       logger.error('[Mesh] Startup reconciliation failed', logError(err));
     }
 
+    // Ensure the Damon system agent is registered (non-fatal)
+    try {
+      await ensureDamon(meshCore, dorkHome);
+    } catch (err) {
+      logger.warn('[Mesh] Failed to register Damon system agent', logError(err));
+    }
+
     // Start periodic reconciliation (every 5 minutes)
     meshCore.startPeriodicReconciliation(300_000);
   } catch (err) {
@@ -233,7 +241,7 @@ async function start() {
       adapterManager = new AdapterManager(adapterRegistry, adapterConfigPath, {
         agentManager: runtimeRegistry.getDefault() as unknown as ClaudeCodeAgentRuntimeLike,
         traceStore,
-        pulseStore,
+        taskStore: taskStore,
         relayCore,
         meshCore, // meshCore is now available
         eventRecorder: traceStore,
@@ -274,7 +282,7 @@ async function start() {
     const mcpToolDeps = {
       transcriptReader: claudeRuntime.getTranscriptReader(),
       defaultCwd: env.DORKOS_DEFAULT_CWD ?? process.cwd(),
-      ...(pulseStore && { pulseStore }),
+      ...(taskStore && { taskStore }),
       ...(relayCore && { relayCore }),
       ...(adapterManager && { adapterManager }),
       ...(adapterManager && { bindingStore: adapterManager.getBindingStore() }),
@@ -298,10 +306,10 @@ async function start() {
     logger.info(`[MCP] External MCP server mounted at /mcp (stateless, ${mcpAuthMode})`);
   }
 
-  // Mount Pulse routes if enabled — Pulse requires ClaudeCodeRuntime as SchedulerAgentManager.
-  if (pulseEnabled && pulseStore && claudeRuntime) {
-    schedulerService = new SchedulerService({
-      store: pulseStore,
+  // Mount Tasks routes if enabled — Tasks requires ClaudeCodeRuntime as SchedulerAgentManager.
+  if (tasksEnabled && taskStore && claudeRuntime) {
+    schedulerService = new TaskSchedulerService({
+      store: taskStore,
       agentManager: claudeRuntime,
       config: {
         maxConcurrentRuns: schedulerConfig.maxConcurrentRuns,
@@ -313,19 +321,19 @@ async function start() {
       activityService,
     });
     app.use(
-      '/api/pulse',
-      createPulseRouter(pulseStore, schedulerService, dorkHome, meshCore, activityService)
+      '/api/tasks',
+      createTasksRouter(taskStore, schedulerService, dorkHome, meshCore, activityService)
     );
-    setPulseEnabled(true);
-    logger.info('[Pulse] Routes mounted and scheduler configured');
+    setTasksEnabled(true);
+    logger.info('[Tasks] Routes mounted and scheduler configured');
 
-    // Cascade-disable: when an agent is unregistered from Mesh, disable its linked Pulse schedules
+    // Cascade-disable: when an agent is unregistered from Mesh, disable its linked task schedules
     if (meshCore) {
       meshCore.onUnregister((agentId) => {
-        const disabledCount = pulseStore.disableSchedulesByAgentId(agentId);
+        const disabledCount = taskStore.disableTasksByAgentId(agentId);
         if (disabledCount > 0) {
           logger.info(
-            `[Pulse] Disabled ${disabledCount} schedule(s) for unregistered agent ${agentId}`
+            `[Tasks] Disabled ${disabledCount} schedule(s) for unregistered agent ${agentId}`
           );
         }
       });
@@ -456,10 +464,10 @@ async function start() {
     });
   });
 
-  // Start Pulse scheduler after server is listening
+  // Start Tasks scheduler after server is listening
   if (schedulerService) {
     await schedulerService.start();
-    logger.info('[Pulse] Scheduler started');
+    logger.info('[Tasks] Scheduler started');
   }
 
   // Run session health check periodically — only ClaudeCodeRuntime needs this.

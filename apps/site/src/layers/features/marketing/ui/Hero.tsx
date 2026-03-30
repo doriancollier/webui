@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'motion/react';
-import { PulseAnimation } from './PulseAnimation';
+import { TasksAnimation } from './TasksAnimation';
 import { REVEAL } from '../lib/motion-variants';
 
 interface HeroProps {
@@ -107,9 +107,9 @@ export function Hero({ label = 'Open Source', headline, subhead, ctaText, ctaHre
           </Link>
         </motion.div>
 
-        {/* Heartbeat pulse line */}
+        {/* Heartbeat tasks line */}
         <motion.div variants={REVEAL}>
-          <PulseAnimation />
+          <TasksAnimation />
         </motion.div>
 
         {/* Product screenshot */}

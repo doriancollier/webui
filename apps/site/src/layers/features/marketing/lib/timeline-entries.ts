@@ -12,7 +12,7 @@ export const timelineEntries: TimelineEntry[] = [
     headline: 'You hand off three tasks. Then you close the laptop.',
     paragraphs: [
       'A test suite that needs expanding. A dependency upgrade across two services. A refactor you\u2019ve been putting off.',
-      'You type one command. [PULSE] schedules all three.',
+      'You type one command. [TASKS] schedules all three.',
       'You close the laptop.',
     ],
   },
@@ -30,7 +30,7 @@ export const timelineEntries: TimelineEntry[] = [
     time: '2:47 AM',
     headline: 'Something breaks. An agent fixes it. You never wake up.',
     paragraphs: [
-      'Tests fail on the dependency upgrade. [PULSE] detects it. Dispatches an agent. The agent reads the error, traces the cause, opens a fix. Tests go green.',
+      'Tests fail on the dependency upgrade. [TASKS] detects it. Dispatches an agent. The agent reads the error, traces the cause, opens a fix. Tests go green.',
       'Your phone buzzes once. A Telegram message from [RELAY]: \u201CTests were failing. Fixed. Change #247 ready for your review.\u201D',
       'You do not see it until morning.',
     ],

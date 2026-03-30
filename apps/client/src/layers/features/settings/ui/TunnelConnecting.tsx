@@ -43,18 +43,13 @@ const checkmarkVariants = {
 /** Spring transition for the checkmark scale-in. */
 const checkmarkTransition = { type: 'spring', stiffness: 400, damping: 30 } as const;
 
-/** Props for the connecting view shown while tunnel is starting. */
-export interface TunnelConnectingProps {
-  // Self-contained — derives step state from elapsed time since mount.
-}
-
 /** Connecting view — shown while the tunnel is being established.
  *
  * Renders three progress steps that activate sequentially based on elapsed
  * time since mount: immediately, after 500 ms, and after 1 200 ms.
  * Each step shows a spinner while active and a checkmark when superseded.
  */
-export function TunnelConnecting(_props: TunnelConnectingProps) {
+export function TunnelConnecting() {
   const [elapsedMs, setElapsedMs] = useState(0);
 
   useEffect(() => {

@@ -94,10 +94,10 @@ vi.mock('../ui/AgentDiscoveryStep', () => ({
   ),
 }));
 
-vi.mock('../ui/PulsePresetsStep', () => ({
-  PulsePresetsStep: ({ onStepComplete }: { onStepComplete: () => void }) => (
-    <div data-testid="pulse-step">
-      <button onClick={onStepComplete}>Complete Pulse</button>
+vi.mock('../ui/TaskTemplatesStep', () => ({
+  TaskTemplatesStep: ({ onStepComplete }: { onStepComplete: () => void }) => (
+    <div data-testid="tasks-step">
+      <button onClick={onStepComplete}>Complete Tasks</button>
     </div>
   ),
 }));
@@ -161,7 +161,7 @@ describe('OnboardingFlow', () => {
   it('shows step indicator dots on step pages', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={0} />);
 
-    // Three step indicators rendered as rounded-full elements (meet-dorkbot, discovery, pulse)
+    // Three step indicators rendered as rounded-full elements (meet-dorkbot, discovery, tasks)
     const { container } = render(<OnboardingFlow onComplete={vi.fn()} initialStep={0} />);
     const dots = container.querySelectorAll('.rounded-full');
     expect(dots.length).toBeGreaterThanOrEqual(3);
@@ -180,10 +180,10 @@ describe('OnboardingFlow', () => {
     expect(screen.getByTestId('discovery-step')).toBeTruthy();
   });
 
-  it('initialStep=2 renders the pulse step', () => {
+  it('initialStep=2 renders the tasks step', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={2} />);
 
-    expect(screen.getByTestId('pulse-step')).toBeTruthy();
+    expect(screen.getByTestId('tasks-step')).toBeTruthy();
   });
 
   it('completing meet-dorkbot calls completeStep and advances to discovery', () => {
@@ -195,21 +195,21 @@ describe('OnboardingFlow', () => {
     expect(screen.getByTestId('discovery-step')).toBeTruthy();
   });
 
-  it('completing discovery advances to pulse step', () => {
+  it('completing discovery advances to tasks step', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={1} />);
 
     fireEvent.click(screen.getByText('Complete Discovery'));
 
     expect(mockCompleteStep).toHaveBeenCalledWith('discovery');
-    expect(screen.getByTestId('pulse-step')).toBeTruthy();
+    expect(screen.getByTestId('tasks-step')).toBeTruthy();
   });
 
   it('completing all steps shows completion screen', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={2} />);
 
-    fireEvent.click(screen.getByText('Complete Pulse'));
+    fireEvent.click(screen.getByText('Complete Tasks'));
 
-    expect(mockCompleteStep).toHaveBeenCalledWith('pulse');
+    expect(mockCompleteStep).toHaveBeenCalledWith('tasks');
     expect(screen.getByTestId('onboarding-complete')).toBeTruthy();
   });
 
@@ -256,9 +256,9 @@ describe('OnboardingFlow', () => {
     });
   });
 
-  // --- Auto-skip Pulse when no agents ---
+  // --- Auto-skip Tasks when no agents ---
 
-  it('auto-skips pulse step when agents list is empty', async () => {
+  it('auto-skips tasks step when agents list is empty', async () => {
     mockAgentPaths.mockReturnValue({
       data: { agents: [] },
       isLoading: false,
@@ -267,17 +267,17 @@ describe('OnboardingFlow', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={2} />);
 
     await waitFor(() => {
-      expect(mockCompleteStep).toHaveBeenCalledWith('pulse');
+      expect(mockCompleteStep).toHaveBeenCalledWith('tasks');
     });
-    // Should show completion screen (pulse was last step)
+    // Should show completion screen (tasks was last step)
     expect(screen.getByTestId('onboarding-complete')).toBeTruthy();
   });
 
-  it('renders pulse step when agents exist', () => {
+  it('renders tasks step when agents exist', () => {
     render(<OnboardingFlow onComplete={vi.fn()} initialStep={2} />);
 
-    expect(screen.getByTestId('pulse-step')).toBeTruthy();
-    expect(mockCompleteStep).not.toHaveBeenCalledWith('pulse');
+    expect(screen.getByTestId('tasks-step')).toBeTruthy();
+    expect(mockCompleteStep).not.toHaveBeenCalledWith('tasks');
   });
 
   // --- Post-onboarding navigation ---
@@ -288,7 +288,7 @@ describe('OnboardingFlow', () => {
     render(<OnboardingFlow onComplete={onComplete} initialStep={2} />);
 
     // Complete the last step to show completion screen
-    fireEvent.click(screen.getByText('Complete Pulse'));
+    fireEvent.click(screen.getByText('Complete Tasks'));
     // Click the Finish button on the completion screen
     fireEvent.click(screen.getByText('Finish'));
 
@@ -328,7 +328,7 @@ describe('OnboardingFlow', () => {
     const onComplete = vi.fn();
     render(<OnboardingFlow onComplete={onComplete} initialStep={2} />);
 
-    fireEvent.click(screen.getByText('Complete Pulse'));
+    fireEvent.click(screen.getByText('Complete Tasks'));
     fireEvent.click(screen.getByText('Finish'));
 
     expect(mockNavigate).toHaveBeenCalledWith({

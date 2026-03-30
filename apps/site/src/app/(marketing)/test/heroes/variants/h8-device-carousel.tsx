@@ -94,7 +94,7 @@ function AgentStatus() {
       style={{ background: CREAM_SECONDARY, border: `1px solid ${BORDER}` }}
     >
       <span
-        className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full"
+        className="animate-tasks h-1.5 w-1.5 shrink-0 rounded-full"
         style={{ background: GREEN }}
       />
       <span className="font-mono text-[9px] leading-none" style={{ color: WARM_GRAY }}>
@@ -146,7 +146,7 @@ function ChatMessages({ compact = false }: { compact?: boolean }) {
         style={{ background: CREAM_PRIMARY, border: `1px solid ${BORDER}` }}
       >
         <span
-          className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full"
+          className="animate-tasks h-1.5 w-1.5 shrink-0 rounded-full"
           style={{ background: GREEN }}
         />
         <span className="truncate font-mono text-[9px]" style={{ color: WARM_GRAY }}>

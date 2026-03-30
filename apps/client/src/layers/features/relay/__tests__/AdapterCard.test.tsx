@@ -249,7 +249,7 @@ describe('AdapterCard', () => {
   it('shows amber pulsing status dot when connected with no bindings', () => {
     const { container } = render(<AdapterCard {...defaultProps()} />);
     expect(container.querySelector('.bg-amber-500')).toBeTruthy();
-    expect(container.querySelector('.animate-pulse')).toBeTruthy();
+    expect(container.querySelector('.animate-tasks')).toBeTruthy();
   });
 
   it('shows red status dot when adapter is in error state', () => {

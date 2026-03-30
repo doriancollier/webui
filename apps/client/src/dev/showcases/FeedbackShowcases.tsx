@@ -25,7 +25,7 @@ export function FeedbackShowcases() {
 
   return (
     <>
-      <PlaygroundSection title="Skeleton" description="Loading placeholder with animated pulse.">
+      <PlaygroundSection title="Skeleton" description="Loading placeholder with animated tasks.">
         <ShowcaseDemo>
           <div className="flex items-center gap-4">
             <Skeleton className="h-12 w-12 rounded-full" />

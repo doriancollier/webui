@@ -48,7 +48,7 @@ interface SessionTimers {
   textStreaming: ReturnType<typeof setTimeout> | null;
   systemStatus: ReturnType<typeof setTimeout> | null;
   sessionBusy: ReturnType<typeof setTimeout> | null;
-  presencePulse: ReturnType<typeof setTimeout> | null;
+  presenceTasks: ReturnType<typeof setTimeout> | null;
   rateLimitClear: ReturnType<typeof setTimeout> | null;
 }
 
@@ -84,7 +84,7 @@ const EMPTY_TIMERS: SessionTimers = {
   textStreaming: null,
   systemStatus: null,
   sessionBusy: null,
-  presencePulse: null,
+  presenceTasks: null,
   rateLimitClear: null,
 };
 
@@ -369,7 +369,7 @@ export class StreamManager {
     if (timers.textStreaming) clearTimeout(timers.textStreaming);
     if (timers.systemStatus) clearTimeout(timers.systemStatus);
     if (timers.sessionBusy) clearTimeout(timers.sessionBusy);
-    if (timers.presencePulse) clearTimeout(timers.presencePulse);
+    if (timers.presenceTasks) clearTimeout(timers.presenceTasks);
     if (timers.rateLimitClear) clearTimeout(timers.rateLimitClear);
 
     this.timers.delete(sessionId);
@@ -543,7 +543,7 @@ function snapshotUiState(activeCwd: string | null): UiState {
     },
     panels: {
       settings: s.settingsOpen,
-      pulse: s.pulseOpen,
+      tasks: s.tasksOpen,
       relay: s.relayOpen,
       mesh: s.meshOpen,
     },

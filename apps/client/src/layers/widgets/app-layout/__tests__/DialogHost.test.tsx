@@ -14,8 +14,8 @@ function MockDirectoryPickerWrapper({ open }: { open: boolean }) {
   return open ? <div data-testid="directory-picker">DirectoryPicker</div> : null;
 }
 
-function MockPulseWrapper({ open }: { open: boolean }) {
-  return open ? <div data-testid="pulse-panel">PulsePanel</div> : null;
+function MockTasksWrapper({ open }: { open: boolean }) {
+  return open ? <div data-testid="tasks-panel">TasksPanel</div> : null;
 }
 
 function MockRelayWrapper({ open }: { open: boolean }) {
@@ -56,12 +56,12 @@ const mockDialogContributions = [
     priority: 2,
   },
   {
-    id: 'pulse',
-    component: MockPulseWrapper as ComponentType<{
+    id: 'tasks',
+    component: MockTasksWrapper as ComponentType<{
       open: boolean;
       onOpenChange: (open: boolean) => void;
     }>,
-    openStateKey: 'pulseOpen',
+    openStateKey: 'tasksOpen',
     priority: 3,
   },
   {
@@ -103,8 +103,8 @@ vi.mock('@/layers/features/onboarding', () => ({
 const mockStoreState: Record<string, unknown> = {
   settingsOpen: false,
   setSettingsOpen: vi.fn(),
-  pulseOpen: false,
-  setPulseOpen: vi.fn(),
+  tasksOpen: false,
+  setTasksOpen: vi.fn(),
   relayOpen: false,
   setRelayOpen: vi.fn(),
   meshOpen: false,
@@ -134,7 +134,7 @@ afterEach(() => {
 beforeEach(() => {
   // Reset all store values to closed/defaults
   mockStoreState.settingsOpen = false;
-  mockStoreState.pulseOpen = false;
+  mockStoreState.tasksOpen = false;
   mockStoreState.relayOpen = false;
   mockStoreState.meshOpen = false;
   mockStoreState.pickerOpen = false;
@@ -149,7 +149,7 @@ describe('DialogHost', () => {
 
     expect(screen.queryByTestId('settings-dialog')).not.toBeInTheDocument();
     expect(screen.queryByTestId('directory-picker')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('pulse-panel')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('tasks-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('relay-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('mesh-panel')).not.toBeInTheDocument();
     expect(screen.queryByTestId('agent-dialog')).not.toBeInTheDocument();
@@ -172,12 +172,12 @@ describe('DialogHost', () => {
     expect(screen.getByTestId('directory-picker')).toBeInTheDocument();
   });
 
-  it('renders PulsePanel when pulseOpen is true', () => {
-    mockStoreState.pulseOpen = true;
+  it('renders TasksPanel when tasksOpen is true', () => {
+    mockStoreState.tasksOpen = true;
 
     render(<DialogHost />);
 
-    expect(screen.getByTestId('pulse-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('tasks-panel')).toBeInTheDocument();
   });
 
   it('renders RelayPanel when relayOpen is true', () => {
@@ -222,13 +222,13 @@ describe('DialogHost', () => {
 
   it('renders multiple dialogs simultaneously', () => {
     mockStoreState.settingsOpen = true;
-    mockStoreState.pulseOpen = true;
+    mockStoreState.tasksOpen = true;
     mockStoreState.meshOpen = true;
 
     render(<DialogHost />);
 
     expect(screen.getByTestId('settings-dialog')).toBeInTheDocument();
-    expect(screen.getByTestId('pulse-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('tasks-panel')).toBeInTheDocument();
     expect(screen.getByTestId('mesh-panel')).toBeInTheDocument();
   });
 

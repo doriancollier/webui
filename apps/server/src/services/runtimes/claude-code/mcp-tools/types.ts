@@ -1,5 +1,5 @@
 import type { TranscriptReader } from '../transcript-reader.js';
-import type { PulseStore } from '../../../pulse/pulse-store.js';
+import type { TaskStore } from '../../../tasks/task-store.js';
 import type { RelayCore } from '@dorkos/relay';
 import type { AdapterManager } from '../../../relay/adapter-manager.js';
 import type { BindingStore } from '../../../relay/binding-store.js';
@@ -16,8 +16,8 @@ export interface McpToolDeps {
   transcriptReader: TranscriptReader;
   /** The default working directory for the server */
   defaultCwd: string;
-  /** Optional Pulse store — undefined when Pulse is disabled */
-  pulseStore?: PulseStore;
+  /** Optional Task store — undefined when Tasks is disabled */
+  taskStore?: TaskStore;
   /** Optional RelayCore — undefined when Relay is disabled */
   relayCore?: RelayCore;
   /** Optional AdapterManager — undefined when Relay adapters are not configured */

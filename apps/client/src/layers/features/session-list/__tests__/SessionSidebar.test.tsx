@@ -31,7 +31,7 @@ vi.mock('@tanstack/react-router', () => ({
 
 // Mock app store (sidebar state + selectedCwd)
 const mockSetSidebarOpen = vi.fn();
-const mockSetPulseOpen = vi.fn();
+const mockSetTasksOpen = vi.fn();
 const mockSetPickerOpen = vi.fn();
 const mockSetAgentDialogOpen = vi.fn();
 const mockSetOnboardingStep = vi.fn();
@@ -46,7 +46,7 @@ vi.mock('@/layers/shared/model/app-store', () => ({
   useAppStore: (selector?: (s: Record<string, unknown>) => unknown) => {
     const state = {
       setSidebarOpen: mockSetSidebarOpen,
-      setPulseOpen: mockSetPulseOpen,
+      setTasksOpen: mockSetTasksOpen,
       setPickerOpen: mockSetPickerOpen,
       setAgentDialogOpen: mockSetAgentDialogOpen,
       setOnboardingStep: mockSetOnboardingStep,
@@ -58,9 +58,9 @@ vi.mock('@/layers/shared/model/app-store', () => ({
       devtoolsOpen: false,
       selectedCwd: '/test/cwd',
       recentCwds: [],
-      enablePulseNotifications: false,
-      pulseOpen: false,
-      setPulseBadgeCount: vi.fn(),
+      enableTasksNotifications: false,
+      tasksOpen: false,
+      setTasksBadgeCount: vi.fn(),
       sidebarActiveTab: mockSidebarActiveTab,
       setSidebarActiveTab: mockSetSidebarActiveTab,
       sidebarOpen: true,
@@ -82,7 +82,7 @@ vi.mock('@/layers/features/onboarding', () => ({
 
 // Mock agent entity hooks — mutable tool status for feature flag tests
 let mockToolStatus = {
-  pulse: 'enabled' as string,
+  tasks: 'enabled' as string,
   relay: 'enabled' as string,
   mesh: 'enabled' as string,
   adapter: 'enabled' as string,
@@ -102,21 +102,21 @@ vi.mock('@/layers/entities/agent', () => ({
   ),
 }));
 
-// Mock usePulseEnabled
-vi.mock('@/layers/entities/pulse/model/use-pulse-config', () => ({
-  usePulseEnabled: () => true,
+// Mock useTasksEnabled
+vi.mock('@/layers/entities/tasks/model/use-tasks-config', () => ({
+  useTasksEnabled: () => true,
 }));
 
 // Mock useActiveRunCount and useRuns
-vi.mock('@/layers/entities/pulse/model/use-runs', () => ({
-  useActiveRunCount: () => ({ data: 0 }),
-  useRuns: () => ({ data: [] }),
+vi.mock('@/layers/entities/tasks/model/use-task-runs', () => ({
+  useActiveTaskRunCount: () => ({ data: 0 }),
+  useTaskRuns: () => ({ data: [] }),
 }));
 
 // Mock useCompletedRunBadge
 const mockClearBadge = vi.fn();
-vi.mock('@/layers/entities/pulse/model/use-completed-run-badge', () => ({
-  useCompletedRunBadge: () => ({ unviewedCount: 0, clearBadge: mockClearBadge }),
+vi.mock('@/layers/entities/tasks/model/use-completed-task-run-badge', () => ({
+  useCompletedTaskRunBadge: () => ({ unviewedCount: 0, clearBadge: mockClearBadge }),
 }));
 
 // Mock useConnectionsStatus (derived hook in model/ segment)
@@ -192,7 +192,7 @@ function registerMockTabContributions() {
       icon: Clock,
       label: 'Schedules',
       component: () => null,
-      visibleWhen: () => mockToolStatus.pulse !== 'disabled-by-server',
+      visibleWhen: () => mockToolStatus.tasks !== 'disabled-by-server',
       shortcut: '\u23183',
       priority: 3,
     },
@@ -348,7 +348,7 @@ describe('SessionSidebar', () => {
 
   it('does not render AgentContextChips (replaced by tab badges)', () => {
     renderWithQuery(<SessionSidebar />);
-    expect(screen.queryByLabelText('Pulse scheduler')).toBeNull();
+    expect(screen.queryByLabelText('Tasks scheduler')).toBeNull();
     expect(screen.queryByLabelText('Relay messaging')).toBeNull();
     expect(screen.queryByLabelText('Mesh discovery')).toBeNull();
   });
@@ -363,7 +363,7 @@ describe('SessionSidebar', () => {
     it('renders SidebarTabRow with tab buttons', () => {
       renderWithQuery(<SessionSidebar />);
       expect(screen.getByRole('tablist')).toBeInTheDocument();
-      // At minimum: sessions + connections (schedules depends on Pulse feature flag)
+      // At minimum: sessions + connections (schedules depends on Tasks feature flag)
       expect(screen.getAllByRole('tab').length).toBeGreaterThanOrEqual(2);
     });
 
@@ -443,16 +443,16 @@ describe('SessionSidebar', () => {
     afterEach(() => {
       // Restore default tool status after each feature flag test
       mockToolStatus = {
-        pulse: 'enabled',
+        tasks: 'enabled',
         relay: 'enabled',
         mesh: 'enabled',
         adapter: 'enabled',
       };
     });
 
-    it('hides schedules tab when Pulse is disabled-by-server', () => {
+    it('hides schedules tab when Tasks is disabled-by-server', () => {
       mockToolStatus = {
-        pulse: 'disabled-by-server',
+        tasks: 'disabled-by-server',
         relay: 'enabled',
         mesh: 'enabled',
         adapter: 'enabled',
@@ -468,7 +468,7 @@ describe('SessionSidebar', () => {
       mockSidebarActiveTab = 'schedules';
 
       mockToolStatus = {
-        pulse: 'disabled-by-server',
+        tasks: 'disabled-by-server',
         relay: 'enabled',
         mesh: 'enabled',
         adapter: 'enabled',

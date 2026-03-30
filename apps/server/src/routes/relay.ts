@@ -102,7 +102,7 @@ export function buildConversations(
     if (!from) {
       if (req.subject.startsWith('relay.agent.')) {
         from = 'relay.human.console.inferred';
-      } else if (req.subject.startsWith('relay.system.pulse.')) {
+      } else if (req.subject.startsWith('relay.system.tasks.')) {
         from = 'relay.system.console';
       }
     }

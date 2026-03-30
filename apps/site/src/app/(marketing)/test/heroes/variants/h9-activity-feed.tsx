@@ -14,7 +14,7 @@ interface HeroProps {
   ctaHref: string;
 }
 
-type ModuleId = 'engine' | 'pulse' | 'wing' | 'mesh' | 'relay' | 'agent' | 'loop';
+type ModuleId = 'engine' | 'tasks' | 'wing' | 'mesh' | 'relay' | 'agent' | 'loop';
 
 interface FeedEntry {
   /** Unique key for AnimatePresence — never reused. */
@@ -36,7 +36,7 @@ const FEED_INTERVAL_MS = 2400;
 /** Module dot colors matching brand palette. */
 const MODULE_COLORS: Record<ModuleId, string> = {
   engine: '#E85D04',
-  pulse: '#F07D2A',
+  tasks: '#F07D2A',
   wing: '#228B22',
   mesh: '#4A90A4',
   relay: '#8B7BA4',
@@ -47,7 +47,7 @@ const MODULE_COLORS: Record<ModuleId, string> = {
 /** Module label for the badge. */
 const MODULE_LABELS: Record<ModuleId, string> = {
   engine: 'Engine',
-  pulse: 'Pulse',
+  tasks: 'Tasks',
   wing: 'Wing',
   mesh: 'Mesh',
   relay: 'Relay',
@@ -59,7 +59,7 @@ const MODULE_LABELS: Record<ModuleId, string> = {
 const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
   // Coding & DevOps
   { module: 'agent', text: 'Agent committed 3 files to feature/auth-flow' },
-  { module: 'pulse', text: 'Pulse executed roadmap step 4 of 12' },
+  { module: 'tasks', text: 'Tasks executed roadmap step 4 of 12' },
   { module: 'agent', text: 'Agent reviewed PR #47 — approved with suggestions' },
   { module: 'wing', text: 'Wing updated your context with new project patterns' },
   { module: 'agent', text: 'Agent deployed v2.1.3 to staging' },
@@ -67,33 +67,33 @@ const ACTIVITY_POOL: Array<Omit<FeedEntry, 'id' | 'secondsAgo'>> = [
   { module: 'agent', text: 'Agent wrote 14 unit tests — all passing' },
   { module: 'agent', text: 'Agent resolved 2 merge conflicts automatically' },
   { module: 'agent', text: 'Agent refactored auth module — removed 340 lines of dead code' },
-  { module: 'pulse', text: 'Pulse triaged 12 GitHub issues while you were asleep' },
+  { module: 'tasks', text: 'Tasks triaged 12 GitHub issues while you were asleep' },
   // Business & money
   { module: 'relay', text: 'Relay sent deployment notification to Slack' },
   { module: 'agent', text: 'Agent drafted Q2 investor update — ready for review' },
   { module: 'relay', text: 'Relay replied to 6 support emails with context from Wing' },
   { module: 'agent', text: 'Agent found $2,400/yr in unused AWS resources — PR open to delete' },
   { module: 'wing', text: 'Wing compiled competitive analysis from 14 sources' },
-  { module: 'pulse', text: 'Pulse generated monthly revenue report — MRR up 23%' },
+  { module: 'tasks', text: 'Tasks generated monthly revenue report — MRR up 23%' },
   // Life automation
   { module: 'relay', text: 'Relay ordered anniversary flowers — delivery confirmed for Friday' },
   { module: 'agent', text: 'Agent booked dentist appointment for Thursday 2pm' },
   { module: 'relay', text: 'Relay negotiated internet bill down $40/mo — new rate locked in' },
   { module: 'wing', text: 'Wing organized 2,847 photos by date, location, and who\u2019s in them' },
   { module: 'agent', text: 'Agent meal-prepped grocery list for the week — ordered via Instacart' },
-  { module: 'pulse', text: 'Pulse filed your quarterly taxes 3 days before the deadline' },
+  { module: 'tasks', text: 'Tasks filed your quarterly taxes 3 days before the deadline' },
   // Ambitious / funny
   { module: 'mesh', text: 'Mesh assembled 7 agents for Operation Birthday Surprise' },
   { module: 'agent', text: 'Agent wrote a passive income bot — estimated $300/mo on autopilot' },
-  { module: 'pulse', text: 'Pulse started next iteration cycle' },
+  { module: 'tasks', text: 'Tasks started next iteration cycle' },
   { module: 'relay', text: 'Relay sent "thinking of you" text to mom — she loved it' },
   { module: 'wing', text: 'Wing has your full context — ask me anything' },
   { module: 'mesh', text: 'Mesh coordinating world domination — ETA 47 minutes' },
   { module: 'agent', text: 'Agent applied to 30 jobs on your behalf — 4 interviews booked' },
-  { module: 'pulse', text: 'Pulse optimized your portfolio — up 12% since last rebalance' },
+  { module: 'tasks', text: 'Tasks optimized your portfolio — up 12% since last rebalance' },
   { module: 'loop', text: 'Loop triaged 8 signals — 3 became hypotheses' },
   { module: 'loop', text: 'Loop validated hypothesis — conversion up 2.1% after fix' },
-  { module: 'loop', text: 'Loop dispatched next priority task to Pulse' },
+  { module: 'loop', text: 'Loop dispatched next priority task to Tasks' },
 ];
 
 /** Seconds-ago values used for the initial snapshot display. */

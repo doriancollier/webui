@@ -16,7 +16,7 @@ const GRID_POS: Record<string, [number, number]> = {
   console: [0, 0],
   core: [0, 1],
   wing: [0, 2],
-  pulse: [1, 0],
+  tasks: [1, 0],
   mesh: [1, 1],
   channels: [1, 2],
 };
@@ -25,7 +25,7 @@ const GRID_POS: Record<string, [number, number]> = {
 const CONNECTIONS: [string, string][] = [
   ['engine', 'console'],
   ['engine', 'wing'],
-  ['engine', 'pulse'],
+  ['engine', 'tasks'],
   ['engine', 'mesh'],
   ['engine', 'relay'],
   ['mesh', 'relay'],
@@ -319,7 +319,7 @@ interface BeamOverlayProps {
 /**
  * Absolute-positioned SVG layer that draws animated tracing beams between
  * module cards. Each beam is a curved cubic Bezier path that draws itself
- * on scroll entry, then pulses a traveling light gradient.
+ * on scroll entry, then taskss a traveling light gradient.
  *
  * Beams connected to the hovered card glow brighter.
  */
@@ -375,7 +375,7 @@ function BeamOverlay({ containerRef, cardRefs, activeId, isVisible }: BeamOverla
           </feMerge>
         </filter>
 
-        {/* Gradient for traveling pulse dot */}
+        {/* Gradient for traveling tasks dot */}
         {CONNECTIONS.map(([from, to], i) => (
           <linearGradient
             key={`grad-${i}`}
@@ -419,7 +419,7 @@ function BeamOverlay({ containerRef, cardRefs, activeId, isVisible }: BeamOverla
         const d = `M ${a.cx} ${a.cy} C ${cx1} ${cy1} ${cx2} ${cy2} ${b.cx} ${b.cy}`;
 
         const baseOpacity = isActive ? 0.55 : 0.18;
-        const pulseOpacity = isActive ? 1.0 : 0.45;
+        const tasksOpacity = isActive ? 1.0 : 0.45;
 
         return (
           <g key={`beam-${i}`}>
@@ -457,12 +457,12 @@ function BeamOverlay({ containerRef, cardRefs, activeId, isVisible }: BeamOverla
               />
             )}
 
-            {/* Traveling pulse — animated dot along the path */}
+            {/* Traveling tasks — animated dot along the path */}
             {isVisible && (
               <motion.circle
                 r={isActive ? 3 : 2}
                 fill={ORANGE}
-                opacity={pulseOpacity}
+                opacity={tasksOpacity}
                 filter={isActive ? 'url(#v11-beam-glow)' : undefined}
               >
                 <animateMotion
@@ -494,7 +494,7 @@ function BeamOverlay({ containerRef, cardRefs, activeId, isVisible }: BeamOverla
  * - Radial spotlight gradient following the cursor
  * - AnimatePresence-powered expand/collapse for module details
  * - Animated SVG tracing beams that draw on viewport entry
- * - Traveling light pulses along beam paths
+ * - Traveling light taskss along beam paths
  * - Beam glow intensifies when the connected card is hovered
  *
  * @param modules - The six DorkOS system modules to render
@@ -515,7 +515,7 @@ export function DiagramV11({ modules }: { modules: SystemModule[] }) {
     setExpandedId((prev) => (prev === id ? null : id));
   }, []);
 
-  // Sort modules into 3×2 grid order: [console, core, wing, pulse, mesh, channels]
+  // Sort modules into 3×2 grid order: [console, core, wing, tasks, mesh, channels]
   const sorted = [...modules].sort((a, b) => {
     const [ar, ac] = GRID_POS[a.id] ?? [99, 99];
     const [br, bc] = GRID_POS[b.id] ?? [99, 99];

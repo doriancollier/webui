@@ -209,6 +209,7 @@ export async function createAgentWorkspace(
       registeredAt: new Date().toISOString(),
       registeredBy: 'dorkos-ui',
       personaEnabled: true,
+      isSystem: false,
       enabledToolGroups: {},
     };
 

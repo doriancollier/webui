@@ -333,7 +333,7 @@ describe('logger module', () => {
       });
       loggerModule.initLogger({ level: 5, logDir: '/test/logs' });
 
-      const tagged = loggerModule.createTaggedLogger('Pulse');
+      const tagged = loggerModule.createTaggedLogger('Tasks');
       tagged.info('scheduler started');
 
       const calls = vi.mocked(fs.appendFileSync).mock.calls;
@@ -341,7 +341,7 @@ describe('logger module', () => {
 
       const [, content] = calls[0] as [string, string];
       const parsed = JSON.parse(content.trim());
-      expect(parsed.tag).toBe('Pulse');
+      expect(parsed.tag).toBe('Tasks');
     });
   });
 

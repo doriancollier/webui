@@ -5,11 +5,11 @@ import type { PromoDialogProps } from '../../model/promo-types';
 
 /** Dialog content for the Schedules promo. */
 export function SchedulesDialog({ onClose }: PromoDialogProps) {
-  const setPulseOpen = useAppStore((s) => s.setPulseOpen);
+  const setTasksOpen = useAppStore((s) => s.setTasksOpen);
 
   const handleSetUp = () => {
     onClose();
-    setPulseOpen(true);
+    setTasksOpen(true);
   };
 
   return (
@@ -20,7 +20,7 @@ export function SchedulesDialog({ onClose }: PromoDialogProps) {
         </div>
         <div>
           <h3 className="text-sm font-medium">Agents that work while you sleep</h3>
-          <p className="text-muted-foreground text-xs">Schedule recurring tasks with Pulse</p>
+          <p className="text-muted-foreground text-xs">Schedule recurring tasks with Tasks</p>
         </div>
       </div>
 

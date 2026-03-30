@@ -4,17 +4,17 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useAppStore, useTransport } from '@/layers/shared/model';
 import { cn, groupSessionsByTime } from '@/layers/shared/lib';
 import { SidebarContent } from '@/layers/shared/ui';
-import { useActiveRunCount } from '@/layers/entities/pulse';
+import { useActiveTaskRunCount } from '@/layers/entities/tasks';
 import { useAgentToolStatus, useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
 import { useSessions } from '@/layers/entities/session';
 import { SidebarTabRow } from './SidebarTabRow';
 import { SessionsView } from './SessionsView';
-import { SchedulesView } from './SchedulesView';
+import { TasksView } from './TasksView';
 import { ConnectionsView } from './ConnectionsView';
 import { OverviewTabPanel } from './OverviewTabPanel';
 import { SidebarAgentHeader } from './SidebarAgentHeader';
 import { useConnectionsStatus } from '../model/use-connections-status';
-import { usePulseNotifications } from '../model/use-pulse-notifications';
+import { useTaskNotifications } from '../model/use-task-notifications';
 import { useSidebarTabs } from '../model/use-sidebar-tabs';
 import { useSidebarNavigation } from '../model/use-sidebar-navigation';
 
@@ -24,13 +24,13 @@ export function SessionSidebar() {
   const selectedCwd = useAppStore((s) => s.selectedCwd);
   const { data: currentAgent } = useCurrentAgent(selectedCwd);
   const toolStatus = useAgentToolStatus(selectedCwd);
-  const pulseToolEnabled = toolStatus.pulse !== 'disabled-by-server';
-  const { data: activeRunCount = 0 } = useActiveRunCount(pulseToolEnabled);
+  const tasksToolEnabled = toolStatus.tasks !== 'disabled-by-server';
+  const { data: activeRunCount = 0 } = useActiveTaskRunCount(tasksToolEnabled);
   const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
   const connectionsStatus = useConnectionsStatus(selectedCwd);
 
   // Side-effect hooks
-  usePulseNotifications();
+  useTaskNotifications();
   const { visibleTabs, sidebarActiveTab, setSidebarActiveTab } = useSidebarTabs();
   const { handleNewSession, handleSessionClick, handleDashboard } = useSidebarNavigation();
   const transport = useTransport();
@@ -116,7 +116,7 @@ export function SessionSidebar() {
           aria-labelledby="sidebar-tab-schedules"
           className={cn('h-full', sidebarActiveTab !== 'schedules' && 'hidden')}
         >
-          <SchedulesView toolStatus={toolStatus.pulse} agentId={currentAgent?.id ?? null} />
+          <TasksView toolStatus={toolStatus.tasks} agentId={currentAgent?.id ?? null} />
         </div>
 
         {/* Connections view */}

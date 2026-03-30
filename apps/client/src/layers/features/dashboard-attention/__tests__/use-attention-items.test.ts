@@ -4,7 +4,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook } from '@testing-library/react';
 import type { Session } from '@dorkos/shared/types';
-import type { PulseRun } from '@dorkos/shared/types';
+import type { TaskRun } from '@dorkos/shared/types';
 import type { AggregatedDeadLetter } from '@dorkos/shared/transport';
 import type { MeshStatus } from '@dorkos/shared/types';
 
@@ -17,9 +17,9 @@ vi.mock('@/layers/entities/session', () => ({
   useSessions: () => mockSessions(),
 }));
 
-const mockUseRuns = vi.fn<() => { data: PulseRun[] | undefined }>(() => ({ data: undefined }));
-vi.mock('@/layers/entities/pulse', () => ({
-  useRuns: () => mockUseRuns(),
+const mockUseRuns = vi.fn<() => { data: TaskRun[] | undefined }>(() => ({ data: undefined }));
+vi.mock('@/layers/entities/tasks', () => ({
+  useTaskRuns: () => mockUseRuns(),
 }));
 
 const mockUseAggregatedDeadLetters = vi.fn<() => { data: AggregatedDeadLetter[] | undefined }>(
@@ -58,7 +58,7 @@ function makeSession(overrides: Partial<Session> = {}): Session {
   };
 }
 
-function makeRun(overrides: Partial<PulseRun> = {}): PulseRun {
+function makeRun(overrides: Partial<TaskRun> = {}): TaskRun {
   return {
     id: 'run-1',
     scheduleId: 'sched-1',
@@ -116,7 +116,7 @@ describe('useAttentionItems', () => {
     expect(result.current).toHaveLength(0);
   });
 
-  it('returns failed Pulse runs from last 24h with severity error', () => {
+  it('returns failed Tasks runs from last 24h with severity error', () => {
     const recentRun = makeRun({
       id: 'recent-run',
       createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2h ago
@@ -130,7 +130,7 @@ describe('useAttentionItems', () => {
     expect(result.current[0].severity).toBe('error');
   });
 
-  it('excludes failed Pulse runs older than 24h', () => {
+  it('excludes failed Tasks runs older than 24h', () => {
     const oldRun = makeRun({
       id: 'old-run',
       createdAt: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25h ago

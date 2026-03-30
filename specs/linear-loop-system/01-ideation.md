@@ -92,21 +92,28 @@ The Linear Loop wraps **around** the spec workflow, providing the upstream intak
 - **Iteration**: What to do next based on evidence (iterate, pivot, or persevere)
 - **Continuity**: The loop never stops — outcomes generate new signals
 
-### How They Connect
+### Spec-Linear Traceability (The Spec-Linear Bridge)
 
-**`/linear:plan`** is the bridge. When an agent encounters a hypothesis that requires non-trivial implementation:
+When complex work routes through the spec workflow, the two systems stay connected:
 
-1. `/linear:plan` evaluates complexity
-2. **Simple** (single-session task): Creates Linear sub-issues directly
-3. **Complex** (multi-session, needs design): Invokes `/ideate` with the Linear issue as context, creating a spec directory linked to the Linear issue. The spec workflow runs. `/linear:done` reports outcomes back to Linear.
+- **Spec → Linear**: The spec's `01-ideation.md` gets a `linear-issue: DOR-NNN` frontmatter field
+- **Linear → Spec**: The `specs/manifest.json` entry gets a `linearIssue: "DOR-NNN"` field
+- **Breadcrumb comments**: Each spec phase transition posts a structured progress comment to the linked Linear issue (Ideation Started → Specification Created → Decomposed → Execution Started → Implementation Complete)
+- **`/pm` spec awareness**: During ASSESS, `/pm` reads `specs/manifest.json` to detect active specs, interrupted work, and falsely complete projects
+- **Completion bridge**: `/spec:execute` prompts for `/linear:done` when all tasks are done
 
-**`/linear:done`** is the return path. After `/spec:execute` completes:
+This enables reverse lookups, cross-reference auditing during `/pm audit`, and — critically — prevents the Loop from silently stopping when work transitions between Linear and the spec workflow.
 
-1. Updates the Linear issue with completion details
-2. Creates a `type/monitor` issue with the hypothesis's validation criteria
-3. Links the spec directory in the issue comment for traceability
+### Loop Continuity and Self-Correction
 
-This means the existing commands — `/ideate`, `/ideate-to-spec`, `/spec:create`, `/spec:decompose`, `/spec:execute`, `/spec:feedback` — remain **exactly as they are**. The Linear Loop commands are a new layer that sits above them.
+**Lesson learned (March 2026):** The Loop's most dangerous failure mode is silence — not a wrong decision, but a Loop that stops spinning without anyone noticing. This happened when research completed but no next step was defined. The fix is layered:
+
+1. **Completion routing** (prevention): Every issue defines `## On Completion` — what should happen when this work is done
+2. **`/linear:done` Pulse Check** (transition detection): After closing, assess project state and recommend the next Loop phase
+3. **`/pm` spec awareness** (review detection): Detect interrupted specs, falsely complete projects, and missing bridges
+4. **`/spec:execute` completion bridge** (spec detection): Prompt for `/linear:done` when implementation finishes
+
+Multiple detection points ensure that if any single layer fails, the next one catches it. The Loop self-corrects.
 
 ## Linear Hierarchy: Team, Projects, Milestones
 
@@ -115,14 +122,10 @@ DorkOS is a product, not a single project. In Linear's hierarchy:
 ```
 Team: DorkOS                              ← the product (all issues belong here)
 ├── Project: Linear Loop System           ← a major workstream
-│   ├── Milestone: Phase 1 Foundation
-│   ├── Milestone: Phase 2 Structured Loop
 │   └── Issues...
 ├── Project: Console UI                   ← another workstream
 │   └── Issues...
 ├── Project: Relay v2                     ← another workstream
-│   └── Issues...
-├── Project: CLI Package
 │   └── Issues...
 └── Unassigned issues                     ← one-off tasks, incoming ideas
 ```
@@ -143,23 +146,41 @@ Team: DorkOS                              ← the product (all issues belong her
 - Labels are team-wide — the `type/*`, `agent/*`, `origin/*`, `confidence/*` taxonomy is shared across all projects
 - Projects have their own goals — each workstream defines its own success criteria
 
-**How `/pm` handles multiple projects:**
+### Ownership-Based Filtering
 
-`/pm` assesses at the **team level** by default — it sees everything across all projects and recommends the highest-priority action globally. The status view groups by project:
+`/pm` discovers active projects dynamically based on the `filter.ownership` setting in `config.json`:
 
-> **Linear Loop System**: 2 tasks ready, 1 monitor overdue
-> **Console UI**: 3 ideas in triage
-> **Relay v2**: blocked — waiting on spec feedback
-> **Unassigned**: 5 new ideas need project assignment
->
-> **Recommendation**: Check the overdue monitor in Linear Loop — 3 days past deadline.
+- **`"unassigned"` (default)**: `/pm` manages projects with no lead and issues with no assignee. Assign a lead in Linear to exclude a project from `/pm`'s scope.
+- **`"all"`**: `/pm` manages everything in the team, regardless of assignment.
 
-Triage assigns incoming ideas to the appropriate project. Planning creates issues within the hypothesis's project. Monitoring checks outcomes per-project against that project's goals.
+No hardcoded project lists. No config updates when projects are created or archived. Just assign a lead to take ownership, or leave it unassigned for the agent.
+
+### Project Status Awareness
+
+`/pm` reads and updates project statuses automatically:
+
+| Status      | Meaning                                |
+| ----------- | -------------------------------------- |
+| Backlog     | Project exists but no work planned yet |
+| Planned     | Work is scoped but hasn't started      |
+| In Progress | Active work underway                   |
+| Completed   | All work finished, goals met           |
+| Cancelled   | Project abandoned                      |
+
+**Automatic transitions:**
+
+| Transition              | When                                                        |
+| ----------------------- | ----------------------------------------------------------- |
+| Backlog → Planned       | First issue is triaged into the project                     |
+| Planned → In Progress   | First issue in the project moves to "In Progress"           |
+| In Progress → Completed | All issues in the project are Done and monitors are cleared |
+
+Completed and Cancelled projects are excluded from the dashboard — they're done. If a Completed project gets a new issue (e.g., a regression signal), it moves back to In Progress automatically.
 
 ## What Linear Handles (No Custom Code Needed)
 
 - Issue CRUD and lifecycle management
-- Workflow states (Triage → Backlog → Todo → In Progress → In Review → Done)
+- Workflow states (Triage → Backlog → Todo → In Progress → Done)
 - Priority ordering (Urgent/High/Medium/Low/None)
 - Project and milestone hierarchy (multiple projects per team)
 - Team assignment and user management
@@ -169,7 +190,7 @@ Triage assigns incoming ideas to the appropriate project. Planning creates issue
 - Triage Intelligence (built-in AI triage for basic categorization)
 - Search, filtering, and custom views
 
-## What We Build (Skills, Commands, Subagents)
+## What We Build (Skills, Commands, Templates)
 
 ### 1. Label Taxonomy
 
@@ -190,12 +211,13 @@ Map Loop's issue types to Linear labels. These are the semantic backbone:
 - `agent/ready` — Ready for automated agent pickup
 - `agent/claimed` — Agent has claimed this issue
 - `agent/completed` — Agent completed, awaiting review/validation
+- `needs-input` — Agent posted a question, awaiting human response
 
 **Origin Tracking**:
 
 - `origin/human` — Created by a human
-- `origin/agent` — Created by an agent (research finding, decomposed task)
-- `origin/signal` — Created from an external signal (error, metric, feedback)
+- `origin/from-agent` — Created by an agent (research finding, decomposed task)
+- `origin/from-signal` — Created from an external signal (error, metric, feedback)
 
 **Confidence** (for hypotheses):
 
@@ -207,146 +229,128 @@ Map Loop's issue types to Linear labels. These are the semantic backbone:
 
 #### The Primary Command: `/pm`
 
-One command to run the entire loop. You wake up, type `/pm`, and the system tells you where things stand and what needs your attention.
+One command to run the entire loop. Five modes:
 
 ```
-/pm          → Review status, recommend next action, wait for approval
-/pm auto     → Take the next N actions autonomously (except approval gates)
+/pm                              → Status dashboard, recommend one action, wait for approval
+/pm auto                         → Execute up to N actions autonomously (except approval gates)
+/pm DOR-47                       → Skip assessment, work on this specific issue directly
+/pm audit                        → Workspace health check (labels, statuses, stale issues, orphans)
+/pm "We should add dark mode"    → Classify input and create appropriate issue(s)
 ```
 
-**What `/pm` does:**
+**What `/pm` does (default mode):**
 
 ```
 /pm
   │
-  ├── 1. SYNC — Query Linear for all issues across types and states
+  ├── 1. SYNC — Discover projects dynamically, query issues with ownership filter
+  │     ├── get_authenticated_user (cache for this run)
+  │     ├── list_projects (filtered by ownership)
+  │     ├── list_issues (by status, labels, across filtered projects)
+  │     └── Check needs-input issues for human responses
   │
   ├── 2. ASSESS — What needs attention, in priority order?
+  │     ├── Needs-input responses (human answered an agent's question)
   │     ├── Overdue monitors (outcomes need checking)
   │     ├── Issues in Triage (ideas/signals awaiting evaluation)
-  │     ├── Planned tasks with agent/ready label (work to execute)
+  │     ├── Ready tasks (agent/ready label, waiting for execution)
   │     ├── Hypotheses without plans (need decomposition)
-  │     └── Stale in-progress items (blocked? stuck? need help?)
+  │     ├── Stale in-progress (>48h without updates)
+  │     └── Empty projects (zero active issues)
   │
-  ├── 3. RECOMMEND — "Here's the most important thing to do next"
-  │     (with reasoning: why this, not something else)
+  ├── 3. PRESENT — Status dashboard grouped by project with status badges
   │
-  └── 4. EXECUTE — On approval, run the appropriate internal operation
-        ├── Triage → reads triage template, evaluates issues
-        ├── Plan → reads plan template, decomposes hypothesis
-        ├── Dispatch → claims task, does the work (or bridges to /ideate)
-        ├── Monitor → reads monitor template, checks outcomes
-        └── Research → reads research template, investigates topic
+  ├── 4. RECOMMEND — "Here's the most important thing to do next" (with reasoning)
+  │
+  └── 5. EXECUTE — On approval, load the appropriate template and act
+        ├── Intake → reads triage-intake.md, classifies freeform input
+        ├── Triage → reads triage-idea.md or triage-signal.md
+        ├── Plan → reads plan-simple.md or plan-complex.md
+        ├── Monitor → reads monitor-outcome.md
+        ├── Dispatch → reads dispatch-priority.md
+        ├── Research → reads research-market.md or research-technical.md
+        └── Audit → reads audit-workspace.md
 ```
 
-The agent invokes the internal operations (`triage`, `plan`, `dispatch`, `monitor`, `research`) based on what the loop needs. The human doesn't need to remember which operation to run — `/pm` figures it out.
+**Freeform input mode**: Accepts any text — ideas, bug reports, product briefs, research questions, file paths. The intake template classifies the input and creates the right issue type(s). Multi-concern briefs trigger the `project-creation` approval gate.
 
-**Progression to automation:**
+**Direct issue mode** (`/pm DOR-47`): Fetches the issue, shows context, routes by type label (task → start working, hypothesis → offer to plan, idea → offer to triage, etc.).
 
-| Phase   | How `/pm` Runs                 | Human Role                      |
-| ------- | ------------------------------ | ------------------------------- |
-| Phase 1 | Human types `/pm`              | Approves each action            |
-| Phase 2 | Human types `/pm auto`         | Approves at gates only          |
-| Phase 3 | Pulse runs `/pm auto` every 2h | Telegram notifications at gates |
-| Phase 4 | Same + system proposes ideas   | Sets direction only             |
+**Audit mode**: Comprehensive workspace health check — label integrity, project status correctness, stale issues, orphan detection, spec-Linear cross-references. Auto-fixes what it can, asks about the rest.
+
+**Approval gates** (always require human approval, even in auto mode):
+
+- `hypothesis-review` — Before accepting a hypothesis
+- `pivot-decision` — Before pivoting or killing a hypothesis
+- `project-creation` — Before creating a new Linear project
+
+#### Async Human-in-the-Loop (`needs-input`)
+
+When `/pm auto` encounters ambiguity it can't resolve:
+
+1. Post a structured comment on the issue with the question (multiple choice when possible)
+2. Add `needs-input` label
+3. Assign the issue to the authenticated user (triggers a Linear notification)
+4. Skip this issue and continue to the next action
+
+On the next `/pm` run, SYNC checks `needs-input` issues for human responses. If a comment exists after the agent's question: remove label, unassign, act on the answer. If no response yet: show in "Awaiting Your Input" dashboard section.
+
+#### Self-Documenting Issues (Next-Steps Comments)
+
+After every action, `/pm` adds a structured comment:
+
+```
+**Agent Action** — [YYYY-MM-DD]
+**Action:** [what was done — e.g., "Triaged idea, moved to Backlog"]
+**Reasoning:** [brief — e.g., "Aligns with SDK Upgrade project goals"]
+**Next steps:** [what should happen next — e.g., "Research phase to validate feasibility"]
+```
+
+Anyone (human or agent) can read the last comment to understand current state without re-running `/pm`.
 
 #### Companion Commands
 
-Two additional user-facing commands for specific entry points:
+**`/linear:idea`** — Quick idea capture. Shortcut for `/pm "your idea"`. Creates a `type/idea` issue in Triage.
 
-**`/linear:idea`** — Quick idea capture. Creates a `type/idea` issue in Triage state.
-
-```
-/linear:idea "We should add keyboard shortcuts for common actions"
-```
-
-Use this when inspiration strikes mid-work. The idea enters the loop and will be triaged on the next `/pm` run.
-
-**`/linear:done [issue-id]`** — Report completion. An intentional act — "I'm satisfied, close the loop."
-
-Updates issue status, adds a structured completion comment with:
-
-- What was done
-- Files changed (or spec directory link if routed through spec workflow)
-- Any follow-up issues needed
-- For hypotheses: whether validation criteria were met
-
-Creates follow-up issues automatically:
-
-- `type/monitor` for shipped hypotheses
-- Next `type/task` in the plan sequence (unblocks)
-- `type/meta` if the instruction template needs improvement
-
-#### Internal Operations (Invoked by `/pm`)
-
-These operations exist as internal commands that `/pm` orchestrates. They can also be called directly as escape hatches when the human knows exactly what they want.
-
-**`/linear:triage`** — Evaluate the next untriaged issue. Ideas: worth building? Signals: noise or real? Research findings: actionable?
-
-**`/linear:plan [issue-id]`** — Decompose a hypothesis into work. The bridge between the Linear Loop and the spec workflow:
-
-- **Simple** (single-session): Creates Linear sub-issues directly
-- **Complex** (multi-session): Invokes `/ideate` with the Linear issue as context, creating a spec directory linked to the issue
-
-**`/linear:next`** — Dispatch the highest-priority ready task. Filters by `agent/ready`, sorts by priority, assembles full context, marks as claimed.
-
-**`/linear:research [topic]`** — Create a structured research issue with methodology template.
-
-**`/linear:status`** — Loop dashboard: issues by type/state, blocked items, active hypotheses, loop velocity.
-
-**`/linear:sync`** — Pull current priorities into local context.
+**`/linear:done [issue-id]`** — Report completion. Updates issue status, adds a structured completion comment, creates follow-up issues (monitors for hypotheses, next tasks in sequence).
 
 ### 3. The `linear-loop` Skill (Single Skill with Progressive Discovery)
 
-All Loop knowledge lives in a **single skill directory** with on-demand template loading. This follows the proven pattern used by `executing-specs/` (4 files) and `debugging-systematically/` (5 files) in this project.
-
-**Why one skill with templates, not many separate skills:**
-
-| Concern            | Single Skill + Templates                     | Many Separate Skills                     |
-| ------------------ | -------------------------------------------- | ---------------------------------------- |
-| DRY                | Label taxonomy written once                  | Repeated across 6 skills                 |
-| Context efficiency | Only the relevant template is loaded         | All skill content injected on activation |
-| Maintenance        | Update conventions in one place              | Update 6 files for a label change        |
-| Skill listing      | One clean description                        | 6 descriptions competing for attention   |
-| Organization       | Directory hierarchy mirrors Loop stages      | Flat list of skill directories           |
-| Auto-triggering    | Not needed — slash commands are the triggers | Each skill needs its own pattern         |
-
-**Why local files over Linear Documents:**
-
-Linear Documents are constrained: must be tied to a project/initiative/issue (not standalone), have no folder/category system, MCP write operations are unreliable, and version history is not API-accessible. Local skill files are git-versioned, searchable, directly injectable via the skill system, and organized in directories.
-
-**Skill structure:**
+All Loop knowledge lives in a **single skill directory** with on-demand template loading:
 
 ```
 .claude/skills/linear-loop/
-├── SKILL.md                          # Core: Loop methodology, label taxonomy, conventions,
-│                                     #   spec workflow bridge, template routing table
-├── config.json                       # Repo-specific settings (team, projects, limits)
+├── SKILL.md                          # Core: Loop methodology, conventions, routing table
+├── config.json                       # Repo-specific settings (team, ownership filter, limits)
 ├── templates/
+│   ├── triage-intake.md             # Universal input classifier (freeform → issue)
 │   ├── triage-idea.md               # How to evaluate an idea against project goals
-│   ├── triage-signal.md             # How to evaluate an incoming signal (error, metric, feedback)
-│   ├── research-market.md           # Market research: competitors, pricing, user reception
-│   ├── research-technical.md        # Technical research: feasibility, trade-offs, effort
-│   ├── plan-simple.md              # Direct Linear sub-issue decomposition for single-session work
+│   ├── triage-signal.md             # How to evaluate signals (Phase 2)
+│   ├── research-market.md           # Market research methodology (Phase 2)
+│   ├── research-technical.md        # Technical research methodology (Phase 2)
+│   ├── plan-simple.md              # Direct Linear sub-issue decomposition
 │   ├── plan-complex.md             # Bridge to spec workflow (/ideate → /spec:create)
-│   ├── monitor-outcome.md          # Validation criteria checking, pivot/persevere/kill framework
-│   └── dispatch-priority.md        # Priority selection algorithm, context assembly
+│   ├── monitor-outcome.md          # Outcome validation framework (Phase 2)
+│   ├── dispatch-priority.md        # Priority selection algorithm (Phase 2)
+│   └── audit-workspace.md          # Workspace health check
 └── conventions/
     └── labels.md                    # Full label taxonomy reference with examples
 ```
 
 **Config file** (`config.json`):
 
-Repo-specific settings that map this codebase to its Linear team and configure `/pm` behavior:
-
 ```json
 {
   "team": {
     "slug": "dorkos",
-    "id": "team_abc123"
+    "name": "DorkOS",
+    "id": "a171dbd5-3ccc-40ab-b58b-1fae7644fba8",
+    "key": "DOR"
   },
-  "defaultProject": null,
-  "activeProjects": ["linear-loop-system", "console-ui", "relay-v2", "cli-package"],
+  "filter": {
+    "ownership": "unassigned"
+  },
   "pm": {
     "autoLimit": 5,
     "approvalGates": ["hypothesis-review", "pivot-decision", "project-creation"]
@@ -357,189 +361,63 @@ Repo-specific settings that map this codebase to its Linear team and configure `
 }
 ```
 
-| Field                   | Purpose                                                                         |
-| ----------------------- | ------------------------------------------------------------------------------- |
-| `team.slug` / `team.id` | Maps this repo to its Linear team                                               |
-| `defaultProject`        | Where unassigned issues go (null = stay unassigned for triage)                  |
-| `activeProjects`        | Which projects `/pm` shows in its status view                                   |
-| `pm.autoLimit`          | Max actions `/pm auto` takes before stopping                                    |
-| `pm.approvalGates`      | Actions that always require human approval, even in auto mode                   |
-| `relay.channel`         | Notification channel for approval gates (null = no notifications until Phase 3) |
+| Field              | Purpose                                                                               |
+| ------------------ | ------------------------------------------------------------------------------------- |
+| `team.*`           | Maps this repo to its Linear team                                                     |
+| `filter.ownership` | `"unassigned"` = projects with no lead, issues with no assignee. `"all"` = everything |
+| `pm.autoLimit`     | Max actions `/pm auto` takes before stopping                                          |
+| `pm.approvalGates` | Actions that always require human approval, even in auto mode                         |
+| `relay.channel`    | Notification channel for approval gates (null = no notifications until Phase 3)       |
 
 **How progressive discovery works:**
 
-The SKILL.md entrypoint provides:
-
-1. The Loop methodology overview (always loaded)
-2. Label taxonomy and issue conventions (always loaded)
-3. A **template routing table** that tells the agent which template to read for each activity
-
-Templates are loaded **on demand** — only when needed for the current task:
+SKILL.md is always loaded — it provides the Loop methodology, label conventions, sizing criteria, and a template routing table. Templates are loaded **on demand** — only when needed for the current action.
 
 ```
+/pm (intake step)    → reads SKILL.md → reads templates/triage-intake.md
 /pm (triage step)    → reads SKILL.md → reads templates/triage-idea.md or triage-signal.md
-/pm (dispatch step)  → reads SKILL.md → reads templates/dispatch-priority.md
 /pm (plan step)      → reads SKILL.md → reads templates/plan-simple.md or plan-complex.md
 /pm (research step)  → reads SKILL.md → reads templates/research-market.md or research-technical.md
 /pm (monitor step)   → reads SKILL.md → reads templates/monitor-outcome.md
+/pm (audit step)     → reads SKILL.md → reads templates/audit-workspace.md
 ```
 
-`/pm` reads SKILL.md once (for conventions), then loads the specific template for whatever action the loop needs. The internal commands (`/linear:triage`, `/linear:plan`, etc.) follow the same pattern when called directly. This separation means:
+### 4. Sizing Criteria
 
-- **`/pm`** = the orchestrator (assesses, recommends, routes)
-- **SKILL.md** = baseline knowledge (the conventions)
-- **Templates** = deep methodology for specific activities (the expertise)
-- **Internal commands** = direct-access escape hatches
+When a `type/hypothesis` reaches the Plan phase, `/pm` sizes it to determine the routing:
 
-Templates reference Linear context dynamically — fetching project goals, issue details, and parent chains via MCP at runtime. The template text itself is static and git-versioned.
+- **Simple** (→ `plan-simple.md`): Single file change, clearly-scoped component, <200 LOC estimated, no new architectural patterns, no cross-cutting concerns
+- **Complex** (→ `plan-complex.md`): 3+ files across layers, introduces new patterns, architectural decisions needed, cross-cutting concerns, multi-session scope
 
-**Cross-agent portability:**
+When in doubt, prefer complex — it's better to over-plan than under-plan.
 
-| Agent        | How This Translates                                                      |
-| ------------ | ------------------------------------------------------------------------ |
-| Claude Code  | Native — `.claude/skills/linear-loop/` with progressive discovery        |
-| Codex CLI    | 1:1 — `.agents/skills/linear-loop/` (identical progressive loading)      |
-| Cursor       | Flatten into `.cursor/rules/linear-*.mdc` files with `globs` frontmatter |
-| Continue.dev | Split into `.continue/rules/linear-*.md` with `globs` + `regex`          |
-| Windsurf     | Flatten to single `.windsurf/rules/linear-loop.md` (12k char limit)      |
+### 5. Linear Status Transitions
 
-### 5. Subagents
+Only `/pm` and `/linear:done` change Linear issue status:
 
-#### `linear-triage-agent`
+| Transition               | Who Does It           | When           |
+| ------------------------ | --------------------- | -------------- |
+| Triage → Backlog         | `/pm` (triage step)   | Issue accepted |
+| Backlog → Todo           | Human or `/pm`        | Prioritized    |
+| Todo → In Progress       | `/pm` (dispatch step) | Work begins    |
+| In Progress → Done       | `/linear:done`        | Work complete  |
+| Done → (creates monitor) | `/linear:done`        | For hypotheses |
 
-Autonomous triage of multiple issues. Can be scheduled via Pulse to run periodically.
+The spec workflow runs entirely within the "In Progress" state — Linear doesn't see spec phases.
 
-- Pulls all issues in Triage state
-- Evaluates each against project goals
-- Sets labels, priority, and project assignment
-- Creates research issues from promising ideas
-- Declines noise with explanatory comments
-- Escalates ambiguous items for human review
+### 6. Blocker Verification
 
-#### `linear-planner-agent`
+Issue descriptions often claim prerequisites ("spec-190 must land first", "blocked by DOR-38"). **Never report an issue as blocked without verifying the blocker's current status.** Stale blocker claims are common — the blocker may have shipped since the issue was written.
 
-Decomposes hypotheses into executable task plans.
+### 7. Future: Subagents (Phase 3)
 
-- Takes a hypothesis issue as input
-- Researches the codebase to understand implementation scope
-- For simple scope: creates sub-issues with relations directly in Linear
-- For complex scope: invokes the spec workflow (`/ideate` → `/spec:create`)
-- Creates monitoring issue with validation criteria
-- Adds estimates and assigns to appropriate project milestone
+When the loop runs autonomously via Pulse, dedicated subagents may be useful for batch operations:
 
-#### `linear-monitor-agent`
+- **Triage agent** — Batch triage of multiple issues in Triage state
+- **Planner agent** — Hypothesis decomposition with codebase research
+- **Monitor agent** — Outcome checking against validation criteria
 
-Checks outcomes of shipped work. Scheduled via Pulse.
-
-- Pulls `type/monitor` issues
-- Checks validation criteria (metrics, error rates, user behavior)
-- Reports findings as comments
-- Creates new issues based on results:
-  - Hypothesis validated → close monitor, update project goal progress
-  - Hypothesis invalidated → create evaluation issue (pivot/persevere/kill)
-  - Partial validation → create iteration hypothesis
-
-### 6. CLAUDE.md Updates
-
-Add a `## Linear Workflow` section:
-
-```markdown
-## Linear Workflow
-
-We use Linear as the orchestration layer for all product work, following the Loop methodology.
-
-### Three Commands
-
-- **`/pm`** — The primary command. Reviews the loop, recommends the next action, executes on approval.
-  Run `/pm auto` to let the agent take multiple actions autonomously (except at approval gates).
-- **`/linear:idea`** — Quick idea capture during development.
-- **`/linear:done`** — Report completion and close the loop on an issue.
-
-### Issue Types
-
-Issues are categorized by `type/*` labels: idea, research, hypothesis, task, monitor, signal, meta.
-
-### The Loop
-
-Everything is an issue. The loop runs continuously:
-Idea → Triage → Research → Hypothesis → Plan → Execute → Monitor → Signal → Loop continues.
-Complex work routes through the spec workflow (/ideate → /spec:execute). Simple work stays in Linear.
-`/pm` orchestrates all of this. You don't need to remember the steps.
-
-### Labels
-
-- `type/*` — Issue type (mutually exclusive)
-- `agent/*` — Agent lifecycle state
-- `origin/*` — How the issue was created
-- `confidence/*` — Hypothesis confidence level
-```
-
-## Phased Implementation
-
-### Phase 1: Foundation (Week 1-2)
-
-**Goal**: `/pm` works. Human types one command, sees status, gets a recommendation, approves it.
-
-- [ ] Create label taxonomy in Linear workspace
-- [ ] Create `linear-loop` skill (`.claude/skills/linear-loop/SKILL.md`) with core conventions
-- [ ] Build `/pm` command (sync + assess + recommend + execute on approval)
-- [ ] Build `/linear:idea` command
-- [ ] Build `/linear:done` command
-- [ ] Build internal operations: `/linear:next`, `/linear:status`, `/linear:sync`
-- [ ] Update CLAUDE.md with Linear conventions
-- [ ] Create Linear team for DorkOS and initial projects for active workstreams (with goals per project)
-
-**Success criteria**: Human types `/pm`, sees the loop status, approves the recommended action, and the agent executes it. `/linear:idea` captures ideas. `/linear:done` closes the loop.
-
-### Phase 2: Structured Loop (Week 3-4)
-
-**Goal**: `/pm` can triage, plan, and research — not just dispatch tasks.
-
-- [ ] Build internal operations: `/linear:triage`, `/linear:plan`, `/linear:research`
-- [ ] Add templates to `linear-loop` skill:
-  - `templates/triage-idea.md` and `templates/triage-signal.md`
-  - `templates/research-market.md` and `templates/research-technical.md`
-  - `templates/plan-simple.md` and `templates/plan-complex.md`
-  - `templates/monitor-outcome.md`
-  - `templates/dispatch-priority.md`
-- [ ] Add `conventions/labels.md` reference document
-- [ ] Build `linear-triage-agent` subagent (for batch triage)
-- [ ] Build `linear-planner-agent` subagent (for hypothesis decomposition)
-
-**Success criteria**: `/pm` autonomously triages issues, decomposes hypotheses (routing complex ones through the spec workflow), and conducts structured research.
-
-### Phase 3: Automated Loop (Week 5-8)
-
-**Goal**: `/pm auto` runs on a schedule. Humans at approval gates only.
-
-- [ ] Implement `/pm auto` mode (take N actions without asking, except approval gates)
-- [ ] Build `linear-monitor-agent` subagent
-- [ ] Configure Pulse: run `/pm auto` every 2 hours
-- [ ] Relay integration for human approval gates:
-  - Telegram notification when hypothesis needs review
-  - Telegram notification when pivot/persevere decision is needed
-  - Ability to approve/reject via Telegram reply
-- [ ] Signal ingestion from git events (PR merged → create monitor issue)
-- [ ] Signal ingestion from error logs (spike → create signal issue)
-- [ ] Automated hypothesis validation (compare before/after metrics)
-
-**Success criteria**: Pulse runs `/pm auto` on a schedule. The full loop runs: idea → triage → research → hypothesis → plan → execute → monitor → signal. Humans only intervene at Telegram approval gates.
-
-### Phase 4: Self-Improving (Week 9+)
-
-**Goal**: The system improves its own methodology.
-
-- [ ] Instruction feedback collection (agents rate skill templates after use)
-- [ ] Meta-issues for template improvement (auto-created when feedback is poor)
-- [ ] Hypothesis hit rate tracking (validated vs invalidated)
-- [ ] Loop velocity metrics (signal → outcome cycle time)
-- [ ] Prompt health dashboard (which templates work, which don't)
-- [ ] Agent-proposed ideas based on codebase analysis
-- [ ] External signal ingestion (PostHog, user feedback, competitor monitoring)
-- [ ] PMF tracking via Linear goals and milestones
-- [ ] Pivot/persevere decision framework with data preparation
-
-**Success criteria**: The system's instruction quality measurably improves over time. Loop velocity decreases. Hypothesis hit rate increases.
+These are Phase 3 deliverables. For now, `/pm` handles all operations directly.
 
 ## Architecture Decisions
 
@@ -558,25 +436,29 @@ Trade-offs we accept:
 - Confidence scores stored as labels, not numeric fields
 - Priority algorithm limited to Linear's built-in (Urgent/High/Medium/Low)
 
+### Why Ownership-Based Filtering (Not Hardcoded Project Lists)
+
+The original design used `activeProjects` and `defaultProject` in config.json — a hardcoded list that needed updating whenever projects were created or archived. Ownership-based filtering is better:
+
+- **Dynamic**: `/pm` discovers projects via `list_projects`, no config changes needed
+- **Self-service**: Assign a lead in the Linear UI to exclude a project — no Claude Code session required
+- **Applies to both projects and issues**: Projects filtered by lead, issues filtered by assignee
+- **Graceful degradation**: `"all"` mode shows everything for full visibility when needed
+
 ### Why One Skill with Progressive Discovery (Not Many Skills or Linear Documents)
 
 **Not Linear Documents** — they're constrained: must be tied to a project/initiative/issue (not standalone), have no folder/category system, MCP write operations are unreliable, and version history is not API-accessible.
 
 **Not many separate skills** — duplicates the label taxonomy across files, competes for attention in the skill listing, and requires independent pattern matching for auto-triggering (unnecessary since slash commands are the triggers).
 
-**One skill with templates** — follows the proven `executing-specs/` pattern already in this project. SKILL.md provides baseline conventions (always loaded). Templates in subdirectories are loaded on demand by slash commands that know which template to read. This gives us:
+**One skill with templates** — follows the proven pattern. SKILL.md provides baseline conventions (always loaded). Templates in subdirectories are loaded on demand. This gives us:
 
 - Git versioning with full history
 - Directory hierarchy that mirrors the Loop methodology stages
 - DRY conventions — label taxonomy written once
 - Progressive context loading — only the relevant template enters context
-- Cross-agent portability — Codex CLI supports identical pattern; others can flatten via build step
-
-Templates fetch Linear context dynamically (project goals, issue details, parent chains) via MCP at runtime. The template text itself is static and versioned locally.
 
 ### Why the Spec Workflow is NOT Replaced
-
-The spec workflow and Linear Loop operate at different abstraction levels:
 
 | Aspect           | Linear Loop                        | Spec Workflow                        |
 | ---------------- | ---------------------------------- | ------------------------------------ |
@@ -586,30 +468,14 @@ The spec workflow and Linear Loop operate at different abstraction levels:
 | **Lifecycle**    | Idea → hypothesis → monitoring     | Ideation → specification → execution |
 | **Time horizon** | Continuous, cross-feature          | Per-feature, finite                  |
 
-The Linear Loop feeds INTO the spec workflow (via `/linear:plan`) and receives results FROM it (via `/linear:done`). The spec workflow gains:
-
-- **Upstream**: Clear provenance for every spec (which Linear hypothesis triggered it?)
-- **Downstream**: Outcome tracking (did the shipped spec achieve its validation criteria?)
-- **Continuity**: Completed specs generate monitoring issues that feed new insights back into the loop
-
-### Why Skills + Slash Commands (Not a Standalone Agent)
-
-The Loop litepaper describes a standalone product. We implement it as Claude Code skills because:
-
-1. **Zero infrastructure** — no server to deploy, no auth to manage
-2. **Composable** — skills inject context into any conversation
-3. **Human-in-the-loop by default** — every action goes through Claude Code's approval flow
-4. **Progressive automation** — start manual, add Pulse scheduling incrementally
-5. **Context-rich** — agents have full codebase context, not just issue descriptions
+The Linear Loop feeds INTO the spec workflow (via `/pm` planning step) and receives results FROM it (via `/linear:done`). Spec-Linear traceability is maintained via `linear-issue` frontmatter and `linearIssue` manifest fields.
 
 ### Pull vs Push Architecture
-
-Following the Loop litepaper's pull architecture:
 
 - `/pm` pulls the current state from Linear, assesses, and acts — not pushed by webhooks
 - Pulse schedules `/pm auto` on a cadence (every N hours)
 - This avoids webhook infrastructure and keeps agents in control
-- Linear webhooks could be added later for real-time signal ingestion
+- Linear's GitHub integration may be added in Phase 3 for PR-based status updates
 
 ## DorkOS Integration Points
 
@@ -631,19 +497,86 @@ Following the Loop litepaper's pull architecture:
 - **Capability routing**: Route research tasks to agents with relevant context
 - **Status visibility**: Dashboard shows which agents are working on which issues
 
+## Phased Implementation
+
+### Phase 1: Foundation ✓
+
+**Goal**: `/pm` works. Human types one command, sees status, gets a recommendation, approves it.
+
+- [x] Create label taxonomy in Linear workspace (17 labels across 4 groups + `needs-input`)
+- [x] Create `linear-loop` skill with core conventions, sizing criteria, template routing
+- [x] Build `/pm` command with 5 modes (status, auto, audit, direct issue, freeform intake)
+- [x] Build `/linear:idea` command
+- [x] Build `/linear:done` command
+- [x] Implement ownership-based project filtering (`filter.ownership` in config.json)
+- [x] Implement project status awareness and automatic transitions
+- [x] Implement async human-in-the-loop (`needs-input` protocol)
+- [x] Implement next-steps comments on every action
+- [x] Add `conventions/labels.md` reference document
+- [x] Update CLAUDE.md with Linear conventions
+- [x] Create DorkOS team in Linear with initial projects
+
+**Delivered**: `/pm` shows the loop dashboard, recommends actions, executes on approval. `/pm <text>` classifies any input. `/pm DOR-47` works on specific issues. `/pm audit` runs workspace health checks. Ownership filtering discovers projects dynamically. Project status transitions are automatic.
+
+### Phase 2: Structured Loop (in progress)
+
+**Goal**: `/pm` can triage, plan, and research with structured methodology templates.
+
+- [x] `templates/triage-intake.md` — Universal input classifier
+- [x] `templates/triage-idea.md` — Idea evaluation
+- [x] `templates/plan-simple.md` — Direct task decomposition
+- [x] `templates/plan-complex.md` — Spec workflow bridge
+- [x] `templates/audit-workspace.md` — Workspace health check
+- [ ] `templates/triage-signal.md` — Signal evaluation
+- [ ] `templates/research-market.md` — Market research methodology
+- [ ] `templates/research-technical.md` — Technical research methodology
+- [ ] `templates/dispatch-priority.md` — Priority selection algorithm
+- [ ] `templates/monitor-outcome.md` — Outcome validation framework
+
+**Success criteria**: `/pm` autonomously triages issues, decomposes hypotheses (routing complex ones through the spec workflow), and conducts structured research — all guided by methodology templates.
+
+### Phase 3: Automated Loop
+
+**Goal**: `/pm auto` runs on a schedule. Humans at approval gates only.
+
+- [ ] Configure Pulse: run `/pm auto` every 2 hours
+- [ ] Build dedicated subagents for batch operations (triage, planner, monitor)
+- [ ] Relay integration for human approval gates (Telegram notifications)
+- [ ] Signal ingestion from git events (PR merged → create monitor issue)
+- [ ] Signal ingestion from error logs (spike → create signal issue)
+- [ ] Evaluate Linear's GitHub integration for PR-based status updates
+
+**Success criteria**: Pulse runs `/pm auto` on a schedule. The full loop runs: idea → triage → research → hypothesis → plan → execute → monitor → signal. Humans only intervene at Telegram approval gates.
+
+### Phase 4: Self-Improving
+
+**Goal**: The system improves its own methodology.
+
+- [ ] Instruction feedback collection (agents rate skill templates after use)
+- [ ] Meta-issues for template improvement (auto-created when feedback is poor)
+- [ ] Hypothesis hit rate tracking (validated vs invalidated)
+- [ ] Loop velocity metrics (signal → outcome cycle time)
+- [ ] Prompt health dashboard (which templates work, which don't)
+- [ ] Agent-proposed ideas based on codebase analysis
+- [ ] External signal ingestion (PostHog, user feedback, competitor monitoring)
+
+**Success criteria**: The system's instruction quality measurably improves over time. Loop velocity decreases. Hypothesis hit rate increases.
+
 ## What This Enables
 
 When fully operational, this system can:
 
-1. **Capture an idea** from any source (human thought, agent observation, signal) → Linear issue
-2. **Autonomously triage** it against project goals → accept/decline/defer
+1. **Capture input** from any source (human thought, agent observation, signal, product brief, bug report) → classified Linear issue(s)
+2. **Autonomously triage** against project goals → accept/decline/defer
 3. **Research the opportunity** with structured investigation → findings in issue comments
 4. **Form a hypothesis** with explicit validation criteria → testable prediction
 5. **Route to the right workflow** — simple tasks stay in Linear, complex features flow through `/ideate` → `/spec:execute`
 6. **Execute tasks** via Claude Code agent sessions → code shipped
 7. **Monitor outcomes** against validation criteria → hypothesis validated/invalidated
 8. **Iterate or pivot** based on evidence → new hypothesis or new direction
-9. **Improve its own instructions** based on agent feedback → better skill templates
-10. **Run continuously** without human intervention except at approval gates
+9. **Audit itself** — detect label issues, stale work, project status drift, spec-Linear mismatches
+10. **Ask for help** — when stuck, post a question to Linear and notify the human
+11. **Improve its own instructions** based on agent feedback → better skill templates
+12. **Run continuously** without human intervention except at approval gates
 
 The human sets the direction. The system does the rest. Loop.

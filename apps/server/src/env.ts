@@ -24,7 +24,7 @@ const serverEnvSchema = z.object({
   MCP_API_KEY: z.string().optional(),
   // Feature flags (boolean after transform)
   DORKOS_A2A_ENABLED: boolFlag,
-  DORKOS_PULSE_ENABLED: boolFlag,
+  DORKOS_TASKS_ENABLED: boolFlag,
   DORKOS_RELAY_ENABLED: boolFlag,
   // Activity feed — retention period for pruning (defaults to 30 days in service)
   DORKOS_ACTIVITY_RETENTION_DAYS: z.coerce.number().int().min(1).optional(),

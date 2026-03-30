@@ -105,7 +105,7 @@ const baseProps = {
   onQueueNavigateUp: vi.fn(),
   onQueueNavigateDown: vi.fn(),
   presenceInfo: null,
-  presencePulse: false,
+  presenceTasks: false,
   activeInteraction: null,
   focusedOptionIndex: 0,
   onToolRef: vi.fn(),

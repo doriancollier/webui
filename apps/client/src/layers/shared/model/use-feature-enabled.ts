@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useTransport } from './TransportContext';
 
-type Subsystem = 'pulse' | 'relay';
+type Subsystem = 'tasks' | 'relay';
 
 const CONFIG_STALE_TIME = 5 * 60 * 1000;
 

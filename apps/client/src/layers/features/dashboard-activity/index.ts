@@ -1,6 +1,6 @@
 /**
  * Dashboard activity feature — time-grouped event feed with last-visit tracking.
- * Aggregates session and Pulse events into Today/Yesterday/Last 7 days groups.
+ * Aggregates session and Tasks events into Today/Yesterday/Last 7 days groups.
  *
  * @module features/dashboard-activity
  */

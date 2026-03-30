@@ -10,7 +10,7 @@ export interface SetDirOptions {
   /**
    * When true, skip clearing the active session ID on directory change.
    * Use this when you intend to set a new session immediately after switching
-   * directories (e.g. navigating to a Pulse run in a different CWD).
+   * directories (e.g. navigating to a Tasks run in a different CWD).
    */
   preserveSession?: boolean;
 }

@@ -13,7 +13,7 @@ import {
   createUpdateScheduleHandler,
   createDeleteScheduleHandler,
   createGetRunHistoryHandler,
-} from '../runtimes/claude-code/mcp-tools/pulse-tools.js';
+} from '../runtimes/claude-code/mcp-tools/task-tools.js';
 import {
   createRelaySendHandler,
   createRelayInboxHandler,
@@ -108,18 +108,18 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
     createGetAgentHandler(deps)
   );
 
-  // ── Pulse tools ─────────────────────────────────────────────────────────
+  // ── Tasks tools ─────────────────────────────────────────────────────────
   server.tool(
-    'pulse_list_schedules',
-    'List all Pulse scheduled jobs. Returns schedule definitions with status and configuration.',
+    'tasks_list',
+    'List all Tasks scheduled jobs. Returns schedule definitions with status and configuration.',
     {
       enabled_only: z.boolean().optional().describe('Only return enabled schedules'),
     },
     createListSchedulesHandler(deps)
   );
   server.tool(
-    'pulse_create_schedule',
-    'Create a new Pulse scheduled job. The schedule will be created with pending_approval status and must be approved by the user before it can run.',
+    'tasks_create',
+    'Create a new Tasks scheduled job. The schedule will be created with pending_approval status and must be approved by the user before it can run.',
     {
       name: z.string().describe('Name for the scheduled job'),
       prompt: z.string().describe('The prompt to send to the agent on each run'),
@@ -135,8 +135,8 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
     createCreateScheduleHandler(deps)
   );
   server.tool(
-    'pulse_update_schedule',
-    'Update an existing Pulse schedule. Only provided fields are updated.',
+    'tasks_update',
+    'Update an existing Tasks schedule. Only provided fields are updated.',
     {
       id: z.string().describe('Schedule ID to update'),
       name: z.string().optional().describe('New name'),
@@ -150,16 +150,16 @@ export function createExternalMcpServer(deps: McpToolDeps): McpServer {
     createUpdateScheduleHandler(deps)
   );
   server.tool(
-    'pulse_delete_schedule',
-    'Delete a Pulse schedule permanently.',
+    'tasks_delete',
+    'Delete a Tasks schedule permanently.',
     {
       id: z.string().describe('Schedule ID to delete'),
     },
     createDeleteScheduleHandler(deps)
   );
   server.tool(
-    'pulse_get_run_history',
-    'Get recent run history for a Pulse schedule.',
+    'tasks_get_run_history',
+    'Get recent run history for a Tasks schedule.',
     {
       schedule_id: z.string().describe('Schedule ID to get runs for'),
       limit: z.number().optional().describe('Max runs to return (default 20)'),

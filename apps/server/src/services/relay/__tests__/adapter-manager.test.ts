@@ -1482,7 +1482,7 @@ describe('AdapterManager', () => {
       const manager = new AdapterManager(registry, '/tmp/adapters.json', deps);
 
       expect(manager.buildContext('relay.human.console.client-1')).toBeUndefined();
-      expect(manager.buildContext('relay.system.pulse.sched-1')).toBeUndefined();
+      expect(manager.buildContext('relay.system.tasks.sched-1')).toBeUndefined();
       expect(manager.buildContext('relay.inbox.some-agent')).toBeUndefined();
     });
 

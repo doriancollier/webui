@@ -72,7 +72,7 @@ const POST_SESSIONS =
   '\n\nThe session routes are migrated. Let me now handle the agent routes, which have the most validation logic.\n\n';
 
 const POST_AGENTS =
-  '\n\nAgent routes are done. Let me migrate the remaining routes: health, config, and pulse.\n\n';
+  '\n\nAgent routes are done. Let me migrate the remaining routes: health, config, and tasks.\n\n';
 
 const POST_REMAINING =
   '\n\nAll routes migrated. Now I need to write comprehensive tests. Let me create the test file with coverage for validation, error handling, and happy paths.\n\n';
@@ -92,7 +92,7 @@ const FINAL_SUMMARY = `Refactoring complete. Here's a summary of all changes:
 - \`src/routes/agents.ts\` — Migrated 5 endpoints with input validation
 - \`src/routes/health.ts\` — Migrated 2 endpoints
 - \`src/routes/config.ts\` — Migrated 3 endpoints
-- \`src/routes/pulse.ts\` — Migrated 4 endpoints
+- \`src/routes/tasks.ts\` — Migrated 4 endpoints
 - \`src/middleware/error-handler.ts\` — Updated to handle typed API errors
 
 ### Key Improvements
@@ -263,7 +263,7 @@ export const deepRefactor: SimScenario = {
       patch: {
         status: 'complete',
         result:
-          'src/routes/sessions.ts:15,22,34,48,62,78\nsrc/routes/agents.ts:12,28,41,55,68\nsrc/routes/health.ts:8,14\nsrc/routes/config.ts:10,18,26\nsrc/routes/pulse.ts:12,20,31,42\nsrc/routes/relay.ts:8,15\nsrc/routes/mesh.ts:10,22\nsrc/routes/discovery.ts:8',
+          'src/routes/sessions.ts:15,22,34,48,62,78\nsrc/routes/agents.ts:12,28,41,55,68\nsrc/routes/health.ts:8,14\nsrc/routes/config.ts:10,18,26\nsrc/routes/tasks.ts:12,20,31,42\nsrc/routes/relay.ts:8,15\nsrc/routes/mesh.ts:10,22\nsrc/routes/discovery.ts:8',
       },
       delayMs: 400,
     },
@@ -452,7 +452,7 @@ export const deepRefactor: SimScenario = {
       toolCallId: 'sim-dr-edit3',
       patch: {
         status: 'complete',
-        result: 'File edited successfully. 9 routes migrated across health, config, pulse.',
+        result: 'File edited successfully. 9 routes migrated across health, config, tasks.',
         hooks: [
           createHookState({
             hookId: 'sim-dr-hook',
@@ -509,7 +509,7 @@ export const deepRefactor: SimScenario = {
       patch: {
         status: 'complete',
         result:
-          '✓ GET /api/sessions returns list (12ms)\n✓ GET /api/sessions/:id returns session (8ms)\n✓ GET /api/sessions/:id returns 404 for unknown (5ms)\n✓ POST /api/sessions validates input (6ms)\n✓ DELETE /api/sessions/:id returns 204 (4ms)\n✓ GET /api/agents returns list (10ms)\n✓ POST /api/agents validates required fields (7ms)\n✓ POST /api/agents rejects invalid input (4ms)\n✓ PUT /api/agents/:id updates agent (9ms)\n✓ PUT /api/agents/:id returns 404 for unknown (5ms)\n✓ DELETE /api/agents/:id returns 204 (3ms)\n✓ GET /health returns status (2ms)\n✓ GET /health/detailed returns metrics (4ms)\n✓ GET /api/config returns config (3ms)\n✓ PUT /api/config validates schema (6ms)\n✓ PUT /api/config rejects unknown keys (4ms)\n✓ GET /api/pulse/schedules returns list (8ms)\n✓ POST /api/pulse/schedules validates cron (5ms)\n✓ PUT /api/pulse/schedules/:id updates (7ms)\n✓ DELETE /api/pulse/schedules/:id returns 204 (3ms)\n✓ Error handler formats ValidationError (2ms)\n✓ Error handler formats NotFoundError (2ms)\n✓ Error handler formats AuthError (2ms)\n✓ Error handler returns 500 for unknown errors (2ms)\n\nTest Files  1 passed (1)\nTests      24 passed (24)\nDuration   0.14s',
+          '✓ GET /api/sessions returns list (12ms)\n✓ GET /api/sessions/:id returns session (8ms)\n✓ GET /api/sessions/:id returns 404 for unknown (5ms)\n✓ POST /api/sessions validates input (6ms)\n✓ DELETE /api/sessions/:id returns 204 (4ms)\n✓ GET /api/agents returns list (10ms)\n✓ POST /api/agents validates required fields (7ms)\n✓ POST /api/agents rejects invalid input (4ms)\n✓ PUT /api/agents/:id updates agent (9ms)\n✓ PUT /api/agents/:id returns 404 for unknown (5ms)\n✓ DELETE /api/agents/:id returns 204 (3ms)\n✓ GET /health returns status (2ms)\n✓ GET /health/detailed returns metrics (4ms)\n✓ GET /api/config returns config (3ms)\n✓ PUT /api/config validates schema (6ms)\n✓ PUT /api/config rejects unknown keys (4ms)\n✓ GET /api/tasks returns list (8ms)\n✓ POST /api/tasks validates cron (5ms)\n✓ PUT /api/tasks/:id updates (7ms)\n✓ DELETE /api/tasks/:id returns 204 (3ms)\n✓ Error handler formats ValidationError (2ms)\n✓ Error handler formats NotFoundError (2ms)\n✓ Error handler formats AuthError (2ms)\n✓ Error handler returns 500 for unknown errors (2ms)\n\nTest Files  1 passed (1)\nTests      24 passed (24)\nDuration   0.14s',
       },
       delayMs: 600,
     },

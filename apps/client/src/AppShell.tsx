@@ -130,7 +130,7 @@ export function AppShell() {
   const isStreaming = useAppStore((s) => s.isStreaming);
   const activeForm = useAppStore((s) => s.activeForm);
   const isWaitingForUser = useAppStore((s) => s.isWaitingForUser);
-  const pulseBadgeCount = useAppStore((s) => s.pulseBadgeCount);
+  const tasksBadgeCount = useAppStore((s) => s.tasksBadgeCount);
   const { data: currentAgent } = useCurrentAgent(selectedCwd);
   const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
   useFavicon({
@@ -145,7 +145,7 @@ export function AppShell() {
     isWaitingForUser,
     agentName: currentAgent?.name,
     agentEmoji: currentAgent ? agentVisual.emoji : undefined,
-    pulseBadgeCount,
+    tasksBadgeCount,
   });
 
   useShortcutsPanel();

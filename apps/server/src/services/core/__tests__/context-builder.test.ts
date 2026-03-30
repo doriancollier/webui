@@ -25,8 +25,8 @@ vi.mock('../../../lib/version.js', () => ({
 vi.mock('../../relay/relay-state.js', () => ({
   isRelayEnabled: vi.fn(() => true),
 }));
-vi.mock('../../pulse/pulse-state.js', () => ({
-  isPulseEnabled: vi.fn(() => true),
+vi.mock('../../tasks/task-state.js', () => ({
+  isTasksEnabled: vi.fn(() => true),
 }));
 vi.mock('../config-manager.js', () => ({
   configManager: {
@@ -34,7 +34,7 @@ vi.mock('../config-manager.js', () => ({
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     })),
   },
 }));
@@ -45,7 +45,7 @@ import {
   _buildRelayToolsBlock,
   _buildMeshToolsBlock,
   _buildAdapterToolsBlock,
-  _buildPulseToolsBlock,
+  _buildTasksToolsBlock,
   _buildPeerAgentsBlock,
   _buildRelayConnectionsBlock,
 } from '../../runtimes/claude-code/context-builder.js';
@@ -53,7 +53,7 @@ import type { RelayContextDeps } from '../../runtimes/claude-code/context-builde
 import { getGitStatus } from '../git-status.js';
 import { readManifest } from '@dorkos/shared/manifest';
 import { isRelayEnabled } from '../../relay/relay-state.js';
-import { isPulseEnabled } from '../../pulse/pulse-state.js';
+import { isTasksEnabled } from '../../tasks/task-state.js';
 import { configManager } from '../config-manager.js';
 import type { GitStatusResponse } from '@dorkos/shared/types';
 
@@ -101,12 +101,12 @@ describe('buildSystemPromptAppend', () => {
     mockedGetGitStatus.mockResolvedValue(makeGitStatus());
     mockedReadManifest.mockResolvedValue(null);
     vi.mocked(isRelayEnabled).mockReturnValue(true);
-    vi.mocked(isPulseEnabled).mockReturnValue(true);
+    vi.mocked(isTasksEnabled).mockReturnValue(true);
     vi.mocked(configManager.get).mockReturnValue({
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
   });
 
@@ -229,19 +229,19 @@ describe('buildSystemPromptAppend', () => {
 
   it('includes tool context blocks in output when features are enabled', async () => {
     vi.mocked(isRelayEnabled).mockReturnValue(true);
-    vi.mocked(isPulseEnabled).mockReturnValue(true);
+    vi.mocked(isTasksEnabled).mockReturnValue(true);
     vi.mocked(configManager.get).mockReturnValue({
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
     const result = await buildSystemPromptAppend('/test/dir');
     expect(result).toContain('<env>');
     expect(result).toContain('<relay_tools>');
     expect(result).toContain('<mesh_tools>');
     expect(result).toContain('<adapter_tools>');
-    expect(result).toContain('<pulse_tools>');
+    expect(result).toContain('<tasks_tools>');
   });
 
   it('excludes relay and adapter blocks when relay is disabled', async () => {
@@ -258,14 +258,14 @@ describe('buildSystemPromptAppend', () => {
       relayTools: false,
       meshTools: false,
       adapterTools: false,
-      pulseTools: false,
+      tasksTools: false,
     });
     const result = await buildSystemPromptAppend('/test/dir');
     expect(result).toContain('<env>');
     expect(result).not.toContain('<relay_tools>');
     expect(result).not.toContain('<mesh_tools>');
     expect(result).not.toContain('<adapter_tools>');
-    expect(result).not.toContain('<pulse_tools>');
+    expect(result).not.toContain('<tasks_tools>');
   });
 });
 
@@ -276,12 +276,12 @@ describe('agent-aware block gating', () => {
     mockedGetGitStatus.mockResolvedValue(makeGitStatus());
     mockedReadManifest.mockResolvedValue(null);
     vi.mocked(isRelayEnabled).mockReturnValue(true);
-    vi.mocked(isPulseEnabled).mockReturnValue(true);
+    vi.mocked(isTasksEnabled).mockReturnValue(true);
   });
 
   it('omits relay block when toolConfig.relay=false', async () => {
     const result = await buildSystemPromptAppend('/tmp/test', null, {
-      pulse: true,
+      tasks: true,
       relay: false,
       mesh: true,
       adapter: true,
@@ -291,7 +291,7 @@ describe('agent-aware block gating', () => {
 
   it('omits mesh block when toolConfig.mesh=false', async () => {
     const result = await buildSystemPromptAppend('/tmp/test', null, {
-      pulse: true,
+      tasks: true,
       relay: true,
       mesh: false,
       adapter: true,
@@ -299,19 +299,19 @@ describe('agent-aware block gating', () => {
     expect(result).not.toContain('<mesh_tools>');
   });
 
-  it('omits pulse block when toolConfig.pulse=false', async () => {
+  it('omits tasks block when toolConfig.tasks=false', async () => {
     const result = await buildSystemPromptAppend('/tmp/test', null, {
-      pulse: false,
+      tasks: false,
       relay: true,
       mesh: true,
       adapter: true,
     });
-    expect(result).not.toContain('<pulse_tools>');
+    expect(result).not.toContain('<tasks_tools>');
   });
 
   it('omits adapter block when toolConfig.adapter=false', async () => {
     const result = await buildSystemPromptAppend('/tmp/test', null, {
-      pulse: true,
+      tasks: true,
       relay: true,
       mesh: true,
       adapter: false,
@@ -319,14 +319,14 @@ describe('agent-aware block gating', () => {
     expect(result).not.toContain('<adapter_tools>');
   });
 
-  it('includes pulse block when toolConfig.pulse=true', async () => {
+  it('includes tasks block when toolConfig.tasks=true', async () => {
     const result = await buildSystemPromptAppend('/tmp/test', null, {
-      pulse: true,
+      tasks: true,
       relay: true,
       mesh: true,
       adapter: true,
     });
-    expect(result).toContain('<pulse_tools>');
+    expect(result).toContain('<tasks_tools>');
   });
 
   it('backward compat: no extra args works as before', async () => {
@@ -340,10 +340,10 @@ describe('agent-aware block gating', () => {
       relayTools: false,
       meshTools: false,
       adapterTools: false,
-      pulseTools: false,
+      tasksTools: false,
     });
     const result = await buildSystemPromptAppend('/tmp/test', null, {
-      pulse: true,
+      tasks: true,
       relay: true,
       mesh: true,
       adapter: true,
@@ -351,7 +351,7 @@ describe('agent-aware block gating', () => {
     expect(result).toContain('<relay_tools>');
     expect(result).toContain('<mesh_tools>');
     expect(result).toContain('<adapter_tools>');
-    expect(result).toContain('<pulse_tools>');
+    expect(result).toContain('<tasks_tools>');
   });
 });
 
@@ -454,7 +454,7 @@ describe('buildRelayToolsBlock', () => {
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
   });
 
@@ -478,7 +478,7 @@ describe('buildRelayToolsBlock', () => {
       relayTools: false,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
     expect(_buildRelayToolsBlock()).toBe('');
   });
@@ -491,13 +491,13 @@ describe('buildRelayToolsBlock', () => {
 
   it('uses toolConfig when provided (relay=true)', () => {
     vi.mocked(isRelayEnabled).mockReturnValue(false); // global says off
-    const result = _buildRelayToolsBlock({ pulse: true, relay: true, mesh: true, adapter: true });
+    const result = _buildRelayToolsBlock({ tasks: true, relay: true, mesh: true, adapter: true });
     expect(result).toContain('<relay_tools>');
   });
 
   it('uses toolConfig when provided (relay=false)', () => {
     vi.mocked(isRelayEnabled).mockReturnValue(true); // global says on
-    const result = _buildRelayToolsBlock({ pulse: true, relay: false, mesh: true, adapter: true });
+    const result = _buildRelayToolsBlock({ tasks: true, relay: false, mesh: true, adapter: true });
     expect(result).toBe('');
   });
 });
@@ -509,7 +509,7 @@ describe('buildMeshToolsBlock', () => {
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
   });
 
@@ -528,7 +528,7 @@ describe('buildMeshToolsBlock', () => {
       relayTools: true,
       meshTools: false,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
     expect(_buildMeshToolsBlock()).toBe('');
   });
@@ -546,7 +546,7 @@ describe('buildMeshToolsBlock', () => {
   });
 
   it('uses toolConfig when provided (mesh=false)', () => {
-    const result = _buildMeshToolsBlock({ pulse: true, relay: true, mesh: false, adapter: true });
+    const result = _buildMeshToolsBlock({ tasks: true, relay: true, mesh: false, adapter: true });
     expect(result).toBe('');
   });
 });
@@ -559,7 +559,7 @@ describe('buildAdapterToolsBlock', () => {
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
   });
 
@@ -582,7 +582,7 @@ describe('buildAdapterToolsBlock', () => {
       relayTools: true,
       meshTools: true,
       adapterTools: false,
-      pulseTools: true,
+      tasksTools: true,
     });
     expect(_buildAdapterToolsBlock()).toBe('');
   });
@@ -595,7 +595,7 @@ describe('buildAdapterToolsBlock', () => {
 
   it('uses toolConfig when provided (adapter=false)', () => {
     const result = _buildAdapterToolsBlock({
-      pulse: true,
+      tasks: true,
       relay: true,
       mesh: true,
       adapter: false,
@@ -604,32 +604,32 @@ describe('buildAdapterToolsBlock', () => {
   });
 });
 
-describe('buildPulseToolsBlock', () => {
+describe('buildTasksToolsBlock', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(isPulseEnabled).mockReturnValue(true);
+    vi.mocked(isTasksEnabled).mockReturnValue(true);
     vi.mocked(configManager.get).mockReturnValue({
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: true,
+      tasksTools: true,
     });
   });
 
-  it('returns pulse context when pulse enabled and config on', () => {
-    const result = _buildPulseToolsBlock();
-    expect(result).toContain('<pulse_tools>');
-    expect(result).toContain('pulse_list_schedules');
-    expect(result).toContain('pulse_create_schedule');
-    expect(result).toContain('pulse_update_schedule');
-    expect(result).toContain('pulse_delete_schedule');
-    expect(result).toContain('pulse_get_run_history');
-    expect(result).toContain('</pulse_tools>');
+  it('returns tasks context when tasks enabled and config on', () => {
+    const result = _buildTasksToolsBlock();
+    expect(result).toContain('<tasks_tools>');
+    expect(result).toContain('tasks_list');
+    expect(result).toContain('tasks_create');
+    expect(result).toContain('tasks_update');
+    expect(result).toContain('tasks_delete');
+    expect(result).toContain('tasks_get_run_history');
+    expect(result).toContain('</tasks_tools>');
   });
 
-  it('returns empty string when pulse disabled', () => {
-    vi.mocked(isPulseEnabled).mockReturnValue(false);
-    expect(_buildPulseToolsBlock()).toBe('');
+  it('returns empty string when tasks disabled', () => {
+    vi.mocked(isTasksEnabled).mockReturnValue(false);
+    expect(_buildTasksToolsBlock()).toBe('');
   });
 
   it('returns empty string when config toggle is off', () => {
@@ -637,26 +637,26 @@ describe('buildPulseToolsBlock', () => {
       relayTools: true,
       meshTools: true,
       adapterTools: true,
-      pulseTools: false,
+      tasksTools: false,
     });
-    expect(_buildPulseToolsBlock()).toBe('');
+    expect(_buildTasksToolsBlock()).toBe('');
   });
 
-  it('returns pulse context when config is undefined (default behavior)', () => {
+  it('returns tasks context when config is undefined (default behavior)', () => {
     vi.mocked(configManager.get).mockReturnValue(undefined);
-    const result = _buildPulseToolsBlock();
-    expect(result).toContain('<pulse_tools>');
+    const result = _buildTasksToolsBlock();
+    expect(result).toContain('<tasks_tools>');
   });
 
-  it('uses toolConfig when provided (pulse=true)', () => {
-    vi.mocked(isPulseEnabled).mockReturnValue(false); // global says off
-    const result = _buildPulseToolsBlock({ pulse: true, relay: true, mesh: true, adapter: true });
-    expect(result).toContain('<pulse_tools>');
+  it('uses toolConfig when provided (tasks=true)', () => {
+    vi.mocked(isTasksEnabled).mockReturnValue(false); // global says off
+    const result = _buildTasksToolsBlock({ tasks: true, relay: true, mesh: true, adapter: true });
+    expect(result).toContain('<tasks_tools>');
   });
 
-  it('uses toolConfig when provided (pulse=false)', () => {
-    vi.mocked(isPulseEnabled).mockReturnValue(true); // global says on
-    const result = _buildPulseToolsBlock({ pulse: false, relay: true, mesh: true, adapter: true });
+  it('uses toolConfig when provided (tasks=false)', () => {
+    vi.mocked(isTasksEnabled).mockReturnValue(true); // global says on
+    const result = _buildTasksToolsBlock({ tasks: false, relay: true, mesh: true, adapter: true });
     expect(result).toBe('');
   });
 });
@@ -784,7 +784,7 @@ describe('buildRelayConnectionsBlock', () => {
     };
   }
 
-  const allOnToolConfig = { pulse: true, relay: true, mesh: true, adapter: true };
+  const allOnToolConfig = { tasks: true, relay: true, mesh: true, adapter: true };
 
   beforeEach(() => {
     vi.clearAllMocks();

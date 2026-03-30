@@ -39,14 +39,14 @@ describe('AgentAvatar', () => {
     expect(xsClasses).not.toEqual(lgClasses);
   });
 
-  it('shows active health pulse indicator', () => {
+  it('shows active health tasks indicator', () => {
     const { container } = render(<AgentAvatar color="#fff" emoji="🤖" healthStatus="active" />);
     const avatar = container.querySelector('[data-slot="agent-avatar"]')!;
     expect(avatar.className).toContain('ring-2');
     expect(avatar.querySelector('.animate-ping')).toBeInTheDocument();
   });
 
-  it('shows health ring without pulse for non-active statuses', () => {
+  it('shows health ring without tasks for non-active statuses', () => {
     const { container } = render(<AgentAvatar color="#fff" emoji="🤖" healthStatus="inactive" />);
     const avatar = container.querySelector('[data-slot="agent-avatar"]')!;
     expect(avatar.className).toContain('ring-2');

@@ -6,7 +6,7 @@ import type {
   AgentRuntimeLike,
   AgentSessionStoreLike,
   TraceStoreLike,
-  PulseStoreLike,
+  TasksStoreLike,
   ClaudeCodeAdapterDeps,
 } from '../index.js';
 import type { RelayPublisher, AdapterContext } from '../../../types.js';
@@ -34,7 +34,7 @@ function createMockTraceStore(): TraceStoreLike {
   };
 }
 
-function createMockPulseStore(): PulseStoreLike {
+function createMockTasksStore(): TasksStoreLike {
   return {
     updateRun: vi.fn(),
   };
@@ -67,11 +67,11 @@ function createTestEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope {
   };
 }
 
-function createPulseEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope {
+function createTasksEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope {
   return {
     id: 'msg-002',
-    subject: 'relay.system.pulse.budget-monitor',
-    from: 'system:pulse',
+    subject: 'relay.system.tasks.budget-monitor',
+    from: 'system:tasks',
     replyTo: 'relay.human.console.client-1',
     budget: {
       hopCount: 0,
@@ -82,13 +82,13 @@ function createPulseEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope 
     },
     createdAt: new Date().toISOString(),
     payload: {
-      type: 'pulse_dispatch',
-      scheduleId: 'sched-1',
+      type: 'task_dispatch',
+      taskId: 'sched-1',
       runId: 'run-1',
       prompt: 'Check the budget',
       cwd: '/home/user/project',
       permissionMode: 'default',
-      scheduleName: 'Budget Monitor',
+      taskName: 'Budget Monitor',
       cron: '0 * * * *',
       trigger: 'cron',
     },
@@ -98,7 +98,7 @@ function createPulseEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope 
 
 // === Compliance Suite ===
 // NOTE: Compliance suite not run for ClaudeCodeAdapter because it depends on
-// injected services (AgentRuntimeLike, TraceStoreLike, PulseStoreLike) and
+// injected services (AgentRuntimeLike, TraceStoreLike, TasksStoreLike) and
 // deliver() drives an SDK agent session via sendMessage(). The compliance
 // suite's generic createAdapter() factory cannot wire up these dependencies.
 // All compliance behaviors (shape, lifecycle, idempotency, delivery, status)
@@ -109,7 +109,7 @@ function createPulseEnvelope(overrides?: Partial<RelayEnvelope>): RelayEnvelope 
 describe('ClaudeCodeAdapter', () => {
   let agentManager: AgentRuntimeLike;
   let traceStore: TraceStoreLike;
-  let pulseStore: PulseStoreLike;
+  let taskStore: TasksStoreLike;
   let deps: ClaudeCodeAdapterDeps;
   let relay: RelayPublisher;
   let adapter: ClaudeCodeAdapter;
@@ -117,9 +117,9 @@ describe('ClaudeCodeAdapter', () => {
   beforeEach(() => {
     agentManager = createMockAgentManager();
     traceStore = createMockTraceStore();
-    pulseStore = createMockPulseStore();
+    taskStore = createMockTasksStore();
     relay = createMockRelay();
-    deps = { agentManager, traceStore, pulseStore };
+    deps = { agentManager, traceStore, taskStore };
     adapter = new ClaudeCodeAdapter('claude-code', { defaultCwd: '/default/cwd' }, deps);
   });
 
@@ -383,11 +383,11 @@ describe('ClaudeCodeAdapter', () => {
     );
   });
 
-  // === Pulse message delivery ===
+  // === Tasks message delivery ===
 
-  it('handles Pulse dispatch messages — validates payload, updates PulseStore lifecycle', async () => {
+  it('handles Tasks dispatch messages — validates payload, updates TasksStore lifecycle', async () => {
     await adapter.start(relay);
-    const envelope = createPulseEnvelope();
+    const envelope = createTasksEnvelope();
 
     const result = await adapter.deliver(envelope.subject, envelope);
 
@@ -397,15 +397,15 @@ describe('ClaudeCodeAdapter', () => {
       'Check the budget',
       expect.anything()
     );
-    expect(pulseStore.updateRun).toHaveBeenCalledWith(
+    expect(taskStore.updateRun).toHaveBeenCalledWith(
       'run-1',
       expect.objectContaining({ status: 'completed' })
     );
   });
 
-  it('Pulse: records failed trace for invalid payload', async () => {
+  it('Tasks: records failed trace for invalid payload', async () => {
     await adapter.start(relay);
-    const envelope = createPulseEnvelope({
+    const envelope = createTasksEnvelope({
       payload: { invalid: 'payload' },
     });
 
@@ -417,9 +417,9 @@ describe('ClaudeCodeAdapter', () => {
     );
   });
 
-  it('Pulse: updates PulseStore to cancelled when TTL already expired', async () => {
+  it('Tasks: updates TasksStore to cancelled when TTL already expired', async () => {
     await adapter.start(relay);
-    const envelope = createPulseEnvelope({
+    const envelope = createTasksEnvelope({
       budget: {
         hopCount: 0,
         maxHops: 5,
@@ -433,8 +433,8 @@ describe('ClaudeCodeAdapter', () => {
 
     // Should fail due to expired TTL
     expect(result.success).toBe(false);
-    // PulseStore should be updated (failed or cancelled)
-    expect(pulseStore.updateRun).toHaveBeenCalledWith(
+    // TasksStore should be updated (failed or cancelled)
+    expect(taskStore.updateRun).toHaveBeenCalledWith(
       'run-1',
       expect.objectContaining({ status: expect.stringMatching(/failed|cancelled/) })
     );
@@ -729,7 +729,7 @@ describe('ClaudeCodeAdapter', () => {
     });
   });
 
-  it('Pulse: collects output summary up to 1000 chars', async () => {
+  it('Tasks: collects output summary up to 1000 chars', async () => {
     // Generate events with text that exceeds 1000 chars total
     const longText = 'a'.repeat(600);
     vi.mocked(agentManager.sendMessage).mockReturnValue(
@@ -741,11 +741,11 @@ describe('ClaudeCodeAdapter', () => {
     );
 
     await adapter.start(relay);
-    const envelope = createPulseEnvelope();
+    const envelope = createTasksEnvelope();
 
     await adapter.deliver(envelope.subject, envelope);
 
-    const updateCall = vi.mocked(pulseStore.updateRun).mock.calls[0][1];
+    const updateCall = vi.mocked(taskStore.updateRun).mock.calls[0][1];
     expect((updateCall.outputSummary as string).length).toBeLessThanOrEqual(1000);
   });
 

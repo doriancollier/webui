@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useCurrentAgent } from './use-current-agent';
 import { useRelayEnabled } from '@/layers/entities/relay';
-import { usePulseEnabled } from '@/layers/entities/pulse';
+import { useTasksEnabled } from '@/layers/entities/tasks';
 
 /**
  * The three possible states for an agent tool chip.
@@ -14,7 +14,7 @@ export type ChipState = 'enabled' | 'disabled-by-agent' | 'disabled-by-server';
 
 /** Per-domain tool status for a given agent. */
 export interface AgentToolStatus {
-  pulse: ChipState;
+  tasks: ChipState;
   relay: ChipState;
   mesh: ChipState;
   adapter: ChipState;
@@ -24,7 +24,7 @@ export interface AgentToolStatus {
  * Resolve per-domain tool chip state for the agent at the given project path.
  *
  * Merges per-agent `enabledToolGroups` overrides with server feature flags:
- * - `disabled-by-server` wins over all agent settings (relay/pulse feature gate).
+ * - `disabled-by-server` wins over all agent settings (relay/tasks feature gate).
  * - `disabled-by-agent` applies when the agent manifest explicitly sets the key to `false`.
  * - `enabled` when neither gate fires.
  * - Mesh has no server feature flag — only agent-level disable is possible.
@@ -34,15 +34,15 @@ export interface AgentToolStatus {
 export function useAgentToolStatus(projectPath: string | null): AgentToolStatus {
   const { data: agent } = useCurrentAgent(projectPath);
   const relayEnabled = useRelayEnabled();
-  const pulseEnabled = usePulseEnabled();
+  const tasksEnabled = useTasksEnabled();
 
   return useMemo((): AgentToolStatus => {
     const groups = agent?.enabledToolGroups ?? {};
 
     return {
-      pulse: !pulseEnabled
+      tasks: !tasksEnabled
         ? 'disabled-by-server'
-        : groups.pulse === false
+        : groups.tasks === false
           ? 'disabled-by-agent'
           : 'enabled',
       relay: !relayEnabled
@@ -58,5 +58,5 @@ export function useAgentToolStatus(projectPath: string | null): AgentToolStatus 
           ? 'disabled-by-agent'
           : 'enabled',
     };
-  }, [agent, relayEnabled, pulseEnabled]);
+  }, [agent, relayEnabled, tasksEnabled]);
 }

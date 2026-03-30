@@ -205,7 +205,7 @@ const defaultProps = {
   isStreaming: false,
   onChipClick: vi.fn(),
   presenceInfo: null,
-  presencePulse: false,
+  presenceTasks: false,
   syncConnectionState: 'connected' as const,
   syncFailedAttempts: 0,
 };

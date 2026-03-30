@@ -26,7 +26,7 @@ const makeAgent = (overrides: Partial<TopologyAgent> & { id: string }): Topology
   healthStatus: overrides.healthStatus ?? 'active',
   relayAdapters: [],
   relaySubject: null,
-  pulseScheduleCount: 0,
+  taskCount: 0,
   lastSeenAt: overrides.lastSeenAt ?? null,
   lastSeenEvent: null,
 });

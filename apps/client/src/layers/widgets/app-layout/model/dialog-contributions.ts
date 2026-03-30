@@ -1,7 +1,7 @@
 import type { DialogContribution } from '@/layers/shared/model';
 import { SettingsDialogWrapper } from './wrappers/SettingsDialogWrapper';
 import { DirectoryPickerWrapper } from './wrappers/DirectoryPickerWrapper';
-import { PulseDialogWrapper } from './wrappers/PulseDialogWrapper';
+import { TasksDialogWrapper } from './wrappers/TaskDialogWrapper';
 import { RelayDialogWrapper } from './wrappers/RelayDialogWrapper';
 import { MeshDialogWrapper } from './wrappers/MeshDialogWrapper';
 import { AgentDialogWrapper } from './wrappers/AgentDialogWrapper';
@@ -21,9 +21,9 @@ export const DIALOG_CONTRIBUTIONS: DialogContribution[] = [
     priority: 2,
   },
   {
-    id: 'pulse',
-    component: PulseDialogWrapper,
-    openStateKey: 'pulseOpen',
+    id: 'tasks',
+    component: TasksDialogWrapper,
+    openStateKey: 'tasksOpen',
     priority: 3,
   },
   {

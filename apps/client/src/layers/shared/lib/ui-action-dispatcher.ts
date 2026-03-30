@@ -16,8 +16,8 @@ export interface DispatcherStore {
   // Panels
   settingsOpen: boolean;
   setSettingsOpen: (open: boolean) => void;
-  pulseOpen: boolean;
-  setPulseOpen: (open: boolean) => void;
+  tasksOpen: boolean;
+  setTasksOpen: (open: boolean) => void;
   relayOpen: boolean;
   setRelayOpen: (open: boolean) => void;
   meshOpen: boolean;
@@ -140,7 +140,7 @@ export function executeUiCommand(ctx: DispatcherContext, command: UiCommand): vo
 function setPanelOpen(store: DispatcherStore, panel: UiPanelId, open: boolean): void {
   const setterMap: Record<UiPanelId, (open: boolean) => void> = {
     settings: store.setSettingsOpen,
-    pulse: store.setPulseOpen,
+    tasks: store.setTasksOpen,
     relay: store.setRelayOpen,
     mesh: store.setMeshOpen,
     picker: store.setPickerOpen,
@@ -151,7 +151,7 @@ function setPanelOpen(store: DispatcherStore, panel: UiPanelId, open: boolean): 
 function togglePanel(store: DispatcherStore, panel: UiPanelId): void {
   const getterMap: Record<UiPanelId, boolean> = {
     settings: store.settingsOpen,
-    pulse: store.pulseOpen,
+    tasks: store.tasksOpen,
     relay: store.relayOpen,
     mesh: store.meshOpen,
     picker: store.pickerOpen,

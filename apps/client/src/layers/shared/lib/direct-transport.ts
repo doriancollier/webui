@@ -21,7 +21,7 @@ import type {
   UploadProgress,
 } from '@dorkos/shared/types';
 import {
-  pulseStubs,
+  tasksStubs,
   relayStubs,
   adapterStubs,
   bindingStubs,
@@ -68,7 +68,7 @@ export interface DirectTransportServices {
  * In-process Transport adapter for the Obsidian plugin.
  *
  * Core session/command methods delegate to injected services.
- * Pulse, Relay, Mesh, and other server-only subsystems use stub
+ * Tasks, Relay, Mesh, and other server-only subsystems use stub
  * implementations from `embedded-mode-stubs.ts`.
  */
 export class DirectTransport implements Transport {
@@ -448,7 +448,7 @@ export class DirectTransport implements Transport {
     return DEFAULT_TEMPLATES;
   }
 
-  // --- Embedded mode stubs (Pulse, Relay, Mesh, etc.) ---
+  // --- Embedded mode stubs (Tasks, Relay, Mesh, etc.) ---
   // These subsystems are server-only. See embedded-mode-stubs.ts for implementations.
 
   startTunnel = serverOnlyStubs.startTunnel;
@@ -464,15 +464,15 @@ export class DirectTransport implements Transport {
   createAgent = serverOnlyStubs.createAgent;
   setDefaultAgent = serverOnlyStubs.setDefaultAgent;
 
-  listSchedules = pulseStubs.listSchedules;
-  createSchedule = pulseStubs.createSchedule;
-  updateSchedule = pulseStubs.updateSchedule;
-  deleteSchedule = pulseStubs.deleteSchedule;
-  triggerSchedule = pulseStubs.triggerSchedule;
-  listRuns = pulseStubs.listRuns;
-  getRun = pulseStubs.getRun;
-  cancelRun = pulseStubs.cancelRun;
-  getPulsePresets = pulseStubs.getPulsePresets;
+  listTasks = tasksStubs.listTasks;
+  createTask = tasksStubs.createTask;
+  updateTask = tasksStubs.updateTask;
+  deleteTask = tasksStubs.deleteTask;
+  triggerTask = tasksStubs.triggerTask;
+  listTaskRuns = tasksStubs.listTaskRuns;
+  getTaskRun = tasksStubs.getTaskRun;
+  cancelTaskRun = tasksStubs.cancelTaskRun;
+  getTaskTemplates = tasksStubs.getTaskTemplates;
 
   listRelayMessages = relayStubs.listRelayMessages;
   getRelayMessage = relayStubs.getRelayMessage;

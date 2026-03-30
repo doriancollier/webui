@@ -88,26 +88,26 @@ function makeMockDeps(overrides: { listSessions?: ReturnType<typeof vi.fn> } = {
   };
 }
 
-/** Create a mock PulseStore with sensible defaults */
-function makeMockPulseStore(overrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}) {
+/** Create a mock TasksStore with sensible defaults */
+function makeMockTasksStore(overrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}) {
   return {
-    getSchedules: vi.fn().mockReturnValue([]),
-    getSchedule: vi.fn().mockReturnValue(null),
-    createSchedule: vi.fn().mockReturnValue({ id: 'new-1', name: 'Test' }),
-    updateSchedule: vi.fn().mockReturnValue(null),
-    deleteSchedule: vi.fn().mockReturnValue(false),
+    getTasks: vi.fn().mockReturnValue([]),
+    getTask: vi.fn().mockReturnValue(null),
+    createTask: vi.fn().mockReturnValue({ id: 'new-1', name: 'Test' }),
+    updateTask: vi.fn().mockReturnValue(null),
+    deleteTask: vi.fn().mockReturnValue(false),
     listRuns: vi.fn().mockReturnValue([]),
     ...overrides,
-  } as unknown as McpToolDeps['pulseStore'];
+  } as unknown as McpToolDeps['taskStore'];
 }
 
-/** Create mock deps with Pulse enabled */
-function makePulseDeps(
+/** Create mock deps with Tasks enabled */
+function makeTasksDeps(
   storeOverrides: Partial<Record<string, ReturnType<typeof vi.fn>>> = {}
 ): McpToolDeps {
   return {
     ...makeMockDeps(),
-    pulseStore: makeMockPulseStore(storeOverrides),
+    taskStore: makeMockTasksStore(storeOverrides),
   };
 }
 
@@ -252,13 +252,13 @@ describe('MCP Tool Handlers', () => {
   });
 
   describe('createListSchedulesHandler', () => {
-    it('returns all schedules when Pulse enabled', async () => {
+    it('returns all schedules when Tasks enabled', async () => {
       const schedules = [
         { id: 's1', name: 'Daily', enabled: true },
         { id: 's2', name: 'Weekly', enabled: false },
       ];
       const handler = createListSchedulesHandler(
-        makePulseDeps({ getSchedules: vi.fn().mockReturnValue(schedules) })
+        makeTasksDeps({ getTasks: vi.fn().mockReturnValue(schedules) })
       );
       const result = await handler({});
       const parsed = JSON.parse(result.content[0].text);
@@ -272,7 +272,7 @@ describe('MCP Tool Handlers', () => {
         { id: 's2', name: 'Weekly', enabled: false },
       ];
       const handler = createListSchedulesHandler(
-        makePulseDeps({ getSchedules: vi.fn().mockReturnValue(schedules) })
+        makeTasksDeps({ getTasks: vi.fn().mockReturnValue(schedules) })
       );
       const result = await handler({ enabled_only: true });
       const parsed = JSON.parse(result.content[0].text);
@@ -280,7 +280,7 @@ describe('MCP Tool Handlers', () => {
       expect(parsed.schedules[0].id).toBe('s1');
     });
 
-    it('returns error when pulseStore undefined', async () => {
+    it('returns error when taskStore undefined', async () => {
       const handler = createListSchedulesHandler(makeMockDeps());
       const result = await handler({});
       expect(result.isError).toBe(true);
@@ -289,7 +289,7 @@ describe('MCP Tool Handlers', () => {
     });
 
     it('handles empty schedule list', async () => {
-      const handler = createListSchedulesHandler(makePulseDeps());
+      const handler = createListSchedulesHandler(makeTasksDeps());
       const result = await handler({});
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.schedules).toEqual([]);
@@ -302,10 +302,10 @@ describe('MCP Tool Handlers', () => {
       const created = { id: 'new-1', name: 'Nightly' };
       const updated = { ...created, status: 'pending_approval' };
       const handler = createCreateScheduleHandler(
-        makePulseDeps({
-          createSchedule: vi.fn().mockReturnValue(created),
-          updateSchedule: vi.fn().mockReturnValue(updated),
-          getSchedule: vi.fn().mockReturnValue(updated),
+        makeTasksDeps({
+          createTask: vi.fn().mockReturnValue(created),
+          updateTask: vi.fn().mockReturnValue(updated),
+          getTask: vi.fn().mockReturnValue(updated),
         })
       );
       const result = await handler({
@@ -320,10 +320,10 @@ describe('MCP Tool Handlers', () => {
 
     it('returns created schedule with approval note', async () => {
       const handler = createCreateScheduleHandler(
-        makePulseDeps({
-          createSchedule: vi.fn().mockReturnValue({ id: 'x' }),
-          updateSchedule: vi.fn(),
-          getSchedule: vi.fn().mockReturnValue({ id: 'x', status: 'pending_approval' }),
+        makeTasksDeps({
+          createTask: vi.fn().mockReturnValue({ id: 'x' }),
+          updateTask: vi.fn(),
+          getTask: vi.fn().mockReturnValue({ id: 'x', status: 'pending_approval' }),
         })
       );
       const result = await handler({ name: 'Test', prompt: 'Do stuff', cron: '* * * * *' });
@@ -332,7 +332,7 @@ describe('MCP Tool Handlers', () => {
       expect(result.isError).toBeUndefined();
     });
 
-    it('returns error when Pulse disabled', async () => {
+    it('returns error when Tasks disabled', async () => {
       const handler = createCreateScheduleHandler(makeMockDeps());
       const result = await handler({ name: 'X', prompt: 'Y', cron: '* * * * *' });
       expect(result.isError).toBe(true);
@@ -345,7 +345,7 @@ describe('MCP Tool Handlers', () => {
     it('updates existing schedule', async () => {
       const updated = { id: 'u1', name: 'Updated Name' };
       const handler = createUpdateScheduleHandler(
-        makePulseDeps({ updateSchedule: vi.fn().mockReturnValue(updated) })
+        makeTasksDeps({ updateTask: vi.fn().mockReturnValue(updated) })
       );
       const result = await handler({ id: 'u1', name: 'Updated Name' });
       const parsed = JSON.parse(result.content[0].text);
@@ -355,7 +355,7 @@ describe('MCP Tool Handlers', () => {
 
     it('returns error for non-existent ID', async () => {
       const handler = createUpdateScheduleHandler(
-        makePulseDeps({ updateSchedule: vi.fn().mockReturnValue(null) })
+        makeTasksDeps({ updateTask: vi.fn().mockReturnValue(null) })
       );
       const result = await handler({ id: 'missing' });
       expect(result.isError).toBe(true);
@@ -365,16 +365,16 @@ describe('MCP Tool Handlers', () => {
     });
 
     it('handles permissionMode string conversion', async () => {
-      const store = makeMockPulseStore({
-        updateSchedule: vi.fn().mockReturnValue({ id: 'u1', permissionMode: 'plan' }),
+      const store = makeMockTasksStore({
+        updateTask: vi.fn().mockReturnValue({ id: 'u1', permissionMode: 'plan' }),
       });
-      const deps = { ...makeMockDeps(), pulseStore: store };
+      const deps = { ...makeMockDeps(), taskStore: store };
       const handler = createUpdateScheduleHandler(deps);
       await handler({ id: 'u1', permissionMode: 'plan' });
-      expect(store!.updateSchedule).toHaveBeenCalledWith('u1', { permissionMode: 'plan' });
+      expect(store!.updateTask).toHaveBeenCalledWith('u1', { permissionMode: 'plan' });
     });
 
-    it('returns error when Pulse disabled', async () => {
+    it('returns error when Tasks disabled', async () => {
       const handler = createUpdateScheduleHandler(makeMockDeps());
       const result = await handler({ id: 'x' });
       expect(result.isError).toBe(true);
@@ -386,7 +386,7 @@ describe('MCP Tool Handlers', () => {
   describe('createDeleteScheduleHandler', () => {
     it('deletes existing schedule and returns success', async () => {
       const handler = createDeleteScheduleHandler(
-        makePulseDeps({ deleteSchedule: vi.fn().mockReturnValue(true) })
+        makeTasksDeps({ deleteTask: vi.fn().mockReturnValue(true) })
       );
       const result = await handler({ id: 'del-1' });
       const parsed = JSON.parse(result.content[0].text);
@@ -397,7 +397,7 @@ describe('MCP Tool Handlers', () => {
 
     it('returns error for non-existent ID', async () => {
       const handler = createDeleteScheduleHandler(
-        makePulseDeps({ deleteSchedule: vi.fn().mockReturnValue(false) })
+        makeTasksDeps({ deleteTask: vi.fn().mockReturnValue(false) })
       );
       const result = await handler({ id: 'ghost' });
       expect(result.isError).toBe(true);
@@ -406,7 +406,7 @@ describe('MCP Tool Handlers', () => {
       expect(parsed.error).toContain('not found');
     });
 
-    it('returns error when Pulse disabled', async () => {
+    it('returns error when Tasks disabled', async () => {
       const handler = createDeleteScheduleHandler(makeMockDeps());
       const result = await handler({ id: 'x' });
       expect(result.isError).toBe(true);
@@ -419,22 +419,22 @@ describe('MCP Tool Handlers', () => {
     it('returns runs with default limit', async () => {
       const runs = [{ id: 'r1' }, { id: 'r2' }];
       const listRuns = vi.fn().mockReturnValue(runs);
-      const handler = createGetRunHistoryHandler(makePulseDeps({ listRuns }));
+      const handler = createGetRunHistoryHandler(makeTasksDeps({ listRuns }));
       const result = await handler({ schedule_id: 'sched-1' });
       const parsed = JSON.parse(result.content[0].text);
       expect(parsed.runs).toEqual(runs);
       expect(parsed.count).toBe(2);
-      expect(listRuns).toHaveBeenCalledWith({ scheduleId: 'sched-1', limit: 20 });
+      expect(listRuns).toHaveBeenCalledWith({ taskId: 'sched-1', limit: 20 });
     });
 
     it('respects custom limit parameter', async () => {
       const listRuns = vi.fn().mockReturnValue([]);
-      const handler = createGetRunHistoryHandler(makePulseDeps({ listRuns }));
+      const handler = createGetRunHistoryHandler(makeTasksDeps({ listRuns }));
       await handler({ schedule_id: 'sched-1', limit: 5 });
-      expect(listRuns).toHaveBeenCalledWith({ scheduleId: 'sched-1', limit: 5 });
+      expect(listRuns).toHaveBeenCalledWith({ taskId: 'sched-1', limit: 5 });
     });
 
-    it('returns error when Pulse disabled', async () => {
+    it('returns error when Tasks disabled', async () => {
       const handler = createGetRunHistoryHandler(makeMockDeps());
       const result = await handler({ schedule_id: 'x' });
       expect(result.isError).toBe(true);
@@ -527,7 +527,7 @@ describe('MCP Tool Handlers', () => {
       expect(server.version).toBe('1.0.0');
     });
 
-    it('registers 21 tools (4 core + 5 pulse + 8 relay + 1 agent + 2 ui + 1 extension)', () => {
+    it('registers 21 tools (4 core + 5 tasks + 8 relay + 1 agent + 2 ui + 1 extension)', () => {
       // Purpose: regression guard against accidental tool omissions or additions.
       // This count changes intentionally when new MCP tools are added.
       const server = createDorkOsToolServer(makeMockDeps()) as unknown as MockServer;
@@ -541,11 +541,11 @@ describe('MCP Tool Handlers', () => {
       expect(toolNames).toContain('get_server_info');
       expect(toolNames).toContain('get_session_count');
       expect(toolNames).toContain('get_agent');
-      expect(toolNames).toContain('pulse_list_schedules');
-      expect(toolNames).toContain('pulse_create_schedule');
-      expect(toolNames).toContain('pulse_update_schedule');
-      expect(toolNames).toContain('pulse_delete_schedule');
-      expect(toolNames).toContain('pulse_get_run_history');
+      expect(toolNames).toContain('tasks_list');
+      expect(toolNames).toContain('tasks_create');
+      expect(toolNames).toContain('tasks_update');
+      expect(toolNames).toContain('tasks_delete');
+      expect(toolNames).toContain('tasks_get_run_history');
       expect(toolNames).toContain('relay_send');
       expect(toolNames).toContain('relay_inbox');
       expect(toolNames).toContain('relay_list_endpoints');

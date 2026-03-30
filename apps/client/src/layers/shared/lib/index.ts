@@ -16,7 +16,7 @@ export {
   hashToHslColor,
   hashToEmoji,
   generateCircleFavicon,
-  generatePulseFrames,
+  generateTasksFrames,
   setFavicon,
 } from './favicon-utils';
 export { playNotificationSound } from './notification-sound';

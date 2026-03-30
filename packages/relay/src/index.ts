@@ -129,7 +129,7 @@ export type {
   AgentRuntimeLike as ClaudeCodeAgentRuntimeLike,
   AgentSessionStoreLike,
   TraceStoreLike,
-  PulseStoreLike,
+  TasksStoreLike,
 } from './adapters/claude-code/index.js';
 
 // Payload utilities

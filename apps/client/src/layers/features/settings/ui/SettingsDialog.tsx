@@ -82,8 +82,8 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     setShowTaskCelebrations,
     enableNotificationSound,
     setEnableNotificationSound,
-    enablePulseNotifications,
-    setEnablePulseNotifications,
+    enableTasksNotifications,
+    setEnableTasksNotifications,
     promoEnabled,
     setPromoEnabled,
   } = useAppStore();
@@ -285,12 +285,12 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                       </SettingRow>
 
                       <SettingRow
-                        label="Pulse run notifications"
-                        description="Show a toast when a scheduled Pulse run completes"
+                        label="Tasks run notifications"
+                        description="Show a toast when a scheduled Tasks run completes"
                       >
                         <Switch
-                          checked={enablePulseNotifications}
-                          onCheckedChange={setEnablePulseNotifications}
+                          checked={enableTasksNotifications}
+                          onCheckedChange={setEnableTasksNotifications}
                         />
                       </SettingRow>
 

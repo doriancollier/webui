@@ -16,23 +16,23 @@ export const activityEvents = sqliteTable(
 
     /** Actor type: who triggered this event. */
     actorType: text('actor_type', {
-      enum: ['user', 'agent', 'system', 'pulse'],
+      enum: ['user', 'agent', 'system', 'tasks'],
     }).notNull(),
 
     /** Actor identifier. Agent ID, schedule ID, or null for user/system. */
     actorId: text('actor_id'),
 
-    /** Human-readable actor name. "You", agent name, "Pulse", "System". */
+    /** Human-readable actor name. "You", agent name, "Tasks", "System". */
     actorLabel: text('actor_label').notNull(),
 
     /** Event category for filtering. */
     category: text('category', {
-      enum: ['pulse', 'relay', 'agent', 'config', 'system'],
+      enum: ['tasks', 'relay', 'agent', 'config', 'system'],
     }).notNull(),
 
     /**
      * Dot-notation event type.
-     * Format: `{resource}.{verb}` — e.g., "adapter.added", "pulse.ran_success".
+     * Format: `{resource}.{verb}` — e.g., "adapter.added", "tasks.run_success".
      */
     eventType: text('event_type').notNull(),
 
