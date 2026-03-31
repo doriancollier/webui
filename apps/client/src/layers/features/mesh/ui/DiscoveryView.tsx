@@ -238,6 +238,7 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
                     { onSuccess: () => markActed(cand.path) }
                   )
                 }
+                onSkip={(cand) => markActed(cand.path)}
                 onDeny={(cand) =>
                   denyAgent({ path: cand.path }, { onSuccess: () => markActed(cand.path) })
                 }

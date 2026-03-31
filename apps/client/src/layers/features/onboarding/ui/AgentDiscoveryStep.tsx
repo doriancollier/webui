@@ -1,8 +1,8 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Search, CheckCircle2 } from 'lucide-react';
+import { Search, CheckCircle2, ChevronDown } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
-import { useRegisterAgent } from '@/layers/entities/mesh';
+import { useRegisterAgent, useDenyAgent, useMeshScanRoots } from '@/layers/entities/mesh';
 import {
   useDiscoveryScan,
   useDiscoveryStore,
@@ -11,6 +11,7 @@ import {
   CandidateCard,
 } from '@/layers/entities/discovery';
 import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
+import { ScanRootInput } from '@/layers/features/mesh';
 import { NoAgentsFound } from './NoAgentsFound';
 
 interface AgentDiscoveryStepProps {
@@ -45,9 +46,15 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
   const { startScan } = useDiscoveryScan();
   const { candidates, existingAgents, isScanning, progress, error } = useDiscoveryStore();
   const registerAgent = useRegisterAgent();
+  const { mutate: denyAgent } = useDenyAgent();
   // Tracks paths the user has explicitly approved or skipped
   const { actedPaths, markActed, resetActed } = useActedPaths();
   const [hasStarted, setHasStarted] = useState(false);
+  const [showScanOptions, setShowScanOptions] = useState(false);
+  const [depth, setDepth] = useState(3);
+  const { roots, setScanRoots } = useMeshScanRoots();
+  const [localRoots, setLocalRoots] = useState<string[] | null>(null);
+  const displayRoots = localRoots ?? roots;
   const reducedMotion = useReducedMotion();
   const autoStarted = useRef(false);
 
@@ -86,11 +93,27 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
     [markActed]
   );
 
+  const handleDeny = useCallback(
+    (candidate: DiscoveryCandidate) => {
+      markActed(candidate.path);
+      denyAgent({ path: candidate.path });
+    },
+    [denyAgent, markActed]
+  );
+
+  const handleRootsChange = useCallback(
+    (newRoots: string[]) => {
+      setLocalRoots(newRoots);
+      setScanRoots(newRoots);
+    },
+    [setScanRoots]
+  );
+
   const handleRescan = useCallback(() => {
     resetActed();
     setHasStarted(true);
-    startScan();
-  }, [startScan, resetActed]);
+    startScan(displayRoots.length > 0 ? { roots: displayRoots, maxDepth: depth } : { roots: [] });
+  }, [startScan, resetActed, displayRoots, depth]);
 
   const handleAgentCreated = useCallback(() => {
     // After creating an agent via the no-results form, re-scan
@@ -205,6 +228,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
                   candidate={candidate}
                   onApprove={handleApprove}
                   onSkip={handleSkip}
+                  onDeny={handleDeny}
                 />
               ))}
             </AnimatePresence>
@@ -216,6 +240,41 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
       {showNoResults && (
         <div className="mt-6 w-full">
           <NoAgentsFound onAgentCreated={handleAgentCreated} />
+
+          {/* Scan options — collapsible section for adjusting scan parameters */}
+          <div className="mt-4">
+            <button
+              type="button"
+              onClick={() => setShowScanOptions(!showScanOptions)}
+              className="text-muted-foreground hover:text-foreground mx-auto flex items-center gap-1 text-xs"
+            >
+              <ChevronDown
+                className={`size-3 transition-transform ${showScanOptions ? '' : '-rotate-90'}`}
+              />
+              Scan options
+            </button>
+            {showScanOptions && (
+              <div className="bg-muted/30 mt-2 space-y-3 rounded-lg border p-3">
+                <ScanRootInput roots={displayRoots} onChange={handleRootsChange} />
+                <div className="flex items-center gap-3">
+                  <label htmlFor="onboarding-scan-depth" className="text-muted-foreground text-xs">
+                    Scan depth
+                  </label>
+                  <input
+                    id="onboarding-scan-depth"
+                    type="range"
+                    min={1}
+                    max={5}
+                    value={depth}
+                    onChange={(e) => setDepth(Number(e.target.value))}
+                    className="flex-1"
+                  />
+                  <span className="min-w-[1.5rem] text-center text-xs font-medium">{depth}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="mt-6 flex flex-col items-center gap-3">
             <Button variant="outline" size="sm" onClick={handleRescan}>
               Scan Again

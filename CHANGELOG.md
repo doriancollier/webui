@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Unify Skip/Deny actions and add scan options to onboarding
+
 ### Changed
 
 - Unify scan UI — fix DiscoveryView parity, extract shared utilities
