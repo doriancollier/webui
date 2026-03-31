@@ -1,0 +1,40 @@
+---
+title: DorkOS 0.30.0
+description: Discovery and documentation refinement — unified scan actions, onboarding polish, and a full contributing guide refresh.
+date: 2026-03-31
+author: DorkOS Team
+category: release
+tags: [release, discovery, onboarding, docs]
+---
+
+The agent discovery experience gets more consistent, and the developer documentation catches up with recent changes. This release unifies scan actions in the onboarding flow and refreshes the full contributing guide suite.
+
+## Highlights
+
+Skip and Deny actions in the onboarding scanner are now unified, with new scan options that give operators more control over how agents are discovered. Behind the scenes, the entire contributing guide suite — data-fetching, design-system, interactive-tools, architecture, and project structure — has been reconciled with recent code changes.
+
+## All Changes
+
+### Added
+
+- Unify Skip/Deny actions and add scan options to onboarding
+
+### Changed
+
+- Update contributing guides, external docs, and CLAUDE.md
+- Fix review issues — FSD compliance, DRY extractions, resetActed
+- Unify scan UI — fix DiscoveryView parity, extract shared utilities
+- Complete Pulse→Tasks terminology migration and improve docs infrastructure
+- Update CLI README and config guide for Tasks rename and new features
+
+### Fixed
+
+- Add resetActed to handleRescan dependency array
+- Surface existing agents during onboarding scan
+- Update SettingsDialog tests after Remote indicator relocation
+
+## Install / Update
+
+```
+npm install -g dorkos@0.30.0
+```

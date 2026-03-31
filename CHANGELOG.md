@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.30.0] - 2026-03-31
+
+> Discovery and documentation refinement — unified scan actions, onboarding polish, and a full contributing guide refresh bring consistency to both the agent discovery experience and developer documentation.
+
+### Added
+
 - Unify Skip/Deny actions and add scan options to onboarding
 
 ### Changed
@@ -24,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Add resetActed to handleRescan dependency array
 - Surface existing agents during onboarding scan
 - Update SettingsDialog tests after Remote indicator relocation
+
 ---
 
 ## [0.29.0] - 2026-03-30
