@@ -11,7 +11,7 @@
     "agents",
     "persona",
     "agent-discovery",
-    "pulse-scheduler",
+    "task-scheduler",
     "relay-observability",
     "building-relay-adapters",
     "agent-coordination"

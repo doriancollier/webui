@@ -267,11 +267,11 @@ Usage pattern:
 
 ```typescript
 // In features/session-list/ui/SchedulesView.tsx — triggers the dialog
-const openWithPreset = usePulsePresetDialog((s) => s.openWithPreset);
-openWithPreset(preset); // Signals PulsePanel to open CreateScheduleDialog
+const openWithPreset = useTaskPresetDialog((s) => s.openWithPreset);
+openWithPreset(preset); // Signals TasksPanel to open CreateScheduleDialog
 
-// In features/pulse/ui/PulsePanel.tsx — consumes the signal
-const { pendingPreset, externalTrigger, clear } = usePulsePresetDialog();
+// In features/tasks/ui/TasksPanel.tsx — consumes the signal
+const { pendingPreset, externalTrigger, clear } = useTaskPresetDialog();
 useEffect(() => {
   if (externalTrigger && pendingPreset) {
     openDialog({ preset: pendingPreset });

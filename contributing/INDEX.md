@@ -94,12 +94,25 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/guides/agents.mdx`                      | Agent identity guide                   | `routes/agents\|manifest\|agent.json`                                  |
 | `docs/guides/agent-discovery.mdx`             | Agent discovery guide                  | `packages/mesh/\|unified-scanner`                                      |
 | `docs/guides/agent-coordination.mdx`          | Multi-agent coordination guide         | `packages/relay/\|packages/mesh/`                                      |
-| `docs/guides/pulse-scheduler.mdx`             | Pulse scheduler guide                  | `services/pulse/\|pulse-store`                                         |
+| `docs/guides/task-scheduler.mdx`              | Task scheduler guide                   | `services/tasks/\|tasks-store`                                         |
 | `docs/guides/relay-messaging.mdx`             | Relay messaging guide                  | `packages/relay/\|services/relay/`                                     |
 | `docs/guides/relay-observability.mdx`         | Relay observability guide              | `trace-store\|relay-metrics`                                           |
 | `docs/guides/building-relay-adapters.mdx`     | Relay adapter authoring guide          | `packages/relay/src/adapters/\|adapter-manager`                        |
 | `docs/guides/obsidian-plugin.mdx`             | Obsidian plugin user guide             | `apps/obsidian-plugin/`                                                |
 | `docs/guides/persona.mdx`                     | Agent persona configuration            | `manifest\|context-builder\|personaEnabled`                            |
+| `docs/getting-started/uninstall.mdx`          | Uninstall guide                        | `packages/cli/\|cleanup-command`                                       |
+| `docs/self-hosting/docker.mdx`                | Docker deployment guide                | `Dockerfile\|packages/cli/`                                            |
+
+### Keyword Triggers
+
+Cross-cutting renames that affect many docs at once. The Stop hook and `/docs:reconcile` should grep for these terms in `docs/` whenever source code removes them.
+
+| Old Term                  | New Term                  | Affected Docs                                                                                                                                                   |
+| ------------------------- | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Pulse`                   | `Tasks`                   | task-scheduler, relay-messaging, agent-coordination, configuration, cli-usage, index, quickstart, architecture, transport, relay, agents, building-integrations |
+| `Damon`                   | `DorkBot`                 | agents, agent-coordination                                                                                                                                      |
+| `pulse.db`                | `dork.db`                 | task-scheduler, architecture                                                                                                                                    |
+| `agentContext.pulseTools` | `agentContext.tasksTools` | configuration                                                                                                                                                   |
 
 ### External Docs Maintenance
 
@@ -130,9 +143,11 @@ Maps `docs/` MDX files (Fumadocs content for the marketing site) to the source c
 | `docs/guides/agents.mdx`                      | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
 | `docs/guides/agent-discovery.mdx`             | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
 | `docs/guides/agent-coordination.mdx`          | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/pulse-scheduler.mdx`             | 2026-03-12    | Claude   | Added Preset Gallery section (PresetCard, PresetGallery, preset onboarding UX)                                    |
+| `docs/guides/task-scheduler.mdx`              | 2026-03-31    | Claude   | Renamed from pulse-scheduler.mdx; Pulse→Tasks terminology migration                                               |
 | `docs/guides/relay-messaging.mdx`             | 2026-03-22    | Claude   | Added Slack + Telegram Chat SDK adapters, fixed enabled-by-default framing                                        |
 | `docs/guides/relay-observability.mdx`         | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
 | `docs/guides/building-relay-adapters.mdx`     | 2026-03-22    | Claude   | Added deliverStream() to interface, PlatformClient/StreamManager/ThreadIdCodec section, Chat SDK reference        |
 | `docs/guides/obsidian-plugin.mdx`             | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
 | `docs/guides/persona.mdx`                     | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
+| `docs/getting-started/uninstall.mdx`          | 2026-03-31    | Claude   | Added to coverage map                                                                                             |
+| `docs/self-hosting/docker.mdx`                | 2026-03-31    | Claude   | Added to coverage map                                                                                             |

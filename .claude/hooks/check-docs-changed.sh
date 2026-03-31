@@ -59,16 +59,29 @@ MAPPINGS=(
 # Format: "docs-path:pattern1|pattern2"
 DOCS_MAPPINGS=(
   "docs/getting-started/configuration.mdx:config-manager|config-schema|packages/cli/"
+  "docs/getting-started/uninstall.mdx:packages/cli/|cleanup-command"
   "docs/integrations/sse-protocol.mdx:apps/server/src/routes/sessions|stream-adapter|session-broadcaster"
   "docs/integrations/building-integrations.mdx:transport.ts|direct-transport|http-transport"
   "docs/self-hosting/deployment.mdx:packages/cli/|config-manager"
   "docs/self-hosting/reverse-proxy.mdx:apps/server/src/routes/sessions|stream-adapter"
+  "docs/self-hosting/docker.mdx:Dockerfile|packages/cli/"
   "docs/contributing/architecture.mdx:apps/server/src/services/|transport.ts|apps/obsidian-plugin/"
   "docs/contributing/testing.mdx:packages/test-utils/|vitest"
   "docs/contributing/development-setup.mdx:package.json|turbo.json|apps/"
   "docs/guides/cli-usage.mdx:packages/cli/"
   "docs/guides/tunnel-setup.mdx:tunnel-manager"
   "docs/guides/slash-commands.mdx:command-registry|.claude/commands/"
+  "docs/guides/task-scheduler.mdx:services/tasks/|tasks-store"
+  "docs/guides/agents.mdx:routes/agents|manifest|agent.json"
+  "docs/guides/agent-discovery.mdx:packages/mesh/|unified-scanner"
+  "docs/guides/agent-coordination.mdx:packages/relay/|packages/mesh/"
+  "docs/guides/relay-messaging.mdx:packages/relay/|services/relay/"
+  "docs/guides/relay-observability.mdx:trace-store|relay-metrics"
+  "docs/guides/building-relay-adapters.mdx:packages/relay/src/adapters/|adapter-manager"
+  "docs/concepts/architecture.mdx:apps/server/src/services/|transport.ts"
+  "docs/concepts/transport.mdx:transport.ts|direct-transport|http-transport"
+  "docs/concepts/relay.mdx:packages/relay/|services/relay/"
+  "docs/concepts/mesh.mdx:packages/mesh/|services/mesh/"
 )
 
 # Track affected guides
@@ -137,6 +150,43 @@ if [ ${#AFFECTED_GUIDES[@]} -gt 0 ] || [ ${#AFFECTED_DOCS[@]} -gt 0 ]; then
     done
   fi
   echo ""
+  echo "   Consider running: /docs:reconcile"
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo ""
+fi
+
+# Terminology drift check — detect stale terms in docs/ that have been renamed in code
+# Format: "old_term:replacement"
+STALE_TERMS=(
+  "Pulse Scheduler:Task Scheduler"
+  "DORKOS_PULSE_ENABLED:DORKOS_TASKS_ENABLED"
+  "agentContext.pulseTools:agentContext.tasksTools"
+  "services/pulse/:services/tasks/"
+  "pulse.db:dork.db"
+)
+
+STALE_FOUND=""
+for entry in "${STALE_TERMS[@]}"; do
+  old_term="${entry%%:*}"
+  new_term="${entry#*:}"
+  # Search docs/ for the old term, excluding changelog (historical)
+  matches=$(grep -rl "$old_term" "$PROJECT_ROOT/docs/" --include='*.mdx' 2>/dev/null | grep -v 'changelog.mdx' | head -3)
+  if [ -n "$matches" ]; then
+    STALE_FOUND="$STALE_FOUND  - \"$old_term\" → \"$new_term\" found in:\n"
+    while IFS= read -r match; do
+      rel_path="${match#$PROJECT_ROOT/}"
+      STALE_FOUND="$STALE_FOUND      $rel_path\n"
+    done <<< "$matches"
+  fi
+done
+
+if [ -n "$STALE_FOUND" ]; then
+  echo ""
+  echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  echo -e "${YELLOW}⚠️  Stale Terminology in Docs${NC}"
+  echo ""
+  echo "   Deprecated terms found in docs/ (update needed):"
+  echo -e "$STALE_FOUND"
   echo "   Consider running: /docs:reconcile"
   echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
   echo ""

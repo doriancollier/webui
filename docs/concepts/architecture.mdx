@@ -77,9 +77,9 @@ The `RuntimeRegistry` holds all registered runtimes keyed by type string. The cu
 
 ### Server
 
-The Express server exposes route groups including sessions, commands, health, config, files, git, Pulse scheduling, Relay messaging, Mesh agent discovery, and extensions. Routes are thin HTTP handlers — all business logic delegates to services or the active runtime.
+The Express server exposes route groups including sessions, commands, health, config, files, git, Tasks scheduling, Relay messaging, Mesh agent discovery, and extensions. Routes are thin HTTP handlers — all business logic delegates to services or the active runtime.
 
-Server-side services are organized by domain: `services/core/` (shared infra), `services/runtimes/` (agent backends), `services/pulse/` (scheduling), `services/relay/` (messaging), `services/mesh/` (discovery), `services/discovery/` (filesystem scanning), `services/session/` (session management), and `services/extensions/` (extension lifecycle, compilation, and discovery).
+Server-side services are organized by domain: `services/core/` (shared infra), `services/runtimes/` (agent backends), `services/tasks/` (scheduling), `services/relay/` (messaging), `services/mesh/` (discovery), `services/discovery/` (filesystem scanning), `services/session/` (session management), and `services/extensions/` (extension lifecycle, compilation, and discovery).
 
 ### Client
 
@@ -90,7 +90,7 @@ The React SPA uses Feature-Sliced Design with strict unidirectional layer import
 - **Canvas** — Agent-controlled UI panels rendered via the extension system
 - **Commands** — Palette for discovering and using slash commands
 - **Settings** — Theme, configuration, and preferences
-- **Pulse / Relay / Mesh** — Scheduling, messaging, and agent discovery panels
+- **Tasks / Relay / Mesh** — Scheduling, messaging, and agent discovery panels
 
 ### Agent UI Control
 

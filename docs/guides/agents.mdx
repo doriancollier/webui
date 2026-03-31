@@ -18,7 +18,7 @@ When a directory has an agent registered:
 - **Tab title** displays the agent's emoji and name
 - **Favicon** reflects the agent's color
 - **Directory picker** recents show agent names for registered directories
-- **Pulse schedules** display agent identity instead of paths
+- **Task schedules** display agent identity instead of paths
 - **Claude sessions** receive agent identity context in the system prompt
 
 Unregistered directories work exactly as before with zero changes.
@@ -80,7 +80,7 @@ Configure how the agent shapes Claude's behavior. See the [Persona Injection](/d
 
 Per-agent tool group toggles and Mesh metadata:
 
-- **Tool Groups** — enable or disable MCP tool domains per agent (Relay tools, Mesh tools, Adapter tools, Pulse tools). Each toggle has three states: inherited (follows global config), enabled, or disabled. Changes take effect on the next session.
+- **Tool Groups** — enable or disable MCP tool domains per agent (Relay tools, Mesh tools, Adapter tools, Tasks tools). Each toggle has three states: inherited (follows global config), enabled, or disabled. Changes take effect on the next session.
 - **Capabilities** — tag-style chips used by Mesh for discovery and routing (e.g., `api-design`, `frontend`)
 - **Namespace** — subject namespace for Relay routing
 - **Response Mode** and **Budget** — behavioral constraints
@@ -94,7 +94,7 @@ Per-agent tool group toggles and Mesh metadata:
 
 A read-only view linking to other subsystems:
 
-- **Pulse schedules** targeting this agent's directory
+- **Task schedules** targeting this agent's directory
 - **Relay endpoints** registered for this agent
 - **Mesh health** status and heartbeat info
 

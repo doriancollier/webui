@@ -107,7 +107,7 @@ Run a single test: `pnpm vitest run <path-to-test-file>`. Agent worktree command
 
 Express server on `DORKOS_PORT` (default 4242, dev convention 6242). Routes obtain the active runtime via `runtimeRegistry.getDefault()`. The `AgentRuntime` interface (`packages/shared/src/agent-runtime.ts`) abstracts all agent backends. SDK interactions are confined to `services/runtimes/claude-code/` (enforced by ESLint).
 
-**Service domains:** `services/core/` (shared infra), `services/runtimes/` (agent backends), `services/pulse/` (scheduling), `services/relay/` (messaging), `services/mesh/` (discovery), `services/discovery/` (filesystem scanning), `services/session/` (session management). API docs at `/api/docs`.
+**Service domains:** `services/core/` (shared infra), `services/runtimes/` (agent backends), `services/tasks/` (scheduling), `services/relay/` (messaging), `services/mesh/` (discovery), `services/discovery/` (filesystem scanning), `services/session/` (session management). API docs at `/api/docs`.
 
 **Key conventions:**
 
@@ -134,7 +134,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, neutral gray). U
 
 **Routing**: TanStack Router with code-based route definitions in `router.tsx`. Route structure:
 
-- `/` → `DashboardPage` (widgets/dashboard) — mission control with four sections in priority order: `NeedsAttentionSection` (conditional, zero DOM when empty), `ActiveSessionsSection` (sessions updated in last 2h), `SystemStatusRow` (Pulse/Relay/Mesh health cards + sparkline), `RecentActivityFeed` (time-grouped event feed). With `DashboardSidebar` (navigation + recent agents) and `DashboardHeader` (system health dot + quick actions)
+- `/` → `DashboardPage` (widgets/dashboard) — mission control with four sections in priority order: `NeedsAttentionSection` (conditional, zero DOM when empty), `ActiveSessionsSection` (sessions updated in last 2h), `SystemStatusRow` (Tasks/Relay/Mesh health cards + sparkline), `RecentActivityFeed` (time-grouped event feed). With `DashboardSidebar` (navigation + recent agents) and `DashboardHeader` (system health dot + quick actions)
 - `/agents` → `AgentsPage` (widgets/agents) — fleet management surface. Mode A (no agents): full-bleed `DiscoveryView`. Mode B (agents present): tabbed `AgentsList` + lazy `TopologyGraph`. With `DashboardSidebar` (shared nav, Agents item active) and `AgentsHeader` (Scan for Agents button)
 - `/session` → `SessionPage` (widgets/session) — agent chat, with `SessionSidebar` + `SessionHeader`, `?session=` and `?dir=` search params
 - `/dev/*` → Dev playground (outside router, conditional on dev mode)

@@ -42,7 +42,7 @@ Transport
   listFiles(cwd)             -> FileListResponse
   getGitStatus(cwd?)         -> GitStatusResponse | GitStatusError
 
-  -- Pulse Scheduler --
+  -- Tasks Scheduler --
   listSchedules / createSchedule / updateSchedule / deleteSchedule
   triggerSchedule / listRuns / getRun / cancelRun
 
@@ -161,10 +161,10 @@ Communicates with the Express server over HTTP and SSE:
 - `uploadFiles` uses XHR with `FormData` for progress tracking
 - Constructor takes `baseUrl` (defaults to `/api`)
 
-Domain-specific methods (Relay, Pulse, Mesh) are delegated to factory-produced objects to keep concerns separated:
+Domain-specific methods (Relay, Tasks, Mesh) are delegated to factory-produced objects to keep concerns separated:
 
 - `createRelayMethods(baseUrl, getClientId)` — Relay bus, adapters, bindings, events
-- `createPulseMethods(baseUrl)` — Pulse schedules and runs
+- `createTasksMethods(baseUrl)` — Tasks schedules and runs
 - `createMeshMethods(baseUrl)` — Mesh discovery, registry, topology
 
 HttpTransport uses `Object.assign(this, createRelayMethods(...))` at construction time. Each factory lives in its own file under `transport/` and handles HTTP serialization for its domain. This keeps the Transport interface unified while allowing independent testability of domain methods.
@@ -180,7 +180,7 @@ Calls service instances directly in the same process:
 - `createSession` generates UUIDs via `crypto.randomUUID()`
 - Respects `AbortSignal` for cancellation
 
-**Scope limitation:** DirectTransport currently implements only session, message, tool, task, and agent APIs. Relay, Mesh, and Pulse methods are not available in DirectTransport (Obsidian plugin mode) — these features require server-side state and are scoped for the standalone web client.
+**Scope limitation:** DirectTransport currently implements only session, message, tool, task, and agent APIs. Relay, Mesh, and Tasks methods are not available in DirectTransport (Obsidian plugin mode) — these features require server-side state and are scoped for the standalone web client.
 
 ## Data Flow
 
@@ -336,7 +336,7 @@ All Claude Code-specific services live under `services/runtimes/claude-code/`:
 | `task-reader.ts`          | Task state parser                                                                 |
 | `sdk-utils.ts`            | `makeUserPrompt()`, `resolveClaudeCliPath()`                                      |
 | `message-sender.ts`       | Extracted send-message logic (streaming, tool filtering, context building)        |
-| `mcp-tools/`              | MCP tool server (core, pulse, relay, mesh, adapter, binding, UI, extension tools) |
+| `mcp-tools/`              | MCP tool server (core, tasks, relay, mesh, adapter, binding, UI, extension tools) |
 | `index.ts`                | Barrel export for `ClaudeCodeRuntime`                                             |
 
 SDK imports (`@anthropic-ai/claude-agent-sdk`) are contained exclusively within `services/runtimes/claude-code/`. No other server code imports the SDK directly. This is enforced by a `no-restricted-imports` rule in the server's `eslint.config.js`.
@@ -366,7 +366,7 @@ Each agent session can have a tailored MCP tool palette. The filtering pipeline 
 ClaudeCodeRuntime.sendMessage(sessionId, content, cwd)
   -> readManifest(effectiveCwd)                    // Load .dork/agent.json
   -> resolveToolConfig(manifest.enabledToolGroups, // Merge agent overrides with global defaults
-       { relayEnabled, pulseEnabled, globalConfig })
+       { relayEnabled, tasksEnabled, globalConfig })
   -> buildSystemPromptAppend(cwd, meshCore,        // Context blocks gated by toolConfig
        toolConfig)
   -> buildAllowedTools(toolConfig)                 // Produce SDK allowedTools array
@@ -377,7 +377,7 @@ ClaudeCodeRuntime.sendMessage(sessionId, content, cwd)
 
 1. **Per-agent override** (`enabledToolGroups` in `.dork/agent.json`): explicit `true`/`false` per domain
 2. **Global default** (`agentContext.*Tools` in `~/.dork/config.json`): applies when agent has no override
-3. **Server feature flag** (`relayEnabled`, `pulseEnabled`): hard gate that overrides both above when `false`
+3. **Server feature flag** (`relayEnabled`, `tasksEnabled`): hard gate that overrides both above when `false`
 
 ### Implicit Grouping
 
@@ -385,7 +385,7 @@ Four top-level toggles control six tool groups:
 
 | Toggle    | Controls                                                                                          |
 | --------- | ------------------------------------------------------------------------------------------------- |
-| `pulse`   | Pulse tools (list/create/update/delete schedules, run history)                                    |
+| `pulse`   | Tasks tools (list/create/update/delete schedules, run history)                                    |
 | `relay`   | Relay tools (send, inbox, endpoints) + Trace tools (get_trace, get_metrics)                       |
 | `mesh`    | Mesh tools (discover, register, list, deny, status, inspect, topology)                            |
 | `adapter` | Adapter tools (list/enable/disable/reload adapters) + Binding tools (list/create/delete bindings) |
@@ -403,7 +403,7 @@ When a domain is disabled, both the MCP `allowedTools` filter and the context bl
 | `apps/server/src/services/runtimes/claude-code/tool-filter.ts`     | `resolveToolConfig()` + `buildAllowedTools()` |
 | `apps/server/src/services/runtimes/claude-code/context-builder.ts` | Agent-aware block gating, peer agents block   |
 | `packages/shared/src/mesh-schemas.ts`                              | `EnabledToolGroupsSchema` on `AgentManifest`  |
-| `packages/shared/src/config-schema.ts`                             | `agentContext.pulseTools` global default      |
+| `packages/shared/src/config-schema.ts`                             | `agentContext.tasksTools` global default      |
 
 ## Module Layout
 
@@ -443,8 +443,8 @@ packages/
     subject-matcher.ts      -- NATS-style subject and wildcard matching
     endpoint-registry.ts    -- Maildir endpoint registration + hash computation
     adapters/
-      claude-code/          -- Routes relay.agent.> and relay.system.pulse.> to ClaudeCodeRuntime
-                               (modular: claude-code-adapter.ts, agent-handler.ts, pulse-handler.ts, queue.ts, publish.ts)
+      claude-code/          -- Routes relay.agent.> and relay.system.tasks.> to ClaudeCodeRuntime
+                               (modular: claude-code-adapter.ts, agent-handler.ts, tasks-handler.ts, queue.ts, publish.ts)
       telegram/             -- Telegram Bot API via grammY (modular: telegram-adapter.ts, inbound.ts, outbound.ts, webhook.ts)
       webhook-adapter.ts    -- Generic HTTP POST with HMAC-SHA256 verification
 
@@ -490,7 +490,7 @@ apps/
         transport/
           http-transport.ts -- HTTP/SSE adapter
           relay-methods.ts  -- createRelayMethods() factory
-          pulse-methods.ts  -- createPulseMethods() factory
+          pulse-methods.ts  -- createTasksMethods() factory
           mesh-methods.ts   -- createMeshMethods() factory
           http-client.ts    -- fetchJSON, buildQueryString helpers
           sse-parser.ts     -- parseSSEStream helper
@@ -543,11 +543,11 @@ apps/
           sdk-utils.ts        -- makeUserPrompt(), resolveClaudeCliPath()
           mcp-tools/          -- In-process MCP tool server for Claude Agent SDK
           index.ts            -- Barrel export for ClaudeCodeRuntime
-      pulse/                  -- Pulse scheduler services
-        pulse-store.ts        -- SQLite + JSON schedule/run state
+      tasks/                  -- Tasks scheduler services
+        tasks-store.ts        -- SQLite + JSON schedule/run state
         scheduler-service.ts  -- Cron engine (croner) with overrun protection
-        pulse-presets.ts      -- Default schedule presets (~/.dork/pulse/presets.json)
-        pulse-state.ts        -- DORKOS_PULSE_ENABLED feature flag holder
+        tasks-presets.ts      -- Default schedule presets (~/.dork/tasks/presets.json)
+        tasks-state.ts        -- DORKOS_TASKS_ENABLED feature flag holder
       relay/                  -- Relay messaging services
         adapter-manager.ts    -- Server-side adapter lifecycle (config I/O, hot-reload, enable/disable)
         adapter-factory.ts    -- Adapter instantiation from config (built-in + plugin)
@@ -671,7 +671,7 @@ Location: `~/.dork/config.json` (created automatically on first run). Format:
     "relayTools": true,
     "meshTools": true,
     "adapterTools": true,
-    "pulseTools": true
+    "tasksTools": true
   }
 }
 ```
@@ -901,7 +901,7 @@ Outbound: RelayCore.publish() → AdapterRegistry.deliver() → Adapter.deliver(
 | ------------------- | ---------------- | ----------------------- | --------------------------------------- |
 | `TelegramAdapter`   | grammY           | Long polling / webhook  | `relay.human.telegram.*`                |
 | `WebhookAdapter`    | Native HTTP      | HTTP POST + HMAC-SHA256 | `relay.webhook.*`                       |
-| `ClaudeCodeAdapter` | Claude Agent SDK | In-process              | `relay.agent.>`, `relay.system.pulse.>` |
+| `ClaudeCodeAdapter` | Claude Agent SDK | In-process              | `relay.agent.>`, `relay.system.tasks.>` |
 
 ### ClaudeCodeAdapter
 
@@ -910,7 +910,7 @@ Outbound: RelayCore.publish() → AdapterRegistry.deliver() → Adapter.deliver(
 It handles two subject prefixes:
 
 - `relay.agent.>` — delivers messages to an existing agent session (via the runtime's `sendMessage()`)
-- `relay.system.pulse.>` — dispatches Pulse scheduler jobs (via the runtime's `sendMessage()`)
+- `relay.system.tasks.>` — dispatches Tasks scheduler jobs (via the runtime's `sendMessage()`)
 
 On deliver, it extracts payload content via shared `extractPayloadContent()` utilities, streams the SDK response back to the `replyTo` subject as individual `StreamEvent` chunks, and records delivery spans in `TraceStore`.
 
@@ -955,13 +955,13 @@ See `contributing/relay-adapters.md` for the full developer guide on creating cu
 
 ## Relay Message Routing (when DORKOS_RELAY_ENABLED=true)
 
-When the Relay feature flag is enabled, Pulse (scheduled) message flows are routed through the Relay message bus instead of calling the runtime directly. The web client always uses direct SSE regardless of this flag.
+When the Relay feature flag is enabled, Tasks (scheduled) message flows are routed through the Relay message bus instead of calling the runtime directly. The web client always uses direct SSE regardless of this flag.
 
-### Pulse Dispatch Flow
+### Tasks Dispatch Flow
 
 ```
-SchedulerService → relay.publish('relay.system.pulse.{scheduleId}')
-  → ClaudeCodeAdapter.deliver() (handlePulseDispatch) → runtime.sendMessage() → Claude SDK
+SchedulerService → relay.publish('relay.system.tasks.{scheduleId}')
+  → ClaudeCodeAdapter.deliver() (handleTasksDispatch) → runtime.sendMessage() → Claude SDK
 ```
 
 ### Message Tracing
@@ -1025,33 +1025,33 @@ The server exposes Mesh via `routes/mesh.ts` (always mounted, no feature flag). 
 
 ### Lifecycle Hooks
 
-`MeshCore` supports an `onUnregister(callback)` lifecycle hook for extensibility. The server wires cascade effects through this hook — for example, disabling Pulse schedules linked to the unregistered agent (see [Cascade Disable on Agent Unregister](#cascade-disable-on-agent-unregister)).
+`MeshCore` supports an `onUnregister(callback)` lifecycle hook for extensibility. The server wires cascade effects through this hook — for example, disabling Tasks schedules linked to the unregistered agent (see [Cascade Disable on Agent Unregister](#cascade-disable-on-agent-unregister)).
 
 ### Relay Bridge
 
 When both Mesh and Relay are enabled, `RelayBridge` publishes lifecycle events (`agent.registered`, `agent.unregistered`, `agent.health_changed`) to Relay subjects, enabling cross-agent event subscriptions.
 
-## Pulse
+## Tasks
 
-The Pulse subsystem provides cron-based agent scheduling. It lives entirely in `apps/server/src/services/pulse/` with state persisted to SQLite (`~/.dork/pulse.db`) and JSON (`~/.dork/schedules.json`).
+The Tasks subsystem provides cron-based agent scheduling. It lives entirely in `apps/server/src/services/tasks/` with state persisted to SQLite (`~/.dork/dork.db`) and JSON (`~/.dork/schedules.json`).
 
 ### Key Components
 
 | Module                 | Purpose                                                                 |
 | ---------------------- | ----------------------------------------------------------------------- |
-| `pulse-store.ts`       | SQLite database + JSON file for schedule and run state                  |
+| `tasks-store.ts`       | SQLite database + JSON file for schedule and run state                  |
 | `scheduler-service.ts` | Cron engine using `croner` with overrun protection and concurrency caps |
 
 ### Dispatch Modes
 
 - **Direct mode** (default): `SchedulerService` calls the active runtime's `sendMessage()` directly to start agent sessions
-- **Relay mode** (`DORKOS_RELAY_ENABLED=true`): Publishes to `relay.system.pulse.{scheduleId}` instead; `ClaudeCodeAdapter` handles dispatch
+- **Relay mode** (`DORKOS_RELAY_ENABLED=true`): Publishes to `relay.system.tasks.{scheduleId}` instead; `ClaudeCodeAdapter` handles dispatch
 
 Agent-created schedules enter `pending_approval` state and require human approval before activation.
 
 ### Cascade Disable on Agent Unregister
 
-When an agent is unregistered from Mesh, all Pulse schedules linked to that `agentId` are automatically disabled via `PulseStore.disableSchedulesByAgentId()`. Agent-linked schedule runs that cannot resolve the agent's project path fail with a descriptive error rather than falling back silently.
+When an agent is unregistered from Mesh, all Tasks schedules linked to that `agentId` are automatically disabled via `TasksStore.disableSchedulesByAgentId()`. Agent-linked schedule runs that cannot resolve the agent's project path fail with a descriptive error rather than falling back silently.
 
 ## Testing
 
@@ -1062,7 +1062,7 @@ function createMockTransport(overrides?: Partial<Transport>): Transport {
   return {
     listSessions: vi.fn().mockResolvedValue([]),
     createSession: vi.fn(),
-    // ...all Transport methods (session, pulse, relay, mesh, agent identity, etc.)
+    // ...all Transport methods (session, tasks, relay, mesh, agent identity, etc.)
     ...overrides,
   };
 }

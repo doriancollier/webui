@@ -43,8 +43,8 @@ The server starts on port 4242 and opens your browser automatically.
       description: 'Enable ngrok tunnel for remote access',
       default: 'false',
     },
-    '--pulse': { type: 'boolean', description: 'Enable the Pulse scheduler' },
-    '--no-pulse': { type: 'boolean', description: 'Disable the Pulse scheduler' },
+    '--tasks': { type: 'boolean', description: 'Enable the Task scheduler' },
+    '--no-tasks': { type: 'boolean', description: 'Disable the Task scheduler' },
     '--log-level, -l': {
       type: 'string',
       description: 'Log verbosity: fatal, error, warn, info, debug, trace',
@@ -68,8 +68,8 @@ dorkos --boundary /home/user/projects
 # Enable tunnel for remote access
 dorkos --tunnel
 
-# Enable Pulse scheduler
-dorkos --pulse
+# Enable Task scheduler
+dorkos --tasks
 
 # Verbose logging
 dorkos --log-level debug

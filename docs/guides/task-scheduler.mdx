@@ -1,5 +1,5 @@
 ---
-title: Pulse Scheduler
+title: Task Scheduler
 description: Cron-based agent jobs that keep running when you close the terminal
 ---
 
@@ -8,30 +8,30 @@ import { Callout } from 'fumadocs-ui/components/callout';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
 import { Cards, Card } from 'fumadocs-ui/components/card';
 
-# Pulse Scheduler
+# Task Scheduler
 
-Pulse is DorkOS's cron scheduling engine for AI agents. Define schedules with cron expressions and prompts, and Pulse triggers autonomous agent sessions at the specified intervals — independent of your IDE or terminal. Agents run with their own working directory and prompt, producing results you can review in the run history.
+Tasks is DorkOS's cron scheduling engine for AI agents. Define schedules with cron expressions and prompts, and Tasks triggers autonomous agent sessions at the specified intervals — independent of your IDE or terminal. Agents run with their own working directory and prompt, producing results you can review in the run history.
 
-## Enabling Pulse
+## Enabling Tasks
 
-Pulse is feature-flag-guarded. Enable it with the environment variable or CLI flag:
+Tasks is feature-flag-guarded. Enable it with the environment variable or CLI flag:
 
 <Steps>
 <Step>
 ### Set the environment variable
 
-Add `DORKOS_PULSE_ENABLED=true` to your `.env` file, or pass the flag to the CLI:
+Add `DORKOS_TASKS_ENABLED=true` to your `.env` file, or pass the flag to the CLI:
 
 ```bash
-dorkos --pulse
+dorkos --tasks
 ```
 
-To explicitly disable Pulse:
+To explicitly disable Tasks:
 
 ```bash
-dorkos --no-pulse
+dorkos --no-tasks
 # or
-export DORKOS_PULSE_ENABLED=false
+export DORKOS_TASKS_ENABLED=false
 ```
 
 </Step>
@@ -39,24 +39,24 @@ export DORKOS_PULSE_ENABLED=false
 <Step>
 ### Verify in the sidebar
 
-The Pulse tab appears in the sidebar when Pulse is enabled. Open it to see your schedules and run history.
+The Tasks tab appears in the sidebar when Tasks is enabled. Open it to see your schedules and run history.
 
 </Step>
 </Steps>
 
 ## Preset Gallery
 
-When you have no schedules yet, the Pulse panel shows a **Preset Gallery** instead of an empty state. Presets are curated schedule templates — common patterns like "Daily standup summary" or "Weekly dependency check" with pre-filled cron expressions and prompts.
+When you have no schedules yet, the Tasks panel shows a **Preset Gallery** instead of an empty state. Presets are curated schedule templates — common patterns like "Daily standup summary" or "Weekly dependency check" with pre-filled cron expressions and prompts.
 
 Click any preset card to open `CreateScheduleDialog` pre-populated with that preset's cron expression and prompt. You can edit any field before saving. Presets are read-only suggestions; the final schedule is always yours to customize.
 
-Presets are fetched from the server via `GET /api/pulse/presets` and cached client-side.
+Presets are fetched from the server via `GET /api/tasks/presets` and cached client-side.
 
 ## Creating Schedules
 
-### PulsePanel UI
+### TasksPanel UI
 
-Open the Pulse tab and click "Create Schedule" (or select a preset from the gallery). Configure:
+Open the Tasks tab and click "Create Schedule" (or select a preset from the gallery). Configure:
 
 - **Name** — A human-readable label (e.g., "Daily code review")
 - **Cron expression** — When the job runs. Choose from preset buttons or build with the visual editor.
@@ -69,7 +69,7 @@ Open the Pulse tab and click "Create Schedule" (or select a preset from the gall
 ### REST API
 
 ```bash
-curl -X POST http://localhost:4242/api/pulse/schedules \
+curl -X POST http://localhost:4242/api/tasks/schedules \
   -H "Content-Type: application/json" \
   -d '{
     "name": "Daily dependency check",
@@ -84,10 +84,10 @@ The response includes the schedule ID and initial state (`active`).
 
 ### MCP Tools
 
-Agents can create schedules using the `pulse_create_schedule` MCP tool. Schedules created by agents enter the `pending_approval` state and require human approval before they start running.
+Agents can create schedules using the `tasks_create` MCP tool. Schedules created by agents enter the `pending_approval` state and require human approval before they start running.
 
 ```
-pulse_create_schedule({
+tasks_create({
   name: "Nightly test suite",
   cron: "0 2 * * *",
   prompt: "Run the full test suite and report any failures.",
@@ -97,12 +97,12 @@ pulse_create_schedule({
 
 <Callout type="warn">
   Agent-created schedules require human approval. This prevents agents from autonomously scheduling
-  expensive or unintended recurring tasks. Approve pending schedules from the PulsePanel UI.
+  expensive or unintended recurring tasks. Approve pending schedules from the TasksPanel UI.
 </Callout>
 
 ## Cron Syntax
 
-Pulse uses standard five-field cron expressions. The PulsePanel includes a visual builder and common presets.
+Tasks uses standard five-field cron expressions. The TasksPanel includes a visual builder and common presets.
 
 ```
 ┌───────────── minute (0-59)
@@ -137,7 +137,7 @@ Pulse uses standard five-field cron expressions. The PulsePanel includes a visua
 
 ## Run History
 
-Every schedule execution creates a run record in SQLite. The RunHistoryPanel in the Pulse tab shows past runs with status and timing.
+Every schedule execution creates a run record in SQLite. The RunHistoryPanel in the Tasks tab shows past runs with status and timing.
 
 ### Run States
 
@@ -157,20 +157,20 @@ Click any run in the history to open the full agent conversation. This navigates
 Cancel an active run:
 
 ```bash
-curl -X POST http://localhost:4242/api/pulse/runs/{runId}/cancel
+curl -X POST http://localhost:4242/api/tasks/runs/{runId}/cancel
 ```
 
 Trigger a schedule outside its cron timing:
 
 ```bash
-curl -X POST http://localhost:4242/api/pulse/schedules/{scheduleId}/trigger
+curl -X POST http://localhost:4242/api/tasks/schedules/{scheduleId}/trigger
 ```
 
-Pulse enforces a configurable concurrency cap on simultaneous runs. If the cap is reached, new triggers are skipped with a warning log. Overrun protection (via croner's `protect` option) prevents a schedule from starting a new run if its previous run is still active.
+Tasks enforces a configurable concurrency cap on simultaneous runs. If the cap is reached, new triggers are skipped with a warning log. Overrun protection (via croner's `protect` option) prevents a schedule from starting a new run if its previous run is still active.
 
-## Pulse + Relay
+## Tasks + Relay
 
-When both Pulse and [Relay](/docs/guides/relay-messaging) are enabled, schedule dispatch goes through Relay. Instead of calling the agent runtime directly, Pulse publishes to `relay.system.pulse.{scheduleId}`. The ClaudeCodeAdapter picks up the message and routes it to a new agent session.
+When both Tasks and [Relay](/docs/guides/relay-messaging) are enabled, schedule dispatch goes through Relay. Instead of calling the agent runtime directly, Tasks publishes to `relay.system.tasks.{scheduleId}`. The ClaudeCodeAdapter picks up the message and routes it to a new agent session.
 
 This integration provides:
 
@@ -179,7 +179,7 @@ This integration provides:
 - **Reliability** — Scheduled messages flow through the same pipeline as all other Relay messages — circuit breakers, backpressure, dead letter queue.
 
 <Callout type="info">
-  When Relay is disabled, Pulse falls back to direct in-process calls. Schedules work the same way —
+  When Relay is disabled, Tasks falls back to direct in-process calls. Schedules work the same way —
   you just lose the tracing and metrics integration.
 </Callout>
 
@@ -187,9 +187,9 @@ This integration provides:
 
 <TypeTable
   type={{
-    DORKOS_PULSE_ENABLED: {
+    DORKOS_TASKS_ENABLED: {
       type: 'boolean',
-      description: 'Enable or disable the Pulse scheduler',
+      description: 'Enable or disable the Task scheduler',
       default: 'false',
     },
     'Max concurrent runs': {
@@ -226,30 +226,30 @@ This integration provides:
   }}
 />
 
-Pause and resume schedules from the PulsePanel UI or via PATCH requests:
+Pause and resume schedules from the TasksPanel UI or via PATCH requests:
 
 ```bash
 # Pause a schedule
-curl -X PATCH http://localhost:4242/api/pulse/schedules/{scheduleId} \
+curl -X PATCH http://localhost:4242/api/tasks/schedules/{scheduleId} \
   -H "Content-Type: application/json" \
   -d '{ "status": "paused" }'
 
 # Resume a schedule
-curl -X PATCH http://localhost:4242/api/pulse/schedules/{scheduleId} \
+curl -X PATCH http://localhost:4242/api/tasks/schedules/{scheduleId} \
   -H "Content-Type: application/json" \
   -d '{ "status": "active" }'
 ```
 
-Pulse data — schedule definitions and run history — is stored in SQLite at `~/.dork/dork.db` with WAL mode for concurrent read/write access.
+Tasks data — schedule definitions and run history — is stored in SQLite at `~/.dork/dork.db` with WAL mode for concurrent read/write access.
 
 ## Next Steps
 
 <Cards>
   <Card title="Relay Messaging" href="/docs/guides/relay-messaging">
-    How Pulse integrates with the Relay messaging layer.
+    How Tasks integrates with the Relay messaging layer.
   </Card>
   <Card title="CLI Usage" href="/docs/guides/cli-usage">
-    See the --pulse and --no-pulse CLI flags.
+    See the --tasks and --no-tasks CLI flags.
   </Card>
   <Card title="Agent Coordination" href="/docs/guides/agent-coordination">
     Multi-agent workflow patterns for scheduled and interactive agents.

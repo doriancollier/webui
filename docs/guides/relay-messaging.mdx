@@ -13,7 +13,7 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 
 Relay is DorkOS's built-in messaging layer. It routes messages between agents, humans, and external platforms like Telegram using a subject-based publish/subscribe model. Every message is persisted to disk, indexed in SQLite, and tracked end-to-end.
 
-This guide covers enabling Relay, sending your first message, configuring adapters, and integrating with Pulse.
+This guide covers enabling Relay, sending your first message, configuring adapters, and integrating with Tasks.
 
 ## What Relay Does
 
@@ -107,7 +107,7 @@ Subjects use a hierarchical dot-separated format: `relay.{audience}.{identifier}
 | `relay.agent.{agentId}`           | Messages addressed to a specific agent          |
 | `relay.human.console.{clientId}`  | Messages destined for a human's browser console |
 | `relay.human.telegram.{chatId}`   | Messages routed to a Telegram chat              |
-| `relay.system.pulse.{scheduleId}` | System messages from the Pulse scheduler        |
+| `relay.system.tasks.{scheduleId}` | System messages from the Task scheduler         |
 
 Wildcards work for subscriptions: `*` matches exactly one segment, `>` matches one or more trailing segments. Subscribing to `relay.agent.>` receives messages addressed to any agent.
 
@@ -282,19 +282,19 @@ Span statuses: `sent` (published, delivery in progress), `delivered` (processed 
 
 For deeper observability, see the [Relay Observability](/docs/guides/relay-observability) guide.
 
-## Relay and Pulse Integration
+## Relay and Tasks Integration
 
-When both Relay and Pulse are enabled, scheduled jobs are dispatched through Relay. Pulse publishes to `relay.system.pulse.{scheduleId}`, and the Claude Code adapter starts the agent session.
+When both Relay and Tasks are enabled, scheduled jobs are dispatched through Relay. Tasks publishes to `relay.system.tasks.{scheduleId}`, and the Claude Code adapter starts the agent session.
 
 Scheduled runs then get Relay's full delivery pipeline — budget enforcement, tracing, dead letter handling, and access control.
 
 ```bash
 export DORKOS_RELAY_ENABLED=true
-export DORKOS_PULSE_ENABLED=true
+export DORKOS_TASKS_ENABLED=true
 dorkos
 ```
 
-Subscribe to `relay.system.pulse.*` via the SSE stream to observe all Pulse dispatch events.
+Subscribe to `relay.system.tasks.*` via the SSE stream to observe all Tasks dispatch events.
 
 ## Configuration Reference
 

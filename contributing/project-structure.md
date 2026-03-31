@@ -58,7 +58,7 @@ src/
 │   │   │   ├── api/
 │   │   │   └── index.ts
 │   │   ├── agent/       # Agent identity hooks (useCurrentAgent, useAgentToolStatus, etc.)
-│   │   ├── pulse/       # Pulse scheduler hooks (useSchedules, useRuns, etc.)
+│   │   ├── tasks/       # Task scheduler hooks (useSchedules, useRuns, etc.)
 │   │   ├── relay/       # Relay messaging hooks (useRelayMessages, useRelayAdapters, etc.)
 │   │   ├── mesh/        # Mesh discovery hooks (useRegisteredAgents, useDiscoverAgents, etc.)
 │   │   ├── discovery/   # Shared discovery scan state (Zustand store + useDiscoveryScan hook)
@@ -77,15 +77,15 @@ src/
 │   │   ├── dashboard-sidebar/ # DashboardSidebar — navigation + recent agents list at /
 │   │   ├── dashboard-attention/ # NeedsAttentionSection — conditional zero-DOM attention zone
 │   │   ├── dashboard-sessions/ # ActiveSessionsSection — active session cards grid (2h window)
-│   │   ├── dashboard-status/ # SystemStatusRow — Pulse/Relay/Mesh health cards + activity sparkline
+│   │   ├── dashboard-status/ # SystemStatusRow — Tasks/Relay/Mesh health cards + activity sparkline
 │   │   ├── dashboard-activity/ # RecentActivityFeed — time-grouped event feed with last-visit tracking
 │   │   ├── settings/    # SettingsDialog (Appearance, Preferences, Status Bar, Server, Tools, Advanced)
 │   │   ├── agent-settings/ # AgentDialog (IdentityTab, PersonaTab, CapabilitiesTab, ConnectionsTab)
 │   │   ├── files/       # FileBrowser
-│   │   ├── pulse/       # PulsePanel, ScheduleRow, CronVisualBuilder, AgentCombobox
+│   │   ├── tasks/        # TasksPanel, ScheduleRow, CronVisualBuilder, AgentCombobox
 │   │   ├── relay/       # RelayPanel, ActivityFeed, AdapterCard, AdapterSetupWizard
 │   │   ├── mesh/        # MeshPanel, TopologyGraph, AgentNode, BindingDialog
-│   │   ├── onboarding/  # OnboardingFlow, AgentDiscoveryStep, PulsePresetsStep
+│   │   ├── onboarding/  # OnboardingFlow, AgentDiscoveryStep, TaskPresetsStep
 │   │   ├── canvas/      # AgentCanvas split-view panel (JSON, Markdown, URL content renderers)
 │   │   └── status/      # StatusLine, GitStatusItem, ModelItem
 │   └── widgets/         # Large UI compositions
@@ -297,11 +297,11 @@ apps/server/src/
 │   │       ├── sdk-utils.ts            # makeUserPrompt(), resolveClaudeCliPath()
 │   │       ├── mcp-tools/              # In-process MCP tool server for Claude Agent SDK
 │   │       └── index.ts                # Barrel export for ClaudeCodeRuntime
-│   ├── pulse/                   # Pulse scheduler services
-│   │   ├── pulse-store.ts       # SQLite + JSON schedule/run state
+│   ├── tasks/                   # Task scheduler services
+│   │   ├── tasks-store.ts       # SQLite + JSON schedule/run state
 │   │   ├── scheduler-service.ts # Cron engine (croner) with overrun protection
-│   │   ├── pulse-presets.ts     # Default schedule presets
-│   │   └── pulse-state.ts       # DORKOS_PULSE_ENABLED feature flag holder
+│   │   ├── task-presets.ts      # Default task presets
+│   │   └── tasks-state.ts       # DORKOS_TASKS_ENABLED feature flag holder
 │   ├── relay/                   # Relay messaging services
 │   │   ├── adapter-manager.ts   # Server-side adapter lifecycle management
 │   │   ├── adapter-factory.ts   # Adapter instantiation from config

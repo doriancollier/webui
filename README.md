@@ -34,14 +34,14 @@ It's 7am. CI has been red since 2:47am. A dependency update cascaded across thre
 
 DorkOS gives your agents what they're missing: scheduling, communication, and coordination. The intelligence comes from the agents. Everything else comes from DorkOS.
 
-### Pulse - Scheduling
+### Tasks - Scheduling
 
-Cron-based agent execution, independent of your IDE or terminal. Your agents ship code, triage issues, and run audits on schedule. You wake up to completed pull requests.
+Cron-based and on-demand agent execution, independent of your IDE or terminal. Your agents ship code, triage issues, and run audits on schedule. You wake up to completed pull requests.
 
-- Overrun protection prevents duplicate runs
+- File-based task definitions alongside your code
 - Isolated sessions per run with full history
 - Configurable concurrency limits
-- Approval gates for agent-created schedules
+- Overrun protection prevents duplicate runs
 
 ### Relay - Communication
 

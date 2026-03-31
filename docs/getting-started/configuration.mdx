@@ -101,14 +101,14 @@ Relay is the messaging layer that lets agents reach you on Telegram, notify each
   }}
 />
 
-## Pulse Configuration
+## Tasks Configuration
 
-Pulse schedules agent tasks on a cron — independently, without keeping a terminal open. See the [Pulse Scheduler guide](/docs/guides/pulse-scheduler) for setup details.
+Tasks schedules agent jobs on a cron — independently, without keeping a terminal open. See the [Task Scheduler guide](/docs/guides/task-scheduler) for setup details.
 
 <TypeTable
   type={{
-    DORKOS_PULSE_ENABLED: {
-      description: 'Enable the Pulse scheduler for autonomous cron-based agent execution.',
+    DORKOS_TASKS_ENABLED: {
+      description: 'Enable the Tasks scheduler for autonomous cron-based agent execution.',
       type: 'boolean',
       default: 'true',
     },

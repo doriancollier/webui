@@ -72,9 +72,9 @@ Transport defines methods for every operation the client needs, organized by dom
 | ------------- | ---------------------------------------------------------------- |
 | `uploadFiles` | Upload files to the session's working directory for agent access |
 
-### Pulse, Relay, Mesh
+### Tasks, Relay, Mesh
 
-Transport also exposes full Pulse scheduler methods (`listSchedules`, `createSchedule`, `triggerSchedule`, `listRuns`, etc.), Relay messaging methods (`sendRelayMessage`, `listRelayAdapters`, `getRelayTrace`, etc.), and Mesh discovery methods (`listMeshAgents`, `registerMeshAgent`, `getMeshTopology`, etc.). These follow the same pattern as the core session methods.
+Transport also exposes full Tasks scheduler methods (`listSchedules`, `createSchedule`, `triggerSchedule`, `listRuns`, etc.), Relay messaging methods (`sendRelayMessage`, `listRelayAdapters`, `getRelayTrace`, etc.), and Mesh discovery methods (`listMeshAgents`, `registerMeshAgent`, `getMeshTopology`, etc.). These follow the same pattern as the core session methods.
 
 <Callout type="info">
   The Transport interface is defined in `@dorkos/shared` so both the client and server reference the

@@ -199,7 +199,7 @@ Update user configuration. Accepts a partial config object that is deep-merged w
     "relayTools": true,
     "meshTools": true,
     "adapterTools": true,
-    "pulseTools": false
+    "tasksTools": false
   }
 }
 ```
@@ -244,21 +244,20 @@ The `warnings` field is only present when the patch includes keys listed in `SEN
 }
 ```
 
-## Pulse Scheduler (`routes/pulse.ts`)
+## Task Scheduler (`routes/tasks.ts`)
 
-Feature-flag guarded via `DORKOS_PULSE_ENABLED`. Router is mounted at `/api/pulse`.
+Feature-flag guarded via `DORKOS_TASKS_ENABLED`. Router is mounted at `/api/tasks`.
 
-| Method | Path                               | Description                   |
-| ------ | ---------------------------------- | ----------------------------- |
-| GET    | `/api/pulse/schedules`             | List all schedules            |
-| POST   | `/api/pulse/schedules`             | Create a schedule             |
-| PATCH  | `/api/pulse/schedules/:id`         | Update a schedule             |
-| DELETE | `/api/pulse/schedules/:id`         | Delete a schedule             |
-| POST   | `/api/pulse/schedules/:id/trigger` | Trigger a schedule run        |
-| GET    | `/api/pulse/runs`                  | Get run history               |
-| GET    | `/api/pulse/runs/:id`              | Get a specific run            |
-| POST   | `/api/pulse/runs/:id/cancel`       | Cancel an active run          |
-| GET    | `/api/pulse/presets`               | List default schedule presets |
+| Method | Path                         | Description               |
+| ------ | ---------------------------- | ------------------------- |
+| GET    | `/api/tasks`                 | List all task definitions |
+| POST   | `/api/tasks`                 | Create a task definition  |
+| PATCH  | `/api/tasks/:id`             | Update a task definition  |
+| DELETE | `/api/tasks/:id`             | Delete a task definition  |
+| POST   | `/api/tasks/:id/trigger`     | Trigger a task run        |
+| GET    | `/api/tasks/runs`            | Get run history           |
+| GET    | `/api/tasks/runs/:id`        | Get a specific run        |
+| POST   | `/api/tasks/runs/:id/cancel` | Cancel an active run      |
 
 Schedules support an optional `agentId` field for agent-linked scheduling. When `agentId` is set, the schedule's CWD is resolved from the agent's registered project path via MeshCore.
 
@@ -281,7 +280,7 @@ Other relevant environment variables:
 | ---------------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | `DORKOS_PORT`          | `4242` (dev: `6242`) | Express server port                                                                                                                    |
 | `DORKOS_CORS_ORIGIN`   | `*`                  | CORS `Access-Control-Allow-Origin` value. Set to a specific origin (e.g. `https://app.example.com`) to restrict cross-origin requests. |
-| `DORKOS_PULSE_ENABLED` | `false`              | `/api/schedules/*` and `/api/runs/*` routes                                                                                            |
+| `DORKOS_TASKS_ENABLED` | `true`               | `/api/tasks/*` routes (task definitions and runs)                                                                                      |
 
 ## Agent Endpoints
 

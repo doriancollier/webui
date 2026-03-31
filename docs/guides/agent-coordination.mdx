@@ -1,6 +1,6 @@
 ---
 title: Agent Coordination
-description: Patterns for coordinating multiple AI agents with Relay, Mesh, and Pulse
+description: Patterns for coordinating multiple AI agents with Relay, Mesh, and Tasks
 ---
 
 import { Callout } from 'fumadocs-ui/components/callout';
@@ -8,7 +8,7 @@ import { Cards, Card } from 'fumadocs-ui/components/card';
 
 # Agent Coordination
 
-DorkOS provides three subsystems that work together to coordinate multiple AI agents: **Relay** handles messaging, **Mesh** handles discovery and identity, and **Pulse** handles scheduling. This guide covers practical patterns for combining them to build multi-agent workflows.
+DorkOS provides three subsystems that work together to coordinate multiple AI agents: **Relay** handles messaging, **Mesh** handles discovery and identity, and **Tasks** handles scheduling. This guide covers practical patterns for combining them to build multi-agent workflows.
 
 For Relay internals — message envelopes, budget enforcement, delivery pipeline — see [Relay Messaging](/docs/guides/relay-messaging).
 
@@ -101,9 +101,9 @@ The web agent's response routes back to `relay.agent.backend.api` automatically.
   hour), and API call allowance. This prevents infinite message loops and runaway costs.
 </Callout>
 
-## Scheduled Coordination with Pulse
+## Scheduled Coordination with Tasks
 
-Pulse adds time-based automation to agent coordination. When Relay is enabled, Pulse dispatches through the Relay bus rather than calling agents directly — so scheduled tasks follow the same access rules and budget limits as manual messages.
+Tasks adds time-based automation to agent coordination. When Relay is enabled, Tasks dispatches through the Relay bus rather than calling agents directly — so scheduled tasks follow the same access rules and budget limits as manual messages.
 
 ### Nightly Code Review
 
@@ -121,7 +121,7 @@ Pulse adds time-based automation to agent coordination. When Relay is enabled, P
 
 Combine scheduled triggers with agent-to-agent messaging for multi-step pipelines. For example, a deployment pipeline:
 
-1. **Pulse triggers** a test run at 6 AM on the backend agent.
+1. **Tasks triggers** a test run at 6 AM on the backend agent.
 2. **Backend agent** runs the test suite. If all pass, it uses `relay_send` to notify the infrastructure agent.
 3. **Infrastructure agent** builds the Docker image and deploys to staging.
 4. **Infrastructure agent** notifies all agents that staging is updated.
@@ -154,7 +154,7 @@ Connect a Telegram adapter so agents can escalate decisions and receive approval
 
 **Setup:** Configure the Telegram adapter in Relay settings with your bot token. Messages from your Telegram chat arrive on `relay.human.telegram.{chatId}`.
 
-**Workflow:** A Pulse-scheduled task runs a database migration check. The agent finds a migration that would drop a column with existing data. Instead of proceeding, it sends a message to your Telegram chat asking for confirmation. You reply "approved", the message flows back through Relay, and the agent continues.
+**Workflow:** A Tasks-scheduled job runs a database migration check. The agent finds a migration that would drop a column with existing data. Instead of proceeding, it sends a message to your Telegram chat asking for confirmation. You reply "approved", the message flows back through Relay, and the agent continues.
 
 **Outcome:** Critical decisions stay under your control even when agents are operating on schedule. Telegram gives you a natural interface for quick approvals without opening the DorkOS UI.
 
