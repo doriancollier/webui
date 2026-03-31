@@ -3,7 +3,6 @@ import { Outlet, useRouterState } from '@tanstack/react-router';
 import { useAppStore, useFavicon, useDocumentTitle } from '@/layers/shared/model';
 import { useSessionId, useDefaultCwd, useDirectoryState } from '@/layers/entities/session';
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
-import type { AgentVisual } from '@/layers/entities/agent';
 import { motion, AnimatePresence, LayoutGroup, MotionConfig } from 'motion/react';
 import { PermissionBanner, DialogHost } from '@/layers/widgets/app-layout';
 import { SessionSidebar, SidebarFooterBar } from '@/layers/features/session-list';
