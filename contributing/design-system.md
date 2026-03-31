@@ -754,6 +754,148 @@ Use instead of plain `Dialog` when the dialog content needs full-screen treatmen
 
 ---
 
+## Data Tables
+
+Use semantic `<table>` markup via the shared Table components. Do not use flex-based row layouts for columnar data.
+
+| Data Shape                                  | Use                               | Why                                       |
+| ------------------------------------------- | --------------------------------- | ----------------------------------------- |
+| Columnar data (rows × columns)              | `Table` primitives or `DataTable` | Semantic HTML, accessible, consistent     |
+| Sortable/filterable data                    | `DataTable` + TanStack Table      | Built-in interaction support              |
+| Card-based items (expandable, rich content) | Cards/custom layout               | Not tabular — each item is self-contained |
+| Sidebar lists (sessions, navigation)        | `SidebarMenu`                     | Navigation pattern, not data display      |
+
+### Table Primitives (`shared/ui/table.tsx`)
+
+Low-level semantic table building blocks with no interaction logic:
+
+```tsx
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption,
+} from '@/layers/shared/ui';
+
+<Table>
+  <TableHeader>
+    <TableRow>
+      <TableHead>Name</TableHead>
+      <TableHead>Status</TableHead>
+    </TableRow>
+  </TableHeader>
+  <TableBody>
+    <TableRow>
+      <TableCell>dorkbot</TableCell>
+      <TableCell>active</TableCell>
+    </TableRow>
+  </TableBody>
+</Table>;
+```
+
+`Table` wraps the `<table>` in a `relative w-full overflow-auto` container for horizontal scroll. `TableRow` has hover highlight (`hover:bg-muted/50`) and a `data-[state=selected]` highlight for selection.
+
+### DataTable (`shared/ui/data-table.tsx`)
+
+Generic wrapper around TanStack Table (`@tanstack/react-table`). Takes `columns` + `data`, handles the rendering loop, and shows an empty state when there are no rows.
+
+```tsx
+import { DataTable } from '@/layers/shared/ui';
+import type { ColumnDef } from '@tanstack/react-table';
+
+const columns: ColumnDef<Agent>[] = [
+  { accessorKey: 'name', header: 'Name' },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    meta: { hideOnMobile: true }, // hidden below 768px
+    cell: ({ row }) => <StatusBadge status={row.getValue('status')} />,
+  },
+];
+
+<DataTable columns={columns} data={agents} emptyMessage="No agents found." />;
+```
+
+For sorting, selection, or pagination, pass `tableOptions`:
+
+```tsx
+<DataTable
+  columns={columns}
+  data={agents}
+  tableOptions={{
+    state: { sorting },
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+  }}
+/>
+```
+
+**`meta.hideOnMobile`** — any column with `meta: { hideOnMobile: true }` is automatically hidden on viewports below 768px. User-provided `columnVisibility` in `tableOptions` takes precedence per-column.
+
+### FSD Placement
+
+- **`Table` + `DataTable`** → `shared/ui` (presentation only — no data fetching)
+- **Column definitions** → feature module that owns them (e.g., `features/activity-feed-page/`)
+- **Data fetching** → entity hooks consumed by the feature component
+
+### Dev Playground
+
+Table showcase at `/dev/tables` — basic tables, sorting, activity log, task history, row selection, empty/loading states, compact/striped variants.
+
+---
+
+## Error Boundaries
+
+Three fallback components handle different failure scopes:
+
+| Component            | Scope                   | Recovery                          | Renders With       |
+| -------------------- | ----------------------- | --------------------------------- | ------------------ |
+| `AppCrashFallback`   | Entire app              | Full page reload                  | Inline styles only |
+| `RouteErrorFallback` | Individual route        | `router.invalidate()` retry + nav | Tailwind + shadcn  |
+| `NotFoundFallback`   | 404 (no matching route) | Navigate to Dashboard             | Tailwind + shadcn  |
+
+### `AppCrashFallback`
+
+Outermost safety net — wraps the entire React tree in `main.tsx` via `react-error-boundary`. Uses **inline styles only** because Tailwind, shadcn, and context providers may themselves have crashed. The only recovery action is a hard page reload.
+
+```tsx
+// main.tsx
+import { ErrorBoundary } from 'react-error-boundary';
+import { AppCrashFallback } from '@/layers/shared/ui/app-crash-fallback';
+
+<ErrorBoundary FallbackComponent={AppCrashFallback}>
+  <App />
+</ErrorBoundary>;
+```
+
+Dev builds show an expandable stack trace. Production builds show only the error message.
+
+### `RouteErrorFallback`
+
+Handles runtime errors thrown inside a TanStack Router route. Renders inside the app shell — the sidebar and header remain visible. Uses `router.invalidate()` for retry (not `reset()`) because `reset()` does not re-run loaders.
+
+Registered as `defaultErrorComponent` in the router root:
+
+```tsx
+// router.tsx
+const rootRoute = createRootRouteWithContext<RouterContext>()({
+  defaultErrorComponent: RouteErrorFallback,
+  defaultNotFoundComponent: NotFoundFallback,
+});
+```
+
+### `NotFoundFallback`
+
+Renders when no route matches (404). Shows a Search icon and a "Go to Dashboard" button. Registered as `notFoundComponent` on the router root and on the root layout route.
+
+All three components are exported from `@/layers/shared/ui`.
+
+---
+
 ## File Reference
 
 | Concern                  | File                                                             |
@@ -761,6 +903,11 @@ Use instead of plain `Dialog` when the dialog content needs full-screen treatmen
 | CSS variables & Tailwind | `apps/client/src/index.css`                                      |
 | shadcn config            | `apps/client/components.json`                                    |
 | Component library        | `apps/client/src/layers/shared/ui/`                              |
+| Table primitives         | `apps/client/src/layers/shared/ui/table.tsx`                     |
+| DataTable                | `apps/client/src/layers/shared/ui/data-table.tsx`                |
+| App crash fallback       | `apps/client/src/layers/shared/ui/app-crash-fallback.tsx`        |
+| Route error fallback     | `apps/client/src/layers/shared/ui/route-error-fallback.tsx`      |
+| Not-found fallback       | `apps/client/src/layers/shared/ui/not-found-fallback.tsx`        |
 | Chat components          | `apps/client/src/layers/features/chat/`                          |
 | Session components       | `apps/client/src/layers/features/session-list/`                  |
 | App state                | `apps/client/src/layers/shared/model/app-store.ts`               |

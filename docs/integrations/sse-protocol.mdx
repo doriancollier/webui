@@ -94,6 +94,15 @@ The endpoint always returns a `text/event-stream` response. The web client uses 
       type: '{ toolCallId: string, questions: object }',
       description: 'Claude is asking the user a question with options',
     },
+    elicitation_prompt: {
+      type: '{ elicitationId: string, message: string, requestedSchema: object, timeoutMs: number }',
+      description:
+        'Agent is requesting structured form input via the MCP elicitation protocol (e.g., OAuth credentials, API keys)',
+    },
+    elicitation_complete: {
+      type: '{ elicitationId: string }',
+      description: 'Elicitation resolved — either submitted by the user or timed out',
+    },
   }}
 />
 
@@ -114,7 +123,7 @@ The endpoint always returns a `text/event-stream` response. The web client uses 
 
 ## Responding to Interactive Events
 
-<Tabs items={["Tool Approval", "Question Response"]}>
+<Tabs items={["Tool Approval", "Question Response", "Elicitation"]}>
 
 <Tab value="Tool Approval">
 When `approval_required` is received, approve or deny before the stream continues:
@@ -151,6 +160,30 @@ Content-Type: application/json
 
 </Tab>
 
+<Tab value="Elicitation">
+When `elicitation_prompt` is received, submit the completed form:
+
+```bash
+POST /api/sessions/:id/submit-elicitation
+Content-Type: application/json
+{ "elicitationId": "eli_123", "action": "submit", "content": { "api_key": "sk-..." } }
+```
+
+To cancel (agent treats as user declining):
+
+```bash
+POST /api/sessions/:id/submit-elicitation
+Content-Type: application/json
+{ "elicitationId": "eli_123", "action": "cancel" }
+```
+
+<Callout type="warn">
+  Elicitation has a server-side timeout (`timeoutMs` from the event). If you do not respond within
+  that window, the agent receives an empty result and continues or fails gracefully.
+</Callout>
+
+</Tab>
+
 </Tabs>
 
 ## Session Sync Protocol
@@ -181,7 +214,29 @@ GET /api/sessions/:id/stream
   supports ETag caching (`If-None-Match` / `304`) for efficient polling.
 </Callout>
 
-The sync stream carries only `sync_connected` and `sync_update` events. Real-time relay activity is available via the dedicated `GET /api/relay/stream` SSE endpoint.
+The sync stream carries only `sync_connected` and `sync_update` events.
+
+## System Events Stream
+
+For relay activity, tunnel status, and extension events, subscribe to the unified system events stream:
+
+```
+GET /api/events
+```
+
+This single persistent connection multiplexes all background events. Events are tagged with a `type` field using namespace prefixes:
+
+| Prefix       | Events                                                 |
+| ------------ | ------------------------------------------------------ |
+| `relay.*`    | Relay adapter activity, message delivery               |
+| `tunnel.*`   | Tunnel start/stop, URL changes                         |
+| `ext:{id}:*` | Extension-emitted events (namespaced per extension ID) |
+
+<Callout type="info">
+  The DorkOS client uses a single `GET /api/events` connection for all background state, replacing
+  the older per-resource SSE endpoints (`/api/relay/stream`, `/api/tunnel/stream`, etc.). Those
+  endpoints no longer exist. External clients should use `GET /api/events`.
+</Callout>
 
 ## Session Write Coordination
 
@@ -235,7 +290,17 @@ On `done`, the message stream ends. Send another message or close the connection
 <Step>
 ### Subscribe for ongoing sync
 
-For real-time updates from other clients or CLI writes, open a persistent connection via `GET /api/sessions/:id/stream`.
+For real-time updates from other clients or CLI writes, open a persistent session sync connection:
+
+```
+GET /api/sessions/:id/stream
+```
+
+For relay, tunnel, and extension events, use the unified system stream:
+
+```
+GET /api/events
+```
 
 </Step>
 

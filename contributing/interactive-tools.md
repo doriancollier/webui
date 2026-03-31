@@ -305,6 +305,90 @@ This clears `isWaitingForUser` (which checks for `status === 'pending'`), so the
 
 Both `approveTool` and `denyTool` call `runtime.approveTool(sessionId, toolCallId, approved)` with `true` or `false`. The pending interaction's `resolve(approved)` is called, returning `{ behavior: 'allow' }` or `{ behavior: 'deny' }` to the SDK.
 
+### MCP Elicitation
+
+MCP elicitation allows agents to request structured form input mid-session — typically used to collect credentials (API keys, OAuth tokens) needed by an MCP server before it can proceed. Unlike `AskUserQuestion` (which presents preset options), elicitation renders a dynamic form derived from a JSON Schema.
+
+**1. SDK triggers the elicitation hook**
+
+When an MCP server invokes the elicitation protocol, the SDK calls the registered elicitation handler with a `requestedSchema` JSON Schema object and a descriptive `message`.
+
+**2. `handleElicitation` creates the event and deferred promise**
+
+The handler in `interactive-handlers.ts` follows the same deferred promise pattern:
+
+```typescript
+function handleElicitation(session, elicitationId, message, requestedSchema) {
+  session.eventQueue.push({
+    type: 'elicitation_prompt',
+    data: {
+      elicitationId,
+      message,
+      requestedSchema,
+      timeoutMs: SESSIONS.INTERACTION_TIMEOUT_MS,
+    },
+  });
+  session.eventQueueNotify?.();
+
+  return new Promise((resolve) => {
+    const timeout = setTimeout(() => {
+      session.pendingInteractions.delete(elicitationId);
+      resolve({ action: 'cancel' });
+    }, SESSIONS.INTERACTION_TIMEOUT_MS);
+
+    session.pendingInteractions.set(elicitationId, {
+      type: 'elicitation',
+      toolCallId: elicitationId,
+      resolve: (result) => {
+        clearTimeout(timeout);
+        session.pendingInteractions.delete(elicitationId);
+        resolve(result);
+      },
+      reject: () => {
+        clearTimeout(timeout);
+        session.pendingInteractions.delete(elicitationId);
+        resolve({ action: 'cancel' });
+      },
+      timeout,
+    });
+  });
+}
+```
+
+**3. Client receives `elicitation_prompt` event**
+
+The stream event handler adds a tool call entry with `interactiveType: 'elicitation'` and stores the schema.
+
+**4. `MessageItem` renders `ElicitationPrompt`**
+
+`ElicitationPrompt.tsx` generates form fields dynamically from the `requestedSchema` (string inputs, number inputs, checkboxes, selects). On submit, it calls:
+
+```typescript
+await transport.submitElicitation(sessionId, elicitationId, {
+  action: 'submit',
+  content: formValues,
+});
+```
+
+To cancel:
+
+```typescript
+await transport.submitElicitation(sessionId, elicitationId, { action: 'cancel' });
+```
+
+**5. Transport resolves the deferred promise**
+
+`POST /api/sessions/:id/submit-elicitation` calls `runtime.submitElicitation(sessionId, elicitationId, result)`, resolving the pending interaction. The MCP SDK receives the submitted values and the MCP server can proceed.
+
+### Implementation Files
+
+| File                                                            | Purpose                                                    |
+| --------------------------------------------------------------- | ---------------------------------------------------------- |
+| `services/runtimes/claude-code/interactive-handlers.ts`         | `handleElicitation()` — deferred promise, event queue push |
+| `apps/server/src/routes/sessions.ts`                            | `POST /:id/submit-elicitation` route                       |
+| `apps/client/src/layers/features/chat/ui/ElicitationPrompt.tsx` | Dynamic form renderer from JSON Schema                     |
+| `packages/shared/src/schemas.ts`                                | `ElicitationPromptEventSchema`, `ElicitationResultSchema`  |
+
 ## Adding a New Interactive Tool
 
 Follow these steps to add a new interactive tool (e.g., a file picker, a confirmation dialog, or a multi-step wizard).

@@ -19,7 +19,7 @@ This guide covers data fetching patterns in DorkOS. The client uses TanStack Que
 | Runtime entity hooks | `apps/client/src/layers/entities/runtime/`                       |
 | Relay entity hooks   | `apps/client/src/layers/entities/relay/`                         |
 | Binding entity hooks | `apps/client/src/layers/entities/binding/`                       |
-| Pulse entity hooks   | `apps/client/src/layers/entities/pulse/`                         |
+| Tasks entity hooks   | `apps/client/src/layers/entities/tasks/`                         |
 | Chat feature hooks   | `apps/client/src/layers/features/chat/model/use-chat-session.ts` |
 | Express routes       | `apps/server/src/routes/`                                        |
 | Zod schemas          | `packages/shared/src/schemas.ts`                                 |
@@ -526,6 +526,50 @@ export function useSubagents() {
 
 The server delegates to `runtimeRegistry.getDefault().getSupportedSubagents()` via `GET /api/subagents`. Values are cached by `RuntimeCache` and refreshed on `reloadPlugins()`.
 
+## Session Chat Store (Zustand)
+
+Per-session chat state is stored in a global Zustand store (`useSessionChatStore`) rather than in component state. This decouples chat state from the React component lifecycle so sessions can stream concurrently, resume instantly on switch, and expose background activity indicators in the sidebar.
+
+**File:** `apps/client/src/layers/entities/session/model/session-chat-store.ts`
+
+### Why Zustand here instead of TanStack Query
+
+TanStack Query manages _server state_ (sessions list, messages, models). The session chat store manages _client-side streaming state_ that doesn't come from an API response:
+
+| State                                     | Managed by            |
+| ----------------------------------------- | --------------------- |
+| Session list, message history             | TanStack Query        |
+| Streaming messages, tool call parts       | `useSessionChatStore` |
+| Input drafts, status (`idle`/`streaming`) | `useSessionChatStore` |
+| Unseen activity badges (sidebar)          | `useSessionChatStore` |
+
+### API
+
+The store is keyed by `sessionId`. All actions auto-initialize a session entry if one doesn't exist:
+
+```typescript
+const { initSession, destroySession, updateSession, getSession } = useSessionChatStore.getState();
+```
+
+**Selectors (prefer granular over full-state):**
+
+```typescript
+// Full session state — re-renders on any field change
+const state = useSessionChatState(sessionId);
+
+// Granular selectors — fewer re-renders
+const messages = useSessionMessages(sessionId);
+const status = useSessionStatus(sessionId);
+```
+
+### LRU eviction
+
+The store retains at most 20 sessions (`MAX_RETAINED_SESSIONS`). When a new session is initialized and the limit is exceeded, the oldest `idle` sessions are evicted. Active sessions (`status !== 'idle'`) are never evicted.
+
+### Mount generation
+
+Each `initSession` call increments a monotonic `mountGeneration` counter. Stale closures captured by a previous component instance for the same session ID detect their staleness by comparing generation values and drop their writes rather than corrupting the new session's state.
+
 ## Runtime Entity Hooks
 
 The runtime entity layer (`entities/runtime/`) provides hooks for querying runtime capabilities. These are static for the server's lifetime, so `staleTime: Infinity` prevents unnecessary refetches.
@@ -731,26 +775,55 @@ const { mutate: deleteBinding } = useDeleteBinding();
 const { mutate: updateBinding } = useUpdateBinding();
 ```
 
-## Pulse Entity Hooks
+## Tasks Entity Hooks
 
-The pulse entity layer (`entities/pulse/`) provides hooks for schedule presets. These are used to pre-populate `CreateScheduleDialog` from the preset gallery.
+The tasks entity layer (`entities/tasks/`) provides hooks for task scheduling and run data. These are consumed by the Tasks feature (`features/tasks/`) to power the schedule list, run history, and task creation dialogs.
 
-### usePulsePresets
+### useTasks / useCreateTask / useUpdateTask / useDeleteTask / useTriggerTask
 
-Fetches the list of available schedule presets from the server. No `staleTime` override — presets change rarely, relying on TanStack Query defaults.
+CRUD and trigger hooks for the Tasks scheduler. All mutations invalidate the `['tasks']` query key on success.
 
 ```typescript
-// apps/client/src/layers/entities/pulse/model/use-pulse-presets.ts
-export function usePulsePresets() {
+// apps/client/src/layers/entities/tasks/model/use-tasks.ts
+export function useTasks(enabled = true) {
   const transport = useTransport();
-  return useQuery<PulsePreset[]>({
-    queryKey: ['pulse', 'presets'],
-    queryFn: () => transport.getPulsePresets(),
+  return useQuery({
+    queryKey: ['tasks'],
+    queryFn: () => transport.listTasks(),
+    enabled,
+  });
+}
+
+export function useCreateTask() {
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateTaskInput) => transport.createTask(input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['tasks'] }),
   });
 }
 ```
 
-Used by `PresetGallery` in `features/pulse/ui/` to render the preset cards shown on the Pulse empty state.
+`enabled` is driven by `useTasksEnabled()` — a config flag that gates the Tasks feature entirely. Pass `enabled={false}` when Tasks is disabled to skip the query.
+
+### useTaskTemplates
+
+Fetches built-in and user-defined task templates. Used to pre-populate `CreateTaskDialog` from the template gallery.
+
+```typescript
+// apps/client/src/layers/entities/tasks/model/use-task-templates.ts
+export function useTaskTemplates() {
+  const transport = useTransport();
+  return useQuery({
+    queryKey: ['tasks', 'templates'],
+    queryFn: () => transport.getTemplates(),
+  });
+}
+```
+
+### useTaskRuns / useTaskRun / useCancelTaskRun / useActiveTaskRunCount
+
+Hooks for task execution history. `useTaskRuns(taskId)` fetches the run list for a specific task. `useActiveTaskRunCount()` is a lightweight selector used by the sidebar badge.
 
 ## Agent Entity: useMcpConfig
 

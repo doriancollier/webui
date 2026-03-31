@@ -76,7 +76,6 @@ src/
 │   │   ├── session-list/ # SessionSidebar, SidebarTabRow, tabbed views
 │   │   ├── dashboard-sidebar/ # DashboardSidebar — navigation + recent agents list at /
 │   │   ├── dashboard-attention/ # NeedsAttentionSection — conditional zero-DOM attention zone
-│   │   ├── dashboard-sessions/ # ActiveSessionsSection — active session cards grid (2h window)
 │   │   ├── dashboard-status/ # SystemStatusRow — Tasks/Relay/Mesh health cards + activity sparkline
 │   │   ├── dashboard-activity/ # RecentActivityFeed — time-grouped event feed with last-visit tracking
 │   │   ├── settings/    # SettingsDialog (Appearance, Preferences, Status Bar, Server, Tools, Advanced)

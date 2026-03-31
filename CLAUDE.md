@@ -134,7 +134,7 @@ React 19 + Vite 6 + Tailwind CSS 4 + shadcn/ui (new-york style, neutral gray). U
 
 **Routing**: TanStack Router with code-based route definitions in `router.tsx`. Route structure:
 
-- `/` → `DashboardPage` (widgets/dashboard) — mission control with four sections in priority order: `NeedsAttentionSection` (conditional, zero DOM when empty), `ActiveSessionsSection` (sessions updated in last 2h), `SystemStatusRow` (Tasks/Relay/Mesh health cards + sparkline), `RecentActivityFeed` (time-grouped event feed). With `DashboardSidebar` (navigation + recent agents) and `DashboardHeader` (system health dot + quick actions)
+- `/` → `DashboardPage` (widgets/dashboard) — mission control with three sections in priority order: `NeedsAttentionSection` (conditional, zero DOM when empty), `SystemStatusRow` (Tasks/Relay/Mesh health cards + sparkline), `RecentActivityFeed` (time-grouped event feed). With `DashboardSidebar` (navigation + recent agents) and `DashboardHeader` (system health dot + quick actions)
 - `/agents` → `AgentsPage` (widgets/agents) — fleet management surface. Mode A (no agents): full-bleed `DiscoveryView`. Mode B (agents present): tabbed `AgentsList` + lazy `TopologyGraph`. With `DashboardSidebar` (shared nav, Agents item active) and `AgentsHeader` (Scan for Agents button)
 - `/session` → `SessionPage` (widgets/session) — agent chat, with `SessionSidebar` + `SessionHeader`, `?session=` and `?dir=` search params
 - `/dev/*` → Dev playground (outside router, conditional on dev mode)

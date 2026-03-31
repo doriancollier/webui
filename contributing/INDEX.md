@@ -42,26 +42,26 @@ Example: If `apps/client/src/layers/shared/ui/button.tsx` changes, it matches:
 
 ## Maintenance Tracking
 
-| Guide                            | Last Reviewed | Reviewer | Notes                                                                                      |
-| -------------------------------- | ------------- | -------- | ------------------------------------------------------------------------------------------ |
-| `project-structure.md`           | 2026-03-26    | Claude   | Added canvas/ feature module, ui-action-dispatcher, init-extensions.ts, extension-registry |
-| `architecture.md`                | 2026-03-29    | Claude   | Added getSubagents() to Transport interface summary                                        |
-| `design-system.md`               | 2026-03-27    | Claude   | Added FilterBar compound component section, filter engine key files                        |
-| `api-reference.md`               | 2026-03-29    | Claude   | Added GET /api/subagents endpoint                                                          |
-| `configuration.md`               | 2026-03-27    | Claude   | Added agents and extensions config sections                                                |
-| `interactive-tools.md`           | 2026-03-26    | Claude   | Added Agent UI Control section (controlUI/get_ui_state MCP tools, ui_command events)       |
-| `keyboard-shortcuts.md`          | 2026-03-19    | Claude   | Reconciled — no matching changes                                                           |
-| `obsidian-plugin-development.md` | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                      |
-| `data-fetching.md`               | 2026-03-29    | Claude   | Added useSubagents() entity hook section                                                   |
-| `state-management.md`            | 2026-03-28    | Claude   | Added refetch-on-reconnect pattern, queryClient singleton, previousConnectionState         |
-| `animations.md`                  | 2026-03-19    | Claude   | Reconciled — no matching changes                                                           |
-| `styling-theming.md`             | 2026-03-27    | Claude   | Added FilterBar styling section and key file reference                                     |
-| `parallel-execution.md`          | 2026-03-19    | Claude   | Reconciled — command file tweaks only                                                      |
-| `relay-adapters.md`              | 2026-03-22    | Claude   | Added telegram-chatsdk to AdapterConfig type union (chat-sdk-relay-adapter-refactor spec)  |
-| `adapter-catalog.md`             | 2026-03-22    | Claude   | Added Slack and Telegram Chat SDK to Built-in Adapter Manifests section                    |
-| `browser-testing.md`             | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                      |
-| `environment-variables.md`       | 2026-03-19    | Claude   | Reconciled — already updated in port convention commit                                     |
-| `extension-authoring.md`         | 2026-03-27    | Claude   | Initial creation — extension system Phase 3 task 5.1                                       |
+| Guide                            | Last Reviewed | Reviewer | Notes                                                                                     |
+| -------------------------------- | ------------- | -------- | ----------------------------------------------------------------------------------------- |
+| `project-structure.md`           | 2026-03-31    | Claude   | Removed stale dashboard-sessions/ feature module (deleted in commit a3ba80d3)             |
+| `architecture.md`                | 2026-03-31    | Claude   | Added session-store.ts, runtime-cache.ts, runtime-constants.ts to ClaudeCodeRuntime table |
+| `design-system.md`               | 2026-03-31    | Claude   | Added Data Tables section (Table/DataTable) and Error Boundaries section                  |
+| `api-reference.md`               | 2026-03-29    | Claude   | Added GET /api/subagents endpoint                                                         |
+| `configuration.md`               | 2026-03-27    | Claude   | Added agents and extensions config sections                                               |
+| `interactive-tools.md`           | 2026-03-31    | Claude   | Added MCP Elicitation section (elicitation_prompt, submit-elicitation, ElicitationPrompt) |
+| `keyboard-shortcuts.md`          | 2026-03-19    | Claude   | Reconciled — no matching changes                                                          |
+| `obsidian-plugin-development.md` | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                     |
+| `data-fetching.md`               | 2026-03-31    | Claude   | Renamed Pulse→Tasks entity hooks section; added session-keyed Zustand store section       |
+| `state-management.md`            | 2026-03-28    | Claude   | Added refetch-on-reconnect pattern, queryClient singleton, previousConnectionState        |
+| `animations.md`                  | 2026-03-19    | Claude   | Reconciled — no matching changes                                                          |
+| `styling-theming.md`             | 2026-03-27    | Claude   | Added FilterBar styling section and key file reference                                    |
+| `parallel-execution.md`          | 2026-03-19    | Claude   | Reconciled — command file tweaks only                                                     |
+| `relay-adapters.md`              | 2026-03-22    | Claude   | Added telegram-chatsdk to AdapterConfig type union (chat-sdk-relay-adapter-refactor spec) |
+| `adapter-catalog.md`             | 2026-03-22    | Claude   | Added Slack and Telegram Chat SDK to Built-in Adapter Manifests section                   |
+| `browser-testing.md`             | 2026-03-19    | Claude   | Reconciled — port convention already applied directly                                     |
+| `environment-variables.md`       | 2026-03-19    | Claude   | Reconciled — already updated in port convention commit                                    |
+| `extension-authoring.md`         | 2026-03-27    | Claude   | Initial creation — extension system Phase 3 task 5.1                                      |
 
 ## External Docs Coverage
 
@@ -116,38 +116,38 @@ Cross-cutting renames that affect many docs at once. The Stop hook and `/docs:re
 
 ### External Docs Maintenance
 
-| MDX File                                      | Last Reviewed | Reviewer | Notes                                                                                                             |
-| --------------------------------------------- | ------------- | -------- | ----------------------------------------------------------------------------------------------------------------- |
-| `docs/index.mdx`                              | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/changelog.mdx`                          | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/getting-started/installation.mdx`       | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/getting-started/quickstart.mdx`         | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/getting-started/configuration.mdx`      | 2026-03-21    | Claude   | Updated DORKOS_RELAY_ENABLED and DORKOS_PULSE_ENABLED defaults false → true                                       |
-| `docs/concepts/architecture.mdx`              | 2026-03-27    | Claude   | Added extensions service domain, canvas feature, agent UI control section                                         |
-| `docs/concepts/sessions.mdx`                  | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/concepts/transport.mdx`                 | 2026-03-27    | Claude   | Added uiState on sendMessage, stopTask, templates, defaultAgent, createDirectory methods                          |
-| `docs/concepts/relay.mdx`                     | 2026-03-22    | Claude   | Updated adapter count from 3 to 5, added Slack and Telegram Chat SDK adapter descriptions                         |
-| `docs/concepts/mesh.mdx`                      | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/integrations/sse-protocol.mdx`          | 2026-03-19    | Claude   | Added thinking_delta/tool_progress events, clientMessageId, lastMessageIds in done, 409 for interactive endpoints |
-| `docs/integrations/building-integrations.mdx` | 2026-03-27    | Claude   | Added uiState/stopTask/createDirectory/templates/setDefaultAgent, ui_command StreamEvent                          |
-| `docs/self-hosting/deployment.mdx`            | 2026-03-06    | Claude   | Reconciled — no content impact from ESLint migration                                                              |
-| `docs/self-hosting/reverse-proxy.mdx`         | 2026-02-17    | Claude   | Written from scratch                                                                                              |
-| `docs/contributing/architecture.mdx`          | 2026-03-27    | Claude   | Added extensions route, extension services, MCP tools (ui/extension), canvas FSD layer, ui_command event          |
-| `docs/contributing/testing.mdx`               | 2026-03-06    | Claude   | Reconciled — no content impact from ESLint migration                                                              |
-| `docs/contributing/development-setup.mdx`     | 2026-03-06    | Claude   | Added eslint-config and icons packages                                                                            |
-| `docs/guides/cli-usage.mdx`                   | 2026-03-06    | Claude   | Reconciled — no content impact from ESLint migration                                                              |
-| `docs/guides/tunnel-setup.mdx`                | 2026-02-17    | Claude   | Written from scratch                                                                                              |
-| `docs/guides/slash-commands.mdx`              | 2026-02-17    | Claude   | Written from scratch                                                                                              |
-| `docs/guides/keyboard-shortcuts.mdx`          | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/tool-approval.mdx`               | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/agents.mdx`                      | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/agent-discovery.mdx`             | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/agent-coordination.mdx`          | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/task-scheduler.mdx`              | 2026-03-31    | Claude   | Renamed from pulse-scheduler.mdx; Pulse→Tasks terminology migration                                               |
-| `docs/guides/relay-messaging.mdx`             | 2026-03-22    | Claude   | Added Slack + Telegram Chat SDK adapters, fixed enabled-by-default framing                                        |
-| `docs/guides/relay-observability.mdx`         | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/building-relay-adapters.mdx`     | 2026-03-22    | Claude   | Added deliverStream() to interface, PlatformClient/StreamManager/ThreadIdCodec section, Chat SDK reference        |
-| `docs/guides/obsidian-plugin.mdx`             | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/guides/persona.mdx`                     | 2026-03-06    | Claude   | Added to coverage map                                                                                             |
-| `docs/getting-started/uninstall.mdx`          | 2026-03-31    | Claude   | Added to coverage map                                                                                             |
-| `docs/self-hosting/docker.mdx`                | 2026-03-31    | Claude   | Added to coverage map                                                                                             |
+| MDX File                                      | Last Reviewed | Reviewer | Notes                                                                                                      |
+| --------------------------------------------- | ------------- | -------- | ---------------------------------------------------------------------------------------------------------- |
+| `docs/index.mdx`                              | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/changelog.mdx`                          | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/getting-started/installation.mdx`       | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/getting-started/quickstart.mdx`         | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/getting-started/configuration.mdx`      | 2026-03-21    | Claude   | Updated DORKOS_RELAY_ENABLED and DORKOS_PULSE_ENABLED defaults false → true                                |
+| `docs/concepts/architecture.mdx`              | 2026-03-27    | Claude   | Added extensions service domain, canvas feature, agent UI control section                                  |
+| `docs/concepts/sessions.mdx`                  | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/concepts/transport.mdx`                 | 2026-03-31    | Claude   | Added forkSession, renameSession, submitElicitation, reloadPlugins methods                                 |
+| `docs/concepts/relay.mdx`                     | 2026-03-22    | Claude   | Updated adapter count from 3 to 5, added Slack and Telegram Chat SDK adapter descriptions                  |
+| `docs/concepts/mesh.mdx`                      | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/integrations/sse-protocol.mdx`          | 2026-03-31    | Claude   | Added elicitation events, unified /api/events system stream, removed stale /api/relay/stream reference     |
+| `docs/integrations/building-integrations.mdx` | 2026-03-27    | Claude   | Added uiState/stopTask/createDirectory/templates/setDefaultAgent, ui_command StreamEvent                   |
+| `docs/self-hosting/deployment.mdx`            | 2026-03-06    | Claude   | Reconciled — no content impact from ESLint migration                                                       |
+| `docs/self-hosting/reverse-proxy.mdx`         | 2026-02-17    | Claude   | Written from scratch                                                                                       |
+| `docs/contributing/architecture.mdx`          | 2026-03-27    | Claude   | Added extensions route, extension services, MCP tools (ui/extension), canvas FSD layer, ui_command event   |
+| `docs/contributing/testing.mdx`               | 2026-03-06    | Claude   | Reconciled — no content impact from ESLint migration                                                       |
+| `docs/contributing/development-setup.mdx`     | 2026-03-06    | Claude   | Added eslint-config and icons packages                                                                     |
+| `docs/guides/cli-usage.mdx`                   | 2026-03-06    | Claude   | Reconciled — no content impact from ESLint migration                                                       |
+| `docs/guides/tunnel-setup.mdx`                | 2026-02-17    | Claude   | Written from scratch                                                                                       |
+| `docs/guides/slash-commands.mdx`              | 2026-02-17    | Claude   | Written from scratch                                                                                       |
+| `docs/guides/keyboard-shortcuts.mdx`          | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/tool-approval.mdx`               | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/agents.mdx`                      | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/agent-discovery.mdx`             | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/agent-coordination.mdx`          | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/task-scheduler.mdx`              | 2026-03-31    | Claude   | Renamed from pulse-scheduler.mdx; Pulse→Tasks terminology migration                                        |
+| `docs/guides/relay-messaging.mdx`             | 2026-03-22    | Claude   | Added Slack + Telegram Chat SDK adapters, fixed enabled-by-default framing                                 |
+| `docs/guides/relay-observability.mdx`         | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/building-relay-adapters.mdx`     | 2026-03-22    | Claude   | Added deliverStream() to interface, PlatformClient/StreamManager/ThreadIdCodec section, Chat SDK reference |
+| `docs/guides/obsidian-plugin.mdx`             | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/guides/persona.mdx`                     | 2026-03-06    | Claude   | Added to coverage map                                                                                      |
+| `docs/getting-started/uninstall.mdx`          | 2026-03-31    | Claude   | Added to coverage map                                                                                      |
+| `docs/self-hosting/docker.mdx`                | 2026-03-31    | Claude   | Added to coverage map                                                                                      |

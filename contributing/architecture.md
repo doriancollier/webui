@@ -322,11 +322,14 @@ All Claude Code-specific services live under `services/runtimes/claude-code/`:
 | File                      | Purpose                                                                           |
 | ------------------------- | --------------------------------------------------------------------------------- |
 | `claude-code-runtime.ts`  | `ClaudeCodeRuntime` class implementing `AgentRuntime`                             |
+| `session-store.ts`        | `SessionStore` — in-memory store for active `AgentSession` objects                |
+| `runtime-cache.ts`        | `RuntimeCache` — caches models, subagents, and other slow-fetch runtime data      |
+| `runtime-constants.ts`    | Shared constants used across ClaudeCodeRuntime modules                            |
 | `agent-types.ts`          | `AgentSession` and `ToolState` interfaces                                         |
 | `sdk-event-mapper.ts`     | SDK message to `StreamEvent` transformation                                       |
 | `context-builder.ts`      | Runtime context injection for system prompt                                       |
 | `tool-filter.ts`          | Per-agent MCP tool filtering                                                      |
-| `interactive-handlers.ts` | Tool approval and question flows                                                  |
+| `interactive-handlers.ts` | Tool approval, question flows, and MCP elicitation                                |
 | `transcript-reader.ts`    | JSONL session data reader                                                         |
 | `transcript-parser.ts`    | JSONL line parser                                                                 |
 | `session-broadcaster.ts`  | Cross-client session sync via file watching                                       |

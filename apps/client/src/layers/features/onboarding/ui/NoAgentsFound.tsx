@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { Button, Input, Textarea, DirectoryPicker, Label } from '@/layers/shared/ui';
 import { useInitAgent } from '@/layers/entities/agent';
-import { FolderOpen, Loader2, CheckCircle2, Bot } from 'lucide-react';
+import { FolderOpen, Loader2, CheckCircle2 } from 'lucide-react';
 import { shortenHomePath } from '@/layers/shared/lib';
 
 interface NoAgentsFoundProps {
@@ -57,20 +57,8 @@ export function NoAgentsFound({ onAgentCreated }: NoAgentsFoundProps) {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center space-y-6 py-8">
-      {/* Header */}
-      <div className="space-y-2 text-center">
-        <div className="bg-muted mx-auto flex size-12 items-center justify-center rounded-full">
-          <Bot className="text-muted-foreground size-6" />
-        </div>
-        <h3 className="text-lg font-semibold">No agents found</h3>
-        <p className="text-muted-foreground mx-auto max-w-sm text-sm">
-          Agents give your projects an identity. Each agent lives in a project directory and can
-          have its own name, persona, and scheduled tasks.
-        </p>
-      </div>
-
-      {/* Creation form */}
+    <div className="flex flex-col items-center justify-center">
+      {/* Creation form — header context is provided by the parent step */}
       <div className="w-full max-w-sm space-y-4">
         {/* Directory picker */}
         <div className="space-y-1.5">
