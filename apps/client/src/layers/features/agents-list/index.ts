@@ -1,13 +1,12 @@
 /**
- * Agent list feature — dense fleet management list with filtering, expandable rows,
- * and session launch.
+ * Agent list feature — sortable, filterable agent fleet table with responsive
+ * column hiding and inline actions.
  *
  * @module features/agents-list
  */
-export { AgentRow } from './ui/AgentRow';
 export { AgentEmptyFilterState } from './ui/AgentEmptyFilterState';
 export { AgentsList } from './ui/AgentsList';
-export { SessionLaunchPopover } from './ui/SessionLaunchPopover';
 export { UnregisterAgentDialog } from './ui/UnregisterAgentDialog';
 export { AgentGhostRows } from './ui/AgentGhostRows';
 export { agentFilterSchema, agentSortOptions } from './lib/agent-filter-schema';
+export type { AgentTableRow } from './lib/agent-columns';

@@ -885,6 +885,272 @@ function CompactStripedSection() {
 }
 
 // ---------------------------------------------------------------------------
+// Section 8: Responsive Patterns
+// ---------------------------------------------------------------------------
+
+interface MockEndpoint {
+  id: string;
+  method: 'GET' | 'POST' | 'PUT' | 'DELETE';
+  path: string;
+  handler: string;
+  latencyP50: string;
+  latencyP99: string;
+  rateLimit: string;
+  status: 'healthy' | 'degraded' | 'down';
+}
+
+const MOCK_ENDPOINTS: MockEndpoint[] = [
+  {
+    id: '1',
+    method: 'GET',
+    path: '/api/sessions',
+    handler: 'SessionController.list',
+    latencyP50: '12ms',
+    latencyP99: '45ms',
+    rateLimit: '100/min',
+    status: 'healthy',
+  },
+  {
+    id: '2',
+    method: 'POST',
+    path: '/api/sessions/:id/message',
+    handler: 'MessageController.send',
+    latencyP50: '340ms',
+    latencyP99: '2.1s',
+    rateLimit: '30/min',
+    status: 'healthy',
+  },
+  {
+    id: '3',
+    method: 'GET',
+    path: '/api/mesh/topology',
+    handler: 'MeshController.topology',
+    latencyP50: '28ms',
+    latencyP99: '120ms',
+    rateLimit: '60/min',
+    status: 'degraded',
+  },
+  {
+    id: '4',
+    method: 'DELETE',
+    path: '/api/agents/:id',
+    handler: 'AgentController.unregister',
+    latencyP50: '8ms',
+    latencyP99: '35ms',
+    rateLimit: '10/min',
+    status: 'healthy',
+  },
+  {
+    id: '5',
+    method: 'PUT',
+    path: '/api/pulse/schedules/:id',
+    handler: 'PulseController.update',
+    latencyP50: '15ms',
+    latencyP99: '90ms',
+    rateLimit: '20/min',
+    status: 'down',
+  },
+];
+
+const METHOD_COLORS: Record<string, string> = {
+  GET: 'text-blue-500',
+  POST: 'text-emerald-500',
+  PUT: 'text-amber-500',
+  DELETE: 'text-red-500',
+};
+
+const RESPONSIVE_COLUMNS: ColumnDef<MockEndpoint>[] = [
+  {
+    accessorKey: 'method',
+    header: 'Method',
+    cell: ({ row }) => {
+      const method = row.getValue('method') as string;
+      return (
+        <span className={cn('text-xs font-bold', METHOD_COLORS[method] ?? 'text-foreground')}>
+          {method}
+        </span>
+      );
+    },
+  },
+  {
+    accessorKey: 'path',
+    header: 'Path',
+    cell: ({ row }) => (
+      <span className="font-mono text-sm">
+        {row.getValue('path')}
+        <span className="text-muted-foreground ml-2 font-sans text-xs sm:hidden">
+          {row.original.handler.split('.')[1]}
+        </span>
+      </span>
+    ),
+  },
+  {
+    accessorKey: 'handler',
+    header: 'Handler',
+    meta: { hideOnMobile: true },
+    cell: ({ row }) => (
+      <span className="text-muted-foreground font-mono text-xs">{row.getValue('handler')}</span>
+    ),
+  },
+  {
+    accessorKey: 'latencyP50',
+    header: 'P50',
+    meta: { hideOnMobile: true },
+    cell: ({ row }) => (
+      <span className="font-mono text-xs tabular-nums">{row.getValue('latencyP50')}</span>
+    ),
+  },
+  {
+    accessorKey: 'latencyP99',
+    header: 'P99',
+    meta: { hideOnMobile: true },
+    cell: ({ row }) => (
+      <span className="font-mono text-xs tabular-nums">{row.getValue('latencyP99')}</span>
+    ),
+  },
+  {
+    accessorKey: 'rateLimit',
+    header: 'Rate Limit',
+    meta: { hideOnMobile: true },
+    cell: ({ row }) => (
+      <span className="text-muted-foreground text-xs">{row.getValue('rateLimit')}</span>
+    ),
+  },
+  {
+    accessorKey: 'status',
+    header: 'Status',
+    cell: ({ row }) => <StatusBadge status={row.getValue('status')} />,
+  },
+];
+
+function ResponsivePatternsSection() {
+  return (
+    <PlaygroundSection
+      title="Responsive & Mobile"
+      description="Tables that adapt to small screens. Columns with meta.hideOnMobile are automatically hidden below 768 px. Resize the browser to see the effect."
+    >
+      <ShowcaseLabel>Column hiding via meta.hideOnMobile</ShowcaseLabel>
+      <ShowcaseDemo>
+        <p className="text-muted-foreground mb-3 text-xs">
+          Handler, P50, P99, and Rate Limit columns hide on mobile. Resize your browser below 768 px
+          to see them disappear. The Path column shows the handler method inline on mobile as a
+          fallback.
+        </p>
+        <DataTable
+          columns={RESPONSIVE_COLUMNS}
+          data={MOCK_ENDPOINTS}
+          emptyMessage="No endpoints."
+        />
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>Horizontal scroll fallback</ShowcaseLabel>
+      <ShowcaseDemo>
+        <p className="text-muted-foreground mb-3 text-xs">
+          When all columns are important, the table container scrolls horizontally. The{' '}
+          <code>{'<Table>'}</code> wrapper includes <code>overflow-auto</code> by default.
+        </p>
+        <div className="max-w-sm rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-[80px]">Method</TableHead>
+                <TableHead className="min-w-[200px]">Path</TableHead>
+                <TableHead className="min-w-[180px]">Handler</TableHead>
+                <TableHead className="min-w-[80px]">P50</TableHead>
+                <TableHead className="min-w-[80px]">P99</TableHead>
+                <TableHead className="min-w-[100px]">Rate Limit</TableHead>
+                <TableHead className="min-w-[100px]">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {MOCK_ENDPOINTS.map((ep) => (
+                <TableRow key={ep.id}>
+                  <TableCell>
+                    <span
+                      className={cn(
+                        'text-xs font-bold',
+                        METHOD_COLORS[ep.method] ?? 'text-foreground'
+                      )}
+                    >
+                      {ep.method}
+                    </span>
+                  </TableCell>
+                  <TableCell className="font-mono text-sm">{ep.path}</TableCell>
+                  <TableCell className="text-muted-foreground font-mono text-xs">
+                    {ep.handler}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs tabular-nums">{ep.latencyP50}</TableCell>
+                  <TableCell className="font-mono text-xs tabular-nums">{ep.latencyP99}</TableCell>
+                  <TableCell className="text-muted-foreground text-xs">{ep.rateLimit}</TableCell>
+                  <TableCell>
+                    <StatusBadge status={ep.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>Stacked content on mobile</ShowcaseLabel>
+      <ShowcaseDemo>
+        <p className="text-muted-foreground mb-3 text-xs">
+          For rich identity columns, stack secondary info below the primary text on small screens
+          using <code>max-sm:hidden</code> or <code>sm:hidden</code> to toggle inline vs stacked
+          layout.
+        </p>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Endpoint</TableHead>
+                <TableHead className="max-sm:hidden">Latency</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {MOCK_ENDPOINTS.map((ep) => (
+                <TableRow key={ep.id}>
+                  <TableCell>
+                    <div className="min-w-0">
+                      <span className="flex items-center gap-1.5">
+                        <span
+                          className={cn(
+                            'text-xs font-bold',
+                            METHOD_COLORS[ep.method] ?? 'text-foreground'
+                          )}
+                        >
+                          {ep.method}
+                        </span>
+                        <span className="truncate font-mono text-sm">{ep.path}</span>
+                      </span>
+                      <span className="text-muted-foreground block truncate text-xs max-sm:hidden">
+                        {ep.handler}
+                      </span>
+                      <span className="text-muted-foreground block text-xs sm:hidden">
+                        {ep.latencyP50} / {ep.latencyP99}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="max-sm:hidden">
+                    <span className="font-mono text-xs tabular-nums">
+                      {ep.latencyP50} / {ep.latencyP99}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <StatusBadge status={ep.status} />
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      </ShowcaseDemo>
+    </PlaygroundSection>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main export
 // ---------------------------------------------------------------------------
 
@@ -899,6 +1165,7 @@ export function TablesShowcases() {
       <RowSelectionSection />
       <EmptyLoadingSection />
       <CompactStripedSection />
+      <ResponsivePatternsSection />
     </>
   );
 }

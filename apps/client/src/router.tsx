@@ -58,6 +58,7 @@ export type DashboardSearch = z.infer<typeof dashboardSearchSchema>;
 const agentsSearchSchema = z
   .object({
     view: z.enum(['list', 'topology']).optional().default('list'),
+    sort: z.string().optional().default('lastSeen:desc'),
   })
   .merge(agentFilterSchema.searchValidator);
 

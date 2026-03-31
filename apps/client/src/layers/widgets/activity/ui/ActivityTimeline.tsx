@@ -44,20 +44,20 @@ function ActivityRowSkeleton() {
 
   return (
     <TableRow>
-      {/* Time column — matches the w-28 fixed-width time slot in ActivityRow */}
-      <TableCell className="w-28 py-1.5 pr-0 pl-2">
+      {/* Time column — hidden on mobile to match ActivityRow */}
+      <TableCell className="w-28 py-1.5 pr-0 pl-2 max-sm:hidden">
         <Skeleton className="h-3 w-20" />
       </TableCell>
-      {/* Actor badge — matches the w-24 actor badge slot */}
-      <TableCell className="w-24 py-1.5 pr-0">
+      {/* Actor badge — hidden on mobile to match ActivityRow */}
+      <TableCell className="w-24 py-1.5 pr-0 max-sm:hidden">
         <Skeleton className="h-5 w-20 rounded-full" />
       </TableCell>
       {/* Summary — variable width for visual variety */}
-      <TableCell className="py-1.5">
+      <TableCell className="py-1.5 max-sm:pl-2">
         <Skeleton className="h-3 rounded" style={{ width: summaryWidth }} />
       </TableCell>
       {/* Link column placeholder */}
-      <TableCell className="w-16 py-1.5" />
+      <TableCell className="w-16 py-1.5 max-sm:w-10" />
     </TableRow>
   );
 }

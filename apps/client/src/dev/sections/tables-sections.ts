@@ -51,4 +51,20 @@ export const TABLES_SECTIONS: PlaygroundSection[] = [
     category: 'Tables',
     keywords: ['compact', 'dense', 'striped', 'zebra', 'alternate', 'relay', 'log'],
   },
+  {
+    id: 'responsive-and-mobile',
+    title: 'Responsive & Mobile',
+    page: 'tables',
+    category: 'Tables',
+    keywords: [
+      'responsive',
+      'mobile',
+      'hideOnMobile',
+      'column',
+      'visibility',
+      'breakpoint',
+      'stacked',
+      'scroll',
+    ],
+  },
 ];

@@ -7,6 +7,9 @@ import '@testing-library/jest-dom/vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import type { TopologyAgent } from '@dorkos/shared/mesh-schemas';
+import { createMockTransport } from '@dorkos/test-utils';
+import { TransportProvider } from '@/layers/shared/model';
+import { TooltipProvider } from '@/layers/shared/ui';
 
 // ---------------------------------------------------------------------------
 // Mocks — URL search state is simulated via a mutable record.
@@ -36,13 +39,6 @@ vi.mock('@/layers/features/agent-settings', () => ({
   AgentDialog: () => null,
 }));
 
-// Mock AgentRow to isolate AgentsList logic
-vi.mock('../ui/AgentRow', () => ({
-  AgentRow: ({ agent }: { agent: TopologyAgent }) => (
-    <div data-testid={`agent-row-${agent.id}`}>{agent.name}</div>
-  ),
-}));
-
 // Mock AgentEmptyFilterState to make it easily assertable
 vi.mock('../ui/AgentEmptyFilterState', () => ({
   AgentEmptyFilterState: ({
@@ -57,9 +53,14 @@ vi.mock('../ui/AgentEmptyFilterState', () => ({
   ),
 }));
 
-// Mock SessionLaunchPopover
-vi.mock('../ui/SessionLaunchPopover', () => ({
-  SessionLaunchPopover: () => <button>Start Session</button>,
+// Mock UnregisterAgentDialog
+vi.mock('../ui/UnregisterAgentDialog', () => ({
+  UnregisterAgentDialog: () => null,
+}));
+
+// Mock relativeTime for deterministic output
+vi.mock('@/layers/features/mesh/lib/relative-time', () => ({
+  relativeTime: (iso: string | null) => (iso ? '5m ago' : 'Never'),
 }));
 
 // ---------------------------------------------------------------------------
@@ -96,8 +97,17 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   });
+  const transport = createMockTransport({
+    getConfig: vi.fn().mockResolvedValue({
+      agents: { defaultDirectory: '~/.dork/agents', defaultAgent: 'dorkbot' },
+    }),
+  });
   return ({ children }: { children: ReactNode }) => (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <TransportProvider transport={transport}>
+        <TooltipProvider>{children}</TooltipProvider>
+      </TransportProvider>
+    </QueryClientProvider>
   );
 }
 
@@ -151,38 +161,36 @@ describe('AgentsList', () => {
       wrapper: createWrapper(),
     });
 
-    const skeletons = container.querySelectorAll('.animate-tasks');
+    // Skeleton elements should be present
+    const skeletons = container.querySelectorAll('[data-slot="skeleton"]');
     expect(skeletons.length).toBeGreaterThanOrEqual(1);
   });
 
-  it('renders an AgentRow for each agent', () => {
+  it('renders a table row for each agent', () => {
     render(<AgentsList agents={multiNsAgents} isLoading={false} />, {
       wrapper: createWrapper(),
     });
 
-    expect(screen.getByTestId('agent-row-1')).toBeInTheDocument();
-    expect(screen.getByTestId('agent-row-2')).toBeInTheDocument();
-    expect(screen.getByTestId('agent-row-3')).toBeInTheDocument();
+    // Each agent name should appear in the table
+    expect(screen.getByText('Agent A')).toBeInTheDocument();
+    expect(screen.getByText('Agent B')).toBeInTheDocument();
+    expect(screen.getByText('Agent C')).toBeInTheDocument();
   });
 
-  it('groups by namespace when >1 namespace exists', () => {
+  it('does NOT group by namespace (flat table)', () => {
     render(<AgentsList agents={multiNsAgents} isLoading={false} />, {
       wrapper: createWrapper(),
     });
 
-    expect(screen.getByText('web')).toBeInTheDocument();
-    expect(screen.getByText('api')).toBeInTheDocument();
-  });
-
-  it('shows flat list (no namespace headers) for single namespace', () => {
-    const singleNsAgents = multiNsAgents.map((a) => ({ ...a, namespace: 'web' }));
-
-    render(<AgentsList agents={singleNsAgents} isLoading={false} />, {
-      wrapper: createWrapper(),
-    });
-
-    expect(screen.queryByText('web')).not.toBeInTheDocument();
-    expect(screen.queryByText('api')).not.toBeInTheDocument();
+    // All agents are in a flat table — no namespace group headers
+    expect(screen.getByText('Agent A')).toBeInTheDocument();
+    expect(screen.getByText('Agent C')).toBeInTheDocument();
+    // No namespace headers rendered as <h3>
+    const h3s = document.querySelectorAll('h3');
+    for (const h3 of h3s) {
+      expect(h3.textContent).not.toBe('web');
+      expect(h3.textContent).not.toBe('api');
+    }
   });
 
   it('renders the composable FilterBar with search input', () => {
@@ -214,7 +222,7 @@ describe('AgentsList', () => {
     );
 
     expect(screen.getByTestId('agent-empty-filter-state')).toBeInTheDocument();
-    expect(screen.queryByTestId('agent-row-1')).not.toBeInTheDocument();
+    expect(screen.queryByText('Agent A')).not.toBeInTheDocument();
   });
 
   it('shows empty state when status param filters out all agents', () => {
@@ -266,6 +274,28 @@ describe('AgentsList', () => {
     );
 
     expect(screen.queryByTestId('agent-empty-filter-state')).not.toBeInTheDocument();
-    expect(screen.getByTestId('agent-row-1')).toBeInTheDocument();
+    expect(screen.getByText('Agent A')).toBeInTheDocument();
+  });
+
+  it('renders status column with health indicators', () => {
+    render(
+      <AgentsList
+        agents={[
+          makeAgent({ id: '1', name: 'Active Agent', healthStatus: 'active' }),
+          makeAgent({ id: '2', name: 'Stale Agent', healthStatus: 'stale' }),
+        ]}
+        isLoading={false}
+      />,
+      { wrapper: createWrapper() }
+    );
+
+    expect(screen.getByText('Active')).toBeInTheDocument();
+    expect(screen.getByText('Stale')).toBeInTheDocument();
+  });
+
+  it('shows "No agents registered." when data is empty', () => {
+    render(<AgentsList agents={[]} isLoading={false} />, { wrapper: createWrapper() });
+
+    expect(screen.getByText('No agents registered.')).toBeInTheDocument();
   });
 });

@@ -1,30 +1,19 @@
-import { useMemo, useState } from 'react';
-import { motion } from 'motion/react';
+import { useMemo, useState, useCallback } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { TopologyAgent } from '@dorkos/shared/mesh-schemas';
 import { useSessions } from '@/layers/entities/session';
 import { applySortAndFilter } from '@/layers/shared/lib';
-import { useFilterState } from '@/layers/shared/model';
+import { useFilterState, useTransport } from '@/layers/shared/model';
 import { FilterBar } from '@/layers/shared/ui/filter-bar';
-import { Skeleton } from '@/layers/shared/ui/skeleton';
+import { DataTable } from '@/layers/shared/ui/data-table';
 import { ScrollArea } from '@/layers/shared/ui/scroll-area';
+import { Skeleton } from '@/layers/shared/ui/skeleton';
+import { AgentDialog } from '@/layers/features/agent-settings';
 import { agentFilterSchema, agentSortOptions } from '../lib/agent-filter-schema';
-import { AgentRow } from './AgentRow';
+import { createAgentColumns, type AgentTableRow } from '../lib/agent-columns';
 import { AgentEmptyFilterState } from './AgentEmptyFilterState';
-
-/** Items beyond this index are rendered without stagger delay to keep animation snappy. */
-const STAGGER_ITEM_LIMIT = 8;
-
-/** Stagger container variants — orchestrates child entrance animations. */
-const staggerContainerVariants = {
-  visible: { transition: { staggerChildren: 0.04 } },
-  hidden: {},
-} as const;
-
-/** Item entrance variants — fade in + slide up for the first N items. */
-const staggerItemVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0 },
-} as const;
+import { UnregisterAgentDialog } from './UnregisterAgentDialog';
 
 interface AgentsListProps {
   agents: TopologyAgent[];
@@ -32,17 +21,18 @@ interface AgentsListProps {
 }
 
 /**
- * Agent list container — renders expandable AgentRow components with
- * optional namespace grouping, composable filter bar, and entrance
- * animations that play once on mount.
+ * Agent fleet table — sortable, filterable DataTable of all registered agents.
+ * Replaces the previous card-based layout with a responsive table that hides
+ * secondary columns (Runtime, Project, Sessions) on mobile.
  */
 export function AgentsList({ agents, isLoading }: AgentsListProps) {
+  const navigate = useNavigate();
+  const transport = useTransport();
+  const queryClient = useQueryClient();
+
   const filterState = useFilterState(agentFilterSchema, {
     debounce: { search: 200 },
   });
-  // staggerKey is intentionally never updated — keeping it stable prevents the
-  // stagger container from remounting (and re-animating) on filter changes.
-  const [staggerKey] = useState(0);
 
   const { sessions } = useSessions();
 
@@ -52,7 +42,7 @@ export function AgentsList({ agents, isLoading }: AgentsListProps) {
     [agents]
   );
 
-  // Apply filters and sort
+  // Apply filters and sort (flat list — no namespace grouping)
   const filteredAgents = useMemo(
     () =>
       applySortAndFilter(agents, agentFilterSchema, filterState.values, agentSortOptions, {
@@ -61,19 +51,6 @@ export function AgentsList({ agents, isLoading }: AgentsListProps) {
       }),
     [agents, filterState.values, filterState.sortField, filterState.sortDirection]
   );
-
-  // Auto-group when multiple namespaces exist
-  const shouldGroup = namespaceOptions.length > 1;
-
-  // Group filtered agents by namespace
-  const grouped = useMemo(() => {
-    if (!shouldGroup) return { '': filteredAgents };
-    return filteredAgents.reduce<Record<string, TopologyAgent[]>>((acc, agent) => {
-      const ns = agent.namespace ?? 'default';
-      (acc[ns] ??= []).push(agent);
-      return acc;
-    }, {});
-  }, [filteredAgents, shouldGroup]);
 
   // Compute session counts per agent (matched by projectPath)
   const sessionCounts = useMemo(() => {
@@ -84,6 +61,75 @@ export function AgentsList({ agents, isLoading }: AgentsListProps) {
     }
     return counts;
   }, [agents, sessions]);
+
+  // Fetch config once for default-agent badge
+  const { data: config } = useQuery({
+    queryKey: ['config'],
+    queryFn: () => transport.getConfig(),
+    staleTime: 30_000,
+  });
+
+  // Enrich topology agents with computed fields for the table
+  const tableData: AgentTableRow[] = useMemo(
+    () =>
+      filteredAgents.map((agent) => ({
+        ...agent,
+        sessionCount: sessionCounts[agent.id] ?? 0,
+        isDefault: config?.agents?.defaultAgent === agent.name,
+      })),
+    [filteredAgents, sessionCounts, config?.agents?.defaultAgent]
+  );
+
+  // ── Dialog state (single instance, controlled from list level) ──
+  const [editPath, setEditPath] = useState<string | null>(null);
+  const [unregisterTarget, setUnregisterTarget] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+
+  // ── Callbacks for column cell renderers ────────────────────────
+  const handleNavigate = useCallback(
+    (projectPath: string) => {
+      void navigate({ to: '/session', search: { dir: projectPath } });
+    },
+    [navigate]
+  );
+
+  const handleStartSession = useCallback(
+    (projectPath: string) => {
+      void navigate({ to: '/session', search: { dir: projectPath } });
+    },
+    [navigate]
+  );
+
+  const handleSetDefault = useCallback(
+    async (agentName: string) => {
+      await transport.setDefaultAgent(agentName);
+      await queryClient.invalidateQueries({ queryKey: ['config'] });
+    },
+    [transport, queryClient]
+  );
+
+  const handleUnregister = useCallback(
+    (agent: { id: string; name: string; isSystem?: boolean }) => {
+      if (agent.isSystem) return;
+      setUnregisterTarget({ id: agent.id, name: agent.name });
+    },
+    []
+  );
+
+  // Stable column definitions — only recreated when callbacks change
+  const columns = useMemo(
+    () =>
+      createAgentColumns({
+        onNavigate: handleNavigate,
+        onEdit: setEditPath,
+        onSetDefault: (name) => void handleSetDefault(name),
+        onUnregister: handleUnregister,
+        onStartSession: handleStartSession,
+      }),
+    [handleNavigate, handleSetDefault, handleUnregister, handleStartSession]
+  );
 
   if (isLoading) {
     return (
@@ -106,48 +152,39 @@ export function AgentsList({ agents, isLoading }: AgentsListProps) {
         <FilterBar.ActiveFilters />
       </FilterBar>
       <ScrollArea className="min-h-0 flex-1">
-        <div className="space-y-2 p-4 pt-0">
+        <div className="px-4 pb-4">
           {filteredAgents.length === 0 && agents.length > 0 ? (
             <AgentEmptyFilterState
               onClearFilters={filterState.clearAll}
               filterDescription={filterState.describeActive()}
             />
           ) : (
-            Object.entries(grouped).map(([namespace, groupAgents]) => (
-              <div key={namespace}>
-                {shouldGroup && namespace && (
-                  <h3 className="text-muted-foreground mt-4 mb-2 text-[10px] font-medium tracking-widest uppercase first:mt-0">
-                    {namespace}
-                  </h3>
-                )}
-                <motion.div
-                  key={staggerKey}
-                  initial="hidden"
-                  animate="visible"
-                  variants={staggerContainerVariants}
-                  className="space-y-2"
-                >
-                  {groupAgents.map((agent, index) => (
-                    <motion.div
-                      key={agent.id}
-                      variants={index < STAGGER_ITEM_LIMIT ? staggerItemVariants : undefined}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <AgentRow
-                        agent={agent}
-                        projectPath={agent.projectPath ?? ''}
-                        sessionCount={sessionCounts[agent.id] ?? 0}
-                        healthStatus={agent.healthStatus}
-                        lastActive={agent.lastSeenAt}
-                      />
-                    </motion.div>
-                  ))}
-                </motion.div>
-              </div>
-            ))
+            <DataTable
+              columns={columns}
+              data={tableData}
+              emptyMessage="No agents registered."
+              className="border-0"
+            />
           )}
         </div>
       </ScrollArea>
+
+      {/* Single dialog instances at list level */}
+      {editPath !== null && (
+        <AgentDialog
+          projectPath={editPath}
+          open
+          onOpenChange={(open) => !open && setEditPath(null)}
+        />
+      )}
+      {unregisterTarget && (
+        <UnregisterAgentDialog
+          agentName={unregisterTarget.name}
+          agentId={unregisterTarget.id}
+          open
+          onOpenChange={(open) => !open && setUnregisterTarget(null)}
+        />
+      )}
     </div>
   );
 }

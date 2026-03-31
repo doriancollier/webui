@@ -87,28 +87,33 @@ export function ActivityRow({ item, className }: ActivityRowProps) {
         className
       )}
     >
-      {/* Time */}
-      <TableCell className="w-28 py-1.5 pr-0 pl-2">
+      {/* Time — hidden on mobile (redundant with group headers) */}
+      <TableCell className="w-28 py-1.5 pr-0 pl-2 max-sm:hidden">
         <span className="text-muted-foreground text-xs tabular-nums">{time}</span>
       </TableCell>
 
-      {/* Actor badge */}
-      <TableCell className="w-24 py-1.5 pr-0">
+      {/* Actor badge — hidden on mobile */}
+      <TableCell className="w-24 py-1.5 pr-0 max-sm:hidden">
         <ActorBadge actorType={item.actorType} actorLabel={item.actorLabel} />
       </TableCell>
 
-      {/* Summary */}
-      <TableCell className="max-w-0 py-1.5">
-        <span className="text-foreground/80 block truncate text-sm">{item.summary}</span>
+      {/* Summary — on mobile, shows actor label inline */}
+      <TableCell className="max-w-0 py-1.5 max-sm:pl-2">
+        <span className="text-foreground/80 block truncate text-sm">
+          <span className="text-muted-foreground mr-1 text-xs font-medium sm:hidden">
+            {item.actorLabel}
+          </span>
+          {item.summary}
+        </span>
       </TableCell>
 
       {/* Link button */}
-      <TableCell className="w-16 py-1.5 pr-2 text-right">
+      <TableCell className="w-16 py-1.5 pr-2 text-right max-sm:w-10">
         {item.linkPath && (
           <Button
             variant="ghost"
             size="sm"
-            className="h-6 px-2 text-xs"
+            className="h-6 min-h-[44px] px-2 text-xs sm:min-h-0"
             onClick={() => navigate({ to: item.linkPath as '/', replace: false })}
           >
             Open →
