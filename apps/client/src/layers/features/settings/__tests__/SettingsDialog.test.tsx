@@ -209,7 +209,7 @@ describe('SettingsDialog', () => {
     navigateTo(/status bar/i);
     const panel = screen.getByText('Directory').closest('[data-slot="navigation-layout-panel"]')!;
     const switches = panel.querySelectorAll('[role="switch"]');
-    expect(switches.length).toBe(10);
+    expect(switches.length).toBe(9);
     switches.forEach((sw) => {
       expect(sw.getAttribute('data-state')).toBe('checked');
     });
@@ -279,8 +279,8 @@ describe('SettingsDialog', () => {
     expect(screen.getByText('Notification sound toggle')).toBeDefined();
   });
 
-  // Verifies all 10 registry items are rendered in the Status Bar tab
-  it('renders all 10 registry items in the Status Bar tab', () => {
+  // Verifies all 9 registry items are rendered in the Status Bar tab
+  it('renders all 9 registry items in the Status Bar tab', () => {
     render(<SettingsDialog open={true} onOpenChange={vi.fn()} />, { wrapper: createWrapper() });
     navigateTo(/status bar/i);
     const expectedLabels = [
@@ -293,7 +293,6 @@ describe('SettingsDialog', () => {
       'Sound',
       'Sync',
       'Refresh',
-      'Remote',
     ];
     for (const label of expectedLabels) {
       expect(screen.getByText(label)).toBeDefined();
