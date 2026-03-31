@@ -90,7 +90,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
     resetActed();
     setHasStarted(true);
     startScan();
-  }, [startScan]);
+  }, [startScan, resetActed]);
 
   const handleAgentCreated = useCallback(() => {
     // After creating an agent via the no-results form, re-scan
