@@ -1,0 +1,50 @@
+---
+title: DorkOS 0.29.0
+description: Agent fleet management and UI refinement — DataTable-powered agent lists, command palette agent settings, and a streamlined dashboard.
+date: 2026-03-30
+author: DorkOS Team
+category: release
+tags: [release, agents, ui, dashboard]
+---
+
+Agent fleet management gets a serious upgrade. This release brings DataTable-powered agent lists with responsive column hiding, agent settings directly in the command palette, and a cleaner dashboard that puts the right information front and center.
+
+## Highlights
+
+The agents list now uses a proper DataTable with sortable columns that hide responsively on smaller screens — no more cramped layouts. The command palette gains an agent settings dialog, so you can configure agents without leaving your flow. And the dashboard sheds its Active Sessions section in favor of a unified, streamlined activity feed.
+
+## All Changes
+
+### Added
+
+- Enhance command palette with agent settings dialog
+- Convert agents list to DataTable with responsive column hiding
+- Auto-focus prompt textarea on session change
+- Add Table primitives, DataTable, and Dev Playground showcase
+- Add AgentIdentity to shortcut chips row
+- Add dedicated Onboarding page to dev playground
+
+### Changed
+
+- Consolidate agent identity to chat input, add breadcrumb nav
+- Reorganize Dev Playground sidebar into domain-oriented groups
+- Relocate Remote indicator from status bar to sidebar footer
+- Streamline dashboard — remove Active Sessions, fix status alignment, unify activity feed
+- Polish onboarding flow UI and extract OnboardingNavBar
+
+### Fixed
+
+- Remove unused AgentVisual type import from AppShell
+- Remote-access promo opens TunnelDialog directly
+- Align sidebar back chevron with content below
+- Use dynamic agent name in chat input placeholder
+- Improve dev playground overview card layout
+- Expand tilde paths in boundary validation and add startup diagnostics
+- Cast spawn proc through EventEmitter to fix CI type resolution
+- Remove unnecessary ChildProcess cast that fails in CI Node 20
+
+## Install / Update
+
+```
+npm install -g dorkos@0.29.0
+```

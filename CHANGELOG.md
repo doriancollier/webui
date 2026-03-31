@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+### Changed
+
+### Fixed
+
+---
+
+## [0.29.0] - 2026-03-30
+
+> Agent fleet management and UI refinement — DataTable-powered agent lists, command palette agent settings, breadcrumb navigation, and a streamlined dashboard bring polish and power to the operator experience.
+
+### Added
+
 - Enhance command palette with agent settings dialog
 - Convert agents list to DataTable with responsive column hiding
 - Auto-focus prompt textarea on session change
@@ -34,6 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expand tilde paths in boundary validation and add startup diagnostics
 - Cast spawn proc through EventEmitter to fix CI type resolution
 - Remove unnecessary ChildProcess cast that fails in CI Node 20
+
 ---
 
 ## [0.28.0] - 2026-03-30

@@ -5,6 +5,40 @@ description: All notable changes to DorkOS, following Keep a Changelog format an
 
 All notable changes to DorkOS are documented here. This project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.29.0] - 2026-03-30
+
+> Agent fleet management and UI refinement — DataTable-powered agent lists, command palette agent settings, breadcrumb navigation, and a streamlined dashboard bring polish and power to the operator experience.
+
+### Added
+
+- Enhance command palette with agent settings dialog
+- Convert agents list to DataTable with responsive column hiding
+- Auto-focus prompt textarea on session change
+- Add Table primitives, DataTable, and Dev Playground showcase
+- Add AgentIdentity to shortcut chips row
+- Add dedicated Onboarding page to dev playground
+
+### Changed
+
+- Consolidate agent identity to chat input, add breadcrumb nav
+- Reorganize Dev Playground sidebar into domain-oriented groups
+- Relocate Remote indicator from status bar to sidebar footer
+- Streamline dashboard — remove Active Sessions, fix status alignment, unify activity feed
+- Polish onboarding flow UI and extract OnboardingNavBar
+
+### Fixed
+
+- Remove unused AgentVisual type import from AppShell
+- Remote-access promo opens TunnelDialog directly
+- Align sidebar back chevron with content below
+- Use dynamic agent name in chat input placeholder
+- Improve dev playground overview card layout
+- Expand tilde paths in boundary validation and add startup diagnostics
+- Cast spawn proc through EventEmitter to fix CI type resolution
+- Remove unnecessary ChildProcess cast that fails in CI Node 20
+
+---
+
 ## [0.28.0] - 2026-03-30
 
 > Tasks redesign, DorkBot system agent, and the extensibility platform matures — file-based task definitions, manifest-driven settings, extension hooks, session forking, and MCP elicitation bring DorkOS closer to a fully autonomous coordination layer.
