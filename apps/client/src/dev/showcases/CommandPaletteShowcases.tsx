@@ -223,6 +223,7 @@ function SubMenuStates() {
               onOpenHere={() => {}}
               onOpenNewTab={() => {}}
               onNewSession={() => {}}
+              onEditSettings={() => {}}
               recentSessions={MOCK_SESSIONS}
             />
           </CommandList>
@@ -238,6 +239,7 @@ function SubMenuStates() {
               onOpenHere={() => {}}
               onOpenNewTab={() => {}}
               onNewSession={() => {}}
+              onEditSettings={() => {}}
               recentSessions={[]}
             />
           </CommandList>
@@ -341,6 +343,7 @@ function EdgeCases() {
               onOpenHere={() => {}}
               onOpenNewTab={() => {}}
               onNewSession={() => {}}
+              onEditSettings={() => {}}
               recentSessions={[
                 {
                   id: 'sess-untitled',

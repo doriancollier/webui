@@ -36,8 +36,9 @@ export const UserConfigSchema = z.object({
       port: z.number().int().min(1024).max(65535).default(4242),
       cwd: z.string().nullable().default(null),
       boundary: z.string().nullable().default(null),
+      open: z.boolean().default(true),
     })
-    .default(() => ({ port: 4242, cwd: null, boundary: null })),
+    .default(() => ({ port: 4242, cwd: null, boundary: null, open: true })),
   tunnel: z
     .object({
       enabled: z.boolean().default(false),

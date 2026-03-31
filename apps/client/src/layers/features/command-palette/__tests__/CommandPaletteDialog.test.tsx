@@ -45,6 +45,7 @@ const mockSetTasksOpen = vi.fn();
 const mockSetRelayOpen = vi.fn();
 const mockSetMeshOpen = vi.fn();
 const mockSetPickerOpen = vi.fn();
+const mockSetAgentDialogOpen = vi.fn();
 
 let mockGlobalPaletteOpen = true;
 
@@ -59,6 +60,7 @@ vi.mock('@/layers/shared/model', () => ({
       setRelayOpen: mockSetRelayOpen,
       setMeshOpen: mockSetMeshOpen,
       setPickerOpen: mockSetPickerOpen,
+      setAgentDialogOpen: mockSetAgentDialogOpen,
       setPreviousCwd: mockSetPreviousCwd,
       globalPaletteInitialSearch: null,
       clearGlobalPaletteInitialSearch: mockClearGlobalPaletteInitialSearch,
@@ -109,6 +111,19 @@ vi.mock('../model/use-agent-frecency', () => ({
     recordUsage: mockRecordUsage,
     getSortedAgentIds: (ids: string[]) => ids,
   }),
+}));
+
+const mockOpenAgentDialog = vi.fn();
+vi.mock('@/layers/features/agent-settings', () => ({
+  useAgentDialog: (selector?: (s: Record<string, unknown>) => unknown) => {
+    const state = {
+      openDialog: mockOpenAgentDialog,
+      closeDialog: vi.fn(),
+      open: false,
+      projectPath: null,
+    };
+    return selector ? selector(state) : state;
+  },
 }));
 
 const mockAgents: AgentPathEntry[] = [
@@ -271,10 +286,11 @@ describe('CommandPaletteDialog', () => {
     render(<CommandPaletteDialog />);
     const item = screen.getAllByText('Worker')[0].closest('[data-slot="command-item"]');
     if (item) fireEvent.click(item as Element);
-    // Sub-menu should appear with "Open Here" action
+    // Sub-menu should appear with all agent actions
     expect(screen.getByText('Open Here')).toBeInTheDocument();
     expect(screen.getByText('Open in New Tab')).toBeInTheDocument();
     expect(screen.getByText('New Session')).toBeInTheDocument();
+    expect(screen.getByText('Edit Worker Settings')).toBeInTheDocument();
   });
 
   it('shows breadcrumb when in agent sub-menu', () => {
@@ -303,6 +319,17 @@ describe('CommandPaletteDialog', () => {
     if (item) fireEvent.click(item as Element);
     const openHereItem = screen.getByText('Open Here').closest('[data-slot="command-item"]');
     if (openHereItem) fireEvent.click(openHereItem as Element);
+    expect(mockSetGlobalPaletteOpen).toHaveBeenCalledWith(false);
+  });
+
+  it('opens agent settings dialog when Edit Settings is clicked in sub-menu', () => {
+    render(<CommandPaletteDialog />);
+    const item = screen.getAllByText('Worker')[0].closest('[data-slot="command-item"]');
+    if (item) fireEvent.click(item as Element);
+    const editItem = screen.getByText('Edit Worker Settings').closest('[data-slot="command-item"]');
+    if (editItem) fireEvent.click(editItem as Element);
+    expect(mockOpenAgentDialog).toHaveBeenCalledWith('/projects/current');
+    expect(mockSetAgentDialogOpen).toHaveBeenCalledWith(true);
     expect(mockSetGlobalPaletteOpen).toHaveBeenCalledWith(false);
   });
 

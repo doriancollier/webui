@@ -1,4 +1,4 @@
-import { FolderOpen, ExternalLink, Plus, MessageSquare } from 'lucide-react';
+import { FolderOpen, ExternalLink, Plus, Settings, MessageSquare } from 'lucide-react';
 import { CommandGroup, CommandItem, CommandShortcut } from '@/layers/shared/ui';
 import type { AgentPathEntry } from '@dorkos/shared/mesh-schemas';
 import { isMac } from '@/layers/shared/lib';
@@ -18,6 +18,8 @@ interface AgentSubMenuProps {
   onOpenNewTab: () => void;
   /** Start a new session in this agent's CWD */
   onNewSession: () => void;
+  /** Open agent settings dialog */
+  onEditSettings: () => void;
   /** Recent sessions for this agent (max 3) */
   recentSessions: SessionMetadata[];
 }
@@ -34,6 +36,7 @@ export function AgentSubMenu({
   onOpenHere,
   onOpenNewTab,
   onNewSession,
+  onEditSettings,
   recentSessions,
 }: AgentSubMenuProps) {
   const modKey = isMac ? '\u2318' : 'Ctrl+';
@@ -54,6 +57,10 @@ export function AgentSubMenu({
         <CommandItem value="new-session" onSelect={onNewSession}>
           <Plus className="size-4" />
           <span>New Session</span>
+        </CommandItem>
+        <CommandItem value="edit-settings" onSelect={onEditSettings}>
+          <Settings className="size-4" />
+          <span>Edit {agent.name} Settings</span>
         </CommandItem>
       </CommandGroup>
       {recentSessions.length > 0 && (

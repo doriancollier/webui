@@ -72,6 +72,7 @@ Adapter-to-agent bindings are persisted to `~/.dork/relay/bindings.json`. The fi
 | `server.port`                 | integer (1024--65535)                                                    | `4242`             | Port the Express server listens on                                                 |
 | `server.cwd`                  | string \| null                                                           | `null`             | Default working directory for sessions                                             |
 | `server.boundary`             | string \| null                                                           | `null`             | Directory boundary root (`null` = home directory)                                  |
+| `server.open`                 | boolean                                                                  | `true`             | Open browser automatically on startup                                              |
 | `tunnel.enabled`              | boolean                                                                  | `false`            | Enable ngrok tunnel on startup                                                     |
 | `tunnel.domain`               | string \| null                                                           | `null`             | Custom ngrok domain                                                                |
 | `tunnel.authtoken`            | string \| null                                                           | `null`             | ngrok auth token (sensitive)                                                       |
@@ -165,6 +166,26 @@ dorkos config set server.boundary /home/user/projects
 
 Equivalent CLI flag: `--boundary` / `-b`
 Equivalent env var: `DORKOS_BOUNDARY`
+
+### server.open
+
+Whether to automatically open DorkOS in the default browser on startup. Defaults to `true`. Only applies in interactive terminals (non-TTY environments always skip opening).
+
+```bash
+dorkos config set server.open false
+```
+
+Equivalent CLI flag: `--no-open` (to suppress) — there is no `--open` flag since the default is already `true`
+Equivalent env var: `DORKOS_OPEN`
+
+**Open browser resolution:**
+
+```
+--no-open                # CLI flag (wins if provided, sets open=false)
+DORKOS_OPEN=false        # Env var (wins if no CLI flag)
+server.open: false       # config.json (wins if no env var)
+true                     # Built-in default (fallback)
+```
 
 ### tunnel.enabled
 
@@ -412,6 +433,7 @@ DorkOS Configuration (~/.dork/config.json)
   server.port          4242           (default)
   server.cwd           —              (default)
   server.boundary      —              (default)
+  server.open          true           (default)
   tunnel.enabled       false          (default)
   tunnel.domain        —              (default)
   tunnel.authtoken     —              (default)

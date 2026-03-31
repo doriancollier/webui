@@ -15,10 +15,18 @@ import type { UserConfig } from '@dorkos/shared/config-schema';
 
 const MOCK_CONFIG: UserConfig = {
   version: 1,
-  server: { port: 4242, cwd: null, boundary: null },
-  tunnel: { enabled: false, domain: null, authtoken: null, auth: null },
-  ui: { theme: 'system' },
-};
+  server: { port: 4242, cwd: null, boundary: null, open: true },
+  tunnel: {
+    enabled: false,
+    domain: null,
+    authtoken: null,
+    auth: null,
+    passcodeEnabled: false,
+    passcodeHash: null,
+    passcodeSalt: null,
+  },
+  ui: { theme: 'system', dismissedUpgradeVersions: [] },
+} as unknown as UserConfig;
 
 function createMockStore(overrides?: Partial<UserConfig>): ConfigStore {
   const config = overrides ? { ...MOCK_CONFIG, ...overrides } : { ...MOCK_CONFIG };

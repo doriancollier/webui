@@ -13,7 +13,7 @@ describe('UserConfigSchema', () => {
     const result = UserConfigSchema.parse({ version: 1 });
     expect(result).toEqual({
       version: 1,
-      server: { port: 4242, cwd: null, boundary: null },
+      server: { port: 4242, cwd: null, boundary: null, open: true },
       tunnel: {
         enabled: false,
         domain: null,
@@ -205,7 +205,7 @@ describe('USER_CONFIG_DEFAULTS', () => {
   it('matches schema defaults', () => {
     expect(USER_CONFIG_DEFAULTS).toEqual({
       version: 1,
-      server: { port: 4242, cwd: null, boundary: null },
+      server: { port: 4242, cwd: null, boundary: null, open: true },
       tunnel: {
         enabled: false,
         domain: null,

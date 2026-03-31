@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Enhance command palette with agent settings dialog
 - Convert agents list to DataTable with responsive column hiding
 - Auto-focus prompt textarea on session change
 - Add Table primitives, DataTable, and Dev Playground showcase

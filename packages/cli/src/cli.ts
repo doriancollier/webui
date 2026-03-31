@@ -34,6 +34,7 @@ try {
       dir: { type: 'string', short: 'd' },
       boundary: { type: 'string', short: 'b' },
       tasks: { type: 'boolean' },
+      open: { type: 'boolean' },
       'log-level': { type: 'string', short: 'l' },
       help: { type: 'boolean', short: 'h' },
       version: { type: 'boolean', short: 'v' },
@@ -41,6 +42,7 @@ try {
       yes: { type: 'boolean', short: 'y', default: false },
     },
     allowPositionals: true,
+    allowNegative: true,
   }));
 } catch (err) {
   if (
@@ -82,6 +84,7 @@ Options:
   -b, --boundary <path>  Directory boundary (default: home directory)
       --tasks              Enable Tasks scheduler
       --no-tasks           Disable Tasks scheduler
+      --no-open            Don't open browser on startup
   -l, --log-level <level>  Log level (fatal|error|warn|info|debug|trace)
       --post-install-check  Verify installation and exit
   -h, --help             Show this help message
@@ -198,6 +201,20 @@ if (values.tasks !== undefined) {
   process.env.DORKOS_TASKS_ENABLED = values.tasks ? 'true' : 'false';
 } else if (!process.env.DORKOS_TASKS_ENABLED && cfgMgr.getDot('scheduler.enabled')) {
   process.env.DORKOS_TASKS_ENABLED = 'true';
+}
+
+// Browser open: CLI flag > env var > config > default (true)
+// node:util parseArgs treats --no-open as open=false, --open as open=true
+let shouldOpenBrowser = true;
+if (values.open !== undefined) {
+  shouldOpenBrowser = Boolean(values.open);
+} else if (process.env.DORKOS_OPEN !== undefined) {
+  shouldOpenBrowser = process.env.DORKOS_OPEN !== 'false' && process.env.DORKOS_OPEN !== '0';
+} else {
+  const configOpen = cfgMgr.getDot('server.open');
+  if (configOpen !== undefined && configOpen !== null) {
+    shouldOpenBrowser = Boolean(configOpen);
+  }
 }
 
 // Relay: env var > config (no CLI flag for relay)
@@ -324,27 +341,12 @@ if (process.env.TUNNEL_ENABLED) {
 }
 console.log('');
 
-// Prompt to open in browser (non-blocking, skipped in non-TTY)
-if (process.stdin.isTTY) {
-  const { confirm } = await import('@inquirer/prompts');
-  try {
-    const shouldOpen = await confirm({
-      message: 'Open DorkOS in your browser?',
-      default: true,
-    });
-    if (shouldOpen) {
-      const { exec } = await import('node:child_process');
-      const openCmd =
-        process.platform === 'darwin'
-          ? 'open'
-          : process.platform === 'win32'
-            ? 'start'
-            : 'xdg-open';
-      exec(`${openCmd} ${localUrl}`);
-    }
-  } catch {
-    // User cancelled (Ctrl+C) — continue running the server
-  }
+// Open browser automatically (skipped in non-TTY or when --no-open)
+if (shouldOpenBrowser && process.stdin.isTTY) {
+  const { exec } = await import('node:child_process');
+  const openCmd =
+    process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
+  exec(`${openCmd} ${localUrl}`);
 }
 
 // Listen for runtime tunnel activation (toggled on via UI after startup)
