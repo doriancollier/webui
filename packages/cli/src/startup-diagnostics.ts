@@ -108,7 +108,7 @@ export function diagnoseStartupError(err: unknown): Diagnostic {
   // 3. Port conflict — EADDRINUSE
   if (code === 'EADDRINUSE') {
     const portMatch = msg.match(/(?:port\s+)?(\d{4,5})/i);
-    const port = portMatch?.[1] ?? process.env.DORKOS_PORT ?? '4242';
+    const port = portMatch?.[1] ?? '4242';
     return {
       category: 'port-conflict',
       headline: `Port ${port} is already in use`,

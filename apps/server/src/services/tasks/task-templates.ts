@@ -9,8 +9,7 @@
 import path from 'node:path';
 import { writeSkillFile } from '@dorkos/skills/writer';
 import { scanSkillDirectory } from '@dorkos/skills/scanner';
-import { TaskFrontmatterSchema, type TaskFrontmatter } from '@dorkos/skills/task-schema';
-import { SKILL_FILENAME } from '@dorkos/skills/constants';
+import { TaskFrontmatterSchema } from '@dorkos/skills/task-schema';
 import { logger } from '../../lib/logger.js';
 
 interface TemplateDefinition {

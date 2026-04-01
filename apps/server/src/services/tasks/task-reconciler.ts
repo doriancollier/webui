@@ -10,7 +10,6 @@ import path from 'node:path';
 import type { TaskStore } from './task-store.js';
 import { scanSkillDirectory } from '@dorkos/skills/scanner';
 import { TaskFrontmatterSchema } from '@dorkos/skills/task-schema';
-import { SKILL_FILENAME } from '@dorkos/skills/constants';
 import { logger } from '../../lib/logger.js';
 
 /** 5-minute reconciliation interval. */

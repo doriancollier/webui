@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { TriangleAlert } from 'lucide-react';
 import { motion } from 'motion/react';
 import { Button } from '@/layers/shared/ui/button';
@@ -31,16 +31,20 @@ export function TasksPage() {
     return map;
   }, [meshAgentsData]);
 
-  // Wire external trigger from useTaskTemplateDialog
+  // Wire external trigger from useTaskTemplateDialog.
+  // Render-time state adjustment avoids useEffect + setState cascade.
+  // See: https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
   const { externalTrigger, clear: clearTrigger } = useTaskTemplateDialog();
+  const [prevTrigger, setPrevTrigger] = useState(false);
 
-  useEffect(() => {
-    if (externalTrigger && !dialogOpen) {
-      setEditTask(undefined);
-      setDialogOpen(true);
-      clearTrigger();
-    }
-  }, [externalTrigger, dialogOpen, clearTrigger]);
+  if (externalTrigger && !prevTrigger && !dialogOpen) {
+    setPrevTrigger(true);
+    setEditTask(undefined);
+    setDialogOpen(true);
+    clearTrigger();
+  } else if (!externalTrigger && prevTrigger) {
+    setPrevTrigger(false);
+  }
 
   const handleCreateWithPreset = (preset: TaskTemplate) => {
     setAppliedPreset(preset);
