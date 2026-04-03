@@ -45,18 +45,19 @@ export function CommandPalette({ filteredCommands, selectedIndex, onSelect }: Co
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 4 }}
       transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-      className="bg-popover absolute right-0 bottom-full left-0 mb-2 max-h-80 overflow-hidden rounded-lg border shadow-lg"
+      className="bg-popover max-h-80 overflow-hidden rounded-lg border shadow-lg"
       onMouseDown={(e) => e.preventDefault()}
     >
-      <div id="command-palette-listbox" role="listbox" className="max-h-72 overflow-y-auto p-2">
+      <div id="command-palette-listbox" role="listbox" className="max-h-72 overflow-y-auto p-1.5">
         {filteredCommands.length === 0 ? (
           <div className="text-muted-foreground px-2 py-4 text-center text-sm">
             No commands found.
           </div>
         ) : (
-          groups.map(({ namespace, items }) => (
+          groups.map(({ namespace, items }, groupIdx) => (
             <div key={namespace}>
-              <div className="text-muted-foreground px-2 py-1.5 text-xs font-medium">
+              {groupIdx > 0 && <div className="bg-border mx-2 my-1.5 h-px" />}
+              <div className="text-muted-foreground/70 px-2 pt-1.5 pb-1 text-[11px] font-medium tracking-wide uppercase">
                 {namespace}
               </div>
               {items.map(({ cmd, index }) => {
@@ -73,16 +74,22 @@ export function CommandPalette({ filteredCommands, selectedIndex, onSelect }: Co
                     onKeyDown={(e) => {
                       if (e.key === 'Enter') onSelect(cmd);
                     }}
-                    className="data-[selected=true]:bg-ring/10 data-[selected=true]:text-foreground hover:bg-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition-colors duration-100"
+                    className="data-[selected=true]:bg-accent hover:bg-muted cursor-pointer rounded-md px-2 py-1.5 transition-colors duration-100"
                   >
-                    <span className="font-mono text-sm">{cmd.fullCommand}</span>
-                    <span className="text-muted-foreground truncate text-xs">
-                      {cmd.description}
-                    </span>
-                    {cmd.argumentHint && (
-                      <span className="text-muted-foreground/60 ml-auto text-xs">
-                        {cmd.argumentHint}
+                    <div className="flex min-w-0 items-baseline gap-2">
+                      <span className="text-foreground shrink-0 font-mono text-[13px] font-medium">
+                        {cmd.fullCommand}
                       </span>
+                      {cmd.argumentHint && (
+                        <span className="text-muted-foreground/50 shrink-0 font-mono text-xs">
+                          {cmd.argumentHint}
+                        </span>
+                      )}
+                    </div>
+                    {cmd.description && (
+                      <p className="text-muted-foreground mt-0.5 truncate text-xs leading-normal">
+                        {cmd.description}
+                      </p>
                     )}
                   </div>
                 );

@@ -5,11 +5,19 @@ import { QueuePanel } from '@/layers/features/chat/ui/QueuePanel';
 import { ShortcutChips } from '@/layers/features/chat/ui/ShortcutChips';
 import { PromptSuggestionChips } from '@/layers/features/chat/ui/PromptSuggestionChips';
 import { QuestionPrompt } from '@/layers/features/chat/ui/QuestionPrompt';
+import { CommandPalette } from '@/layers/features/commands';
+import { FilePalette } from '@/layers/features/files';
 import { TransportProvider } from '@/layers/shared/model';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
 import { ShowcaseDemo } from '../ShowcaseDemo';
-import { SAMPLE_FILES, SAMPLE_QUEUE } from '../mock-chat-data';
+import {
+  SAMPLE_FILES,
+  SAMPLE_QUEUE,
+  SAMPLE_COMMANDS,
+  SAMPLE_COMMANDS_LONG,
+  SAMPLE_FILE_ENTRIES,
+} from '../mock-chat-data';
 import { createPlaygroundTransport } from '../playground-transport';
 import type { QuestionItem } from '@dorkos/shared/types';
 
@@ -106,9 +114,33 @@ function ChatInputDemo({
   );
 }
 
-/** Input-related component showcases: ChatInput, FileChipBar, QueuePanel, ShortcutChips, PromptSuggestionChips, QuestionPrompt. */
+/** Renders a palette dropdown in normal flow above a fake input anchor. */
+function PaletteAnchor({
+  hint,
+  children,
+  controls,
+}: {
+  hint: string;
+  children: React.ReactNode;
+  controls?: React.ReactNode;
+}) {
+  return (
+    <div>
+      {controls && <div className="mb-2">{controls}</div>}
+      <div className="mb-2">{children}</div>
+      <div className="border-border bg-muted/30 text-muted-foreground flex h-10 items-center rounded-lg border px-3 text-sm">
+        {hint}
+        <span className="bg-foreground ml-0.5 inline-block h-4 w-px animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+/** Input-related component showcases: ChatInput, FileChipBar, QueuePanel, ShortcutChips, CommandPalette, FilePalette, PromptSuggestionChips, QuestionPrompt. */
 export function InputShowcases() {
   const [files, setFiles] = useState(SAMPLE_FILES);
+  const [cmdIndex, setCmdIndex] = useState(0);
+  const [fileIndex, setFileIndex] = useState(0);
 
   return (
     <>
@@ -154,6 +186,142 @@ export function InputShowcases() {
       >
         <ShowcaseDemo>
           <ShortcutChips onChipClick={() => {}} />
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="CommandPalette"
+        description="Dropdown autocomplete for slash commands, triggered by typing / in the input."
+      >
+        <ShowcaseLabel>With commands</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor hint="/">
+            <CommandPalette
+              filteredCommands={SAMPLE_COMMANDS}
+              selectedIndex={1}
+              onSelect={() => {}}
+            />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Long text (real-world commands)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor hint="/debug:">
+            <CommandPalette
+              filteredCommands={SAMPLE_COMMANDS_LONG}
+              selectedIndex={2}
+              onSelect={() => {}}
+            />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Filtered (single namespace)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor hint="/linear:">
+            <CommandPalette
+              filteredCommands={SAMPLE_COMMANDS.filter((c) => c.namespace === 'linear')}
+              selectedIndex={0}
+              onSelect={() => {}}
+            />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Empty state</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor hint="/xyz">
+            <CommandPalette filteredCommands={[]} selectedIndex={0} onSelect={() => {}} />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Interactive (arrow keys)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor
+            hint="/"
+            controls={
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="bg-muted text-foreground rounded px-2 py-1 text-xs"
+                  onClick={() => setCmdIndex((i) => Math.max(0, i - 1))}
+                >
+                  &uarr; Up
+                </button>
+                <button
+                  type="button"
+                  className="bg-muted text-foreground rounded px-2 py-1 text-xs"
+                  onClick={() => setCmdIndex((i) => Math.min(SAMPLE_COMMANDS.length - 1, i + 1))}
+                >
+                  &darr; Down
+                </button>
+                <span className="text-muted-foreground self-center text-xs">Index: {cmdIndex}</span>
+              </div>
+            }
+          >
+            <CommandPalette
+              filteredCommands={SAMPLE_COMMANDS}
+              selectedIndex={cmdIndex}
+              onSelect={() => {}}
+            />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+      </PlaygroundSection>
+
+      <PlaygroundSection
+        title="FilePalette"
+        description="Dropdown autocomplete for file mentions, triggered by typing @ in the input."
+      >
+        <ShowcaseLabel>With files</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor hint="@auth">
+            <FilePalette
+              filteredFiles={SAMPLE_FILE_ENTRIES}
+              selectedIndex={0}
+              onSelect={() => {}}
+            />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Empty state</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor hint="@nonexistent">
+            <FilePalette filteredFiles={[]} selectedIndex={0} onSelect={() => {}} />
+          </PaletteAnchor>
+        </ShowcaseDemo>
+
+        <ShowcaseLabel>Interactive (arrow keys)</ShowcaseLabel>
+        <ShowcaseDemo>
+          <PaletteAnchor
+            hint="@"
+            controls={
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className="bg-muted text-foreground rounded px-2 py-1 text-xs"
+                  onClick={() => setFileIndex((i) => Math.max(0, i - 1))}
+                >
+                  &uarr; Up
+                </button>
+                <button
+                  type="button"
+                  className="bg-muted text-foreground rounded px-2 py-1 text-xs"
+                  onClick={() =>
+                    setFileIndex((i) => Math.min(SAMPLE_FILE_ENTRIES.length - 1, i + 1))
+                  }
+                >
+                  &darr; Down
+                </button>
+                <span className="text-muted-foreground self-center text-xs">
+                  Index: {fileIndex}
+                </span>
+              </div>
+            }
+          >
+            <FilePalette
+              filteredFiles={SAMPLE_FILE_ENTRIES}
+              selectedIndex={fileIndex}
+              onSelect={() => {}}
+            />
+          </PaletteAnchor>
         </ShowcaseDemo>
       </PlaygroundSection>
 

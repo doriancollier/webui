@@ -47,10 +47,10 @@ export function FilePalette({ filteredFiles, selectedIndex, onSelect }: FilePale
       animate={{ opacity: 1, scale: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.98, y: 4 }}
       transition={{ duration: 0.15, ease: [0, 0, 0.2, 1] }}
-      className="bg-popover absolute right-0 bottom-full left-0 mb-2 max-h-80 overflow-hidden rounded-lg border shadow-lg"
+      className="bg-popover max-h-80 overflow-hidden rounded-lg border shadow-lg"
       onMouseDown={(e) => e.preventDefault()}
     >
-      <div id="file-palette-listbox" role="listbox" className="max-h-72 overflow-y-auto p-2">
+      <div id="file-palette-listbox" role="listbox" className="max-h-72 overflow-y-auto p-1.5">
         {filteredFiles.length === 0 ? (
           <div className="text-muted-foreground px-2 py-4 text-center text-sm">No files found.</div>
         ) : (
@@ -69,19 +69,23 @@ export function FilePalette({ filteredFiles, selectedIndex, onSelect }: FilePale
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') onSelect(entry);
                 }}
-                className="data-[selected=true]:bg-ring/10 data-[selected=true]:text-foreground hover:bg-muted flex cursor-pointer items-center gap-2 rounded px-2 py-1.5 transition-colors duration-100"
+                className="data-[selected=true]:bg-accent hover:bg-muted flex cursor-pointer items-start gap-2 rounded-md px-2 py-1.5 transition-colors duration-100"
               >
-                <Icon className="text-muted-foreground size-4 shrink-0" />
-                <span className="truncate text-sm">
-                  <HighlightedText
-                    text={entry.filename}
-                    indices={entry.indices}
-                    startOffset={entry.directory.length}
-                  />
-                </span>
-                {entry.directory && (
-                  <span className="text-muted-foreground truncate text-xs">{entry.directory}</span>
-                )}
+                <Icon className="text-muted-foreground mt-0.5 size-4 shrink-0" />
+                <div className="min-w-0">
+                  <span className="text-foreground truncate text-sm font-medium">
+                    <HighlightedText
+                      text={entry.filename}
+                      indices={entry.indices}
+                      startOffset={entry.directory.length}
+                    />
+                  </span>
+                  {entry.directory && (
+                    <p className="text-muted-foreground/70 truncate text-xs leading-normal">
+                      {entry.directory}
+                    </p>
+                  )}
+                </div>
               </div>
             );
           })

@@ -266,22 +266,24 @@ export function ChatInputContainer({
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15 }}
           >
-            <AnimatePresence>
-              {autocomplete.commands.show && (
-                <CommandPalette
-                  filteredCommands={autocomplete.commands.filtered}
-                  selectedIndex={autocomplete.commands.selectedIndex}
-                  onSelect={autocomplete.handleCommandSelect}
-                />
-              )}
-              {autocomplete.files.show && (
-                <FilePalette
-                  filteredFiles={autocomplete.files.filtered}
-                  selectedIndex={autocomplete.files.selectedIndex}
-                  onSelect={autocomplete.handleFileSelect}
-                />
-              )}
-            </AnimatePresence>
+            <div className="absolute right-0 bottom-full left-0 mb-2">
+              <AnimatePresence>
+                {autocomplete.commands.show && (
+                  <CommandPalette
+                    filteredCommands={autocomplete.commands.filtered}
+                    selectedIndex={autocomplete.commands.selectedIndex}
+                    onSelect={autocomplete.handleCommandSelect}
+                  />
+                )}
+                {autocomplete.files.show && (
+                  <FilePalette
+                    filteredFiles={autocomplete.files.filtered}
+                    selectedIndex={autocomplete.files.selectedIndex}
+                    onSelect={autocomplete.handleFileSelect}
+                  />
+                )}
+              </AnimatePresence>
+            </div>
 
             {pendingFiles.length > 0 && (
               <FileChipBar files={pendingFiles} onRemove={onFileRemove} />

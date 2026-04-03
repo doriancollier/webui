@@ -156,6 +156,20 @@ export const CHAT_SECTIONS: PlaygroundSection[] = [
     keywords: ['shortcut', 'chip', 'command', 'mention', 'file', 'slash'],
   },
   {
+    id: 'commandpalette',
+    title: 'CommandPalette',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['command', 'palette', 'slash', 'autocomplete', 'dropdown', 'namespace'],
+  },
+  {
+    id: 'filepalette',
+    title: 'FilePalette',
+    page: 'chat',
+    category: 'Input',
+    keywords: ['file', 'palette', 'mention', 'autocomplete', 'dropdown', 'fuzzy', 'at'],
+  },
+  {
     id: 'promptsuggestionchips',
     title: 'PromptSuggestionChips',
     page: 'chat',
