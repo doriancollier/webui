@@ -374,7 +374,7 @@ export class ClaudeCodeRuntime implements AgentRuntime {
   async getCommands(forceRefresh?: boolean, cwd?: string): Promise<CommandRegistry> {
     const root = cwd || this.cwd;
     const registry = this.getOrCreateRegistry(root);
-    return this.cache.getCommands(registry, forceRefresh);
+    return this.cache.getCommands(registry, root, forceRefresh);
   }
 
   /** Get or create a CommandRegistryService for the given root, with LRU eviction. */

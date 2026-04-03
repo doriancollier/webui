@@ -33,18 +33,27 @@ type CacheCallbacks = Pick<
  */
 export class RuntimeCache {
   private cachedModels: ModelOption[] | null = null;
-  private cachedSubagents: SubagentInfo[] | null = null;
+  private cachedSubagents = new Map<string, SubagentInfo[]>();
   private cachedMcpStatus = new Map<string, McpServerEntry[]>();
-  private cachedSdkCommands: SdkCommandEntry[] | null = null;
+  private cachedSdkCommands = new Map<string, SdkCommandEntry[]>();
 
   /** Get available models — returns SDK-reported models if cached, otherwise defaults. */
   getSupportedModels(): ModelOption[] {
     return this.cachedModels ?? DEFAULT_MODELS;
   }
 
-  /** Get available subagents — returns SDK-reported agents if cached, otherwise empty. */
-  getSupportedSubagents(): SubagentInfo[] {
-    return this.cachedSubagents ?? [];
+  /**
+   * Get available subagents — returns SDK-reported agents for a cwd if cached, otherwise empty.
+   *
+   * When called without cwd (e.g. from the interface that lacks a cwd parameter),
+   * returns the most recently cached entry as a best-effort fallback.
+   */
+  getSupportedSubagents(cwd?: string): SubagentInfo[] {
+    if (cwd) return this.cachedSubagents.get(cwd) ?? [];
+    // Fallback: return last-inserted entry (best-effort when no cwd is available)
+    let last: SubagentInfo[] | undefined;
+    for (const v of this.cachedSubagents.values()) last = v;
+    return last ?? [];
   }
 
   /** Return last-known MCP server status for a project path, or null if unavailable. */
@@ -55,19 +64,25 @@ export class RuntimeCache {
   /**
    * Return commands, merging SDK-reported commands with filesystem metadata.
    *
-   * When SDK commands are cached, they are the authoritative source and get
-   * enriched with filesystem metadata (allowedTools, filePath, namespace).
-   * Before any SDK session, falls back to the filesystem scanner.
+   * When SDK commands are cached for the given cwd, they are the authoritative
+   * source and get enriched with filesystem metadata (allowedTools, filePath, namespace).
+   * Before any SDK session for a cwd, falls back to the filesystem scanner.
+   *
+   * @param registry - Filesystem command scanner for the target project
+   * @param cwdKey - Project directory to look up cached SDK commands
+   * @param forceRefresh - Force filesystem rescan (SDK cache persists)
    */
   async getCommands(
     registry: CommandRegistryService,
+    cwdKey: string,
     forceRefresh?: boolean
   ): Promise<CommandRegistry> {
-    if (!this.cachedSdkCommands) {
+    const cached = this.cachedSdkCommands.get(cwdKey);
+    if (!cached) {
       return registry.getCommands(forceRefresh);
     }
 
-    const sdkEntries: CommandEntry[] = this.cachedSdkCommands.map((c) => ({
+    const sdkEntries: CommandEntry[] = cached.map((c) => ({
       fullCommand: c.name.startsWith('/') ? c.name : `/${c.name}`,
       description: c.description,
       argumentHint: c.argumentHint || undefined,
@@ -116,16 +131,22 @@ export class RuntimeCache {
           count: servers.length,
         });
       },
-      onCommandsReceived: !this.cachedSdkCommands
+      onCommandsReceived: !this.cachedSdkCommands.has(cwdKey)
         ? (commands) => {
-            this.cachedSdkCommands = commands;
-            logger.debug('[sendMessage] cached supported commands', { count: commands.length });
+            this.cachedSdkCommands.set(cwdKey, commands);
+            logger.debug('[sendMessage] cached supported commands', {
+              cwd: cwdKey,
+              count: commands.length,
+            });
           }
         : undefined,
-      onSubagentsReceived: !this.cachedSubagents
+      onSubagentsReceived: !this.cachedSubagents.has(cwdKey)
         ? (agents) => {
-            this.cachedSubagents = agents;
-            logger.debug('[sendMessage] cached supported subagents', { count: agents.length });
+            this.cachedSubagents.set(cwdKey, agents);
+            logger.debug('[sendMessage] cached supported subagents', {
+              cwd: cwdKey,
+              count: agents.length,
+            });
           }
         : undefined,
     };
@@ -145,13 +166,15 @@ export class RuntimeCache {
   ): Promise<ReloadPluginsResult> {
     const result = await queryObj.reloadPlugins();
 
-    this.cachedSdkCommands = result.commands.map((c) => ({
-      name: c.name,
-      description: c.description,
-      argumentHint: c.argumentHint,
-    }));
-
     const cwd = sessionCwd ?? defaultCwd;
+    this.cachedSdkCommands.set(
+      cwd,
+      result.commands.map((c) => ({
+        name: c.name,
+        description: c.description,
+        argumentHint: c.argumentHint,
+      }))
+    );
     this.cachedMcpStatus.set(
       cwd,
       result.mcpServers
@@ -169,11 +192,14 @@ export class RuntimeCache {
     );
 
     if (result.agents) {
-      this.cachedSubagents = result.agents.map((a) => ({
-        name: a.name,
-        description: a.description,
-        model: a.model,
-      }));
+      this.cachedSubagents.set(
+        cwd,
+        result.agents.map((a) => ({
+          name: a.name,
+          description: a.description,
+          model: a.model,
+        }))
+      );
     }
 
     return {
