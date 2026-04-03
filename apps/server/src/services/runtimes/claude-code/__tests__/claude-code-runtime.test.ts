@@ -17,7 +17,10 @@ const {
     _mockBuildSystemPromptAppend: bspa,
     _mockResolveToolConfig: rtc,
     _mockBuildAllowedTools: bat,
-    contextBuilderFactory: () => ({ buildSystemPromptAppend: bspa }),
+    contextBuilderFactory: () => ({
+      buildSystemPromptAppend: bspa,
+      buildPerMessageContext: vi.fn().mockResolvedValue(''),
+    }),
     toolFilterFactory: () => ({ resolveToolConfig: rtc, buildAllowedTools: bat }),
   };
 });
@@ -656,8 +659,7 @@ describe('ClaudeCodeRuntime', () => {
       expect(buildSystemPromptAppend).toHaveBeenCalledTimes(1);
       const callArgs = (buildSystemPromptAppend as ReturnType<typeof vi.fn>).mock.calls[0];
       expect(typeof callArgs[0]).toBe('string'); // cwd
-      // callArgs[1] is meshCore (null when not set)
-      expect(callArgs[2]).toEqual(
+      expect(callArgs[1]).toEqual(
         expect.objectContaining({
           tasks: expect.any(Boolean),
           relay: expect.any(Boolean),

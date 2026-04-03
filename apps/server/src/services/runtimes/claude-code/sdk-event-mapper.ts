@@ -450,13 +450,31 @@ export async function* mapSdkMessage(
     return;
   }
 
-  // Handle rate limit events
+  // Handle rate limit events (includes subscription utilization data)
   if (message.type === 'rate_limit_event') {
-    const retryAfter = (message as Record<string, unknown>).retry_after as number | undefined;
+    const msg = message as Record<string, unknown>;
+    const retryAfter = msg.retry_after as number | undefined;
     yield {
       type: 'rate_limit',
       data: { retryAfter },
     };
+
+    // Extract subscription utilization from rate_limit_info if present
+    const info = msg.rate_limit_info as Record<string, unknown> | undefined;
+    if (info) {
+      const resetsAtRaw = info.resetsAt as number | undefined;
+      const status = (info.status as 'allowed' | 'allowed_warning' | 'rejected') ?? 'allowed';
+      yield {
+        type: 'usage_info' as const,
+        data: {
+          status,
+          utilization: info.utilization as number | undefined,
+          resetsAt: resetsAtRaw ? new Date(resetsAtRaw * 1000).toISOString() : undefined,
+          rateLimitType: info.rateLimitType as string | undefined,
+          isUsingOverage: info.isUsingOverage as boolean | undefined,
+        },
+      };
+    }
     return;
   }
 
@@ -467,7 +485,7 @@ export async function* mapSdkMessage(
     const modelUsageMap = result.modelUsage as Record<string, Record<string, unknown>> | undefined;
     const firstModelUsage = modelUsageMap ? Object.values(modelUsageMap)[0] : undefined;
 
-    // Always emit session_status with final cost/token/model data
+    // Always emit session_status with final cost/token/model data + cache metrics
     yield {
       type: 'session_status',
       data: {
@@ -476,6 +494,8 @@ export async function* mapSdkMessage(
         costUsd: result.total_cost_usd as number | undefined,
         contextTokens: usage?.input_tokens as number | undefined,
         contextMaxTokens: firstModelUsage?.contextWindow as number | undefined,
+        cacheReadTokens: firstModelUsage?.cacheReadInputTokens as number | undefined,
+        cacheCreationTokens: firstModelUsage?.cacheCreationInputTokens as number | undefined,
       },
     };
 

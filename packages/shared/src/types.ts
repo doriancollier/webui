@@ -81,6 +81,7 @@ export type {
   ApiRetryEvent,
   ContextUsage,
   ContextUsageCategory,
+  UsageInfo,
   SystemStatusEvent,
   CompactBoundaryEvent,
   PromptSuggestionEvent,

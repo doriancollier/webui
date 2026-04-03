@@ -21,7 +21,7 @@ import { createToolState } from './agent-types.js';
 import { createCanUseTool, handleElicitation } from './interactive-handlers.js';
 import { mapSdkMessage } from './sdk-event-mapper.js';
 import { makeUserPrompt } from './sdk-utils.js';
-import { buildSystemPromptAppend, type RelayContextDeps } from './context-builder.js';
+import { buildSystemPromptAppend, buildPerMessageContext } from './context-builder.js';
 import type { BindingRouter } from '../../relay/binding-router.js';
 import type { BindingStore } from '../../relay/binding-store.js';
 import type { AdapterManager } from '../../relay/adapter-manager.js';
@@ -151,27 +151,18 @@ export async function* executeSdkQuery(
     globalConfig,
   });
 
-  const relayContext: RelayContextDeps | undefined =
-    opts.bindingRouter && opts.bindingStore && opts.adapterManager && meshAgentId
-      ? {
-          agentId: meshAgentId,
-          bindingRouter: opts.bindingRouter,
-          bindingStore: opts.bindingStore,
-          adapterManager: opts.adapterManager,
-        }
-      : undefined;
-
-  const baseAppend = await buildSystemPromptAppend(
-    effectiveCwd,
-    opts.meshCore ?? undefined,
-    toolConfig,
-    relayContext,
-    session.uiState
-  );
+  const [baseAppend, perMessageContext] = await Promise.all([
+    buildSystemPromptAppend(effectiveCwd, toolConfig),
+    buildPerMessageContext(effectiveCwd, session.uiState),
+  ]);
   // Concatenate caller-supplied append (e.g. Tasks scheduler context) after the base
   const systemPromptAppend = messageOpts?.systemPromptAppend
     ? `${baseAppend}\n\n${messageOpts.systemPromptAppend}`
     : baseAppend;
+
+  // Prepend dynamic context (git status, UI state) to user message — keeps it
+  // out of the system prompt to preserve prompt cache hits on the static prefix.
+  const enrichedContent = perMessageContext ? `${perMessageContext}\n\n${content}` : content;
 
   const sdkOptions: Options = {
     cwd: effectiveCwd,
@@ -259,7 +250,7 @@ export async function* executeSdkQuery(
     return handleElicitation(session, request, signal);
   };
 
-  const agentQuery = query({ prompt: makeUserPrompt(content), options: sdkOptions });
+  const agentQuery = query({ prompt: makeUserPrompt(enrichedContent), options: sdkOptions });
   session.activeQuery = agentQuery;
 
   // Non-blocking model fetch on first invocation

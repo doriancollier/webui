@@ -47,8 +47,8 @@ afterEach(() => {
 });
 
 describe('STATUS_BAR_REGISTRY', () => {
-  it('contains exactly 9 items', () => {
-    expect(STATUS_BAR_REGISTRY).toHaveLength(9);
+  it('contains exactly 11 items', () => {
+    expect(STATUS_BAR_REGISTRY).toHaveLength(11);
   });
 
   it('has unique keys', () => {
@@ -64,7 +64,9 @@ describe('STATUS_BAR_REGISTRY', () => {
       'git',
       'model',
       'cost',
+      'cache',
       'context',
+      'usage',
       'permission',
       'sound',
       'sync',
@@ -113,10 +115,10 @@ describe('getGroupedRegistryItems', () => {
     expect(groups[1].group).toBe('controls');
   });
 
-  it('session group has 5 items', () => {
+  it('session group has 7 items', () => {
     const groups = getGroupedRegistryItems();
     const sessionGroup = groups.find((g) => g.group === 'session');
-    expect(sessionGroup?.items).toHaveLength(5);
+    expect(sessionGroup?.items).toHaveLength(7);
   });
 
   it('controls group has 4 items', () => {

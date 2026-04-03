@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useShallow } from 'zustand/shallow';
 import { motion, AnimatePresence } from 'motion/react';
 import type { PanInfo } from 'motion/react';
 import type {
@@ -19,7 +20,9 @@ import {
   PermissionModeItem,
   ModelItem,
   CostItem,
+  CacheItem,
   ContextItem,
+  UsageItem,
   NotificationSoundItem,
   SyncItem,
   PollingItem,
@@ -134,6 +137,10 @@ export function ChatStatusSection({
     setShowStatusBarCost,
     showStatusBarContext,
     setShowStatusBarContext,
+    showStatusBarCache,
+    setShowStatusBarCache,
+    showStatusBarUsage,
+    setShowStatusBarUsage,
     showStatusBarGit,
     setShowStatusBarGit,
     showStatusBarSound,
@@ -151,6 +158,20 @@ export function ChatStatusSection({
   } = useAppStore();
   const contextUsage = useSessionChatStore(
     useCallback((s) => s.sessions[sessionId]?.contextUsage ?? null, [sessionId])
+  );
+  const usageInfo = useSessionChatStore(
+    useCallback((s) => s.sessions[sessionId]?.usageInfo ?? null, [sessionId])
+  );
+  const cacheStatus = useSessionChatStore(
+    useShallow((s) => {
+      const ss = s.sessions[sessionId]?.sessionStatus;
+      if (!ss?.cacheReadTokens && !ss?.cacheCreationTokens) return null;
+      return {
+        cacheReadTokens: ss.cacheReadTokens ?? 0,
+        cacheCreationTokens: ss.cacheCreationTokens ?? 0,
+        contextTokens: ss.contextTokens,
+      };
+    })
   );
   const { data: gitStatus } = useGitStatus(status.cwd);
   const { data: subagents } = useSubagents();
@@ -273,6 +294,21 @@ export function ChatStatusSection({
                 {status.costUsd !== null && <CostItem costUsd={status.costUsd} />}
               </ItemContextMenu>
             </StatusLine.Item>
+            <StatusLine.Item itemKey="cache" visible={showStatusBarCache && cacheStatus !== null}>
+              <ItemContextMenu
+                itemLabel={getItemLabel('cache')}
+                onHide={() => setShowStatusBarCache(false)}
+                onConfigure={() => setConfigureOpen(true)}
+              >
+                {cacheStatus && (
+                  <CacheItem
+                    cacheReadTokens={cacheStatus.cacheReadTokens}
+                    cacheCreationTokens={cacheStatus.cacheCreationTokens}
+                    contextTokens={cacheStatus.contextTokens}
+                  />
+                )}
+              </ItemContextMenu>
+            </StatusLine.Item>
             <StatusLine.Item
               itemKey="context"
               visible={showStatusBarContext && status.contextPercent !== null}
@@ -285,6 +321,15 @@ export function ChatStatusSection({
                 {status.contextPercent !== null && (
                   <ContextItem percent={status.contextPercent} contextUsage={contextUsage} />
                 )}
+              </ItemContextMenu>
+            </StatusLine.Item>
+            <StatusLine.Item itemKey="usage" visible={showStatusBarUsage && usageInfo !== null}>
+              <ItemContextMenu
+                itemLabel={getItemLabel('usage')}
+                onHide={() => setShowStatusBarUsage(false)}
+                onConfigure={() => setConfigureOpen(true)}
+              >
+                {usageInfo && <UsageItem usageInfo={usageInfo} />}
               </ItemContextMenu>
             </StatusLine.Item>
             <StatusLine.Item itemKey="sound" visible={showStatusBarSound}>

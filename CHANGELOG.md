@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Add cache hit rate and usage status bar items, refactor context to per-message
 - Redesign tool/thinking blocks for clarity and visual cohesion
 - Redesign onboarding copy and project discovery UX
 - Adopt SKILL.md file-first architecture for task system

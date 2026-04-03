@@ -61,6 +61,7 @@ export const StreamEventTypeSchema = z
     'ui_command',
     'session_state_changed',
     'context_usage',
+    'usage_info',
     'elicitation_prompt',
     'elicitation_complete',
   ])
@@ -336,10 +337,33 @@ export const SessionStatusEventSchema = z
     contextTokens: z.number().int().optional(),
     contextMaxTokens: z.number().int().optional(),
     outputTokens: z.number().int().optional(),
+    /** Tokens read from prompt cache (90% cost savings). */
+    cacheReadTokens: z.number().int().optional(),
+    /** Tokens written to prompt cache (slight write premium). */
+    cacheCreationTokens: z.number().int().optional(),
   })
   .openapi('SessionStatusEvent');
 
 export type SessionStatusEvent = z.infer<typeof SessionStatusEventSchema>;
+
+// === Rate Limit / Subscription Usage Types ===
+
+export const UsageInfoSchema = z
+  .object({
+    /** Rate limit status: allowed, warning, or rejected. */
+    status: z.enum(['allowed', 'allowed_warning', 'rejected']),
+    /** Percentage of rate limit consumed (0-1). */
+    utilization: z.number().optional(),
+    /** ISO timestamp when the rate limit resets. */
+    resetsAt: z.string().optional(),
+    /** Type of rate limit applied. */
+    rateLimitType: z.string().optional(),
+    /** Whether currently using overage tier. */
+    isUsingOverage: z.boolean().optional(),
+  })
+  .openapi('UsageInfo');
+
+export type UsageInfo = z.infer<typeof UsageInfoSchema>;
 
 // === Context Usage Types ===
 
@@ -633,6 +657,7 @@ export const StreamEventSchema = z
       PresenceUpdateEventSchema,
       SessionStateChangedEventSchema,
       ContextUsageSchema,
+      UsageInfoSchema,
       ElicitationPromptEventSchema,
       ElicitationCompleteEventSchema,
     ]),

@@ -79,7 +79,7 @@ export function ThinkingBlock({ text, isStreaming, elapsedMs }: ThinkingBlockPro
         </>
       }
     >
-      <div ref={contentRef} className="max-h-64 overflow-y-auto">
+      <div ref={contentRef} className="max-h-32 overflow-y-auto">
         <pre className="text-muted-foreground text-xs break-words whitespace-pre-wrap">{text}</pre>
       </div>
     </CollapsibleCard>

@@ -5,6 +5,8 @@ import {
   Bot,
   DollarSign,
   BarChart3,
+  Zap,
+  Gauge,
   Shield,
   Volume2,
   RefreshCw,
@@ -18,7 +20,9 @@ export type StatusBarItemKey =
   | 'git'
   | 'model'
   | 'cost'
+  | 'cache'
   | 'context'
+  | 'usage'
   | 'permission'
   | 'sound'
   | 'sync'
@@ -86,11 +90,27 @@ export const STATUS_BAR_REGISTRY: readonly StatusBarItemConfig[] = [
     defaultVisible: true,
   },
   {
+    key: 'cache',
+    label: 'Cache',
+    description: 'Prompt cache hit rate',
+    group: 'session',
+    icon: Zap,
+    defaultVisible: true,
+  },
+  {
     key: 'context',
     label: 'Context Usage',
     description: 'Context window utilization',
     group: 'session',
     icon: BarChart3,
+    defaultVisible: true,
+  },
+  {
+    key: 'usage',
+    label: 'Usage',
+    description: 'Subscription utilization',
+    group: 'session',
+    icon: Gauge,
     defaultVisible: true,
   },
   {

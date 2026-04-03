@@ -13,6 +13,7 @@ import type {
   ErrorEvent,
   ApiRetryEvent,
   ContextUsage,
+  UsageInfo,
   SessionStatusEvent,
   SessionStateChangedEvent,
   TaskUpdateEvent,
@@ -219,6 +220,9 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
           contextTokens: incoming.contextTokens ?? sessionStatusRef.current?.contextTokens,
           contextMaxTokens: incoming.contextMaxTokens ?? sessionStatusRef.current?.contextMaxTokens,
           outputTokens: incoming.outputTokens ?? sessionStatusRef.current?.outputTokens,
+          cacheReadTokens: incoming.cacheReadTokens ?? sessionStatusRef.current?.cacheReadTokens,
+          cacheCreationTokens:
+            incoming.cacheCreationTokens ?? sessionStatusRef.current?.cacheCreationTokens,
         };
         sessionStatusRef.current = merged;
         setSessionStatus(merged);
@@ -260,6 +264,11 @@ export function createStreamEventHandler(deps: StreamEventDeps) {
       case 'context_usage': {
         const usage = data as ContextUsage;
         useSessionChatStore.getState().updateSession(sessionId, { contextUsage: usage });
+        break;
+      }
+      case 'usage_info': {
+        const info = data as UsageInfo;
+        useSessionChatStore.getState().updateSession(sessionId, { usageInfo: info });
         break;
       }
       case 'session_state_changed': {

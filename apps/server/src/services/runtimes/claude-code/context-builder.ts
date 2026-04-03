@@ -335,54 +335,83 @@ async function buildPeerAgentsBlock(
 /**
  * Build a system prompt append string containing runtime context.
  *
- * Returns XML key-value blocks mirroring Claude Code's own `<env>` structure.
- * Never throws — all errors result in partial context (git failures produce
- * `Is git repo: false`).
+ * Structured for optimal Claude prompt caching — static tool documentation blocks
+ * come first (never change), followed by semi-static agent identity (changes only
+ * on manifest edit), then stable environment metadata.
+ *
+ * Dynamic context (git status, peer agents, relay connections, UI state) is
+ * intentionally excluded — those are available on-demand via tool calls or
+ * injected into the user message via {@link buildPerMessageContext}.
  *
  * @param cwd - Working directory for the session
- * @param meshCore - Optional agent registry port for peer agents block
  * @param toolConfig - Optional resolved tool config for agent-aware block gating
- * @param relayContext - Optional relay context deps for building relay connections block
- * @param uiState - Optional client-reported UI state for the active session
  */
 export async function buildSystemPromptAppend(
   cwd: string,
-  meshCore?: AgentRegistryPort | null,
-  toolConfig?: ResolvedToolConfig,
-  relayContext?: RelayContextDeps,
-  uiState?: UiState
+  toolConfig?: ResolvedToolConfig
 ): Promise<string> {
-  const results = await Promise.allSettled([
-    buildEnvBlock(cwd),
-    buildGitBlock(cwd),
-    buildAgentBlock(cwd),
-    buildPeerAgentsBlock(meshCore),
-  ]);
-
-  // Tool context blocks are synchronous (static strings + config checks)
+  // Static tool context blocks (synchronous — config checks only, content never changes)
   const relayBlock = buildRelayToolsBlock(toolConfig);
   const meshBlock = buildMeshToolsBlock(toolConfig);
   const adapterBlock = buildAdapterToolsBlock(toolConfig);
   const tasksBlock = buildTasksToolsBlock(toolConfig);
-  const relayConnectionsBlock = buildRelayConnectionsBlock(relayContext, toolConfig);
-  const uiBlock = buildUiToolsBlock(uiState);
+  const uiBlock = buildUiToolsBlock();
+
+  // Semi-static blocks (async — reads files, but content stable between agent config changes)
+  const results = await Promise.allSettled([buildAgentBlock(cwd), buildEnvBlock(cwd)]);
 
   return [
-    ...results
-      .filter((r) => r.status === 'fulfilled' && r.value)
-      .map((r) => (r as PromiseFulfilledResult<string>).value),
+    // 1. Static tool documentation — fully cacheable, never changes
     relayBlock,
     meshBlock,
     adapterBlock,
     tasksBlock,
-    relayConnectionsBlock,
     uiBlock,
+    // 2. Semi-static identity + env — changes only on agent config or server restart
+    ...results
+      .filter((r) => r.status === 'fulfilled' && r.value)
+      .map((r) => (r as PromiseFulfilledResult<string>).value),
   ]
     .filter(Boolean)
     .join('\n\n');
 }
 
-/** Build the `<env>` block with system and DorkOS metadata. */
+/**
+ * Build per-message context that is prepended to the user's message.
+ *
+ * Contains dynamic data that changes between messages — keeping it out of the
+ * system prompt preserves cache hits on the static prefix.
+ *
+ * @param cwd - Working directory for git status
+ * @param uiState - Optional client-reported UI state
+ */
+export async function buildPerMessageContext(cwd: string, uiState?: UiState): Promise<string> {
+  const blocks: string[] = [];
+
+  // Git status — changes on file modifications
+  try {
+    const gitBlock = await buildGitBlock(cwd);
+    if (gitBlock) blocks.push(gitBlock);
+  } catch {
+    // Non-fatal: git status is advisory context
+  }
+
+  // UI state — changes on user interaction
+  if (uiState) {
+    blocks.push(`<ui_state>\n${JSON.stringify(uiState, null, 2)}\n</ui_state>`);
+  }
+
+  return blocks.length > 0 ? blocks.join('\n\n') : '';
+}
+
+/**
+ * Build the `<env>` block with system and DorkOS metadata.
+ *
+ * All values here are stable for the lifetime of the server process.
+ * Dynamic values (date, git status, UI state) are intentionally excluded
+ * to maximize Claude's prompt cache hit rate — the SDK's own system prompt
+ * already injects the current date.
+ */
 async function buildEnvBlock(cwd: string): Promise<string> {
   const lines = [
     `Working directory: ${cwd}`,
@@ -393,7 +422,6 @@ async function buildEnvBlock(cwd: string): Promise<string> {
     `OS Version: ${os.release()}`,
     `Node.js: ${process.version}`,
     `Hostname: ${os.hostname()}`,
-    `Date: ${new Date().toISOString()}`,
   ];
 
   return `<env>\n${lines.join('\n')}\n</env>`;

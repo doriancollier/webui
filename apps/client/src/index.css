@@ -189,7 +189,7 @@
   --msg-timestamp-color: hsl(var(--muted-foreground) / 0.6);
 
   /* === Spacing tokens (density-aware) === */
-  --msg-padding-x: 1rem;
+  --msg-padding-x: 1.5rem;
   --msg-padding-y-start: 1rem;
   --msg-padding-y-mid: 0.375rem;
   --msg-padding-y-end: 2rem;

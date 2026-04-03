@@ -41,6 +41,7 @@ vi.mock('../config-manager.js', () => ({
 
 import {
   buildSystemPromptAppend,
+  buildPerMessageContext,
   _buildAgentBlock,
   _buildRelayToolsBlock,
   _buildMeshToolsBlock,
@@ -126,15 +127,11 @@ describe('buildSystemPromptAppend', () => {
     expect(result).toMatch(/OS Version: /);
     expect(result).toMatch(/Node\.js: /);
     expect(result).toMatch(/Hostname: /);
-    expect(result).toMatch(/Date: /);
   });
 
-  it('Date field is valid ISO 8601', async () => {
+  it('does not include Date in env block (SDK injects its own)', async () => {
     const result = await buildSystemPromptAppend('/test/dir');
-    const dateMatch = result.match(/Date: (.+)/);
-    expect(dateMatch).not.toBeNull();
-    const parsed = new Date(dateMatch![1]);
-    expect(parsed.toISOString()).toBe(dateMatch![1]);
+    expect(result).not.toMatch(/Date: /);
   });
 
   it('Version uses SERVER_VERSION from version module', async () => {
@@ -142,79 +139,27 @@ describe('buildSystemPromptAppend', () => {
     expect(result).toContain('Version: 1.2.3');
   });
 
-  it('<git_status> shows "Is git repo: false" for non-git dirs', async () => {
-    mockedGetGitStatus.mockResolvedValue({ error: 'not_git_repo' as const });
+  it('does not include git status (moved to per-message context)', async () => {
     const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('<git_status>');
-    expect(result).toContain('Is git repo: false');
-    expect(result).toContain('</git_status>');
+    expect(result).not.toContain('<git_status>');
   });
 
-  it('<git_status> shows branch when git repo', async () => {
-    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ branch: 'feat/my-feature' }));
+  it('does not include peer agents (available via mesh_list tool)', async () => {
     const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('Is git repo: true');
-    expect(result).toContain('Current branch: feat/my-feature');
+    expect(result).not.toContain('<peer_agents>');
   });
 
-  it('omits "Ahead of origin" when ahead=0', async () => {
-    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ ahead: 0 }));
+  it('does not include ui_state (moved to per-message context)', async () => {
     const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).not.toContain('Ahead of origin');
+    expect(result).not.toContain('<ui_state>');
   });
 
-  it('shows "Ahead of origin" when ahead>0', async () => {
-    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ ahead: 3 }));
-    const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('Ahead of origin: 3 commits');
-  });
-
-  it('shows "Working tree: clean" when all counts zero', async () => {
-    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ clean: true }));
-    const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('Working tree: clean');
-  });
-
-  it('shows "Working tree: dirty" with only non-zero counts', async () => {
-    mockedGetGitStatus.mockResolvedValue(
-      makeGitStatus({
-        clean: false,
-        modified: 2,
-        staged: 0,
-        untracked: 3,
-        conflicted: 0,
-      })
-    );
-    const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('Working tree: dirty (2 modified, 3 untracked)');
-    expect(result).not.toContain('staged');
-    expect(result).not.toContain('conflicted');
-  });
-
-  it('shows "Detached HEAD" only when detached', async () => {
-    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ detached: false }));
-    let result = await buildSystemPromptAppend('/test/dir');
-    expect(result).not.toContain('Detached HEAD');
-
-    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ detached: true, branch: 'HEAD' }));
-    result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('Detached HEAD: true');
-  });
-
-  it('git failure still returns env block (no throw)', async () => {
-    mockedGetGitStatus.mockRejectedValue(new Error('git not found'));
-    const result = await buildSystemPromptAppend('/test/dir');
-    expect(result).toContain('<env>');
-    expect(result).toContain('</env>');
-  });
-
-  it('includes agent block alongside env and git blocks', async () => {
+  it('includes agent block alongside env block', async () => {
     mockedReadManifest.mockResolvedValue(
       makeManifest({ name: 'my-agent', description: 'A helpful agent' })
     );
     const result = await buildSystemPromptAppend('/test/dir');
     expect(result).toContain('<env>');
-    expect(result).toContain('<git_status>');
     expect(result).toContain('<agent_identity>');
     expect(result).toContain('Name: my-agent');
   });
@@ -223,8 +168,18 @@ describe('buildSystemPromptAppend', () => {
     mockedReadManifest.mockRejectedValue(new Error('disk error'));
     const result = await buildSystemPromptAppend('/test/dir');
     expect(result).toContain('<env>');
-    expect(result).toContain('<git_status>');
     expect(result).not.toContain('<agent_identity>');
+  });
+
+  it('places static tool blocks before semi-static agent/env blocks', async () => {
+    mockedReadManifest.mockResolvedValue(makeManifest({ name: 'test-agent' }));
+    const result = await buildSystemPromptAppend('/test/dir');
+    const relayIdx = result.indexOf('<relay_tools>');
+    const envIdx = result.indexOf('<env>');
+    const agentIdx = result.indexOf('<agent_identity>');
+    // Tool docs (static) should precede agent identity and env (semi-static)
+    expect(relayIdx).toBeLessThan(agentIdx);
+    expect(relayIdx).toBeLessThan(envIdx);
   });
 
   it('includes tool context blocks in output when features are enabled', async () => {
@@ -280,7 +235,7 @@ describe('agent-aware block gating', () => {
   });
 
   it('omits relay block when toolConfig.relay=false', async () => {
-    const result = await buildSystemPromptAppend('/tmp/test', null, {
+    const result = await buildSystemPromptAppend('/tmp/test', {
       tasks: true,
       relay: false,
       mesh: true,
@@ -290,7 +245,7 @@ describe('agent-aware block gating', () => {
   });
 
   it('omits mesh block when toolConfig.mesh=false', async () => {
-    const result = await buildSystemPromptAppend('/tmp/test', null, {
+    const result = await buildSystemPromptAppend('/tmp/test', {
       tasks: true,
       relay: true,
       mesh: false,
@@ -300,7 +255,7 @@ describe('agent-aware block gating', () => {
   });
 
   it('omits tasks block when toolConfig.tasks=false', async () => {
-    const result = await buildSystemPromptAppend('/tmp/test', null, {
+    const result = await buildSystemPromptAppend('/tmp/test', {
       tasks: false,
       relay: true,
       mesh: true,
@@ -310,7 +265,7 @@ describe('agent-aware block gating', () => {
   });
 
   it('omits adapter block when toolConfig.adapter=false', async () => {
-    const result = await buildSystemPromptAppend('/tmp/test', null, {
+    const result = await buildSystemPromptAppend('/tmp/test', {
       tasks: true,
       relay: true,
       mesh: true,
@@ -320,7 +275,7 @@ describe('agent-aware block gating', () => {
   });
 
   it('includes tasks block when toolConfig.tasks=true', async () => {
-    const result = await buildSystemPromptAppend('/tmp/test', null, {
+    const result = await buildSystemPromptAppend('/tmp/test', {
       tasks: true,
       relay: true,
       mesh: true,
@@ -342,7 +297,7 @@ describe('agent-aware block gating', () => {
       adapterTools: false,
       tasksTools: false,
     });
-    const result = await buildSystemPromptAppend('/tmp/test', null, {
+    const result = await buildSystemPromptAppend('/tmp/test', {
       tasks: true,
       relay: true,
       mesh: true,
@@ -352,6 +307,71 @@ describe('agent-aware block gating', () => {
     expect(result).toContain('<mesh_tools>');
     expect(result).toContain('<adapter_tools>');
     expect(result).toContain('<tasks_tools>');
+  });
+});
+
+describe('buildPerMessageContext', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockedGetGitStatus.mockResolvedValue(makeGitStatus());
+  });
+
+  it('includes git status block', async () => {
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).toContain('<git_status>');
+    expect(result).toContain('Is git repo: true');
+    expect(result).toContain('</git_status>');
+  });
+
+  it('shows branch from git status', async () => {
+    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ branch: 'feat/my-feature' }));
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).toContain('Current branch: feat/my-feature');
+  });
+
+  it('shows "Is git repo: false" for non-git dirs', async () => {
+    mockedGetGitStatus.mockResolvedValue({ error: 'not_git_repo' as const });
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).toContain('Is git repo: false');
+  });
+
+  it('shows "Working tree: dirty" with non-zero counts', async () => {
+    mockedGetGitStatus.mockResolvedValue(
+      makeGitStatus({ clean: false, modified: 2, untracked: 3 })
+    );
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).toContain('Working tree: dirty (2 modified, 3 untracked)');
+  });
+
+  it('includes ui_state when provided', async () => {
+    const uiState = { canvas: { open: false }, sidebar: { open: true } };
+    const result = await buildPerMessageContext('/test/dir', uiState as never);
+    expect(result).toContain('<ui_state>');
+    expect(result).toContain('"open": true');
+  });
+
+  it('excludes ui_state when not provided', async () => {
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).not.toContain('<ui_state>');
+  });
+
+  it('returns empty string when git fails and no ui state', async () => {
+    mockedGetGitStatus.mockRejectedValue(new Error('git not found'));
+    const result = await buildPerMessageContext('/test/dir');
+    // buildGitBlock handles errors internally and returns a fallback, so this won't be empty
+    expect(result).toContain('<git_status>');
+  });
+
+  it('shows "Ahead of origin" when ahead>0', async () => {
+    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ ahead: 3 }));
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).toContain('Ahead of origin: 3 commits');
+  });
+
+  it('shows "Detached HEAD" when detached', async () => {
+    mockedGetGitStatus.mockResolvedValue(makeGitStatus({ detached: true, branch: 'HEAD' }));
+    const result = await buildPerMessageContext('/test/dir');
+    expect(result).toContain('Detached HEAD: true');
   });
 });
 
