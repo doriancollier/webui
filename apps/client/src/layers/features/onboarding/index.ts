@@ -15,6 +15,5 @@ export { NoAgentsFound } from './ui/NoAgentsFound';
 export { TaskTemplatesStep } from './ui/TaskTemplatesStep';
 export { AdapterSetupStep } from './ui/AdapterSetupStep';
 export { OnboardingComplete } from './ui/OnboardingComplete';
-export { DiscoveryCelebration } from './ui/DiscoveryCelebration';
 export { OnboardingNavBar } from './ui/OnboardingNavBar';
 export { ProgressCard } from './ui/ProgressCard';

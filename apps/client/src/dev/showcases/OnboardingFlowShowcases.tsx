@@ -14,9 +14,13 @@ import {
   OnboardingNavBar,
   ProgressCard,
   NoAgentsFound,
-  DiscoveryCelebration,
 } from '@/layers/features/onboarding';
-import type { DiscoveryCandidate, AgentPathEntry } from '@dorkos/shared/mesh-schemas';
+import { CandidateCard, BulkAddBar, CollapsibleImportedSection } from '@/layers/entities/discovery';
+import type {
+  DiscoveryCandidate,
+  ExistingAgent,
+  AgentPathEntry,
+} from '@dorkos/shared/mesh-schemas';
 
 // ── Mock data ────────────────────────────────────────────────
 
@@ -56,6 +60,21 @@ const MOCK_CANDIDATES: DiscoveryCandidate[] = [
   },
 ];
 
+const MOCK_EXISTING_AGENTS: ExistingAgent[] = [
+  {
+    path: '/Users/kai/projects/dorkbot',
+    name: 'dorkbot',
+    runtime: 'claude-code',
+    description: 'System agent',
+  },
+  {
+    path: '/Users/kai/projects/blog',
+    name: 'blog',
+    runtime: 'cursor',
+    description: 'Blog site project',
+  },
+];
+
 const MOCK_AGENTS: AgentPathEntry[] = [
   {
     id: 'webapp-agent',
@@ -87,7 +106,6 @@ export function OnboardingFlowShowcases() {
       <OnboardingNavBarShowcase />
       <ProgressCardShowcase />
       <NoAgentsFoundShowcase />
-      <DiscoveryCelebrationShowcase />
     </>
   );
 }
@@ -100,7 +118,7 @@ function InteractiveFlowShowcase() {
   return (
     <PlaygroundSection
       title="OnboardingFlow"
-      description="Full interactive onboarding flow. Click through each step — Welcome, Meet DorkBot, Agent Discovery, Tasks, and Complete. Rendered in a contained viewport."
+      description="Full interactive onboarding flow. Click through each step — Welcome, Meet DorkBot, Project Import, Tasks, and Complete. Rendered in a contained viewport."
     >
       <div className="mb-3 flex items-center gap-2">
         <Button variant="outline" size="sm" onClick={() => setFlowKey((k) => k + 1)}>
@@ -155,11 +173,73 @@ function AgentDiscoveryStepShowcase() {
   return (
     <PlaygroundSection
       title="AgentDiscoveryStep"
-      description="Agent discovery with auto-scan. In the playground this shows the scanning animation (mock transport has no real scan results)."
+      description="Project import step with auto-scan. The live component shows the scanning state (mock transport has no real scan results). Static showcases below demonstrate all visual states."
     >
+      <ShowcaseLabel>Live — scanning state (auto-scan, mock transport)</ShowcaseLabel>
       <ShowcaseDemo responsive>
         <div className="flex min-h-[300px] flex-col px-4 py-4">
           <AgentDiscoveryStep onStepComplete={noop} />
+        </div>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>State: existing + new projects (Option A layout)</ShowcaseLabel>
+      <ShowcaseDemo responsive>
+        <div className="flex min-h-[300px] flex-col items-center px-4 py-4">
+          <div className="w-full shrink-0 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Projects Found</h2>
+            <p className="text-muted-foreground mt-3 shrink-0 text-center text-sm">
+              Adding a project lets you manage it from DorkOS — assign agents, schedule tasks, and
+              connect to Slack, Telegram, and more.
+            </p>
+          </div>
+          <div className="mt-4 w-full space-y-3">
+            <BulkAddBar count={MOCK_CANDIDATES.length} onAddAll={noop} />
+            {MOCK_CANDIDATES.map((candidate) => (
+              <CandidateCard
+                key={candidate.path}
+                candidate={candidate}
+                onApprove={noop}
+                onSkip={noop}
+              />
+            ))}
+            <CollapsibleImportedSection agents={MOCK_EXISTING_AGENTS} />
+          </div>
+          <div className="mt-4 flex shrink-0 flex-col items-center gap-2 border-t pt-4">
+            <Button size="lg">Continue</Button>
+          </div>
+        </div>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>State: all projects already imported</ShowcaseLabel>
+      <ShowcaseDemo responsive>
+        <div className="flex min-h-[200px] flex-col items-center px-4 py-4">
+          <div className="w-full shrink-0 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">Projects Found</h2>
+            <p className="text-muted-foreground mt-3 shrink-0 text-center text-sm">
+              Adding a project lets you manage it from DorkOS — assign agents, schedule tasks, and
+              connect to Slack, Telegram, and more.
+            </p>
+          </div>
+          <div className="mt-4 w-full">
+            <CollapsibleImportedSection agents={MOCK_EXISTING_AGENTS} />
+          </div>
+          <div className="mt-4 flex shrink-0 flex-col items-center gap-2 border-t pt-4">
+            <Button size="lg">Continue</Button>
+          </div>
+        </div>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>State: error</ShowcaseLabel>
+      <ShowcaseDemo responsive>
+        <div className="flex min-h-[150px] flex-col items-center px-4 py-4">
+          <div className="w-full shrink-0 text-center">
+            <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
+              Searching your machine...
+            </h2>
+          </div>
+          <div className="border-destructive/30 bg-destructive/5 text-destructive mt-6 shrink-0 rounded-lg border px-4 py-3 text-sm">
+            Failed to scan directories: EACCES permission denied
+          </div>
         </div>
       </ShowcaseDemo>
     </PlaygroundSection>
@@ -291,31 +371,10 @@ function NoAgentsFoundShowcase() {
   return (
     <PlaygroundSection
       title="NoAgentsFound"
-      description="Fallback form shown when discovery finds zero agents. Includes directory picker, name input, and persona textarea."
+      description="Fallback form shown when discovery finds zero projects. Includes directory picker, name input, and persona textarea."
     >
       <ShowcaseDemo responsive>
         <NoAgentsFound onAgentCreated={noop} />
-      </ShowcaseDemo>
-    </PlaygroundSection>
-  );
-}
-
-function DiscoveryCelebrationShowcase() {
-  const [remountKey, setRemountKey] = useState(0);
-
-  return (
-    <PlaygroundSection
-      title="DiscoveryCelebration"
-      description="Three-beat celebration animation after agent discovery. Beat 1: cards stagger in. Beat 2: confetti + announcement. Beat 3: fade out."
-    >
-      <ShowcaseLabel>With 3 discovered candidates</ShowcaseLabel>
-      <ShowcaseDemo>
-        <div className="space-y-3">
-          <Button variant="outline" size="sm" onClick={() => setRemountKey((k) => k + 1)}>
-            Replay animation
-          </Button>
-          <DiscoveryCelebration key={remountKey} candidates={MOCK_CANDIDATES} onComplete={noop} />
-        </div>
       </ShowcaseDemo>
     </PlaygroundSection>
   );

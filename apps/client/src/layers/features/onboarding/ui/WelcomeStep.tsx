@@ -74,7 +74,7 @@ export function WelcomeStep({ onGetStarted, onSkip }: WelcomeStepProps) {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.4, duration: 0.5 }}
       >
-        Let&rsquo;s set up your AI agent workspace.
+        Your agents are three steps away.
       </motion.p>
 
       {/* Preview items */}

@@ -96,7 +96,7 @@ vi.mock('@/layers/shared/model', () => ({
     },
     {
       id: 'discover',
-      label: 'Discover Agents',
+      label: 'Import Projects',
       icon: 'Search',
       action: 'discoverAgents',
       category: 'quick-action',

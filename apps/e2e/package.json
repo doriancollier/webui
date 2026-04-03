@@ -10,8 +10,8 @@
   },
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
-    "@playwright/test": "^1.51.0",
-    "@types/node": "^22.15.0",
-    "@dorkos/typescript-config": "workspace:*"
+    "@dorkos/typescript-config": "workspace:*",
+    "@playwright/test": "^1.59.0",
+    "@types/node": "^22.19.15"
   }
 }

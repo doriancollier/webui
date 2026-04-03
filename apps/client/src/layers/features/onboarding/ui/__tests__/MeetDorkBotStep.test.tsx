@@ -65,10 +65,8 @@ describe('MeetDorkBotStep', () => {
     render(<MeetDorkBotStep onStepComplete={onStepComplete} />);
 
     expect(screen.getByText('Meet DorkBot')).toBeInTheDocument();
-    expect(screen.getByText(/Your system agent/)).toBeInTheDocument();
-    expect(
-      screen.getByText(/Shape DorkBot\u2019s personality to match your style/)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Your permanent system agent/)).toBeInTheDocument();
+    expect(screen.getByText(/Tune how it operates before you continue/)).toBeInTheDocument();
   });
 
   // --- Personality sliders ---

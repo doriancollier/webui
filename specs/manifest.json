@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "nextNumber": 213,
+  "nextNumber": 214,
   "specs": [
     {
       "number": 212,
@@ -1535,6 +1535,13 @@
       "slug": "claude-code-webui-api",
       "title": "Claude Code WebUI & Reusable API",
       "created": "2026-02-06",
+      "status": "implemented"
+    },
+    {
+      "number": 213,
+      "slug": "upgrade-electron-vite",
+      "title": "Upgrade electron-vite from v3.1.0 to v5.0.0 (+ Electron ecosystem)",
+      "created": "2026-04-01",
       "status": "implemented"
     }
   ]

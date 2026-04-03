@@ -12,7 +12,7 @@
  * @module relay/adapters/telegram-chatsdk/adapter
  */
 import { Chat } from 'chat';
-import type { StateAdapter, Lock, Thread, Message } from 'chat';
+import type { StateAdapter, Lock, Thread, Message, QueueEntry } from 'chat';
 import {
   TelegramAdapter as ChatSdkTelegramAdapterImpl,
   createTelegramAdapter,
@@ -51,6 +51,7 @@ class MemoryStateAdapter implements StateAdapter {
   private readonly store = new Map<string, { value: unknown; expiresAt?: number }>();
   private readonly locks = new Map<string, Lock>();
   private readonly lists = new Map<string, unknown[]>();
+  private readonly queues = new Map<string, QueueEntry[]>();
   private readonly subscriptions = new Set<string>();
 
   async connect(): Promise<void> {}
@@ -142,6 +143,30 @@ class MemoryStateAdapter implements StateAdapter {
 
   async getList<T = unknown>(key: string): Promise<T[]> {
     return (this.lists.get(key) ?? []) as T[];
+  }
+
+  async enqueue(threadId: string, entry: QueueEntry, maxSize: number): Promise<number> {
+    const queue = this.queues.get(threadId) ?? [];
+    queue.push(entry);
+    if (queue.length > maxSize) {
+      queue.splice(0, queue.length - maxSize);
+    }
+    this.queues.set(threadId, queue);
+    return queue.length;
+  }
+
+  async dequeue(threadId: string): Promise<QueueEntry | null> {
+    const queue = this.queues.get(threadId);
+    if (!queue || queue.length === 0) return null;
+    const now = Date.now();
+    while (queue.length > 0 && queue[0].expiresAt <= now) {
+      queue.shift();
+    }
+    return queue.shift() ?? null;
+  }
+
+  async queueDepth(threadId: string): Promise<number> {
+    return this.queues.get(threadId)?.length ?? 0;
   }
 }
 

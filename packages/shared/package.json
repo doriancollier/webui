@@ -87,13 +87,13 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@asteasolutions/zod-to-openapi": "^8.4.0",
+    "@asteasolutions/zod-to-openapi": "^8.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
     "@dorkos/typescript-config": "workspace:*",
-    "@types/node": "^25.3.2",
-    "vitest": "^4.0.18"
+    "@types/node": "^25.5.0",
+    "vitest": "^4.1.2"
   }
 }

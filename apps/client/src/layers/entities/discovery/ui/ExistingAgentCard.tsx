@@ -14,7 +14,7 @@ export function ExistingAgentCard({ agent }: ExistingAgentCardProps) {
         <p className="truncate text-sm font-medium">{agent.name}</p>
         <p className="text-muted-foreground truncate text-xs">{agent.path}</p>
       </div>
-      <span className="text-muted-foreground shrink-0 text-xs">Registered</span>
+      <span className="text-muted-foreground shrink-0 text-xs">Imported</span>
     </div>
   );
 }

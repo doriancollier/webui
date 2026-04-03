@@ -82,11 +82,6 @@ export function CandidateCard({
           <span className="truncate font-mono">{path}</span>
         </div>
 
-        {/* Description (extracted from CLAUDE.md or similar) */}
-        {hints.description && (
-          <p className="text-muted-foreground line-clamp-2 text-xs">{hints.description}</p>
-        )}
-
         {/* Runtime with HoverCard showing detection strategy */}
         <div className="flex flex-wrap items-center gap-1.5">
           <HoverCard openDelay={300}>
@@ -126,7 +121,7 @@ export function CandidateCard({
           onClick={() => onApprove(candidate)}
           className="focus-visible:ring-ring rounded-md bg-green-600/10 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-600/20 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none dark:text-green-400"
         >
-          Approve
+          Add
         </button>
         {onSkip && (
           <button

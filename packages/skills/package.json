@@ -61,12 +61,12 @@
   },
   "dependencies": {
     "gray-matter": "^4.0.3",
-    "zod": "^3.24.0"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
     "@dorkos/typescript-config": "workspace:*",
-    "@types/node": "^25.3.2",
-    "vitest": "^3.1.1"
+    "@types/node": "^25.5.0",
+    "vitest": "^3.2.4"
   }
 }

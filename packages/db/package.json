@@ -17,16 +17,16 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "better-sqlite3": "^12.6.2",
-    "drizzle-orm": "^0.39.0",
-    "ulidx": "^2.4.0"
+    "better-sqlite3": "^12.8.0",
+    "drizzle-orm": "^0.39.3",
+    "ulidx": "^2.4.1"
   },
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
     "@dorkos/typescript-config": "workspace:*",
-    "@types/better-sqlite3": "^7.6.0",
-    "drizzle-kit": "^0.30.0",
-    "typescript": "^5.7.0",
-    "vitest": "^3.0.0"
+    "@types/better-sqlite3": "^7.6.13",
+    "drizzle-kit": "^0.30.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }

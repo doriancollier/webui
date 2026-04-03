@@ -87,9 +87,9 @@ vi.mock('@radix-ui/react-tabs', () => ({
 vi.mock('../ui/DiscoveryView', () => ({
   DiscoveryView: ({ fullBleed }: { fullBleed?: boolean }) => (
     <div data-testid="discovery-view" data-full-bleed={fullBleed}>
-      <h2>Discover Agents</h2>
+      <h2>Import Projects</h2>
       <span>/home/user</span>
-      <button>Scan for Agents</button>
+      <button>Search for Projects</button>
     </div>
   ),
 }));
@@ -207,12 +207,12 @@ describe('MeshPanel - Mode A (zero agents)', () => {
 
   it('shows Discovery headline', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
-    expect(screen.getByText('Discover Agents')).toBeInTheDocument();
+    expect(screen.getByText('Import Projects')).toBeInTheDocument();
   });
 
-  it('shows the Scan for Agents button', () => {
+  it('shows the Search for Projects button', () => {
     render(<MeshPanel />, { wrapper: createWrapper() });
-    expect(screen.getByRole('button', { name: /Scan for Agents/ })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Search for Projects/ })).toBeInTheDocument();
   });
 
   it('pre-populates boundary as default scan root chip', () => {

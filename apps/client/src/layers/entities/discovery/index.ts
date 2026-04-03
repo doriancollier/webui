@@ -16,4 +16,6 @@ export { buildRegistrationOverrides } from './lib/build-registration-overrides';
 export { sortCandidates } from './lib/sort-candidates';
 export { CandidateCard } from './ui/CandidateCard';
 export { ExistingAgentCard } from './ui/ExistingAgentCard';
+export { CollapsibleImportedSection } from './ui/CollapsibleImportedSection';
+export { BulkAddBar } from './ui/BulkAddBar';
 export { ScanRootInput } from './ui/ScanRootInput';

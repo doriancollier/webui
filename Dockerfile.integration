@@ -12,7 +12,7 @@
 #     -t dorkos-integration:npm .
 #   docker run --rm dorkos-integration:npm
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-slim
 
 # curl needed for health checks in test script

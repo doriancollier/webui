@@ -20,21 +20,21 @@
     "lint": "eslint ."
   },
   "dependencies": {
-    "@chat-adapter/telegram": "^4.20.2",
+    "@chat-adapter/telegram": "^4.23.0",
     "@dorkos/db": "workspace:*",
     "@dorkos/shared": "workspace:*",
     "@grammyjs/auto-retry": "^2.0.2",
     "@slack/bolt": "^4.6.0",
     "@slack/web-api": "^7.15.0",
-    "chat": "^4.20.2",
-    "chokidar": "^4.0.0",
-    "grammy": "^1.40.0",
+    "chat": "^4.23.0",
+    "chokidar": "^4.0.3",
+    "grammy": "^1.41.1",
     "slackify-markdown": "^5.0.0",
-    "ulidx": "^2.4.0"
+    "ulidx": "^2.4.1"
   },
   "devDependencies": {
     "@dorkos/eslint-config": "workspace:*",
     "@dorkos/typescript-config": "workspace:*",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.2"
   }
 }

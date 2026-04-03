@@ -62,10 +62,10 @@ export function AgentGhostRows() {
 
         {/* Centered overlay CTA */}
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-4">
-          <p className="text-lg font-semibold">Discover Your Agent Fleet</p>
+          <p className="text-lg font-semibold">Import Your Projects</p>
           <Button size="sm" className="gap-1.5" onClick={() => setDiscoveryOpen(true)}>
             <ScanSearch className="size-3.5" />
-            Scan for Agents
+            Search for Projects
           </Button>
         </div>
       </div>
@@ -73,7 +73,7 @@ export function AgentGhostRows() {
       <ResponsiveDialog open={discoveryOpen} onOpenChange={setDiscoveryOpen}>
         <ResponsiveDialogContent className="max-w-2xl">
           <ResponsiveDialogHeader>
-            <ResponsiveDialogTitle>Discover Agents</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Import Projects</ResponsiveDialogTitle>
           </ResponsiveDialogHeader>
           <DiscoveryView />
         </ResponsiveDialogContent>

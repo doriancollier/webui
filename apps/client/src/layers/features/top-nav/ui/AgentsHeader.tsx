@@ -51,7 +51,7 @@ export function AgentsHeader({ viewMode }: AgentsHeaderProps) {
             </Button>
             <Button variant="outline" size="xs" onClick={() => setDiscoveryOpen(true)}>
               <ScanSearch />
-              Scan for Agents
+              Search for Projects
             </Button>
           </>
         }
@@ -79,9 +79,9 @@ export function AgentsHeader({ viewMode }: AgentsHeaderProps) {
       <ResponsiveDialog open={discoveryOpen} onOpenChange={setDiscoveryOpen}>
         <ResponsiveDialogContent className="max-h-[85vh] max-w-2xl gap-0 p-0">
           <ResponsiveDialogHeader className="px-6 pt-6 pb-4">
-            <ResponsiveDialogTitle>Discover Agents</ResponsiveDialogTitle>
+            <ResponsiveDialogTitle>Import Projects</ResponsiveDialogTitle>
             <ResponsiveDialogDescription className="sr-only">
-              Scan directories to find agents on your computer
+              Search for existing projects to import into DorkOS
             </ResponsiveDialogDescription>
           </ResponsiveDialogHeader>
           <ResponsiveDialogBody className="px-6 pb-6">

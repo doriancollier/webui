@@ -106,7 +106,7 @@ vi.mock('../model/use-palette-items', () => ({
     const commands = [{ name: '/deploy', description: 'Deploy service' }];
     const quickActions = [
       { id: 'new-session', label: 'New Session', icon: 'Plus', action: 'newSession' },
-      { id: 'discover', label: 'Discover Agents', icon: 'Search', action: 'discoverAgents' },
+      { id: 'discover', label: 'Import Projects', icon: 'Search', action: 'discoverAgents' },
       { id: 'browse', label: 'Browse Filesystem', icon: 'FolderOpen', action: 'browseFilesystem' },
       { id: 'theme', label: 'Toggle Theme', icon: 'Moon', action: 'toggleTheme' },
     ];
@@ -372,9 +372,9 @@ describe('Command Palette Integration', () => {
 
   // --- Quick actions ---
 
-  it('Discover Agents opens mesh panel', () => {
+  it('Import Projects opens mesh panel', () => {
     render(<CommandPaletteDialog />);
-    const item = screen.getByText('Discover Agents').closest('[data-slot="command-item"]');
+    const item = screen.getByText('Import Projects').closest('[data-slot="command-item"]');
     fireEvent.click(item as Element);
 
     expect(mockSetMeshOpen).toHaveBeenCalledWith(true);

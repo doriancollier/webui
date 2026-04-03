@@ -81,21 +81,21 @@ describe('AgentGhostRows', () => {
   it('renders heading "Discover Your Agent Fleet"', () => {
     render(<AgentGhostRows />);
 
-    expect(screen.getByText('Discover Your Agent Fleet')).toBeInTheDocument();
+    expect(screen.getByText('Import Your Projects')).toBeInTheDocument();
   });
 
-  it('renders "Scan for Agents" button', () => {
+  it('renders "Search for Projects" button', () => {
     render(<AgentGhostRows />);
 
-    expect(screen.getByRole('button', { name: /scan for agents/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /search for projects/i })).toBeInTheDocument();
   });
 
-  it('clicking "Scan for Agents" opens the discovery dialog', () => {
+  it('clicking "Search for Projects" opens the discovery dialog', () => {
     render(<AgentGhostRows />);
 
     expect(screen.queryByTestId('responsive-dialog')).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: /scan for agents/i }));
+    fireEvent.click(screen.getByRole('button', { name: /search for projects/i }));
 
     expect(screen.getByTestId('responsive-dialog')).toBeInTheDocument();
     expect(screen.getByTestId('discovery-view')).toBeInTheDocument();

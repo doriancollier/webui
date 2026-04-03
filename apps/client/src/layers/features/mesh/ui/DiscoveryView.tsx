@@ -14,10 +14,11 @@ import {
   buildRegistrationOverrides,
   sortCandidates,
   CandidateCard,
-  ExistingAgentCard,
+  BulkAddBar,
+  CollapsibleImportedSection,
   ScanRootInput,
 } from '@/layers/entities/discovery';
-import type { DiscoveryCandidate, ExistingAgent } from '@dorkos/shared/mesh-schemas';
+import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
 import { Button } from '@/layers/shared/ui';
 
 const DETECTION_STRATEGIES = [
@@ -80,13 +81,23 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
   const hasResults = hasExisting || hasCandidates;
   const scanComplete = !isPending && lastScanAt !== null;
 
+  function handleAddAll() {
+    for (const c of visibleCandidates) {
+      markActed(c.path);
+      registerAgent(
+        { path: c.path, overrides: buildRegistrationOverrides(c) },
+        { onSuccess: () => markActed(c.path) }
+      );
+    }
+  }
+
   return (
     <div className={fullBleed ? 'flex h-full flex-col p-6' : 'space-y-4 p-4'}>
       {fullBleed && (
         <div className="mb-4 space-y-1">
-          <h2 className="text-lg font-semibold">Discover Agents</h2>
+          <h2 className="text-lg font-semibold">Import Projects</h2>
           <p className="text-muted-foreground text-sm">
-            Scan directories to find agents on your computer.
+            Search for existing projects to import into DorkOS.
           </p>
         </div>
       )}
@@ -142,7 +153,7 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
 
         <Button onClick={handleScan} disabled={isPending || displayRoots.length === 0}>
           {isPending ? <Loader2 className="size-4 animate-spin" /> : <Search className="size-4" />}
-          Scan for Agents
+          Search for Projects
         </Button>
       </div>
 
@@ -155,7 +166,7 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
               <div className="text-muted-foreground space-y-0.5 text-center text-xs">
                 <p>Scanned {progress.scannedDirs} directories</p>
                 <p>
-                  Found {progress.foundAgents} agent{progress.foundAgents === 1 ? '' : 's'}
+                  Found {progress.foundAgents} project{progress.foundAgents === 1 ? '' : 's'}
                 </p>
               </div>
             )}
@@ -169,21 +180,12 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
           </div>
         )}
 
-        {/* Existing agents — already registered, display-only */}
-        {scanComplete && hasExisting && (
-          <div className="mb-3 space-y-2">
-            {existingAgents.map((agent: ExistingAgent) => (
-              <ExistingAgentCard key={agent.path} agent={agent} />
-            ))}
-          </div>
-        )}
-
         {/* No-results messaging — only after a scan has completed */}
         {scanComplete && !hasCandidates && hasExisting && (
           <div className="rounded-xl border border-dashed p-8 text-center">
-            <p className="text-sm font-medium">All agents already registered</p>
+            <p className="text-sm font-medium">All projects already imported</p>
             <p className="text-muted-foreground mt-1 text-xs">
-              All discovered agents are already configured. Check the Agents tab to see them.
+              All found projects are already imported. Check the Agents tab to see them.
             </p>
           </div>
         )}
@@ -191,40 +193,50 @@ export function DiscoveryView({ fullBleed = false }: DiscoveryViewProps) {
         {scanComplete && !hasResults && (
           <div className="rounded-xl border border-dashed p-8 text-center">
             <p className="text-sm font-medium">
-              {hasRegistered ? 'No new agents found' : 'No agents found'}
+              {hasRegistered ? 'No new projects found' : 'No projects found'}
             </p>
             <p className="text-muted-foreground mt-1 text-xs">
               {hasRegistered
-                ? 'All discovered agents are already registered. Check the Agents tab to see them.'
+                ? 'All found projects are already imported. Check the Agents tab to see them.'
                 : 'Try scanning deeper directories or adding different paths.'}
             </p>
           </div>
         )}
 
-        {/* New candidates — require user action */}
+        {/* New candidates first — bulk add bar + individual cards */}
         {scanComplete && visibleCandidates.length > 0 && (
-          <AnimatePresence mode="popLayout">
-            {visibleCandidates.map((c: DiscoveryCandidate) => (
-              <CandidateCard
-                key={c.path}
-                candidate={c}
-                className="mb-2"
-                onApprove={(cand) =>
-                  registerAgent(
-                    {
-                      path: cand.path,
-                      overrides: buildRegistrationOverrides(cand),
-                    },
-                    { onSuccess: () => markActed(cand.path) }
-                  )
-                }
-                onSkip={(cand) => markActed(cand.path)}
-                onDeny={(cand) =>
-                  denyAgent({ path: cand.path }, { onSuccess: () => markActed(cand.path) })
-                }
-              />
-            ))}
-          </AnimatePresence>
+          <>
+            <BulkAddBar count={visibleCandidates.length} onAddAll={handleAddAll} />
+            <AnimatePresence mode="popLayout">
+              {visibleCandidates.map((c: DiscoveryCandidate) => (
+                <CandidateCard
+                  key={c.path}
+                  candidate={c}
+                  className="mb-2"
+                  onApprove={(cand) =>
+                    registerAgent(
+                      {
+                        path: cand.path,
+                        overrides: buildRegistrationOverrides(cand),
+                      },
+                      { onSuccess: () => markActed(cand.path) }
+                    )
+                  }
+                  onSkip={(cand) => markActed(cand.path)}
+                  onDeny={(cand) =>
+                    denyAgent({ path: cand.path }, { onSuccess: () => markActed(cand.path) })
+                  }
+                />
+              ))}
+            </AnimatePresence>
+          </>
+        )}
+
+        {/* Already-imported — collapsed at bottom */}
+        {scanComplete && hasExisting && (
+          <div className="mt-3">
+            <CollapsibleImportedSection agents={existingAgents} />
+          </div>
         )}
       </div>
     </div>

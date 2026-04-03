@@ -5,7 +5,7 @@
 #   docker build -t dorkos-smoke .
 #   docker run --rm dorkos-smoke
 
-ARG NODE_VERSION=20
+ARG NODE_VERSION=24
 FROM node:${NODE_VERSION}-slim
 
 # Install build tools for native addons (better-sqlite3)

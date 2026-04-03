@@ -86,9 +86,9 @@ describe('AgentsHeader', () => {
     expect(mockOpenCreateDialog).toHaveBeenCalledTimes(1);
   });
 
-  it('renders Scan for Agents button', () => {
+  it('renders Search for Projects button', () => {
     render(<AgentsHeader viewMode="list" />);
-    expect(screen.getByRole('button', { name: /scan for agents/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /search for projects/i })).toBeInTheDocument();
   });
 
   it('opens discovery dialog on Scan button click', () => {
@@ -98,7 +98,7 @@ describe('AgentsHeader', () => {
     expect(screen.queryByTestId('discovery-view')).not.toBeInTheDocument();
 
     // Click the scan button
-    fireEvent.click(screen.getByRole('button', { name: /scan for agents/i }));
+    fireEvent.click(screen.getByRole('button', { name: /search for projects/i }));
 
     // Discovery view should now be visible in dialog
     expect(screen.getByTestId('discovery-view')).toBeInTheDocument();

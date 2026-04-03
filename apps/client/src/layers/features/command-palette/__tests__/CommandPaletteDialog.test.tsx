@@ -148,7 +148,7 @@ vi.mock('../model/use-palette-items', () => ({
     ],
     quickActions: [
       { id: 'new-session', label: 'New Session', icon: 'Plus', action: 'newSession' },
-      { id: 'discover', label: 'Discover Agents', icon: 'Search', action: 'discoverAgents' },
+      { id: 'discover', label: 'Import Projects', icon: 'Search', action: 'discoverAgents' },
       { id: 'browse', label: 'Browse Filesystem', icon: 'FolderOpen', action: 'browseFilesystem' },
       { id: 'theme', label: 'Toggle Theme', icon: 'Moon', action: 'toggleTheme' },
     ],
@@ -167,7 +167,7 @@ vi.mock('../model/use-palette-items', () => ({
       { id: 'cmd-/hello', name: '/hello', type: 'command', data: {} },
       { id: 'cmd-/world', name: '/world', type: 'command', data: {} },
       { id: 'new-session', name: 'New Session', type: 'quick-action', data: {} },
-      { id: 'discover', name: 'Discover Agents', type: 'quick-action', data: {} },
+      { id: 'discover', name: 'Import Projects', type: 'quick-action', data: {} },
       { id: 'browse', name: 'Browse Filesystem', type: 'quick-action', data: {} },
       { id: 'theme', name: 'Toggle Theme', type: 'quick-action', data: {} },
     ],
@@ -246,7 +246,7 @@ describe('CommandPaletteDialog', () => {
     render(<CommandPaletteDialog />);
     expect(screen.getByText('Quick Actions')).toBeInTheDocument();
     expect(screen.getByText('New Session')).toBeInTheDocument();
-    expect(screen.getByText('Discover Agents')).toBeInTheDocument();
+    expect(screen.getByText('Import Projects')).toBeInTheDocument();
     expect(screen.getByText('Browse Filesystem')).toBeInTheDocument();
     expect(screen.getByText('Toggle Theme')).toBeInTheDocument();
   });
@@ -366,9 +366,9 @@ describe('CommandPaletteDialog', () => {
 
   // --- Quick action dispatching ---
 
-  it('opens Mesh panel when Discover Agents quick action is selected', () => {
+  it('opens Mesh panel when Import Projects quick action is selected', () => {
     render(<CommandPaletteDialog />);
-    const item = screen.getByText('Discover Agents').closest('[data-slot="command-item"]');
+    const item = screen.getByText('Import Projects').closest('[data-slot="command-item"]');
     if (item) fireEvent.click(item as Element);
     expect(mockSetMeshOpen).toHaveBeenCalledWith(true);
   });

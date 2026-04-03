@@ -1,7 +1,34 @@
 {
   "version": 1,
-  "nextNumber": 221,
+  "nextNumber": 224,
   "decisions": [
+    {
+      "number": 223,
+      "slug": "defer-electron-rebuild-v4-upgrade",
+      "title": "Defer @electron/rebuild v4 Upgrade Due to electron-builder Compatibility",
+      "created": "2026-04-01",
+      "status": "draft",
+      "extractedFrom": "upgrade-electron-vite",
+      "specSlug": "upgrade-electron-vite"
+    },
+    {
+      "number": 222,
+      "slug": "pin-vitejs-plugin-react-at-v5-in-electron-vite-upgrade",
+      "title": "Pin @vitejs/plugin-react at v5.x During electron-vite v5 Upgrade",
+      "created": "2026-04-01",
+      "status": "draft",
+      "extractedFrom": "upgrade-electron-vite",
+      "specSlug": "upgrade-electron-vite"
+    },
+    {
+      "number": 221,
+      "slug": "electron-39-target-for-vite-v5-upgrade",
+      "title": "Target Electron 39.x for electron-vite v5 Upgrade",
+      "created": "2026-04-01",
+      "status": "draft",
+      "extractedFrom": "upgrade-electron-vite",
+      "specSlug": "upgrade-electron-vite"
+    },
     {
       "number": 220,
       "slug": "adopt-skill-md-open-standard",

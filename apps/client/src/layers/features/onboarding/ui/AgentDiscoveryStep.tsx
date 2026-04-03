@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { Search, ChevronDown } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
-import { useRegisterAgent, useDenyAgent, useMeshScanRoots } from '@/layers/entities/mesh';
+import { useRegisterAgent, useMeshScanRoots } from '@/layers/entities/mesh';
 import {
   useDiscoveryScan,
   useDiscoveryStore,
@@ -10,7 +10,8 @@ import {
   buildRegistrationOverrides,
   sortCandidates,
   CandidateCard,
-  ExistingAgentCard,
+  BulkAddBar,
+  CollapsibleImportedSection,
   ScanRootInput,
 } from '@/layers/entities/discovery';
 import type { DiscoveryCandidate } from '@dorkos/shared/mesh-schemas';
@@ -33,7 +34,6 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
   const { startScan } = useDiscoveryScan();
   const { candidates, existingAgents, isScanning, progress, error } = useDiscoveryStore();
   const registerAgent = useRegisterAgent();
-  const { mutate: denyAgent } = useDenyAgent();
   // Tracks paths the user has explicitly approved or skipped
   const { actedPaths, markActed, resetActed } = useActedPaths();
   const [hasStarted, setHasStarted] = useState(false);
@@ -80,13 +80,16 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
     [markActed]
   );
 
-  const handleDeny = useCallback(
-    (candidate: DiscoveryCandidate) => {
+  const handleAddAll = useCallback(() => {
+    for (const candidate of displayCandidates) {
+      if (actedPaths.has(candidate.path)) continue;
       markActed(candidate.path);
-      denyAgent({ path: candidate.path });
-    },
-    [denyAgent, markActed]
-  );
+      registerAgent.mutate({
+        path: candidate.path,
+        overrides: buildRegistrationOverrides(candidate),
+      });
+    }
+  }, [displayCandidates, actedPaths, registerAgent, markActed]);
 
   const handleRootsChange = useCallback(
     (newRoots: string[]) => {
@@ -124,19 +127,25 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
       <div className="w-full shrink-0 text-center">
         <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {isScanning && !hasResults
-            ? 'Searching your projects...'
+            ? 'Searching your machine...'
             : showNoResults
               ? 'Create Your First Agent'
-              : 'Discovered Agents'}
+              : 'Projects Found'}
         </h2>
         {isScanning && !hasResults && (
-          <p className="text-muted-foreground mt-2 text-sm">
-            Looking for AI-configured projects on your machine.
-          </p>
+          <div className="mt-2 space-y-1">
+            <p className="text-muted-foreground text-sm">
+              Looking for existing projects on your machine.
+            </p>
+            <p className="text-muted-foreground text-sm">
+              Once imported, your agents can work across them — and you can connect to Slack,
+              Telegram, and more.
+            </p>
+          </div>
         )}
         {showNoResults && (
           <p className="text-muted-foreground mt-2 text-sm">
-            No AI-configured projects were found on your machine.
+            No projects were found on your machine.
           </p>
         )}
       </div>
@@ -161,19 +170,16 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
       {/* Progress indicator during scan with results */}
       {isScanning && hasResults && progress && (
         <div className="text-muted-foreground mt-4 shrink-0 text-center text-sm">
-          Scanning... {progress.scannedDirs} directories &middot; Found {progress.foundAgents} agent
-          {progress.foundAgents === 1 ? '' : 's'}
+          Scanning... {progress.scannedDirs} directories &middot; Found {progress.foundAgents}{' '}
+          project{progress.foundAgents === 1 ? '' : 's'}
         </div>
       )}
 
-      {/* Summary after scan */}
+      {/* Value prop after scan */}
       {scanComplete && hasResults && (
-        <p className="text-muted-foreground mt-4 shrink-0 text-center text-sm">
-          {hasExisting && !hasCandidates
-            ? `Found ${existingAgents.length} existing agent${existingAgents.length === 1 ? '' : 's'} — already configured.`
-            : hasExisting && hasCandidates
-              ? `Found ${existingAgents.length} existing and ${candidates.length} new project${candidates.length === 1 ? '' : 's'}. Approve or skip the new ones.`
-              : `Found ${candidates.length} project${candidates.length === 1 ? '' : 's'}. Approve or skip each one.`}
+        <p className="text-muted-foreground mt-3 shrink-0 text-center text-sm">
+          Adding a project lets you manage it from DorkOS — assign agents, schedule tasks, and
+          connect to Slack, Telegram, and more.
         </p>
       )}
 
@@ -184,20 +190,14 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
         </div>
       )}
 
-      {/* Scrollable results area */}
+      {/* Scrollable results area — new projects first, imported collapsed at bottom */}
       {hasResults && (
         <div className="mt-4 min-h-0 w-full flex-1 overflow-y-auto pr-1">
           <div className="space-y-3">
-            {/* Existing agents — already registered, display-only */}
-            {hasExisting && (
-              <div className="space-y-2">
-                {existingAgents.map((agent) => (
-                  <ExistingAgentCard key={agent.path} agent={agent} />
-                ))}
-              </div>
+            {/* Bulk add bar + new candidates first */}
+            {pendingCandidates.length > 0 && (
+              <BulkAddBar count={pendingCandidates.length} onAddAll={handleAddAll} />
             )}
-
-            {/* New candidates — require user action */}
             <AnimatePresence mode="popLayout">
               {pendingCandidates.map((candidate) => (
                 <CandidateCard
@@ -205,10 +205,12 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
                   candidate={candidate}
                   onApprove={handleApprove}
                   onSkip={handleSkip}
-                  onDeny={handleDeny}
                 />
               ))}
             </AnimatePresence>
+
+            {/* Already-imported — collapsed at bottom */}
+            {hasExisting && <CollapsibleImportedSection agents={existingAgents} />}
           </div>
         </div>
       )}
@@ -260,7 +262,7 @@ export function AgentDiscoveryStep({ onStepComplete }: AgentDiscoveryStepProps) 
               onClick={onStepComplete}
               className="text-muted-foreground hover:text-foreground text-sm transition-colors"
             >
-              Continue without agents
+              Continue without adding
             </button>
           </div>
         </div>

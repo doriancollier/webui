@@ -11,22 +11,22 @@
     "dist": "CSC_IDENTITY_AUTO_DISCOVERY=false electron-builder"
   },
   "dependencies": {
+    "@dorkos/db": "workspace:*",
     "@dorkos/server": "workspace:*",
     "@dorkos/shared": "workspace:*",
-    "@dorkos/db": "workspace:*",
-    "better-sqlite3": "^12.6.2",
-    "electron-updater": "^6.3.0",
-    "electron-log": "^5.2.0"
+    "better-sqlite3": "^12.8.0",
+    "electron-log": "^5.4.3",
+    "electron-updater": "^6.8.3"
   },
   "devDependencies": {
     "@dorkos/client": "workspace:*",
-    "electron": "^33.0.0",
-    "electron-vite": "^3.0.0",
-    "electron-builder": "^26.0.0",
-    "@electron/rebuild": "^3.7.0",
-    "@vitejs/plugin-react": "^4.3.0",
-    "@tailwindcss/vite": "^4.0.0",
-    "tailwindcss": "^4.0.0",
-    "typescript": "^5.7.0"
+    "@electron/rebuild": "^3.7.2",
+    "@tailwindcss/vite": "^4.2.2",
+    "@vitejs/plugin-react": "5.1.4",
+    "electron": "^39.8.5",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "tailwindcss": "^4.2.2",
+    "typescript": "^5.9.3"
   }
 }

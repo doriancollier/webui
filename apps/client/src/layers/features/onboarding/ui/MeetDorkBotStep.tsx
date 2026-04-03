@@ -82,13 +82,14 @@ export function MeetDorkBotStep({ onStepComplete }: MeetDorkBotStepProps) {
         <Bot className="text-muted-foreground size-8" />
       </div>
 
-      <div className="space-y-1 text-center">
+      <div className="space-y-3 text-center">
         <h2 className="text-2xl font-semibold tracking-tight">Meet DorkBot</h2>
         <p className="text-muted-foreground max-w-sm text-sm">
-          Your system agent. Runs tasks, writes summaries, sets up and manages other agents, etc.
+          Your permanent system agent. Handles background jobs, manages other agents, and knows
+          DorkOS end to end.
         </p>
         <p className="text-foreground max-w-sm text-sm font-medium">
-          Shape DorkBot&rsquo;s personality to match your style.
+          Tune how it operates before you continue.
         </p>
       </div>
 
@@ -128,14 +129,16 @@ export function MeetDorkBotStep({ onStepComplete }: MeetDorkBotStepProps) {
       )}
 
       {/* Continue button */}
-      <Button
-        onClick={handleContinue}
-        disabled={updateAgent.isPending}
-        className="mt-2"
-        data-testid="continue-dorkbot"
-      >
-        {updateAgent.isPending ? 'Saving...' : 'Continue'}
-      </Button>
+      <div className="mt-2 flex flex-col items-center gap-2">
+        <Button
+          onClick={handleContinue}
+          disabled={updateAgent.isPending}
+          data-testid="continue-dorkbot"
+        >
+          {updateAgent.isPending ? 'Saving...' : 'Continue'}
+        </Button>
+        <p className="text-muted-foreground text-xs">Adjustable anytime in settings.</p>
+      </div>
     </div>
   );
 }
