@@ -18,7 +18,7 @@ import { useAdapterCatalog, useToggleAdapter, useRemoveAdapter } from '@/layers/
 import { useUpdateBinding, useDeleteBinding } from '@/layers/entities/binding';
 import type { AdapterBinding, AdapterManifest } from '@dorkos/shared/relay-schemas';
 import { BindingDialog, type BindingFormValues } from '@/layers/features/mesh/ui/BindingDialog';
-import { AdapterCard } from './AdapterCard';
+import { AdapterCard } from './adapter/AdapterCard';
 import { AdapterEventLog } from './AdapterEventLog';
 import { CatalogCard } from './CatalogCard';
 import { AdapterSetupWizard } from './AdapterSetupWizard';

@@ -21,7 +21,7 @@ export type {
 } from './chat-types';
 
 // Re-export for consumers
-export { classifyTransportError } from './classify-transport-error';
+export { classifyTransportError } from './stream/classify-transport-error';
 
 /** Orchestrates chat session state, message history, SSE streaming, and optimistic UI updates. */
 export function useChatSession(sessionId: string | null, options: ChatSessionOptions = {}) {

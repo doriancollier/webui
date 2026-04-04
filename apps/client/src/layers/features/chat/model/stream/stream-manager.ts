@@ -18,7 +18,7 @@ import { useSessionChatStore } from '@/layers/entities/session';
 import { SSE_RESILIENCE, TIMING } from '@/layers/shared/lib';
 import { useAppStore } from '@/layers/shared/model';
 import { classifyTransportError } from './classify-transport-error';
-import type { ChatMessage, TransportErrorInfo } from './chat-types';
+import type { ChatMessage, TransportErrorInfo } from '../chat-types';
 
 /** Per-session streaming context managed by StreamManager. */
 interface ActiveStream {

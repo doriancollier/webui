@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { createStreamEventHandler } from '../stream-event-handler';
+import { createStreamEventHandler } from '../stream/stream-event-handler';
 import type { MessagePart, SessionStatusEvent, TaskUpdateEvent } from '@dorkos/shared/types';
 
 function createMinimalDeps() {

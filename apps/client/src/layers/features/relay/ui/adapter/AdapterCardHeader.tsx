@@ -10,7 +10,7 @@ import {
 } from '@/layers/shared/ui/dropdown-menu';
 import { cn } from '@/layers/shared/lib';
 import type { AdapterManifest, CatalogInstance } from '@dorkos/shared/relay-schemas';
-import { getCategoryColorClasses } from '../lib/category-colors';
+import { getCategoryColorClasses } from '../../lib/category-colors';
 import { AdapterIcon } from './AdapterIcon';
 
 interface AdapterCardHeaderProps {

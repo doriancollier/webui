@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { MessagePart, SessionStatusEvent, TaskUpdateEvent } from '@dorkos/shared/types';
-import { createStreamEventHandler } from '../stream-event-handler';
+import { createStreamEventHandler } from '../stream/stream-event-handler';
 
 function createMinimalDeps() {
   const currentPartsRef = { current: [] as MessagePart[] };

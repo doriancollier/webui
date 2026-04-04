@@ -30,7 +30,7 @@ vi.mock('../AdapterBindingRow', () => ({
   ),
 }));
 
-vi.mock('../QuickBindingPopover', () => ({
+vi.mock('../../QuickBindingPopover', () => ({
   QuickBindingPopover: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 

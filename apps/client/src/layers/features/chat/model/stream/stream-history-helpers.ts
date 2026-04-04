@@ -8,7 +8,7 @@
  * @module features/chat/model/stream-history-helpers
  */
 import type { HistoryMessage, MessagePart } from '@dorkos/shared/types';
-import type { ChatMessage } from './chat-types';
+import type { ChatMessage } from '../chat-types';
 import { deriveFromParts } from './stream-event-helpers';
 
 /** Map a server `HistoryMessage` to the client `ChatMessage` format. */

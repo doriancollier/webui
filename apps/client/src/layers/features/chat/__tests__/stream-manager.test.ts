@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useSessionChatStore } from '@/layers/entities/session';
 import { createMockTransport } from '@dorkos/test-utils';
-import { StreamManager } from '../model/stream-manager';
+import { StreamManager } from '../model/stream/stream-manager';
 
 /**
  * Helper: create a transport whose sendMessage blocks until the returned

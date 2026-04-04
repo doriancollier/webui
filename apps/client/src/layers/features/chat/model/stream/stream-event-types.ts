@@ -4,7 +4,7 @@
  * @module features/chat/model/stream-event-types
  */
 import type { MessagePart, HookPart, ToolCallPart, BackgroundTaskPart } from '@dorkos/shared/types';
-import type { ChatMessage, TransportErrorInfo } from './chat-types';
+import type { ChatMessage, TransportErrorInfo } from '../chat-types';
 
 /**
  * Client-only streaming text part with a stable identity key.

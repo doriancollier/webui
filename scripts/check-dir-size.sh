@@ -27,7 +27,13 @@ for dir in $dirs; do
   # Allowlist: directories that are flat by design
   #   */shared/ui, */components/ui — shadcn primitives (one file per component)
   #   dev/showcases — playground showcase files
+  #   server/routes — Express routes, one-per-resource convention
+  #   shared/lib — independent utility modules
+  #   packages/*/src — package source roots
+  #   marketing/ui — independent page section components
   [[ "$dir" == *"/shared/ui" || "$dir" == *"/components/ui" || "$dir" == *"dev/showcases" ]] && continue
+  [[ "$dir" == *"server/src/routes" || "$dir" == *"/shared/lib" ]] && continue
+  [[ "$dir" == *"packages/"*"/src" || "$dir" == *"marketing/ui" ]] && continue
 
   # Count source files (not directories, not tests)
   count=$(find "$dir" -maxdepth 1 -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.js' -o -name '*.jsx' -o -name '*.css' \) 2>/dev/null | wc -l | tr -d ' ')

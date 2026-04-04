@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createStreamEventHandler } from '../stream-event-handler';
+import { createStreamEventHandler } from '../stream/stream-event-handler';
 import { useSessionChatStore } from '@/layers/entities/session';
 import type { MessagePart } from '@dorkos/shared/types';
 

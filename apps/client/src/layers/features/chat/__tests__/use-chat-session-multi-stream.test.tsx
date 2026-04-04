@@ -14,7 +14,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
-import { streamManager } from '../model/stream-manager';
+import { streamManager } from '../model/stream/stream-manager';
 import { useSessionChatStore } from '@/layers/entities/session';
 import { TransportProvider } from '@/layers/shared/model';
 import { createMockTransport } from '@dorkos/test-utils';

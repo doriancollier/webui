@@ -6,7 +6,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/layers/shared/ui/tooltip';
-import { STRATEGY_BADGE_LABELS } from '../lib/binding-labels';
+import { STRATEGY_BADGE_LABELS } from '../../lib/binding-labels';
 
 interface AdapterBindingRowProps {
   agentName: string;

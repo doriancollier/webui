@@ -4,7 +4,7 @@
  * @module features/chat/model/classify-transport-error
  */
 import { TIMING } from '@/layers/shared/lib';
-import type { TransportErrorInfo } from './chat-types';
+import type { TransportErrorInfo } from '../chat-types';
 
 /**
  * Classify a transport-level error for structured banner display.

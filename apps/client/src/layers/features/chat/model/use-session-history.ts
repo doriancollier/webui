@@ -10,7 +10,7 @@ import type { PresenceUpdateEvent } from '@dorkos/shared/types';
 import { useSSEConnection, useTabVisibility, useTransport } from '@/layers/shared/model';
 import { QUERY_TIMING } from '@/layers/shared/lib';
 import { useSessionChatStore } from '@/layers/entities/session';
-import { mapHistoryMessage, reconcileTaggedMessages } from './stream-history-helpers';
+import { mapHistoryMessage, reconcileTaggedMessages } from './stream/stream-history-helpers';
 import type { ChatMessage } from './chat-types';
 
 // ---------------------------------------------------------------------------

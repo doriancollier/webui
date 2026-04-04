@@ -3,7 +3,7 @@ import { ChevronRight, Plus } from 'lucide-react';
 import { Button } from '@/layers/shared/ui/button';
 import type { AdapterBinding, CatalogInstance } from '@dorkos/shared/relay-schemas';
 import { AdapterBindingRow } from './AdapterBindingRow';
-import { QuickBindingPopover } from './QuickBindingPopover';
+import { QuickBindingPopover } from '../QuickBindingPopover';
 
 /** Maximum binding rows to display before showing overflow link. */
 const MAX_VISIBLE_BINDINGS = 3;

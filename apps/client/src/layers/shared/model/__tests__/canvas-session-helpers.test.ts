@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { readCanvasSession, writeCanvasSession } from '../app-store-helpers';
+import { readCanvasSession, writeCanvasSession } from '../app-store/app-store-helpers';
 import { STORAGE_KEYS, MAX_CANVAS_SESSIONS } from '@/layers/shared/lib';
-import type { CanvasSessionEntry } from '../app-store-helpers';
+import type { CanvasSessionEntry } from '../app-store/app-store-helpers';
 
 describe('readCanvasSession', () => {
   beforeEach(() => {

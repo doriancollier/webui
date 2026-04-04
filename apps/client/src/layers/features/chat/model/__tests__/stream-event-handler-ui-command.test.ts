@@ -8,7 +8,7 @@ import type {
   SessionStatusEvent,
   TaskUpdateEvent,
 } from '@dorkos/shared/types';
-import { createStreamEventHandler } from '../stream-event-handler';
+import { createStreamEventHandler } from '../stream/stream-event-handler';
 
 // Mock useAppStore to return a controllable state object
 const mockStore = {

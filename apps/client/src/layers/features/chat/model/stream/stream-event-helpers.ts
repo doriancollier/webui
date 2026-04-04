@@ -4,7 +4,7 @@
  * @module features/chat/model/stream-event-helpers
  */
 import type { MessagePart, HookPart } from '@dorkos/shared/types';
-import type { ToolCallState } from './chat-types';
+import type { ToolCallState } from '../chat-types';
 import type { StreamEventDeps, StreamHandlerHelpers } from './stream-event-types';
 
 /** Derive flat content and toolCalls from parts for backward compat. */

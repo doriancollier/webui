@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     "./App": "./src/App.tsx",
-    "./stores/app-store": "./src/layers/shared/model/app-store.ts",
+    "./stores/app-store": "./src/layers/shared/model/app-store/index.ts",
     "./contexts/TransportContext": "./src/layers/shared/model/TransportContext.tsx",
     "./lib/direct-transport": "./src/layers/shared/lib/direct-transport.ts",
     "./lib/platform": "./src/layers/shared/lib/platform.ts"

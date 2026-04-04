@@ -3,7 +3,7 @@ import { Button } from '@/layers/shared/ui/button';
 import { Plus } from 'lucide-react';
 import type { AdapterManifest } from '@dorkos/shared/relay-schemas';
 import { getCategoryColorClasses } from '../lib/category-colors';
-import { AdapterIcon } from './AdapterIcon';
+import { AdapterIcon } from './adapter/AdapterIcon';
 
 interface CatalogCardProps {
   manifest: AdapterManifest;

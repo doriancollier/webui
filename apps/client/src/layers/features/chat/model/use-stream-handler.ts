@@ -8,8 +8,8 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { MessagePart, HookPart } from '@dorkos/shared/types';
 import { useTheme } from '@/layers/shared/model';
-import { createStreamEventHandler } from './stream-event-handler';
-import { streamManager } from './stream-manager';
+import { createStreamEventHandler } from './stream/stream-event-handler';
+import { streamManager } from './stream/stream-manager';
 import type { SessionStoreActions } from './use-session-store-actions';
 import type { ChatSessionOptions } from './chat-types';
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { HistoryMessage, MessagePart } from '@dorkos/shared/types';
 import type { ChatMessage } from '../chat-types';
-import { reconcileTaggedMessages } from '../stream-history-helpers';
+import { reconcileTaggedMessages } from '../stream/stream-history-helpers';
 
 // ---------------------------------------------------------------------------
 // Helper to apply setMessages calls against a mutable state array
