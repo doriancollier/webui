@@ -47,10 +47,31 @@ vi.mock('react-dropzone', () => ({
   }),
 }));
 
+vi.mock('../model/use-chat-queue', () => ({
+  useChatQueue: () => ({
+    queue: [],
+    editingIndex: null,
+    handleQueue: vi.fn(),
+    handleQueueEdit: vi.fn(),
+    handleQueueSaveEdit: vi.fn(),
+    handleQueueCancelEdit: vi.fn(),
+    handleQueueRemove: vi.fn(),
+    handleQueueNavigateUp: vi.fn(),
+    handleQueueNavigateDown: vi.fn(),
+  }),
+}));
+
+vi.mock('../model/use-background-tasks', () => ({
+  useBackgroundTasks: () => [],
+}));
+
 vi.mock('@/layers/shared/model', () => ({
   useAppStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
     selector({ isTextStreaming: false })
   ),
+  useTransport: () => ({
+    stopTask: vi.fn(),
+  }),
 }));
 
 vi.mock('@/layers/entities/agent', () => ({
@@ -60,6 +81,7 @@ vi.mock('@/layers/entities/agent', () => ({
 
 vi.mock('@/layers/entities/session', () => ({
   useDirectoryState: () => [null, vi.fn()],
+  useSessionChatState: () => ({ messages: [] }),
 }));
 
 import { ChatInputContainer } from '../ui/ChatInputContainer';
@@ -85,35 +107,31 @@ const baseProps = {
     activeDescendantId: undefined,
   } as never,
   handleSubmit: vi.fn(),
+  submitContent: vi.fn(),
   status: 'idle' as const,
   sessionBusy: false,
   stop: vi.fn(),
   setInput: vi.fn(),
   sessionId: 'test-session',
   sessionStatus: null,
-  pendingFiles: [],
-  onFilesSelected: vi.fn(),
-  onFileRemove: vi.fn(),
-  isUploading: false,
-  queue: [],
-  editingIndex: null,
-  onQueue: vi.fn(),
-  onQueueRemove: vi.fn(),
-  onQueueEdit: vi.fn(),
-  onQueueSaveEdit: vi.fn(),
-  onQueueCancelEdit: vi.fn(),
-  onQueueNavigateUp: vi.fn(),
-  onQueueNavigateDown: vi.fn(),
-  presenceInfo: null,
-  presenceTasks: false,
-  activeInteraction: null,
-  focusedOptionIndex: 0,
-  onToolRef: vi.fn(),
-  onToolDecided: vi.fn(),
-  backgroundTasks: [],
-  onStopTask: vi.fn(),
-  syncConnectionState: 'connected' as const,
-  syncFailedAttempts: 0,
+  fileUpload: {
+    pendingFiles: [],
+    onFilesSelected: vi.fn(),
+    onFileRemove: vi.fn(),
+    isUploading: false,
+  },
+  interaction: {
+    active: null,
+    focusedOptionIndex: 0,
+    onToolRef: vi.fn(),
+    onToolDecided: vi.fn(),
+  },
+  sync: {
+    connectionState: 'connected' as const,
+    failedAttempts: 0,
+    presenceInfo: null,
+    presenceTasks: false,
+  },
 };
 
 afterEach(() => {
@@ -134,21 +152,26 @@ describe('ChatInputContainer mode switching', () => {
   });
 
   it('renders ToolApproval in interactive mode for approval type', () => {
-    const interaction: ToolCallState = {
+    const toolCall: ToolCallState = {
       toolCallId: 'tc-1',
       toolName: 'Write',
       input: '{}',
       status: 'pending',
       interactiveType: 'approval',
     };
-    render(<ChatInputContainer {...baseProps} activeInteraction={interaction} />);
+    render(
+      <ChatInputContainer
+        {...baseProps}
+        interaction={{ ...baseProps.interaction, active: toolCall }}
+      />
+    );
     expect(screen.getByTestId('tool-approval')).toBeInTheDocument();
     expect(screen.getByText('ToolApproval-tc-1')).toBeInTheDocument();
     expect(screen.queryByTestId('chat-input')).not.toBeInTheDocument();
   });
 
   it('renders QuestionPrompt in interactive mode for question type', () => {
-    const interaction: ToolCallState = {
+    const toolCall: ToolCallState = {
       toolCallId: 'tc-2',
       toolName: 'AskUser',
       input: '{}',
@@ -163,21 +186,31 @@ describe('ChatInputContainer mode switching', () => {
         },
       ],
     };
-    render(<ChatInputContainer {...baseProps} activeInteraction={interaction} />);
+    render(
+      <ChatInputContainer
+        {...baseProps}
+        interaction={{ ...baseProps.interaction, active: toolCall }}
+      />
+    );
     expect(screen.getByTestId('question-prompt')).toBeInTheDocument();
     expect(screen.getByText('QuestionPrompt-tc-2')).toBeInTheDocument();
     expect(screen.queryByTestId('chat-input')).not.toBeInTheDocument();
   });
 
   it('hides normal-mode elements during interactive mode', () => {
-    const interaction: ToolCallState = {
+    const toolCall: ToolCallState = {
       toolCallId: 'tc-3',
       toolName: 'Write',
       input: '{}',
       status: 'pending',
       interactiveType: 'approval',
     };
-    render(<ChatInputContainer {...baseProps} activeInteraction={interaction} />);
+    render(
+      <ChatInputContainer
+        {...baseProps}
+        interaction={{ ...baseProps.interaction, active: toolCall }}
+      />
+    );
     expect(screen.queryByTestId('chat-input')).not.toBeInTheDocument();
     expect(screen.queryByTestId('chat-status')).not.toBeInTheDocument();
     expect(screen.queryByTestId('queue-panel')).not.toBeInTheDocument();

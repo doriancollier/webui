@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Decompose ChatPanel and reduce ChatInputContainer prop surface
 - Remove unused Transport import and add onStop prop to ChatInput
 
 ### Fixed

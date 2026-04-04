@@ -12,7 +12,8 @@ import { ChatInput } from './ChatInput';
 import type { ChatInputHandle } from './ChatInput';
 import { ChatStatusSection } from './ChatStatusSection';
 import { BackgroundTaskBar } from './BackgroundTaskBar';
-import type { VisibleBackgroundTask } from '../model/use-background-tasks';
+import { useBackgroundTasks } from '../model/use-background-tasks';
+import { useChatQueue } from '../model/use-chat-queue';
 import { FileChipBar } from './FileChipBar';
 import { QueuePanel } from './QueuePanel';
 import { ToolApproval } from './ToolApproval';
@@ -20,74 +21,56 @@ import { QuestionPrompt } from './QuestionPrompt';
 import { CommandPalette } from '@/layers/features/commands';
 import { FilePalette } from '@/layers/features/files';
 import { ScanLine } from '@/layers/shared/ui';
-import { useAppStore } from '@/layers/shared/model';
+import { useAppStore, useTransport } from '@/layers/shared/model';
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
-import { useDirectoryState } from '@/layers/entities/session';
+import { useDirectoryState, useSessionChatState } from '@/layers/entities/session';
 import type { InteractiveToolHandle } from './message';
 import { useRotatingPlaceholder } from '../model/use-rotating-placeholder';
 import { AnimatedPlaceholder } from './AnimatedPlaceholder';
 import placeholderHints from '../config/placeholder-hints.json';
 import type { useInputAutocomplete } from '../model/use-input-autocomplete';
 import type { PendingFile } from '../model/use-file-upload';
-import type { QueueItem } from '../model/use-message-queue';
+
+/** File upload state passed from the parent. */
+interface FileUploadProps {
+  pendingFiles: PendingFile[];
+  onFilesSelected: (files: File[]) => void;
+  onFileRemove: (id: string) => void;
+  isUploading: boolean;
+}
+
+/** Interactive tool state shared between the message list and input zone. */
+interface InteractionProps {
+  active: ToolCallState | null;
+  focusedOptionIndex: number;
+  onToolRef: (handle: InteractiveToolHandle | null) => void;
+  onToolDecided: (toolCallId: string) => void;
+}
+
+/** Cross-client sync and presence state for status indicators. */
+interface SyncPresenceProps {
+  connectionState: ConnectionState;
+  failedAttempts: number;
+  presenceInfo: PresenceUpdateEvent | null;
+  presenceTasks: boolean;
+}
 
 interface ChatInputContainerProps {
   chatInputRef: RefObject<ChatInputHandle | null>;
   input: string;
   autocomplete: ReturnType<typeof useInputAutocomplete>;
   handleSubmit: () => void;
+  /** Send explicit content (used by message queue auto-flush). */
+  submitContent: (content: string) => void;
   status: 'idle' | 'streaming' | 'error';
   sessionBusy: boolean;
   stop: () => void;
   setInput: (value: string) => void;
   sessionId: string;
   sessionStatus: SessionStatusEvent | null;
-  /** Files staged for upload. */
-  pendingFiles: PendingFile[];
-  /** Called when new files are selected via drop, paste, or the paperclip button. */
-  onFilesSelected: (files: File[]) => void;
-  /** Called when a pending file chip is dismissed. */
-  onFileRemove: (id: string) => void;
-  /** Whether an upload batch is in flight. */
-  isUploading: boolean;
-  /** Current message queue contents. */
-  queue: QueueItem[];
-  /** Index of the queue item being edited, or null. */
-  editingIndex: number | null;
-  /** Queue the current input for later sending. */
-  onQueue: () => void;
-  /** Remove a queue item by index. */
-  onQueueRemove: (index: number) => void;
-  /** Load a queue item into the textarea for editing. */
-  onQueueEdit: (index: number) => void;
-  /** Save the currently edited queue item. */
-  onQueueSaveEdit: () => void;
-  /** Cancel editing the current queue item. */
-  onQueueCancelEdit: () => void;
-  /** Navigate up through the queue (shell-history style). */
-  onQueueNavigateUp: () => void;
-  /** Navigate down through the queue (shell-history style). */
-  onQueueNavigateDown: () => void;
-  /** Current presence info from SSE. */
-  presenceInfo: PresenceUpdateEvent | null;
-  /** Whether the presence badge should tasks. */
-  presenceTasks: boolean;
-  /** The currently active interactive tool awaiting user input, or null. */
-  activeInteraction: ToolCallState | null;
-  /** Index of the currently keyboard-focused option (question prompts). */
-  focusedOptionIndex: number;
-  /** Ref callback to attach to the interactive tool's imperative handle. */
-  onToolRef: (handle: InteractiveToolHandle | null) => void;
-  /** Called after the user approves/denies/submits to clear waiting state. */
-  onToolDecided: (toolCallId: string) => void;
-  /** Background tasks to display in the task bar. */
-  backgroundTasks: VisibleBackgroundTask[];
-  /** Callback to stop a running background task. */
-  onStopTask: (taskId: string) => void;
-  /** SSE sync connection state for the ConnectionItem indicator. */
-  syncConnectionState: ConnectionState;
-  /** Number of failed reconnection attempts. */
-  syncFailedAttempts: number;
+  fileUpload: FileUploadProps;
+  interaction: InteractionProps;
+  sync: SyncPresenceProps;
 }
 
 /** Container for chat input, autocomplete palettes, drag-and-drop, and status chips. */
@@ -96,45 +79,58 @@ export function ChatInputContainer({
   input,
   autocomplete,
   handleSubmit,
+  submitContent,
   status,
   sessionBusy,
   stop,
   setInput,
   sessionId,
   sessionStatus,
-  pendingFiles,
-  onFilesSelected,
-  onFileRemove,
-  isUploading,
-  queue,
-  editingIndex,
-  onQueue,
-  onQueueRemove,
-  onQueueEdit,
-  onQueueSaveEdit,
-  onQueueCancelEdit,
-  onQueueNavigateUp,
-  onQueueNavigateDown,
-  presenceInfo,
-  presenceTasks,
-  activeInteraction,
-  focusedOptionIndex,
-  onToolRef,
-  onToolDecided,
-  backgroundTasks,
-  onStopTask,
-  syncConnectionState,
-  syncFailedAttempts,
+  fileUpload,
+  interaction,
+  sync,
 }: ChatInputContainerProps) {
+  const { active: activeInteraction, focusedOptionIndex, onToolRef, onToolDecided } = interaction;
+  const { pendingFiles, onFilesSelected, onFileRemove, isUploading } = fileUpload;
   const mode = activeInteraction ? 'interactive' : 'normal';
   const isStreaming = status === 'streaming';
-  const isIdle = !isStreaming && editingIndex === null;
   const isTextStreaming = useAppStore((s) => s.isTextStreaming);
   const [selectedCwd] = useDirectoryState();
+  const transport = useTransport();
   const { data: currentAgent } = useCurrentAgent(selectedCwd);
   const agentVisual = useAgentVisual(currentAgent ?? null, selectedCwd ?? '');
   const agentName = currentAgent?.name;
   const defaultPlaceholder = agentName ? `Message ${agentName}...` : 'Send a message...';
+
+  // --- Queue management (owned here, not passed from ChatPanel) ---
+  const chatQueue = useChatQueue({
+    input,
+    setInput,
+    status,
+    sessionBusy,
+    sessionId,
+    selectedCwd,
+    onFlush: submitContent,
+    chatInputRef,
+  });
+
+  // --- Background tasks (derived from messages in the session store) ---
+  const { messages } = useSessionChatState(sessionId);
+  const backgroundTasks = useBackgroundTasks(messages);
+
+  const handleStopTask = useCallback(
+    async (taskId: string) => {
+      if (!sessionId) return;
+      try {
+        await transport.stopTask(sessionId, taskId);
+      } catch (err) {
+        console.error('[chat] Failed to stop task:', err);
+      }
+    },
+    [sessionId, transport]
+  );
+
+  const isIdle = !isStreaming && chatQueue.editingIndex === null;
   const rotatingPlaceholder = useRotatingPlaceholder({
     defaultText: defaultPlaceholder,
     hints: placeholderHints,
@@ -290,13 +286,13 @@ export function ChatInputContainer({
             )}
 
             <QueuePanel
-              queue={queue}
-              editingIndex={editingIndex}
-              onEdit={onQueueEdit}
-              onRemove={onQueueRemove}
+              queue={chatQueue.queue}
+              editingIndex={chatQueue.editingIndex}
+              onEdit={chatQueue.handleQueueEdit}
+              onRemove={chatQueue.handleQueueRemove}
             />
 
-            <BackgroundTaskBar tasks={backgroundTasks} onStopTask={onStopTask} />
+            <BackgroundTaskBar tasks={backgroundTasks} onStopTask={handleStopTask} />
 
             <ChatInput
               ref={chatInputRef}
@@ -319,18 +315,18 @@ export function ChatInputContainer({
               activeDescendantId={autocomplete.activeDescendantId}
               onCursorChange={autocomplete.handleCursorChange}
               onAttach={onFilesSelected}
-              editingQueueItem={editingIndex !== null}
-              queueDepth={queue.length}
-              onQueue={onQueue}
-              onSaveEdit={onQueueSaveEdit}
-              onCancelEdit={onQueueCancelEdit}
-              onQueueNavigateUp={onQueueNavigateUp}
-              onQueueNavigateDown={onQueueNavigateDown}
-              queueHasItems={queue.length > 0}
+              editingQueueItem={chatQueue.editingIndex !== null}
+              queueDepth={chatQueue.queue.length}
+              onQueue={chatQueue.handleQueue}
+              onSaveEdit={chatQueue.handleQueueSaveEdit}
+              onCancelEdit={chatQueue.handleQueueCancelEdit}
+              onQueueNavigateUp={chatQueue.handleQueueNavigateUp}
+              onQueueNavigateDown={chatQueue.handleQueueNavigateDown}
+              queueHasItems={chatQueue.queue.length > 0}
               placeholder={(() => {
-                if (editingIndex !== null) return '';
-                if (isStreaming && queue.length > 0)
-                  return `Compose another \u2014 ${queue.length} queued`;
+                if (chatQueue.editingIndex !== null) return '';
+                if (isStreaming && chatQueue.queue.length > 0)
+                  return `Compose another \u2014 ${chatQueue.queue.length} queued`;
                 if (isStreaming) return 'Compose next \u2014 will send when ready';
                 return defaultPlaceholder;
               })()}
@@ -349,10 +345,10 @@ export function ChatInputContainer({
               sessionStatus={sessionStatus}
               isStreaming={status === 'streaming'}
               onChipClick={autocomplete.handleChipClick}
-              presenceInfo={presenceInfo}
-              presenceTasks={presenceTasks}
-              syncConnectionState={syncConnectionState}
-              syncFailedAttempts={syncFailedAttempts}
+              presenceInfo={sync.presenceInfo}
+              presenceTasks={sync.presenceTasks}
+              syncConnectionState={sync.connectionState}
+              syncFailedAttempts={sync.failedAttempts}
               agentName={agentName}
               agentColor={agentVisual.color}
               agentEmoji={agentVisual.emoji}

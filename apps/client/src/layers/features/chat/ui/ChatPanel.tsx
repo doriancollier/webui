@@ -1,10 +1,7 @@
 import { useRef, useMemo, useCallback, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { ArrowDown } from 'lucide-react';
+import { AnimatePresence } from 'motion/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useChatSession } from '../model/use-chat-session';
-import { useBackgroundTasks } from '../model/use-background-tasks';
-import { useMessageQueue } from '../model/use-message-queue';
 import { useCommands } from '@/layers/entities/command';
 import { useTaskState } from '../model/use-task-state';
 import { useToolShortcuts } from '../model/use-tool-shortcuts';
@@ -14,11 +11,11 @@ import { useChatStatusSync } from '../model/use-chat-status-sync';
 import { useFileUpload } from '../model/use-file-upload';
 import { buildFileEntries } from '../lib/build-file-entries';
 import { useSessionId, useSessionStatus, useDirectoryState } from '@/layers/entities/session';
-import { useAppStore, useTransport } from '@/layers/shared/model';
+import { useAppStore } from '@/layers/shared/model';
 import { playNotificationSound } from '@/layers/shared/lib';
-import { MessageList } from './MessageList';
 import type { MessageListHandle } from './MessageList';
 import type { ChatInputHandle } from './ChatInput';
+import { ChatMessageArea } from './ChatMessageArea';
 import { ChatInputContainer } from './ChatInputContainer';
 import { TaskListPanel } from './TaskListPanel';
 import { CelebrationOverlay } from './CelebrationOverlay';
@@ -44,8 +41,6 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
   const taskState = useTaskState(sessionId);
   const celebrations = useCelebrations();
   const enableNotificationSound = useAppStore((s) => s.enableNotificationSound);
-  const dorkbotFirstMessage = useAppStore((s) => s.dorkbotFirstMessage);
-  const setDorkbotFirstMessage = useAppStore((s) => s.setDorkbotFirstMessage);
   const [cwd] = useDirectoryState();
 
   const fileUpload = useFileUpload();
@@ -143,20 +138,6 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     }, [enableNotificationSound, queryClient]),
   });
   const { permissionMode } = useSessionStatus(sessionId, sessionStatus, status === 'streaming');
-  const backgroundTasks = useBackgroundTasks(messages);
-  const transport = useTransport();
-
-  const handleStopTask = useCallback(
-    async (taskId: string) => {
-      if (!sessionId) return;
-      try {
-        await transport.stopTask(sessionId, taskId);
-      } catch (err) {
-        console.error('[chat] Failed to stop task:', err);
-      }
-    },
-    [sessionId, transport]
-  );
 
   const { handleToolRef, focusedOptionIndex } = useToolShortcuts(activeInteraction);
   const { isAtBottom, hasNewMessages, scrollToBottom, handleScrollStateChange } = useScrollOverlay(
@@ -189,48 +170,6 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     chatInputRef,
   });
 
-  // Draft ref preserves the user's in-progress composition when they navigate into the queue
-  const draftRef = useRef('');
-
-  const messageQueue = useMessageQueue({
-    status,
-    sessionBusy,
-    sessionId,
-    selectedCwd: cwd,
-    onFlush: submitContent,
-  });
-
-  const handleQueue = useCallback(() => {
-    if (input.trim()) {
-      messageQueue.addToQueue(input.trim());
-      setInput('');
-    }
-  }, [input, messageQueue, setInput]);
-
-  const handleQueueEdit = useCallback(
-    (index: number) => {
-      if (messageQueue.editingIndex === null) {
-        draftRef.current = input;
-      }
-      const content = messageQueue.startEditing(index);
-      setInput(content);
-      chatInputRef.current?.focus();
-    },
-    [input, messageQueue, setInput]
-  );
-
-  const handleQueueSaveEdit = useCallback(() => {
-    if (messageQueue.editingIndex !== null && input.trim()) {
-      messageQueue.saveEditing(input.trim());
-      setInput(draftRef.current);
-    }
-  }, [input, messageQueue, setInput]);
-
-  const handleQueueCancelEdit = useCallback(() => {
-    messageQueue.cancelEditing();
-    setInput(draftRef.current);
-  }, [messageQueue, setInput]);
-
   /** Re-send the last user message after an inline execution_error. */
   const handleRetry = useCallback(() => {
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user');
@@ -257,149 +196,25 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
     [setInput]
   );
 
-  const handleQueueRemove = useCallback(
-    (index: number) => {
-      if (messageQueue.editingIndex === index) {
-        setInput(draftRef.current);
-      }
-      messageQueue.removeFromQueue(index);
-    },
-    [messageQueue, setInput]
-  );
-
-  const handleQueueNavigateUp = useCallback(() => {
-    if (messageQueue.editingIndex === null) {
-      draftRef.current = input;
-      const content = messageQueue.startEditing(messageQueue.queue.length - 1);
-      setInput(content);
-    } else if (messageQueue.editingIndex > 0) {
-      const content = messageQueue.startEditing(messageQueue.editingIndex - 1);
-      setInput(content);
-    } else {
-      messageQueue.cancelEditing();
-      setInput(draftRef.current);
-    }
-  }, [input, messageQueue, setInput]);
-
-  const handleQueueNavigateDown = useCallback(() => {
-    if (messageQueue.editingIndex !== null) {
-      if (messageQueue.editingIndex < messageQueue.queue.length - 1) {
-        const content = messageQueue.startEditing(messageQueue.editingIndex + 1);
-        setInput(content);
-      } else {
-        messageQueue.cancelEditing();
-        setInput(draftRef.current);
-      }
-    }
-  }, [messageQueue, setInput]);
-
   return (
     <div data-testid="chat-panel" className="mx-auto flex h-full w-full max-w-7xl flex-col">
-      <div className="relative min-h-0 flex-1">
-        {isLoadingHistory ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-muted-foreground flex items-center gap-2 text-sm">
-              <div className="flex gap-1">
-                <span
-                  className="bg-muted-foreground h-2 w-2 rounded-full"
-                  style={{
-                    animation: 'typing-dot 1.4s ease-in-out infinite',
-                    animationDelay: '0s',
-                  }}
-                />
-                <span
-                  className="bg-muted-foreground h-2 w-2 rounded-full"
-                  style={{
-                    animation: 'typing-dot 1.4s ease-in-out infinite',
-                    animationDelay: '0.2s',
-                  }}
-                />
-                <span
-                  className="bg-muted-foreground h-2 w-2 rounded-full"
-                  style={{
-                    animation: 'typing-dot 1.4s ease-in-out infinite',
-                    animationDelay: '0.4s',
-                  }}
-                />
-              </div>
-              Loading conversation...
-            </div>
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            {dorkbotFirstMessage ? (
-              <div className="flex flex-col items-center gap-4 text-center">
-                <motion.div
-                  layoutId="dorkbot-first-message"
-                  className="bg-muted/50 w-full max-w-md rounded-lg border p-4"
-                  data-testid="dorkbot-welcome-message"
-                  onLayoutAnimationComplete={() => {
-                    // Clear after the layout animation fires once so it becomes a normal element
-                    setDorkbotFirstMessage(null);
-                  }}
-                >
-                  <p className="text-muted-foreground text-sm">{dorkbotFirstMessage}</p>
-                </motion.div>
-                <p className="text-muted-foreground/60 text-sm">Type a message below to begin</p>
-              </div>
-            ) : (
-              <div className="text-center">
-                <p className="text-muted-foreground text-base">Start a conversation</p>
-                <p className="text-muted-foreground/60 mt-2 text-sm">
-                  Type a message below to begin
-                </p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <MessageList
-            ref={messageListRef}
-            messages={messages}
-            sessionId={sessionId!}
-            isTextStreaming={isTextStreaming}
-            onScrollStateChange={handleScrollStateChange}
-            activeToolCallId={activeInteraction?.toolCallId ?? null}
-            onToolRef={handleToolRef}
-            focusedOptionIndex={focusedOptionIndex}
-            onToolDecided={markToolCallResponded}
-            onRetry={handleRetry}
-            inputZoneToolCallId={activeInteraction?.toolCallId ?? null}
-          />
-        )}
-
-        <AnimatePresence>
-          {hasNewMessages && !isAtBottom && (
-            <motion.button
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 4 }}
-              transition={{ duration: 0.2 }}
-              onClick={scrollToBottom}
-              className="bg-foreground text-background hover:bg-foreground/90 absolute bottom-16 left-1/2 z-10 -translate-x-1/2 cursor-pointer rounded-full px-3 py-1.5 text-xs font-medium shadow-sm transition-colors"
-              role="status"
-              aria-live="polite"
-            >
-              New messages
-            </motion.button>
-          )}
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {!isAtBottom && messages.length > 0 && !isLoadingHistory && (
-            <motion.button
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.15 }}
-              onClick={scrollToBottom}
-              className="bg-background absolute right-4 bottom-4 rounded-full border p-2 shadow-sm transition-shadow hover:shadow-md"
-              aria-label="Scroll to bottom"
-            >
-              <ArrowDown className="size-(--size-icon-md)" />
-            </motion.button>
-          )}
-        </AnimatePresence>
-      </div>
+      <ChatMessageArea
+        messages={messages}
+        sessionId={sessionId!}
+        isLoadingHistory={isLoadingHistory}
+        isTextStreaming={isTextStreaming}
+        isAtBottom={isAtBottom}
+        hasNewMessages={hasNewMessages}
+        scrollToBottom={scrollToBottom}
+        onScrollStateChange={handleScrollStateChange}
+        activeToolCallId={activeInteraction?.toolCallId ?? null}
+        onToolRef={handleToolRef}
+        focusedOptionIndex={focusedOptionIndex}
+        onToolDecided={markToolCallResponded}
+        onRetry={handleRetry}
+        inputZoneToolCallId={activeInteraction?.toolCallId ?? null}
+        messageListRef={messageListRef}
+      />
 
       <ChatStatusStrip
         status={status}
@@ -454,35 +269,31 @@ export function ChatPanel({ sessionId, transformContent }: ChatPanelProps) {
         input={input}
         autocomplete={autocomplete}
         handleSubmit={handleSubmit}
+        submitContent={submitContent}
         status={status}
         sessionBusy={sessionBusy}
         stop={stop}
         setInput={setInput}
         sessionId={sessionId ?? ''}
         sessionStatus={sessionStatus}
-        pendingFiles={fileUpload.pendingFiles}
-        onFilesSelected={fileUpload.addFiles}
-        onFileRemove={fileUpload.removeFile}
-        isUploading={fileUpload.isUploading}
-        queue={messageQueue.queue}
-        editingIndex={messageQueue.editingIndex}
-        onQueue={handleQueue}
-        onQueueRemove={handleQueueRemove}
-        onQueueEdit={handleQueueEdit}
-        onQueueSaveEdit={handleQueueSaveEdit}
-        onQueueCancelEdit={handleQueueCancelEdit}
-        onQueueNavigateUp={handleQueueNavigateUp}
-        onQueueNavigateDown={handleQueueNavigateDown}
-        presenceInfo={presenceInfo}
-        presenceTasks={presenceTasks}
-        activeInteraction={activeInteraction}
-        focusedOptionIndex={focusedOptionIndex}
-        onToolRef={handleToolRef}
-        onToolDecided={markToolCallResponded}
-        backgroundTasks={backgroundTasks}
-        onStopTask={handleStopTask}
-        syncConnectionState={syncConnectionState}
-        syncFailedAttempts={syncFailedAttempts}
+        fileUpload={{
+          pendingFiles: fileUpload.pendingFiles,
+          onFilesSelected: fileUpload.addFiles,
+          onFileRemove: fileUpload.removeFile,
+          isUploading: fileUpload.isUploading,
+        }}
+        interaction={{
+          active: activeInteraction,
+          focusedOptionIndex,
+          onToolRef: handleToolRef,
+          onToolDecided: markToolCallResponded,
+        }}
+        sync={{
+          connectionState: syncConnectionState,
+          failedAttempts: syncFailedAttempts,
+          presenceInfo,
+          presenceTasks,
+        }}
       />
     </div>
   );
