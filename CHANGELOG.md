@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Remove unused Transport import and add onStop prop to ChatInput
+
 ### Fixed
 
 - Add horizontal padding to chat scroll area for improved layout

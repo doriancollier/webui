@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useSessionChatStore } from '@/layers/entities/session';
 import { createMockTransport } from '@dorkos/test-utils';
-import type { Transport } from '@dorkos/shared/transport';
 import { StreamManager } from '../model/stream-manager';
 
 /**

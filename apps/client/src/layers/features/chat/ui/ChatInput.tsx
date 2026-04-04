@@ -196,6 +196,7 @@ export const ChatInput = forwardRef<ChatInputHandle, ChatInputProps>(function Ch
       isMobile,
       value,
       onSubmit,
+      onStop,
       onEscape,
       onClear,
       isPaletteOpen,
