@@ -10,6 +10,9 @@ pre-commit:
         cd packages/db && npx drizzle-kit generate && cd ../..
         git add packages/db/drizzle/
       fail_text: 'DB schema changed — migrations generated and staged. Review and re-commit.'
+    dir-size:
+      run: bash scripts/check-dir-size.sh
+      fail_text: 'Directory has too many files — split into subdirectories.'
     lint:
       run: pnpm lint
       fail_text: 'Lint errors found — fix them before committing.'
