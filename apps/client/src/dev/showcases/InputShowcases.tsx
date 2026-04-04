@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { ChatInput } from '@/layers/features/chat/ui/ChatInput';
-import { FileChipBar } from '@/layers/features/chat/ui/FileChipBar';
-import { QueuePanel } from '@/layers/features/chat/ui/QueuePanel';
-import { ShortcutChips } from '@/layers/features/chat/ui/ShortcutChips';
-import { PromptSuggestionChips } from '@/layers/features/chat/ui/PromptSuggestionChips';
-import { QuestionPrompt } from '@/layers/features/chat/ui/QuestionPrompt';
+import { ChatInput } from '@/layers/features/chat/ui/input/ChatInput';
+import { FileChipBar } from '@/layers/features/chat/ui/input/FileChipBar';
+import { QueuePanel } from '@/layers/features/chat/ui/input/QueuePanel';
+import { ShortcutChips } from '@/layers/features/chat/ui/input/ShortcutChips';
+import { PromptSuggestionChips } from '@/layers/features/chat/ui/input/PromptSuggestionChips';
+import { QuestionPrompt } from '@/layers/features/chat/ui/tools/QuestionPrompt';
 import { CommandPalette } from '@/layers/features/commands';
 import { FilePalette } from '@/layers/features/files';
 import { TransportProvider } from '@/layers/shared/model';

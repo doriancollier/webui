@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { BackgroundTaskPart } from '@dorkos/shared/types';
-import { getToolStatusIcon, CollapsibleCard, type ToolIconStatus } from './primitives';
+import { getToolStatusIcon, CollapsibleCard, type ToolIconStatus } from '../primitives';
 
 interface SubagentBlockProps {
   part: BackgroundTaskPart;

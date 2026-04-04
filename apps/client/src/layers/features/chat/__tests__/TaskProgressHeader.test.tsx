@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { TaskProgressHeader } from '../ui/TaskProgressHeader';
+import { TaskProgressHeader } from '../ui/tasks/TaskProgressHeader';
 import type { TaskItem } from '@dorkos/shared/types';
 
 afterEach(cleanup);

@@ -154,7 +154,7 @@ vi.mock('@/layers/shared/model/app-store', () => ({
 }));
 
 // Mock child components
-vi.mock('../ui/ChatInput', () => ({
+vi.mock('../ui/input/ChatInput', () => ({
   ChatInput: vi.fn(() => <div data-testid="chat-input">ChatInput</div>),
 }));
 
@@ -162,7 +162,7 @@ vi.mock('../ui/MessageList', () => ({
   MessageList: vi.fn(() => <div data-testid="message-list">MessageList</div>),
 }));
 
-vi.mock('../ui/ShortcutChips', () => ({
+vi.mock('../ui/input/ShortcutChips', () => ({
   ShortcutChips: vi.fn(() => <div data-testid="shortcut-chips">ShortcutChips</div>),
 }));
 
@@ -194,7 +194,7 @@ vi.mock('@/layers/features/status', () => ({
   resetStatusBarPreferences: vi.fn(),
 }));
 
-vi.mock('../ui/TaskListPanel', () => ({
+vi.mock('../ui/tasks/TaskListPanel', () => ({
   TaskListPanel: vi.fn(() => null),
 }));
 

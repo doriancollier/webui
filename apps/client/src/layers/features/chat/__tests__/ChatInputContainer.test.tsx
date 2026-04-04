@@ -3,29 +3,29 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/react';
 // Mock child components to isolate ChatInputContainer behavior
-vi.mock('../ui/ChatInput', () => ({
+vi.mock('../ui/input/ChatInput', () => ({
   ChatInput: vi.fn(() => <div data-testid="chat-input">ChatInput</div>),
 }));
 
-vi.mock('../ui/ChatStatusSection', () => ({
+vi.mock('../ui/status/ChatStatusSection', () => ({
   ChatStatusSection: () => <div data-testid="chat-status">ChatStatusSection</div>,
 }));
 
-vi.mock('../ui/FileChipBar', () => ({
+vi.mock('../ui/input/FileChipBar', () => ({
   FileChipBar: () => <div data-testid="file-chips">FileChipBar</div>,
 }));
 
-vi.mock('../ui/QueuePanel', () => ({
+vi.mock('../ui/input/QueuePanel', () => ({
   QueuePanel: () => <div data-testid="queue-panel">QueuePanel</div>,
 }));
 
-vi.mock('../ui/ToolApproval', () => ({
+vi.mock('../ui/tools/ToolApproval', () => ({
   ToolApproval: vi.fn(({ toolCallId }: { toolCallId: string }) => (
     <div data-testid="tool-approval">ToolApproval-{toolCallId}</div>
   )),
 }));
 
-vi.mock('../ui/QuestionPrompt', () => ({
+vi.mock('../ui/tools/QuestionPrompt', () => ({
   QuestionPrompt: vi.fn(({ toolCallId }: { toolCallId: string }) => (
     <div data-testid="question-prompt">QuestionPrompt-{toolCallId}</div>
   )),
@@ -84,7 +84,7 @@ vi.mock('@/layers/entities/session', () => ({
   useSessionChatState: () => ({ messages: [] }),
 }));
 
-import { ChatInputContainer } from '../ui/ChatInputContainer';
+import { ChatInputContainer } from '../ui/input/ChatInputContainer';
 import type { ToolCallState } from '../model/chat-types';
 import { createRef } from 'react';
 

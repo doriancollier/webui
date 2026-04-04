@@ -4,8 +4,8 @@
  * @module features/chat
  */
 export { ChatPanel } from './ui/ChatPanel';
-export { ChatStatusStrip, deriveStripState, deriveSystemIcon } from './ui/ChatStatusStrip';
-export type { StripState } from './ui/ChatStatusStrip';
+export { ChatStatusStrip, deriveStripState, deriveSystemIcon } from './ui/status/ChatStatusStrip';
+export type { StripState } from './ui/status/ChatStatusStrip';
 export { useChatSession } from './model/use-chat-session';
 export { useCelebrations } from './model/use-celebrations';
 export { useTaskState } from './model/use-task-state';

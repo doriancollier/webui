@@ -1,5 +1,5 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import type { VisibleBackgroundTask } from '../model/use-background-tasks';
+import type { VisibleBackgroundTask } from '../../model/use-background-tasks';
 import './agent-runner.css';
 
 interface TaskDotSectionProps {

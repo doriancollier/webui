@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Loader2, Check, X } from 'lucide-react';
-import type { ToolCallState, HookState } from '../model/use-chat-session';
+import type { ToolCallState, HookState } from '../../model/use-chat-session';
 import {
   getToolLabel,
   getMcpServerBadge,
@@ -9,8 +9,8 @@ import {
   cn,
   formatDuration,
 } from '@/layers/shared/lib';
-import { getToolStatusIcon, CollapsibleCard } from './primitives';
-import { OutputRenderer } from './OutputRenderer';
+import { getToolStatusIcon, CollapsibleCard } from '../primitives';
+import { OutputRenderer } from '../message/OutputRenderer';
 
 /** Maximum characters to render before truncation (5KB). */
 const TRUNCATE_THRESHOLD = 5120;

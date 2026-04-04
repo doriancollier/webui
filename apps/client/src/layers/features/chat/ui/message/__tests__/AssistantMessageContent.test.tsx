@@ -8,14 +8,14 @@ import { AssistantMessageContent } from '../AssistantMessageContent';
 import type { ChatMessage } from '../../../model/use-chat-session';
 
 // Mock StreamingText to simplify rendering
-vi.mock('../../StreamingText', () => ({
+vi.mock('../StreamingText', () => ({
   StreamingText: ({ content }: { content: string }) => (
     <span data-testid="streaming-text">{content}</span>
   ),
 }));
 
 // Mock ToolCallCard — expose timestamps as data attrs for passthrough assertions
-vi.mock('../../ToolCallCard', () => ({
+vi.mock('../../tools/ToolCallCard', () => ({
   ToolCallCard: ({
     toolCall,
   }: {
@@ -32,14 +32,14 @@ vi.mock('../../ToolCallCard', () => ({
 }));
 
 // Mock ToolApproval
-vi.mock('../../ToolApproval', () => ({
+vi.mock('../../tools/ToolApproval', () => ({
   ToolApproval: ({ toolName }: { toolName: string }) => (
     <div data-testid="tool-approval">{toolName}</div>
   ),
 }));
 
 // Mock QuestionPrompt
-vi.mock('../../QuestionPrompt', () => ({
+vi.mock('../../tools/QuestionPrompt', () => ({
   QuestionPrompt: () => <div data-testid="question-prompt" />,
 }));
 

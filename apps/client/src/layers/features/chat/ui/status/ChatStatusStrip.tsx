@@ -6,7 +6,7 @@ import type { PermissionMode } from '@dorkos/shared/types';
 import { useElapsedTime } from '@/layers/shared/model';
 import { DEFAULT_THEME, type IndicatorTheme } from './inference-themes';
 import { BYPASS_INFERENCE_VERBS } from './inference-verbs';
-import { useRotatingVerb } from '../model/use-rotating-verb';
+import { useRotatingVerb } from '../../model/use-rotating-verb';
 
 // ---------------------------------------------------------------------------
 // Types

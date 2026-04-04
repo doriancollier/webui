@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeAll, afterAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { FileChipBar } from '../ui/FileChipBar';
+import { FileChipBar } from '../ui/input/FileChipBar';
 import type { PendingFile } from '../model/use-file-upload';
 
 // Mock URL.createObjectURL / revokeObjectURL for jsdom

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
-import type { VisibleBackgroundTask } from '../model/use-background-tasks';
+import type { VisibleBackgroundTask } from '../../model/use-background-tasks';
 import { AgentRunner } from './AgentRunner';
 import { TaskDotSection } from './TaskDotSection';
 import { TaskDetailPanel } from './TaskDetailPanel';

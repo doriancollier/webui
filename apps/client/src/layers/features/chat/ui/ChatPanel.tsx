@@ -14,16 +14,16 @@ import { useSessionId, useSessionStatus, useDirectoryState } from '@/layers/enti
 import { useAppStore } from '@/layers/shared/model';
 import { playNotificationSound } from '@/layers/shared/lib';
 import type { MessageListHandle } from './MessageList';
-import type { ChatInputHandle } from './ChatInput';
+import type { ChatInputHandle } from './input/ChatInput';
 import { ChatMessageArea } from './ChatMessageArea';
-import { ChatInputContainer } from './ChatInputContainer';
-import { TaskListPanel } from './TaskListPanel';
+import { ChatInputContainer } from './input/ChatInputContainer';
+import { TaskListPanel } from './tasks/TaskListPanel';
 import { CelebrationOverlay } from './CelebrationOverlay';
 import { useFiles } from '@/layers/features/files';
 import { useCelebrations } from '../model/use-celebrations';
-import { ErrorMessageBlock } from './ErrorMessageBlock';
-import { ChatStatusStrip } from './ChatStatusStrip';
-import { PromptSuggestionChips } from './PromptSuggestionChips';
+import { ErrorMessageBlock } from './message/ErrorMessageBlock';
+import { ChatStatusStrip } from './status/ChatStatusStrip';
+import { PromptSuggestionChips } from './input/PromptSuggestionChips';
 import type { TaskUpdateEvent } from '@dorkos/shared/types';
 
 interface ChatPanelProps {

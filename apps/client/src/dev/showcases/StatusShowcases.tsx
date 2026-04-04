@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { AlertTriangle } from 'lucide-react';
 import { Button } from '@/layers/shared/ui';
-import { StreamingText } from '@/layers/features/chat/ui/StreamingText';
-import { ChatStatusStrip } from '@/layers/features/chat/ui/ChatStatusStrip';
-import { TaskListPanel } from '@/layers/features/chat/ui/TaskListPanel';
+import { StreamingText } from '@/layers/features/chat/ui/message/StreamingText';
+import { ChatStatusStrip } from '@/layers/features/chat/ui/status/ChatStatusStrip';
+import { TaskListPanel } from '@/layers/features/chat/ui/tasks/TaskListPanel';
 import { ClientsItem } from '@/layers/features/status';
 import type { TransportErrorInfo } from '@/layers/features/chat/model/chat-types';
 import { PlaygroundSection } from '../PlaygroundSection';

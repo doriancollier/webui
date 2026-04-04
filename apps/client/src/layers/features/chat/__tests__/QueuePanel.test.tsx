@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, afterEach, beforeAll } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
-import { QueuePanel } from '../ui/QueuePanel';
+import { QueuePanel } from '../ui/input/QueuePanel';
 import type { QueueItem } from '../model/use-message-queue';
 
 beforeAll(() => {

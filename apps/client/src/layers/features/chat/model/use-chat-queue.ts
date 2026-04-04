@@ -3,7 +3,7 @@ import type { RefObject } from 'react';
 import { useMessageQueue } from './use-message-queue';
 import type { QueueItem } from './use-message-queue';
 import type { ChatStatus } from './chat-types';
-import type { ChatInputHandle } from '../ui/ChatInput';
+import type { ChatInputHandle } from '../ui/input/ChatInput';
 
 interface UseChatQueueOptions {
   input: string;

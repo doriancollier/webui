@@ -189,7 +189,7 @@ vi.mock('@/layers/features/status', async (importOriginal) => {
 // Import component under test after all mocks
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { ChatStatusSection } from '../ui/ChatStatusSection';
+import { ChatStatusSection } from '../ui/status/ChatStatusSection';
 import { resetStatusBarPreferences } from '@/layers/features/status';
 
 // ──────────────────────────────────────────────────────────────────────────────

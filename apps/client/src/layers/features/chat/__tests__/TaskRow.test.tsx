@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, cleanup, fireEvent } from '@testing-library/react';
 import React from 'react';
-import { TaskRow } from '../ui/TaskRow';
+import { TaskRow } from '../ui/tasks/TaskRow';
 import type { TaskItem } from '@dorkos/shared/types';
 
 afterEach(cleanup);

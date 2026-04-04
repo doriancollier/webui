@@ -1,7 +1,7 @@
 import { AnimatePresence, motion } from 'motion/react';
 import { X } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
-import type { QueueItem } from '../model/use-message-queue';
+import type { QueueItem } from '../../model/use-message-queue';
 
 interface QueuePanelProps {
   queue: QueueItem[];

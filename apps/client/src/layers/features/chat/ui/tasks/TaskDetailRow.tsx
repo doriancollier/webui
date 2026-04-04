@@ -1,5 +1,5 @@
 import { cn } from '@/layers/shared/lib';
-import type { VisibleBackgroundTask } from '../model/use-background-tasks';
+import type { VisibleBackgroundTask } from '../../model/use-background-tasks';
 import { InlineKillButton } from './InlineKillButton';
 
 interface TaskDetailRowProps {

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Brain } from 'lucide-react';
 import { cn } from '@/layers/shared/lib';
-import { CollapsibleCard } from './primitives';
+import { CollapsibleCard } from '../primitives';
 
 interface ThinkingBlockProps {
   text: string;

@@ -7,29 +7,29 @@ import type {
   PresenceUpdateEvent,
   ConnectionState,
 } from '@dorkos/shared/types';
-import type { ToolCallState } from '../model/chat-types';
+import type { ToolCallState } from '../../model/chat-types';
 import { ChatInput } from './ChatInput';
 import type { ChatInputHandle } from './ChatInput';
-import { ChatStatusSection } from './ChatStatusSection';
-import { BackgroundTaskBar } from './BackgroundTaskBar';
-import { useBackgroundTasks } from '../model/use-background-tasks';
-import { useChatQueue } from '../model/use-chat-queue';
+import { ChatStatusSection } from '../status/ChatStatusSection';
+import { BackgroundTaskBar } from '../tasks/BackgroundTaskBar';
+import { useBackgroundTasks } from '../../model/use-background-tasks';
+import { useChatQueue } from '../../model/use-chat-queue';
 import { FileChipBar } from './FileChipBar';
 import { QueuePanel } from './QueuePanel';
-import { ToolApproval } from './ToolApproval';
-import { QuestionPrompt } from './QuestionPrompt';
+import { ToolApproval } from '../tools/ToolApproval';
+import { QuestionPrompt } from '../tools/QuestionPrompt';
 import { CommandPalette } from '@/layers/features/commands';
 import { FilePalette } from '@/layers/features/files';
 import { ScanLine } from '@/layers/shared/ui';
 import { useAppStore, useTransport } from '@/layers/shared/model';
 import { useCurrentAgent, useAgentVisual } from '@/layers/entities/agent';
 import { useDirectoryState, useSessionChatState } from '@/layers/entities/session';
-import type { InteractiveToolHandle } from './message';
-import { useRotatingPlaceholder } from '../model/use-rotating-placeholder';
+import type { InteractiveToolHandle } from '../message';
+import { useRotatingPlaceholder } from '../../model/use-rotating-placeholder';
 import { AnimatedPlaceholder } from './AnimatedPlaceholder';
-import placeholderHints from '../config/placeholder-hints.json';
-import type { useInputAutocomplete } from '../model/use-input-autocomplete';
-import type { PendingFile } from '../model/use-file-upload';
+import placeholderHints from '../../config/placeholder-hints.json';
+import type { useInputAutocomplete } from '../../model/use-input-autocomplete';
+import type { PendingFile } from '../../model/use-file-upload';
 
 /** File upload state passed from the parent. */
 interface FileUploadProps {

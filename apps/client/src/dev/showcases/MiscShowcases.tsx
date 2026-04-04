@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { CelebrationOverlay } from '@/layers/features/chat/ui/CelebrationOverlay';
-import { DragHandle } from '@/layers/features/chat/ui/DragHandle';
+import { DragHandle } from '@/layers/features/chat/ui/status/DragHandle';
 import { Button } from '@/layers/shared/ui';
 import type { CelebrationEvent } from '@/layers/shared/lib';
 import { PlaygroundSection } from '../PlaygroundSection';

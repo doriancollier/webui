@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, cleanup, waitFor, act } from '@testing-library/react';
 import { createRef } from 'react';
-import { ToolApproval, type ToolApprovalHandle } from '../ui/ToolApproval';
+import { ToolApproval, type ToolApprovalHandle } from '../ui/tools/ToolApproval';
 
 const mockApproveTool = vi.fn().mockResolvedValue(undefined);
 const mockDenyTool = vi.fn().mockResolvedValue(undefined);

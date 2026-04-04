@@ -3,13 +3,13 @@ import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
 import { render, screen, cleanup, act } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { Info, RefreshCw, Shield } from 'lucide-react';
-import { DEFAULT_THEME } from '../ui/inference-themes';
+import { DEFAULT_THEME } from '../ui/status/inference-themes';
 import {
   deriveStripState,
   deriveSystemIcon,
   ChatStatusStrip,
   type StripStateInput,
-} from '../ui/ChatStatusStrip';
+} from '../ui/status/ChatStatusStrip';
 
 afterEach(() => {
   cleanup();

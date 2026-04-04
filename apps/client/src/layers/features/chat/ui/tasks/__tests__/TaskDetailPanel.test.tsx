@@ -6,8 +6,8 @@ import { render, screen, cleanup } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '@testing-library/jest-dom/vitest';
 import { TaskDetailPanel } from '../TaskDetailPanel';
-import type { VisibleBackgroundTask } from '../../model/use-background-tasks';
-import { TASK_COLORS } from '../../model/use-background-tasks';
+import type { VisibleBackgroundTask } from '../../../model/use-background-tasks';
+import { TASK_COLORS } from '../../../model/use-background-tasks';
 
 vi.mock('motion/react', () => ({
   motion: {

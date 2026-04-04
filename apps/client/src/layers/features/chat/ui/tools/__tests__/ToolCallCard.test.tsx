@@ -5,7 +5,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
 import { ToolCallCard } from '../ToolCallCard';
-import type { ToolCallState, HookState } from '../../model/chat-types';
+import type { ToolCallState, HookState } from '../../../model/chat-types';
 
 vi.mock('motion/react', () => ({
   motion: {
@@ -16,7 +16,7 @@ vi.mock('motion/react', () => ({
   AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }));
 
-vi.mock('../OutputRenderer', () => ({
+vi.mock('../../message/OutputRenderer', () => ({
   OutputRenderer: ({ content, toolName }: { content: string; toolName: string }) => {
     const isTruncated = content.length > 5120;
     const displayContent = isTruncated ? content.slice(0, 5120) : content;

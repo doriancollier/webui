@@ -3,7 +3,7 @@ import type { CommandEntry } from '@dorkos/shared/types';
 import type { FileEntry } from '@/layers/shared/lib';
 import { useCommandPalette } from './use-command-palette';
 import { useFileAutocomplete } from './use-file-autocomplete';
-import type { ChatInputHandle } from '../ui/ChatInput';
+import type { ChatInputHandle } from '../ui/input/ChatInput';
 
 interface UseInputAutocompleteOptions {
   input: string;

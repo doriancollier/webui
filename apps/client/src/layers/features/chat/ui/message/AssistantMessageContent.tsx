@@ -4,17 +4,17 @@ import { ChevronRight } from 'lucide-react';
 import type { ChatMessage, HookState } from '../../model/use-chat-session';
 import { useAppStore } from '@/layers/shared/model';
 import { TIMING } from '@/layers/shared/lib';
-import { StreamingText } from '../StreamingText';
-import { ToolCallCard } from '../ToolCallCard';
-import { ToolApproval } from '../ToolApproval';
-import type { ToolApprovalHandle } from '../ToolApproval';
-import { QuestionPrompt } from '../QuestionPrompt';
-import type { QuestionPromptHandle } from '../QuestionPrompt';
-import { ElicitationPrompt } from '../ElicitationPrompt';
+import { StreamingText } from './StreamingText';
+import { ToolCallCard } from '../tools/ToolCallCard';
+import { ToolApproval } from '../tools/ToolApproval';
+import type { ToolApprovalHandle } from '../tools/ToolApproval';
+import { QuestionPrompt } from '../tools/QuestionPrompt';
+import type { QuestionPromptHandle } from '../tools/QuestionPrompt';
+import { ElicitationPrompt } from '../tools/ElicitationPrompt';
 import { useMessageContext } from './MessageContext';
-import { SubagentBlock } from '../SubagentBlock';
-import { ThinkingBlock } from '../ThinkingBlock';
-import { ErrorMessageBlock } from '../ErrorMessageBlock';
+import { SubagentBlock } from './SubagentBlock';
+import { ThinkingBlock } from './ThinkingBlock';
+import { ErrorMessageBlock } from './ErrorMessageBlock';
 import { CompactPendingRow, CollapsibleCard } from '../primitives';
 
 /**

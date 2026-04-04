@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Check } from 'lucide-react';
 import { useTransport } from '@/layers/shared/model';
 import { Kbd, Button, RadioGroup, RadioGroupItem, Checkbox } from '@/layers/shared/ui';
-import { OptionRow, CompactResultRow, InteractiveCard } from './primitives';
+import { OptionRow, CompactResultRow, InteractiveCard } from '../primitives';
 import type { QuestionItem } from '@dorkos/shared/types';
 
 // --- Animation constants (module-scope to avoid per-render allocation) ---

@@ -11,7 +11,7 @@ import { SlidersHorizontal } from 'lucide-react';
 import { useIsMobile, useAppStore } from '@/layers/shared/model';
 import { STORAGE_KEYS, TIMING } from '@/layers/shared/lib';
 import { useSessionStatus, useSessionChatStore, useSubagents } from '@/layers/entities/session';
-import { ShortcutChips } from './ShortcutChips';
+import { ShortcutChips } from '../input/ShortcutChips';
 import { DragHandle } from './DragHandle';
 import {
   StatusLine,

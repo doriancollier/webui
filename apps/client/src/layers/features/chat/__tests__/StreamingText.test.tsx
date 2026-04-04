@@ -13,7 +13,7 @@ vi.mock('streamdown', () => ({
 }));
 vi.mock('streamdown/styles.css', () => ({}));
 
-import { StreamingText } from '../ui/StreamingText';
+import { StreamingText } from '../ui/message/StreamingText';
 import type { TextEffectConfig } from '@/layers/shared/lib';
 
 afterEach(() => {

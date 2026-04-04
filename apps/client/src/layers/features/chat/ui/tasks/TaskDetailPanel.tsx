@@ -1,5 +1,5 @@
 import { motion } from 'motion/react';
-import type { VisibleBackgroundTask } from '../model/use-background-tasks';
+import type { VisibleBackgroundTask } from '../../model/use-background-tasks';
 import { TaskDetailRow } from './TaskDetailRow';
 
 interface TaskDetailPanelProps {

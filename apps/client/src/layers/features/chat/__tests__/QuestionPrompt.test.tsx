@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createRef } from 'react';
 import { render, screen, fireEvent, cleanup, waitFor, act } from '@testing-library/react';
-import { QuestionPrompt, type QuestionPromptHandle } from '../ui/QuestionPrompt';
+import { QuestionPrompt, type QuestionPromptHandle } from '../ui/tools/QuestionPrompt';
 import type { QuestionItem } from '@dorkos/shared/types';
 
 // Mock Radix RadioGroup for jsdom

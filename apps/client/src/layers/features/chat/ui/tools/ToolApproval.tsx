@@ -4,7 +4,7 @@ import { Check, X, Shield } from 'lucide-react';
 import { useTransport } from '@/layers/shared/model';
 import { ToolArgumentsDisplay, cn, getToolLabel, getMcpServerBadge } from '@/layers/shared/lib';
 import { Kbd, Button } from '@/layers/shared/ui';
-import { CompactResultRow, InteractiveCard } from './primitives';
+import { CompactResultRow, InteractiveCard } from '../primitives';
 
 // --- Animation constants (module-scope to avoid per-render allocation) ---
 

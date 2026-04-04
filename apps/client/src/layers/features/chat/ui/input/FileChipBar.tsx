@@ -1,7 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, File as FileIcon, AlertCircle } from 'lucide-react';
-import type { PendingFile } from '../model/use-file-upload';
+import type { PendingFile } from '../../model/use-file-upload';
 
 /** Check if a File is an image by MIME type. */
 function isImageFile(file: File): boolean {

@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/react';
 
-import { ShortcutChips } from '../ui/ShortcutChips';
+import { ShortcutChips } from '../ui/input/ShortcutChips';
 
 afterEach(() => {
   cleanup();
