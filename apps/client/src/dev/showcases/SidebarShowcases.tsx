@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { Session } from '@dorkos/shared/types';
 import { PlaygroundSection } from '../PlaygroundSection';
 import { ShowcaseLabel } from '../ShowcaseLabel';
@@ -9,6 +9,7 @@ import {
   SidebarTabRow,
   SidebarFooterBar,
 } from '@/layers/features/session-list';
+import { useSessionChatStore } from '@/layers/entities/session';
 import { SidebarGroup, SidebarMenu, SidebarMenuItem, TooltipProvider } from '@/layers/shared/ui';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +25,37 @@ function hoursAgo(hours: number): string {
 function daysAgo(days: number): string {
   return new Date(now.getTime() - days * 24 * 60 * 60 * 1000).toISOString();
 }
+
+// Session IDs used to seed specific activity indicator states in the store
+const INDICATOR_SESSION_IDS = {
+  streaming: 'dev-indicator-streaming',
+  pendingApproval: 'dev-indicator-pending-approval',
+  error: 'dev-indicator-error',
+  unseenActivity: 'dev-indicator-unseen-activity',
+} as const;
+
+function makeIndicatorSession(id: string, title: string): Session {
+  return {
+    id,
+    title,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    permissionMode: 'default',
+  };
+}
+
+const INDICATOR_SESSIONS: Record<keyof typeof INDICATOR_SESSION_IDS, Session> = {
+  streaming: makeIndicatorSession(INDICATOR_SESSION_IDS.streaming, 'Running agent task...'),
+  pendingApproval: makeIndicatorSession(
+    INDICATOR_SESSION_IDS.pendingApproval,
+    'Waiting for tool approval'
+  ),
+  error: makeIndicatorSession(INDICATOR_SESSION_IDS.error, 'Session encountered an error'),
+  unseenActivity: makeIndicatorSession(
+    INDICATOR_SESSION_IDS.unseenActivity,
+    'New messages since last visit'
+  ),
+};
 
 const MOCK_SESSIONS: Session[] = [
   {
@@ -98,6 +130,14 @@ export function SidebarShowcases() {
 
 function SessionItemShowcase() {
   const [showNew, setShowNew] = useState(false);
+  const updateSession = useSessionChatStore((s) => s.updateSession);
+
+  useEffect(() => {
+    updateSession(INDICATOR_SESSION_IDS.streaming, { sdkState: 'running' });
+    updateSession(INDICATOR_SESSION_IDS.pendingApproval, { sdkState: 'requires_action' });
+    updateSession(INDICATOR_SESSION_IDS.error, { status: 'error' });
+    updateSession(INDICATOR_SESSION_IDS.unseenActivity, { hasUnseenActivity: true });
+  }, [updateSession]);
 
   return (
     <PlaygroundSection
@@ -122,6 +162,42 @@ function SessionItemShowcase() {
       <ShowcaseDemo>
         <SidebarItemWrapper>
           <SessionItem session={MOCK_SESSIONS[3]} isActive={false} onClick={() => {}} />
+        </SidebarItemWrapper>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>Activity indicator — streaming (green pulse)</ShowcaseLabel>
+      <ShowcaseDemo>
+        <SidebarItemWrapper>
+          <SessionItem session={INDICATOR_SESSIONS.streaming} isActive={false} onClick={() => {}} />
+        </SidebarItemWrapper>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>Activity indicator — pending approval (amber pulse)</ShowcaseLabel>
+      <ShowcaseDemo>
+        <SidebarItemWrapper>
+          <SessionItem
+            session={INDICATOR_SESSIONS.pendingApproval}
+            isActive={false}
+            onClick={() => {}}
+          />
+        </SidebarItemWrapper>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>Activity indicator — error (red)</ShowcaseLabel>
+      <ShowcaseDemo>
+        <SidebarItemWrapper>
+          <SessionItem session={INDICATOR_SESSIONS.error} isActive={false} onClick={() => {}} />
+        </SidebarItemWrapper>
+      </ShowcaseDemo>
+
+      <ShowcaseLabel>Activity indicator — unseen activity (blue)</ShowcaseLabel>
+      <ShowcaseDemo>
+        <SidebarItemWrapper>
+          <SessionItem
+            session={INDICATOR_SESSIONS.unseenActivity}
+            isActive={false}
+            onClick={() => {}}
+          />
         </SidebarItemWrapper>
       </ShowcaseDemo>
 

@@ -14,17 +14,36 @@ interface SessionItemProps {
   isNew?: boolean;
 }
 
-interface SessionActivityIndicatorProps {
-  sessionId: string;
+/*
+ * Border color uses inline style because an unlayered browser-extension stylesheet
+ * (`:where(:not(.copilot-view-content *))`) overrides all Tailwind border-color
+ * utilities in `@layer utilities`. Explicit RGB values are required for the pulse
+ * animation since motion cannot interpolate CSS custom properties.
+ */
+const BORDER_COLORS = {
+  green: 'rgb(34, 197, 94)',
+  greenDim: 'rgba(34, 197, 94, 0.15)',
+  amber: 'rgb(245, 158, 11)',
+  amberDim: 'rgba(245, 158, 11, 0.15)',
+  blue: 'var(--color-blue-500)',
+  destructive: 'hsl(var(--destructive))',
+  primary: 'hsl(var(--primary))',
+  transparent: 'transparent',
+} as const;
+
+interface BorderState {
+  color: string;
+  pulse: boolean;
+  dimColor?: string;
 }
 
 /**
- * Ambient status dot shown for background (non-active) sessions.
+ * Derives a border color and pulse flag from session activity state.
  *
- * Renders a colored dot conveying streaming, error, pending tool approval,
- * or unseen activity state. Returns null when the session is idle and clean.
+ * Priority: active → pending approval → streaming → error → unseen → idle.
+ * Streaming and pending states pulse between full and dim opacity.
  */
-function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) {
+function useSessionBorderState(sessionId: string, isActive: boolean): BorderState {
   const status = useSessionChatStore(
     useCallback((s) => s.sessions[sessionId]?.status ?? 'idle', [sessionId])
   );
@@ -37,7 +56,6 @@ function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) 
   const hasPendingApproval = useSessionChatStore(
     useCallback(
       (s) =>
-        // SDK authoritative signal takes priority over tool-call-based detection
         s.sessions[sessionId]?.sdkState === 'requires_action' ||
         (s.sessions[sessionId]?.messages.some((m) =>
           m.toolCalls?.some((tc) => tc.interactiveType && tc.status === 'pending')
@@ -47,41 +65,14 @@ function SessionActivityIndicator({ sessionId }: SessionActivityIndicatorProps) 
     )
   );
 
-  if (hasPendingApproval) {
-    return (
-      <span
-        className="animate-tasks size-1.5 flex-shrink-0 rounded-full bg-amber-500"
-        aria-label="Waiting for approval"
-      />
-    );
-  }
-
-  // SDK 'running' is authoritative; fall back to inferred streaming status
-  const isRunning = sdkRunning || status === 'streaming';
-  const isError = status === 'error';
-
-  if (isRunning) {
-    return (
-      <span
-        className="animate-tasks size-1.5 flex-shrink-0 rounded-full bg-green-500"
-        aria-label="Streaming"
-      />
-    );
-  }
-
-  if (isError) {
-    return (
-      <span className="bg-destructive size-1.5 flex-shrink-0 rounded-full" aria-label="Error" />
-    );
-  }
-
-  if (hasUnseenActivity) {
-    return (
-      <span className="size-1.5 flex-shrink-0 rounded-full bg-blue-500" aria-label="New activity" />
-    );
-  }
-
-  return null;
+  if (isActive) return { color: BORDER_COLORS.primary, pulse: false };
+  if (hasPendingApproval)
+    return { color: BORDER_COLORS.amber, pulse: true, dimColor: BORDER_COLORS.amberDim };
+  if (sdkRunning || status === 'streaming')
+    return { color: BORDER_COLORS.green, pulse: true, dimColor: BORDER_COLORS.greenDim };
+  if (status === 'error') return { color: BORDER_COLORS.destructive, pulse: false };
+  if (hasUnseenActivity) return { color: BORDER_COLORS.blue, pulse: false };
+  return { color: BORDER_COLORS.transparent, pulse: false };
 }
 
 function formatTimestamp(iso: string): string {
@@ -161,27 +152,46 @@ export function SessionItem({
     onRename?.(session.id, trimmed);
   }, [renameValue, session.id, session.title, onRename]);
 
-  const Wrapper = isNew ? motion.div : 'div';
-  const animationProps = isNew
-    ? {
-        initial: { opacity: 0, y: -8 },
-        animate: { opacity: 1, y: 0 },
-        transition: { duration: 0.2, ease: [0, 0, 0.2, 1] },
-      }
-    : {};
+  const borderState = useSessionBorderState(session.id, isActive);
 
   function handleExpandToggle(e: React.MouseEvent) {
     e.stopPropagation();
     setExpanded((prev) => !prev);
   }
 
+  const needsMotionAnimate = isNew || borderState.pulse;
+  const animate = needsMotionAnimate
+    ? {
+        ...(isNew ? { opacity: 1, y: 0 } : {}),
+        ...(borderState.pulse && borderState.dimColor
+          ? { borderLeftColor: [borderState.color, borderState.dimColor, borderState.color] }
+          : {}),
+      }
+    : undefined;
+  const transition = needsMotionAnimate
+    ? {
+        ...(isNew
+          ? {
+              opacity: { duration: 0.2, ease: [0, 0, 0.2, 1] as const },
+              y: { duration: 0.2, ease: [0, 0, 0.2, 1] as const },
+            }
+          : {}),
+        ...(borderState.pulse
+          ? { borderLeftColor: { duration: 2, repeat: Infinity, ease: 'easeInOut' as const } }
+          : {}),
+      }
+    : undefined;
+
   return (
-    <Wrapper
-      {...(animationProps as Record<string, unknown>)}
+    <motion.div
       data-testid="session-item"
+      initial={isNew ? { opacity: 0, y: -8 } : undefined}
+      animate={animate}
+      transition={transition}
+      style={borderState.pulse ? undefined : { borderLeftColor: borderState.color }}
       className={cn(
-        'group relative rounded-lg transition-colors duration-150',
-        isActive ? 'text-foreground border-primary border-l-2' : 'border-l-2 border-transparent'
+        'group relative rounded-lg border-l-2 transition-colors duration-150',
+        isActive && 'text-foreground'
       )}
     >
       {isActive && (
@@ -210,7 +220,6 @@ export function SessionItem({
         {/* Line 1: relative time + activity indicator + permission icon + expand */}
         <div className="text-muted-foreground flex items-center gap-1 text-xs">
           <span className="min-w-0 flex-1">{formatRelativeTime(session.updatedAt)}</span>
-          {!isActive && <SessionActivityIndicator sessionId={session.id} />}
           <span className="flex flex-shrink-0 items-center gap-1">
             {isSkipMode && (
               <ShieldOff
@@ -280,7 +289,7 @@ export function SessionItem({
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.2, ease: [0, 0, 0.2, 1] }}
-            className="overflow-hidden"
+            className="relative z-10 overflow-hidden"
           >
             <div className="text-muted-foreground border-border/30 mx-2 space-y-1.5 border-t px-3 pt-2 pb-2 text-[11px]">
               <DetailRow label="Session ID" value={session.id} copyable />
@@ -304,7 +313,7 @@ export function SessionItem({
           </motion.div>
         )}
       </AnimatePresence>
-    </Wrapper>
+    </motion.div>
   );
 }
 
